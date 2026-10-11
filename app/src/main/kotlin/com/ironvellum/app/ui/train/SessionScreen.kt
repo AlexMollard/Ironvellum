@@ -89,7 +89,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import com.ironvellum.app.ui.theme.InkPressIndication
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.text.TextAutoSize
@@ -603,7 +607,15 @@ fun SessionScreen(
     // Every write the screen makes goes through here: the steppers, the log
     // button, Undo, un-log and the typed entries. The view model routes it by
     // metric (LiveTrialActions), the way the lock-screen "Set done" does.
-    fun commit(set: SessionSet) = viewModel.commit(set, metricOf(set.exerciseId))
+    val haptic = LocalHapticFeedback.current
+    fun commit(set: SessionSet) {
+        // A tick the lifter feels: only a set going from not logged to logged. The system's
+        // own haptics setting decides whether it is felt at all.
+        if (set.done && ui.sets.firstOrNull { it.id == set.id }?.done == false) {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+        }
+        viewModel.commit(set, metricOf(set.exerciseId))
+    }
 
     fun applyLoad(set: SessionSet, kg: Double?) = commit(set.copy(weightKg = kg))
 
@@ -618,6 +630,16 @@ fun SessionScreen(
     // spends. "Not now" spends nothing and asks again on the next trial, up to
     // FirstRun.MAX_NOTIFICATION_ASKS times in all (Settings can still grant it).
     val trialPrefs = remember { TrialPrefs(screenContext) }
+    // The pocket lock: a dim cover that ignores touches until held. Survives rotation.
+    var locked by rememberSaveable { mutableStateOf(false) }
+    // A phone that sleeps between sets hides the rest timer; the setting defaults on.
+    val view = LocalView.current
+    val keepAwake = remember { trialPrefs.keepScreenOn }
+    DisposableEffect(view, keepAwake) {
+        val before = view.keepScreenOn
+        view.keepScreenOn = keepAwake
+        onDispose { view.keepScreenOn = before }
+    }
     var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
     val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -776,6 +798,7 @@ fun SessionScreen(
                 startedAtMs = session.startedAtMs,
                 onBack = onExit,
                 onMuscles = { showRiteMuscles = true },
+                onLock = { locked = true },
                 onAbandon = { confirmAbandon = true },
             )
             Column(
@@ -956,6 +979,16 @@ fun SessionScreen(
                 onSkip = viewModel::skipRest,
                 onSealed = ::requestSeal,
                 slideReset = slideReset,
+            )
+        }
+        if (locked) {
+            PocketLockOverlay(
+                rest = rest,
+                nextLine = activeSet?.let { set ->
+                    "Set ${set.workingNumber(ui.sets)} · ${set.exerciseName} · " +
+                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                },
+                onUnlock = { locked = false },
             )
         }
         undo?.let { prompt ->
@@ -1675,6 +1708,7 @@ private fun TrialHeader(
     startedAtMs: Long,
     onBack: () -> Unit,
     onMuscles: () -> Unit,
+    onLock: () -> Unit,
     onAbandon: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp)) {
@@ -1701,6 +1735,9 @@ private fun TrialHeader(
                 onClick = onBack,
                 modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
             )
+            InkIconButton(onClick = onLock, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.Lock, contentDescription = "Lock the screen", tint = IronvellumColors.InkMuted)
+            }
             var menuOpen by remember { mutableStateOf(false) }
             Box {
                 InkIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
@@ -2226,6 +2263,7 @@ private fun FigureStepper(
 
 @Composable
 private fun StepButton(symbol: String, description: String, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
     Box(
         Modifier
             .size(width = 44.dp, height = 48.dp)
@@ -2233,7 +2271,10 @@ private fun StepButton(symbol: String, description: String, onClick: () -> Unit)
                 interactionSource = remember { MutableInteractionSource() },
                 indication = InkPressIndication,
                 role = Role.Button,
-                onClick = onClick,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                },
             )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -2570,7 +2611,7 @@ private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
 
 /** The clock of the rest in the footer: ticks while one runs, and only then. */
 @Composable
-private fun restNow(timer: RestTimer?): Long {
+internal fun restNow(timer: RestTimer?): Long {
     var now by remember(timer) { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     LaunchedEffect(timer) {
         while (timer != null && !timer.isOver(now)) {

@@ -151,6 +151,17 @@ resting, "Skip rest" and "+15 s"; otherwise "Seal", which opens the app. Android
 shows three actions at most, so Seal waits until nothing else is on offer. They
 call the same code as the screen (`data/LiveTrialActions.kt`, `data/RestClock.kt`).
 
+**Pocket lock.** A lock icon in the live trial's header covers the screen with
+`Abyss` at 97%: a lock glyph, the rest countdown (56sp, `Ink` at 85%) or, between
+rests, the set in hand, and "Hold to unlock". It swallows every touch and the back
+button. A finger held for 1.2 seconds unlocks it, shown by a 3dp `Emerald` bar
+filling along the bottom edge; a tap, a swipe or a brush does nothing. Holding is
+not possible for everyone, so it also offers an "Unlock the trial" accessibility
+action and a long-click. Nothing about the trial pauses underneath it. The screen
+stays awake for the whole live trial unless Settings (DURING A TRIAL) turns that off.
+Logging a set gives a `Confirm` haptic and every stepper press a `SegmentTick`, both
+through `LocalHapticFeedback`, so the system's own haptics setting decides.
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 
