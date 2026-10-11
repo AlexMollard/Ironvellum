@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -44,6 +46,8 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // The file is always kg, which its reader assumes; say so when the screen is in lb.
+    val csvUnitNote = if (Units.current == LoadUnit.LB) "Weights export in kg" else null
     // The archive picked and read, held until the lifter confirms the restore.
     var pendingArchive by remember { mutableStateOf<String?>(null) }
     val exportTrials: (WorkoutCsvWriter.Period) -> Unit = { period ->
@@ -101,11 +105,11 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     },
                 )
                 InkDivider()
-                ListRow("Export trials this week", onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
+                ListRow("Export trials this week", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
                 InkDivider()
-                ListRow("Export trials this month", onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
+                ListRow("Export trials this month", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
                 InkDivider()
-                ListRow("Export trials this year", onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
+                ListRow("Export trials this year", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
             }
             InkDivider()
             ListRow(

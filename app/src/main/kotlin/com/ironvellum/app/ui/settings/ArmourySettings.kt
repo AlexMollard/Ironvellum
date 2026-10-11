@@ -60,9 +60,10 @@ private fun BarAndPlates() {
     LaunchedEffect(Unit) { PlateStore.load(context.applicationContext) }
     val setup = setups.getValue(unit)
     val rack = PlateStore.rack(setup, unit)
-    SettingsGroup("Bar and plates") {
+    SettingsGroup("Bar") {
         BarChooser(unit, setup.bar) { PlateStore.setBar(context.applicationContext, unit, it) }
-        Spacer(Modifier.height(12.dp))
+    }
+    SettingsGroup("Plates you own") {
         SettingsCaption("Pairs of each. The plate calculator builds loads from these.")
         PlateSizes.sizes(unit).forEach { size ->
             PairRow(size, unit, setup.pairs[size] ?: 0) { PlateStore.setPairs(context.applicationContext, unit, size, it) }

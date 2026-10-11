@@ -305,7 +305,7 @@ private fun loadTarget(kgText: String): String =
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-private fun LoadTargetStepper(kgText: String, error: Boolean, onKgText: (String) -> Unit) {
+private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, onKgText: (String) -> Unit) {
     val unit = Units.current
     if (unit == LoadUnit.KG) {
         DecimalStepper("Load", kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
@@ -320,7 +320,7 @@ private fun LoadTargetStepper(kgText: String, error: Boolean, onKgText: (String)
     val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
-        "Load", shown, "lb", "Lighter load", "Heavier load", 5.0, error,
+        "Load", shown, "lb", "Lighter load", "Heavier load", gridLb, error,
         max = Loads.toUnit(MAX_LOAD_KG, unit),
     ) { lb ->
         typed = lb
@@ -683,7 +683,7 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                LoadTargetStepper(entry.weight, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
