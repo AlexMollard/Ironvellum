@@ -139,6 +139,8 @@ internal fun TrialAmendEditor(
                     onChange { d -> (0 until block.sets.size).fold(d) { acc, _ -> acc.removeSet(blockIdx, 0) } }
                 },
                 onWarmup = null,
+                restOff = null,
+                onRestOff = {},
                 onEdit = { set -> update(set.id.toInt()) { set.asDraftSet() } },
                 onTypeLoad = { set -> loadFor = blockIdx to set.id.toInt() },
                 onTypeFigure = { set, kind -> typing = Triple(blockIdx, set.id.toInt(), kind) },

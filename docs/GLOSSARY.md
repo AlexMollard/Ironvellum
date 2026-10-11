@@ -84,6 +84,8 @@ Settings keeps the name **Settings**.
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
 | **Set type** | How one set was done: Working, Warm-up, Drop, Failure or Rest-pause. A tag on the set row, changed by tapping it. Only a warm-up is left out of XP, volume and peaks | "Set types", "Mark as warm-up", "Count as a working set", tags W · D · F · R | set kind (in copy), set mode, set flavour |
 | **Warm up** | The action on a loaded exercise's menu that adds warm-up sets before its first working set: the bar for 10 (barbell only), then about 40% for 5, 60% for 3 and 80% for 2 of the working load, rounded to the movement's load step | "Warm up", "Warm-up added · Undo" | ramp, prime, build-up |
+| **Rest timer** | The countdown between sets, to the movement's ready time (the window's max is only a soft ceiling). It can be off for every movement (Settings, DURING A TRIAL) or for one movement (its rite, or its menu in the trial). Rest *between sets* stays plain | "Rest timer", "No rest timer", "Skip rest", "+15", "Rest is over" | cooldown, break, recovery |
+| **Rest alert** | How a rest's end is announced: Vibrate, Sound + vibrate or Silent. The same choice cues the last 3 seconds of a timed set | "WHEN A REST ENDS", "Vibrate", "Sound + vibrate", "Silent" | notification sound, ringtone |
 | **Note** | Free text on a trial or rite | "PRIVATE NOTE", "NOTE · shared with allies", "PUBLIC NOTE" | field note, sealed note, mantra |
 
 ## Codex

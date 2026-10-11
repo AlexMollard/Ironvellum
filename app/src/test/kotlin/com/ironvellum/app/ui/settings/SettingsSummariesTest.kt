@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.settings
 
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.Sex
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -32,6 +33,14 @@ class SettingsSummariesTest {
         assertEquals("Sam · 180 cm · Male", SettingsSummaries.profile("Sam", 180.0, Sex.MALE))
         assertEquals("Sam · 172.5 cm · Female", SettingsSummaries.profile(" Sam ", 172.5, Sex.FEMALE))
         assertEquals("height not set · Male", SettingsSummaries.profile("", null, Sex.MALE))
+    }
+
+    @Test
+    fun `the trial row says the rest is off, or how its end is announced`() {
+        assertEquals("Rest off", SettingsSummaries.trial(restOff = true, alert = RestAlert.SOUND_VIBRATE))
+        assertEquals("Rest · vibrate", SettingsSummaries.trial(restOff = false, alert = RestAlert.VIBRATE))
+        assertEquals("Rest · sound + vibrate", SettingsSummaries.trial(restOff = false, alert = RestAlert.SOUND_VIBRATE))
+        assertEquals("Rest · silent", SettingsSummaries.trial(restOff = false, alert = RestAlert.SILENT))
     }
 
     @Test

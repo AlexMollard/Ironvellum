@@ -43,6 +43,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.data.TrialPrefs
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -81,6 +83,7 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.WholeStepper
@@ -630,6 +633,7 @@ private fun EntryItem(
 ) {
     val name = entry.exerciseName.ifBlank { "Pick exercise" }
     val bad = missingTargets(entry, metric)
+    val context = LocalContext.current
     if (!open) {
         Row(
             Modifier
@@ -687,6 +691,20 @@ private fun EntryItem(
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
+        }
+        // Activities have no rest between sets, so only the lifting movements are asked.
+        if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) {
+            val prefs = remember { TrialPrefs(context) }
+            var restOff by remember(entry.exerciseName) { mutableStateOf(prefs.restOffFor(entry.exerciseName)) }
+            SettingsSwitchRow(
+                label = "No rest timer",
+                caption = "Ticking a set of ${entry.exerciseName.ifBlank { "this movement" }} starts no rest, in any rite.",
+                checked = restOff,
+                onCheckedChange = {
+                    restOff = it
+                    prefs.setRestOffFor(entry.exerciseName, it)
+                },
+            )
         }
         UnderlineField(
             label = "Modifiers",

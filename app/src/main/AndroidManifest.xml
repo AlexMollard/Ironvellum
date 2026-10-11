@@ -65,6 +65,12 @@
             </intent-filter>
         </activity>
 
+        <!-- The trial notification's Set done, Skip rest and +15 s buttons. Broadcasts
+             run from the lock screen; not exported, only our own PendingIntents. -->
+        <receiver
+            android:name=".TrialActionReceiver"
+            android:exported="false" />
+
         <!-- Live-session companion notification. specialUse because "glanceable
              workout progress" is not one of the platform's fixed FGS types;
              the subtype documents that for the Play review, should one happen. -->

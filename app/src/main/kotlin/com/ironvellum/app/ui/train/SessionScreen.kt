@@ -118,7 +118,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import android.os.SystemClock
 import com.ironvellum.app.data.FirstRunPrefs
+import com.ironvellum.app.data.LiveTrialActions
 import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
@@ -354,52 +356,22 @@ class SessionViewModel(
         .map { it?.takeIf { t -> t.sessionId == sessionId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    private val actions = LiveTrialActions(repo, appContext, sessionId)
+
     fun extendRest() = RestClock.extend(sessionId)
 
     fun shortenRest() = RestClock.shorten(sessionId)
 
     fun skipRest() = RestClock.cancel(sessionId)
 
-    /** A set ticked done, with sets still waiting, starts its movement's prescribed rest. */
-    private fun noteTick(setId: Long, done: Boolean) {
-        val sets = ui.value.sets
-        if (!RestTimer.startsRest(sets, setId, done)) return
-        val set = sets.first { it.id == setId }
-        val exercise = exercises.value.firstOrNull { it.id == set.exerciseId }
-        val window = RestTimer.window(set.exerciseName, focus.value, exercise?.metric, exercise?.isWeighted)
-        // An activity (a run) has no rest between sets: no timer.
-        if (window.isNone) return
-        RestClock.start(sessionId, window.ready, window.max)
-    }
-
-    fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
-    }
-
-    /** A hold's figure is seconds; writing it as reps is the bug this replaces. */
-    fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateHoldSet(setId, seconds, weightKg, done) }
-    }
-
     /**
-     * One route for every activity edit. The caller hands back the set's whole
-     * shape — including the fields its metric does not edit — because the
-     * repository writes all columns together and a null here would erase a
-     * duration, distance or grade a neighbouring stepper did not touch.
+     * Every set write the screen makes: the steppers, the log button, Undo, un-log and the
+     * typed entries. [LiveTrialActions] routes it by metric, passing the set's current values
+     * for the columns its metric does not own, and starts the rest a tick earns, the same
+     * path the lock-screen "Set done" takes.
      */
-    fun updateActivitySet(
-        setId: Long,
-        reps: Int,
-        durationSec: Int?,
-        distanceM: Double?,
-        grade: String?,
-        weightKg: Double?,
-        done: Boolean,
-    ) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateActivitySet(setId, reps, durationSec, distanceM, grade, weightKg, done) }
+    fun commit(set: SessionSet, metric: ExerciseMetric) {
+        viewModelScope.launch { actions.commit(set, metric) }
     }
 
     /** "Warm up" on an exercise's menu; [onAdded] gets the new sets' ids for the Undo bar, and is not called when none were added. */
@@ -628,18 +600,10 @@ fun SessionScreen(
     fun metricOf(exerciseId: Long): ExerciseMetric =
         exercises.firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
 
-    // One route per metric, each passing the set's current values for the
-    // columns it does not own, so no edit erases a neighbour's figure. Every
-    // write the screen makes goes through here: the steppers, the log button,
-    // Undo, un-log and the typed entries.
-    fun commit(set: SessionSet) {
-        val metric = metricOf(set.exerciseId)
-        when {
-            metric == ExerciseMetric.HOLD -> viewModel.updateHoldSet(set.id, set.durationSec ?: 0, set.weightKg, set.done)
-            metric.isStrength -> viewModel.updateSet(set.id, set.reps, set.weightKg, set.done)
-            else -> viewModel.updateActivitySet(set.id, set.reps, set.durationSec, set.distanceM, set.grade, set.weightKg, set.done)
-        }
-    }
+    // Every write the screen makes goes through here: the steppers, the log
+    // button, Undo, un-log and the typed entries. The view model routes it by
+    // metric (LiveTrialActions), the way the lock-screen "Set done" does.
+    fun commit(set: SessionSet) = viewModel.commit(set, metricOf(set.exerciseId))
 
     fun applyLoad(set: SessionSet, kg: Double?) = commit(set.copy(weightKg = kg))
 
@@ -653,7 +617,9 @@ fun SessionScreen(
     // the system prompt, which gets one chance: that is what the asked flag
     // spends. "Not now" spends nothing and asks again on the next trial, up to
     // FirstRun.MAX_NOTIFICATION_ASKS times in all (Settings can still grant it).
-    val restAccess = rememberNotificationAccess(Notifications.CHANNEL_REST)
+    val trialPrefs = remember { TrialPrefs(screenContext) }
+    var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
+    val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted) WorkoutSessionService.start(screenContext, sessionId)
@@ -822,7 +788,7 @@ fun SessionScreen(
                 rest?.let {
                     // The countdown in the footer still runs, but the buzz at its end cannot arrive.
                     NotificationBlockedNotice(
-                        channelId = Notifications.CHANNEL_REST,
+                        channelId = Notifications.restChannel(trialPrefs.restAlert),
                         access = restAccess,
                         blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
                         modifier = Modifier.padding(top = 12.dp),
@@ -885,6 +851,13 @@ fun SessionScreen(
                                     { viewModel.addWarmupRamp(block.id, ::offerRampUndo) }
                                 } else {
                                     null
+                                },
+                                restOff = if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) restOffMovements.contains(first.exerciseName.trim().lowercase()) else null,
+                                onRestOff = { off ->
+                                    trialPrefs.setRestOffFor(first.exerciseName, off)
+                                    restOffMovements = trialPrefs.restOffNames()
+                                    // Turning it off mid-rest ends the rest that is running.
+                                    if (off) viewModel.skipRest()
                                 },
                                 onAddSet = {
                                     // A duplicate carries the block's own figure: a hold's
@@ -1814,6 +1787,9 @@ internal fun OpenExerciseCard(
     onMove: (up: Boolean) -> Unit,
     onEditLoad: (() -> Unit)?,
     onWarmup: (() -> Unit)?,
+    /** This movement's rest switch (null where none applies, as in an amendment or for an activity). */
+    restOff: Boolean?,
+    onRestOff: (Boolean) -> Unit,
     onAddSet: () -> Unit,
     onRemoveSet: (SessionSet) -> Unit,
     onRemoveExercise: () -> Unit,
@@ -1888,6 +1864,8 @@ internal fun OpenExerciseCard(
                 // An amendment may drop any set; Save is the commit.
                 onRemoveLastSet = block.sets.last().takeIf { block.sets.size > 1 && (amend || !it.done) }?.let { last -> { onRemoveSet(last) } },
                 onRemoveExercise = onRemoveExercise,
+                restOff = restOff.takeIf { !amend },
+                onRestOff = onRestOff,
             )
         }
         Column(Modifier.padding(horizontal = 16.dp)) {
@@ -2016,6 +1994,9 @@ private fun ExerciseMenu(
     onAddSet: (() -> Unit)?,
     onRemoveLastSet: (() -> Unit)?,
     onRemoveExercise: () -> Unit,
+    /** The movement's own rest switch: whether its rest is off, and flipping it; null for an activity. */
+    restOff: Boolean? = null,
+    onRestOff: (Boolean) -> Unit = {},
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -2044,6 +2025,7 @@ private fun ExerciseMenu(
             onModifiers?.let { item("Edit modifiers", action = it) }
             onMoveUp?.let { item("Move up", action = it) }
             onMoveDown?.let { item("Move down", action = it) }
+            restOff?.let { off -> item(if (off) "Turn rest timer on" else "Turn rest timer off") { onRestOff(!off) } }
             onRemoveLastSet?.let { item("Remove last set", action = it) }
             item("Remove exercise", IronvellumColors.DangerRed, onRemoveExercise)
         }

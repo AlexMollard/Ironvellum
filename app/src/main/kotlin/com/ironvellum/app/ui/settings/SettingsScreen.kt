@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Reminders
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsValueRow
@@ -57,6 +58,7 @@ fun SettingsScreen(
     // The hub leaves composition while a sub-screen is open, so these are
     // re-read on every return rather than going stale behind a toggle.
     val summonsOn = remember { Reminders.enabled(context) }
+    val trialPrefs = remember { TrialPrefs(context) }
     var crashCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         ProgramAnswersStore.get(context.applicationContext)
@@ -94,6 +96,9 @@ fun SettingsScreen(
         SettingsGroup("TRAINING", topSpace = 10.dp, rows = true) {
             SettingsValueRow("Training mode", (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
+            }
+            SettingsValueRow("During a trial", SettingsSummaries.trial(trialPrefs.restOff, trialPrefs.restAlert)) {
+                onOpenSection(SettingsSection.DURING_TRIAL)
             }
             SettingsValueRow("Armoury", SettingsSummaries.armoury(savedGear)) {
                 onOpenSection(SettingsSection.ARMOURY)

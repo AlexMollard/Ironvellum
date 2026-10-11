@@ -143,6 +143,14 @@ is offered only before anything on that exercise is logged, on a loaded rep
 movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
 bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
 
+**Lock-screen trial actions.** The trial notification is public on the lock screen
+and carries the movement, the set and its figures, never a note. Its buttons are
+broadcasts, so they run without unlocking: while a set waits, "Set done" (ticks it
+with the figures shown, starting a rest exactly as the log button does); while
+resting, "Skip rest" and "+15 s"; otherwise "Seal", which opens the app. Android
+shows three actions at most, so Seal waits until nothing else is on offer. They
+call the same code as the screen (`data/LiveTrialActions.kt`, `data/RestClock.kt`).
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 

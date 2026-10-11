@@ -4,12 +4,14 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioAttributes
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationManagerCompat
+import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -30,6 +32,12 @@ object Notifications {
     const val CHANNEL_TRIAL = "workout"
     const val CHANNEL_REST = "rest"
 
+    // A channel's sound and vibration are frozen when it is created, so each way
+    // of announcing a rest's end ([RestAlert]) is a channel of its own, and
+    // "rest" stays the vibrate-only one it always was.
+    const val CHANNEL_REST_SOUND = "rest_sound"
+    const val CHANNEL_REST_SILENT = "rest_silent"
+
     const val ID_SUMMONS = 1
     const val ID_TRIAL = 2
     const val ID_ALLIES = 3
@@ -43,6 +51,9 @@ object Notifications {
     const val REQUEST_ALLIES = 3
     const val REQUEST_SEAL = 4
     const val REQUEST_REST_OVER = 5
+    const val REQUEST_SET_DONE = 6
+    const val REQUEST_SKIP_REST = 7
+    const val REQUEST_EXTEND_REST = 8
 
     /** Where a tap lands; read by MainActivity. */
     const val EXTRA_OPEN_TAB = "open_tab"
@@ -52,6 +63,13 @@ object Notifications {
     const val TAB_INBOX = "inbox"
     const val TAB_TODAY = "today"
     const val TAB_TRIAL = "trial"
+
+    /** The channel a rest's end is announced on under [alert]. */
+    fun restChannel(alert: RestAlert): String = when (alert) {
+        RestAlert.VIBRATE -> CHANNEL_REST
+        RestAlert.SOUND_VIBRATE -> CHANNEL_REST_SOUND
+        RestAlert.SILENT -> CHANNEL_REST_SILENT
+    }
 
     /** The accent the shade tints the small icon and actions with: the theme's own emerald. */
     val ACCENT: Int get() = IronvellumColors.Emerald.toArgb()
@@ -82,6 +100,23 @@ object Notifications {
                     description = "One buzz when the rest between sets is over."
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 350)
+                    setSound(null, null)
+                },
+                NotificationChannel(CHANNEL_REST_SOUND, "Rest between sets, with sound", NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "The phone's default notification sound and a buzz when the rest between sets is over."
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 350)
+                    setSound(
+                        Settings.System.DEFAULT_NOTIFICATION_URI,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
+                },
+                NotificationChannel(CHANNEL_REST_SILENT, "Rest between sets, silent", NotificationManager.IMPORTANCE_LOW).apply {
+                    description = "A quiet notice when the rest between sets is over: no sound, no buzz."
+                    enableVibration(false)
                     setSound(null, null)
                 },
             ),

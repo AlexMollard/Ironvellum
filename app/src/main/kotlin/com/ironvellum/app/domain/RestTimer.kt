@@ -67,6 +67,27 @@ data class RestTimer(
         fun clock(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 
         /**
+         * The rest ticking [setId] to [nowDone] starts, or null when it starts none:
+         * unticking, re-saving a done set, ticking the last set (see [startsRest]), an
+         * activity (no rest between its sets), or rest turned off, for every movement or
+         * for this one ([restOff]). The one rule the trial screen and the lock-screen
+         * "Set done" both ask, so they cannot disagree.
+         */
+        fun restAfterTick(
+            before: List<SessionSet>,
+            setId: Long,
+            nowDone: Boolean,
+            focus: TrainingFocus,
+            metric: ExerciseMetric?,
+            weighted: Boolean?,
+            restOff: Boolean,
+        ): RestRules.Window? {
+            if (restOff || !startsRest(before, setId, nowDone)) return null
+            val set = before.first { it.id == setId }
+            return window(set.exerciseName, focus, metric, weighted).takeUnless { it.isNone }
+        }
+
+        /**
          * True when ticking [setId] to [nowDone] begins a rest: the set goes
          * from not done to done and another set is still waiting (a warm-up never waits). Unticking,
          * re-saving a done set, or ticking the last set starts nothing.
