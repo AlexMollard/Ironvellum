@@ -82,10 +82,10 @@ jobs:
       - name: Compile instrumented tests
         run: ./gradlew :app:assembleFossDebugAndroidTest
 
-      # A signed release is a local/owner step: the keystore is a credential
-      # and must never enter CI. Release-variant lint coverage is already
-      # provided by the :app:lintFossRelease step above; the signed APK is built
-      # and verified locally only.
+      # A signed release is release.yml's job alone: the keystore is a
+      # credential read only behind the release environment's approval, never
+      # here. Release-variant lint coverage is already provided by the
+      # :app:lintFossRelease step above.
 
       - name: Upload lint reports
         if: always()
