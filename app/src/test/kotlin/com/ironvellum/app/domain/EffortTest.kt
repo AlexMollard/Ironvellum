@@ -170,7 +170,7 @@ class EffortTest {
     fun `the card prints only the top set's effort and never an at sign figure`() {
         val sets = squats(100.0 to 7, 102.5 to 9, 100.0 to 8)
         val text = share(sets, effort = true)
-        assertTrue(text, text.contains("@ top 102.5kg · RPE 9"))
+        assertTrue(text, text.contains("Back Squat · top 102.5kg\n${WorkoutShare.HIT}${WorkoutShare.HIT}${WorkoutShare.HIT} 3×5 · RPE 9"))
         assertFalse("one set's effort, not each", text.contains("RPE 7") || text.contains("RPE 8"))
         assertFalse(text.contains("@9") || text.contains("@ 9") || text.contains("@8"))
     }
@@ -178,7 +178,7 @@ class EffortTest {
     @Test
     fun `the card reads RIR on the RIR scale and in the lifter's unit`() {
         val text = share(squats(100.0 to 8, 100.0 to 8, 100.0 to 8), effort = true, scale = EffortScale.RIR, unit = LoadUnit.LB)
-        assertTrue(text, text.contains("3×5 @ 220.5lb · 2 RIR"))
+        assertTrue(text, text.contains("Back Squat · 220.5lb\n${WorkoutShare.HIT}${WorkoutShare.HIT}${WorkoutShare.HIT} 3×5 · 2 RIR"))
     }
 
     @Test

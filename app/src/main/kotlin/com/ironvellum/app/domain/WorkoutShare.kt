@@ -11,22 +11,27 @@ import java.util.Locale
  * ```
  * Ironvellum · Push day · 8 Oct
  *
- * Bench    🟩🟩🟩🟩🏆 5×5 @ 80kg
- * OHP      🟩🟩🟩🟨 6/6/7/4 @ 45kg
- * Laterals 🟩🟩⬛ 15/15 @ 8kg
+ * Bench Press · 80kg
+ * 🟩🟩🟩🟩🏆 5×5
+ * Overhead Press · 45kg
+ * 🟩🟩🟩🟨 6/6/7/4
+ * Lateral Raise · 8kg
+ * 🟩🟩⬛ 15/15
+ * Run · 5km in 25:00
  *
  * 52 min · 17 sets · +214 XP · 380 STR
  * ```
  *
- * One line per movement, one square per working set: 🏆 set a personal
+ * Two lines per lift, nothing aligned (a proportional chat font cannot hold a column), the full name as
+ * logged: one square per working set: 🏆 set a personal
  * record, green hit the target (or beat it, or had none), yellow was done
  * under it, black was prescribed and not done. Warm-ups are not working sets
- * and never show. After the squares come the done sets' figures ("5×5" when
- * three or more match, else "6/6/7/4") and the load ("@ 80kg", "@ top 85kg"
- * when it varies). Activities (distance, time, attempts) have no sets to
- * score, so they read as one compact figure instead.
+ * and never show. The first line is the name and, when there is one, " · " and the
+ * load ("80kg", "top 85kg" when it varies, "+10kg" added to bodyweight). The second is the squares, then the done
+ * sets' figures ("5×5" when three or more match, else "6/6/7/4"). Activities (distance, time, attempts) have no
+ * sets to score, so they read as one line, "Run · 5km in 25:00".
  *
- * With effort asked for ([format]'s includeEffort), the top set's effort follows the load: "3×5 @ 225lb · RPE 8",
+ * With effort asked for ([format]'s includeEffort), the top set's effort ends the figures line: "3×5 · RPE 8",
  * or "· 2 RIR" on the RIR scale. Only that one set's, never a figure per set, and never "@8".
  *
  * The private note is never included. It is the one field the app promises
@@ -42,32 +47,8 @@ object WorkoutShare {
     const val UNDER = "🟨"
     const val SKIPPED = "⬛"
 
-    /** A movement's name never takes more columns than this; longer ones are cut with an ellipsis. */
-    const val NAME_MAX = 10
-
     /** A note line is cut to this many characters, ellipsis included. */
     const val NOTE_MAX = 80
-
-    /** Common lifts by their catalogue name, lower-cased, to the name lifters actually say. */
-    private val shortNames = mapOf(
-        "bench press" to "Bench",
-        "dumbbell bench press" to "DB Bench",
-        "incline bench press" to "Incline",
-        "close-grip bench press" to "CG Bench",
-        "overhead press" to "OHP",
-        "dumbbell shoulder press" to "DB OHP",
-        "lateral raise" to "Laterals",
-        "cable lateral raise" to "Cable Lat",
-        "dip" to "Dips",
-        "ring dip" to "Ring Dips",
-        "back squat" to "Squat",
-        "bulgarian split squat" to "BSS",
-        "romanian deadlift" to "RDL",
-        "barbell row" to "Row",
-        "dumbbell row" to "DB Row",
-        "lat pulldown" to "Pulldown",
-        "hanging leg raise" to "Leg raise",
-    )
 
     /**
      * @param exercises catalogue by id, for metric and unit rendering. A set
@@ -113,15 +94,14 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: "Movement" }
                 val peak = peakByName[full.trim().lowercase(Locale.ENGLISH)]
-                val body = movementBody(working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
+                val text = movementText(full.trim(), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
                     ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
-                Triple(shortName(full), body, note)
+                text to note
             }
-        val width = lines.maxOfOrNull { it.first.length } ?: 0
         if (lines.isNotEmpty()) append('\n')
-        lines.forEach { (name, body, note) ->
-            append(name.padEnd(width)).append(' ').append(body).append('\n')
+        lines.forEach { (text, note) ->
+            append(text).append('\n')
             if (note != null) append(note).append('\n')
         }
 
@@ -164,13 +144,6 @@ object WorkoutShare {
         return Totals(done.size, counted.sumOf { it.reps }, heldSeconds, moved)
     }
 
-    /** The name a lifter would say: a known short form, else the catalogue name cut to [NAME_MAX]. */
-    fun shortName(full: String): String {
-        val name = full.trim()
-        shortNames[name.lowercase(Locale.ENGLISH)]?.let { return it }
-        return if (name.length <= NAME_MAX) name else name.take(NAME_MAX - 1).trimEnd() + "…"
-    }
-
     private fun durationMinutes(session: WorkoutSession): Long? =
         session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).coerceAtLeast(1) }
 
@@ -192,8 +165,9 @@ object WorkoutShare {
     /** Seconds held by one set, wherever this build stored them. */
     private fun heldSeconds(set: SessionSet): Int = set.durationSec ?: set.reps
 
-    /** What follows the name: the squares and load for strength work, one figure for an activity; null when there is nothing to say. */
-    private fun movementBody(
+    /** A lift's two lines (name and load, then squares and figures), or an activity's one; null when there is nothing to say. */
+    private fun movementText(
+        name: String,
         working: List<SessionSet>,
         exercise: Exercise?,
         target: Int?,
@@ -206,7 +180,7 @@ object WorkoutShare {
             ExerciseMetric.DURATION -> {
                 if (done.isEmpty()) return null
                 val total = done.sumOf { it.durationSec ?: 0 }
-                if (total < 60) "${total}s" else "${(total + 30) / 60} min"
+                "$name · " + if (total < 60) "${total}s" else "${(total + 30) / 60} min"
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 if (done.isEmpty()) return null
@@ -214,16 +188,17 @@ object WorkoutShare {
                 val secs = done.sumOf { it.durationSec ?: 0 }
                 val distance = if (km > 0.0) trimmed(km) + "km" else ""
                 val time = if (secs > 0) clock(secs) else ""
-                when {
+                val figure = when {
                     distance.isNotEmpty() && time.isNotEmpty() -> "$distance in $time"
                     else -> distance + time
                 }.ifEmpty { return null }
+                "$name · $figure"
             }
             ExerciseMetric.ATTEMPTS_GRADE -> {
                 if (done.isEmpty()) return null
                 val attempts = done.sumOf { it.reps }
                 val grade = done.firstNotNullOfOrNull { it.grade?.takeIf(String::isNotBlank) }
-                "$attempts ${if (attempts == 1) "attempt" else "attempts"}" + (grade?.let { " · $it" } ?: "")
+                "$name · $attempts ${if (attempts == 1) "attempt" else "attempts"}" + (grade?.let { " · $it" } ?: "")
             }
             ExerciseMetric.REPS, ExerciseMetric.HOLD -> {
                 val hold = holdSet(exercise, working.first())
@@ -240,9 +215,9 @@ object WorkoutShare {
                 // The top set is the one the load line names: heaviest, then most reps or longest.
                 val top = done.maxWithOrNull(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { figure(it) }))
                 val rated = if (effort != null) top?.rpe?.let { "· ${Effort.value(it, effort)}" }.orEmpty() else ""
-                listOf(squares, figures(done.map(::figure), hold), load(done, exercise, unit), rated)
-                    .filter { it.isNotEmpty() }
-                    .joinToString(" ")
+                val head = listOf(name, load(done, exercise, unit)).filter { it.isNotEmpty() }.joinToString(" · ")
+                val tail = listOf(squares, figures(done.map(::figure), hold), rated).filter { it.isNotEmpty() }.joinToString(" ")
+                "$head\n$tail"
             }
         }
     }
@@ -260,7 +235,7 @@ object WorkoutShare {
     }
 
     /**
-     * "@ 80kg" when every done set carried the same load, "@ top 85kg" when it
+     * "80kg" when every done set carried the same load, "top 85kg" when it
      * varied, blank when every set was bodyweight. "+10kg" is ADDED load on a
      * bodyweight movement (a belt on a dip); a barbell or dumbbell lift reads
      * "80kg", because the weight in the hand is the whole load and "+80kg"
@@ -272,7 +247,7 @@ object WorkoutShare {
         val loads = done.map { it.weightKg?.takeIf { kg -> kg > 0.0 } ?: 0.0 }
         val top = loads.maxOrNull()?.takeIf { it > 0.0 } ?: return ""
         val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit) else trimmed(top)) + unit.label
-        return if (loads.distinct().size > 1) "@ top $text" else "@ $text"
+        return if (loads.distinct().size > 1) "top $text" else text
     }
 
     /** `  ↳ "note"`: one line, whitespace collapsed, cut to [NOTE_MAX] with an ellipsis. */
