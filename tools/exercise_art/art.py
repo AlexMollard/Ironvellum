@@ -8,12 +8,13 @@ An exercise's art is one text file, `exercise_art/<id>.paths`:
 The window is the union of the frames once each is moved by its own (dx, dy), so the figure keeps one scale and one
 ground line from pose to pose. The app scales the window to its slot with Fit and fills the paths in the house ink.
 
-    workout-guide   assets/<slug>/frame-N.svg   one 512 x 512 <path>; its `d` is copied verbatim, never edited
+    workout-guide   assets/<slug>/frame-N.svg   one 512 x 512 <path>
     Everkinetic     dist/svg/<id>-relaxation|tension.svg   rendered into ONE shared box, thresholded, vector-traced (potrace)
     owner-made      owner/<slug>-N.svg|png                  the same as Everkinetic, see owner/README.md
 
 The free sets are used as drawn: a frame is dropped only when it is broken (see `analyse`); an exercise left with one
-frame is shipped as a still.
+frame is shipped as a still. Only the line weight changes: the sources range from hairline to heavy, sometimes within one
+exercise, so every frame is redrawn on its own centre lines at one shared weight (`reweight_paths`).
 """
 import io
 import re
@@ -27,6 +28,8 @@ from scipy import ndimage
 WG_SIZE = 512          # workout-guide canvas
 EK_ZOOM = 3            # Everkinetic is rasterised at this multiple of its own viewBox before tracing
 MIN_INK = 40           # px of ink below which a speck is noise when measuring bounds
+WEIGHT = 0.008         # every frame's median line, as a share of its window's long side (the brief's 0.8%)
+WEIGHT_RES = 1024      # the window's long side, in px, when reweighting
 
 # Movements hung from a fixed bar or handle are registered by their top; everything else by its ground line.
 HANGING = re.compile(r"(?i)pull-?up|chin-?up|pulldown|hang|muscle-up|toes-to-bar|leg raise|knee raise|lever|flag|dead hang|"
@@ -114,7 +117,11 @@ def owner_frames(folder, slug, tracer):
 def trace(mask, turdsize=10, tolerance=0.9):
     """Ink mask -> compact SVG path data, one path for the whole pose (potrace; holes by even-odd)."""
     import potrace
-    plist = potrace.Bitmap(~mask).trace(turdsize=turdsize, alphamax=1.0, opticurve=True, opttolerance=tolerance)
+    try:
+        plist = potrace.Bitmap(~mask).trace(turdsize=turdsize, alphamax=1.0, opticurve=True, opttolerance=tolerance)
+    except ValueError:
+        # potracer's curve optimiser can take a square root of a negative on a near-degenerate corner; trace unoptimised.
+        plist = potrace.Bitmap(~mask).trace(turdsize=turdsize, alphamax=1.0, opticurve=False)
 
     def p(v):
         return str(int(round(v)))
@@ -154,6 +161,30 @@ def stroke_width(mask):
     dist = ndimage.distance_transform_edt(mask)
     sk = skeletonize(mask)
     return float(2 * np.median(dist[sk])) if sk.any() else 0.0
+
+
+def reweight(mask, target):
+    """Redraws the ink around its centre lines so the median line is `target` px wide. Each line keeps its own taper (its
+    width scales with the frame's), and none is thinner than about a third of the target."""
+    from skimage.morphology import skeletonize
+    sk = skeletonize(mask)
+    if not sk.any():
+        return mask
+    dist = ndimage.distance_transform_edt(mask)
+    scale = np.clip(target / (2 * np.median(dist[sk])), 0.25, 4.0)
+    reach, (iy, ix) = ndimage.distance_transform_edt(~sk, return_indices=True)
+    # A line drawn out to radius r measures 2r + 2 by stroke_width's own count, hence the - 1.
+    return reach <= np.maximum(dist[iy, ix] * scale - 1, target * 0.35)
+
+
+def reweight_paths(text, tracer=None):
+    """A .paths file with every frame redrawn at the house line weight (WEIGHT), retraced in a WEIGHT_RES px window."""
+    (_, _, w, h), frames = read_paths(text)
+    s = WEIGHT_RES / max(w, h)
+    size = (round(w * s), round(h * s))
+    imgs = render_paths(text, width=size[0], height=size[1], ink="#ffffff", ground="#000000")
+    ds = [(tracer or trace)(reweight(np.asarray(i.convert("L")) > 127, WEIGHT * WEIGHT_RES)) for i in imgs]
+    return write_paths((0, 0) + size, [(0, 0)] * len(ds), ds)
 
 
 def halo_score(mask, gap=3):
@@ -267,7 +298,7 @@ def build_one(kind, src, ident, hanging, tracer=trace):
         keep = [max(range(len(items)), key=lambda i: int(items[i][1].sum()))]
     sel = [items[i] for i in keep]
     window, shifts = register(sel, hanging)
-    text = write_paths(window, shifts, [d for d, _ in sel])
+    text = reweight_paths(write_paths(window, shifts, [d for d, _ in sel]), tracer)
     return text, keep, {"source": len(items), "kept": keep, "why": why, "stroke": [list(w) for w in widths],
                         "window": [round(v, 1) for v in window]}
 

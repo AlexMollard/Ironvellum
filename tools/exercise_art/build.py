@@ -4,6 +4,7 @@
     python3 -P tools/exercise_art/build.py --src <upstream dir>          # rewrites assets and the generated Kotlin
     python3 -P tools/exercise_art/build.py --check                       # exits 1 if the Kotlin is stale (no --src needed)
     python3 -P tools/exercise_art/build.py --owner-only                  # after dropping files in owner/ (see owner/README.md)
+    python3 -P tools/exercise_art/build.py --reweight                    # redraws the shipped assets at art.WEIGHT (no --src)
 
 <upstream dir> holds clones of bryllim/workout-guide and everkinetic/data as wg/ and ek/ (see upstream.py, art.py).
 Outputs:
@@ -305,6 +306,21 @@ def build_assets(lib, mp, src, workers, owned, owner_only=False, old_report=None
     return dict(sorted(report.items()))
 
 
+def reweight_assets(workers):
+    """Redraws every shipped drawing at the house line weight, in place; for a WEIGHT change without the upstream clones."""
+    import multiprocessing
+    paths = sorted(ASSETS.glob("*.paths"))
+    with multiprocessing.Pool(workers) as pool:
+        for path, text in zip(paths, pool.imap(_reweight, paths)):
+            path.write_bytes(text.encode("utf-8"))
+    print("reweighted", len(paths))
+
+
+def _reweight(path):
+    import art
+    return art.reweight_paths(path.read_text(encoding="utf-8"))
+
+
 def _job(job):
     import art
     kind, src, ident, hanging, aid = job
@@ -318,7 +334,12 @@ def main():
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--owner-only", action="store_true", help="rebuild only the owner-made drawings (no --src needed)")
+    ap.add_argument("--reweight", action="store_true", help="redraw the shipped drawings at art.WEIGHT (no --src needed)")
     a = ap.parse_args()
+    if a.reweight:
+        sys.path.insert(0, str(HERE))
+        reweight_assets(a.workers)
+        return
     lib, mp, guides = load()
     owned = apply_owner(mp)
     if (a.src or a.owner_only) and not a.check:

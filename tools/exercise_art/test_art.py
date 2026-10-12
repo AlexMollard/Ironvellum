@@ -48,12 +48,13 @@ class ArtTest(unittest.TestCase):
         self.assertLess(art.halo_score(single), art.HALO)
         self.assertGreater(art.halo_score(doubled), art.halo_score(single) * 1.45)
 
-    def test_heavy_strokes_and_empty_frames_are_dropped(self):
+    def test_heavy_strokes_are_noted_and_empty_frames_dropped(self):
         thin = ring(400, 400, (20, 380, 20, 380), (24, 376, 24, 376))
         heavy = ring(400, 400, (20, 380, 20, 380), (50, 350, 50, 350))
         empty = box(400, 400, e=(5, 7, 5, 30))
         ok, why, _ = art.analyse([thin, heavy, empty])
-        self.assertEqual(ok, [True, False, False])
+        self.assertEqual(ok, [True, True, False])
+        self.assertIn("heavy", why[1])
 
     def test_the_file_round_trips_and_keeps_paths_verbatim(self):
         d = "M298.955 5.977c-3.049.394-12.049 2.553-20 4.798z"
@@ -70,6 +71,23 @@ class ArtTest(unittest.TestCase):
         self.assertGreater((img & m).sum() / m.sum(), 0.97)
         self.assertLess((img & ~m).sum() / m.sum(), 0.05)
 
+
+    def test_hairline_and_heavy_frames_come_out_at_one_weight(self):
+        hairline = ring(400, 400, (20, 380, 20, 380), (22, 378, 22, 378))
+        heavy = ring(400, 400, (20, 380, 20, 380), (34, 366, 34, 366))
+        for m in (hairline, heavy):
+            self.assertAlmostEqual(art.stroke_width(art.reweight(m, 6.0)), 6.0, delta=1.5)
+
+    def test_reweighting_a_file_keeps_its_frames_and_pose(self):
+        a = art.trace(box(400, 400, a=(40, 360, 100, 104), b=(40, 44, 100, 300)))
+        b = art.trace(box(400, 400, a=(40, 360, 100, 110), b=(40, 50, 100, 300)))
+        window, frames = art.read_paths(art.reweight_paths(art.write_paths((0, 0, 400, 400), [(0, 0), (0, 0)], [a, b])))
+        self.assertEqual(len(frames), 2)
+        self.assertEqual(max(window[2:]), art.WEIGHT_RES)
+        widths = [art.stroke_width(np.asarray(i.convert("L")) > 127) for i in art.render_paths(
+            art.write_paths(window, [(0, 0)] * 2, [d for _, _, d in frames]), ink="#ffffff", ground="#000000")]
+        for w in widths:
+            self.assertAlmostEqual(w, art.WEIGHT * art.WEIGHT_RES, delta=2.5)
 
 if __name__ == "__main__":
     unittest.main()
