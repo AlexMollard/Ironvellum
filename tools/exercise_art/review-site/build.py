@@ -24,6 +24,8 @@ overrides_path=art/'pose-overrides.json'
 overrides=json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else {}
 reviews_path=art/'review-decisions.json'
 reviews=json.loads(reviews_path.read_text(encoding='utf-8')) if reviews_path.exists() else {'frames':[]}
+anchors_path=art/'frame-anchors.json'
+anchors=json.loads(anchors_path.read_text(encoding='utf-8'))['sequences'] if anchors_path.exists() else {}
 entries=[]; available=0
 for e in source['entries']:
     frames=[]
@@ -38,7 +40,15 @@ for e in source['entries']:
             f.update(available=True,src='frames/'+name,sha256=hashlib.sha256(path.read_bytes()).hexdigest())
             available+=1
         frames.append(f)
-    entries.append({'slug':e['slug'],'name':e['name'],'group':e.get('line',e['kind']),'note':e.get('note',''),'frames':frames})
+    alignment=anchors.get(e['slug'])
+    if alignment and any(f['available'] and f['sha256'] != expected for f,expected in zip(frames,alignment.get('hashes',[]))):
+        raise ValueError(f"Source image changed; recalibrate anchors for {e['slug']}")
+    if alignment:
+        if len(alignment['points']) != frame_count:
+            raise ValueError(f"Anchor count mismatch: {e['slug']}")
+        for f, point in zip(frames,alignment['points']):
+            f['anchor']=point
+    entries.append({'slug':e['slug'],'name':e['name'],'group':e.get('line',e['kind']),'note':e.get('note',''),'frames':frames,'alignment':alignment})
 shutil.copy2(root/'docs/art/style-options/approved.png',dist/'approved.png')
 active_ids={f['id'] for e in entries for f in e['frames']}
 packaged_ids={f['id'] for e in entries for f in e['frames'] if f['available']}

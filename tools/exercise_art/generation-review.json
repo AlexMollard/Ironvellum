@@ -148,5 +148,13 @@
   ],
   "hosting": "local",
   "localReviewUrl": "http://127.0.0.1:18765",
-  "approvedAt": "2026-10-12T01:46:37.566652+00:00"
+  "approvedAt": "2026-10-12T01:46:37.566652+00:00",
+  "frameConsistency": {
+    "canvas": "Same square canvas dimensions for every frame in a movement",
+    "camera": "Fixed camera and athlete scale within a movement",
+    "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
+    "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
+    "reviewAlignment": "tools/exercise_art/frame-anchors.json; preview-only translation, not a substitute for consistent source framing",
+    "ownerImportStatus": "Pending availability of the user-described vector pipeline; do not run the older WebP importer"
+  }
 }

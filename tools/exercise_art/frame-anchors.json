@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "description": "Normalized palm contact centers measured in each source canvas. One shared scale and target per movement; preview translation only, no artwork changes.",
+  "sequences": {
+    "advanced-tuck-planche": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.68,
+          0.845
+        ],
+        [
+          0.675,
+          0.79
+        ],
+        [
+          0.735,
+          0.745
+        ]
+      ],
+      "hashes": [
+        "adb3be49c3b5b2c563cccbfdb827333be4660469fc35a931f9665192c79b0ad8",
+        "55fcd2951d9c611073a30dee54e533f30cb37f8277c04d87ac8ae6a0f1769ae7",
+        "de8a98a2ec87cc7602792fb9e7695a69f45580bb6d78e609c935dcdc130d30ea"
+      ]
+    },
+    "elbow-lever": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.57,
+          0.795
+        ],
+        [
+          0.695,
+          0.71
+        ],
+        [
+          0.695,
+          0.71
+        ]
+      ],
+      "hashes": [
+        "3022d8f839398dddf4d05d63c19ede1893507ab8917ad783525c6e40f5eeebf0",
+        "903c65390bcd09b566a610dea85c818a74a8d3c0bdfb0c16537501f7639856a4",
+        "4ed6ce2a6cf728663d50a416847ae9f955d772a97e754ea4b5df962efd998ad6"
+      ]
+    },
+    "frog-stand": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.72,
+          0.895
+        ],
+        [
+          0.585,
+          0.855
+        ],
+        [
+          0.675,
+          0.875
+        ]
+      ],
+      "hashes": [
+        "65270e23e3d6635e242fb0b22a6cdd1449a2a57cdc06bb8c50083b3bf315e44a",
+        "4210d37a49107a19f086188f9f75643f4aa90ff59143065d6fd68e2b4baa8305",
+        "21b195e63c3400da7febccf27444b8460c13e6e73a6439da6293274feaf481aa"
+      ]
+    },
+    "one-leg-planche": {
+      "label": "Near palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.745,
+          0.765
+        ],
+        [
+          0.71,
+          0.775
+        ],
+        [
+          0.68,
+          0.75
+        ]
+      ],
+      "hashes": [
+        "8f79aa6eb92826b52a27f86b2e2ff9ad9943907e4326708d8160c0e067e15d11",
+        "062cf49afba0953b0427154326b263101b712c33b81d3d87027358d2cd63ccb7",
+        "9c4849dbd4cbdc0bd9e831693e7c32b371ba0e8d77319de4d61f664e1c53b84d"
+      ]
+    },
+    "straddle-planche": {
+      "label": "Near palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.75,
+          0.765
+        ],
+        [
+          0.63,
+          0.775
+        ],
+        [
+          0.6,
+          0.78
+        ]
+      ],
+      "hashes": [
+        "5ec00bbf58ce627b39d2dc74e0e13b4d20c8fd84580ffdd16dd2df8173b1a6ff",
+        "d3ad5821da27bd719edce05447f74607c9238a9a814d546b8575d265c8ec2a34",
+        "ca6d76f1ba3a2d42e1c5b921e5d6cca05eeaeee862663287b27c20436f5d7f0b"
+      ]
+    },
+    "tuck-planche": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.69,
+          0.885
+        ],
+        [
+          0.71,
+          0.865
+        ],
+        [
+          0.655,
+          0.87
+        ]
+      ],
+      "hashes": [
+        "e8c8a77e0fb72c3735dec1763fdd9f0db3d606a02f5c00f73675068dce940225",
+        "63993442bf0a8ae20a8a75f42b8c5d7a986a9a249e5fef6227954f71f81cc6c4",
+        "229f9706f8849ca1d6d571c98253fd111f0e9c2cbf38cc85a7b87eaeb81dbe3a"
+      ]
+    }
+  }
+}
