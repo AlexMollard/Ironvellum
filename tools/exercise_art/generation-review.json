@@ -2,115 +2,148 @@
   "schema": 1,
   "batchSize": 20,
   "currentBatch": 1,
-  "status": "awaiting-user-review",
+  "status": "review-applied",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
-  "expectedTotal": 324,
-  "generated": 20,
+  "expectedTotal": 322,
+  "generated": 19,
   "stylePrompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet.",
   "poseSource": "tools/exercise_art/missing.json",
   "siteProjectId": "appgprj_6acc332221ec8191a0c541c0fe2687a2",
   "frames": [
     {
       "id": "frog-stand-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Deep squat facing right with the hands flat on the floor shoulder width apart, fingers pointing forward. Knees wide, hips low, the elbows bent and angled out to the sides, head lifted and looking forward. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Frog Stand."
     },
     {
       "id": "frog-stand-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Leaning forward: the shoulders move well forward of the wrists, the knees move onto the backs of the upper arms and rest on the elbows. The heels are lifting and the toes start to leave the floor."
     },
     {
       "id": "frog-stand-3.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Full hold: the feet are off the floor and the toes pointed together behind the hips, the knees resting on the backs of the bent elbows. The elbows are bent at about 90 degrees angled out, the torso tilted forward, the back rounded and the head lifted looking forward."
     },
     {
       "id": "elbow-lever-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Crouching facing right with the hands on the floor, fingers pointing back toward the feet, the elbows bent and tucked into the hips. The torso is leaning forward over the hands, the head lifted looking ahead."
     },
     {
       "id": "elbow-lever-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Leaning forward: the elbows are pressed into the stomach and the hips, the weight shifting onto the hands. The torso tilts toward horizontal and the feet start to lift off the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Elbow Lever clearly in this side (facing right) view."
     },
     {
       "id": "elbow-lever-3.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Full hold: the body is horizontal and straight, supported on the hands with the elbows bent at about 90 degrees and set into the hips. Legs together and straight, extended behind, the feet are off the floor and the head is lifted looking forward with the torso level."
     },
     {
       "id": "planche-lean-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Push-up plank position facing right with the hands on the floor under the shoulders, the fingers pointing forward or slightly outward. Arms straight, the body in a straight line from head to heels, the feet together on the toes."
     },
     {
       "id": "planche-lean-2.png",
-      "status": "pending",
+      "status": "removed",
       "pose": "Leaning forward: the arms stay locked straight as the shoulders move forward past the wrists. The body remains a straight rigid line, the heels stretching back, the weight shifting onto the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Planche Lean clearly in this side (facing right) view."
     },
     {
       "id": "planche-lean-3.png",
-      "status": "pending",
+      "status": "removed",
       "pose": "Full hold: the arms are locked straight and the shoulders are far ahead of the hands, about a hand-length past the wrists. The body is straight from the head to the toes, tilted forward and downward, the toes still on the floor, the shoulders protracted and the hips level."
     },
     {
       "id": "advanced-tuck-planche-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Tuck planche set position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the hands, the knees tucked to the chest with the feet just off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Planche."
     },
     {
       "id": "advanced-tuck-planche-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Opening up: the arms stay locked and the hips lower to shoulder height, the back flattening. The knees begin to move away from the chest, the thighs rotating down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Planche clearly in this side (facing right) view."
     },
     {
       "id": "advanced-tuck-planche-3.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Full hold: the arms are locked straight, the shoulders far ahead of the hands, and the back is flat and horizontal. The hips are open so that the thighs are in line with the back, the knees bent at about 90 degrees with the shins pointing straight back, feet off the floor."
     },
     {
       "id": "tuck-planche-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Frog stand position facing right, the hands flat on the floor, fingers forward, the arms straight but the knees close to the chest. The shoulders are leaned far ahead of the wrists and the toes are on the floor."
     },
     {
       "id": "tuck-planche-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Rising: the arms are locked straight and the shoulders are forward of the hands. The hips rise to shoulder height as the feet lift off the floor with the knees tucked to the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Planche clearly in this side (facing right) view."
     },
     {
       "id": "tuck-planche-3.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Full hold: the arms are locked straight and the shoulders are pushed forward past the hands. The knees are tucked tight to the chest with the hips bent, the back is rounded slightly, the hips level with the shoulders and the feet are off the floor."
     },
     {
       "id": "one-leg-planche-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Advanced tuck planche position facing right: the arms locked straight and the shoulders ahead of the hands, the back flat, the knees bent with the shins pointing back and the feet off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the One-Leg Planche."
     },
     {
       "id": "one-leg-planche-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Extending: the arms stay locked and the body stays horizontal. One leg begins to straighten backward from the hip while the other knee stays bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Planche clearly in this side (facing right) view."
     },
     {
       "id": "one-leg-planche-3.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Full hold: the arms are locked straight and the body is horizontal over the hands. One leg is straight and extended behind in line with the torso with the toes pointed, the other leg is tucked with the knee bent into the chest. The hips are level with the shoulders and the shoulders are forward of the hands."
     },
     {
       "id": "straddle-planche-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Planche lean position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the wrists. The legs are wide apart on the floor behind with the feet on the toes. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Straddle Planche."
     },
     {
       "id": "straddle-planche-2.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Lifting: the arms stay straight and the shoulders push forward. The hips rise to shoulder height and the straight legs lift off the floor, spreading wide. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Planche clearly in this side (facing right) view."
+    },
+    {
+      "id": "straddle-planche-3.png",
+      "status": "approved",
+      "pose": "Full straddle planche hold with straight arms and shoulders ahead of wrists."
+    }
+  ],
+  "reviewSource": "tools/exercise_art/review-input-batch-001.json",
+  "decisions": "tools/exercise_art/review-decisions.json",
+  "batches": [
+    {
+      "batch": 1,
+      "ids": [
+        "frog-stand-1.png",
+        "frog-stand-2.png",
+        "frog-stand-3.png",
+        "elbow-lever-1.png",
+        "elbow-lever-2.png",
+        "elbow-lever-3.png",
+        "planche-lean-1.png",
+        "advanced-tuck-planche-1.png",
+        "advanced-tuck-planche-2.png",
+        "advanced-tuck-planche-3.png",
+        "tuck-planche-1.png",
+        "tuck-planche-2.png",
+        "tuck-planche-3.png",
+        "one-leg-planche-1.png",
+        "one-leg-planche-2.png",
+        "one-leg-planche-3.png",
+        "straddle-planche-1.png",
+        "straddle-planche-2.png",
+        "straddle-planche-3.png"
+      ]
     }
   ]
 }

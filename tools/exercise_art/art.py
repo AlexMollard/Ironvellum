@@ -20,9 +20,11 @@ LEVELS = 4       # coverage steps kept (lossless WebP; 4 steps cost about 5 KB a
 THRESHOLD = 24   # coverage below this is background noise when finding the ink bounds
 
 
-def owner_files(folder, slug):
-    """Only complete three-pose PNG sets are eligible for import."""
-    files = [Path(folder) / ("%s-%d.png" % (slug, i)) for i in range(1, 4)]
+def owner_files(folder, slug, expected_frames=3):
+    """Import complete PNG sets; reviewed stills may explicitly request one frame."""
+    if type(expected_frames) is not int or expected_frames not in (1, 3):
+        raise ValueError("Owner frame count must be 1 or 3: %s" % slug)
+    files = [Path(folder) / ("%s-%d.png" % (slug, i)) for i in range(1, expected_frames + 1)]
     return files if all(p.is_file() for p in files) else []
 
 

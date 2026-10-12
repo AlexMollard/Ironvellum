@@ -16,6 +16,25 @@ import build  # noqa: E402
 
 
 class ArtTest(unittest.TestCase):
+    def test_explicit_still_imports_one_pose_while_other_holds_require_three(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            brief = folder / "missing.json"
+            counts = folder / "frame-counts.json"
+            brief.write_text(json.dumps({"entries": [
+                {"slug": slug, "name": name, "kind": "technique"}
+                for slug, name in (("planche-lean", "Planche Lean"), ("frog-stand", "Frog Stand"))
+            ]}))
+            counts.write_text(json.dumps({"planche-lean": 1}))
+            for slug in ("planche-lean", "frog-stand"):
+                (folder / f"{slug}-1.png").touch()
+            mp = {"mapped": [], "techniques": {}}
+            with patch.object(build, "OWNER", folder), patch.object(build, "MISSING", brief), \
+                    patch.object(build, "FRAME_COUNTS", counts):
+                self.assertEqual(build.apply_owner(mp), {"own_planche-lean"})
+            self.assertEqual(build.art_table([], mp)["Planche Lean"], ("own_planche-lean", 1))
+            self.assertNotIn("Frog Stand", mp["techniques"])
+
     def test_owner_encode_preserves_soft_alpha_and_three_cells(self):
         with tempfile.TemporaryDirectory() as tmp:
             alpha = np.tile(np.arange(256, dtype=np.uint8), (256, 1))
