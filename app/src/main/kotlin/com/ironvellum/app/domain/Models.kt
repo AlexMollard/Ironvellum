@@ -51,6 +51,8 @@ data class PresetEntry(
     val targetWeightKg: Double? = null,
     val modifiers: String = "",
     val position: Int = 0,
+    /** Shared with the adjacent entries done as one superset; null when not in one. */
+    val supersetGroup: Int? = null,
 )
 
 data class WorkoutPreset(

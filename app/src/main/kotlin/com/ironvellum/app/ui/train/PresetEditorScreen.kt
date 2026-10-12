@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,6 +74,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.ui.components.DecimalStepper
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.EntryCard
@@ -103,6 +105,8 @@ data class EditorEntry(
     val reps: String,
     val weight: String,
     val modifiers: String,
+    /** Shared with the adjacent entries done as one superset; null when not in one. */
+    val supersetGroup: Int? = null,
 )
 
 data class EditorUi(
@@ -145,6 +149,7 @@ class PresetEditorViewModel(
                                 reps = entry.targetReps.toString(),
                                 weight = entry.targetWeightKg?.let(::formatSteppedFigure) ?: "",
                                 modifiers = entry.modifiers,
+                                supersetGroup = entry.supersetGroup,
                             )
                         },
                         exercises = exercises,
@@ -187,17 +192,32 @@ class PresetEditorViewModel(
         _ui.value = _ui.value.copy(entries = list)
     }
 
-    fun moveEntry(index: Int, delta: Int) {
-        val target = index + delta
-        val list = _ui.value.entries.toMutableList()
-        // Both ends are checked: the index arrives from a rendered row, so a
-        // tap queued before a removal recomposes carries an index the list no
-        // longer has — which crashed on list[index] rather than doing nothing.
-        if (index !in list.indices || target !in list.indices) return
-        val moved = list[index]
-        list[index] = list[target]
-        list[target] = moved
-        _ui.value = _ui.value.copy(entries = list)
+    /**
+     * Moves one entry a place up or down ([Supersets.move]: a lone entry steps over a whole superset, a member
+     * that moves out past its group's edge leaves it). Null, and nothing changed, when there is nowhere to go;
+     * the index arrives from a rendered row, so a tap queued before a removal recomposes may carry one the
+     * list no longer has. Otherwise the layout says where every entry went.
+     */
+    fun moveEntry(index: Int, delta: Int): Supersets.Layout? {
+        val list = _ui.value.entries
+        val layout = Supersets.move(list.map { it.supersetGroup }, index, up = delta < 0) ?: return null
+        _ui.value = _ui.value.copy(entries = list.arranged(layout))
+        return layout
+    }
+
+    /** Links entry [partner] to [index] (it moves next to it); null when the pair cannot be made. */
+    fun linkEntries(index: Int, partner: Int): Supersets.Layout? {
+        val list = _ui.value.entries
+        val layout = Supersets.link(list.map { it.supersetGroup }, index, partner) ?: return null
+        _ui.value = _ui.value.copy(entries = list.arranged(layout))
+        return layout
+    }
+
+    /** Ends the superset holding [index]. */
+    fun unlinkEntry(index: Int) {
+        val list = _ui.value.entries
+        val groups = Supersets.unlink(list.map { it.supersetGroup }, index)
+        _ui.value = _ui.value.copy(entries = list.mapIndexed { i, e -> e.copy(supersetGroup = groups[i]) })
     }
 
     fun updateEntry(index: Int, newEntry: EditorEntry) {
@@ -224,6 +244,7 @@ class PresetEditorViewModel(
                         targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: HIDDEN_REPS,
                         targetWeightKg = DecimalInput.parse(it.weight),
                         modifiers = it.modifiers.trim(),
+                        supersetGroup = it.supersetGroup,
                     )
                 },
             )
@@ -250,6 +271,17 @@ internal fun newEntry(exercise: Exercise): EditorEntry =
     } else {
         EditorEntry(exercise.id, exercise.name, sets = "3", reps = "", weight = "", modifiers = "")
     }
+
+/** The entries in the order and groups [layout] says. */
+internal fun List<EditorEntry>.arranged(layout: Supersets.Layout): List<EditorEntry> =
+    layout.order.mapIndexed { slot, old -> this[old].copy(supersetGroup = layout.groups[slot]) }
+
+/** "With Bench press" for the superset holding [index] (two partners read "With A and B"); null when it is in none. */
+internal fun supersetPartners(entries: List<EditorEntry>, index: Int): String? {
+    val run = Supersets.runAt(entries.map { it.supersetGroup }, index) ?: return null
+    val names = run.filter { it != index }.map { entries[it].exerciseName.ifBlank { "exercise" } }
+    return "With " + names.joinToString(" and ")
+}
 
 /** The reps stored for distance work, whose editor has no reps field. */
 private const val HIDDEN_REPS = 10
@@ -366,20 +398,18 @@ fun PresetEditorScreen(
     var open by remember { mutableStateOf<Int?>(null) }
     var removed by remember { mutableStateOf<Pair<Int, EditorEntry>?>(null) }
     var dragIndex by remember { mutableIntStateOf(-1) }
+    // The entry whose superset is being picked.
+    var linking by remember { mutableStateOf<Int?>(null) }
 
     // Back used to drop every edit without a word; with anything changed it
     // asks first.
     BackHandler(enabled = editorChanged(baseline, ui)) { confirmDiscard = true }
 
-    fun move(index: Int, delta: Int) {
-        val to = index + delta
-        if (index !in ui.entries.indices || to !in ui.entries.indices) return
-        viewModel.moveEntry(index, delta)
-        open = when (open) {
-            index -> to
-            to -> index
-            else -> open
-        }
+    // The open row and the dragged one follow their entry, wherever the move (or a superset) put it.
+    fun move(index: Int, delta: Int): Supersets.Layout? {
+        val layout = viewModel.moveEntry(index, delta) ?: return null
+        open = open?.let { layout.order.indexOf(it) }
+        return layout
     }
 
     fun remove(index: Int) {
@@ -420,25 +450,36 @@ fun PresetEditorScreen(
                 InkDivider()
 
                 SectionHeader("Exercises", topPadding = 14.dp)
+                val groups = ui.entries.map { it.supersetGroup }
+                val runs = Supersets.runs(groups)
+                val numbers = Supersets.numbers(groups)
                 ui.entries.forEachIndexed { index, entry ->
                     val metric = ui.exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
-                    EntryItem(
-                        entry = entry,
-                        metric = metric,
-                        open = open == index,
-                        onToggle = { open = if (open == index) null else index },
-                        onEntry = { viewModel.updateEntry(index, it) },
-                        onChange = { swapping = index },
-                        onRemove = { remove(index) },
-                        onMove = { move(index, it) },
-                        onDragStart = { dragIndex = index },
-                        onDragStep = { delta ->
-                            if (dragIndex + delta in ui.entries.indices) {
-                                move(dragIndex, delta)
-                                dragIndex += delta
-                            }
+                    val rail = runs.firstOrNull { index in it }?.let { RailPosition.of(index, it) }
+                    // A superset's members share a thin rail in the left gutter, one segment per member.
+                    Column(
+                        if (rail != null) {
+                            Modifier.supersetRail(rail, if (open == index) EDITOR_OPEN_TITLE_CENTER else EDITOR_FOLDED_TITLE_CENTER)
+                        } else {
+                            Modifier
                         },
-                    )
+                    ) {
+                        EntryItem(
+                            entry = entry,
+                            metric = metric,
+                            open = open == index,
+                            supersetNumber = numbers[index],
+                            partners = supersetPartners(ui.entries, index),
+                            onSuperset = { linking = index },
+                            onToggle = { open = if (open == index) null else index },
+                            onEntry = { viewModel.updateEntry(index, it) },
+                            onChange = { swapping = index },
+                            onRemove = { remove(index) },
+                            onMove = { move(index, it) },
+                            onDragStart = { dragIndex = index },
+                            onDragStep = { delta -> move(dragIndex, delta)?.let { dragIndex = it.order.indexOf(dragIndex) } },
+                        )
+                    }
                 }
                 // Opens the picker: appending the catalogue's first row put an
                 // Assault Bike in the workout, a machine most lifters do not have.
@@ -524,6 +565,67 @@ fun PresetEditorScreen(
                     swapping = null
                 },
                 onDismiss = { swapping = null },
+            )
+        }
+    }
+
+    linking?.let { index ->
+        val entry = ui.entries.getOrNull(index)
+        if (entry == null) {
+            linking = null
+        } else {
+            val groups = ui.entries.map { it.supersetGroup }
+            val together = Supersets.runAt(groups, index)
+            IronvellumDialog(
+                onDismissRequest = { linking = null },
+                title = { Text("Superset with") },
+                text = {
+                    Column {
+                        val choices: List<Pair<Int?, String>> = listOf<Pair<Int?, String>>(null to "None") +
+                            ui.entries.indices.filter { it != index }.map { it to ui.entries[it].exerciseName.ifBlank { "Exercise ${it + 1}" } }
+                        choices.forEach { (partner, label) ->
+                            val selected = if (partner == null) together == null else together != null && partner in together
+                            // A partner is on offer while the group stays within three; one already linked just shows its tick.
+                            val enabled = selected || partner == null || Supersets.canLink(groups, index, partner)
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 52.dp)
+                                    .clickable(enabled = enabled, role = Role.RadioButton) {
+                                        if (partner == null) {
+                                            viewModel.unlinkEntry(index)
+                                        } else if (!selected) {
+                                            viewModel.linkEntries(index, partner)?.let { layout ->
+                                                open = open?.let { layout.order.indexOf(it) }
+                                            }
+                                        }
+                                        linking = null
+                                    }
+                                    .semantics { this.selected = selected },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (enabled) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (selected) {
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Emerald)
+                                }
+                            }
+                            InkDivider()
+                        }
+                        if (ui.entries.size < 2) {
+                            Text(
+                                "Add another exercise to link it.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
+                },
+                confirmButton = { IronvellumButton(label = "Close", onClick = { linking = null }, quiet = true) },
             )
         }
     }
@@ -623,6 +725,11 @@ private fun EntryItem(
     entry: EditorEntry,
     metric: ExerciseMetric,
     open: Boolean,
+    /** The "Superset 1" this entry is in, by its place in the rite; null when it is in none. */
+    supersetNumber: Int?,
+    /** "With Bench press" for the superset it is in; null when it is in none. */
+    partners: String?,
+    onSuperset: () -> Unit,
     onToggle: () -> Unit,
     onEntry: (EditorEntry) -> Unit,
     onChange: () -> Unit,
@@ -653,7 +760,7 @@ private fun EntryItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    entrySummary(entry, metric),
+                    supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
                 )
@@ -715,6 +822,14 @@ private fun EntryItem(
             // in the field that is still empty.
             placeholder = "weighted, deficit, elevated…",
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        )
+        ListRow(
+            label = "Superset",
+            value = partners ?: "None",
+            valueColor = if (partners != null) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            onClickLabel = "Choose what ${name} is a superset with",
+            contentPadding = PaddingValues(0.dp),
+            onClick = onSuperset,
         )
     }
 }

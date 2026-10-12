@@ -160,6 +160,17 @@ reads "NEXT · NO REST YET", and a rest still running from the round before is e
 Move up and Move down keep a group whole: a lone exercise steps over a whole group, and a
 member that moves out past its group's edge leaves it.
 
+**Superset (rite editor).** An open exercise card has a "Superset" row after Modifiers,
+valued "None" or "With Bench press" (a triple reads "With A and B", in `SystemGreen`).
+It opens a "Superset with" pick of the other exercises, with "None" to end the group; a
+partner that is not next door moves beside the entry, and one that would make four is
+greyed. Linked entries share the same gutter rail as the live trial (`SupersetRail.kt`),
+and a folded row reads "Superset 1 · 3 × 8 · 60 kg". The group is a number on the rite's
+entries (`preset_entries.supersetGroup`); saving keeps it only where the members are
+neighbours, a trial begun from the rite starts with it on every set, and the archive
+(format 11) writes it only for an entry in one. The Forge never makes or reads a
+superset; tempering a rite keeps the lifter's own where the pair is still adjacent.
+
 **Lock-screen trial actions.** The trial notification is public on the lock screen
 and carries the movement, the set and its figures, never a note. Its buttons are
 broadcasts, so they run without unlocking: while a set waits, "Set done" (ticks it

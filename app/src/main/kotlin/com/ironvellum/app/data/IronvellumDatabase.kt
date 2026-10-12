@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 40
+        const val VERSION = 41
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -612,6 +612,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Supersets in rites: the group an entry belongs to, carried onto the sets of a trial begun from
+         * the rite. Nullable with no default: every existing entry is in no superset, and no row is
+         * rewritten. Independent of every other column, so it applies on top of any v40.
+         */
+        private val MIGRATION_40_41 = object : Migration(40, 41) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE preset_entries ADD COLUMN supersetGroup INTEGER")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -642,6 +653,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_37_38,
             MIGRATION_38_39,
             MIGRATION_39_40,
+            MIGRATION_40_41,
         )
 
         const val NAME = "ironvellum.db"

@@ -453,6 +453,7 @@ class Repository(
                         targetWeightKg = e.targetWeightKg,
                         modifiers = e.modifiers,
                         position = e.position,
+                        supersetGroup = e.supersetGroup,
                     )
                 },
             )
@@ -465,6 +466,8 @@ class Repository(
         val targetReps: Int,
         val targetWeightKg: Double?,
         val modifiers: String = "",
+        /** Shared with the adjacent entries done as one superset; saved only where they really are neighbours. */
+        val supersetGroup: Int? = null,
     )
 
     suspend fun savePreset(
@@ -481,6 +484,8 @@ class Repository(
             presetDao.clearEntries(presetId)
             presetId
         }
+        // A group is kept only while its members are neighbours: a number left by a removal or a reorder is dropped here.
+        val groups = Supersets.effective(entries.map { it.supersetGroup })
         presetDao.insertEntries(
             entries.mapIndexed { position, e ->
                 PresetEntryEntity(
@@ -491,6 +496,7 @@ class Repository(
                     targetWeightKg = e.targetWeightKg,
                     modifiers = e.modifiers,
                     position = position,
+                    supersetGroup = groups[position],
                 )
             },
         )
@@ -612,6 +618,10 @@ class Repository(
         val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
         val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
         require(unknown.isEmpty()) { "Unknown exercises in rite \"${preset.name}\": $unknown" }
+        // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
+        // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
+        val keptGroups = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+            ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
         return savePreset(
             presetId = presetId,
             name = preset.name,
@@ -624,6 +634,7 @@ class Repository(
                     targetReps = entry.reps,
                     targetWeightKg = entry.targetWeightKg,
                     modifiers = entry.modifiers,
+                    supersetGroup = keptGroups[idByName.getValue(entry.exerciseName)],
                 )
             },
         )
@@ -917,7 +928,10 @@ class Repository(
         val exerciseById = exerciseDao.let { dao -> pw.entries.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
             .associateBy { it.id }
 
-        val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
+        val ordered = pw.entries.sortedBy { it.position }
+        // Only entries that really are neighbours start the trial as a superset.
+        val groups = Supersets.effective(ordered.map { it.supersetGroup })
+        val sets = ordered.flatMapIndexed { entryPos, entry ->
             val exercise = exerciseById[entry.exerciseId]
             val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
                 .getOrDefault(ExerciseMetric.REPS)
@@ -940,6 +954,7 @@ class Repository(
                     modifiers = entry.modifiers,
                     weightKg = recommendation?.weightKg ?: entry.targetWeightKg,
                     done = false,
+                    supersetGroup = groups[entryPos],
                 )
             }
         }
@@ -2621,6 +2636,7 @@ class Repository(
                         targetWeightKg = e.targetWeightKg,
                         modifiers = e.modifiers,
                         position = e.position,
+                        supersetGroup = e.supersetGroup,
                     )
                 },
             )
@@ -2851,6 +2867,7 @@ class Repository(
                                 targetWeightKg = entry.targetWeightKg,
                                 modifiers = entry.modifiers,
                                 position = entry.position,
+                                supersetGroup = entry.supersetGroup,
                             )
                         },
                     )

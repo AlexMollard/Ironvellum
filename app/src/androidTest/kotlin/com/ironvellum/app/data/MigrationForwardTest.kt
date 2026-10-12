@@ -940,4 +940,43 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 40 -> 41, supersets in rites: a rite entry gains a nullable superset group. Every existing entry
+     * reads as in no superset and nothing else moves. The test inserts only into the rite and trial tables
+     * (never exercises), so it holds on whatever v40 adds to the catalogue.
+     */
+    @Test
+    fun upgradeTo41AddsTheRiteSupersetGroupAsNull() = runTest {
+        helper.createDatabase(dbName, 40).use { old ->
+            old.execSQL("INSERT INTO presets (id, name, note, scheduledDay) VALUES (1, 'Push day', '', 3)")
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position) " +
+                    "VALUES (10, 1, 1, 3, 8, 60.0, 'Pause', 0)",
+            )
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position) " +
+                    "VALUES (11, 1, 2, 4, 6, NULL, '', 1)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 41, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position, supersetGroup FROM preset_entries ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(10L, c.getLong(0))
+                assertEquals(3, c.getInt(3))
+                assertEquals(60.0, c.getDouble(5), 0.0)
+                assertEquals("Pause", c.getString(6))
+                assertTrue("an old entry is in no superset", c.isNull(8))
+                assertTrue(c.moveToNext())
+                assertEquals(11L, c.getLong(0))
+                assertEquals(6, c.getInt(4))
+                assertTrue(c.isNull(8))
+            }
+            db.execSQL("UPDATE preset_entries SET supersetGroup = 2 WHERE id IN (10, 11)")
+            db.query("SELECT COUNT(*) FROM preset_entries WHERE supersetGroup = 2").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(2, c.getInt(0))
+            }
+        }
+    }
 }

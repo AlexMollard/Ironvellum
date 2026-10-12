@@ -54,6 +54,8 @@ data class PresetEntryEntity(
     val targetWeightKg: Double?,
     val modifiers: String,
     val position: Int,
+    /** Shared by the entries done as one superset; null when not in one. Carried onto the sets of a trial begun from the rite. */
+    val supersetGroup: Int? = null,
 )
 
 @Entity(tableName = "sessions")

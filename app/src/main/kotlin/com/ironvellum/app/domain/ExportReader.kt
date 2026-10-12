@@ -113,6 +113,8 @@ object ExportReader {
                 targetWeightKg = entry.dbl("targetWeightKg"),
                 modifiers = entry.str("modifiers") ?: "",
                 position = entry.int("position") ?: 0,
+                // v11, only for an entry in a superset: an older archive has none.
+                supersetGroup = entry.int("supersetGroup"),
             )
         },
         scheduledDay = o.int("scheduledDay"),
