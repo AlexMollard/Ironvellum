@@ -796,7 +796,7 @@ object ProgramGenerator {
         val roleSeen = mutableMapOf<Role, Int>()
 
         return RoutinePlan(
-            built
+            Recovery.spaceDays(built
                 .map { session ->
                     // Ordinal letters count per ROLE: Upper A, Lower A,
                     // Upper B, Lower B - not one alphabet across the week.
@@ -807,7 +807,7 @@ object ProgramGenerator {
                         scheduledDay = session.day,
                         entries = spacePullUps(compoundsFirst(session.entries)),
                     )
-                },
+                }),
             note = joinNotes(capacityNote, frequencyNote, fewerDaysNote),
         )
     }
@@ -1308,14 +1308,19 @@ object ProgramGenerator {
      */
     private fun redundantIn(session: Draft, candidate: Exercise): Boolean {
         val profile = profileOf(candidate)
-        if (profile.noLeadByDesign) return false
-        val main = dominantMuscle(profile)
         return session.entries.any { entry ->
             val existing = MuscleMap.profile(entry.exerciseName) ?: return@any false
-            !existing.noLeadByDesign && existing.pattern == profile.pattern && dominantMuscle(existing) == main &&
-                entry.sets < entry.setsMax
+            sharesJob(existing, profile) && entry.sets < entry.setsMax
         }
     }
+
+    /**
+     * Whether two movements do one job: the same pattern leading with the
+     * same muscle, neither without a lead by design. The predicate behind
+     * [redundantIn] and [Overlap.detect].
+     */
+    internal fun sharesJob(a: ExerciseProfile, b: ExerciseProfile): Boolean =
+        !a.noLeadByDesign && !b.noLeadByDesign && a.pattern == b.pattern && dominantMuscle(a) == dominantMuscle(b)
 
     /**
      * Weekly sets under the floor of [range] that losing [entry] would cost
@@ -2209,4 +2214,25 @@ object ProgramGenerator {
             "Rest 2-3 min, at least 90 s. $effort (Singer 2024; Refalo 2023)."
         }
     }
+
+    // ------------------------------------------------- overlap, easing, days
+
+    /** Rows of [preset] that do one job; replacements come with a [request] and [catalogue]. */
+    fun overlaps(
+        preset: PlannedPreset,
+        request: ProgramRequest? = null,
+        catalogue: List<Exercise> = emptyList(),
+    ): List<OverlapFinding> = Overlap.detect(preset, request, catalogue)
+
+    /** Per heavy muscle, the ranked ways to ease it; empty when nothing is heavy. */
+    fun easing(
+        week: List<PlannedPreset>,
+        request: ProgramRequest,
+        catalogue: List<Exercise>,
+        strength: StrengthProfile = StrengthProfile(),
+    ): List<EasingSuggestion> = Easing.suggest(week, request, catalogue, strength)
+
+    /** The three best sessions of [week] to put [entry] in, best first. */
+    fun bestFitDays(entry: PlannedEntry, week: List<PlannedPreset>, request: ProgramRequest): RankedDays =
+        Recovery.bestFitDays(entry, week, request)
 }
