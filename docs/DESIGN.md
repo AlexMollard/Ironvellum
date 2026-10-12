@@ -57,6 +57,7 @@ border, not that the shape changes.
 | Link accent (`SystemGreen`, derived from primary) | #6FAE8C | Quiet links and chips (`InkChip`) | Fills |
 | Reward accent (`SovereignGold`) | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
 | `DangerRed` | #EF5350 | Destructive actions and errors | Warnings that are not destructive |
+| `Caution` | #E0B25A | A soft warning on a muscle that runs heavy, always with its own mark (a double chevron) | Errors, earned moments, anything the lifter must obey |
 
 Emerald and gold are the default accent pair. Settings → Appearance lets the
 lifter choose a preset or customise the primary and reward accents on this

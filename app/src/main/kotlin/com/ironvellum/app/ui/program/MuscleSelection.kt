@@ -42,21 +42,6 @@ internal fun riteMuscleLine(muscle: Muscle, sets: Double, riteName: String): Str
     if (sets <= 0.0) "not worked in $riteName" else "${riteSetsLabel(sets)} in $riteName",
 )
 
-/**
- * The routine's figure: the week's sets against the muscle's own target range - "Hamstrings · 6 sets
- * this week · target 12–20". A muscle the map does not judge (the neck) has no target, so it shows just its sets.
- */
-internal fun coverageMuscleLine(muscle: Muscle, sets: Double, goal: CoverageGoal): String {
-    val count = trimSets(sets)
-    val fact = if (muscle in JUDGED) {
-        // The range, not just its floor: "20 / 8" read as a broken fraction once a muscle passed it.
-        "$count ${if (count == "1") "set" else "sets"} this week · target ${targetLabel(rangeFor(muscle, goal))}"
-    } else {
-        "$count ${if (count == "1") "set" else "sets"} this week"
-    }
-    return muscleLine(muscle, fact)
-}
-
 // ---------------------------------------------------------------- the coverage filter
 
 /** One rite's part in a muscle's weekly sets: its exercises that reach the muscle, largest first. */
@@ -80,13 +65,3 @@ internal fun ritesTraining(presets: List<PlannedPreset>, muscle: Muscle): List<R
         if (exercises.isEmpty()) null else RiteContribution(preset.name, exercises)
     }.sortedByDescending { it.credited }
 
-/** A weekly range as "12–18", or "3+" for a helper's open-ended floor (its ceiling is a huge sentinel). */
-internal fun targetLabel(range: ClosedFloatingPointRange<Double>): String =
-    if (range.endInclusive < OPEN_ENDED_SETS && range.endInclusive > range.start) {
-        "${trimSets(range.start)}–${trimSets(range.endInclusive)}"
-    } else {
-        "${trimSets(range.start)}+"
-    }
-
-/** A weekly ceiling at or past this many sets is no ceiling at all. */
-private const val OPEN_ENDED_SETS = 100.0

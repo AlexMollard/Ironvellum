@@ -1,18 +1,15 @@
 package com.ironvellum.app.ui.program
 
-import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.VolumeLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The Forge row ("N muscles short") and the coverage page it opens count the UNSAVED proposal through
- * one function, [shortCount], so they cannot disagree.
+ * The Forge chip ("2 below minimum") and the coverage page it opens count the UNSAVED proposal through one
+ * function, [coverageTally], so they cannot disagree.
  */
 class ProposalCoverageTest {
 
@@ -27,40 +24,36 @@ class ProposalCoverageTest {
             ),
         ),
     )
-    private val priorities = setOf(MuscleArea.entries.first())
 
     @Test
-    fun `the Forge row and the preview page agree on the short count`() {
-        val tier = VolumeLevel.STANDARD
-        val focus = TrainingFocus.MUSCLE
+    fun `the Forge chip and the preview page agree on the tally`() {
+        // The chip: what CoverageChip reads from the proposal.
+        val chip = coverageTally(sample)
+        // The page: what CoveragePreviewScreen reads from the same proposal as caller data.
+        val ui = previewCoverage(sample)
+        val page = coverageTally(loadsOf(ui.plannedPresets))
 
-        // The row: what CoverageSummaryRow computes from the proposal.
-        val rowShort = shortCount(sample, coverageGoal(tier, focus, priorities))
-        // The page: what CoveragePreviewScreen computes from the same proposal as caller data.
-        val ui = previewCoverage(sample, tier, focus, priorities)
-        val pageShort = shortCount(ui.plannedPresets, CoverageGoal(ui.tier, ui.focus, ui.priorities))
-
-        assertEquals(rowShort, pageShort)
-        assertEquals(shortHeadline(rowShort), shortHeadline(pageShort))
-        // And it is the domain's own gap rule, not a second one.
-        val goal = coverageGoal(tier, focus, priorities)
-        assertEquals(coverageGaps(ProgramRules.weeklyVolume(sample), goal).size, rowShort)
+        assertEquals(chip, page)
+        assertEquals(coverageHeadline(chip), coverageHeadline(page))
+        // And it is the domain's own coverage rule, not a second one.
+        val domain = ProgramRules.coverage(sample)
+        val below = domain.values.count { it.weekly > 0.0 && it.weekly < ProgramRules.COVERED_MIN && it.muscle in JUDGED_MUSCLES }
+        assertEquals(below, chip.below.size)
         // One push day leaves most of the body short, so the check is not vacuous.
-        assertTrue(rowShort > 0)
+        assertTrue(chip.gaps > 0)
     }
 
     @Test
     fun `the preview reads the proposal, so a first run with no saved rites is not empty`() {
-        val ui = previewCoverage(sample, VolumeLevel.LOW, TrainingFocus.MUSCLE, emptySet())
+        val ui = previewCoverage(sample)
         assertTrue(ui.hasAnyPreset)
         assertEquals(sample, ui.plannedPresets)
         assertTrue(ui.loggedPresets.isEmpty())
     }
 
     @Test
-    fun `headline words match the row`() {
-        assertEquals("Every muscle covered", shortHeadline(0))
-        assertEquals("1 muscle short", shortHeadline(1))
-        assertEquals("5 muscles short", shortHeadline(5))
+    fun `the Train card counts the same gaps the page does`() {
+        // PresetsScreen reads coverageTally(ProgramRules.coverage(...)).gaps; the page reads loadsOf(...).
+        assertEquals(coverageTally(ProgramRules.coverage(sample)).gaps, coverageTally(loadsOf(sample)).gaps)
     }
 }

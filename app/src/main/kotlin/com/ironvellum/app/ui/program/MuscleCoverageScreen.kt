@@ -32,7 +32,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +45,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -93,7 +97,7 @@ import kotlinx.coroutines.launch
  */
 
 enum class CoverageView(val label: String) {
-    CYCLE("Cycle"),
+    CYCLE("Planned"),
     LOGGED("Last 7 days"),
 }
 
@@ -104,10 +108,6 @@ data class CoverageUi(
     val unattributedLoggedSets: Int = 0,
     /** Preset sets with no profile (planned view honesty count). */
     val unattributedPlannedSets: Int = 0,
-    val tier: VolumeLevel = VolumeLevel.LOW,
-    val focus: TrainingFocus = TrainingFocus.MUSCLE,
-    /** Muscles of the areas she prioritised, whose ceiling rises (ProgramRules.judgedRange). */
-    val priorities: Set<Muscle> = emptySet(),
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
 )
@@ -116,59 +116,35 @@ data class CoverageUi(
 internal fun unattributedSets(presets: List<PlannedPreset>): Int =
     presets.sumOf { p -> p.entries.sumOf { e -> if (MuscleMap.profile(e.exerciseName) == null) e.sets else 0 } }
 
-/**
- * THE count of muscles [presets] leave short against [goal]. The saved Cycle page's dock and the Forge
- * row's count both read it, so a proposal and the page that opens from it can never disagree.
- */
-internal fun shortCount(presets: List<PlannedPreset>, goal: CoverageGoal): Int =
-    coverageGaps(ProgramRules.weeklyVolume(presets), goal).size
-
-/** "3 muscles short" or "Every muscle covered": the Forge row's words, and the preview page's. */
-internal fun shortHeadline(short: Int): String =
-    if (short == 0) "Every muscle covered" else "$short ${if (short == 1) "muscle" else "muscles"} short"
-
-internal fun coverageGoal(tier: VolumeLevel, focus: TrainingFocus, priorities: Set<MuscleArea>): CoverageGoal =
-    CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
-
 /** What the Cycle page reads for a cycle that is not saved yet: the builder's proposal, as the caller's data. */
-internal fun previewCoverage(
-    presets: List<PlannedPreset>,
-    tier: VolumeLevel,
-    focus: TrainingFocus,
-    priorities: Set<MuscleArea>,
-): CoverageUi = CoverageUi(
+internal fun previewCoverage(presets: List<PlannedPreset>): CoverageUi = CoverageUi(
     plannedPresets = presets,
     unattributedPlannedSets = unattributedSets(presets),
-    tier = tier,
-    focus = focus,
-    priorities = priorities.flatMap { it.muscles }.toSet(),
     hasAnyPreset = presets.isNotEmpty(),
 )
 
+/**
+ * Heavy flags the lifter has dismissed on this page, kept through rotation. A dismissed muscle reads as plain
+ * covered, which it still is.
+ * shortcut: lives with the screen, so a dismissal lasts the visit; persist per muscle if it should outlive it.
+ */
+@Composable
+internal fun rememberDismissedHeavy(): MutableState<Set<Muscle>> =
+    rememberSaveable(
+        stateSaver = listSaver<Set<Muscle>, String>(
+            save = { set -> set.map { it.name } },
+            restore = { names -> names.map(Muscle::valueOf).toSet() },
+        ),
+    ) { mutableStateOf(emptySet()) }
+
 class MuscleCoverageViewModel(
     private val repo: Repository,
-    appContext: android.content.Context,
 ) : ViewModel() {
-
-    /** What she last told the generator; when present it outranks the
-     *  history/profile guesses, which said "beginner, strength" minutes
-     *  after she accepted an INTERMEDIATE / MUSCLE week. */
-    private val savedAnswers = com.ironvellum.app.data.ProgramAnswersStore.get(appContext)
-
-    /** Tier is derived from history, so it is a one-shot read, not a flow. */
-    private val tierFlow = flow {
-        emit(
-            savedAnswers?.volume
-                ?: ProgramRules.suggestVolume(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
-        )
-    }
 
     val ui: StateFlow<CoverageUi> = combine(
         repo.observePresets(),
         repo.observeHistory(),
-        repo.observeProfile(),
-        tierFlow,
-    ) { presets, history, profile, tier ->
+    ) { presets, history ->
         // Scheduled days are the routine; with none scheduled, the whole
         // board is the routine. The builder's preview reads the same rule.
         val scheduled = scheduledRoutine(presets) { it.scheduledDay }
@@ -177,7 +153,7 @@ class MuscleCoverageViewModel(
         val cutoff = Instant.now().minus(java.time.Duration.ofDays(7)).toEpochMilli()
         val recent = history.filter { (session, _) -> session.startedAtMs >= cutoff }
         // Done sets grouped per movement and modifiers, then read through
-        // the SAME weeklyVolume rule as the plan, so the two views can be
+        // the SAME rule as the plan, so the two views can be
         // compared - a feet-elevated push-up credits the upper chest here too.
         val loggedSets = recent.flatMap { (_, sets) -> sets.filter { it.done } }
         val byExercise = loggedSets.groupBy { it.exerciseName to it.modifiers }
@@ -209,12 +185,6 @@ class MuscleCoverageViewModel(
             loggedPresets = loggedPresets,
             unattributedLoggedSets = unattributedSets(loggedPresets),
             unattributedPlannedSets = unattributedSets(plannedPresets),
-            tier = tier,
-            focus = savedAnswers?.focus ?: when (profile?.trainingMode) {
-                TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
-                else -> TrainingFocus.MUSCLE
-            },
-            priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
             hasAnyPreset = presets.isNotEmpty(),
             hasLoggedWeek = loggedSets.isNotEmpty(),
         )
@@ -227,13 +197,13 @@ fun MuscleCoverageScreen(
     onGenerateSession: () -> Unit,
     viewModel: MuscleCoverageViewModel =
         viewModel(factory = viewModelFactory {
-            val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
-            initializer { MuscleCoverageViewModel(ironvellumRepository(), appContext) }
+            initializer { MuscleCoverageViewModel(ironvellumRepository()) }
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val pager = rememberPagerState { CoverageView.entries.size }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
+    val dismissed = rememberDismissedHeavy()
     // One lit muscle per page, kept when the lifter swipes away and back: the cycle and the last 7 days are
     // two different weeks, so each remembers what it was showing. Held here because the pager drops pages
     // it is not near.
@@ -243,9 +213,10 @@ fun MuscleCoverageScreen(
 
     // The dock reads the page that is open, so it is worked out here and not inside the pager.
     val view = CoverageView.entries[pager.currentPage]
-    val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val short = remember(presets, goal) { shortCount(presets, goal) }
+    val tally = remember(presets, view, dismissed.value) {
+        coverageTally(loadsOf(presets, pooled = view == CoverageView.LOGGED), dismissed.value)
+    }
     val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
 
     Column(Modifier.fillMaxSize()) {
@@ -269,12 +240,13 @@ fun MuscleCoverageScreen(
                 lit = lit.getValue(CoverageView.entries[page]),
                 openExercise = openExercise,
                 onOpenExercise = { openExercise = it },
+                dismissed = dismissed.value,
+                onDismiss = { dismissed.value = dismissed.value + it },
             )
         }
-        if (!empty && short > 0) {
+        if (!empty && tally.gaps > 0) {
             CoverageDock(
-                short = short,
-                scope = if (view == CoverageView.CYCLE) "Your cycle" else "Last 7 days",
+                headline = coverageHeadline(tally),
                 onForge = onGenerateSession,
             )
         }
@@ -289,13 +261,11 @@ fun MuscleCoverageScreen(
 @Composable
 internal fun CoveragePreviewScreen(
     presets: List<PlannedPreset>,
-    tier: VolumeLevel,
-    focus: TrainingFocus,
-    priorities: Set<MuscleArea>,
     onBack: () -> Unit,
 ) {
-    val ui = remember(presets, tier, focus, priorities) { previewCoverage(presets, tier, focus, priorities) }
-    val short = remember(ui) { shortCount(ui.plannedPresets, CoverageGoal(ui.tier, ui.focus, ui.priorities)) }
+    val ui = remember(presets) { previewCoverage(presets) }
+    val dismissed = rememberDismissedHeavy()
+    val tally = remember(presets, dismissed.value) { coverageTally(presets, dismissed.value) }
     val lit = rememberSaveable(key = "lit-preview") { mutableStateOf<Muscle?>(null) }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize()) {
@@ -304,9 +274,14 @@ internal fun CoveragePreviewScreen(
             PushedHeader("Coverage of this cycle", onBack)
             Spacer(Modifier.height(8.dp))
             Text(
-                shortHeadline(short),
+                coverageHeadline(tally),
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
+            )
+            Text(
+                "A hint only. Saving is never blocked.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(8.dp))
         }
@@ -317,6 +292,8 @@ internal fun CoveragePreviewScreen(
                 lit = lit,
                 openExercise = openExercise,
                 onOpenExercise = { openExercise = it },
+                dismissed = dismissed.value,
+                onDismiss = { dismissed.value = dismissed.value + it },
             )
         }
     }
@@ -324,7 +301,7 @@ internal fun CoveragePreviewScreen(
 
 /** What the page is short of, and the way to forge a rite that fills it. */
 @Composable
-private fun CoverageDock(short: Int, scope: String, onForge: () -> Unit) {
+private fun CoverageDock(headline: String, onForge: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -337,11 +314,15 @@ private fun CoverageDock(short: Int, scope: String, onForge: () -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                shortHeadline(short),
+                headline,
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
             )
-            Text(scope, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text(
+                "A hint only. Saving is never blocked.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
         }
         IronvellumButton(label = "Forge a rite", onClick = onForge)
     }
@@ -355,9 +336,12 @@ internal fun CoveragePage(
     lit: MutableState<Muscle?>,
     openExercise: String?,
     onOpenExercise: (String?) -> Unit,
+    dismissed: Set<Muscle>,
+    onDismiss: (Muscle) -> Unit,
 ) {
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
+    val loads = remember(presets, view) { loadsOf(presets, pooled = view == CoverageView.LOGGED) }
+    val tally = remember(loads, dismissed) { coverageTally(loads, dismissed) }
     // Each exercise once, in routine order, keyed with its modifiers because
     // a deficit push-up works the chest differently from a flat one.
     val exercisesInView = remember(presets) {
@@ -366,14 +350,13 @@ internal fun CoveragePage(
             .distinct()
             .mapNotNull { (name, modifiers) -> MuscleMap.profile(name, modifiers)?.let { Triple(name, modifiers, it.muscles) } }
     }
-    val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
-    val target = goal.target
     val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
     val unattributed = if (view == CoverageView.CYCLE) ui.unattributedPlannedSets else ui.unattributedLoggedSets
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
-    var inRangeOpen by rememberSaveable(view.name) { mutableStateOf(false) }
+    var coveredOpen by rememberSaveable(view.name) { mutableStateOf(false) }
     var byExerciseOpen by rememberSaveable(view.name) { mutableStateOf(false) }
+    var whyOpen by rememberSaveable(view.name) { mutableStateOf(false) }
 
     Column(
         Modifier
@@ -396,19 +379,12 @@ internal fun CoveragePage(
             return@Column
         }
 
-        BodyHeatMap(
-            volume = volume,
-            goal = goal,
+        CoverageFigure(
+            loads = loads,
+            dismissed = dismissed,
             modifier = Modifier.fillMaxWidth(),
             figureHeight = 260.dp,
             selection = lit,
-            lineFor = { coverageMuscleLine(it, volume[it] ?: 0.0, goal) },
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            targetCaption(ui.tier, ui.focus, target),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
         )
         if (unattributed > 0) {
             Text(
@@ -423,6 +399,10 @@ internal fun CoveragePage(
         // train it, and clearing brings it back.
         val litMuscle = lit.value
         if (litMuscle != null) {
+            val litLoad = loads[litMuscle]
+            if (litLoad != null && tally.states[litMuscle] == CoverageState.HEAVY) {
+                HeavyNote(litMuscle, litLoad) { onDismiss(litMuscle) }
+            }
             MuscleFilter(
                 muscle = litMuscle,
                 rites = remember(presets, litMuscle) { ritesTraining(presets, litMuscle) },
@@ -436,28 +416,55 @@ internal fun CoveragePage(
                 scope.launch { scroll.animateScrollTo(0) }
                 Unit
             }
-            // The muscles that need a look come first, least trained leading; the ones in range fold away.
-            val ordered = remember(volume, goal) { JUDGED.sortedWith(shortFirst(volume, goal)) }
-            val (needing, inRange) = ordered.partition {
-                levelOf(it, volume[it] ?: 0.0, goal) != CoverageLevel.IN_RANGE
-            }
+            // The muscles that need a look come first; the covered ones fold away.
+            val needing = remember(loads, tally) { attentionOrder(loads, tally) }
+            val covered = tally.covered
             InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
                 needing.forEachIndexed { index, muscle ->
                     if (index > 0) InkDivider()
-                    MuscleRow(muscle, volume[muscle] ?: 0.0, goal) { pick(muscle) }
+                    CoverageRow(muscle, loads[muscle], tally.states.getValue(muscle)) { pick(muscle) }
                 }
-                if (inRange.isNotEmpty()) {
-                    if (needing.isNotEmpty()) InkDivider()
-                    ListRow(
-                        label = "${inRange.size} ${if (inRange.size == 1) "muscle" else "muscles"} in range",
-                        value = if (inRangeOpen) "Hide" else null,
-                        onClickLabel = if (inRangeOpen) "Hide the muscles in range" else "Show the muscles in range",
-                        onClick = { inRangeOpen = !inRangeOpen },
+                if (needing.isEmpty()) {
+                    Text(
+                        "Every muscle covered",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                        modifier = Modifier.padding(vertical = 16.dp),
                     )
-                    if (inRangeOpen) {
-                        inRange.forEach { muscle ->
+                }
+                if (covered.isNotEmpty()) {
+                    if (needing.isNotEmpty()) InkDivider()
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = ListRowHeight)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = if (coveredOpen) "Hide the covered muscles" else "Show the covered muscles",
+                                onClick = { coveredOpen = !coveredOpen },
+                            )
+                            .semantics { stateDescription = if (coveredOpen) "Expanded" else "Collapsed" },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CoverageMark(CoverageState.COVERED)
+                        Text(
+                            "${covered.size} ${if (covered.size == 1) "muscle" else "muscles"} covered",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            if (coveredOpen) "⌃" else "›",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.clearAndSetSemantics {},
+                        )
+                    }
+                    if (coveredOpen) {
+                        covered.forEach { muscle ->
                             InkDivider()
-                            MuscleRow(muscle, volume[muscle] ?: 0.0, goal) { pick(muscle) }
+                            CoverageRow(muscle, loads[muscle], CoverageState.COVERED) { pick(muscle) }
                         }
                     }
                 }
@@ -490,87 +497,23 @@ internal fun CoveragePage(
                     }
                 }
             }
+
+            Spacer(Modifier.height(4.dp))
+            Disclosure("Why effort, not set counts", whyOpen) { whyOpen = !whyOpen }
+            if (whyOpen) {
+                CoverageExplainer(
+                    tally = tally,
+                    onSeeMuscles = {
+                        whyOpen = false
+                        scope.launch { scroll.animateScrollTo(0) }
+                    },
+                    onDone = { whyOpen = false },
+                )
+            }
         }
         Spacer(Modifier.height(20.dp))
     }
 }
-
-/** Gaps first - untrained, then under, then light - and the least trained first within each. */
-private fun shortFirst(volume: Map<Muscle, Double>, goal: CoverageGoal): Comparator<Muscle> =
-    compareBy<Muscle>(
-        {
-            when (levelOf(it, volume[it] ?: 0.0, goal)) {
-                CoverageLevel.NONE -> 0
-                CoverageLevel.UNDER -> 1
-                CoverageLevel.LIGHT -> 2
-                CoverageLevel.OVER -> 3
-                CoverageLevel.IN_RANGE -> 4
-            }
-        },
-        { volume[it] ?: 0.0 },
-    )
-
-/**
- * One muscle's week as a row: a dot at the verdict's strength, its name, and its sets against its range
- * ("6 of 12-18 sets", a helper's open floor "2 of 3+ sets") with the verdict. Tapped, it lights the muscle.
- */
-@Composable
-private fun MuscleRow(
-    muscle: Muscle,
-    sets: Double,
-    goal: CoverageGoal,
-    onPick: () -> Unit,
-) {
-    val level = levelOf(muscle, sets, goal)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = ListRowHeight)
-            .clickable(onClickLabel = "Show what trains ${muscle.label}", role = Role.Button, onClick = onPick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(Modifier.size(10.dp).clip(DotShape).background(verdictDot(level)))
-        Text(
-            muscle.label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(color = IronvellumColors.Ink)) { append(trimSets(sets)) }
-                append(" of ${targetLabel(rangeFor(muscle, goal))} sets · ${verdictLabel(level)}")
-            },
-            style = MaterialTheme.typography.labelMedium,
-            color = IronvellumColors.InkMuted,
-            textAlign = TextAlign.End,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-/** The dot's strength steps up with the verdict, the same emerald the figure is drawn in; over is plain Ink. */
-private fun verdictDot(level: CoverageLevel): Color = when (level) {
-    CoverageLevel.NONE -> IronvellumColors.Emerald.copy(alpha = 0.1f)
-    CoverageLevel.UNDER -> IronvellumColors.Emerald.copy(alpha = 0.28f)
-    CoverageLevel.LIGHT -> IronvellumColors.Emerald.copy(alpha = 0.5f)
-    CoverageLevel.IN_RANGE -> IronvellumColors.Emerald.copy(alpha = 0.9f)
-    CoverageLevel.OVER -> IronvellumColors.Ink
-}
-
-private fun verdictLabel(level: CoverageLevel): String = when (level) {
-    CoverageLevel.NONE -> "Untrained"
-    CoverageLevel.UNDER -> "Under"
-    CoverageLevel.LIGHT -> "Light"
-    CoverageLevel.IN_RANGE -> "In range"
-    CoverageLevel.OVER -> "Over"
-}
-
 
 /** One exercise's credit to a muscle: its name, MAIN or ASSIST, and sets times share. */
 @Composable
@@ -729,19 +672,6 @@ private fun ExerciseRow(
         if (open) {
             ExerciseMuscles(shares, name, Modifier.fillMaxWidth().padding(bottom = 10.dp))
         }
-    }
-}
-
-/**
- * Strength and skill targets are 5-15 at every volume level, so naming the
- * level there says nothing - "lean volume, strength" read as a contradiction.
- */
-internal fun targetCaption(volume: VolumeLevel, focus: TrainingFocus, target: ClosedFloatingPointRange<Double>): String {
-    val sets = "${trimSets(target.start)}-${trimSets(target.endInclusive)} sets per muscle a week"
-    return when (focus) {
-        TrainingFocus.STRENGTH -> "Strength target: $sets"
-        TrainingFocus.SKILL -> "Technique target: $sets"
-        else -> "Muscle target, ${volume.label.lowercase()} volume: $sets"
     }
 }
 
