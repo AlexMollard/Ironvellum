@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 20,
   "currentBatch": 2,
-  "status": "awaiting-user-review",
+  "status": "corrections-incomplete",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -150,7 +150,7 @@
     {
       "id": "front-row-hold-3.png",
       "pose": "Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "skin-the-cat-1.png",
@@ -160,7 +160,7 @@
     {
       "id": "skin-the-cat-2.png",
       "pose": "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "skin-the-cat-3.png",
@@ -170,12 +170,12 @@
     {
       "id": "tuck-back-lever-1.png",
       "pose": "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "tuck-back-lever-2.png",
       "pose": "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "tuck-back-lever-3.png",
@@ -190,17 +190,17 @@
     {
       "id": "advanced-tuck-back-lever-2.png",
       "pose": "Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "advanced-tuck-back-lever-3.png",
       "pose": "Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "advanced-tuck-front-lever-1.png",
       "pose": "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "advanced-tuck-front-lever-2.png",
@@ -215,10 +215,10 @@
     {
       "id": "crow-pose-1.png",
       "pose": "Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.",
-      "status": "pending"
+      "status": "redo"
     }
   ],
-  "reviewSource": "tools/exercise_art/review-input-batch-001.json",
+  "reviewSource": "tools/exercise_art/review-input-batch-002.json",
   "decisions": "tools/exercise_art/review-decisions.json",
   "batches": [
     {
@@ -286,5 +286,16 @@
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "tools/exercise_art/frame-anchors.json; preview-only translation, not a substitute for consistent source framing",
     "ownerImportStatus": "Pending availability of the user-described vector pipeline; do not run the older WebP importer"
+  },
+  "correctionStatus": {
+    "batch": 2,
+    "correctedAwaitingReview": [
+      "planche-push-up-2.png"
+    ],
+    "remainingRedo": 8,
+    "missing": [
+      "tuck-back-lever-3.png"
+    ],
+    "blocker": "Image service rejected back-lever correction; other edited candidates failed style/pose checks and were not substituted."
   }
 }
