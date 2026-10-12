@@ -26,6 +26,7 @@ ROOT = HERE.parents[1]
 KT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "ironvellum" / "app" / "domain"
 OWNER = HERE / "owner"
 MISSING = HERE / "missing.json"
+FRAME_COUNTS = HERE / "frame-counts.json"   # a reviewed still asks for 1 frame instead of the entry's count
 DOCS = ROOT / "docs" / "art"
 REPORT = HERE / "art_report.json"
 ASSETS = ROOT / "app" / "src" / "main" / "assets" / "exercise_art"
@@ -265,10 +266,11 @@ def apply_owner(mp):
     sys.path.insert(0, str(HERE))
     import art
     approved = set((OWNER / "APPROVED").read_text(encoding="utf-8").split()) if (OWNER / "APPROVED").exists() else set()
+    counts = json.loads(FRAME_COUNTS.read_text(encoding="utf-8")) if FRAME_COUNTS.exists() else {}
     for e in json.loads(MISSING.read_text(encoding="utf-8"))["entries"]:
         files = art.owner_files(OWNER, e["slug"])
         # Only sets the owner has approved, and only once every frame the entry asks for is there.
-        if e["slug"] not in approved or len(files) < e.get("frameCount", 1):
+        if e["slug"] not in approved or len(files) < counts.get(e["slug"], e.get("frameCount", 1)):
             continue
         aid = "own_" + e["slug"]
         owned[aid] = bool(e.get("hanging"))
