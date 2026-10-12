@@ -13,16 +13,19 @@ import java.util.Locale
  *
  * Bench Press · 80kg
  * 🟩🟩🟩🟩🏆 5×5
+ *
  * Overhead Press · 45kg
  * 🟩🟩🟩🟨 6/6/7/4
+ *
  * Lateral Raise · 8kg
  * 🟩🟩⬛ 15/15
+ *
  * Run · 5km in 25:00
  *
  * 52 min · 17 sets · +214 XP · 380 STR
  * ```
  *
- * Two lines per lift, nothing aligned (a proportional chat font cannot hold a column), the full name as
+ * Two lines per lift and a blank line between lifts, nothing aligned (a proportional chat font cannot hold a column), the full name as
  * logged: one square per working set: 🏆 set a personal
  * record, green hit the target (or beat it, or had none), yellow was done
  * under it, black was prescribed and not done. Warm-ups are not working sets
@@ -100,7 +103,8 @@ object WorkoutShare {
                 text to note
             }
         if (lines.isNotEmpty()) append('\n')
-        lines.forEach { (text, note) ->
+        lines.forEachIndexed { i, (text, note) ->
+            if (i > 0) append('\n')
             append(text).append('\n')
             if (note != null) append(note).append('\n')
         }

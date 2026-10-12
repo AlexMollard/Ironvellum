@@ -611,35 +611,35 @@
     {
       "name": "Bench Press",
       "status": "exact",
-      "drawing": "ek_0042",
+      "drawing": "own_bench-press",
       "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Volume Bench Press",
       "status": "exact",
-      "drawing": "ek_0042",
+      "drawing": "own_bench-press",
       "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Paused Bench Press",
       "status": "exact",
-      "drawing": "ek_0042",
+      "drawing": "own_bench-press",
       "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Heavy Bench Press",
       "status": "exact",
-      "drawing": "ek_0042",
+      "drawing": "own_bench-press",
       "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Double-Bodyweight Bench Press",
       "status": "exact",
-      "drawing": "ek_0042",
+      "drawing": "own_bench-press",
       "frames": 1,
       "shows": "Bench Press"
     },

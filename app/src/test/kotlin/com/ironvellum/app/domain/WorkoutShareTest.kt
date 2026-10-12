@@ -130,12 +130,16 @@ class WorkoutShareTest {
                 "\n" +
                 "Bench Press · 80kg\n" +
                 "$g$g$g$g$p 5×5\n" +
+                "\n" +
                 "Overhead Press · 45kg\n" +
                 "$g$g$g$y 6/6/7/4\n" +
+                "\n" +
                 "Dip · +10kg\n" +
                 "$g$g$g 3×10\n" +
+                "\n" +
                 "Lateral Raise · 8kg\n" +
                 "$g$g$b 15/15\n" +
+                "\n" +
                 "Plank\n" +
                 "$g$y$g 60/45/60s\n" +
                 "\n" +
@@ -305,7 +309,7 @@ class WorkoutShareTest {
         val notes = mapOf(1L to "  left wrist clicked\non the last rep  ")
 
         val on = card(sets, catalogue, notes = notes, includeNotes = true)
-        assertTrue(on, on.contains("Push-up\n$g 12\n  ↳ \"left wrist clicked on the last rep\"\nDip"))
+        assertTrue(on, on.contains("Push-up\n$g 12\n  ↳ \"left wrist clicked on the last rep\"\n\nDip"))
         assertEquals(1, on.lines().count { it.contains("↳") })
 
         val off = card(sets, catalogue, notes = notes, includeNotes = false)
@@ -416,12 +420,16 @@ class WorkoutShareTest {
                 "\n" +
                 "Pull-up · +17.7kg\n" +
                 "$y$y$y$y 4/3/3/2\n" +
+                "\n" +
                 "Advanced Tuck Front Lever\n" +
                 "$g$g$g 20/15/10s\n" +
+                "\n" +
                 "Chin-up · +7.7kg\n" +
                 "$g$y$y 9/6/4\n" +
+                "\n" +
                 "Lateral Raise · 11.5kg\n" +
                 "$y$y$y 8/6/6\n" +
+                "\n" +
                 "Hanging Knee Raise\n" +
                 "$p$g$g 3×10\n" +
                 "\n" +

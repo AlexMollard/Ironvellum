@@ -2791,7 +2791,8 @@ private fun TrialFooter(
 @Composable
 private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onShorten: () -> Unit, onSkip: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        // The gap above the sweep keeps the soft ceiling's line off the bar.
+        Row(Modifier.fillMaxWidth().weight(1f).padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -2799,7 +2800,7 @@ private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
                         fontSize = 28.sp,
-                        lineHeight = 30.sp,
+                        lineHeight = 28.sp,
                         color = IronvellumColors.Ink,
                         maxLines = 1,
                     )
