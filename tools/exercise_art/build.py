@@ -26,6 +26,7 @@ ROOT = HERE.parents[1]
 KT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "ironvellum" / "app" / "domain"
 OWNER = HERE / "owner"
 MISSING = HERE / "missing.json"
+REPLACEMENTS = HERE / "replacement-catalog.json"
 FRAME_COUNTS = HERE / "frame-counts.json"   # a reviewed still asks for 1 frame instead of the entry's count
 DOCS = ROOT / "docs" / "art"
 REPORT = HERE / "art_report.json"
@@ -69,6 +70,10 @@ def art_table(lib, mp, report=None):
     for sk, t in mp["techniques"].items():
         if not t.get("proxy"):  # a proxy drawing shows another movement: it is the technique's, never the catalogue row's
             table.setdefault(sk, (t["art"], t["frames"]))
+    # Approved owner drawings also replace art for movements added by the library.
+    for m in mp["mapped"]:
+        if m["used"] and m.get("confidence") == "owner":
+            table[m["exercise"]] = (m["art"], m["frames"])
     return {k: (a, fin.get(a, f)) for k, (a, f) in table.items()}
 
 
@@ -267,7 +272,10 @@ def apply_owner(mp):
     import art
     approved = set((OWNER / "APPROVED").read_text(encoding="utf-8").split()) if (OWNER / "APPROVED").exists() else set()
     counts = json.loads(FRAME_COUNTS.read_text(encoding="utf-8")) if FRAME_COUNTS.exists() else {}
-    for e in json.loads(MISSING.read_text(encoding="utf-8"))["entries"]:
+    entries = json.loads(MISSING.read_text(encoding="utf-8"))["entries"]
+    if REPLACEMENTS.exists():
+        entries += json.loads(REPLACEMENTS.read_text(encoding="utf-8"))["entries"]
+    for e in entries:
         files = art.owner_files(OWNER, e["slug"])
         # Only sets the owner has approved, and only once every frame the entry asks for is there.
         if e["slug"] not in approved or len(files) < counts.get(e["slug"], e.get("frameCount", 1)):
@@ -278,8 +286,13 @@ def apply_owner(mp):
             mp["techniques"][e["name"]] = {"exercise": e["name"], "art": aid, "frames": len(files),
                                            "confidence": "owner", "proxy": False}
         else:
-            mp["mapped"].append({"record": "owner:" + e["slug"], "exercise": e["name"], "confidence": "owner", "art": aid,
-                                 "frames": len(files), "source": {"kind": "own", "id": e["slug"]}, "used": True})
+            for name in dict.fromkeys([e["name"], *e.get("aliases", [])]):
+                mp["mapped"].append({"record": "owner:" + e["slug"], "exercise": name, "confidence": "owner", "art": aid,
+                                     "frames": len(files), "source": {"kind": "own", "id": e["slug"]}, "used": True})
+            if e.get("sourceArt"):
+                for technique in mp["techniques"].values():
+                    if technique["art"] == e["sourceArt"]:
+                        technique.update(art=aid, frames=len(files))
     return owned
 
 
@@ -359,6 +372,8 @@ def main():
         sys.path.insert(0, str(HERE))
         from stills import apply_selections
         selections = json.loads(selection_path.read_text(encoding="utf-8"))["selections"]
+        # Replaced upstream assets leave the active report; their animations remain archived.
+        selections = {aid: choice for aid, choice in selections.items() if aid in report}
         if a.check or a.select_stills or a.src or a.owner_only:
             apply_selections(ASSETS, report, selections, HERE / "animation-sources", check=a.check)
             if not a.check:
