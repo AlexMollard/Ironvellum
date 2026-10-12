@@ -13,6 +13,9 @@ for name in ('index.html','style.css','app.js'):
     shutil.copy2(Path(__file__).resolve().parent/name,dist/name)
 source=json.loads((root/'tools/exercise_art/missing.json').read_text(encoding='utf-8'))
 art=root/'tools/exercise_art'
+replacement_path=art/'replacement-catalog.json'
+if replacement_path.exists():
+    source['entries'].extend(json.loads(replacement_path.read_text(encoding='utf-8'))['entries'])
 counts_path=art/'frame-counts.json'
 counts=json.loads(counts_path.read_text(encoding='utf-8')) if counts_path.exists() else {}
 generation=json.loads((art/'generation-review.json').read_text(encoding='utf-8'))
