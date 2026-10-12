@@ -1,0 +1,18 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 5,
+  "exportedAt": "2026-10-12T23:21:39.216952+00:00",
+  "batchComplete": true,
+  "approvalSource": "User chat",
+  "message": "good enough i approve",
+  "frames": [
+    {
+      "id": "decline-dumbbell-fly-1.png",
+      "sha256": "6fcaf3b3d0b005ceb4c0f383807b12dbb924a6e249644fbd86f62497af367657",
+      "status": "approved",
+      "note": "Approved by user in chat: good enough i approve",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T23:21:39.216952+00:00"
+    }
+  ]
+}
