@@ -29,6 +29,8 @@ data class TrialDraft(val blocks: List<Block>) {
         val done: Boolean = true,
         /** A warm-up is shown as one and never ticked; the other kinds count as working sets. */
         val kind: SetKind = SetKind.WORKING,
+        /** How hard it was, RPE 5 to 10; null when never rated. */
+        val rpe: Int? = null,
     ) {
         val warmup: Boolean get() = kind == SetKind.WARMUP
     }
@@ -44,7 +46,7 @@ data class TrialDraft(val blocks: List<Block>) {
     /** A copy of the block's last set, unticked, so the lifter decides whether it counted. */
     fun addSet(block: Int): TrialDraft = replaceBlock(block) { b ->
         val template = b.sets.lastOrNull() ?: DraftSet(reps = 0)
-        b.copy(sets = b.sets + template.copy(done = false, kind = SetKind.WORKING))
+        b.copy(sets = b.sets + template.copy(done = false, kind = SetKind.WORKING, rpe = null))
     }
 
     /** Removing a block's last set removes the movement. */
@@ -110,6 +112,7 @@ data class TrialDraft(val blocks: List<Block>) {
                                 grade = it.grade,
                                 done = it.done,
                                 kind = it.kind,
+                                rpe = it.rpe,
                             )
                         },
                     )
@@ -129,7 +132,7 @@ data class TrialDraft(val blocks: List<Block>) {
         }
 
         /** One set carried across a metric change: the new metric's figure is always set. */
-        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = reshapeFigures(set, to).copy(kind = set.kind)
+        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = reshapeFigures(set, to).copy(kind = set.kind, rpe = set.rpe)
 
         private fun reshapeFigures(set: DraftSet, to: ExerciseMetric): DraftSet = when (to) {
             ExerciseMetric.HOLD -> DraftSet(

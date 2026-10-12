@@ -613,13 +613,15 @@ abstract class IronvellumDatabase : RoomDatabase() {
         }
 
         /**
-         * Supersets in rites: the group an entry belongs to, carried onto the sets of a trial begun from
-         * the rite. Nullable with no default: every existing entry is in no superset, and no row is
-         * rewritten. Independent of every other column, so it applies on top of any v40.
+         * Supersets in rites and effort per set. A rite entry gains the superset group it belongs to, carried
+         * onto the sets of a trial begun from the rite; a set gains its RPE (5 to 10, RIR is 10 minus it).
+         * Both nullable with no default: every existing entry is in no superset, every existing set was never
+         * rated, and no row is rewritten. Independent of every other column, so it applies on top of any v40.
          */
         private val MIGRATION_40_41 = object : Migration(40, 41) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE preset_entries ADD COLUMN supersetGroup INTEGER")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN rpe INTEGER")
             }
         }
 

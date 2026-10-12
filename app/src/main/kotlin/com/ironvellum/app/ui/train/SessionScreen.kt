@@ -46,6 +46,8 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.clickable
@@ -142,7 +144,9 @@ import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.Supersets
+import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
@@ -459,6 +463,11 @@ class SessionViewModel(
         viewModelScope.launchGuarded("link superset") { repo.linkSupersetWithNext(sessionId, exerciseId) }
     }
 
+    /** A chip on the effort strip: rates a logged set, or clears its rating when [rpe] is null. */
+    fun setRpe(setId: Long, rpe: Int?) {
+        viewModelScope.launchGuarded("log effort") { repo.setRpe(setId, rpe) }
+    }
+
     /** Unlink on a superset's strip. */
     fun unlink(exerciseId: Long) {
         viewModelScope.launchGuarded("unlink superset") { repo.unlinkSuperset(sessionId, exerciseId) }
@@ -626,6 +635,8 @@ fun SessionScreen(
     var editingSetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var undo by remember { mutableStateOf<UndoPrompt?>(null) }
     var undoSerial by remember { mutableIntStateOf(0) }
+    // The set just logged, whose effort the strip asks for (when Settings turns that on); the next set logged takes it over.
+    var effortFor by rememberSaveable { mutableStateOf<Long?>(null) }
     // Bumped when a seal is declined or fails, so the slider comes back to the start.
     var slideReset by remember { mutableIntStateOf(0) }
 
@@ -760,6 +771,8 @@ fun SessionScreen(
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
     val supersetNumbers = remember(groups) { Supersets.numbers(groups) }
+    // The logged set the effort strip is under, while it is still logged and counted.
+    val effortSet = effortFor?.let { id -> ui.sets.firstOrNull { it.id == id } }?.takeIf { it.done && !it.warmup }
     // In a superset the card follows the round, so ticking one movement opens its partner, whichever
     // door the tick came through.
     LaunchedEffect(nextSet?.id) {
@@ -789,6 +802,7 @@ fun SessionScreen(
         val set = activeSet ?: return
         commit(set.copy(durationSec = seconds ?: set.durationSec, done = true))
         viewModel.setClock(set.id, null)
+        if (EffortSetting.enabled) effortFor = set.id
         undoSerial++
         undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // The card moves on once its last set is logged.
@@ -807,6 +821,7 @@ fun SessionScreen(
 
     fun undoLog(prompt: UndoPrompt.Logged) {
         ui.sets.firstOrNull { it.id == prompt.setId }?.let { commit(it.copy(done = false)) }
+        if (effortFor == prompt.setId) effortFor = null
         // The rest belonged to the set that was just taken back.
         viewModel.skipRest()
         undo = null
@@ -888,6 +903,15 @@ fun SessionScreen(
                         val weighted = exercise?.isWeighted ?: false
                         if (block.id == openBlock?.id) {
                             Spacer(Modifier.height(12.dp))
+                            // In a superset the partner's card opens as soon as a set is logged, so the question follows it.
+                            if (effortSet != null && effortSet.exerciseId != block.id) {
+                                EffortStrip(
+                                    title = "How hard was ${effortSet.exerciseName} set ${effortSet.workingNumber(ui.sets)}?",
+                                    rpe = effortSet.rpe,
+                                    onPick = { viewModel.setRpe(effortSet.id, it) },
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                            }
                             val modifiersEditable = canEditModifiers(
                                 exercise?.let(::applicableModifiers).orEmpty(),
                                 first.modifiers,
@@ -968,6 +992,8 @@ fun SessionScreen(
                                 supersetWith = blocks.getOrNull(blockIdx + 1)?.takeIf { Supersets.canLink(groups, blockIdx, blockIdx + 1) }
                                     ?.first?.exerciseName,
                                 onSuperset = { viewModel.linkWithNext(block.id) },
+                                effortSetId = effortSet?.id,
+                                onRpe = { set, rpe -> viewModel.setRpe(set.id, rpe) },
                                 onEdit = ::commit,
                                 timed = true,
                                 clocks = clocks,
@@ -1363,7 +1389,7 @@ fun SessionScreen(
         )
     }
 
-    var shareRender by remember { mutableStateOf<((Boolean) -> String)?>(null) }
+    var shareRender by remember { mutableStateOf<((Boolean, Boolean) -> String)?>(null) }
 
     // Celebrate first, then ask about the routine, then leave. The stage lives
     // in the view model, so a rotation resumes where the lifter was; the
@@ -1415,7 +1441,7 @@ fun SessionScreen(
                     val catalogue = exercises.associateBy { it.id }
                     val notes = exerciseNotes
                     val targets = shareTargets
-                    shareRender = { includeNotes ->
+                    shareRender = { includeNotes, includeEffort ->
                         WorkoutShare.format(
                             sealed,
                             sets,
@@ -1425,6 +1451,8 @@ fun SessionScreen(
                             exerciseNotes = notes,
                             includeNotes = includeNotes,
                             unit = Units.current,
+                            includeEffort = includeEffort,
+                            effortScale = EffortSetting.scale,
                         )
                     }
                 },
@@ -1468,7 +1496,12 @@ fun SessionScreen(
     }
 
     shareRender?.let { render ->
-        ShareCardDialog(render = render, hasNotes = exerciseNotes.isNotEmpty(), onDismiss = { shareRender = null })
+        ShareCardDialog(
+            render = render,
+            hasNotes = exerciseNotes.isNotEmpty(),
+            hasEffort = ui.sets.any { it.rpe != null },
+            onDismiss = { shareRender = null },
+        )
     }
 }
 
@@ -1697,8 +1730,9 @@ private fun referenceLine(
 ): AnnotatedString? {
     val hold = metric == ExerciseMetric.HOLD
     val lastText = last?.let {
-        if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold)
-        else exercise?.let { e -> lastLoggedFigure(it, e) }
+        (if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold)
+        else exercise?.let { e -> lastLoggedFigure(it, e) })
+            ?.let { figure -> figure + (it.rpe?.let { rpe -> " · ${Effort.value(rpe, EffortSetting.scale)}" } ?: "") }
     }
     val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold) }
     if (lastText == null && peakText == null) return null
@@ -1751,7 +1785,7 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
             } else {
                 done.maxBy { (it.durationSec ?: 0) + it.reps }
             }
-            "$total/$total · best ${setFigureText(best, metric, weighted)}"
+            "$total/$total · best ${setFigureText(best, metric, weighted)}" + (best.rpe?.let { " · ${Effort.value(it, EffortSetting.scale)}" } ?: "")
         }
         done.isNotEmpty() -> "${done.size}/$total ${plural(total, "set", "sets")}"
         else -> when (metric) {
@@ -1912,6 +1946,10 @@ internal fun OpenExerciseCard(
     onLog: (SessionSet) -> Unit = {},
     footer: (@Composable () -> Unit)? = null,
     onPlates: (() -> Unit)? = null,
+    /** The logged set the effort strip sits under (live trial, right after a tick); null when none is being asked. */
+    effortSetId: Long? = null,
+    /** A pick on an effort strip, here or on an opened logged set: the rating, or null to clear it. */
+    onRpe: (SessionSet, Int?) -> Unit = { _, _ -> },
     /** The live trial only: this exercise's superset (its number and the partner whose turn follows), and Unlink. */
     superset: SupersetLine? = null,
     onUnlink: () -> Unit = {},
@@ -2071,7 +2109,15 @@ internal fun OpenExerciseCard(
                     timedAlert = timedAlert,
                     onClock = { onClock(set.id, it) },
                     onTimedLog = onTimedLog,
+                    onRpe = { onRpe(set, it) },
                 )
+                if (set.id == effortSetId && state == RowState.DONE) {
+                    EffortStrip(
+                        title = "How hard was set ${set.workingNumber(block.sets)}?",
+                        rpe = set.rpe,
+                        onPick = { onRpe(set, it) },
+                    )
+                }
             }
         }
         footer?.invoke()
@@ -2222,6 +2268,7 @@ private fun TrialSetRow(
     timedAlert: RestAlert = RestAlert.DEFAULT,
     onClock: (SetClock?) -> Unit = {},
     onTimedLog: (seconds: Int) -> Unit = {},
+    onRpe: (Int?) -> Unit = {},
 ) {
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
@@ -2295,6 +2342,10 @@ private fun TrialSetRow(
                         IronvellumColors.Ink,
                     ) { onSetKind(if (set.warmup) SetKind.WORKING else SetKind.WARMUP) }
                 }
+                // A logged set can be rated, or re-rated, here; the strip shows while Settings asks for effort or the set already has one.
+                if (set.done && !set.warmup && (EffortSetting.enabled || set.rpe != null)) {
+                    EffortStrip(title = "How hard was set $label?", rpe = set.rpe, onPick = onRpe)
+                }
             }
         }
         return
@@ -2358,6 +2409,70 @@ private fun TrialSetRow(
                 color = IronvellumColors.SovereignGold,
             )
         }
+        // How hard it was, muted at the right: "RPE 7" or "2 RIR". Shown even with the question off.
+        if (done) {
+            set.rpe?.let {
+                Text(
+                    Effort.value(it, EffortSetting.scale),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = tone,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * "How hard was set 2?" with the scale's chips under it: ≤5 6 7 8 9 10 on RPE, 5+ 4 3 2 1 0 on RIR, one
+ * tap. Skipping costs nothing: nothing here blocks the next set, and tapping the chosen chip again clears
+ * it. The line beneath reads the chosen chip ("RPE 8: about two reps left"), or what the scale means.
+ */
+@Composable
+internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modifier: Modifier = Modifier) {
+    val scale = EffortSetting.scale
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(IronvellumColors.Ink.copy(alpha = 0.04f))
+            .padding(start = 46.dp, end = 16.dp, bottom = 8.dp),
+    ) {
+        Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Text(scale.label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, letterSpacing = 2.sp)
+        }
+        val shape = MaterialTheme.shapes.small
+        Row(Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = "${scale.label} for ${title.removePrefix("How hard was ").removeSuffix("?")}" }) {
+            Effort.CHIPS.forEach { value ->
+                val chosen = rpe == value
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .selectable(selected = chosen, role = Role.RadioButton, onClick = { onPick(if (chosen) null else value) })
+                        .padding(horizontal = 2.dp, vertical = 4.dp)
+                        .clip(shape)
+                        .background(if (chosen) IronvellumColors.Emerald.copy(alpha = 0.16f) else Color.Transparent)
+                        .inkBorder(if (chosen) IronvellumColors.Emerald else IronvellumColors.Rune, shape, 1.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        Effort.chip(value, scale),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal,
+                        color = if (chosen) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                    )
+                }
+            }
+        }
+        Text(
+            rpe?.let { Effort.caption(it, scale) } ?: Effort.hint(scale),
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
 

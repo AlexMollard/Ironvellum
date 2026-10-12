@@ -15,6 +15,8 @@ data class LastLogged(
     val distanceM: Double?,
     val grade: String?,
     val atMs: Long,
+    /** How hard the set was, RPE 5 to 10; null when it was never rated. */
+    val rpe: Int? = null,
 ) {
     companion object {
         /**

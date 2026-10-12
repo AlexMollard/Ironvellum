@@ -26,6 +26,9 @@ import java.util.Locale
  * when it varies). Activities (distance, time, attempts) have no sets to
  * score, so they read as one compact figure instead.
  *
+ * With effort asked for ([format]'s includeEffort), the top set's effort follows the load: "3×5 @ 225lb · RPE 8",
+ * or "· 2 RIR" on the RIR scale. Only that one set's, never a figure per set, and never "@8".
+ *
  * The private note is never included. It is the one field the app promises
  * stays on the device. Per-exercise notes are the lifter's own words and ride
  * along only when [format] is asked to include them.
@@ -78,6 +81,7 @@ object WorkoutShare {
      *   known target, so its done sets all read as hit.
      * @param exerciseNotes the trial's per-exercise notes by movement id; they
      *   are printed only when [includeNotes] is true.
+     * @param includeEffort print each movement's top set's effort, read on [effortScale].
      */
     fun format(
         session: WorkoutSession,
@@ -89,6 +93,8 @@ object WorkoutShare {
         exerciseNotes: Map<Long, String> = emptyMap(),
         includeNotes: Boolean = false,
         unit: LoadUnit = LoadUnit.KG,
+        includeEffort: Boolean = false,
+        effortScale: EffortScale = EffortScale.RPE,
     ): String = buildString {
         val at = session.completedAtMs ?: session.startedAtMs
 
@@ -107,7 +113,8 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: "Movement" }
                 val peak = peakByName[full.trim().lowercase(Locale.ENGLISH)]
-                val body = movementBody(working, exercise, targets[id], peak, unit) ?: return@mapNotNull null
+                val body = movementBody(working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
+                    ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
                 Triple(shortName(full), body, note)
             }
@@ -192,6 +199,7 @@ object WorkoutShare {
         target: Int?,
         peak: SessionPeaks.Peak?,
         unit: LoadUnit,
+        effort: EffortScale?,
     ): String? {
         val done = working.filter { it.done }
         return when (exercise?.metric ?: ExerciseMetric.REPS) {
@@ -229,7 +237,10 @@ object WorkoutShare {
                         else -> HIT
                     }
                 }
-                listOf(squares, figures(done.map(::figure), hold), load(done, exercise, unit))
+                // The top set is the one the load line names: heaviest, then most reps or longest.
+                val top = done.maxWithOrNull(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { figure(it) }))
+                val rated = if (effort != null) top?.rpe?.let { "· ${Effort.value(it, effort)}" }.orEmpty() else ""
+                listOf(squares, figures(done.map(::figure), hold), load(done, exercise, unit), rated)
                     .filter { it.isNotEmpty() }
                     .joinToString(" ")
             }

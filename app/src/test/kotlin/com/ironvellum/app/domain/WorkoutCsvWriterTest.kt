@@ -74,7 +74,7 @@ class WorkoutCsvWriterTest {
         val csv = WorkoutCsvWriter.write(listOf(session(1, "2026-10-05T18:00:00") to sets), zone)
         val lines = csv.removePrefix("\uFEFF").trimEnd().split("\r\n")
         assertEquals(WorkoutCsvWriter.HEADER, lines[0])
-        assertEquals(listOf("2026-10-05 18:00:00,Push,1h 0m,Bench Press,1,80,5,,,,,"), lines.drop(1))
+        assertEquals(listOf("2026-10-05 18:00:00,Push,1h 0m,Bench Press,1,80,5,,,,,,"), lines.drop(1))
         assertTrue("secret" !in csv)
     }
 

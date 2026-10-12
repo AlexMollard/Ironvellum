@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Effort
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -418,7 +420,7 @@ fun WorkoutDetailScreen(
     if (sharing) {
         ui.session?.let { session ->
             ShareCardDialog(
-                render = { includeNotes ->
+                render = { includeNotes, includeEffort ->
                     WorkoutShare.format(
                         session,
                         ui.sets,
@@ -428,9 +430,12 @@ fun WorkoutDetailScreen(
                         exerciseNotes = exerciseNotes,
                         includeNotes = includeNotes,
                         unit = Units.current,
+                        includeEffort = includeEffort,
+                        effortScale = EffortSetting.scale,
                     )
                 },
                 hasNotes = exerciseNotes.isNotEmpty(),
+                hasEffort = ui.sets.any { it.rpe != null },
                 onDismiss = { sharing = false },
             )
         }
@@ -733,6 +738,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 var number = 0
                 groupSets.forEach { set ->
                     val figure = setText(set, metric, hold, weighted) +
+                        set.rpe?.takeIf { set.done }?.let { " · ${Effort.value(it, EffortSetting.scale)}" }.orEmpty() +
                         set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     when {
                         set.warmup -> SetLine("", "Warm-up · $figure", muted = true)

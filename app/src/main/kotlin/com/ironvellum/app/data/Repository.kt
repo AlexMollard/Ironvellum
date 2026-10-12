@@ -39,6 +39,7 @@ import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.CustomExercises
 import com.ironvellum.app.domain.CustomSave
 import com.ironvellum.app.domain.CustomSpec
+import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
@@ -999,6 +1000,7 @@ class Repository(
                 grade = s.grade,
                 kind = s.setKind(),
                 supersetGroup = s.supersetGroup,
+                rpe = s.rpe,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
@@ -1015,7 +1017,7 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup)
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
@@ -1038,7 +1040,20 @@ class Repository(
             wasWarmup -> true
             else -> current.done
         }
-        sessionDao.updateSet(current.copy(kind = kind.name, done = done))
+        sessionDao.updateSet(current.copy(kind = kind.name, done = done).ratedOnlyIfDone())
+    }
+
+    /** A rating belongs to a logged working set: taking the tick off, or making it a warm-up, takes the rating off too. */
+    private fun SetLogEntity.ratedOnlyIfDone(): SetLogEntity = if (done && !isWarmup) this else copy(rpe = null)
+
+    /**
+     * Rates a logged set of a live trial ([com.ironvellum.app.domain.Effort]: 5 to 10, or null to clear). A set that is
+     * not logged, a warm-up and a sealed trial are left alone: a sealed trial is amended, not rated here.
+     */
+    suspend fun setRpe(setId: Long, rpe: Int?) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId) || !current.done || current.isWarmup) return@withTransaction
+        sessionDao.updateSet(current.copy(rpe = Effort.clamp(rpe)))
     }
 
     /**
@@ -1107,7 +1122,7 @@ class Repository(
             durationSec = seconds.coerceAtLeast(0),
             weightKg = weightKg,
             done = done && !current.isWarmup,
-        )
+        ).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.HOLD))
@@ -1164,7 +1179,7 @@ class Repository(
             grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
             weightKg = weightKg,
             done = done && !current.isWarmup,
-        )
+        ).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.DURATION))
@@ -1601,6 +1616,7 @@ class Repository(
                     grade = s.grade,
                     kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
+                    rpe = s.rpe,
                 )
             }
         }
@@ -2532,6 +2548,8 @@ class Repository(
                     grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
                     kind = s.kind.name,
                     supersetGroup = block.supersetGroup,
+                    // Only a logged working set carries a rating.
+                    rpe = Effort.clamp(s.rpe).takeIf { s.done && !s.warmup },
                 )
             }
         }
@@ -2590,6 +2608,7 @@ class Repository(
                     grade = s.grade,
                     kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
+                    rpe = s.rpe,
                 )
             }
         }
@@ -2918,6 +2937,7 @@ class Repository(
                                 grade = s.grade,
                                 kind = s.kind.name,
                                 supersetGroup = s.supersetGroup,
+                                rpe = Effort.clamp(s.rpe),
                             )
                         },
                     ).size
@@ -3149,10 +3169,8 @@ class Repository(
             }
             val mapped = workout.sets.mapNotNull { set ->
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
-                val mods = buildList {
-                    set.rpe?.let { add("RPE ${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()}") }
-                    set.notes.takeIf { it.isNotBlank() }?.let { add(it) }
-                }.joinToString(", ")
+                // The set's own note stays a modifier; its RPE is the effort field, not text.
+                val mods = set.notes.trim()
                 Triple(set, exerciseId, mods)
             }
             val sessionId = sessionDao.insertSession(
@@ -3188,6 +3206,7 @@ class Repository(
                     grade = null,
                     kind = kind.name,
                     supersetGroup = set.supersetGroup,
+                    rpe = Effort.fromImported(set.rpe).takeIf { kind.countsAsWork },
                 )
             }
             sessionDao.insertSets(setEntities)

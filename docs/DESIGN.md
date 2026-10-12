@@ -214,6 +214,27 @@ walks its 2.5 kg plate grid. Progression advice in lb moves on the lb grid, so
 Strong-format file whose reader assumes kg), body weight and measurements, and
 the Forge's generated load notes and dumbbell limit.
 
+**Effort (RPE and RIR).** Optional, per set, off by default. Settings > Training mode,
+"Effort per set": a "Log effort" switch and an RPE | RIR choice. The figure stored is one
+whole-number RPE on the set, 5 to 10 (`domain/Effort.kt`): RIR is 10 minus it, so changing
+scale loses nothing, and anything at or under 5 is stored as 5 (the "≤5" chip, "5+" on
+RIR). With the switch on, logging a set opens a strip under it on a faint `Ink` 4% wash,
+in the 46dp inset of the set number: "How hard was set 2?" with the scale's name at the
+right in 10sp spaced caps, six chips (44dp targets, 36dp outlined boxes in `Rune`; the chosen
+one `Emerald` at 16% with an `Emerald` rule and bold `Ink` text), and under them a muted line
+for the chosen chip ("RPE 8: about two reps left", "2 RIR: two reps left") or what the scale
+means. Skipping costs nothing: the strip never blocks the next set, and tapping the chosen chip
+again clears it. In a superset the partner's card opens at once, so the strip moves above it
+and names the exercise. A logged row shows its effort muted at the right ("RPE 7", "2 RIR"),
+even with the switch off. Tapping a logged set to edit it (and amending a sealed trial) offers
+the same chips. Un-logging a set, or making it a warm-up, takes its rating off. Elsewhere:
+the folded done row and the "Last" line carry the top set's effort; the trial detail reads
+"Set 3 · 225 lb × 5 · RPE 8"; the share card adds only the top set's effort after the load
+("3×5 @ 225lb · RPE 8", never "@8") behind an "Include effort" switch beside "Include
+exercise notes", offered when a set was rated; the CSV export has an RPE column after Set
+Type; a Strong or Hevy import fills the field (halves round up, 5 or less reads 5) instead
+of writing "RPE 8" into the set's modifiers. Progression never reads it.
+
 **Plates (`PlateSheet`).** A chip beside the open item's reference line on a barbell
 lift, opening the app's one pop-up frame. A load stepper that only lands on loads
 the plates can make, a tappable bar row (a per-exercise bar), an iron line-art

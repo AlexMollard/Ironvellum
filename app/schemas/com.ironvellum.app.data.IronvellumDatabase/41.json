@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 41,
-    "identityHash": "99c455c7aa2ea9849601d694ce0810c1",
+    "identityHash": "04027120822c30af2d5b3d40d54060c3",
     "entities": [
       {
         "tableName": "exercises",
@@ -269,7 +269,7 @@
       },
       {
         "tableName": "set_logs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `exercisePosition` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `reps` INTEGER NOT NULL, `weightKg` REAL, `modifiers` TEXT NOT NULL, `done` INTEGER NOT NULL, `durationSec` INTEGER, `distanceM` REAL, `grade` TEXT, `kind` TEXT NOT NULL, `supersetGroup` INTEGER, FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `exercisePosition` INTEGER NOT NULL, `setIndex` INTEGER NOT NULL, `reps` INTEGER NOT NULL, `weightKg` REAL, `modifiers` TEXT NOT NULL, `done` INTEGER NOT NULL, `durationSec` INTEGER, `distanceM` REAL, `grade` TEXT, `kind` TEXT NOT NULL, `supersetGroup` INTEGER, `rpe` INTEGER, FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -348,6 +348,11 @@
           {
             "fieldPath": "supersetGroup",
             "columnName": "supersetGroup",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rpe",
+            "columnName": "rpe",
             "affinity": "INTEGER"
           }
         ],
@@ -984,7 +989,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '99c455c7aa2ea9849601d694ce0810c1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '04027120822c30af2d5b3d40d54060c3')"
     ]
   }
 }

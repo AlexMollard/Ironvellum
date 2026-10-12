@@ -133,6 +133,8 @@ data class SetLogEntity(
     val kind: String = "WORKING",
     /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
+    /** How hard the set was, RPE 5 to 10 ([com.ironvellum.app.domain.Effort]); null when never rated. RIR is 10 minus this. */
+    val rpe: Int? = null,
 )
 
 @Entity(tableName = "stats")

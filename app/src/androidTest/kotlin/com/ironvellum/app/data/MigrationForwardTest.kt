@@ -942,12 +942,13 @@ class MigrationForwardTest {
     }
 
     /**
-     * Schema 40 -> 41, supersets in rites: a rite entry gains a nullable superset group. Every existing entry
-     * reads as in no superset and nothing else moves. The test inserts only into the rite and trial tables
-     * (never exercises), so it holds on whatever v40 adds to the catalogue.
+     * Schema 40 -> 41, supersets in rites and effort per set: a rite entry gains a nullable superset group
+     * and a set a nullable rating. Every existing entry is in no superset, every existing set was never
+     * rated, and nothing else moves. The test inserts only into the rite and trial tables (never
+     * exercises), so it holds on whatever v40 adds to the catalogue.
      */
     @Test
-    fun upgradeTo41AddsTheRiteSupersetGroupAsNull() = runTest {
+    fun upgradeTo41AddsTheRiteSupersetGroupAndTheSetRatingAsNull() = runTest {
         helper.createDatabase(dbName, 40).use { old ->
             old.execSQL("INSERT INTO presets (id, name, note, scheduledDay) VALUES (1, 'Push day', '', 3)")
             old.execSQL(
@@ -957,6 +958,16 @@ class MigrationForwardTest {
             old.execSQL(
                 "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position) " +
                     "VALUES (11, 1, 2, 4, 6, NULL, '', 1)",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (2, 1, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, reps, weightKg, modifiers, " +
+                    "done, durationSec, distanceM, grade, kind, supersetGroup) " +
+                    "VALUES (7, 2, 1, 0, 0, 5, 100.0, 'Pause', 1, NULL, NULL, NULL, 'WORKING', 3)",
             )
         }
         helper.runMigrationsAndValidate(dbName, 41, true, *IronvellumDatabase.MIGRATIONS).use { db ->
@@ -972,6 +983,17 @@ class MigrationForwardTest {
                 assertEquals(6, c.getInt(4))
                 assertTrue(c.isNull(8))
             }
+            db.query("SELECT reps, weightKg, modifiers, done, kind, supersetGroup, rpe FROM set_logs WHERE id = 7").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(5, c.getInt(0))
+                assertEquals(100.0, c.getDouble(1), 0.0)
+                assertEquals("Pause", c.getString(2))
+                assertEquals(1, c.getInt(3))
+                assertEquals("WORKING", c.getString(4))
+                assertEquals("the set's own superset survives", 3, c.getInt(5))
+                assertTrue("an old set was never rated", c.isNull(6))
+            }
+            db.execSQL("UPDATE set_logs SET rpe = 8 WHERE id = 7")
             db.execSQL("UPDATE preset_entries SET supersetGroup = 2 WHERE id IN (10, 11)")
             db.query("SELECT COUNT(*) FROM preset_entries WHERE supersetGroup = 2").use { c ->
                 assertTrue(c.moveToFirst())

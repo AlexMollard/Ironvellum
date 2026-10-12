@@ -241,7 +241,7 @@ interface SessionDao {
     @Query(
         "SELECT s.exerciseId AS exerciseId, s.reps AS reps, s.weightKg AS weightKg, " +
             "s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade, " +
-            "x.startedAtMs AS atMs " +
+            "x.startedAtMs AS atMs, s.rpe AS rpe " +
             "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
             "JOIN (SELECT s2.exerciseId AS eid, MAX(x2.startedAtMs) AS latest " +
             "FROM set_logs s2 JOIN sessions x2 ON s2.sessionId = x2.id " +
