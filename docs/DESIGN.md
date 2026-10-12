@@ -144,6 +144,22 @@ is offered only before anything on that exercise is logged, on a loaded rep
 movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
 bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
 
+**Superset (live trial).** Adjacent exercises done as one group, a pair or a triple
+(`domain/Supersets.kt`). An exercise's menu offers "Superset with <next exercise>" while
+the next one can be linked (a group never passes three); linking writes one number on
+every set of the members. Linked exercises share a thin rail in the left gutter, a 2dp
+line in `SystemGreen` at 60% between two 8dp square dots, drawn in the gutter's 16dp so no row
+moves. The open card carries "Superset 1 · Barbell row next" under its name with an
+"Unlink" text action (it ends the whole group); folded members read "Superset 1 · 1/3
+sets". A group is read as a superset only while its members are neighbours, so a number
+left behind by a removal or a reorder is just not one. Ticking a set opens the partner's
+card (A1, B1, A2, B2: the member with the fewest sets done goes next, the earlier on a
+tie), judged from the sets alone, so the lock-screen "Set done" and the notification name
+the same set. Rest starts only on the tick that closes a round; mid-round the footer
+reads "NEXT · NO REST YET", and a rest still running from the round before is ended.
+Move up and Move down keep a group whole: a lone exercise steps over a whole group, and a
+member that moves out past its group's edge leaves it.
+
 **Lock-screen trial actions.** The trial notification is public on the lock screen
 and carries the movement, the set and its figures, never a note. Its buttons are
 broadcasts, so they run without unlocking: while a set waits, "Set done" (ticks it

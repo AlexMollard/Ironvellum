@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Edit
@@ -57,6 +58,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -140,6 +142,7 @@ import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
@@ -451,6 +454,16 @@ class SessionViewModel(
         viewModelScope.launchGuarded("move exercise") { repo.moveSessionExercise(sessionId, exercisePosition, up) }
     }
 
+    /** "Superset with <next exercise>" on an exercise's menu. */
+    fun linkWithNext(exerciseId: Long) {
+        viewModelScope.launchGuarded("link superset") { repo.linkSupersetWithNext(sessionId, exerciseId) }
+    }
+
+    /** Unlink on a superset's strip. */
+    fun unlink(exerciseId: Long) {
+        viewModelScope.launchGuarded("unlink superset") { repo.unlinkSuperset(sessionId, exerciseId) }
+    }
+
     /**
      * True from the Claim Victory tap until the completion result lands (or
      * the claim fails). The session row reads completed a beat before the
@@ -738,9 +751,21 @@ fun SessionScreen(
     val allLogged = workCount > 0 && unlogged == 0
     // One exercise is open: the one holding the next unlogged set, unless the
     // lifter opened another. The footer logs the open card's next set.
-    val nextBlock = blocks.firstOrNull { block -> block.sets.any { it.isPending } }
+    // The next set is the next in order, or inside a superset the next in the round; the lock-screen
+    // "Set done" and the notification take it from the same rule.
+    val nextSet = remember(ui.sets) { Supersets.nextSet(ui.sets) }
+    val nextBlock = blocks.firstOrNull { it.id == nextSet?.exerciseId }
     val openBlock = blocks.firstOrNull { it.id == openOverride } ?: nextBlock ?: blocks.lastOrNull()
-    val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextBlock?.sets?.firstOrNull { it.isPending }
+    val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextSet
+    val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
+    val supersetRuns = remember(groups) { Supersets.runs(groups) }
+    val supersetNumbers = remember(groups) { Supersets.numbers(groups) }
+    // In a superset the card follows the round, so ticking one movement opens its partner, whichever
+    // door the tick came through.
+    LaunchedEffect(nextSet?.id) {
+        val at = blocks.indexOfFirst { it.id == nextSet?.exerciseId }
+        if (nextSet != null && Supersets.runAt(groups, at) != null) openOverride = null
+    }
     LaunchedEffect(openBlock?.id) { editingSetId = null }
 
     val seekOpen = remember { BringIntoViewRequester() }
@@ -844,7 +869,18 @@ fun SessionScreen(
                     WarmupRow(warmupText, warmupState, viewModel::answerWarmup)
                 }
                 var previousFolded = false
-                blocks.forEachIndexed { blockIdx, block ->
+                // The partner whose turn follows [at] in its superset, round the group: the one the strip names.
+                fun partnerNext(run: IntRange, at: Int): String? =
+                    ((at + 1..run.last) + (run.first until at))
+                        .firstOrNull { blocks[it].sets.any { set -> set.isPending } }
+                        ?.let { blocks[it].first.exerciseName }
+
+                @Composable
+                fun BlockItem(blockIdx: Int, block: TrialBlock) {
+                    val run = supersetRuns.firstOrNull { blockIdx in it }
+                    val rail = run?.let { RailPosition.of(blockIdx, it) }
+                    // A superset's members share a thin rail in the left gutter, one segment per member.
+                    Column(if (rail != null) Modifier.supersetRail(rail, if (block.id == openBlock?.id) OPEN_TITLE_CENTER else FOLDED_TITLE_CENTER) else Modifier) {
                     key(block.id) {
                         val first = block.first
                         val metric = metricOf(block.id)
@@ -925,6 +961,13 @@ fun SessionScreen(
                                     viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
                                 },
                                 onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
+                                superset = supersetNumbers[blockIdx]?.let { number ->
+                                    SupersetLine(number, supersetRuns.first { blockIdx in it }.let { partnerNext(it, blockIdx) })
+                                },
+                                onUnlink = { viewModel.unlink(block.id) },
+                                supersetWith = blocks.getOrNull(blockIdx + 1)?.takeIf { Supersets.canLink(groups, blockIdx, blockIdx + 1) }
+                                    ?.first?.exerciseName,
+                                onSuperset = { viewModel.linkWithNext(block.id) },
                                 onEdit = ::commit,
                                 timed = true,
                                 clocks = clocks,
@@ -947,7 +990,7 @@ fun SessionScreen(
                             if (previousFolded) FolderRule()
                             FoldedExerciseRow(
                                 name = first.exerciseName,
-                                subline = foldedSubline(block, metric, weighted),
+                                subline = supersetNumbers[blockIdx]?.let { "Superset $it · " }.orEmpty() + foldedSubline(block, metric, weighted),
                                 done = block.sets.count { it.done },
                                 total = block.sets.count { !it.warmup },
                                 hasNote = exerciseNotes[block.id] != null,
@@ -956,7 +999,9 @@ fun SessionScreen(
                             previousFolded = true
                         }
                     }
+                    }
                 }
+                blocks.forEachIndexed { blockIdx, block -> BlockItem(blockIdx, block) }
                 Spacer(Modifier.height(16.dp))
                 TrialEndRows(
                     nameValue = session.title.ifBlank { null }
@@ -995,6 +1040,7 @@ fun SessionScreen(
                     val where = if (set.exerciseId != openBlock?.id) " · ${set.exerciseName}" else ""
                     "Set ${set.workingNumber(ui.sets)}$where · $figure"
                 },
+                noRestYet = activeSet?.let { Supersets.midRound(ui.sets, it) } == true,
                 onLog = ::logActive,
                 onExtend = viewModel::extendRest,
                 onShorten = viewModel::shortenRest,
@@ -1866,6 +1912,12 @@ internal fun OpenExerciseCard(
     onLog: (SessionSet) -> Unit = {},
     footer: (@Composable () -> Unit)? = null,
     onPlates: (() -> Unit)? = null,
+    /** The live trial only: this exercise's superset (its number and the partner whose turn follows), and Unlink. */
+    superset: SupersetLine? = null,
+    onUnlink: () -> Unit = {},
+    /** The live trial only: the next exercise, when "Superset with" it is on offer, and the link. */
+    supersetWith: String? = null,
+    onSuperset: (() -> Unit)? = null,
     /** The live trial only: the active timed set gets a countdown or a stopwatch. An amendment has none. */
     timed: Boolean = false,
     clocks: Map<Long, SetClock> = emptyMap(),
@@ -1933,8 +1985,11 @@ internal fun OpenExerciseCard(
                 onRemoveExercise = onRemoveExercise,
                 restOff = restOff.takeIf { !amend },
                 onRestOff = onRestOff,
+                supersetWith = supersetWith.takeIf { !amend },
+                onSuperset = onSuperset.takeIf { !amend },
             )
         }
+        superset?.let { SupersetStrip(it, first.exerciseName, onUnlink) }
         Column(Modifier.padding(horizontal = 16.dp)) {
             if (reference != null || onPlates != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2054,6 +2109,38 @@ private fun ExerciseNoteRow(name: String, note: String?, onClick: () -> Unit) {
     }
 }
 
+/** What an open card says of its superset: which one it is, and the partner whose turn follows. */
+internal class SupersetLine(val number: Int, val next: String?)
+
+/** "Superset 1 · Barbell row next" under the exercise's name, with Unlink, which ends the whole group. */
+@Composable
+private fun SupersetStrip(line: SupersetLine, name: String, onUnlink: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp).offset(y = (-4).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Filled.Link, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
+        Text(
+            "Superset ${line.number}" + (line.next?.let { " · $it next" } ?: ""),
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .heightIn(min = 44.dp)
+                .clickable(onClickLabel = "Unlink $name from its superset", role = Role.Button, onClick = onUnlink)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Unlink", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        }
+    }
+}
+
 /** Reorder, tune, add and remove: the exercise's own actions, behind one small menu. */
 @Composable
 private fun ExerciseMenu(
@@ -2069,6 +2156,9 @@ private fun ExerciseMenu(
     /** The movement's own rest switch: whether its rest is off, and flipping it; null for an activity. */
     restOff: Boolean? = null,
     onRestOff: (Boolean) -> Unit = {},
+    /** "Superset with <supersetWith>", when the next exercise can be linked. */
+    supersetWith: String? = null,
+    onSuperset: (() -> Unit)? = null,
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -2097,6 +2187,7 @@ private fun ExerciseMenu(
             onModifiers?.let { item("Edit modifiers", action = it) }
             onMoveUp?.let { item("Move up", action = it) }
             onMoveDown?.let { item("Move down", action = it) }
+            if (supersetWith != null && onSuperset != null) item("Superset with $supersetWith", action = onSuperset)
             restOff?.let { off -> item(if (off) "Turn rest timer on" else "Turn rest timer off") { onRestOff(!off) } }
             onRemoveLastSet?.let { item("Remove last set", action = it) }
             item("Remove exercise", IronvellumColors.DangerRed, onRemoveExercise)
@@ -2538,6 +2629,8 @@ private fun TrialFooter(
     rest: RestTimer?,
     nextSetNumber: Int?,
     nextLine: String?,
+    /** Mid-round in a superset: this set does not start a rest, and the next one is not waiting on one. */
+    noRestYet: Boolean,
     onLog: () -> Unit,
     onExtend: () -> Unit,
     onShorten: () -> Unit,
@@ -2558,7 +2651,7 @@ private fun TrialFooter(
         when {
             allLogged -> SlideToSeal(label = "Slide to seal", onSealed = onSealed, resetKey = slideReset)
             rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip)
-            nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, onLog)
+            nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, noRestYet, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
             else -> SlideToSeal(label = "Log a set to seal the trial", onSealed = onSealed, enabled = false)
         }
@@ -2631,11 +2724,11 @@ private fun FooterAction(label: String, color: Color, onClick: () -> Unit) {
 
 /** What is next, and the one emerald control: tick the set. Reads as a row you tick, not a slab. */
 @Composable
-private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
+private fun NextSetStrip(setNumber: Int, line: String, noRestYet: Boolean, onLog: () -> Unit) {
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
-                "NEXT",
+                if (noRestYet) "NEXT · NO REST YET" else "NEXT",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,

@@ -90,12 +90,13 @@ data class RestTimer(
         /**
          * True when ticking [setId] to [nowDone] begins a rest: the set goes
          * from not done to done and another set is still waiting (a warm-up never waits). Unticking,
-         * re-saving a done set, or ticking the last set starts nothing.
+         * re-saving a done set, or ticking the last set starts nothing. Inside a superset the rest waits for
+         * the round to close: only the tick that completes it starts one ([Supersets.completesRound]).
          */
         fun startsRest(before: List<SessionSet>, setId: Long, nowDone: Boolean): Boolean {
             val set = before.firstOrNull { it.id == setId } ?: return false
             if (set.done || !nowDone) return false
-            return before.any { it.isPending && it.id != setId }
+            return before.any { it.isPending && it.id != setId } && Supersets.completesRound(before, setId)
         }
     }
 }

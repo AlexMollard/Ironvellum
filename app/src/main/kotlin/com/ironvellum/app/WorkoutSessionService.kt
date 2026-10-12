@@ -20,6 +20,7 @@ import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.workingNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -245,7 +246,7 @@ class WorkoutSessionService : Service() {
     private fun buildNotification(sessionId: Long, sets: List<SessionSet>, startedAtMs: Long?, rest: RestTimer?): Notification {
         val done = sets.count { it.done }
         val total = sets.count { !it.warmup }
-        val next = sets.firstOrNull { it.isPending }
+        val next = Supersets.nextSet(sets)
         // The exercise the lifter is on now, not the first one of the day.
         val title = (next ?: sets.firstOrNull())?.exerciseName ?: "Trial"
         val resting = rest != null && !rest.isOver(SystemClock.elapsedRealtime())
@@ -305,7 +306,7 @@ class WorkoutSessionService : Service() {
     }
 
     private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
-        val next = sets.firstOrNull { it.isPending }
+        val next = Supersets.nextSet(sets)
         // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
         return NotificationCompat.Builder(this, Notifications.restChannel(TrialPrefs(this).restAlert))
             .setSmallIcon(R.drawable.ic_reminder)

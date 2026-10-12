@@ -87,6 +87,7 @@ import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SealedReopen
@@ -1188,35 +1189,70 @@ class Repository(
                     weightKg = weightKg,
                     modifiers = existing?.modifiers ?: modifiers,
                     done = false,
+                    // A set added to a linked movement stays in its superset.
+                    supersetGroup = existing?.supersetGroup,
                 ),
             ),
         ).first()
     }
 
     /**
-     * Moves one movement's whole block up or down the session order. The swap
-     * goes through a sentinel position because `exercisePosition` is shared by
-     * every set of a movement: writing A->B before B->A would briefly give two
-     * movements the same position and fuse their blocks. Completed sessions are
-     * immutable, like every other set edit.
+     * Moves one movement's whole block up or down the session order ([Supersets.move]: a movement steps
+     * over a whole superset rather than into it, and leaves its own by moving out past its edge).
+     * Completed sessions are immutable, like every other set edit.
      */
     suspend fun moveSessionExercise(sessionId: Long, exercisePosition: Int, up: Boolean) = db.withTransaction {
-        val session = sessionDao.byId(sessionId)
-        if (session != null && session.completedAtMs == null) {
-            val positions = sessionDao.setsFor(sessionId)
-                .map { it.exercisePosition }
-                .distinct()
-                .sorted()
-            val index = positions.indexOf(exercisePosition)
-            val swapIndex = if (up) index - 1 else index + 1
-            if (index >= 0 && swapIndex in positions.indices) {
-                val other = positions[swapIndex]
-                val sentinel = (positions.max() + 1)
-                sessionDao.moveExercisePosition(sessionId, exercisePosition, sentinel)
-                sessionDao.moveExercisePosition(sessionId, other, exercisePosition)
-                sessionDao.moveExercisePosition(sessionId, sentinel, other)
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.position == exercisePosition }
+            Supersets.move(blocks.map { it.group }, at, up)
+        }
+    }
+
+    /**
+     * Links [exerciseId] with the movement after it in a live trial, so the two (or three) are done a set
+     * each in turn. False when there is no next movement, they already are, or a group would pass three.
+     */
+    suspend fun linkSupersetWithNext(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            Supersets.link(blocks.map { it.group }, at, at + 1)
+        }
+    }
+
+    /** Dissolves the superset holding [exerciseId] in a live trial; the movements keep their places. */
+    suspend fun unlinkSuperset(sessionId: Long, exerciseId: Long) = db.withTransaction {
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            if (Supersets.runAt(blocks.map { it.group }, at) == null) {
+                null
+            } else {
+                Supersets.Layout(blocks.indices.toList(), Supersets.unlink(blocks.map { it.group }, at))
             }
         }
+    }
+
+    /**
+     * Writes a new order and superset numbers onto a live trial's rows: each movement's sets take the slot's
+     * position (renumbered gap-free, so a block never shares one) and group. [plan] gets the movements in
+     * trial order and answers null for no change; a sealed trial is left alone. True when it wrote.
+     */
+    private suspend fun relayout(sessionId: Long, plan: (List<Supersets.Block>) -> Supersets.Layout?): Boolean {
+        if (isSealed(sessionId)) return false
+        val rows = sessionDao.setsFor(sessionId)
+        val blocks = Supersets.blocks(
+            rows.map { SessionSet(id = it.id, exerciseId = it.exerciseId, exercisePosition = it.exercisePosition, setIndex = it.setIndex, reps = it.reps, done = it.done, kind = it.setKind(), supersetGroup = it.supersetGroup) },
+        )
+        val layout = plan(blocks) ?: return false
+        layout.order.forEachIndexed { slot, old ->
+            val exerciseId = blocks[old].exerciseId
+            val group = layout.groups[slot]
+            rows.filter { it.exerciseId == exerciseId }.forEach { row ->
+                if (row.exercisePosition != slot || row.supersetGroup != group) {
+                    sessionDao.updateSet(row.copy(exercisePosition = slot, supersetGroup = group))
+                }
+            }
+        }
+        return true
     }
 
     /**
