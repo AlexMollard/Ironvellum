@@ -64,6 +64,7 @@ import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRequest
+import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.Sex
@@ -79,8 +80,10 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.CoverageChip
 import com.ironvellum.app.ui.program.CoveragePreviewScreen
-import com.ironvellum.app.ui.program.CoverageSummaryRow
+import com.ironvellum.app.ui.program.coverageTally
+import com.ironvellum.app.ui.program.startingSetsCaption
 import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
@@ -94,7 +97,6 @@ import com.ironvellum.app.ui.program.withEntryRemoved
 import com.ironvellum.app.ui.program.withRepsDelta
 import com.ironvellum.app.ui.program.withSetsDelta
 import com.ironvellum.app.ui.program.splitCaption
-import com.ironvellum.app.ui.program.volumeCaption
 import com.ironvellum.app.ui.settings.SettingsConfirmDialog
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -130,6 +132,10 @@ class OnboardingViewModel(
 ) : ViewModel() {
 
     private val prefs = appContext.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
+
+    /** Minutes one rite may take: a returning lifter's own answer, else the default. First-run has no question for it. */
+    private val sessionMinutes: Int =
+        ProgramAnswersStore.get(appContext)?.sessionMinutes ?: ProgramRules.DEFAULT_SESSION_MINUTES
 
     /**
      * Persisted: the comment that called this in-memory argued a skip "must
@@ -315,6 +321,7 @@ class OnboardingViewModel(
                             daysPerWeek = daysPerWeek,
                             sex = sex,
                             split = split,
+                            sessionMinutes = sessionMinutes,
                         ),
                         catalogue,
                         StrengthProfile(),
@@ -408,7 +415,7 @@ class OnboardingViewModel(
                     if (!starter) {
                         ProgramAnswersStore.save(
                             appContext,
-                            ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split),
+                            ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split, sessionMinutes = sessionMinutes),
                         )
                     }
                 }
@@ -537,6 +544,7 @@ fun OnboardingScreen(
         }
     }
     var confirmReplace by remember { mutableStateOf(false) }
+    var confirmSkip by rememberSaveable { mutableStateOf(false) }
     val takeCycle = {
         equipment?.let { viewModel.acceptRoutine(tier, focus, it, daysPerWeek, split) }
         Unit
@@ -554,6 +562,16 @@ fun OnboardingScreen(
                 takeCycle()
             },
             onDismiss = { confirmReplace = false },
+        )
+    }
+
+    if (confirmSkip) {
+        SkipSetupDialog(
+            onConfirm = {
+                confirmSkip = false
+                viewModel.skip()
+            },
+            onDismiss = { confirmSkip = false },
         )
     }
 
@@ -577,7 +595,7 @@ fun OnboardingScreen(
                 .background(IronvellumColors.Abyss)
                 .statusBarsPadding(),
         ) {
-            CoveragePreviewScreen(coverageOf, tier, focus, emptySet()) { coverageOpen = false }
+            CoveragePreviewScreen(coverageOf) { coverageOpen = false }
         }
         return
     }
@@ -611,7 +629,8 @@ fun OnboardingScreen(
             .imePadding()
             .statusBarsPadding(),
     ) {
-        StepBar(step = step, onBack = { step -= 1 }, onSkip = viewModel::skip)
+        // The cycle step keeps only Back up here; skipping lives at the foot of the page, behind a question.
+        StepBar(step = step, onBack = { step -= 1 }, onSkip = if (step < 2) viewModel::skip else null)
 
         // A step is a plain Column inside this one scroller: never a lazy list
         // or a second scroller nested in it - that pairing crashes at runtime
@@ -656,6 +675,7 @@ fun OnboardingScreen(
                     )
                     else -> ProposalStep(
                         viewModel = viewModel,
+                        onSkip = { confirmSkip = true },
                         daysPerWeek = daysPerWeek,
                         split = split,
                         // Step 3 is reachable only once the armoury is answered.
@@ -710,6 +730,24 @@ fun OnboardingScreen(
     }
 }
 
+/** What skipping costs, said before it is done. */
+private const val SKIP_COST =
+    "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time."
+
+/** The question the cycle step's Skip setup link asks first. */
+@Composable
+internal fun SkipSetupDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    SettingsConfirmDialog(
+        title = "Skip setup?",
+        text = SKIP_COST,
+        confirmLabel = "Skip setup",
+        dismissLabel = "Keep going",
+        danger = false,
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
+}
+
 /** Why Continue is off on the training step until the armoury is answered. */
 private const val ARMOURY_REQUIRED_CAPTION = "Pick your armoury to continue. Nothing means bodyweight only."
 
@@ -732,7 +770,7 @@ private fun stepProse(step: Int): String = when (step) {
  * accessibility description.
  */
 @Composable
-private fun StepBar(step: Int, onBack: () -> Unit, onSkip: () -> Unit) {
+internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -742,11 +780,13 @@ private fun StepBar(step: Int, onBack: () -> Unit, onSkip: () -> Unit) {
     ) {
         if (step > 0) InkChip(label = "BACK", description = "Back to ${stepTitle(step - 1).lowercase()}", onClick = onBack)
         Spacer(Modifier.weight(1f))
-        InkChip(
-            label = "SKIP",
-            description = "Skip setup. Set your details and cycle later in Settings or the Ledger",
-            onClick = onSkip,
-        )
+        if (onSkip != null) {
+            InkChip(
+                label = "SKIP",
+                description = "Skip setup. Set your details and cycle later in Settings or the Ledger",
+                onClick = onSkip,
+            )
+        }
     }
 }
 
@@ -757,13 +797,15 @@ private fun StepBar(step: Int, onBack: () -> Unit, onSkip: () -> Unit) {
 @Composable
 private fun StepHeader(step: Int) {
     Column(Modifier.fillMaxWidth()) {
-        // Sighted people get the cost of skipping too, not only TalkBack.
-        Text(
-            "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(12.dp))
+        // Sighted people get the cost of skipping too, not only TalkBack. The cycle step asks at its Skip link.
+        if (step < 2) {
+            Text(
+                SKIP_COST,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(12.dp))
+        }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -782,6 +824,12 @@ private fun StepHeader(step: Int) {
                 )
             }
         }
+        Text(
+            "Step ${step + 1} of 3",
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(top = 8.dp),
+        )
         Spacer(Modifier.height(12.dp))
         Text(
             stepTitle(step),
@@ -962,13 +1010,13 @@ private fun TrainingStep(
         FieldCaption(splitCaption(split, daysPerWeek))
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("Weekly volume")
+        FieldLabel("Starting sets")
         InkSegmented(
             options = VolumeLevel.entries.map { it to it.label },
             selected = tier,
             onPick = onTier,
         )
-        FieldCaption(volumeCaption(tier, focus))
+        FieldCaption(startingSetsCaption(tier))
 
         Spacer(Modifier.height(12.dp))
         FieldLabel("Your armoury")
@@ -1043,6 +1091,7 @@ private fun FieldCaption(text: String) {
 @Composable
 private fun ProposalStep(
     viewModel: OnboardingViewModel,
+    onSkip: () -> Unit,
     daysPerWeek: Int,
     split: TrainingSplit,
     equipment: Equipment,
@@ -1080,11 +1129,9 @@ private fun ProposalStep(
                 ProposedDay(
                     preset = preset,
                     editable = !isStarter,
+                    equipment = equipment,
                     onSets = { entryIndex, delta ->
                         viewModel.editEntry(presetIndex, entryIndex) { it.withSetsDelta(delta) }
-                    },
-                    onReps = { entryIndex, delta ->
-                        viewModel.editEntry(presetIndex, entryIndex) { it.withRepsDelta(delta) }
                     },
                     onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },
                     showNote = false,
@@ -1094,8 +1141,8 @@ private fun ProposalStep(
             }
             if (current.presets.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                // The same coverage row as the Forge, with no priorities picked at this point.
-                CoverageSummaryRow(current.presets, tier, focus, emptySet(), onOpenCoverage)
+                // The same coverage row as the Forge. A hint, never a gate.
+                CoverageChip(remember(current.presets) { coverageTally(current.presets) }, onOpen = onOpenCoverage)
             }
             if (current.presets.isEmpty()) {
                 Text(
@@ -1118,7 +1165,7 @@ private fun ProposalStep(
             // The rest guidance and any shortfall, said once for the routine
             // rather than under every day, with the progression rule the goal
             // picked beside it.
-            val notes = planNotes(current) + when (focus) {
+            val notes = planNotes(current) + "A hard set ends 0\u20132 reps short of failure. Change any number." + when (focus) {
                 TrainingFocus.STRENGTH -> listOf("Strength goal: load goes up when you hit your reps.")
                 TrainingFocus.MUSCLE -> listOf("Muscle goal: reps go up first, then load.")
                 else -> emptyList()
@@ -1154,6 +1201,13 @@ private fun ProposalStep(
             )
         }
         current?.let { SourcesPanel(planTexts(it.presets, it.note)) }
+        // Last, small and behind a question: leaving setup is allowed, never an accident.
+        IronvellumButton(
+            label = "Skip setup\u2026",
+            onClick = onSkip,
+            quiet = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(2.dp))
     }
 }
