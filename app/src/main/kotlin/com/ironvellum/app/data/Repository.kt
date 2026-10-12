@@ -39,6 +39,7 @@ import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.CustomExercises
 import com.ironvellum.app.domain.CustomSave
 import com.ironvellum.app.domain.CustomSpec
+import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
@@ -87,6 +88,7 @@ import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SealedReopen
@@ -452,6 +454,7 @@ class Repository(
                         targetWeightKg = e.targetWeightKg,
                         modifiers = e.modifiers,
                         position = e.position,
+                        supersetGroup = e.supersetGroup,
                     )
                 },
             )
@@ -464,6 +467,8 @@ class Repository(
         val targetReps: Int,
         val targetWeightKg: Double?,
         val modifiers: String = "",
+        /** Shared with the adjacent entries done as one superset; saved only where they really are neighbours. */
+        val supersetGroup: Int? = null,
     )
 
     suspend fun savePreset(
@@ -480,6 +485,8 @@ class Repository(
             presetDao.clearEntries(presetId)
             presetId
         }
+        // A group is kept only while its members are neighbours: a number left by a removal or a reorder is dropped here.
+        val groups = Supersets.effective(entries.map { it.supersetGroup })
         presetDao.insertEntries(
             entries.mapIndexed { position, e ->
                 PresetEntryEntity(
@@ -490,6 +497,7 @@ class Repository(
                     targetWeightKg = e.targetWeightKg,
                     modifiers = e.modifiers,
                     position = position,
+                    supersetGroup = groups[position],
                 )
             },
         )
@@ -611,6 +619,10 @@ class Repository(
         val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
         val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
         require(unknown.isEmpty()) { "Unknown exercises in rite \"${preset.name}\": $unknown" }
+        // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
+        // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
+        val keptGroups = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+            ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
         return savePreset(
             presetId = presetId,
             name = preset.name,
@@ -623,6 +635,7 @@ class Repository(
                     targetReps = entry.reps,
                     targetWeightKg = entry.targetWeightKg,
                     modifiers = entry.modifiers,
+                    supersetGroup = keptGroups[idByName.getValue(entry.exerciseName)],
                 )
             },
         )
@@ -916,7 +929,10 @@ class Repository(
         val exerciseById = exerciseDao.let { dao -> pw.entries.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
             .associateBy { it.id }
 
-        val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
+        val ordered = pw.entries.sortedBy { it.position }
+        // Only entries that really are neighbours start the trial as a superset.
+        val groups = Supersets.effective(ordered.map { it.supersetGroup })
+        val sets = ordered.flatMapIndexed { entryPos, entry ->
             val exercise = exerciseById[entry.exerciseId]
             val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
                 .getOrDefault(ExerciseMetric.REPS)
@@ -939,6 +955,7 @@ class Repository(
                     modifiers = entry.modifiers,
                     weightKg = recommendation?.weightKg ?: entry.targetWeightKg,
                     done = false,
+                    supersetGroup = groups[entryPos],
                 )
             }
         }
@@ -983,6 +1000,7 @@ class Repository(
                 grade = s.grade,
                 kind = s.setKind(),
                 supersetGroup = s.supersetGroup,
+                rpe = s.rpe,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
@@ -999,7 +1017,7 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup)
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
@@ -1022,7 +1040,20 @@ class Repository(
             wasWarmup -> true
             else -> current.done
         }
-        sessionDao.updateSet(current.copy(kind = kind.name, done = done))
+        sessionDao.updateSet(current.copy(kind = kind.name, done = done).ratedOnlyIfDone())
+    }
+
+    /** A rating belongs to a logged working set: taking the tick off, or making it a warm-up, takes the rating off too. */
+    private fun SetLogEntity.ratedOnlyIfDone(): SetLogEntity = if (done && !isWarmup) this else copy(rpe = null)
+
+    /**
+     * Rates a logged set of a live trial ([com.ironvellum.app.domain.Effort]: 5 to 10, or null to clear). A set that is
+     * not logged, a warm-up and a sealed trial are left alone: a sealed trial is amended, not rated here.
+     */
+    suspend fun setRpe(setId: Long, rpe: Int?) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId) || !current.done || current.isWarmup) return@withTransaction
+        sessionDao.updateSet(current.copy(rpe = Effort.clamp(rpe)))
     }
 
     /**
@@ -1091,7 +1122,7 @@ class Repository(
             durationSec = seconds.coerceAtLeast(0),
             weightKg = weightKg,
             done = done && !current.isWarmup,
-        )
+        ).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.HOLD))
@@ -1148,7 +1179,7 @@ class Repository(
             grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
             weightKg = weightKg,
             done = done && !current.isWarmup,
-        )
+        ).ratedOnlyIfDone()
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.DURATION))
@@ -1188,35 +1219,70 @@ class Repository(
                     weightKg = weightKg,
                     modifiers = existing?.modifiers ?: modifiers,
                     done = false,
+                    // A set added to a linked movement stays in its superset.
+                    supersetGroup = existing?.supersetGroup,
                 ),
             ),
         ).first()
     }
 
     /**
-     * Moves one movement's whole block up or down the session order. The swap
-     * goes through a sentinel position because `exercisePosition` is shared by
-     * every set of a movement: writing A->B before B->A would briefly give two
-     * movements the same position and fuse their blocks. Completed sessions are
-     * immutable, like every other set edit.
+     * Moves one movement's whole block up or down the session order ([Supersets.move]: a movement steps
+     * over a whole superset rather than into it, and leaves its own by moving out past its edge).
+     * Completed sessions are immutable, like every other set edit.
      */
     suspend fun moveSessionExercise(sessionId: Long, exercisePosition: Int, up: Boolean) = db.withTransaction {
-        val session = sessionDao.byId(sessionId)
-        if (session != null && session.completedAtMs == null) {
-            val positions = sessionDao.setsFor(sessionId)
-                .map { it.exercisePosition }
-                .distinct()
-                .sorted()
-            val index = positions.indexOf(exercisePosition)
-            val swapIndex = if (up) index - 1 else index + 1
-            if (index >= 0 && swapIndex in positions.indices) {
-                val other = positions[swapIndex]
-                val sentinel = (positions.max() + 1)
-                sessionDao.moveExercisePosition(sessionId, exercisePosition, sentinel)
-                sessionDao.moveExercisePosition(sessionId, other, exercisePosition)
-                sessionDao.moveExercisePosition(sessionId, sentinel, other)
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.position == exercisePosition }
+            Supersets.move(blocks.map { it.group }, at, up)
+        }
+    }
+
+    /**
+     * Links [exerciseId] with the movement after it in a live trial, so the two (or three) are done a set
+     * each in turn. False when there is no next movement, they already are, or a group would pass three.
+     */
+    suspend fun linkSupersetWithNext(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            Supersets.link(blocks.map { it.group }, at, at + 1)
+        }
+    }
+
+    /** Dissolves the superset holding [exerciseId] in a live trial; the movements keep their places. */
+    suspend fun unlinkSuperset(sessionId: Long, exerciseId: Long) = db.withTransaction {
+        relayout(sessionId) { blocks ->
+            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            if (Supersets.runAt(blocks.map { it.group }, at) == null) {
+                null
+            } else {
+                Supersets.Layout(blocks.indices.toList(), Supersets.unlink(blocks.map { it.group }, at))
             }
         }
+    }
+
+    /**
+     * Writes a new order and superset numbers onto a live trial's rows: each movement's sets take the slot's
+     * position (renumbered gap-free, so a block never shares one) and group. [plan] gets the movements in
+     * trial order and answers null for no change; a sealed trial is left alone. True when it wrote.
+     */
+    private suspend fun relayout(sessionId: Long, plan: (List<Supersets.Block>) -> Supersets.Layout?): Boolean {
+        if (isSealed(sessionId)) return false
+        val rows = sessionDao.setsFor(sessionId)
+        val blocks = Supersets.blocks(
+            rows.map { SessionSet(id = it.id, exerciseId = it.exerciseId, exercisePosition = it.exercisePosition, setIndex = it.setIndex, reps = it.reps, done = it.done, kind = it.setKind(), supersetGroup = it.supersetGroup) },
+        )
+        val layout = plan(blocks) ?: return false
+        layout.order.forEachIndexed { slot, old ->
+            val exerciseId = blocks[old].exerciseId
+            val group = layout.groups[slot]
+            rows.filter { it.exerciseId == exerciseId }.forEach { row ->
+                if (row.exercisePosition != slot || row.supersetGroup != group) {
+                    sessionDao.updateSet(row.copy(exercisePosition = slot, supersetGroup = group))
+                }
+            }
+        }
+        return true
     }
 
     /**
@@ -1550,6 +1616,7 @@ class Repository(
                     grade = s.grade,
                     kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
+                    rpe = s.rpe,
                 )
             }
         }
@@ -2481,6 +2548,8 @@ class Repository(
                     grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
                     kind = s.kind.name,
                     supersetGroup = block.supersetGroup,
+                    // Only a logged working set carries a rating.
+                    rpe = Effort.clamp(s.rpe).takeIf { s.done && !s.warmup },
                 )
             }
         }
@@ -2539,6 +2608,7 @@ class Repository(
                     grade = s.grade,
                     kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
+                    rpe = s.rpe,
                 )
             }
         }
@@ -2585,6 +2655,7 @@ class Repository(
                         targetWeightKg = e.targetWeightKg,
                         modifiers = e.modifiers,
                         position = e.position,
+                        supersetGroup = e.supersetGroup,
                     )
                 },
             )
@@ -2815,6 +2886,7 @@ class Repository(
                                 targetWeightKg = entry.targetWeightKg,
                                 modifiers = entry.modifiers,
                                 position = entry.position,
+                                supersetGroup = entry.supersetGroup,
                             )
                         },
                     )
@@ -2865,6 +2937,7 @@ class Repository(
                                 grade = s.grade,
                                 kind = s.kind.name,
                                 supersetGroup = s.supersetGroup,
+                                rpe = Effort.clamp(s.rpe),
                             )
                         },
                     ).size
@@ -3096,10 +3169,8 @@ class Repository(
             }
             val mapped = workout.sets.mapNotNull { set ->
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
-                val mods = buildList {
-                    set.rpe?.let { add("RPE ${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()}") }
-                    set.notes.takeIf { it.isNotBlank() }?.let { add(it) }
-                }.joinToString(", ")
+                // The set's own note stays a modifier; its RPE is the effort field, not text.
+                val mods = set.notes.trim()
                 Triple(set, exerciseId, mods)
             }
             val sessionId = sessionDao.insertSession(
@@ -3135,6 +3206,7 @@ class Repository(
                     grade = null,
                     kind = kind.name,
                     supersetGroup = set.supersetGroup,
+                    rpe = Effort.fromImported(set.rpe).takeIf { kind.countsAsWork },
                 )
             }
             sessionDao.insertSets(setEntities)

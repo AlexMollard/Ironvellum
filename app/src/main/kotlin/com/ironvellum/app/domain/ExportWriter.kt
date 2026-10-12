@@ -12,8 +12,8 @@ object ExportWriter {
     // come back whole (draw counters, round level mark, purchases, grant version).
     // 9: per-set kind (drop, failure, rest-pause; a warm-up still writes warmup:true).
     // 10: custom exercises carry their flag, needs and muscle shares.
-    // ExportReader still accepts 9 and below.
-    const val FORMAT_VERSION = 10
+    // 11: a rite entry's supersetGroup and a set's rpe, each written only when there is one.
+    const val FORMAT_VERSION = 11
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -251,6 +251,8 @@ object ExportWriter {
                 appendNullable(entry.targetWeightKg) { append(it) }
                 append(",\"modifiers\":").appendEscaped(entry.modifiers)
                 append(",\"position\":").append(entry.position)
+                // v11, only for an entry in a superset: every other entry stays byte-identical to v9.
+                entry.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
                 append("}")
             }
             append("]}")
@@ -330,6 +332,8 @@ object ExportWriter {
                 if (set.warmup) append(",\"warmup\":true")
                 else if (set.kind != SetKind.WORKING) append(",\"kind\":\"").append(set.kind.wire).append("\"")
                 set.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
+                // v11, only for a rated set: an unrated set stays byte-identical to v9.
+                set.rpe?.let { append(",\"rpe\":").append(it) }
                 append("}")
             }
             append("]}")

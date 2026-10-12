@@ -13,7 +13,8 @@ import java.time.temporal.TemporalAdjusters
  * layout [CsvWorkoutReader] reads, so the app (and Strong-aware tools) can take
  * its own export back in. Weight is kg and distance km, as the reader expects.
  * Strong has no documented warm-up marker, so a trailing `Set Type` column
- * carries it; tools that do not know the column ignore it.
+ * carries it, and an `RPE` column after it carries each rated set's effort (whole numbers, always RPE
+ * whatever scale the lifter reads); tools that do not know the columns ignore them.
  *
  * Only the PUBLIC note is written: a CSV is made to be shared, and the private
  * note stays in the JSON archive. Grade and modifiers have no Strong column.
@@ -36,7 +37,7 @@ object WorkoutCsvWriter {
     }
 
     const val HEADER =
-        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type"
+        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type,RPE"
 
     private val DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -78,6 +79,7 @@ object WorkoutCsvWriter {
                             "",
                             session.note,
                             SetKind.csvType(set.kind),
+                            set.rpe?.toString() ?: "",
                         )
                     }
                 }

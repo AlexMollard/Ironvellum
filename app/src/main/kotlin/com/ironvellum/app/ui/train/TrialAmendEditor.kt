@@ -141,14 +141,15 @@ internal fun TrialAmendEditor(
                 onWarmup = null,
                 restOff = null,
                 onRestOff = {},
+                onRpe = { set, rpe -> update(set.id.toInt()) { it.copy(rpe = rpe) } },
                 onEdit = { set -> update(set.id.toInt()) { set.asDraftSet() } },
                 onTypeLoad = { set -> loadFor = blockIdx to set.id.toInt() },
                 onTypeFigure = { set, kind -> typing = Triple(blockIdx, set.id.toInt(), kind) },
                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
                 // A warm-up never counts, so marking one takes the tick off; the other kinds keep it.
-                onSetKind = { set, kind -> update(set.id.toInt()) { it.copy(kind = kind, done = it.done && kind != SetKind.WARMUP) } },
+                onSetKind = { set, kind -> update(set.id.toInt()) { it.copy(kind = kind, done = it.done && kind != SetKind.WARMUP, rpe = it.rpe.takeIf { _ -> kind != SetKind.WARMUP }) } },
                 onUnlog = { set ->
-                    update(set.id.toInt()) { it.copy(done = false) }
+                    update(set.id.toInt()) { it.copy(done = false, rpe = null) }
                     editingSetId = null
                 },
                 amend = true,
@@ -280,6 +281,7 @@ private fun TrialDraft.DraftSet.asSessionSet(block: TrialDraft.Block, blockIdx: 
     grade = grade,
     kind = kind,
     supersetGroup = block.supersetGroup,
+    rpe = rpe,
 )
 
 /** A warm-up never counts, so its tick does not stick. */
@@ -291,6 +293,7 @@ private fun SessionSet.asDraftSet() = TrialDraft.DraftSet(
     grade = grade,
     done = done && !warmup,
     kind = kind,
+    rpe = rpe.takeIf { done && !warmup },
 )
 
 /** The quiet row under an open exercise's sets that adds another. */

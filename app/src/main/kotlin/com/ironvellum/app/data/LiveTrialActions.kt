@@ -5,6 +5,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.isStrength
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -44,14 +45,14 @@ class LiveTrialActions(
     }
 
     /**
-     * The lock-screen "Set done": ticks the next set still to log with the figures it
-     * shows. False, and nothing written, when no set is waiting or [expectedSetId]
+     * The lock-screen "Set done": ticks the next set still to log ([Supersets.nextSet], which is
+     * the one the notification names) with the figures it shows. False, and nothing written, when no set is waiting or [expectedSetId]
      * (the set the notification named) is no longer the next one: a tap on a stale
      * notification must not tick the set after it.
      */
     suspend fun tickNext(expectedSetId: Long? = null): Boolean = writeLock.withLock {
         val sets = repo.observeSessionSets(sessionId).first()
-        val next = sets.firstOrNull { it.isPending } ?: return@withLock false
+        val next = Supersets.nextSet(sets) ?: return@withLock false
         if (expectedSetId != null && next.id != expectedSetId) return@withLock false
         val metric = metricOf(next.exerciseId)
         write(next.copy(done = true), metric)
@@ -62,6 +63,8 @@ class LiveTrialActions(
         val sets = repo.observeSessionSets(sessionId).first()
         val set = sets.firstOrNull { it.id == setId } ?: return
         val exercise = repo.observeExercises().first().firstOrNull { it.id == set.exerciseId }
+        // Mid-round in a superset no rest starts, and the one still running belongs to the round before.
+        if (!set.done && nowDone && !Supersets.completesRound(sets, setId)) RestClock.cancel(sessionId)
         val window = RestTimer.restAfterTick(
             before = sets,
             setId = setId,

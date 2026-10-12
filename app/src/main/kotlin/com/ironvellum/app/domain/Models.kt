@@ -51,6 +51,8 @@ data class PresetEntry(
     val targetWeightKg: Double? = null,
     val modifiers: String = "",
     val position: Int = 0,
+    /** Shared with the adjacent entries done as one superset; null when not in one. */
+    val supersetGroup: Int? = null,
 )
 
 data class WorkoutPreset(
@@ -81,6 +83,8 @@ data class SessionSet(
     val kind: SetKind = SetKind.WORKING,
     /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
+    /** How hard the set was, RPE 5 to 10 ([Effort]); null when never rated. */
+    val rpe: Int? = null,
 ) {
     /** A warm-up: the one kind that never counts. */
     val warmup: Boolean get() = kind == SetKind.WARMUP

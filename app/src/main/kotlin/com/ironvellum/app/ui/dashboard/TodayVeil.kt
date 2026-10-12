@@ -121,10 +121,14 @@ private const val TICK_MS = 3_000L
 /** The rune ring's diameter on a respite day. */
 private val RING_SIZE = 184.dp
 
-/** The relic centrepiece: the plate and the column it heads. */
-private val RELIC_SIZE = 100.dp
-private val RELIC_HERO_HEIGHT = 200.dp
-private val RELIC_GROW_MAX = 48.dp
+/**
+ * The relic centrepiece: the plate and the column it heads, at the least they take. Today measures the hero at
+ * this size, so it must fit beside a worn crest on the owner's phone; the room left over grows it back (a relic
+ * of up to 148dp on a tall page).
+ */
+private val RELIC_SIZE = 72.dp
+private val RELIC_HERO_HEIGHT = 144.dp
+private val RELIC_GROW_MAX = 76.dp
 
 /** The Veil's reserved inscriptions slot: the same height whether or not any wait. */
 private val SLOT_HEIGHT = 44.dp

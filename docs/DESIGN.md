@@ -144,6 +144,33 @@ is offered only before anything on that exercise is logged, on a loaded rep
 movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
 bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
 
+**Superset (live trial).** Adjacent exercises done as one group, a pair or a triple
+(`domain/Supersets.kt`). An exercise's menu offers "Superset with <next exercise>" while
+the next one can be linked (a group never passes three); linking writes one number on
+every set of the members. Linked exercises share a thin rail in the left gutter, a 2dp
+line in `SystemGreen` at 60% between two 8dp square dots, drawn in the gutter's 16dp so no row
+moves. The open card carries "Superset 1 · Barbell row next" under its name with an
+"Unlink" text action (it ends the whole group); folded members read "Superset 1 · 1/3
+sets". A group is read as a superset only while its members are neighbours, so a number
+left behind by a removal or a reorder is just not one. Ticking a set opens the partner's
+card (A1, B1, A2, B2: the member with the fewest sets done goes next, the earlier on a
+tie), judged from the sets alone, so the lock-screen "Set done" and the notification name
+the same set. Rest starts only on the tick that closes a round; mid-round the footer
+reads "NEXT · NO REST YET", and a rest still running from the round before is ended.
+Move up and Move down keep a group whole: a lone exercise steps over a whole group, and a
+member that moves out past its group's edge leaves it.
+
+**Superset (rite editor).** An open exercise card has a "Superset" row after Modifiers,
+valued "None" or "With Bench press" (a triple reads "With A and B", in `SystemGreen`).
+It opens a "Superset with" pick of the other exercises, with "None" to end the group; a
+partner that is not next door moves beside the entry, and one that would make four is
+greyed. Linked entries share the same gutter rail as the live trial (`SupersetRail.kt`),
+and a folded row reads "Superset 1 · 3 × 8 · 60 kg". The group is a number on the rite's
+entries (`preset_entries.supersetGroup`); saving keeps it only where the members are
+neighbours, a trial begun from the rite starts with it on every set, and the archive
+(format 11) writes it only for an entry in one. The Forge never makes or reads a
+superset; tempering a rite keeps the lifter's own where the pair is still adjacent.
+
 **Lock-screen trial actions.** The trial notification is public on the lock screen
 and carries the movement, the set and its figures, never a note. Its buttons are
 broadcasts, so they run without unlocking: while a set waits, "Set done" (ticks it
@@ -186,6 +213,27 @@ walks its 2.5 kg plate grid. Progression advice in lb moves on the lb grid, so
 "Last 220.5 lb" is followed by 225 lb. Left in kg on purpose: the CSV export (a
 Strong-format file whose reader assumes kg), body weight and measurements, and
 the Forge's generated load notes and dumbbell limit.
+
+**Effort (RPE and RIR).** Optional, per set, off by default. Settings > Training mode,
+"Effort per set": a "Log effort" switch and an RPE | RIR choice. The figure stored is one
+whole-number RPE on the set, 5 to 10 (`domain/Effort.kt`): RIR is 10 minus it, so changing
+scale loses nothing, and anything at or under 5 is stored as 5 (the "≤5" chip, "5+" on
+RIR). With the switch on, logging a set opens a strip under it on a faint `Ink` 4% wash,
+in the 46dp inset of the set number: "How hard was set 2?" with the scale's name at the
+right in 10sp spaced caps, six chips (44dp targets, 36dp outlined boxes in `Rune`; the chosen
+one `Emerald` at 16% with an `Emerald` rule and bold `Ink` text), and under them a muted line
+for the chosen chip ("RPE 8: about two reps left", "2 RIR: two reps left") or what the scale
+means. Skipping costs nothing: the strip never blocks the next set, and tapping the chosen chip
+again clears it. In a superset the partner's card opens at once, so the strip moves above it
+and names the exercise. A logged row shows its effort muted at the right ("RPE 7", "2 RIR"),
+even with the switch off. Tapping a logged set to edit it (and amending a sealed trial) offers
+the same chips. Un-logging a set, or making it a warm-up, takes its rating off. Elsewhere:
+the folded done row and the "Last" line carry the top set's effort; the trial detail reads
+"Set 3 · 225 lb × 5 · RPE 8"; the share card adds only the top set's effort after the load
+("3×5 @ 225lb · RPE 8", never "@8") behind an "Include effort" switch beside "Include
+exercise notes", offered when a set was rated; the CSV export has an RPE column after Set
+Type; a Strong or Hevy import fills the field (halves round up, 5 or less reads 5) instead
+of writing "RPE 8" into the set's modifiers. Progression never reads it.
 
 **Plates (`PlateSheet`).** A chip beside the open item's reference line on a barbell
 lift, opening the app's one pop-up frame. A load stepper that only lands on loads

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.data.IdleSnapshot
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.IdleRate
 import com.ironvellum.app.domain.IdleState
@@ -33,7 +34,9 @@ import com.ironvellum.app.domain.LiftRecord
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.PresetEntry
+import com.ironvellum.app.domain.RelicHouses
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.theme.IronvellumTheme
@@ -204,6 +207,18 @@ class TodayFitsTest {
         assertInside("Add a weight reading")
         assertInside("3 inscriptions waiting")
         saveShot("today-respite-full")
+    }
+
+    /** The lifter's real respite: a relic in the centre and a crest worn under it, both of which make the hero taller. */
+    @Test
+    fun aRespiteDayWithARelicAndACrestStillShowsTheHero() {
+        val glance = VeilGlance(veil.snapshot, 3, active = VaultSlot(RelicHouses.CATALOGUE.first(), owned = null, active = true), worn = Crests.ALL.first(), wornWorth = 4.0)
+        show(ui = DashboardUi(presets = listOf(rite(9, day = 3))), selectedDay = 2, bodyGap = BodyGap.BOTH, glance = glance)
+        assertDoesNotScroll()
+        assertPlaced("veil-hero")
+        assertInside("essence")
+        assertInside("3 inscriptions waiting")
+        saveShot("today-respite-relic-crest")
     }
 
     @Test

@@ -3,7 +3,10 @@ package com.ironvellum.app.ui.settings
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Effort
+import com.ironvellum.app.domain.EffortScale
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -78,5 +81,19 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
         )
         Spacer(Modifier.height(8.dp))
         SettingsCaption("Loads and plates. Your history keeps its exact weights; only what you see changes.")
+        SectionHeader("Effort per set", topPadding = 16.dp)
+        SettingsSwitchRow(
+            label = "Log effort",
+            caption = "After a set, rate how hard it was. Optional, one tap.",
+            checked = EffortSetting.enabled,
+            onCheckedChange = { EffortSetting.setEnabled(context.applicationContext, it) },
+        )
+        InkSegmented(
+            options = EffortScale.entries.map { it to it.label },
+            selected = EffortSetting.scale,
+            onPick = { EffortSetting.setScale(context.applicationContext, it) },
+        )
+        Spacer(Modifier.height(8.dp))
+        SettingsCaption("${Effort.hint(EffortScale.RPE)} RIR counts those reps instead.")
     }
 }

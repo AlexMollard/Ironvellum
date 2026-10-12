@@ -53,28 +53,31 @@ import kotlinx.coroutines.launch
  * full data export — goes through FileProvider instead, because Intent extras
  * share a ~512 KB binder buffer.
  *
- * [render] builds the card for the current "Include exercise notes" choice, so
- * the preview, the clipboard and the share sheet always carry the same text.
- * The switch is offered only when the trial has a note to include ([hasNotes]),
- * starts off, and is remembered between shares.
+ * [render] builds the card for the current "Include exercise notes" and
+ * "Include effort" choices, so the preview, the clipboard and the share sheet
+ * always carry the same text. Each switch is offered only when the trial has
+ * something to include ([hasNotes], [hasEffort]), starts off, and is
+ * remembered between shares.
  */
 @Composable
 fun ShareCardDialog(
-    render: (includeNotes: Boolean) -> String,
+    render: (includeNotes: Boolean, includeEffort: Boolean) -> String,
     hasNotes: Boolean,
     onDismiss: () -> Unit,
+    hasEffort: Boolean = false,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
     var includeNotes by remember { mutableStateOf(readIncludeNotes(context)) }
+    var includeEffort by remember { mutableStateOf(readIncludeEffort(context)) }
     var signWithCrest by remember { mutableStateOf(readSignWithCrest(context)) }
     // The crest worn now, if any: the card can sign with its name, and only when there is a crest to name.
     val repo = (context.applicationContext as IronvellumApp).repository
     val worn = Crests.byId(repo.observeEquippedFrame().collectAsStateWithLifecycle(null).value)
-    val text = remember(render, includeNotes, hasNotes, signWithCrest, worn) {
-        WorkoutShare.signed(render(includeNotes && hasNotes), worn.takeIf { signWithCrest })
+    val text = remember(render, includeNotes, hasNotes, includeEffort, hasEffort, signWithCrest, worn) {
+        WorkoutShare.signed(render(includeNotes && hasNotes, includeEffort && hasEffort), worn.takeIf { signWithCrest })
     }
 
     LaunchedEffect(copied) {
@@ -113,6 +116,17 @@ fun ShareCardDialog(
                         onCheckedChange = {
                             includeNotes = it
                             writeIncludeNotes(context, it)
+                        },
+                    )
+                }
+                if (hasEffort) {
+                    SettingsSwitchRow(
+                        label = "Include effort",
+                        caption = "Adds each exercise's top set's RPE or RIR",
+                        checked = includeEffort,
+                        onCheckedChange = {
+                            includeEffort = it
+                            writeIncludeEffort(context, it)
                         },
                     )
                 }
@@ -168,6 +182,15 @@ private const val KEY_INCLUDE_NOTES = "include_exercise_notes"
 /** Off until the lifter turns it on: a note is their own words, not something to publish by default. */
 private fun readIncludeNotes(context: Context): Boolean =
     context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_INCLUDE_NOTES, false)
+
+private const val KEY_INCLUDE_EFFORT = "include_effort"
+
+/** Off until the lifter turns it on, like the notes: how hard a set felt is theirs to publish. */
+private fun readIncludeEffort(context: Context): Boolean =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_INCLUDE_EFFORT, false)
+
+private fun writeIncludeEffort(context: Context, on: Boolean) =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_INCLUDE_EFFORT, on) }
 
 private const val KEY_SIGN_WITH_CREST = "sign_with_crest"
 

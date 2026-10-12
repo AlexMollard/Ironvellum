@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Effort
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -418,7 +420,7 @@ fun WorkoutDetailScreen(
     if (sharing) {
         ui.session?.let { session ->
             ShareCardDialog(
-                render = { includeNotes ->
+                render = { includeNotes, includeEffort ->
                     WorkoutShare.format(
                         session,
                         ui.sets,
@@ -428,9 +430,12 @@ fun WorkoutDetailScreen(
                         exerciseNotes = exerciseNotes,
                         includeNotes = includeNotes,
                         unit = Units.current,
+                        includeEffort = includeEffort,
+                        effortScale = EffortSetting.scale,
                     )
                 },
                 hasNotes = exerciseNotes.isNotEmpty(),
+                hasEffort = ui.sets.any { it.rpe != null },
                 onDismiss = { sharing = false },
             )
         }
@@ -689,8 +694,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         .toSortedMap()
         .map { (_, groupSets) -> groupSets.sortedBy { it.setIndex } }
     // Supersets are numbered in the order the trial reached them.
-    val supersetNumber = groups.mapNotNull { it.firstOrNull()?.supersetGroup }.distinct()
-        .withIndex().associate { (i, group) -> group to i + 1 }
+    val supersetNumber = com.ironvellum.app.domain.Supersets.numbers(groups.map { it.firstOrNull()?.supersetGroup })
     // The first movement opens; the rest fold to one line each until tapped.
     var open by remember { mutableStateOf(setOf(0)) }
     groups.forEachIndexed { groupIndex, groupSets ->
@@ -719,7 +723,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
             else -> setFigure(metric, 0, totals.secondsWorked, null).figure
         }
         val subline = listOfNotNull(
-            supersetNumber[first.supersetGroup]?.let { "Superset $it" },
+            supersetNumber[groupIndex]?.let { "Superset $it" },
             "${doneWorking.size}/${working.size}",
             summary,
         ).joinToString(" · ")
@@ -733,6 +737,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 var number = 0
                 groupSets.forEach { set ->
                     val figure = setText(set, metric, hold, weighted) +
+                        set.rpe?.takeIf { set.done }?.let { " · ${Effort.value(it, EffortSetting.scale)}" }.orEmpty() +
                         set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     when {
                         set.warmup -> SetLine("", "Warm-up · $figure", muted = true)
