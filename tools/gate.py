@@ -156,7 +156,16 @@ def revive(serial: str) -> bool:
     return False
 
 
-LOCK = os.path.join(ROOT, ".tmp", "emulator.lock")
+def main_checkout() -> str:
+    """The main checkout, also when run from a worktree: every worktree shares one emulator."""
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=ROOT, capture_output=True, text=True,
+    ).stdout.strip()
+    return os.path.dirname(common) if common else ROOT
+
+
+LOCK = os.path.join(main_checkout(), ".tmp", "emulator.lock")
 
 
 @contextlib.contextmanager
