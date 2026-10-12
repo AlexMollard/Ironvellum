@@ -148,7 +148,15 @@ sealed class ChangeOp {
     data class RemoveEntry(val exerciseName: String) : ChangeOp()
     data class SwapEntry(val fromName: String, val to: PlannedEntry) : ChangeOp()
     data class SetSets(val exerciseName: String, val sets: Int) : ChangeOp()
-    data class SetLoad(val exerciseName: String, val weightKg: Double?) : ChangeOp()
+    /** A load filled from the lifter's logged sets, with the reps it was worked out for and where it came from. */
+    data class SetLoad(
+        val exerciseName: String,
+        val weightKg: Double?,
+        val reps: Int? = null,
+        val loadNote: String? = null,
+    ) : ChangeOp()
     data class SetReps(val exerciseName: String, val reps: Int) : ChangeOp()
+    /** Marks an entry moved up to keep pull-up variants apart; the spacing itself is the tidy-up pass. */
+    data class SpaceEntry(val exerciseName: String) : ChangeOp()
     data class MoveEntryToDay(val exerciseName: String, val toDay: Int) : ChangeOp()
 }
