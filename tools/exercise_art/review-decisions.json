@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 5,
-  "exportedAt": "2026-10-12T23:13:48.095124+00:00",
+  "exportedAt": "2026-10-12T23:16:22.270552+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1206,11 +1206,11 @@
     },
     {
       "id": "decline-dumbbell-fly-1.png",
-      "sha256": "0db34390d03bd7705abc92efd15db324a85693f13cf4f528a5b3a933b73a0595",
+      "sha256": "6fcaf3b3d0b005ceb4c0f383807b12dbb924a6e249644fbd86f62497af367657",
       "status": "pending",
-      "note": "Redrawn feet under restraint following: feet and ankles should be under it",
+      "note": "New side-view draft following: thats so broken hes feet are backwards and his ankles are inside the bars",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T23:13:48.095124+00:00"
+      "updatedAt": "2026-10-12T23:16:22.270552+00:00"
     },
     {
       "id": "chest-dip-1.png",
