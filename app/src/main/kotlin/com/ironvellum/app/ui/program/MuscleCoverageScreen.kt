@@ -170,8 +170,8 @@ class MuscleCoverageViewModel(
         tierFlow,
     ) { presets, history, profile, tier ->
         // Scheduled days are the routine; with none scheduled, the whole
-        // board is the routine.
-        val scheduled = presets.filter { it.scheduledDay != null }.ifEmpty { presets }
+        // board is the routine. The builder's preview reads the same rule.
+        val scheduled = scheduledRoutine(presets) { it.scheduledDay }
         val plannedPresets = scheduled.map { it.toPlanned() }
 
         val cutoff = Instant.now().minus(java.time.Duration.ofDays(7)).toEpochMilli()

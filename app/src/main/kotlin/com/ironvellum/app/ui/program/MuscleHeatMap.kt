@@ -159,9 +159,6 @@ fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> 
         levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
     }
 
-/** Every muscle both bodies can colour, front or back. */
-internal val DRAWN: Set<Muscle> by lazy { BodyFigures.MALE.drawn intersect BodyFigures.FEMALE.drawn }
-
 /**
  * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
  * each tracked muscle filled by its weekly coverage against [goal], plus

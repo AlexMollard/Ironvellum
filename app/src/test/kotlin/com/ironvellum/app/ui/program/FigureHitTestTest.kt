@@ -138,8 +138,26 @@ class FigureHitTestTest {
         for ((name, figure) in bodies) {
             val g = FigureGeometry(figure, width, height)
             for (muscle in figure.drawn) {
-                val r = muscleBounds(g, muscle)
-                assertTrue("$name $muscle has no bounds", r != null && r.width >= 1f && r.height >= 1f)
+                val views = viewsOf(figure, muscle)
+                assertTrue("$name $muscle is drawn in no view", views.isNotEmpty())
+                for (view in views) {
+                    val r = muscleBounds(g, muscle, view)
+                    assertTrue("$name $muscle has no bounds in $view", r != null && r.width >= 1f && r.height >= 1f)
+                }
+            }
+        }
+    }
+
+    @Test fun aMuscleBothViewsShowGetsABoundsPerView() {
+        // The traps sit on the shoulders in the front and across the back: two nodes, not one.
+        for ((name, figure) in bodies) {
+            val two = figure.drawn.filter { viewsOf(figure, it).size == 2 }
+            assertTrue("$name has no two-sided muscle", two.isNotEmpty())
+            val g = FigureGeometry(figure, width, height)
+            for (muscle in two) {
+                val front = muscleBounds(g, muscle, FigureView.FRONT)!!
+                val back = muscleBounds(g, muscle, FigureView.BACK)!!
+                assertTrue("$name $muscle bounds coincide", front.center.x < g.slot && back.center.x > g.slot)
             }
         }
     }

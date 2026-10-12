@@ -2,6 +2,7 @@ package com.ironvellum.app.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -46,7 +47,10 @@ class OnboardingBackTest {
         compose.onNodeWithText("Height (cm)").performTextInput("165")
         compose.onNodeWithText("Weight (kg)").performTextInput("61")
         compose.onNodeWithText("Continue").performClick()
-        compose.waitForIdle()
+        // The step advances once the profile is written, which Room does off the main thread.
+        compose.waitUntil(timeoutMillis = 10_000) {
+            compose.onAllNodesWithText("How you train").fetchSemanticsNodes().isNotEmpty()
+        }
 
         compose.onNodeWithText("How you train").assertIsDisplayed()
 

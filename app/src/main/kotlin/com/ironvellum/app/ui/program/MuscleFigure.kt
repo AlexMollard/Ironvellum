@@ -20,7 +20,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -91,13 +93,18 @@ private fun MuscleNodes(
     lineFor: (Muscle) -> String,
     modifier: Modifier,
 ) {
-    val muscles = Muscle.entries.filter { it in figure.drawn }
+    // One node per occurrence: a muscle both views show gets a node on each figure, not just the front one.
+    val nodes = Muscle.entries.filter { it in figure.drawn }
+        .flatMap { muscle -> viewsOf(figure, muscle).map { muscle to it } }
+    val sided = nodes.groupBy { it.first }.filterValues { it.size > 1 }.keys
     Layout(
         content = {
-            muscles.forEach { muscle ->
+            nodes.forEach { (muscle, view) ->
                 Box(
                     Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = lineFor(muscle)
+                        role = Role.Button
+                        contentDescription = lineFor(muscle) +
+                            if (muscle in sided) ", ${if (view == FigureView.FRONT) "front" else "back"} view" else ""
                         this.selected = muscle == selected
                         onClick(label = if (muscle == selected) "Clear ${muscle.label}" else "Select ${muscle.label}") {
                             onSelect(nextSelection(selected, muscle))
@@ -114,7 +121,7 @@ private fun MuscleNodes(
         // centre to the floor, kept inside the figure. Touch is the canvas's hit test; these only steer TalkBack.
         val floor = MIN_NODE.roundToPx()
         val placed = measurables.mapIndexed { i, measurable ->
-            val bounds = muscleBounds(g, muscles[i])
+            val bounds = muscleBounds(g, nodes[i].first, nodes[i].second)
             val w = maxOf((bounds?.width ?: 0f).roundToInt(), floor).coerceAtMost(constraints.maxWidth)
             val h = maxOf((bounds?.height ?: 0f).roundToInt(), floor).coerceAtMost(constraints.maxHeight)
             val x = ((bounds?.center?.x ?: 0f) - w / 2f).roundToInt().coerceIn(0, constraints.maxWidth - w)

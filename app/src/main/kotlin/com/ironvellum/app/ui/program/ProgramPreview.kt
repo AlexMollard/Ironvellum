@@ -86,6 +86,9 @@ private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Fr
 fun dayLabel(scheduledDay: Int?): String =
     scheduledDay?.let { DAY_NAMES.getOrNull(it - 1) } ?: "Unscheduled"
 
+/** What an exercise row is, apart from where it sits: the movement and its modifiers. */
+private fun entryKey(entry: PlannedEntry): String = "${entry.exerciseName}|${entry.modifiers}"
+
 private fun entryScheme(entry: PlannedEntry): String = buildString {
     append("${entry.sets}\u00D7${entry.reps}")
     entry.targetWeightKg?.let { append(" @ ${Units.withUnit(it)}") }
@@ -116,7 +119,9 @@ fun ProposedDay(
     /** A folded day opens on arrival: first-run's review opens its first day so the exercises are in view. */
     startOpen: Boolean = !folded,
 ) {
-    var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
+    // The open row is remembered by the entry it is, not its position: removing an exercise above it
+    // would otherwise slide the open card onto its neighbour.
+    var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<String?>(null) }
     var dayOpen by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf(startOpen) }
     val body: @Composable ColumnScope.() -> Unit = {
         val count = preset.entries.size
@@ -175,8 +180,8 @@ fun ProposedDay(
                     entry = entry,
                     dayName = dayLabel(preset.scheduledDay),
                     editable = editable,
-                    expanded = open == entryIndex,
-                    onToggle = { open = if (open == entryIndex) null else entryIndex },
+                    expanded = open == entryKey(entry),
+                    onToggle = { open = if (open == entryKey(entry)) null else entryKey(entry) },
                     onSets = { delta -> onSets(entryIndex, delta) },
                     onReps = { delta -> onReps(entryIndex, delta) },
                     onRemove = {
@@ -291,6 +296,7 @@ fun ProposedEntryRow(
                     if (opens) {
                         Modifier.clickable(
                             onClickLabel = if (expanded) "Close ${entry.exerciseName}" else "Open ${entry.exerciseName}",
+                            role = Role.Button,
                             onClick = onToggle,
                         )
                     } else {
@@ -353,7 +359,7 @@ fun TapPad(
         Modifier
             .clip(shape)
             .background(IronvellumColors.VaultHigh)
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .heightIn(min = minSize)
             .widthIn(min = minSize)
             .padding(horizontal = 8.dp, vertical = 5.dp),
