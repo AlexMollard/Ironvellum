@@ -315,9 +315,9 @@ class ProgramGeneratorTest {
         )
 
         // Loads come from the lifter's own PRs: bench e1RM 100 -> 8 reps at
-        // 2 RIR = 66.67 -> floored to the 2.5 kg step.
+        // 2 RIR = 100 / (1 + 10/30) = 75 (the true Epley inverse).
         val bench = entries.first { it.exerciseName == "Bench Press" }
-        assertEquals(65.0, bench.targetWeightKg!!, 1e-9)
+        assertEquals(75.0, bench.targetWeightKg!!, 1e-9)
         assertTrue(bench.loadNote!!.contains("estimated 1-rep max"))
     }
 
@@ -436,10 +436,15 @@ class ProgramGeneratorTest {
         assertNotNull(session)
         val entries = session!!.entries
         assertTrue(entries.isNotEmpty())
-        // Furthest under target first: the untrained calves lead.
+        // Furthest under target first: the untrained calves are served. The
+        // session is anchored by a compound, ahead of the single-joint work.
         assertTrue(
-            "AUTO did not lead with calves: ${entries.first().exerciseName}",
-            (MuscleMap.profile(entries.first().exerciseName)?.muscles?.get(Muscle.CALVES) ?: 0.0) >= 0.5,
+            "AUTO did not serve calves: ${entries.map { it.exerciseName }}",
+            entries.any { (MuscleMap.profile(it.exerciseName)?.muscles?.get(Muscle.CALVES) ?: 0.0) >= 0.5 },
+        )
+        assertTrue(
+            "AUTO opened with single-joint work: ${entries.first().exerciseName}",
+            MuscleMap.profile(entries.first().exerciseName)?.compound == true,
         )
         assertTrue(
             "no hamstring work in the AUTO session",

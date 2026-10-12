@@ -137,13 +137,28 @@ class ProgramRulesTest {
     @Test
     fun `working load applies the epley inversion and rounds DOWN to the step`() {
         val strength = ProgramRules.strengthProfile(listOf(LoggedLift("Bench Press", 75.0, 10)))
-        // 100 * (1 - 10/30) = 66.67 -> floor to the 2.5 kg step, not round.
+        // 100 / (1 + 10/30) = 75.0 exactly: the load that Epley puts back at 100.
         val (load, note) = ProgramRules.workingLoadKg("Bench Press", "PUSH", strength, 8, 2)!!
-        assertEquals(65.0, load, 1e-9)
+        assertEquals(75.0, load, 1e-9)
         assertTrue(note.contains("100"))
-        // Another one that would round UP if mis-rounded: 76.67 -> 75.0.
+        // Another one that would round UP if mis-rounded: 100 / (1 + 7/30) = 81.08 -> 80.0.
         val (load2, _) = ProgramRules.workingLoadKg("Bench Press", "PUSH", strength, 6, 1)!!
-        assertEquals(75.0, load2, 1e-9)
+        assertEquals(80.0, load2, 1e-9)
+    }
+
+    @Test
+    fun `a working load never prescribes more than the e1rm it came from allows`() {
+        // The inversion must be the true inverse of epley(): the prescribed
+        // load for reps + rir repetitions never estimates ABOVE the e1RM it
+        // was derived from, and sits within one load step of it.
+        val strength = ProgramRules.strengthProfile(listOf(LoggedLift("Bench Press", 75.0, 10)))
+        val e1rm = strength.bestE1rmKg.getValue("bench press")
+        for (reps in 1..12) for (rir in 0..3) {
+            val (load, _) = ProgramRules.workingLoadKg("Bench Press", "PUSH", strength, reps, rir)!!
+            val back = ProgramRules.epley(load, reps + rir)
+            assertTrue("$reps@$rir: $load kg is worth $back > $e1rm", back <= e1rm + 1e-9)
+            assertTrue("$reps@$rir: $load kg is far under $e1rm", back > e1rm - 2.5 * (1 + (reps + rir) / 30.0) - 1e-9)
+        }
     }
 
     @Test
@@ -158,8 +173,8 @@ class ProgramRulesTest {
         val strength = ProgramRules.strengthProfile(listOf(LoggedLift("Barbell Row", 60.0, 10)))
         val (load, note) = ProgramRules.estimatedLoadKg("Seated Cable Row", "PULL", strength, 10, 2)!!
         // force: 80 * 0.90 ratio * 0.90 safety = 64.8; marked: / 0.85 stack = 76.2;
-        // 10 reps at 2 RIR: 76.2 * (1 - 12/30) = 45.7 -> floor to the 5 kg stack step.
-        assertEquals(45.0, load, 1e-9)
+        // 10 reps at 2 RIR: 76.2 / (1 + 12/30) = 54.4 -> floor to the 5 kg stack step.
+        assertEquals(50.0, load, 1e-9)
         assertEquals("estimate from Barbell Row", note)
     }
 

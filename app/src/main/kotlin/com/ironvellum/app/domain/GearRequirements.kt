@@ -75,6 +75,8 @@ object GearRequirements {
         "weighted dip" to listOf(setOf(Gear.DIP_BARS), setOf(Gear.RINGS)),
         // Core implements.
         "ab wheel rollout" to listOf(setOf(Gear.AB_WHEEL)),
+        // A flat bench is the usual rig to grip behind the head.
+        "dragon flag" to listOf(setOf(Gear.BENCH)),
         // Floor works too, hence the empty-set alternative.
         "l-sit" to listOf(setOf(Gear.PARALLETTES), setOf(Gear.DIP_BARS), emptySet()),
         "tuck l-sit" to listOf(setOf(Gear.PARALLETTES), setOf(Gear.DIP_BARS), emptySet()),
@@ -172,10 +174,14 @@ object GearRequirements {
         return requirements[key] ?: CustomExercises.gear(key)
     }
 
-    /** Whether the movement's catalogue row is machine, cable, sled, Smith or assisted. */
-    private fun isMachine(name: String): Boolean =
+    /**
+     * Whether the movement's catalogue row is machine, cable, sled, Smith or assisted. A movement
+     * the table above states a need for is never one: the T-bar row carries a sled-band loadFactor
+     * for its load arithmetic, but a landmine T-bar row is a barbell lift.
+     */
+    internal fun isMachine(name: String): Boolean =
         name.trim().lowercase().startsWith("assisted") ||
-            MovementDifficulty.loadFactor(name) < MovementDifficulty.FREE_WEIGHT_LOAD
+            (MovementDifficulty.loadFactor(name) < MovementDifficulty.FREE_WEIGHT_LOAD && !hasEntry(name))
 
     /** True when the movement is generator-eligible under this equipment. */
     fun allows(exerciseName: String, isWeighted: Boolean, equipment: Equipment): Boolean {

@@ -214,7 +214,7 @@ object ProgramRules {
 
     /**
      * Working load for [reps] at [rir] reps in reserve, straight from the
-     * lifter's own e1RM: e1RM x (1 - (reps + rir) / 30) - the Epley inversion
+     * lifter's own e1RM: e1RM / (1 + (reps + rir) / 30) - the Epley inversion
      * (Zourdos 2016 RIR scale; LeSuer 1997 validity; Helms 2016). Rounded
      * DOWN to the movement's real load step so the prescription is on the
      * bar's actual increments. Null when the lifter never logged the lift.
@@ -241,7 +241,7 @@ object ProgramRules {
         reps: Int,
         rir: Int,
     ): Double {
-        val raw = e1rm * (1.0 - (reps + rir) / 30.0)
+        val raw = e1rm / (1.0 + (reps + rir) / 30.0)
         val step = Progression.weightStepKg(muscleGroup, exerciseName)
         val floored = floor(raw / step) * step
         return floored.coerceAtLeast(step)
@@ -353,21 +353,8 @@ object ProgramRules {
      * failure); beginners get the conservative end (ACSM 2009: never program
      * failure for novices).
      */
-    fun targetRir(tier: VolumeLevel, focus: TrainingFocus): Int = when {
-        focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LOW -> 3
-        focus == TrainingFocus.MUSCLE -> 2
-        else -> 2
-    }
-
-    /**
-     * The rep anchor per focus: MUSCLE compounds 8, isolation 12 (inside the
-     * 6-15 band, Lopez 2021); STRENGTH/GENERAL/SKILL compounds 5 (1-6 band at
-     * >=80% 1RM, Lopez 2021).
-     */
-    fun repAnchor(focus: TrainingFocus, compound: Boolean): Int = when {
-        focus == TrainingFocus.MUSCLE -> if (compound) 8 else 12
-        else -> 5
-    }
+    fun targetRir(tier: VolumeLevel, focus: TrainingFocus): Int =
+        if (focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LOW) 3 else 2
 
     /** Per-session exercise cap by volume level: 6 low, 8 standard, 9
      * high. Practical scheduling heuristic - the evidence brief lists no

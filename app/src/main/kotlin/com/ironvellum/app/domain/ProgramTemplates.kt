@@ -310,8 +310,8 @@ object ProgramTemplates {
      * longer, and any muscle left under the chosen floor is named in the
      * routine's note.
      *
-     * A day with more movements than the lifter's [maxExercises] (clamped to
-     * [ProgramRules.MAX_EXERCISES_RANGE]) gives up, one at a time, the entry
+     * A day with more movements than [ProgramRules.exerciseCap] of the volume
+     * level and the lifter's [maxExercises] gives up, one at a time, the entry
      * whose loss leaves the fewest tracked sets short once the repair
      * pass has regrown what it can - never its first, the day's primary
      * lift. The day's note says it was trimmed.
@@ -325,7 +325,9 @@ object ProgramTemplates {
         compoundOnly: Boolean = false,
         maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
     ): RoutinePlan {
-        val pool = ProgramGenerator.eligible(catalogue, equipment, template.focus, compoundOnly)
+        val pool = ProgramGenerator.prescribable(
+            catalogue, ProgramRequest(template.focus, volume, equipment, compoundOnly = compoundOnly),
+        )
         val rir = ProgramRules.targetRir(volume, template.focus)
         val chosenRange = ProgramRules.weeklySetTarget(volume, template.focus)
         val factor = midpoint(chosenRange) /
@@ -359,7 +361,7 @@ object ProgramTemplates {
                 // The dumbbell cap lives in fillWithCap: an over-cap movement
                 // becomes its harder variant when the pool has one.
                 val (filledExercise, load) = ProgramGenerator.fillWithCap(
-                    exercise, pool, strength, entry.reps, rir, equipment,
+                    exercise, pool, strength, entry.reps, rir, equipment, taken = used,
                 )
                 val capSwapped = filledExercise !== exercise
                 if (capSwapped) used += filledExercise.name
@@ -409,7 +411,7 @@ object ProgramTemplates {
             )
             scaled to entries.map { ProgramRules.maxSetsPerEntry(it.exerciseName) }
         }
-        val cap = maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
+        val cap = ProgramRules.exerciseCap(volume, maxExercises)
         val work = presets.map { (day, caps) -> day.entries.toMutableList() to caps.toMutableList() }
         val trimmed = mutableSetOf<Int>()
         // Tracked sets the week still lacks under the floor once the repair
@@ -474,16 +476,26 @@ object ProgramTemplates {
      * range give sets back where that leaves every muscle at its floor.
      * [caps] bounds each entry ([ProgramRules.maxSetsPerEntry]). Uniform scaling alone rounded
      * 2- and 3-set entries away and left hamstrings at 11 of 12; the authored
-     * upper/lower days ran 90 minutes.
+     * upper/lower days ran 90 minutes. A day still over the budget with every
+     * entry at two sets drops its last single-joint entry, and says so when
+     * there is none to drop.
      */
-    private fun fitToRange(
+    internal fun fitToRange(
         days: List<PlannedPreset>,
         caps: List<List<Int>>,
         focus: TrainingFocus,
         range: ClosedFloatingPointRange<Double>,
     ): List<PlannedPreset> {
         val work = days.map { it.entries.toMutableList() }
+        val capsWork = caps.map { it.toMutableList() }
+        val overBudget = mutableSetOf<Int>()
         val budget = ProgramRules.SESSION_BUDGET_SECONDS
+        fun result() = days.mapIndexed { d, day ->
+            day.copy(
+                entries = work[d],
+                note = if (d in overBudget) day.note + " Runs past ${budget / 60} minutes even at 2 sets each." else day.note,
+            )
+        }
         fun week() = ProgramRules.weeklyVolume(work.map { PlannedPreset("", "", null, it) })
         fun share(e: PlannedEntry, m: Muscle) = MuscleMap.profile(e.exerciseName)?.muscles?.get(m) ?: 0.0
         fun seconds(d: Int) = ProgramRules.sessionSeconds(work[d], focus)
@@ -501,11 +513,21 @@ object ProgramTemplates {
                 val vol = week()
                 val i = work[d].indices.filter { work[d][it].sets > 2 }
                     .maxWithOrNull(compareBy({ surplusAfterCut(work[d][it], vol) }, { work[d][it].sets }))
-                    ?: break
-                change(d, i, -1)
+                if (i != null) {
+                    change(d, i, -1)
+                    continue
+                }
+                // Every entry is at its two-set floor. Never the first, the day's primary lift.
+                val drop = (1 until work[d].size).lastOrNull { MuscleMap.profile(work[d][it])?.compound == false }
+                if (drop == null) {
+                    overBudget += d
+                    break
+                }
+                work[d].removeAt(drop)
+                capsWork[d].removeAt(drop)
             }
         }
-        if (focus != TrainingFocus.MUSCLE) return days.mapIndexed { d, day -> day.copy(entries = work[d]) }
+        if (focus != TrainingFocus.MUSCLE) return result()
 
         val stuckLow = mutableSetOf<Muscle>()
         var steps = 0
@@ -516,7 +538,7 @@ object ProgramTemplates {
                 .minByOrNull { vol[it] ?: 0.0 } ?: break
             fun growable(d: Int, i: Int): Boolean {
                 val e = work[d][i]
-                return share(e, muscle) >= 0.5 && e.sets < caps[d][i] &&
+                return share(e, muscle) >= 0.5 && e.sets < capsWork[d][i] &&
                     ProgramRules.sessionMuscleRoom(work[d], e.exerciseName, 1) &&
                     ProgramRules.TRACKED.none { (vol[it] ?: 0.0) + share(e, it) > range.endInclusive + 1e-9 }
             }
@@ -574,7 +596,7 @@ object ProgramTemplates {
                 )
             if (pick == null) stuckHigh += muscle else change(pick.first, pick.second, -1)
         }
-        return days.mapIndexed { d, day -> day.copy(entries = work[d]) }
+        return result()
     }
 
     /**
