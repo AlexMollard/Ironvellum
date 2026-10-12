@@ -68,7 +68,6 @@ import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.DockedActionBar
@@ -89,6 +88,11 @@ import com.ironvellum.app.ui.program.SourcesPanel
 import com.ironvellum.app.ui.program.planTexts
 import com.ironvellum.app.ui.program.planNotes
 import com.ironvellum.app.ui.program.SplitPicker
+import com.ironvellum.app.ui.program.alignProgressionMode
+import com.ironvellum.app.ui.program.withEntryEdited
+import com.ironvellum.app.ui.program.withEntryRemoved
+import com.ironvellum.app.ui.program.withRepsDelta
+import com.ironvellum.app.ui.program.withSetsDelta
 import com.ironvellum.app.ui.program.splitCaption
 import com.ironvellum.app.ui.program.volumeCaption
 import com.ironvellum.app.ui.settings.SettingsConfirmDialog
@@ -107,7 +111,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A plan with no exercises would, taken, replace every existing rite with
@@ -200,9 +208,24 @@ class OnboardingViewModel(
     private val _isStarter = MutableStateFlow(false)
     val isStarter: StateFlow<Boolean> = _isStarter.asStateFlow()
 
-    /** Set when a write is refused; shown on the step that made it. Nothing was written. */
+    /** Set when a write is refused; shown on the step that made it. */
     private val _applyError = MutableStateFlow<String?>(null)
     val applyError: StateFlow<String?> = _applyError.asStateFlow()
+
+    /** True while the profile or the cycle is being written: a second tap is ignored and Continue is off. */
+    private val _busy = MutableStateFlow(false)
+    val busy: StateFlow<Boolean> = _busy.asStateFlow()
+
+    /** Raised once the profile is safely written; the screen steps on and consumes it. */
+    private val _profileSaved = MutableStateFlow(false)
+    val profileSaved: StateFlow<Boolean> = _profileSaved.asStateFlow()
+
+    fun profileSavedHandled() {
+        _profileSaved.value = false
+    }
+
+    /** The generation in flight, so a newer choice (or the starter pick) can cancel an older one. */
+    private var planJob: Job? = null
 
     /**
      * The choices the current plan was built from. A plain field, not state:
@@ -226,24 +249,36 @@ class OnboardingViewModel(
      * first reading heightless with BMI stuck at the dash.
      */
     fun saveProfile(name: String, sex: Sex, heightCm: Double, weightKg: Double) {
+        if (!_busy.compareAndSet(false, true)) return
         _flowActive.value = true
+        _applyError.value = null
         viewModelScope.launch {
-            runCatching {
-                if (name.trim().isNotEmpty()) repo.rename(name)
-                repo.setSex(sex)
-                repo.setHeight(heightCm)
-                repo.logTodaysWeight(weightKg)
-            }.onFailure {
-                _applyError.value = "Could not save your details" + (it.message?.let { m -> ": $m" } ?: "")
+            try {
+                runCatching {
+                    if (name.trim().isNotEmpty()) repo.rename(name)
+                    repo.setSex(sex)
+                    repo.setHeight(heightCm)
+                    repo.logTodaysWeight(weightKg)
+                }.fold(
+                    // The step advances only on this: on a refusal she stays, with the reason on screen.
+                    onSuccess = { _profileSaved.value = true },
+                    onFailure = {
+                        _applyError.value = "Could not save your details" + (it.message?.let { m -> ": $m" } ?: "")
+                    },
+                )
+            } finally {
+                _busy.value = false
             }
         }
     }
 
     /**
      * Regenerates the proposal only when a choice actually changed (or there
-     * is nothing yet, or she is returning from the starter template).
-     * Returning to the review step after hand-editing entries therefore keeps
-     * the edits: same key, same plan.
+     * is nothing yet, or [force] says so: the "Forge from my answers" button
+     * leaving the starter template). Returning to the review step after
+     * hand-editing entries therefore keeps the edits: same key, same plan. A
+     * chosen starter cycle stays chosen whatever the answers do. The generator
+     * runs off the main thread; its refusal lands in [applyError].
      */
     fun ensurePlan(
         daysPerWeek: Int,
@@ -256,31 +291,57 @@ class OnboardingViewModel(
         force: Boolean = false,
     ) {
         val key = PlanKey(daysPerWeek, split, equipment, focus, tier, sex)
-        if (force || _plan.value == null || _isStarter.value || planKey != key) {
+        // A chosen starter cycle stays chosen: re-entering the step or a catalogue re-emit is not a reason to
+        // throw it away. Only the explicit "Forge from my answers" (force) leaves it.
+        if (_isStarter.value && !force) return
+        if (!(force || _plan.value == null || planKey != key)) return
+        // The same choices are already being built: a re-emit must not restart the work.
+        if (!force && planKey == key && planJob?.isActive == true) return
+        planKey = key
+        planJob?.cancel()
+        planJob = viewModelScope.launch {
             // RoutineBuilder is gone: one generator everywhere, and the first
             // run now uses the same evidence-backed engine as Train ->
             // NEW PRESET. No history exists yet, so the strength profile the
-            // loads would come from is honestly empty.
-            _plan.value = ProgramGenerator.week(
-                ProgramRequest(
-                    focus = focus,
-                    volume = tier,
-                    equipment = equipment,
-                    daysPerWeek = daysPerWeek,
-                    sex = sex,
-                    split = split,
-                ),
-                catalogue,
-                StrengthProfile(),
+            // loads would come from is honestly empty. Off the main thread, and a refusal
+            // lands on screen like the builder's, not as a crash.
+            runCatching {
+                withContext(Dispatchers.Default) {
+                    ProgramGenerator.week(
+                        ProgramRequest(
+                            focus = focus,
+                            volume = tier,
+                            equipment = equipment,
+                            daysPerWeek = daysPerWeek,
+                            sex = sex,
+                            split = split,
+                        ),
+                        catalogue,
+                        StrengthProfile(),
+                    )
+                }
+            }.fold(
+                onSuccess = {
+                    _plan.value = it
+                    _isStarter.value = false
+                    _applyError.value = null
+                },
+                onFailure = {
+                    if (it is CancellationException) throw it
+                    // What was shown was built from choices that no longer stand.
+                    planKey = null
+                    _plan.value = null
+                    _isStarter.value = false
+                    _applyError.value = "The Forge failed: ${it.message}"
+                },
             )
-            _isStarter.value = false
-            planKey = key
-            _applyError.value = null
         }
     }
 
     /** Swaps the review for the owner's calisthenics week, shown read-only (see ProposalStep). */
     fun previewStarter() {
+        // A generation still running would land on top of the pick.
+        planJob?.cancel()
         if (!_isStarter.value) {
             _plan.value = Seed.starterPlan()
             _isStarter.value = true
@@ -290,6 +351,15 @@ class OnboardingViewModel(
     /** Applies a hand edit to sets, reps or membership made on the review step. */
     fun replacePlan(plan: RoutinePlan) {
         if (!_isStarter.value) _plan.value = plan
+    }
+
+    /** Indices come from rows composed earlier, so they are checked against the plan as it stands now. */
+    fun editEntry(presetIndex: Int, entryIndex: Int, transform: (PlannedEntry) -> PlannedEntry) {
+        _plan.value?.withEntryEdited(presetIndex, entryIndex, transform)?.let(::replacePlan)
+    }
+
+    fun removeEntry(presetIndex: Int, entryIndex: Int) {
+        _plan.value?.withEntryRemoved(presetIndex, entryIndex)?.let(::replacePlan)
     }
 
     /**
@@ -315,38 +385,42 @@ class OnboardingViewModel(
             _applyError.value = "This cycle has no exercises. Rebuild it from your answers first. Nothing was written."
             return
         }
-        val generated = !_isStarter.value
+        // One accept at a time: a second tap would replace the cycle the first one just wrote.
+        if (!_busy.compareAndSet(false, true)) return
+        val starter = _isStarter.value
         viewModelScope.launch {
-            runCatching {
-                if (_isStarter.value) repo.applyStarterTemplate() else repo.applyRoutine(plan)
-                // Every focus the question offers must land in the profile, or
-                // Settings' TRAINING MODE silently shows the STRENGTH default
-                // for Skills and Mixed. Skill practice is low-rep and
-                // load-driven, so it follows the strength engine; a mixed goal
-                // suits double progression (reps first, then load).
-                when (focus) {
-                    TrainingFocus.STRENGTH, TrainingFocus.SKILL ->
-                        repo.setTrainingMode(TrainingMode.STRENGTH)
-                    TrainingFocus.MUSCLE, TrainingFocus.GENERAL ->
-                        repo.setTrainingMode(TrainingMode.HYPERTROPHY)
+            try {
+                // The cycle write is one transaction: when it fails nothing was written, and only then may the
+                // message say so.
+                val written = runCatching {
+                    if (starter) repo.applyStarterTemplate() else repo.applyRoutine(plan)
                 }
-                if (generated) {
-                    ProgramAnswersStore.save(
-                        appContext,
-                        ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split),
-                    )
-                }
-            }.fold(
-                onSuccess = {
-                    _applyError.value = null
-                    _dismissed.value = true
-                    prefs.edit { putBoolean(KEY_DISMISSED, true) }
-                },
-                onFailure = {
+                if (written.isFailure) {
                     _applyError.value = "Could not save the cycle" +
-                        (it.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
-                },
-            )
+                        (written.exceptionOrNull()?.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
+                    return@launch
+                }
+                // The cycle is in. What follows is bookkeeping; if it fails the cycle still stands, and the
+                // message must not say otherwise. The progression mode follows the goal by the same rule as
+                // the Forge (strength and muscle; Skills and Mixed leave the profile mode alone).
+                val bookkeeping = runCatching {
+                    repo.alignProgressionMode(focus)
+                    if (!starter) {
+                        ProgramAnswersStore.save(
+                            appContext,
+                            ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split),
+                        )
+                    }
+                }
+                _applyError.value = bookkeeping.exceptionOrNull()?.let {
+                    "Your cycle was saved, but your goal could not be remembered" +
+                        (it.message?.let { m -> ": $m" } ?: "")
+                }
+                _dismissed.value = true
+                prefs.edit { putBoolean(KEY_DISMISSED, true) }
+            } finally {
+                _busy.value = false
+            }
         }
     }
 
@@ -453,6 +527,15 @@ fun OnboardingScreen(
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
     val existingRites by viewModel.existingRites.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val profileSaved by viewModel.profileSaved.collectAsStateWithLifecycle()
+    // The step advances only once the profile is written; a refusal keeps her here with the reason showing.
+    LaunchedEffect(profileSaved) {
+        if (profileSaved) {
+            viewModel.profileSavedHandled()
+            step = 1
+        }
+    }
     var confirmReplace by remember { mutableStateOf(false) }
     val takeCycle = {
         equipment?.let { viewModel.acceptRoutine(tier, focus, it, daysPerWeek, split) }
@@ -604,9 +687,8 @@ fun OnboardingScreen(
                     // Only reachable when profileValid, so the !! is safe -
                     // the same bounds the repository enforces, checked first.
                     viewModel.saveProfile(name, sex, DecimalInput.parse(heightInput)!!, DecimalInput.parse(weightInput)!!)
-                    step = 1
                 },
-                primaryEnabled = profileValid,
+                primaryEnabled = profileValid && !busy,
                 reserveLink = false,
             )
             1 -> DockedActionBar(
@@ -621,7 +703,7 @@ fun OnboardingScreen(
                     // Taking a cycle replaces every existing rite: never silently.
                     if (existingRites > 0) confirmReplace = true else takeCycle()
                 },
-                primaryEnabled = plan?.isTakeable() == true,
+                primaryEnabled = plan?.isTakeable() == true && !busy,
                 reserveLink = false,
             )
         }
@@ -951,7 +1033,8 @@ private fun FieldCaption(text: String) {
  * calisthenics template is shown read-only because accepting it goes through
  * applyStarterTemplate, which restores the hand-written preset notes that a
  * round-trip through the plan would silently drop. Changing a choice upstream
- * rebuilds the plan; coming back without changing one keeps the edits.
+ * rebuilds a generated plan (a chosen starter stays until she forges again);
+ * coming back without changing one keeps the edits.
  *
  * This is the payoff step, so the day cards lead with the training plan -
  * day and focus legible at a glance - and the edit glyphs sit beneath each
@@ -981,31 +1064,6 @@ private fun ProposalStep(
         }
     }
 
-    fun editEntry(presetIndex: Int, entryIndex: Int, transform: (PlannedEntry) -> PlannedEntry) {
-        val current = plan ?: return
-        val preset = current.presets[presetIndex]
-        val entries = preset.entries.toMutableList()
-        entries[entryIndex] = transform(entries[entryIndex])
-        viewModel.replacePlan(
-            current.copy(
-                presets = current.presets.toMutableList()
-                    .also { it[presetIndex] = preset.copy(entries = entries) },
-            ),
-        )
-    }
-
-    fun removeEntry(presetIndex: Int, entryIndex: Int) {
-        val current = plan ?: return
-        val preset = current.presets[presetIndex]
-        val entries = preset.entries.filterIndexed { i, _ -> i != entryIndex }
-        val presets = if (entries.isEmpty()) {
-            current.presets.filterIndexed { i, _ -> i != presetIndex }
-        } else {
-            current.presets.toMutableList().also { it[presetIndex] = preset.copy(entries = entries) }
-        }
-        viewModel.replacePlan(current.copy(presets = presets))
-    }
-
     Column(Modifier.fillMaxWidth()) {
         val current = plan
         if (current == null) {
@@ -1023,16 +1081,12 @@ private fun ProposalStep(
                     preset = preset,
                     editable = !isStarter,
                     onSets = { entryIndex, delta ->
-                        editEntry(presetIndex, entryIndex) {
-                            it.copy(sets = (it.sets + delta).coerceIn(1, 10))
-                        }
+                        viewModel.editEntry(presetIndex, entryIndex) { it.withSetsDelta(delta) }
                     },
                     onReps = { entryIndex, delta ->
-                        editEntry(presetIndex, entryIndex) {
-                            it.copy(reps = (it.reps + delta).coerceIn(1, 30))
-                        }
+                        viewModel.editEntry(presetIndex, entryIndex) { it.withRepsDelta(delta) }
                     },
-                    onRemove = { entryIndex -> removeEntry(presetIndex, entryIndex) },
+                    onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },
                     showNote = false,
                     folded = true,
                     startOpen = presetIndex == 0,

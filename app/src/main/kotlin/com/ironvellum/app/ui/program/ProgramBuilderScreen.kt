@@ -56,6 +56,7 @@ import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -113,6 +114,10 @@ class ProgramBuilderViewModel(
     val presets: StateFlow<List<WorkoutPreset>> =
         repo.observePresets().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** False until Room's first emission, so "still loading" and "she has no rites" are not the same thing. */
+    val presetsLoaded: StateFlow<Boolean> =
+        repo.observePresets().map { true }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     val sex: StateFlow<Sex> = repo.observeBodyProfile()
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
@@ -123,6 +128,9 @@ class ProgramBuilderViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _strength = MutableStateFlow(StrengthProfile())
+
+    /** Her logged lifts, once read: a plan built before they arrive is rebuilt with them. */
+    val strength: StateFlow<StrengthProfile> = _strength.asStateFlow()
     private val _firstSessionEpochDay = MutableStateFlow<Long?>(null)
 
     /** Whether any completed session exists - what the tier caption quotes. */
@@ -161,7 +169,23 @@ class ProgramBuilderViewModel(
     private val _improvement = MutableStateFlow<com.ironvellum.app.domain.Improvement?>(null)
     val improvement: StateFlow<com.ironvellum.app.domain.Improvement?> = _improvement.asStateFlow()
 
-    /** Set when a generation or write is refused; nothing was written. */
+    /** The rite [improvement] was computed for: applying it to any other would write one rite's changes onto another. */
+    private var improvementFor: Long? = null
+
+    /** True while a save is in flight; a second tap is ignored and the buttons are disabled. */
+    private val _saving = MutableStateFlow(false)
+    val saving: StateFlow<Boolean> = _saving.asStateFlow()
+
+    /** The answers the first proposal was built from; what leaving would lose is measured against it. */
+    val baseline = MutableStateFlow<List<Any?>?>(null)
+
+    /** The first proposal as generated, to tell her day edits from the plan she was given. */
+    val generatedPlan = MutableStateFlow<RoutinePlan?>(null)
+
+    /** Everything the last generation was built from; the same inputs again must not overwrite her edits. */
+    private var lastKey: List<Any?>? = null
+
+    /** Set when a generation or write is refused, or a write landed but its bookkeeping did not. */
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -272,30 +296,70 @@ class ProgramBuilderViewModel(
 
     private fun planned(existing: List<WorkoutPreset>): List<PlannedPreset> = existing.map { it.toPlanned() }
 
+    /** Read from the model so the settled template and rite picks are in it. */
+    fun answersNow(): List<Any?> = listOf(
+        focus.value, tier.value, equipment.value, daysPerWeek.value,
+        split.value, priorities.value, compoundOnly.value,
+        maxExercises.value, sessionKind.value, sessionDay.value,
+        selectedTemplateId.value, selectedPresetId.value,
+    )
+
+    private class Generated(val plan: RoutinePlan?, val improvement: Improvement? = null, val improvementFor: Long? = null)
+
+    /** Nothing can be shown, so nothing stale may be saved either. */
+    private fun clearProposal() {
+        _plan.value = null
+        _improvement.value = null
+        improvementFor = null
+        lastKey = null
+    }
+
     /**
      * Runs the generator for this screen's mode. Pure domain work on the
-     * catalogue already in memory; a refusal lands in [error] and the board
-     * keeps whatever was last shown.
+     * catalogue already in memory. It rebuilds only when an input actually
+     * changed: the screen calls it on every recomposition trigger, including a
+     * rotation, and the same inputs must not overwrite her hand edits. A
+     * refusal lands in [error] and the board is cleared, so the save buttons
+     * cannot write a plan built from answers she has since changed.
      */
     fun generate() {
         val cat = catalogue.value
-        if (cat.isEmpty()) return
+        if (cat.isEmpty()) return clearProposal()
         // The screen asks for the armoury and shows no preview until it is set.
-        val gear = equipment.value ?: return
+        val gear = equipment.value ?: return clearProposal()
         // A preset picker that is still loading is not "nothing to improve":
         // wait for Room's first emission instead of flashing an error.
-        if (mode == "improve" && presets.value.isEmpty()) return
+        if (mode == "improve" && presets.value.isEmpty()) return clearProposal()
+        // Picks are settled first, so the key below already holds them.
+        if (mode == "template") {
+            val templates = matchingTemplates()
+            selectedTemplateId.value =
+                (templates.firstOrNull { it.id == selectedTemplateId.value } ?: templates.firstOrNull())?.id
+        }
+        if (mode == "improve") {
+            // No route argument and no pick yet: improve the first preset
+            // rather than demanding a choice she can see below.
+            val sel = selectedPresetId.value ?: presetId ?: presets.value.firstOrNull()?.id
+            if (sel != selectedPresetId.value) selectedPresetId.value = sel
+        }
+        val key = listOf(
+            answersNow(), cat, sex.value, _strength.value,
+            // Only these modes read the saved rites; a week or pattern does not care that she saved one.
+            if (mode == "session" || mode == "improve") presets.value else null,
+        )
+        if (key == lastKey) return
+        lastKey = key
         runCatching {
             when (mode) {
                 "template" -> {
-                    val templates = matchingTemplates()
-                    val chosen = templates.firstOrNull { it.id == selectedTemplateId.value } ?: templates.firstOrNull()
-                    selectedTemplateId.value = chosen?.id
-                    chosen?.let {
-                        ProgramTemplates.build(
-                            it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value,
-                        )
-                    }
+                    val chosen = matchingTemplates().firstOrNull { it.id == selectedTemplateId.value }
+                    Generated(
+                        chosen?.let {
+                            ProgramTemplates.build(
+                                it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value,
+                            )
+                        },
+                    )
                 }
                 "session" -> {
                     val week = planned(presets.value)
@@ -320,15 +384,12 @@ class ProgramBuilderViewModel(
                             else -> "The catalogue cannot fill this rite with your armoury."
                         }
                     }
-                    RoutinePlan(listOf(preset))
+                    Generated(RoutinePlan(listOf(preset)))
                 }
                 "improve" -> {
                     val all = planned(presets.value)
                     val ids = presets.value.map { it.id }
-                    // No route argument and no pick yet: improve the first
-                    // preset rather than demanding a choice she can see below.
-                    val sel = selectedPresetId.value ?: presetId ?: ids.firstOrNull()
-                    if (sel != selectedPresetId.value) selectedPresetId.value = sel
+                    val sel = selectedPresetId.value
                     val index = ids.indexOf(sel)
                     val target = all.getOrNull(index)
                     if (target == null) {
@@ -337,21 +398,32 @@ class ProgramBuilderViewModel(
                         throw IllegalArgumentException("Pick a rite to temper.")
                     } else {
                         val rest = all.filterIndexed { i, _ -> i != index }
-                        _improvement.value = ProgramGenerator.improve(
-                            target, rest, request(), cat, _strength.value,
+                        Generated(
+                            plan = null,
+                            improvement = ProgramGenerator.improve(target, rest, request(), cat, _strength.value),
+                            improvementFor = sel,
                         )
-                        null
                     }
                 }
-                else -> ProgramGenerator.week(request(), cat, _strength.value)
+                else -> Generated(ProgramGenerator.week(request(), cat, _strength.value))
             }
         }.fold(
             onSuccess = { result ->
                 _error.value = null
-                if (result != null) _plan.value = result
+                _plan.value = result.plan
+                _improvement.value = result.improvement
+                improvementFor = result.improvementFor
             },
-            onFailure = { _error.value = "The Forge failed: ${it.message}" },
+            onFailure = {
+                // Whatever was shown was built from answers that no longer stand.
+                _plan.value = null
+                _improvement.value = null
+                improvementFor = null
+                _error.value = "The Forge failed: ${it.message}"
+            },
         )
+        generatedPlan.value = _plan.value
+        if (baseline.value == null && (_plan.value != null || _improvement.value != null)) baseline.value = answersNow()
     }
 
     /** Every hand-authored template for the goal, whatever its split: picking one picks the split. */
@@ -364,28 +436,11 @@ class ProgramBuilderViewModel(
     }
 
     fun editEntry(presetIndex: Int, entryIndex: Int, transform: (PlannedEntry) -> PlannedEntry) {
-        val current = _plan.value ?: return
-        val preset = current.presets[presetIndex]
-        val entries = preset.entries.toMutableList()
-        entries[entryIndex] = transform(entries[entryIndex])
-        replacePlan(
-            current.copy(
-                presets = current.presets.toMutableList()
-                    .also { it[presetIndex] = preset.copy(entries = entries) },
-            ),
-        )
+        _plan.value?.withEntryEdited(presetIndex, entryIndex, transform)?.let(::replacePlan)
     }
 
     fun removeEntry(presetIndex: Int, entryIndex: Int) {
-        val current = _plan.value ?: return
-        val preset = current.presets[presetIndex]
-        val entries = preset.entries.filterIndexed { i, _ -> i != entryIndex }
-        val presetsOut = if (entries.isEmpty()) {
-            current.presets.filterIndexed { i, _ -> i != presetIndex }
-        } else {
-            current.presets.toMutableList().also { it[presetIndex] = preset.copy(entries = entries) }
-        }
-        replacePlan(current.copy(presets = presetsOut))
+        _plan.value?.withEntryRemoved(presetIndex, entryIndex)?.let(::replacePlan)
     }
 
     // Actions. Every one reports failure on screen; silence is the bug.
@@ -403,89 +458,97 @@ class ProgramBuilderViewModel(
         )
     }
 
-    /** The progression engine must follow the goal: a hypertrophy plan left on
-     *  the strength mode progressed by the rep band, never by double
-     *  progression. GENERAL and SKILL leave the profile mode alone. */
-    private suspend fun alignProgressionMode() {
-        when (focus.value) {
-            TrainingFocus.STRENGTH -> repo.setTrainingMode(TrainingMode.STRENGTH)
-            TrainingFocus.MUSCLE -> repo.setTrainingMode(TrainingMode.HYPERTROPHY)
-            else -> {}
-        }
-    }
-
-    /** True when [alignProgressionMode] would switch the profile's mode. */
+    /** True when saving would switch the profile's progression mode ([alignProgressionMode]). */
     fun switchesProgression(): Boolean =
-        mode in setOf("week", "template") &&
-            (focus.value == TrainingFocus.STRENGTH || focus.value == TrainingFocus.MUSCLE)
+        mode in setOf("week", "template") && progressionModeFor(focus.value) != null
 
     fun progressionLine(): String = when (focus.value) {
         TrainingFocus.STRENGTH -> "Strength goal: load goes up when you hit your reps."
         else -> "Muscle goal: reps go up first, then load."
     }
 
+    /**
+     * One save at a time: a second tap while one is in flight is ignored, never a second insert. [write] is
+     * the database write alone (all or nothing), so its failure honestly says nothing was written; [after] is
+     * the bookkeeping that follows a write that already landed, and its failure must not claim otherwise.
+     */
+    private fun save(
+        failure: String,
+        onDone: () -> Unit,
+        after: suspend () -> Unit = {},
+        write: suspend () -> Unit,
+    ) {
+        if (!_saving.compareAndSet(false, true)) return
+        viewModelScope.launch {
+            try {
+                val written = runCatching { write() }
+                if (written.isFailure) {
+                    _error.value = "$failure: ${written.exceptionOrNull()?.message}. Nothing was written."
+                    return@launch
+                }
+                val bookkeeping = runCatching { after() }
+                _error.value = bookkeeping.exceptionOrNull()?.let {
+                    "Saved, but your answers could not be remembered: ${it.message}"
+                }
+                onDone()
+            } finally {
+                _saving.value = false
+            }
+        }
+    }
+
     fun addPresets(onDone: () -> Unit) {
         val plan = _plan.value ?: return
-        viewModelScope.launch {
-            runCatching {
-                repo.applyRoutine(plan, replaceExisting = false)
-                rememberAnswers()
-                alignProgressionMode()
-            }.fold(
-                onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not add the rites: ${it.message}. Nothing was written." },
-            )
+        if (_saving.value) return
+        // Adding keeps her cycle, so the new week must not land on days it already uses.
+        val taken = presets.value.mapNotNull { it.scheduledDay }.toSet()
+        val placed = plan.avoidingDays(taken)
+        if (placed == null) {
+            val needed = plan.presets.count { it.scheduledDay != null }
+            _error.value = "Your cycle leaves ${7 - taken.size} free ${if (7 - taken.size == 1) "day" else "days"} " +
+                "and this week needs $needed. Free some days, or replace your cycle instead."
+            return
+        }
+        val focusNow = focus.value
+        save("Could not add the rites", onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
+            repo.applyRoutine(placed, replaceExisting = false)
         }
     }
 
     fun replacePresets(onDone: () -> Unit) {
         val plan = _plan.value ?: return
-        viewModelScope.launch {
-            runCatching {
-                repo.applyRoutine(plan, replaceExisting = true)
-                rememberAnswers()
-                alignProgressionMode()
-            }.fold(
-                onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not replace the cycle: ${it.message}. Nothing was written." },
-            )
+        val focusNow = focus.value
+        save("Could not replace the cycle", onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
+            repo.applyRoutine(plan, replaceExisting = true)
         }
     }
 
     fun addSession(onDone: () -> Unit) {
         val preset = _plan.value?.presets?.firstOrNull() ?: return
-        viewModelScope.launch {
-            runCatching {
-                repo.savePlannedPreset(null, preset)
-                rememberAnswers()
-            }.fold(
-                onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not save the rite: ${it.message}. Nothing was written." },
-            )
+        save("Could not save the rite", onDone, after = { rememberAnswers() }) {
+            repo.savePlannedPreset(null, preset)
         }
     }
 
     fun applyImprovement(onDone: () -> Unit) {
         val improvement = _improvement.value ?: return
         val id = selectedPresetId.value ?: presetId
-        viewModelScope.launch {
-            runCatching {
-                repo.savePlannedPreset(id, improvement.after)
-                rememberAnswers()
-            }.fold(
-                onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not apply the changes: ${it.message}. Nothing was written." },
-            )
+        if (improvementFor != id) {
+            _error.value = "That preview was for another rite. Wait for this one to load."
+            return
+        }
+        save("Could not apply the changes", onDone, after = { rememberAnswers() }) {
+            repo.savePlannedPreset(id, improvement.after)
         }
     }
 }
 
-/** The planned form of a stored preset, keeping modifiers and loads. */
 /**
- * The cycle a proposal makes, for the coverage row and the page behind it. A single generated rite is
- * judged against the week it joins, and adding never replaces the rite already on that day, so that day
- * counts too, as the generator saw it. A tempered rite stands in for the original; the rest of the
- * week feeds the read.
+ * The cycle a proposal makes, for the coverage row and the page behind it. A generated rite, week or pattern
+ * is judged against the cycle it joins (adding is the primary action, and never replaces the rite already
+ * on that day), so the saved rites count too, as the generator saw them. A tempered rite stands in for the
+ * original; the rest of the week feeds the read. Weekly Coverage reads only the scheduled rites of a cycle
+ * ([scheduledRoutine]), so this does as well, and the two cannot disagree about the same cycle.
  */
 internal fun proposalCoveragePresets(
     mode: String,
@@ -493,12 +556,15 @@ internal fun proposalCoveragePresets(
     improved: PlannedPreset?,
     saved: List<WorkoutPreset>,
     improvingId: Long?,
-): List<PlannedPreset> = when (mode) {
-    "improve" -> listOfNotNull(improved) + saved.filter { it.id != improvingId }.map { it.toPlanned() }
-    "session" -> proposed.orEmpty() + saved.map { it.toPlanned() }
-    else -> proposed.orEmpty()
-}
+): List<PlannedPreset> = scheduledRoutine(
+    when (mode) {
+        "improve" -> listOfNotNull(improved) + saved.filter { it.id != improvingId }.map { it.toPlanned() }
+        // A week or pattern is added to the saved cycle by default (the primary action), so it joins it.
+        else -> proposed.orEmpty() + saved.map { it.toPlanned() }
+    },
+) { it.scheduledDay }
 
+/** The planned form of a stored preset, keeping modifiers and loads. */
 internal fun WorkoutPreset.toPlanned(): PlannedPreset = PlannedPreset(
     name = name,
     note = note,
@@ -538,6 +604,11 @@ fun ProgramBuilderScreen(
 ) {
     val catalogue by viewModel.catalogue.collectAsStateWithLifecycle()
     val presets by viewModel.presets.collectAsStateWithLifecycle()
+    val presetsLoaded by viewModel.presetsLoaded.collectAsStateWithLifecycle()
+    val strength by viewModel.strength.collectAsStateWithLifecycle()
+    val saving by viewModel.saving.collectAsStateWithLifecycle()
+    val baseline by viewModel.baseline.collectAsStateWithLifecycle()
+    val generated by viewModel.generatedPlan.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val profileMode by viewModel.trainingMode.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
@@ -577,27 +648,18 @@ fun ProgramBuilderScreen(
     var coverageOpen by rememberSaveable { mutableStateOf(false) }
     // Hoisted so the form keeps its place while the coverage page is up.
     val formScroll = rememberScrollState()
-    var baseline by remember { mutableStateOf<List<Any?>?>(null) }
-    var generated by remember { mutableStateOf<RoutinePlan?>(null) }
-    // Read from the model, not the collected copies above: generate() itself
-    // settles the template and rite picks, and the baseline must see that.
-    fun answersNow(): List<Any?> = listOf(
-        viewModel.focus.value, viewModel.tier.value, viewModel.equipment.value, viewModel.daysPerWeek.value,
-        viewModel.split.value, viewModel.priorities.value, viewModel.compoundOnly.value,
-        viewModel.maxExercises.value, viewModel.sessionKind.value, viewModel.sessionDay.value,
-        viewModel.selectedTemplateId.value, viewModel.selectedPresetId.value,
-    )
+    // The baseline and the first proposal live in the view model, with the plan they measure: a rotation
+    // re-runs the effect below, and a screen-local copy would forget there was anything to discard.
 
-    // Any answer change rebuilds; the tier suggestion has settled by the time
-    // the catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    // Any answer change rebuilds, and generate() itself skips a call whose inputs did not change (a rotation
+    // re-runs this effect), so hand edits survive. The tier suggestion has settled by the time the
+    // catalogue is non-empty, so this cannot thrash.
+    LaunchedEffect(mode, catalogue, presets, strength, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
-        generated = viewModel.plan.value
-        if (baseline == null && (generated != null || viewModel.improvement.value != null)) baseline = answersNow()
     }
 
     // Something to lose: answers moved off the first proposal's, or its days edited.
-    val answers = answersNow()
+    val answers = viewModel.answersNow()
     val dirty = baseline != null && (answers != baseline || plan != generated)
     BackHandler(enabled = dirty) { confirmDiscard = true }
 
@@ -809,7 +871,15 @@ fun ProgramBuilderScreen(
                 if (equipment == null) {
                     Caption(ARMOURY_PICK_CAPTION)
                 } else if (current == null) {
-                    Caption("Reading your rite against the evidence…")
+                    Caption(
+                        when {
+                            // Room has answered and there is nothing to read: say so instead of waiting forever.
+                            presetsLoaded && presets.isEmpty() ->
+                                "You have no rites to temper yet. Forge a cycle or a rite first."
+                            error != null -> "Nothing to show yet."
+                            else -> "Reading your rite against the evidence…"
+                        },
+                    )
                 } else {
                     // The rest of the week feeds the volume read but is NOT
                     // listed: on a five-day split it buried the diff under every
@@ -844,21 +914,17 @@ fun ProgramBuilderScreen(
                             editable = true,
                             folded = true,
                             onSets = { entryIndex, delta ->
-                                viewModel.editEntry(presetIndex, entryIndex) {
-                                    it.copy(sets = (it.sets + delta).coerceIn(1, ProgramRules.maxSetsPerEntry(it.exerciseName)))
-                                }
+                                viewModel.editEntry(presetIndex, entryIndex) { it.withSetsDelta(delta) }
                             },
                             onReps = { entryIndex, delta ->
-                                viewModel.editEntry(presetIndex, entryIndex) {
-                                    it.copy(reps = (it.reps + delta).coerceIn(1, 30))
-                                }
+                                viewModel.editEntry(presetIndex, entryIndex) { it.withRepsDelta(delta) }
                             },
                             onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     CoverageSummaryRow(coveragePresets, tier, focus, priorities) { coverageOpen = true }
-                    if (mode == "session" && presets.isNotEmpty()) {
+                    if (presets.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
                         val noun = if (presets.size == 1) "rite" else "rites"
                         Caption("Weekly volume includes your ${presets.size} existing $noun.")
@@ -896,13 +962,15 @@ fun ProgramBuilderScreen(
                 DockedActionBar(
                     primary = if (presets.isEmpty()) "Take this cycle" else "Add to my cycle",
                     onPrimary = { viewModel.addPresets(onDone) },
+                    primaryEnabled = !saving,
                     link = if (presets.isNotEmpty()) "Replace my cycle" else null,
+                    linkOn = !saving,
                     linkColor = IronvellumColors.DangerRed,
                     onLink = { confirmReplace = true },
                 )
             }
             "session" -> if (plan != null) {
-                DockedActionBar(primary = "Add this rite", onPrimary = { viewModel.addSession(onDone) })
+                DockedActionBar(primary = "Add this rite", onPrimary = { viewModel.addSession(onDone) }, primaryEnabled = !saving)
             }
             else -> {
                 if (improvement?.changes?.isEmpty() == true) {
@@ -913,6 +981,7 @@ fun ProgramBuilderScreen(
                     DockedActionBar(
                         primary = "Apply changes",
                         onPrimary = { viewModel.applyImprovement(onDone) },
+                        primaryEnabled = !saving,
                         link = "Keep original",
                         onLink = onDone,
                     )
