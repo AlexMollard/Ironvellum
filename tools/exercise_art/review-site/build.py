@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 p=argparse.ArgumentParser()
-p.add_argument('--limit', type=int, default=20)
+p.add_argument('--limit', type=int)
 p.add_argument('--batch', type=int, default=1)
 a=p.parse_args()
 root=Path(__file__).resolve().parents[3]
@@ -16,6 +16,8 @@ art=root/'tools/exercise_art'
 counts_path=art/'frame-counts.json'
 counts=json.loads(counts_path.read_text(encoding='utf-8')) if counts_path.exists() else {}
 generation=json.loads((art/'generation-review.json').read_text(encoding='utf-8'))
+if a.limit is None:
+    a.limit=generation.get('batchSize',50)
 batch_ids={f['id'] for f in generation['frames'][(a.batch-1)*a.limit:a.batch*a.limit]}
 for batch in generation.get('batches',[]):
     if batch['batch']==a.batch:
