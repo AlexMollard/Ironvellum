@@ -120,32 +120,32 @@
     {
       "id": "full-planche-1.png",
       "pose": "Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "planche-push-up-1.png",
       "pose": "Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "planche-push-up-2.png",
       "pose": "Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "planche-push-up-3.png",
       "pose": "Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "front-row-hold-1.png",
       "pose": "Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "front-row-hold-2.png",
       "pose": "Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "front-row-hold-3.png",
@@ -160,12 +160,12 @@
     {
       "id": "skin-the-cat-2.png",
       "pose": "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
-      "status": "redo"
+      "status": "approved"
     },
     {
       "id": "skin-the-cat-3.png",
       "pose": "Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.",
-      "status": "pending"
+      "status": "redo"
     },
     {
       "id": "tuck-back-lever-1.png",
@@ -175,7 +175,7 @@
     {
       "id": "tuck-back-lever-2.png",
       "pose": "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
-      "status": "redo"
+      "status": "approved"
     },
     {
       "id": "tuck-back-lever-3.png",
@@ -185,7 +185,7 @@
     {
       "id": "advanced-tuck-back-lever-1.png",
       "pose": "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "advanced-tuck-back-lever-2.png",
@@ -200,7 +200,7 @@
     {
       "id": "advanced-tuck-front-lever-1.png",
       "pose": "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "advanced-tuck-front-lever-2.png",
@@ -210,12 +210,12 @@
     {
       "id": "advanced-tuck-front-lever-3.png",
       "pose": "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "crow-pose-1.png",
       "pose": "Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.",
-      "status": "pending"
+      "status": "approved"
     }
   ],
   "reviewSource": "tools/exercise_art/review-input-batch-002.json",
@@ -290,13 +290,15 @@
   "correctionStatus": {
     "batch": 2,
     "correctedAwaitingReview": [
-      "planche-push-up-2.png",
-      "crow-pose-1.png"
+      "advanced-tuck-front-lever-2.png",
+      "advanced-tuck-front-lever-1.png",
+      "skin-the-cat-1.png"
     ],
-    "remainingRedo": 7,
+    "remainingRedo": 6,
     "missing": [
       "tuck-back-lever-3.png"
     ],
-    "blocker": "Image service rejected several back-lever, front-lever and Skin the Cat anatomy corrections. Row clearance repaired but pose/continuity remains flagged."
+    "blocker": "Image service blocked row-start rack edit and back-lever setup/final anatomy edits. Two replacement head orientations and row-top pose remain flagged.",
+    "reviewSource": "review-input-batch-002-revision-001.json"
   }
 }
