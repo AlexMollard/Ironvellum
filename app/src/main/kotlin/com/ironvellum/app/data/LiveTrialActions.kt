@@ -7,6 +7,8 @@ import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.isStrength
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * What the lifter does to a live trial's sets, in one place: the trial screen's
@@ -29,8 +31,11 @@ class LiveTrialActions(
      * no edit erases a neighbour's figure. A tick that earns a rest starts it first,
      * judged against the sets as they stood before this write.
      */
-    suspend fun commit(set: SessionSet, metric: ExerciseMetric) {
-        startRestAfter(set.id, set.done)
+    suspend fun commit(set: SessionSet, metric: ExerciseMetric) = writeLock.withLock { write(set, metric) }
+
+    private suspend fun write(set: SessionSet, metric: ExerciseMetric) {
+        // Only a tick can start a rest, so a stepper press goes straight to the writer.
+        if (set.done) startRestAfter(set.id, set.done)
         when {
             metric == ExerciseMetric.HOLD -> repo.updateHoldSet(set.id, set.durationSec ?: 0, set.weightKg, set.done)
             metric.isStrength -> repo.updateSet(set.id, set.reps, set.weightKg, set.done)
@@ -44,13 +49,13 @@ class LiveTrialActions(
      * (the set the notification named) is no longer the next one: a tap on a stale
      * notification must not tick the set after it.
      */
-    suspend fun tickNext(expectedSetId: Long? = null): Boolean {
+    suspend fun tickNext(expectedSetId: Long? = null): Boolean = writeLock.withLock {
         val sets = repo.observeSessionSets(sessionId).first()
-        val next = sets.firstOrNull { it.isPending } ?: return false
-        if (expectedSetId != null && next.id != expectedSetId) return false
+        val next = sets.firstOrNull { it.isPending } ?: return@withLock false
+        if (expectedSetId != null && next.id != expectedSetId) return@withLock false
         val metric = metricOf(next.exerciseId)
-        commit(next.copy(done = true), metric)
-        return true
+        write(next.copy(done = true), metric)
+        true
     }
 
     private suspend fun startRestAfter(setId: Long, nowDone: Boolean) {
@@ -77,4 +82,13 @@ class LiveTrialActions(
 
     private suspend fun metricOf(exerciseId: Long): ExerciseMetric =
         repo.observeExercises().first().firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
+
+    private companion object {
+        /**
+         * One lock for the whole process, so the trial screen's taps and the notification's
+         * "Set done" write in the order they came: a write waits behind the reads of the one
+         * before it, and a tick's rest is judged against the sets as that one left them.
+         */
+        val writeLock = Mutex()
+    }
 }

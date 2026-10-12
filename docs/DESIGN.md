@@ -134,8 +134,9 @@ set's type control: tapping it opens a small menu of the five set types
 reads "W"; Drop, Failure and Rest-pause add a 10sp letter under the number
 (D, F, R) in a muted token (`SystemGreen`, `DangerRed` at 80%, `Ink` at 85%).
 A plain working set adds none, only a faint caret on the active row. The tag is
-a label, never a reward colour, and never sheen. The cell keeps the 22dp width of
-the number so the two steppers still fit a 360dp phone.
+a label, never a reward colour, and never sheen. The cell is 24dp wide, the
+WCAG floor for a target, and the row's start padding gives the 2dp back so the two
+steppers still fit a 360dp phone.
 
 **Warm up (exercise menu).** On the open item's overflow menu, "Warm up" adds the
 ramp as Warm-up rows ahead of the first working set (`domain/WarmupRamp.kt`). It

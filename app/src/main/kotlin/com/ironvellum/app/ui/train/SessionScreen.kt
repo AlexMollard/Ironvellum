@@ -1003,16 +1003,6 @@ fun SessionScreen(
                 slideReset = slideReset,
             )
         }
-        if (locked) {
-            PocketLockOverlay(
-                rest = rest,
-                nextLine = activeSet?.let { set ->
-                    "Set ${set.workingNumber(ui.sets)} · ${set.exerciseName} · " +
-                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
-                },
-                onUnlock = { locked = false },
-            )
-        }
         undo?.let { prompt ->
             UndoBar(
                 message = prompt.message,
@@ -1033,6 +1023,17 @@ fun SessionScreen(
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
                     .padding(bottom = FOOTER_HEIGHT + 8.dp),
+            )
+        }
+        // Last child, so nothing above it (the Undo bar included) can take a touch while locked.
+        if (locked) {
+            PocketLockOverlay(
+                rest = rest,
+                nextLine = activeSet?.let { set ->
+                    "Set ${set.workingNumber(ui.sets)} · ${set.exerciseName} · " +
+                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                },
+                onUnlock = { locked = false },
             )
         }
     }
@@ -2140,7 +2141,7 @@ private fun TrialSetRow(
                 .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
                 .padding(vertical = 4.dp),
         ) {
-            Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 SetNumberCell(
                     label = label,
                     kind = set.kind,
@@ -2148,7 +2149,7 @@ private fun TrialSetRow(
                     tone = IronvellumColors.Ink,
                     showHint = true,
                     numberStyle = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.width(22.dp),
+                    modifier = Modifier.width(24.dp),
                 )
                 figures.forEach { figure ->
                     FigureStepper(
@@ -2238,7 +2239,7 @@ private fun TrialSetRow(
             kind = set.kind,
             onKind = onSetKind,
             tone = tone,
-            modifier = Modifier.padding(start = 6.dp).width(22.dp),
+            modifier = Modifier.padding(start = 4.dp).width(24.dp),
         )
         Text(
             setFigureText(set, metric, weighted),

@@ -124,7 +124,8 @@ internal fun TimedSetControl(
 private fun finishEarly(clock: SetClock, onClock: (SetClock?) -> Unit, onLog: (Int) -> Unit) {
     val seconds = clock.loggedSeconds(SystemClock.elapsedRealtime())
     onClock(null)
-    onLog(seconds)
+    // Finishing before the first second is a stop, not a 0-second hold to log.
+    if (seconds > 0) onLog(seconds)
 }
 
 /** The clock of a running [SetClock]: ticks while it runs, and only then. */
