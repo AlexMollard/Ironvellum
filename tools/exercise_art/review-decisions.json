@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 5,
-  "exportedAt": "2026-10-12T23:00:32.388432+00:00",
+  "exportedAt": "2026-10-12T23:08:49.335015+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1206,11 +1206,11 @@
     },
     {
       "id": "decline-dumbbell-fly-1.png",
-      "sha256": "18fdbb815fecc371b9b0f32e02bb21f17ddb2fbce2386e0a455023b4231fece7",
+      "sha256": "688b288c8dfa45b245347afa74ea8f04dfc2d880111d14641316795e01446cd4",
       "status": "pending",
-      "note": "Replacement for: ankle clip into ankle holds",
+      "note": "Redrawn leg/pad overlap following: ankles still in the bars at teh end",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T23:00:32.388432+00:00"
+      "updatedAt": "2026-10-12T23:08:49.335015+00:00"
     },
     {
       "id": "chest-dip-1.png",
