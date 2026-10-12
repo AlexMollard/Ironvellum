@@ -1,0 +1,1787 @@
+{
+  "schema": "ironvellum-still-selections-v1",
+  "indexing": "sourceFrame is zero-based in the original source, not the filtered animation",
+  "policy": "One representative still for every exercise. Visually compared all 445 existing animated drawings. Preserve original vector paths and reports in animation-sources for reselection. No tracing or line-weight changes.",
+  "selections": {
+    "ek_0001": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0002": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0004": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0005": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0008": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0009": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0013": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0014": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0015": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0016": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0017": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0018": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0019": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0020": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0021": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0022": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0023": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0024": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0025": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0026": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0027": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0028": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0029": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0031": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0032": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0033": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0034": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0035": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0037": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0038": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0039": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0041": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0042": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0043": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0044": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0045": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0046": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0048": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0049": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0050": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0051": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0052": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0053": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0054": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0055": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0056": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0057": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0058": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0059": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0060": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0061": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0062": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0063": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0064": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0066": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0067": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0068": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0069": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0070": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0071": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0072": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0076": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0077": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0078": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0079": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0081": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0082": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0083": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0085": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0086": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0087": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0090": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0091": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0092": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0093": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0094": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0096": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0098": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0099": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0100": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0101": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0102": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0103": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0104": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0107": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0109": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0111": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0112": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0113": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0114": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0115": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0117": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0118": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0119": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0120": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0121": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0122": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0123": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0124": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0125": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0126": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0127": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0128": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0129": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0130": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0131": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0132": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0133": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0134": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0136": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0137": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0138": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0139": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0140": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0141": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0142": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0143": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0144": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0145": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0146": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0148": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0150": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0151": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0154": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0158": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0160": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0161": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0162": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0163": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0164": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0165": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0166": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0168": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0169": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0170": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0171": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0172": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0174": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0175": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0177": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0178": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0179": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0181": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0182": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0183": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0186": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0187": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0189": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0190": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0193": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0194": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0195": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0201": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0202": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0203": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0204": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0205": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0206": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0207": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0208": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0209": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0210": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0211": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0212": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0213": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0214": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0215": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0216": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0217": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0218": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0219": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0220": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0221": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0222": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0223": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0224": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0225": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0226": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0227": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0228": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0229": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0232": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0236": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0237": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0238": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0239": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0240": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0241": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0243": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0245": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0247": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0248": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0250": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0251": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0253": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0254": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0256": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0259": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0261": {
+      "sourceFrame": 0,
+      "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
+    },
+    "ek_0264": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0265": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0266": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0268": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0270": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0272": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0273": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0274": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0275": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0276": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0277": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0278": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0279": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0280": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0281": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0282": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0284": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0285": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0286": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0287": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0288": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0289": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0290": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0291": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0292": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0293": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0295": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "ek_0296": {
+      "sourceFrame": 1,
+      "reason": "Distinct active pose with readable body and equipment."
+    },
+    "wg_active-hang": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_archer-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_arm-circles": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_arnold-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_assault-bike": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_assisted-chin-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_assisted-pistol-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_assisted-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_band-pull-apart": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-clamshell": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-dead-bug": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-donkey-kick": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-face-pull": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-fire-hydrant": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-frog-pump": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-glute-bridge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-hip-thrust": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-kickback": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-lat-pulldown": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-lateral-walk": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-monster-walk": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-pallof-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-seated-hip-abduction": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-standing-hip-abduction": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_banded-woodchop": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_barbell-glute-bridge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_battle-ropes": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bear-crawl": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bear-plank": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_belt-squat": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bent-over-rear-delt-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bird-dog": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bodyweight-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_bulgarian-split-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_burpee": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_butterfly-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-lateral-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-pallof-hold": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-pull-through": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-rear-delt-fly": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-standing-hip-abduction": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-standing-hip-adduction": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cable-woodchop": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_calf-raise": {
+      "sourceFrame": 2,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_captains-chair-knee-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cat-cow-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_chest-supported-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_childs-pose": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_chin-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_clamshell": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_commando-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_copenhagen-plank": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cossack-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_crab-walk": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cross-body-shoulder-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_curtsy-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_cycling": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dead-bug": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dead-hang": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_decline-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_decline-sit-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_deficit-reverse-lunge": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_diamond-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_donkey-kick": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_doorway-chest-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_doorway-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dragon-flag": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-bent-over-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-curtsy-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-glute-bridge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-hip-thrust": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-lateral-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-romanian-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-side-bend": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-sumo-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_dumbbell-sumo-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_elliptical": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_explosive-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_face-pull": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_feet-elevated-pike-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_fire-hydrant": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_flutter-kick": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_forward-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_frog-pump": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_front-foot-elevated-split-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_glute-bridge-march": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_glute-focused-back-extension": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_goblet-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_half-kneeling-pallof-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hamstring-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_handstand-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hanging-knee-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hanging-leg-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_heel-elevated-goblet-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_high-knees": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hiking": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hindu-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hip-abduction-machine": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hip-adduction-machine": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hip-airplane": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hip-thrust": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hollow-body-hold": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_hollow-rock": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_inchworm": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_incline-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_jump-rope": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_jump-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_jumping-jack": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_kettlebell-romanian-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_kettlebell-swing": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_knee-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_kneeling-hip-flexor-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_l-sit-hold": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_l-sit-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_landmine-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_landmine-romanian-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_landmine-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_lateral-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_lateral-shuffle": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_leg-swings-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_lying-hamstring-walkout": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_lying-leg-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_machine-glute-kickback": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_machine-lateral-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_machine-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_machine-shoulder-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_meadows-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_mountain-climber": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_negative-pull-up": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_nordic-hamstring-curl": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_one-arm-dumbbell-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_overhead-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_overhead-tricep-extension": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_pallof-press": {
+      "sourceFrame": 2,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_pec-deck": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_pendlay-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_pike-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_pistol-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_plank": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_plank-jack": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_plank-shoulder-tap": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_plate-front-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_prone-t-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_prone-y-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_push-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_push-up-shoulder-tap": {
+      "sourceFrame": 2,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_rack-pull": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_rear-delt-fly": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_reverse-curl": {
+      "sourceFrame": 2,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_reverse-hyperextension": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_reverse-pec-deck": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_reverse-snow-angel": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_rowing": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_running": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_russian-twist": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_scapular-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_scapular-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_seated-dumbbell-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_seated-forward-fold-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_seated-knee-tuck": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_shrimp-squat": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_shrug": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_side-lying-hip-abduction": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_side-lying-leg-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_side-plank-hip-dip": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-arm-cable-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-arm-dumbbell-tricep-extension": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-dumbbell-skullcrusher": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-leg-box-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-leg-calf-raise": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-leg-glute-bridge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_single-leg-romanian-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_sissy-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_skater-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_skierg": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_smith-machine-bulgarian-split-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_smith-machine-hip-thrust": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_smith-machine-reverse-lunge": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_smith-machine-romanian-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_smith-machine-split-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_split-squat": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_sprawl": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_stability-ball-hamstring-curl": {
+      "sourceFrame": 1,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_stair-climber": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_standing-dumbbell-press": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_standing-quad-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_step-down": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_sumo-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_superman": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_swimming": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_toe-touch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_torso-twist-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_towel-hamstring-curl": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_towel-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_towel-row": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_trap-bar-deadlift": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_treadmill-incline-walk": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_typewriter-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_v-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_walking": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wall-calf-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wall-handstand-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wall-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wall-sit": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wall-walk": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-chin-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-crunch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-dip": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-pull-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_weighted-russian-twist": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wide-grip-lat-pulldown": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wide-push-up": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_worlds-greatest-stretch": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wrist-curl": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    },
+    "wg_wrist-extension": {
+      "sourceFrame": 0,
+      "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
+    }
+  }
+}

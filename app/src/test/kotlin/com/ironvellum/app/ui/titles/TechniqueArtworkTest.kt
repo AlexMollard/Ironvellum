@@ -11,10 +11,8 @@ class TechniqueArtworkTest {
     @Test
     fun everyTechniqueHasADrawingOrTheHousePictogramAndNoAiArtRemains() {
         val drawn = Skills.ALL.filter { techniqueDrawing(it.name) != null }
-        // Every technique is drawn (its own movement or a captioned proxy) or wears its glyph; none has a third source.
-        assertTrue("some techniques are drawn", drawn.size >= 60)
-        assertTrue("some techniques wear the pictogram", drawn.size < Skills.ALL.size)
-        Skills.ALL.filter { it !in drawn }.forEach { glyphFamily(it) }
+        // Every technique has its own still; none falls back to the glyph, and there is no third source.
+        assertEquals("techniques with no drawing", emptyList<String>(), Skills.ALL.filter { it !in drawn }.map { it.name })
         assertTrue(java.io.File("src/main/res/drawable-nodpi").listFiles().orEmpty().none { it.name.startsWith("skill_") })
     }
 

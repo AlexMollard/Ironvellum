@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
-import com.ironvellum.app.ui.components.ExerciseStill
+import com.ironvellum.app.ui.components.ExerciseDrawing
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.TileShape
@@ -405,7 +405,7 @@ private fun SkillNode(
             ) {
                 if (drawing != null) {
                     // A tree node is a thumbnail: the first pose, still. The sheet is where it moves.
-                    ExerciseStill(drawing, Modifier.size(NodeSize - 10.dp), alpha = artAlpha(art))
+                    ExerciseDrawing(drawing, Modifier.size(NodeSize - 10.dp), alpha = artAlpha(art))
                 } else {
                     SkillGlyph(
                         family = glyphFamily(skill),

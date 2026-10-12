@@ -64,7 +64,7 @@ internal fun ExerciseInfoSheet(
             InfoPage("About") {
                 // The drawing leads: what the movement looks like before anything is said about it.
                 section(null) {
-                    ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp), animated = true)
+                    ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp))
                 }
                 if (lastLine != null) text("LAST TRIAL", lastLine)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)

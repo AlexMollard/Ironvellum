@@ -339,6 +339,7 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--owner-only", action="store_true", help="rebuild only the owner-made drawings (no --src needed)")
     ap.add_argument("--reweight", action="store_true", help="redraw the shipped drawings at art.WEIGHT (no --src needed)")
+    ap.add_argument("--select-stills", action="store_true", help="apply selected still poses to existing vector assets")
     a = ap.parse_args()
     if a.reweight:
         sys.path.insert(0, str(HERE))
@@ -353,6 +354,15 @@ def main():
         print("drawings", len(report), "animated", sum(1 for r in report.values() if len(r["kept"]) > 1),
               "still", sum(1 for r in report.values() if len(r["kept"]) == 1))
     report = json.loads(REPORT.read_text(encoding="utf-8")) if REPORT.exists() else {}
+    selection_path = HERE / "still-selections.json"
+    if selection_path.exists():
+        sys.path.insert(0, str(HERE))
+        from stills import apply_selections
+        selections = json.loads(selection_path.read_text(encoding="utf-8"))["selections"]
+        if a.check or a.select_stills or a.src or a.owner_only:
+            apply_selections(ASSETS, report, selections, HERE / "animation-sources", check=a.check)
+            if not a.check:
+                REPORT.write_bytes((json.dumps(report, indent=1, ensure_ascii=False) + chr(10)).replace(chr(10), chr(13) + chr(10)).encode("utf-8"))
     stale = []
     for path, text in ((DOCS / "skill-technique-art.json", technique_doc(mp, report)), (KT / "ExerciseLibrary.kt", library_kt(lib)), (KT / "ExerciseArtIndex.kt", index_kt(lib, mp, report)),
                        (KT / "LibraryGuides.kt", guides_kt(lib, guides))):
