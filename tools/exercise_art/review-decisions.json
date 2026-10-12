@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 5,
-  "exportedAt": "2026-10-12T22:56:17.570483+00:00",
+  "exportedAt": "2026-10-12T23:00:32.388432+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1159,10 +1159,10 @@
     {
       "id": "dumbbell-bent-arm-pullover-1.png",
       "sha256": "4cc2d8716cbd121f8befd9325ab870ac9256d29d208e69c2af70c37d165cce82",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: Left arm is detached",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T22:56:17.570483+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T22:57:33.898Z"
     },
     {
       "id": "cable-fly-1.png",
@@ -1191,10 +1191,10 @@
     {
       "id": "decline-bench-press-1.png",
       "sha256": "285defde61326e26c3fcd4d5fddd076040740f46017f338828dae4aef2bcb811",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: Left arm is detached",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T22:56:17.570483+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T22:57:36.085Z"
     },
     {
       "id": "decline-dumbbell-press-1.png",
@@ -1206,11 +1206,11 @@
     },
     {
       "id": "decline-dumbbell-fly-1.png",
-      "sha256": "1b69b71eaeca4d642c95ba2cf489de3a0b3aae0a0c31c655ef6b751d446384e3",
+      "sha256": "18fdbb815fecc371b9b0f32e02bb21f17ddb2fbce2386e0a455023b4231fece7",
       "status": "pending",
-      "note": "Replacement for: Left arm is in his leg",
+      "note": "Replacement for: ankle clip into ankle holds",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T22:56:17.570483+00:00"
+      "updatedAt": "2026-10-12T23:00:32.388432+00:00"
     },
     {
       "id": "chest-dip-1.png",

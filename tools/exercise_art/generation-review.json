@@ -735,7 +735,7 @@
     {
       "id": "dumbbell-bent-arm-pullover-1.png",
       "pose": "Redraw the selected source pose for Dumbbell Bent-Arm Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "cable-fly-1.png",
@@ -755,7 +755,7 @@
     {
       "id": "decline-bench-press-1.png",
       "pose": "Redraw the selected source pose for Decline Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "decline-dumbbell-press-1.png",
@@ -2982,8 +2982,8 @@
       "status": "awaiting-user-review",
       "available": 50,
       "blocked": [],
-      "pending": 3,
-      "approved": 47,
+      "pending": 1,
+      "approved": 49,
       "redo": 0
     },
     {
@@ -3455,17 +3455,15 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "155 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "157 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 5,
+    "remainingRedo": 0,
     "correctedAwaitingReview": [
-      "dumbbell-bent-arm-pullover-1.png",
-      "decline-bench-press-1.png",
       "decline-dumbbell-fly-1.png"
     ],
-    "remainingRedo": 0,
-    "note": "47 user approvals imported; 3 new arm corrections require user review"
+    "note": "49 approved; revised ankle-pad contact awaits user review"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
