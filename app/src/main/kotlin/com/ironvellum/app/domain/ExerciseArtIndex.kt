@@ -192,6 +192,7 @@ object ExerciseArtIndex {
         "double-bodyweight squat" to ref("ek_0122", 2),
         "drag curl" to ref("ek_0222", 2),
         "dragon flag" to ref("wg_dragon-flag", 3),
+        "dragon squat" to ref("own_dragon-squat", 1),
         "dumbbell bench press" to ref("ek_0055", 2),
         "dumbbell bent-arm pullover" to ref("ek_0046", 2),
         "dumbbell bent-over row" to ref("wg_dumbbell-bent-over-row", 3),
@@ -317,6 +318,7 @@ object ExerciseArtIndex {
         "kip-up" to ref("own_kip-up", 1),
         "knee circles" to ref("ek_0277", 2),
         "knee push-up" to ref("wg_knee-push-up", 3),
+        "knee-to-wall dorsiflexion" to ref("own_knee-to-wall-dorsiflexion", 1),
         "kneeling barbell rollout" to ref("ek_0286", 2),
         "kneeling cable triceps extension" to ref("ek_0177", 2),
         "kneeling hip flexor stretch" to ref("wg_kneeling-hip-flexor-stretch", 3),
@@ -366,6 +368,7 @@ object ExerciseArtIndex {
         "negative pull-up" to ref("wg_negative-pull-up", 3),
         "neutral-grip pull-up" to ref("ek_0090", 2),
         "nordic curl" to ref("wg_nordic-hamstring-curl", 3),
+        "nordic negative" to ref("own_nordic-negative", 1),
         "one-arm barbell curl" to ref("ek_0254", 2),
         "one-arm barbell floor press" to ref("ek_0070", 2),
         "one-arm barbell snatch" to ref("ek_0148", 2),
@@ -488,6 +491,7 @@ object ExerciseArtIndex {
         "smith machine reverse calf raise" to ref("ek_0280", 2),
         "smith machine reverse lunge" to ref("wg_smith-machine-reverse-lunge", 3),
         "smith machine romanian deadlift" to ref("wg_smith-machine-romanian-deadlift", 3),
+        "smith machine row" to ref("own_smith-machine-row", 1),
         "smith machine shrug" to ref("ek_0041", 2),
         "smith machine split squat" to ref("wg_smith-machine-split-squat", 3),
         "smith machine squat" to ref("ek_0124", 2),
@@ -631,6 +635,7 @@ object ExerciseArtIndex {
         "double-bodyweight deadlift" to ref("ek_0099", 2),
         "double-bodyweight squat" to ref("ek_0122", 2),
         "dragon flag" to ref("wg_dragon-flag", 3),
+        "dragon squat" to ref("own_dragon-squat", 1),
         "elbow lever" to ref("own_elbow-lever", 1),
         "elevated pike push-up" to ref("wg_feet-elevated-pike-push-up", 3),
         "freestanding handstand" to ref("own_freestanding-handstand", 1),
@@ -664,7 +669,7 @@ object ExerciseArtIndex {
         "muscle-up" to ref("own_muscle-up", 1),
         "negative pull-up" to ref("wg_negative-pull-up", 3),
         "nordic curl" to ref("wg_nordic-hamstring-curl", 3),
-        "nordic negative" to ref("wg_nordic-hamstring-curl", 3),
+        "nordic negative" to ref("own_nordic-negative", 1),
         "one-arm front lever" to ref("own_one-arm-front-lever", 1),
         "one-arm handstand" to ref("own_one-arm-handstand", 1),
         "one-arm hang" to ref("own_one-arm-hang", 1),
@@ -726,6 +731,5 @@ object ExerciseArtIndex {
     )
 
     private val proxies: Map<String, String> = mapOf(
-        "nordic negative" to "Nordic Curl",
     )
 }

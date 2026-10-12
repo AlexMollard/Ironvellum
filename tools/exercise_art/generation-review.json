@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 4,
-  "status": "awaiting-user-review",
+  "status": "all-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -350,12 +350,12 @@
     {
       "id": "nordic-negative-1.png",
       "pose": "Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "dragon-squat-1.png",
       "pose": "Bottom of a DRAGON SQUAT: right supporting knee deeply bent, heel flat; left non-supporting leg crosses BEHIND and around the right supporting leg and extends straight diagonally to the RIGHT beyond it, hovering off floor. Clear crossed-leg configuration, not a pistol or shrimp squat. Torso leans slightly forward, arms reach forward for balance.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "dumbbell-external-rotation-1.png",
@@ -365,7 +365,7 @@
     {
       "id": "knee-to-wall-dorsiflexion-1.png",
       "pose": "Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "smith-machine-overhead-press-1.png",
@@ -375,7 +375,7 @@
     {
       "id": "smith-machine-row-1.png",
       "pose": "Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "tib-raise-1.png",
@@ -694,34 +694,30 @@
         "wrestling-1.png",
         "yoga-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 43,
       "blocked": [],
-      "pending": 4,
-      "approved": 39
+      "pending": 0,
+      "approved": 43
     }
   ],
   "hosting": "local",
   "localReviewUrl": "http://127.0.0.1:18765",
-  "approvedAt": "2026-10-12T05:23:26.214589+00:00",
+  "approvedAt": "2026-10-12T06:35:20.903809+00:00",
   "frameConsistency": {
     "canvas": "Same square canvas dimensions for every frame in a movement",
     "camera": "Fixed camera and athlete scale within a movement",
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "104 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "All 108 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 4,
-    "correctedAwaitingReview": [
-      "nordic-negative-1.png",
-      "dragon-squat-1.png",
-      "knee-to-wall-dorsiflexion-1.png",
-      "smith-machine-row-1.png"
-    ],
+    "correctedAwaitingReview": [],
     "remainingRedo": 0,
-    "note": "39 approved; 4 replacements await user review"
+    "missing": [],
+    "note": "All batches fully approved by user; 108 single stills."
   },
   "artMode": "single-still",
   "framesPerExercise": 1

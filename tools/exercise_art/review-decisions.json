@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 4,
-  "exportedAt": "2026-10-12T06:28:11.994853+00:00",
-  "batchComplete": false,
+  "exportedAt": "2026-10-12T06:35:20.903809+00:00",
+  "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -543,18 +543,18 @@
     {
       "id": "nordic-negative-1.png",
       "sha256": "7d530da74ef8ed9eb29f10f0f43d04445cce0eb8a2e5a3cf5032eacffb01142a",
-      "status": "pending",
-      "note": "Replacement for: The head doesnt match the main style as it has hair and a ear",
-      "reviewer": "Assistant QA",
-      "updatedAt": "2026-10-12T06:28:11.994853+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T06:35:20.903809+00:00"
     },
     {
       "id": "dragon-squat-1.png",
       "sha256": "c7b1ab1be1ca42926438a9d061be837b0f1e87d735fb12e4f97880d2f1c94ee6",
-      "status": "pending",
-      "note": "Replacement for: Dragon squat is defined by one leg going behind the other where this is more representaive of a pistol squat",
-      "reviewer": "Assistant QA",
-      "updatedAt": "2026-10-12T06:32:02.068466+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T06:35:20.903809+00:00"
     },
     {
       "id": "dumbbell-external-rotation-1.png",
@@ -567,10 +567,10 @@
     {
       "id": "knee-to-wall-dorsiflexion-1.png",
       "sha256": "68d31fe86b028e5f1d74f54df383f04c9b8b4f46f622ed3416c3c2e6faf0a27d",
-      "status": "pending",
-      "note": "Replacement for: This is close to perfect but his toes are touching the wall as he should be stand back from the wall slightly with knee reaching over toes",
-      "reviewer": "Assistant QA",
-      "updatedAt": "2026-10-12T06:28:11.994853+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T06:35:20.903809+00:00"
     },
     {
       "id": "smith-machine-overhead-press-1.png",
@@ -583,10 +583,10 @@
     {
       "id": "smith-machine-row-1.png",
       "sha256": "f1a89a8de0941e1c085c59d58f6106b948cf5fe02394f7ca1785c4bcc547e2ba",
-      "status": "pending",
-      "note": "Replacement for: The barbell is clipping into the machine ",
-      "reviewer": "Assistant QA",
-      "updatedAt": "2026-10-12T06:28:11.994853+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T06:35:20.903809+00:00"
     },
     {
       "id": "tib-raise-1.png",
