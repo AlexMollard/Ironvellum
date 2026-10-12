@@ -2,6 +2,9 @@
 import io
 import sys
 import unittest
+import tempfile
+import json
+from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
@@ -9,9 +12,57 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import art  # noqa: E402
+import build  # noqa: E402
 
 
 class ArtTest(unittest.TestCase):
+    def test_owner_encode_preserves_soft_alpha_and_three_cells(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            alpha = np.tile(np.arange(256, dtype=np.uint8), (256, 1))
+            rgba = np.full((256, 256, 4), 255, np.uint8)
+            rgba[:, :, 3] = alpha
+            for n in (1, 2, 3):
+                Image.fromarray(rgba).save(Path(tmp) / f"pose-{n}.png")
+            np.testing.assert_array_equal(art.coverage("own", tmp, "pose", 0), alpha)
+            data, cw, ch = art.encode("own", tmp, "pose", 3)
+            result = np.asarray(Image.open(io.BytesIO(data)))
+            self.assertEqual(result.shape, (ch, cw * 3, 3))
+            self.assertGreater(len(np.unique(result)), 200)
+            np.testing.assert_array_equal(result[:, :cw], result[:, cw:2*cw])
+
+    def test_owner_only_preserves_upstream_assets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            upstream = folder / "ek_existing.webp"
+            upstream.write_bytes(b"keep upstream unchanged")
+            with patch.object(build, "ASSETS", folder), patch.object(build, "KT", folder), \
+                    patch.object(build, "load", return_value=([], {"mapped": [], "techniques": {}}, {})), \
+                    patch.object(build, "apply_owner", return_value=set()), \
+                    patch.object(sys, "argv", ["build.py", "--owner-only"]):
+                build.main()
+            self.assertEqual(upstream.read_bytes(), b"keep upstream unchanged")
+
+    def test_owner_mapping_requires_complete_three_frame_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            brief = folder / "missing.json"
+            brief.write_text(json.dumps({"entries": [
+                {"slug": "frog-stand", "name": "Frog Stand", "kind": "technique"},
+                {"slug": "row", "name": "Row", "kind": "exercise"},
+            ]}))
+            for slug in ("frog-stand", "row"):
+                for n in (1, 2):
+                    (folder / f"{slug}-{n}.png").touch()
+            mp = {"mapped": [], "techniques": {}}
+            with patch.object(build, "OWNER", folder), patch.object(build, "MISSING", brief):
+                self.assertEqual(build.apply_owner(mp), set())
+                self.assertEqual(mp["techniques"], {})
+                for slug in ("frog-stand", "row"):
+                    (folder / f"{slug}-3.png").touch()
+                self.assertEqual(build.apply_owner(mp), {"own_frog-stand", "own_row"})
+            self.assertEqual(build.art_table([], mp)["Frog Stand"], ("own_frog-stand", 3))
+            self.assertEqual(build.art_table([], mp)["Row"], ("own_row", 3))
+
     def test_strip_keeps_frames_in_one_crop(self):
         a = np.zeros((100, 100), np.uint8)
         b = np.zeros((100, 100), np.uint8)

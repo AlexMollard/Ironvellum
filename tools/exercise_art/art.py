@@ -20,10 +20,22 @@ LEVELS = 4       # coverage steps kept (lossless WebP; 4 steps cost about 5 KB a
 THRESHOLD = 24   # coverage below this is background noise when finding the ink bounds
 
 
+def owner_files(folder, slug):
+    """Only complete three-pose PNG sets are eligible for import."""
+    files = [Path(folder) / ("%s-%d.png" % (slug, i)) for i in range(1, 4)]
+    return files if all(p.is_file() for p in files) else []
+
+
 def coverage(kind, src, ident, index):
     """One frame's coverage mask as uint8, or raises FileNotFoundError."""
     src = Path(src)
-    if kind == "ek":
+    if kind == "own":
+        im = Image.open(src / ("%s-%d.png" % (ident, index + 1))).convert("RGBA")
+        a = np.asarray(im)[:, :, 3].astype(np.uint8)
+        if not (a < 255).any() or not (a > 0).any():
+            raise ValueError("Owner PNG must contain visible ink and a transparent background: %s" % ident)
+        return a
+    elif kind == "ek":
         name = "relaxation" if index == 0 else "tension"
         im = Image.open(src / "ek" / "dist" / "png" / ("%s-%s.png" % (ident, name))).convert("L")
         a = 255 - np.asarray(im).astype(np.uint8)
@@ -43,17 +55,17 @@ def normalise(a):
     return a
 
 
-def strip(frames):
+def strip(frames, max_side=MAX_SIDE, threshold=THRESHOLD):
     """Frames -> (PIL 'L' image of all cells side by side, cell width, cell height)."""
     ys, xs = [], []
     for a in frames:
-        m = a > THRESHOLD
+        m = a > threshold
         rows, cols = np.where(m.any(1))[0], np.where(m.any(0))[0]
         ys += [rows[0], rows[-1]]
         xs += [cols[0], cols[-1]]
     y0, y1, x0, x1 = min(ys), max(ys) + 1, min(xs), max(xs) + 1
     w, h = x1 - x0, y1 - y0
-    s = MAX_SIDE / max(w, h)
+    s = max_side / max(w, h)
     cw, ch = max(1, round(w * s)), max(1, round(h * s))
     out = Image.new("L", (cw * len(frames), ch))
     for i, a in enumerate(frames):
@@ -71,7 +83,9 @@ def quantise(img):
 def encode(kind, src, ident, nframes):
     """-> (webp bytes, cell width, cell height)."""
     frames = [coverage(kind, src, ident, i) for i in range(nframes)]
-    img, cw, ch = strip(frames)
+    if kind == "own" and len({a.shape for a in frames}) != 1:
+        raise ValueError("Owner frames must use the same canvas: %s" % ident)
+    img, cw, ch = strip(frames, max_side=1024, threshold=0) if kind == "own" else strip(frames)
     buf = io.BytesIO()
-    quantise(img).convert("RGB").save(buf, "WEBP", lossless=True, quality=100, method=6)
+    (img if kind == "own" else quantise(img)).convert("RGB").save(buf, "WEBP", lossless=True, quality=100, method=6)
     return buf.getvalue(), cw, ch
