@@ -128,11 +128,16 @@ class WorkoutShareTest {
         assertEquals(
             "Ironvellum · Push day · 16 Sep\n" +
                 "\n" +
-                "Bench    $g$g$g$g$p 5×5 @ 80kg\n" +
-                "OHP      $g$g$g$y 6/6/7/4 @ 45kg\n" +
-                "Dips     $g$g$g 3×10 @ +10kg\n" +
-                "Laterals $g$g$b 15/15 @ 8kg\n" +
-                "Plank    $g$y$g 60/45/60s\n" +
+                "Bench Press · 80kg\n" +
+                "$g$g$g$g$p 5×5\n" +
+                "Overhead Press · 45kg\n" +
+                "$g$g$g$y 6/6/7/4\n" +
+                "Dip · +10kg\n" +
+                "$g$g$g 3×10\n" +
+                "Lateral Raise · 8kg\n" +
+                "$g$g$b 15/15\n" +
+                "Plank\n" +
+                "$g$y$g 60/45/60s\n" +
                 "\n" +
                 "52 min · 17 sets · +214 XP · 380 STR",
             text,
@@ -151,7 +156,7 @@ class WorkoutShareTest {
             listOf(exercise(1, "Push-up")),
             targets = mapOf(1L to 12),
         )
-        assertTrue(text, text.contains("Push-up $g$y$b$g 12/9/15"))
+        assertTrue(text, text.contains("Push-up\n$g$y$b$g 12/9/15"))
     }
 
     @Test
@@ -165,7 +170,7 @@ class WorkoutShareTest {
             listOf(exercise(1, "Bench Press", weighted = true)),
             targets = mapOf(1L to 5),
         )
-        assertTrue(text, text.contains("Bench $g$g 5/5 @ 80kg"))
+        assertTrue(text, text.contains("Bench Press · 80kg\n$g$g 5/5"))
         assertFalse(text, text.contains(b))
     }
 
@@ -176,13 +181,13 @@ class WorkoutShareTest {
             listOf(exercise(1, "Bench Press", weighted = true), exercise(2, "Push-up")),
         )
         assertFalse(text, text.contains("Bench"))
-        assertTrue(text, text.contains("Push-up $g 12"))
+        assertTrue(text, text.contains("Push-up\n$g 12"))
     }
 
     @Test
     fun `with no target known a done set is green`() {
         val text = card(listOf(set(1, "Push-up", 0, 3), set(1, "Push-up", 1, 1)), listOf(exercise(1, "Push-up")))
-        assertTrue(text, text.contains("Push-up $g$g 3/1"))
+        assertTrue(text, text.contains("Push-up\n$g$g 3/1"))
     }
 
     @Test
@@ -192,7 +197,7 @@ class WorkoutShareTest {
             listOf(exercise(1, "Push-up")),
             targets = mapOf(1L to 12),
         )
-        assertTrue(text, text.contains("Push-up $g$b 12"))
+        assertTrue(text, text.contains("Push-up\n$g$b 12"))
     }
 
     @Test
@@ -203,22 +208,22 @@ class WorkoutShareTest {
             List(3) { set(1, "Dip", it, 8, 10.0) } + List(3) { set(2, "Dumbbell Shoulder Press", it, 5, 18.0, position = 1) },
             listOf(dip, press),
         )
-        assertTrue(text, text.contains("Dips   $g$g$g 3×8 @ +10kg"))
-        assertTrue(text, text.contains("DB OHP $g$g$g 3×5 @ 18kg"))
+        assertTrue(text, text.contains("Dip · +10kg\n$g$g$g 3×8"))
+        assertTrue(text, text.contains("Dumbbell Shoulder Press · 18kg\n$g$g$g 3×5"))
         assertFalse(text, text.contains("+18"))
     }
 
     @Test
     fun `pure bodyweight prints no load and the top load wins`() {
         val bare = card(List(3) { set(1, "Push-up", it, 12) }, listOf(exercise(1, "Push-up")))
-        assertTrue(bare, bare.lines().any { it == "Push-up $g$g$g 3×12" })
+        assertTrue(bare, bare.contains("Push-up\n$g$g$g 3×12"))
         assertFalse(bare, bare.contains("kg"))
 
         val ramp = card(
             listOf(set(1, "Dip", 0, 6, 20.0), set(1, "Dip", 1, 6, 22.5), set(1, "Dip", 2, 6)),
             listOf(exercise(1, "Dip")),
         )
-        assertTrue(ramp, ramp.contains("Dips $g$g$g 3×6 @ top +22.5kg"))
+        assertTrue(ramp, ramp.contains("Dip · top +22.5kg\n$g$g$g 3×6"))
     }
 
     /** The isolation step is 1.25 kg, so a real load can sit on a quarter kilo. */
@@ -228,7 +233,7 @@ class WorkoutShareTest {
             List(3) { set(1, "Lateral Raise", it, 8, 8.75) },
             listOf(exercise(1, "Lateral Raise", weighted = true)),
         )
-        assertTrue(text, text.contains("Laterals $g$g$g 3×8 @ 8.75kg"))
+        assertTrue(text, text.contains("Lateral Raise · 8.75kg\n$g$g$g 3×8"))
     }
 
     @Test
@@ -243,7 +248,7 @@ class WorkoutShareTest {
             listOf(plank),
             targets = mapOf(1L to 60),
         )
-        assertTrue(text, text.contains("Plank $g$y$b 60/45s"))
+        assertTrue(text, text.contains("Plank\n$g$y$b 60/45s"))
     }
 
     @Test
@@ -253,7 +258,7 @@ class WorkoutShareTest {
             listOf(exercise(1, "L-sit", ExerciseMetric.HOLD)),
             targets = mapOf(1L to 20),
         )
-        assertTrue(text, text.contains("L-sit $g$g 20/20s @ +5kg"))
+        assertTrue(text, text.contains("L-sit · +5kg\n$g$g 20/20s"))
     }
 
     @Test
@@ -267,8 +272,8 @@ class WorkoutShareTest {
             ),
             listOf(run, climb),
         )
-        assertTrue(text, text.contains("Run   5.2km in 28:10"))
-        assertTrue(text, text.contains("Climb 6 attempts · V4"))
+        assertTrue(text, text.contains("Run · 5.2km in 28:10"))
+        assertTrue(text, text.contains("Climb · 6 attempts · V4"))
         assertFalse(text, text.contains(g))
     }
 
@@ -280,8 +285,8 @@ class WorkoutShareTest {
             listOf(set(1, "Sprint", 0, 0, durationSec = 45), set(2, "Swim", 0, 0, durationSec = 1800, position = 1)),
             listOf(sprint, swim),
         )
-        assertTrue(text, text.contains("Sprint 45s"))
-        assertTrue(text, text.contains("Swim   30 min"))
+        assertTrue(text, text.contains("Sprint · 45s"))
+        assertTrue(text, text.contains("Swim · 30 min"))
     }
 
     @Test
@@ -300,7 +305,7 @@ class WorkoutShareTest {
         val notes = mapOf(1L to "  left wrist clicked\non the last rep  ")
 
         val on = card(sets, catalogue, notes = notes, includeNotes = true)
-        assertTrue(on, on.contains("Push-up $g 12\n  ↳ \"left wrist clicked on the last rep\"\nDips"))
+        assertTrue(on, on.contains("Push-up\n$g 12\n  ↳ \"left wrist clicked on the last rep\"\nDip"))
         assertEquals(1, on.lines().count { it.contains("↳") })
 
         val off = card(sets, catalogue, notes = notes, includeNotes = false)
@@ -333,24 +338,96 @@ class WorkoutShareTest {
     }
 
     @Test
-    fun `common lifts take their short name and long ones are cut`() {
-        assertEquals("Bench", WorkoutShare.shortName("Bench Press"))
-        assertEquals("OHP", WorkoutShare.shortName("overhead press"))
-        assertEquals("Laterals", WorkoutShare.shortName("Lateral Raise"))
-        assertEquals("Pull-up", WorkoutShare.shortName("Pull-up"))
-        val cut = WorkoutShare.shortName("Single-Leg Romanian Deadlift")
-        assertEquals(WorkoutShare.NAME_MAX, cut.length)
-        assertTrue(cut, cut.endsWith("…"))
+    fun `a long name is printed in full`() {
+        val text = card(
+            listOf(20, 15, 10).mapIndexed { i, sec -> set(1, "Advanced Tuck Front Lever", i, 0, durationSec = sec) },
+            listOf(exercise(1, "Advanced Tuck Front Lever", ExerciseMetric.HOLD)),
+        )
+        assertTrue(text, text.contains("\nAdvanced Tuck Front Lever\n$g$g$g 20/15/10s\n"))
+        assertFalse(text, text.contains("…"))
     }
 
     @Test
-    fun `names are padded so the squares start in one column`() {
+    fun `nothing is padded to a column`() {
         val text = card(
-            listOf(set(1, "Bench Press", 0, 5, 80.0), set(2, "Dip", 0, 8, position = 1)),
-            listOf(exercise(1, "Bench Press", weighted = true), exercise(2, "Dip")),
+            listOf(
+                set(1, "Bench Press", 0, 5, 80.0),
+                set(2, "Dip", 0, 8, position = 1),
+                set(3, "Run", 0, 0, distanceM = 5000.0, durationSec = 1500, position = 2),
+            ),
+            listOf(exercise(1, "Bench Press", weighted = true), exercise(2, "Dip"), exercise(3, "Run", ExerciseMetric.DISTANCE_TIME)),
         )
-        val columns = text.lines().filter { it.contains(g) }.map { it.indexOf(g) }.distinct()
-        assertEquals(text, 1, columns.size)
+        assertFalse(text, text.contains("  "))
+        assertTrue(text, text.lines().none { it != it.trimEnd() })
+    }
+
+    @Test
+    fun `a lift with no load has no separator on its name line`() {
+        val text = card(listOf(set(1, "Push-up", 0, 12)), listOf(exercise(1, "Push-up")))
+        assertEquals("Push-up", text.lines().first { it.startsWith("Push-up") })
+    }
+
+    @Test
+    fun `effort follows the figures on the second line`() {
+        val text = WorkoutShare.format(
+            session(),
+            listOf(set(1, "Bench Press", 0, 5, 80.0).copy(rpe = 8)),
+            mapOf(1L to exercise(1, "Bench Press", weighted = true)),
+            zone,
+            includeEffort = true,
+        )
+        assertTrue(text, text.contains("Bench Press · 80kg\n$g 5 · RPE 8\n"))
+    }
+
+    @Test
+    fun `pounds keep their unit on the name line`() {
+        val text = WorkoutShare.format(
+            session(),
+            listOf(set(1, "Bench Press", 0, 5, 100.0)),
+            mapOf(1L to exercise(1, "Bench Press", weighted = true)),
+            zone,
+            unit = LoadUnit.LB,
+        )
+        assertTrue(text, text.contains("Bench Press · 220.5lb\n$g 5"))
+    }
+
+    @Test
+    fun `a pull day reads as two lines per lift`() {
+        val sets = listOf(4, 3, 3, 2).mapIndexed { i, r -> set(1, "Pull-up", i, r, 17.7) } +
+            listOf(20, 15, 10).mapIndexed { i, sec -> set(2, "Advanced Tuck Front Lever", i, 0, durationSec = sec, position = 1) } +
+            listOf(9, 6, 4).mapIndexed { i, r -> set(3, "Chin-up", i, r, 7.7, position = 2) } +
+            listOf(8, 6, 6).mapIndexed { i, r -> set(4, "Lateral Raise", i, r, 11.5, position = 3) } +
+            List(3) { set(5, "Hanging Knee Raise", it, 10, position = 4) }
+        val text = card(
+            sets,
+            listOf(
+                exercise(1, "Pull-up"),
+                exercise(2, "Advanced Tuck Front Lever", ExerciseMetric.HOLD),
+                exercise(3, "Chin-up"),
+                exercise(4, "Lateral Raise", weighted = true),
+                exercise(5, "Hanging Knee Raise"),
+            ),
+            session(title = "Pull", xp = 353, strength = 602, minutes = 49),
+            peaks = listOf(peak("Hanging Knee Raise", 0)),
+            targets = mapOf(1L to 5, 2L to 10, 3L to 9, 4L to 10, 5L to 10),
+        )
+        assertEquals(
+            "Ironvellum · Pull · 16 Sep\n" +
+                "\n" +
+                "Pull-up · +17.7kg\n" +
+                "$y$y$y$y 4/3/3/2\n" +
+                "Advanced Tuck Front Lever\n" +
+                "$g$g$g 20/15/10s\n" +
+                "Chin-up · +7.7kg\n" +
+                "$g$y$y 9/6/4\n" +
+                "Lateral Raise · 11.5kg\n" +
+                "$y$y$y 8/6/6\n" +
+                "Hanging Knee Raise\n" +
+                "$p$g$g 3×10\n" +
+                "\n" +
+                "49 min · 16 sets · +353 XP · 602 STR",
+            text,
+        )
     }
 
     @Test
@@ -359,7 +436,7 @@ class WorkoutShareTest {
         val catalogue = listOf(exercise(1, "Push-up"), exercise(2, "Dip"))
         val text = card(sets, catalogue, peaks = listOf(peak("push-up", 0)))
         assertEquals(text, 1, text.split(p).size - 1)
-        assertTrue(text, text.lines().first { it.startsWith("Push-up") }.contains(p))
+        assertTrue(text, text.contains("Push-up\n$p 12"))
         assertFalse(card(sets, catalogue).contains(p))
     }
 
@@ -385,7 +462,7 @@ class WorkoutShareTest {
             peaks = listOf(peak("Push-up", 2)),
             targets = mapOf(1L to 12),
         )
-        assertTrue(text, text.contains("Push-up $g$g$p$y 12/15/9/9"))
+        assertTrue(text, text.contains("Push-up\n$g$g$p$y 12/15/9/9"))
     }
 
     @Test
@@ -395,7 +472,7 @@ class WorkoutShareTest {
             listOf(exercise(1, "Push-up")),
             peaks = listOf(peak("Push-up", 1)),
         )
-        assertTrue(text, text.contains("Push-up $g$b 12"))
+        assertTrue(text, text.contains("Push-up\n$g$b 12"))
         assertFalse(text, text.contains(p))
     }
 
@@ -406,13 +483,13 @@ class WorkoutShareTest {
             listOf(exercise(1, "Push-up")),
             targets = mapOf(1L to 12),
         )
-        assertTrue(reps, reps.contains("Push-up $g$g 12/15"))
+        assertTrue(reps, reps.contains("Push-up\n$g$g 12/15"))
         val hold = card(
             listOf(set(1, "Plank", 0, 0, durationSec = 60), set(1, "Plank", 1, 0, durationSec = 75)),
             listOf(exercise(1, "Plank", ExerciseMetric.HOLD)),
             targets = mapOf(1L to 60),
         )
-        assertTrue(hold, hold.contains("Plank $g$g 60/75s"))
+        assertTrue(hold, hold.contains("Plank\n$g$g 60/75s"))
     }
 
     @Test
@@ -422,7 +499,7 @@ class WorkoutShareTest {
             listOf(set(1, "Bench Press", 0, 5, 80.0), set(1, "Bench Press", 1, 5, 82.5), set(1, "Bench Press", 2, 4, 85.0)),
             listOf(bench),
         )
-        assertTrue(text, text.contains("Bench $g$g$g 5/5/4 @ top 85kg"))
+        assertTrue(text, text.contains("Bench Press · top 85kg\n$g$g$g 5/5/4"))
     }
 
     @Test
@@ -434,10 +511,10 @@ class WorkoutShareTest {
                 listOf(set(4, "Curl", 0, 10, position = 3), set(4, "Curl", 1, 9, position = 3), set(4, "Curl", 2, 10, position = 3)),
             listOf(exercise(1, "Push-up"), exercise(2, "Dip"), exercise(3, "Row"), exercise(4, "Curl")),
         )
-        assertTrue(text, text.contains("Push-up $g$g$g 3×10"))
-        assertTrue(text, text.contains("Dips    $g$g 8/8"))
-        assertTrue(text, text.contains("Row     $g 12"))
-        assertTrue(text, text.contains("Curl    $g$g$g 10/9/10"))
+        assertTrue(text, text.contains("Push-up\n$g$g$g 3×10"))
+        assertTrue(text, text.contains("Dip\n$g$g 8/8"))
+        assertTrue(text, text.contains("Row\n$g 12"))
+        assertTrue(text, text.contains("Curl\n$g$g$g 10/9/10"))
     }
 
     @Test
@@ -446,7 +523,7 @@ class WorkoutShareTest {
             List(3) { set(1, "Plank", it, 0, durationSec = 60) },
             listOf(exercise(1, "Plank", ExerciseMetric.HOLD)),
         )
-        assertTrue(text, text.contains("Plank $g$g$g 3×60s"))
+        assertTrue(text, text.contains("Plank\n$g$g$g 3×60s"))
     }
 
     @Test
@@ -457,7 +534,7 @@ class WorkoutShareTest {
             peaks = listOf(peak("Push-up", 1)),
             targets = mapOf(1L to 12),
         )
-        assertTrue(text, text.contains("Push-up $g$p 15/12"))
+        assertTrue(text, text.contains("Push-up\n$g$p 15/12"))
         assertTrue(text, text.endsWith("47 min · 2 sets · +248 XP · 1,204 STR"))
         assertFalse(text, text.contains("★") || text.contains("peak") || text.contains("rite"))
     }
