@@ -10,42 +10,42 @@
       "name": "Dead Hang",
       "status": "exact",
       "drawing": "wg_dead-hang",
-      "frames": 3,
+      "frames": 1,
       "shows": "Dead Hang"
     },
     {
       "name": "Scapular Pull",
       "status": "exact",
       "drawing": "wg_scapular-pull-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Scapular Pull"
     },
     {
       "name": "Australian Pull-up",
       "status": "exact",
       "drawing": "ek_0086",
-      "frames": 2,
+      "frames": 1,
       "shows": "Inverted Row"
     },
     {
       "name": "Negative Pull-up",
       "status": "exact",
       "drawing": "wg_negative-pull-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Negative Pull-up"
     },
     {
       "name": "Pull-up",
       "status": "exact",
       "drawing": "ek_0087",
-      "frames": 2,
+      "frames": 1,
       "shows": "Pull-up"
     },
     {
       "name": "L-sit Pull-up",
       "status": "exact",
       "drawing": "wg_l-sit-pull-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "L-sit Pull-up"
     },
     {
@@ -59,7 +59,7 @@
       "name": "Weighted Pull-up",
       "status": "exact",
       "drawing": "wg_weighted-pull-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Weighted Pull-up"
     },
     {
@@ -87,28 +87,28 @@
       "name": "Incline Push-up",
       "status": "exact",
       "drawing": "wg_incline-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Incline Push-up"
     },
     {
       "name": "Push-up",
       "status": "exact",
       "drawing": "ek_0077",
-      "frames": 2,
+      "frames": 1,
       "shows": "Push-up"
     },
     {
       "name": "Diamond Push-up",
       "status": "exact",
       "drawing": "wg_diamond-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Diamond Push-up"
     },
     {
       "name": "Archer Push-up",
       "status": "exact",
       "drawing": "wg_archer-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Archer Push-up"
     },
     {
@@ -129,7 +129,7 @@
       "name": "Bench Dip",
       "status": "exact",
       "drawing": "ek_0162",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Dip"
     },
     {
@@ -143,14 +143,14 @@
       "name": "Parallel Bar Dip",
       "status": "exact",
       "drawing": "ek_0172",
-      "frames": 2,
+      "frames": 1,
       "shows": "Dip"
     },
     {
       "name": "Weighted Dip",
       "status": "exact",
       "drawing": "wg_weighted-dip",
-      "frames": 3,
+      "frames": 1,
       "shows": "Weighted Dip"
     },
     {
@@ -178,7 +178,7 @@
       "name": "Elevated Pike Push-up",
       "status": "exact",
       "drawing": "wg_feet-elevated-pike-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Feet-Elevated Pike Push-up"
     },
     {
@@ -192,7 +192,7 @@
       "name": "Wall HSPU",
       "status": "exact",
       "drawing": "wg_wall-handstand-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Wall HSPU"
     },
     {
@@ -220,7 +220,7 @@
       "name": "Handstand Push-up",
       "status": "exact",
       "drawing": "wg_handstand-push-up",
-      "frames": 3,
+      "frames": 1,
       "shows": "Handstand Push-up"
     },
     {
@@ -500,49 +500,49 @@
       "name": "Bodyweight Squat",
       "status": "exact",
       "drawing": "wg_bodyweight-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Bodyweight Squat"
     },
     {
       "name": "Split Squat",
       "status": "exact",
       "drawing": "wg_split-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Split Squat"
     },
     {
       "name": "Bulgarian Split Squat",
       "status": "exact",
       "drawing": "wg_bulgarian-split-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Bulgarian Split Squat"
     },
     {
       "name": "Supported Pistol Squat",
       "status": "exact",
       "drawing": "wg_assisted-pistol-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Supported Pistol Squat"
     },
     {
       "name": "Sissy Squat",
       "status": "exact",
       "drawing": "wg_sissy-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Sissy Squat"
     },
     {
       "name": "Shrimp Squat",
       "status": "exact",
       "drawing": "wg_shrimp-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Shrimp Squat"
     },
     {
       "name": "Pistol Squat",
       "status": "exact",
       "drawing": "wg_pistol-squat",
-      "frames": 3,
+      "frames": 1,
       "shows": "Pistol Squat"
     },
     {
@@ -570,154 +570,154 @@
       "name": "Nordic Curl",
       "status": "exact",
       "drawing": "wg_nordic-hamstring-curl",
-      "frames": 3,
+      "frames": 1,
       "shows": "Nordic Curl"
     },
     {
       "name": "Back Squat",
       "status": "exact",
       "drawing": "ek_0122",
-      "frames": 2,
+      "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Pause Squat",
       "status": "exact",
       "drawing": "ek_0122",
-      "frames": 2,
+      "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Heavy Squat",
       "status": "exact",
       "drawing": "ek_0122",
-      "frames": 2,
+      "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Double-Bodyweight Squat",
       "status": "exact",
       "drawing": "ek_0122",
-      "frames": 2,
+      "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Triple-Bodyweight Squat",
       "status": "exact",
       "drawing": "ek_0122",
-      "frames": 2,
+      "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Bench Press",
       "status": "exact",
       "drawing": "ek_0042",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Volume Bench Press",
       "status": "exact",
       "drawing": "ek_0042",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Paused Bench Press",
       "status": "exact",
       "drawing": "ek_0042",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Heavy Bench Press",
       "status": "exact",
       "drawing": "ek_0042",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Double-Bodyweight Bench Press",
       "status": "exact",
       "drawing": "ek_0042",
-      "frames": 2,
+      "frames": 1,
       "shows": "Bench Press"
     },
     {
       "name": "Overhead Press",
       "status": "exact",
       "drawing": "wg_overhead-press",
-      "frames": 3,
+      "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Volume Overhead Press",
       "status": "exact",
       "drawing": "wg_overhead-press",
-      "frames": 3,
+      "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Bodyweight Overhead Press",
       "status": "exact",
       "drawing": "wg_overhead-press",
-      "frames": 3,
+      "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Heavy Overhead Press",
       "status": "exact",
       "drawing": "wg_overhead-press",
-      "frames": 3,
+      "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Half-Again Overhead Press",
       "status": "exact",
       "drawing": "wg_overhead-press",
-      "frames": 3,
+      "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Deadlift",
       "status": "exact",
       "drawing": "ek_0099",
-      "frames": 2,
+      "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Volume Deadlift",
       "status": "exact",
       "drawing": "ek_0099",
-      "frames": 2,
+      "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Double-Bodyweight Deadlift",
       "status": "exact",
       "drawing": "ek_0099",
-      "frames": 2,
+      "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Heavy Deadlift",
       "status": "exact",
       "drawing": "ek_0099",
-      "frames": 2,
+      "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Triple-Bodyweight Deadlift",
       "status": "exact",
       "drawing": "ek_0099",
-      "frames": 2,
+      "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Hollow Hold",
       "status": "exact",
       "drawing": "wg_hollow-body-hold",
-      "frames": 3,
+      "frames": 1,
       "shows": "Hollow Hold"
     },
     {
@@ -731,7 +731,7 @@
       "name": "L-sit",
       "status": "exact",
       "drawing": "wg_l-sit-hold",
-      "frames": 3,
+      "frames": 1,
       "shows": "L-sit"
     },
     {
@@ -759,14 +759,14 @@
       "name": "Hanging Knee Raise",
       "status": "exact",
       "drawing": "wg_hanging-knee-raise",
-      "frames": 3,
+      "frames": 1,
       "shows": "Hanging Knee Raise"
     },
     {
       "name": "Hanging Leg Raise",
       "status": "exact",
       "drawing": "wg_hanging-leg-raise",
-      "frames": 3,
+      "frames": 1,
       "shows": "Hanging Leg Raise"
     },
     {
@@ -780,7 +780,7 @@
       "name": "Dragon Flag",
       "status": "exact",
       "drawing": "wg_dragon-flag",
-      "frames": 3,
+      "frames": 1,
       "shows": "Dragon Flag"
     },
     {
