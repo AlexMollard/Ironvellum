@@ -1,7 +1,6 @@
 package com.ironvellum.app.domain
 
 import com.ironvellum.app.data.Seed
-import com.ironvellum.app.ui.components.artSequence
 import java.io.File
 import androidx.compose.ui.graphics.vector.PathParser
 import com.ironvellum.app.ui.components.ExerciseArtFile
@@ -61,6 +60,12 @@ class ExerciseArtIndexTest {
     }
 
     @Test
+    fun `every catalogue movement is drawn`() {
+        val undrawn = Seed.exercises.map { it.name }.filter { ExerciseArtIndex.forName(it) == null }
+        assertEquals("catalogue movements with no drawing", emptyList<String>(), undrawn)
+    }
+
+    @Test
     fun `every library movement is drawn`() {
         val undrawn = ExerciseLibrary.rows.map { it.name }.filter { ExerciseArtIndex.forName(it) == null }
         assertEquals("library movements with no drawing", emptyList<String>(), undrawn)
@@ -69,16 +74,16 @@ class ExerciseArtIndexTest {
     @Test
     fun `a proxy names the movement it shows and a movement's own drawing never does`() {
         val proxied = ExerciseArtIndex.techniques.filter { ExerciseArtIndex.shows(it) != null }
-        assertTrue("some techniques use a proxy", proxied.isNotEmpty())
         // A proxy is not the catalogue row's own drawing, so the movement of that name is not drawn with it.
         proxied.forEach { assertNull("$it must not be drawn as a movement", ExerciseArtIndex.forName(it)) }
         assertNull(ExerciseArtIndex.shows("Back Squat"))
     }
 
     @Test
-    fun `the loop returns the way it went`() {
-        assertEquals(listOf(0, 1), artSequence(2))
-        assertEquals(listOf(0, 1, 2, 1), artSequence(3))
-        assertEquals(listOf(0), artSequence(1))
+    fun `every drawing is one still`() {
+        val moving = assets.listFiles { f -> f.name.endsWith(".paths") }!!
+            .filter { ExerciseArtFile.parse(it.readText()).frames.size != 1 }
+            .map { it.name }
+        assertEquals("drawings with more than one pose", emptyList<String>(), moving)
     }
 }

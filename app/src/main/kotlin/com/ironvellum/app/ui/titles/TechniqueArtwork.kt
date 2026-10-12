@@ -57,6 +57,6 @@ internal fun TechniqueDrawingPlate(animation: ArtRef, state: ArtState, modifier:
             .then(if (state != ArtState.LOCKED) Modifier.background(artBrush(state, METAL_WASH)) else Modifier)
             .inkBorder(artBrush(state, METAL_RIM), shape, 1.dp),
     ) {
-        ExerciseDrawing(animation, Modifier.fillMaxSize().padding(8.dp), animated = true, alpha = artAlpha(state))
+        ExerciseDrawing(animation, Modifier.fillMaxSize().padding(8.dp), alpha = artAlpha(state))
     }
 }

@@ -6,13 +6,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -32,7 +28,6 @@ import com.ironvellum.app.ui.titles.GlyphFamily
 import com.ironvellum.app.ui.titles.SkillGlyph
 import com.ironvellum.app.ui.titles.glyphFamily
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -93,16 +88,6 @@ private fun rememberArt(ref: ArtRef): State<ExerciseArt?> {
     }
 }
 
-/** Frame order of one loop: 1, 2 for a pair; 1, 2, 3, 2 for three, so the figure returns the way it went. */
-internal fun artSequence(frames: Int): List<Int> = when {
-    frames <= 1 -> listOf(0)
-    frames == 2 -> listOf(0, 1)
-    else -> (0 until frames) + (frames - 2 downTo 1)
-}
-
-/** How long each pose is held before the next replaces it: a cut, never a blend. */
-internal const val HOLD_MS = 700L
-
 /** Share of the slot's shorter side left empty on every edge, so a drawing never touches its slot's border. */
 internal const val ART_INSET = 0.06f
 
@@ -123,14 +108,13 @@ internal fun fitArt(artWidth: Float, artHeight: Float, slotWidth: Float, slotHei
  * The one drawing slot: every place an exercise's picture appears (sheet, picker row, tree node, technique plate) is this.
  * The art is fitted inside whatever size the caller gives it, in the house ink, and clipped to it.
  *
- * [animated] loops the poses, each held [HOLD_MS] and then cut to the next (1, 2 or 1, 2, 3, 2); with system animations off,
- * with one frame, or with [animated] false, it shows the first pose, still. [alpha] dims it (a locked technique).
+ * It is always a still: the first pose, never looped (the owner chose one selected still per movement). [alpha] dims it
+ * (a locked technique).
  */
 @Composable
 internal fun ExerciseDrawing(
     ref: ArtRef,
     modifier: Modifier = Modifier,
-    animated: Boolean = true,
     alpha: Float = 1f,
     ink: Color = IronvellumColors.Ink,
 ) {
@@ -138,36 +122,15 @@ internal fun ExerciseDrawing(
     val loaded = art
     Box(modifier.clipToBounds(), contentAlignment = Alignment.Center) {
         if (loaded == null) return@Box
-        val context = LocalContext.current
-        val sequence = remember(loaded) { artSequence(loaded.paths.size) }
-        val motion = animated && sequence.size > 1 && animatorsOn(context)
-        var step by remember(loaded) { mutableIntStateOf(0) }
-        LaunchedEffect(motion, sequence) {
-            step = 0
-            while (motion) {
-                delay(HOLD_MS)
-                step = (step + 1) % sequence.size
-            }
-        }
         Canvas(Modifier.fillMaxSize()) {
             val fit = fitArt(loaded.file.width, loaded.file.height, size.width, size.height)
             withTransform({
                 translate(fit.left, fit.top)
                 scale(fit.scale, fit.scale, pivot = Offset.Zero)
-            }) { drawPath(loaded.paths[sequence[step]], ink, alpha) }
+            }) { drawPath(loaded.paths.first(), ink, alpha) }
         }
     }
 }
-
-/** The drawing looping through its poses. */
-@Composable
-internal fun ExerciseAnimation(ref: ArtRef, modifier: Modifier = Modifier, alpha: Float = 1f, ink: Color = IronvellumColors.Ink) =
-    ExerciseDrawing(ref, modifier, animated = true, alpha = alpha, ink = ink)
-
-/** The first pose only: a thumbnail that never moves. */
-@Composable
-internal fun ExerciseStill(ref: ArtRef, modifier: Modifier = Modifier, alpha: Float = 1f, ink: Color = IronvellumColors.Ink) =
-    ExerciseDrawing(ref, modifier, animated = false, alpha = alpha, ink = ink)
 
 /** The pictogram that stands in for a movement nobody has drawn: its technique's own, else its muscle group's. */
 internal fun placeholderFamily(name: String, group: MuscleGroup): GlyphFamily =
@@ -189,11 +152,10 @@ internal fun ExerciseArtSlot(
     name: String,
     group: MuscleGroup,
     modifier: Modifier = Modifier,
-    animated: Boolean = false,
 ) {
     val ref = ExerciseArtIndex.forName(name)
     if (ref != null) {
-        ExerciseDrawing(ref, modifier, animated = animated)
+        ExerciseDrawing(ref, modifier)
     } else {
         Box(modifier.clipToBounds(), contentAlignment = Alignment.Center) {
             SkillGlyph(placeholderFamily(name, group), IronvellumColors.InkMuted.copy(alpha = 0.55f), Modifier.fillMaxSize(0.62f))
