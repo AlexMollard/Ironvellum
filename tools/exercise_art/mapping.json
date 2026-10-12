@@ -340,11 +340,11 @@
    "record": "wg:chin-up",
    "exercise": "Chin-up",
    "confidence": "high",
-   "art": "ek_0090",
-   "frames": 2,
+   "art": "wg_chin-up",
+   "frames": 3,
    "source": {
-    "kind": "ek",
-    "id": "0090"
+    "kind": "wg",
+    "id": "chin-up"
    },
    "used": true
   },
@@ -1523,212 +1523,513 @@
     "id": "0134"
    },
    "used": true
+  },
+  {
+   "record": "wg:cycling",
+   "exercise": "Indoor Cycling",
+   "confidence": "medium",
+   "art": "wg_cycling",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cycling"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:jump-rope",
+   "exercise": "Jump Rope Intervals",
+   "confidence": "medium",
+   "art": "wg_jump-rope",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "jump-rope"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:running",
+   "exercise": "Treadmill",
+   "confidence": "medium",
+   "art": "wg_running",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "running"
+   },
+   "used": true
   }
  ],
  "techniques": {
+  "Archer Pull-up": {
+   "exercise": "Pull-up",
+   "art": "ek_0087",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
+  },
   "Archer Push-up": {
    "exercise": "Archer Push-up",
    "art": "wg_archer-push-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Australian Pull-up": {
    "exercise": "Inverted Row",
    "art": "ek_0086",
    "frames": 2,
-   "confidence": "medium"
+   "confidence": "medium",
+   "proxy": false
   },
   "Back Squat": {
    "exercise": "Back Squat",
    "art": "ek_0122",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Bench Dip": {
    "exercise": "Bench Dip",
    "art": "ek_0162",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Bench Press": {
    "exercise": "Bench Press",
    "art": "ek_0042",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Bodyweight Overhead Press": {
+   "exercise": "Overhead Press",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "confidence": "high",
+   "proxy": false
   },
   "Bodyweight Squat": {
    "exercise": "Bodyweight Squat",
    "art": "wg_bodyweight-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Bulgarian Split Squat": {
    "exercise": "Bulgarian Split Squat",
    "art": "wg_bulgarian-split-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Dead Hang": {
    "exercise": "Dead Hang",
    "art": "wg_dead-hang",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Deadlift": {
    "exercise": "Deadlift",
    "art": "ek_0099",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Deep Squat Hold": {
+   "exercise": "Bodyweight Squat",
+   "art": "wg_bodyweight-squat",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Diamond Push-up": {
    "exercise": "Diamond Push-up",
    "art": "wg_diamond-push-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Double-Bodyweight Bench Press": {
+   "exercise": "Bench Press",
+   "art": "ek_0042",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Double-Bodyweight Deadlift": {
+   "exercise": "Deadlift",
+   "art": "ek_0099",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Double-Bodyweight Squat": {
+   "exercise": "Back Squat",
+   "art": "ek_0122",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
   },
   "Dragon Flag": {
    "exercise": "Dragon Flag",
    "art": "wg_dragon-flag",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Elevated Pike Push-up": {
    "exercise": "Feet-Elevated Pike Push-up",
    "art": "wg_feet-elevated-pike-push-up",
    "frames": 3,
-   "confidence": "medium"
+   "confidence": "medium",
+   "proxy": false
+  },
+  "Half-Again Overhead Press": {
+   "exercise": "Overhead Press",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Hamstring Bridge": {
+   "exercise": "Glute Bridge",
+   "art": "ek_0109",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Handstand Push-up": {
    "exercise": "Handstand Push-up",
    "art": "wg_handstand-push-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Hanging Knee Raise": {
    "exercise": "Hanging Knee Raise",
    "art": "wg_hanging-knee-raise",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Hanging Leg Raise": {
    "exercise": "Hanging Leg Raise",
    "art": "wg_hanging-leg-raise",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Heavy Bench Press": {
+   "exercise": "Bench Press",
+   "art": "ek_0042",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Heavy Deadlift": {
+   "exercise": "Deadlift",
+   "art": "ek_0099",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Heavy Overhead Press": {
+   "exercise": "Overhead Press",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Heavy Squat": {
+   "exercise": "Back Squat",
+   "art": "ek_0122",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
   },
   "Hollow Hold": {
    "exercise": "Hollow Hold",
    "art": "wg_hollow-body-hold",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Incline Push-up": {
    "exercise": "Incline Push-up",
    "art": "wg_incline-push-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "L-sit": {
    "exercise": "L-sit",
    "art": "wg_l-sit-hold",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "L-sit Pull-up": {
    "exercise": "L-sit Pull-up",
    "art": "wg_l-sit-pull-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Negative Pull-up": {
    "exercise": "Negative Pull-up",
    "art": "wg_negative-pull-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Nordic Curl": {
    "exercise": "Nordic Curl",
    "art": "wg_nordic-hamstring-curl",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Nordic Negative": {
+   "exercise": "Nordic Curl",
+   "art": "wg_nordic-hamstring-curl",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "One-Arm Hang": {
+   "exercise": "Dead Hang",
+   "art": "wg_dead-hang",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "One-Arm Negative": {
+   "exercise": "Negative Pull-up",
+   "art": "wg_negative-pull-up",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "One-Arm Negative Push-up": {
+   "exercise": "Push-up",
+   "art": "ek_0077",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "One-Arm Pull-up": {
+   "exercise": "Pull-up",
+   "art": "ek_0087",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "One-Arm Push-up": {
+   "exercise": "Push-up",
+   "art": "ek_0077",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Overhead Press": {
    "exercise": "Overhead Press",
    "art": "wg_overhead-press",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Parallel Bar Dip": {
    "exercise": "Dip",
    "art": "ek_0172",
    "frames": 2,
-   "confidence": "medium"
+   "confidence": "medium",
+   "proxy": false
+  },
+  "Pause Squat": {
+   "exercise": "Back Squat",
+   "art": "ek_0122",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Paused Bench Press": {
+   "exercise": "Bench Press",
+   "art": "ek_0042",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Pike Press": {
+   "exercise": "Pike Push-up",
+   "art": "wg_pike-push-up",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Pistol Squat": {
    "exercise": "Pistol Squat",
    "art": "wg_pistol-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Pull-up": {
    "exercise": "Pull-up",
    "art": "ek_0087",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Push-up": {
    "exercise": "Push-up",
    "art": "ek_0077",
    "frames": 2,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Ring Row": {
+   "exercise": "Inverted Row",
+   "art": "ek_0086",
+   "frames": 2,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Scapular Pull": {
    "exercise": "Scapular Pull",
    "art": "wg_scapular-pull-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Shrimp Squat": {
    "exercise": "Shrimp Squat",
    "art": "wg_shrimp-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Sissy Squat": {
    "exercise": "Sissy Squat",
    "art": "wg_sissy-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Split Squat": {
    "exercise": "Split Squat",
    "art": "wg_split-squat",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
+  },
+  "Straddle L-sit": {
+   "exercise": "L-sit",
+   "art": "wg_l-sit-hold",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Supported Pistol Squat": {
    "exercise": "Supported Pistol Squat",
    "art": "wg_assisted-pistol-squat",
    "frames": 3,
-   "confidence": "medium"
+   "confidence": "medium",
+   "proxy": false
+  },
+  "Toes-to-Bar": {
+   "exercise": "Hanging Leg Raise",
+   "art": "wg_hanging-leg-raise",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "Triple-Bodyweight Deadlift": {
+   "exercise": "Deadlift",
+   "art": "ek_0099",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Triple-Bodyweight Squat": {
+   "exercise": "Back Squat",
+   "art": "ek_0122",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Tuck L-sit": {
+   "exercise": "L-sit",
+   "art": "wg_l-sit-hold",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "V-Sit": {
+   "exercise": "L-sit",
+   "art": "wg_l-sit-hold",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
+  },
+  "Volume Bench Press": {
+   "exercise": "Bench Press",
+   "art": "ek_0042",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Volume Deadlift": {
+   "exercise": "Deadlift",
+   "art": "ek_0099",
+   "frames": 2,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Volume Overhead Press": {
+   "exercise": "Overhead Press",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "confidence": "high",
+   "proxy": false
+  },
+  "Wall Handstand": {
+   "exercise": "Wall HSPU",
+   "art": "wg_wall-handstand-push-up",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Wall HSPU": {
    "exercise": "Wall HSPU",
    "art": "wg_wall-handstand-push-up",
    "frames": 3,
-   "confidence": "medium"
+   "confidence": "medium",
+   "proxy": false
+  },
+  "Wall HSPU Negative": {
+   "exercise": "Wall HSPU",
+   "art": "wg_wall-handstand-push-up",
+   "frames": 3,
+   "confidence": "proxy",
+   "proxy": true
   },
   "Weighted Dip": {
    "exercise": "Weighted Dip",
    "art": "wg_weighted-dip",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   },
   "Weighted Pull-up": {
    "exercise": "Weighted Pull-up",
    "art": "wg_weighted-pull-up",
    "frames": 3,
-   "confidence": "high"
+   "confidence": "high",
+   "proxy": false
   }
  },
  "dropped": [

@@ -3,8 +3,8 @@
 Ironvellum ships one set of third-party artwork: the exercise drawings (see "Exercise drawings" below, CC BY-SA 4.0).
 Everything else is original. The existing empty-state and crest
 images were generated for this project with Google **`gemini-3.1-flash-image`**
-(via `tools/art.py`); the technique illustrations below were generated
-with Codex's built-in image-generation tool; other glyphs include hand-authored
+(via `tools/art.py`); the Codex technique plates are the exercise drawings below or the
+app's own pictograms (no AI-generated art remains in the Codex); other glyphs include hand-authored
 Android VectorDrawables. All ship under the project licence (GPL-3.0-or-later,
 see `LICENSE`).
 
@@ -17,39 +17,37 @@ see `LICENSE`).
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
 | the 28 crest marks (`ui/components/CrestMarks.kt`) | hand-authored SVG line art in `tools/crest_art/marks.txt`, baked into Compose path data by `tools/crest_art/build.py` (which refuses a solid fill); drawn in flat gradients at runtime. They replace the ten generated `art_crest_*.png` frames. | project licence |
-| `drawable-nodpi/skill_*.webp` (119 technique illustrations across all 14 Paths) | generated individually with Codex's built-in image-generation tool. The owner chose the first Dead Hang pilot (`exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png`) as the style reference. Shipped WebP files retain the generated warm-bone/charcoal colours and transparency, with a maximum edge of 640 px. The [technique art manifest](art/skill-technique-art.json) records source image identifiers, prompts, dimensions and file hashes. | project licence |
 
 ### Exercise drawings (third party)
 
 | Source | Author | Licence | Taken | Modified |
 |---|---|---|---|---|
-| [Everkinetic](https://github.com/everkinetic/data) (`dist/png/<id>-relaxation.png`, `-tension.png`; records in `src/exercises/<id>/<id>.json`) | Greg Priday (everkinetic.com) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), `LICENSE.md` in the repository | the start and end drawings of each exercise, and the written steps and tips that the added movements' guides adapt | converted from black-on-white PNG to a one-channel ink mask, cropped, scaled to at most 256 px, reduced to four ink levels; recoloured at draw time; steps lightly edited |
-| [Workout Guide](https://github.com/bryllim/workout-guide) (`packages/workout-guide/assets/<slug>/frame-N.png`, `manifest.json`) | Bryl Lim (https://bryllim.com); its first frames of 76 exercises are vector traces of Everkinetic drawings | assets [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (`LICENSE-ASSETS`, `ATTRIBUTION.md`); its code is MIT and is not used | the three animation frames of every exercise Everkinetic does not draw, and its exercise names | converted from alpha PNG to an ink mask, cropped to the figure, scaled, four ink levels, faint frames brightened; recoloured at draw time |
+| [Everkinetic](https://github.com/everkinetic/data) (`dist/svg/<id>-relaxation.svg`, `-tension.svg`; records in `src/exercises/<id>/<id>.json`) | Greg Priday (everkinetic.com) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), `LICENSE.md` in the repository | the start and end drawings of each exercise, and the written steps and tips that the added movements' guides adapt | the two poses are rasterised together into one shared crop box, thresholded and vector-traced (potrace) to one path each, registered to a common ground line and centre, and shipped as path data; recoloured at draw time; steps lightly edited |
+| [Workout Guide](https://github.com/bryllim/workout-guide) (`packages/workout-guide/assets/<slug>/frame-N.svg`, `manifest.json`) | Bryl Lim (https://bryllim.com); its first frames of 76 exercises are vector traces of Everkinetic drawings | assets [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (`LICENSE-ASSETS`, `ATTRIBUTION.md`); its code is MIT and is not used | the three animation frames of every exercise Everkinetic does not draw, and its exercise names | the geometry is used unmodified: each frame's path data is copied verbatim; only a translation that registers the frames to one ground line and centre is stored beside it; recoloured at draw time |
 
 Both are adaptations shared under CC BY-SA 4.0 and keep that licence; the rest of the app is GPL-3.0-or-later. The
 licence text is in `licenses/CC-BY-SA-4.0-exercise-art.txt`. Credit is also in `NOTICE`, `THIRD_PARTY_NOTICES.md`, the
-README and the app under Support. `tools/exercise_art/` rebuilds `app/src/main/assets/exercise_art/*.webp` and the
+README and the app under Support. `tools/exercise_art/` rebuilds `app/src/main/assets/exercise_art/*.paths` and the
 generated tables from fresh clones; `mapping.json` records, per drawing, which movement it shows and how sure the match
-is, and `library.json` which upstream record each added movement came from. Nothing was taken from GymMane. A drawing
-is an ink coverage mask and carries no colour of its own: the app paints it in `IronvellumColors.Ink`.
+is, `art_report.json` which source frames each drawing kept, and `library.json` which upstream record each added movement
+came from. Nothing was taken from GymMane. A drawing is vector path data and carries no colour of its own: the app fills it
+in `IronvellumColors.Ink`. The free sets are used as drawn; a frame is dropped only when it is broken (one Workout Guide frame is empty).
 
-34 skill-tree techniques use these animated drawings instead of a Codex illustration (listed in
-`tools/exercise_art/mapping.json`, "techniques"); their Codex WebP files were removed, and `docs/art/skill-technique-art.json` no longer lists them as assets but records them under `replaced_by_exercise_art`.
+### Technique drawings
 
-### Technique illustrations
+The Codex shows no generated art. Of the 119 techniques, 50 show their own movement's drawing (the load variants of the
+bench press, overhead press, deadlift and squat show that lift), 19 show the drawing of the movement they build on and say
+so on the technique sheet ("Shown: Pull-up"), and 50 wear the app's own pictogram because no upstream drawing shows the
+movement (levers, planches, flags, rings, handstand progressions, splits). `docs/art/skill-technique-art.json` lists each.
+The earlier AI-generated technique WebP files, their audit pages and the manifest of their prompts were deleted.
 
-The technique set follows the owner's approved detailed bone-ink athlete style.
-The empty-state generator and its tinting rules remain unchanged; crests are no longer generated images.
-Each technique owns a distinct bundled image, shared by its 48dp tree illustration
-and 176dp About preview. Node states, tier labels, progression and actions stay in
-code. No runtime image generation or remote image hosting is required.
+### Owner-made drawings (project licence)
 
-For another technique, use the built-in image generator with the approved Dead
-Hang source as a **style-only reference**, a genuinely transparent background,
-the technique's published standard and a precise full-body pose description.
-Retain the raw generated PNG, preserve alpha when reducing it to WebP, and update
-the manifest and `TechniqueArtwork.kt` together. Do not apply the older generator's
-automatic tinting to this set.
+Drawings the owner generates for the gaps (`docs/art/missing-exercise-art.md`, `tools/exercise_art/missing.json`) are dropped
+in `tools/exercise_art/owner/` and built by `build.py --owner-only`: each frame is thresholded and vector-traced with potrace
+to one path, registered and shipped exactly as Everkinetic's poses are, as `own_<slug>.paths`. They are the project's own work
+under the project licence (GPL-3.0-or-later). The owner's generator prompt, the style references (frames of the Workout Guide set) and
+the date are noted per batch in this section when a batch is added.
 
 ## House style: monochrome ink (adopted)
 

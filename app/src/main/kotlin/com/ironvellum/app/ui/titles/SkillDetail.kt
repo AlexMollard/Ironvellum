@@ -241,11 +241,10 @@ fun SkillDetailSheet(
             InfoPage("ABOUT", summary) {
                 // A female lifter reads her own published bar, not the male default.
                 val standard = sexBar ?: skill.standard
-                val artwork = techniqueArtwork(skill.name)
-                val animation = techniqueAnimation(skill.name)
-                if (artwork != null || animation != null) {
-                    // The engraving in its plate, with the standard and the reason beside it: the art fills
-                    // the width the text leaves, instead of a band of its own above the text.
+                val drawing = techniqueDrawing(skill.name)
+                if (drawing != null) {
+                    // The drawing in its plate, with the standard and the reason beside it: the art fills
+                    // the width the text leaves, instead of a band of its own above the text. A proxy says what it shows.
                     section(null) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             val plateState = when {
@@ -253,10 +252,12 @@ fun SkillDetailSheet(
                                 unlocked -> ArtState.OPEN
                                 else -> ArtState.LOCKED
                             }
-                            if (artwork != null) {
-                                TechniquePlate(artwork, plateState, Modifier.weight(0.42f))
-                            } else if (animation != null) {
-                                TechniqueAnimationPlate(animation, plateState, Modifier.weight(0.42f))
+                            Column(Modifier.weight(0.42f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                TechniqueDrawingPlate(drawing, plateState, Modifier.fillMaxWidth())
+                                techniqueCaption(skill.name)?.let {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                                }
                             }
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(0.58f)) {

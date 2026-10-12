@@ -58,7 +58,6 @@ import com.ironvellum.app.domain.CustomSave
 import com.ironvellum.app.domain.CustomSpec
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.domain.ExerciseArtIndex
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.MovementDifficulty
@@ -563,11 +562,9 @@ private fun PickerRow(
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The first pose of the drawing, still; the sheet behind the info button is where it moves. The slot is
-        // kept for movements with no drawing so every name starts on the same edge.
-        Box(Modifier.size(PickerArtSize), contentAlignment = Alignment.Center) {
-            ExerciseArtIndex.forName(exercise.name)?.let { ExerciseStill(it, Modifier.size(PickerArtSize)) }
-        }
+        // The first pose of the drawing, still; the sheet behind the info button is where it moves. A movement with no
+        // drawing gets the house pictogram, so every name starts on the same edge.
+        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.size(PickerArtSize))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

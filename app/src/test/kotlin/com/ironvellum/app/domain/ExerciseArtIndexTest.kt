@@ -3,36 +3,20 @@ package com.ironvellum.app.domain
 import com.ironvellum.app.data.Seed
 import com.ironvellum.app.ui.components.artSequence
 import java.io.File
+import androidx.compose.ui.graphics.vector.PathParser
+import com.ironvellum.app.ui.components.ExerciseArtFile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The drawings against the real catalogue and the real files: every mapped movement's frames exist and are lossless
- * WebP strips of the frame count the index claims, and nothing in the index points at a movement we do not ship.
+ * The drawings against the real catalogue and the real files: every mapped movement's file exists, parses, holds the frame
+ * count the index claims, every path in it is valid SVG path data, and nothing in the index points at a movement we do not ship.
  */
 class ExerciseArtIndexTest {
 
     private val assets = File("src/main/assets/exercise_art")
-
-    /** Width and height of a lossless (VP8L) or extended (VP8X) WebP, read from its header bytes. */
-    private fun dimensions(file: File): Pair<Int, Int> {
-        val b = file.readBytes()
-        require(b.size > 30 && String(b, 0, 4, Charsets.US_ASCII) == "RIFF" && String(b, 8, 4, Charsets.US_ASCII) == "WEBP") {
-            "${file.name} is not a WebP"
-        }
-        fun u(i: Int) = b[i].toInt() and 0xFF
-        return when (val chunk = String(b, 12, 4, Charsets.US_ASCII)) {
-            "VP8L" -> {
-                require(u(20) == 0x2F) { "${file.name} has no VP8L signature" }
-                val bits = u(21) or (u(22) shl 8) or (u(23) shl 16) or (u(24) shl 24)
-                ((bits and 0x3FFF) + 1) to (((bits shr 14) and 0x3FFF) + 1)
-            }
-            "VP8X" -> {
-                (u(24) or (u(25) shl 8) or (u(26) shl 16)) + 1 to ((u(27) or (u(28) shl 8) or (u(29) shl 16)) + 1)
-            }
-            else -> error("${file.name}: unexpected chunk $chunk")
-        }
-    }
 
     private fun refs(): Map<String, ArtRef> =
         (ExerciseArtIndex.names.map { ExerciseArtIndex.forName(it)!! } +
@@ -42,15 +26,17 @@ class ExerciseArtIndexTest {
     @Test
     fun `every mapped movement has its frames and they parse`() {
         val problems = refs().values.mapNotNull { ref ->
-            val file = File(assets, ref.id + ".webp")
+            val file = File(assets, ref.id + ".paths")
             if (!file.exists()) {
                 "${ref.id}: file missing"
             } else {
                 runCatching {
-                    val (w, h) = dimensions(file)
+                    val art = ExerciseArtFile.parse(file.readText())
+                    // Path data must be valid for the runtime parser; toNodes() is its pure-Kotlin half.
+                    art.frames.forEach { PathParser().parsePathString(it.data).toNodes() }
                     when {
-                        w % ref.frames != 0 -> "${ref.id}: width $w is not ${ref.frames} equal cells"
-                        w / ref.frames < 32 || h < 32 || w / ref.frames > 512 || h > 512 -> "${ref.id}: odd cell ${w / ref.frames} x $h"
+                        art.frames.size != ref.frames -> "${ref.id}: file holds ${art.frames.size} frames, index says ${ref.frames}"
+                        art.width < 16f || art.height < 16f -> "${ref.id}: odd window ${art.width} x ${art.height}"
                         else -> null
                     }
                 }.getOrElse { "${ref.id}: ${it.message}" }
@@ -78,6 +64,15 @@ class ExerciseArtIndexTest {
     fun `every library movement is drawn`() {
         val undrawn = ExerciseLibrary.rows.map { it.name }.filter { ExerciseArtIndex.forName(it) == null }
         assertEquals("library movements with no drawing", emptyList<String>(), undrawn)
+    }
+
+    @Test
+    fun `a proxy names the movement it shows and a movement's own drawing never does`() {
+        val proxied = ExerciseArtIndex.techniques.filter { ExerciseArtIndex.shows(it) != null }
+        assertTrue("some techniques use a proxy", proxied.isNotEmpty())
+        // A proxy is not the catalogue row's own drawing, so the movement of that name is not drawn with it.
+        proxied.forEach { assertNull("$it must not be drawn as a movement", ExerciseArtIndex.forName(it)) }
+        assertNull(ExerciseArtIndex.shows("Back Squat"))
     }
 
     @Test

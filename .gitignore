@@ -8,3 +8,4 @@ captures/
 .kotlin/
 .tmp/
 __pycache__/
+tools/exercise_art/.venv/

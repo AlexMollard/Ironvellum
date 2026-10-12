@@ -1,93 +1,316 @@
-"""Turns upstream drawings into the compact masks the app tints at runtime.
+"""Turns upstream drawings into the vector files the app draws.
 
-Every drawing becomes a coverage mask (0 = no ink, 255 = full ink) and an exercise's frames are laid side by side in one
-lossless WebP, cropped to the union of the frames' ink so the figure keeps its place and scale from frame to frame:
+An exercise's art is one text file, `exercise_art/<id>.paths`:
 
-    Everkinetic   dist/png/<id>-relaxation.png + -tension.png   black ink on white  -> coverage = 255 - luminance
-    workout-guide assets/<slug>/frame-N.png                     white ink, alpha     -> coverage = alpha
+    v1 <x> <y> <w> <h>            the shared window, in source units, that every frame is drawn inside
+    <dx> <dy> <d>                 one line per kept frame: translation that registers it, then SVG path data (even-odd)
 
-The mask is stored as grey RGB (R = G = B = coverage), quantised to LEVELS steps, so the file carries no colour at all.
-The app reads the R channel as alpha and paints it in the house ink; recolouring never touches the files.
+The window is the union of the frames once each is moved by its own (dx, dy), so the figure keeps one scale and one
+ground line from pose to pose. The app scales the window to its slot with Fit and fills the paths in the house ink.
+
+    workout-guide   assets/<slug>/frame-N.svg   one 512 x 512 <path>
+    Everkinetic     dist/svg/<id>-relaxation|tension.svg   rendered into ONE shared box, thresholded, vector-traced (potrace)
+    owner-made      owner/<slug>-N.svg|png                  the same as Everkinetic, see owner/README.md
+
+The free sets are used as drawn: a frame is dropped only when it is broken (see `analyse`); an exercise left with one
+frame is shipped as a still. Only the line weight changes: the sources range from hairline to heavy, sometimes within one
+exercise, so every frame is redrawn on its own centre lines at one shared weight (`reweight_paths`).
 """
 import io
+import re
 from pathlib import Path
 
 import numpy as np
+import resvg_py
 from PIL import Image
+from scipy import ndimage
 
-MAX_SIDE = 256   # longest side of one frame cell, px
-LEVELS = 4       # coverage steps kept (lossless WebP; 4 steps cost about 5 KB a frame pair)
-THRESHOLD = 24   # coverage below this is background noise when finding the ink bounds
+WG_SIZE = 512          # workout-guide canvas
+EK_ZOOM = 3            # Everkinetic is rasterised at this multiple of its own viewBox before tracing
+MIN_INK = 40           # px of ink below which a speck is noise when measuring bounds
+WEIGHT = 0.008         # every frame's median line, as a share of its window's long side (the brief's 0.8%)
+WEIGHT_RES = 1024      # the window's long side, in px, when reweighting
+
+# Movements hung from a fixed bar or handle are registered by their top; everything else by its ground line.
+HANGING = re.compile(r"(?i)pull-?up|chin-?up|pulldown|hang|muscle-up|toes-to-bar|leg raise|knee raise|lever|flag|dead hang|"
+                     r"L-sit|skin the cat|ring row|inverted row|australian|front row")
 
 
-def owner_files(folder, slug, expected_frames=3):
-    """Import complete PNG sets; reviewed stills may explicitly request one frame."""
-    if type(expected_frames) is not int or expected_frames not in (1, 3):
-        raise ValueError("Owner frame count must be 1 or 3: %s" % slug)
-    files = [Path(folder) / ("%s-%d.png" % (slug, i)) for i in range(1, expected_frames + 1)]
-    return files if all(p.is_file() for p in files) else []
+def _render(svg_text, width=None, zoom=None):
+    b = resvg_py.svg_to_bytes(svg_string=svg_text, background="#000000", width=width, zoom=zoom)
+    return np.asarray(Image.open(io.BytesIO(b)).convert("L"))
 
 
-def coverage(kind, src, ident, index):
-    """One frame's coverage mask as uint8, or raises FileNotFoundError."""
-    src = Path(src)
-    if kind == "own":
-        im = Image.open(src / ("%s-%d.png" % (ident, index + 1))).convert("RGBA")
-        a = np.asarray(im)[:, :, 3].astype(np.uint8)
-        if not (a < 255).any() or not (a > 0).any():
-            raise ValueError("Owner PNG must contain visible ink and a transparent background: %s" % ident)
-        return a
-    elif kind == "ek":
-        name = "relaxation" if index == 0 else "tension"
-        im = Image.open(src / "ek" / "dist" / "png" / ("%s-%s.png" % (ident, name))).convert("L")
-        a = 255 - np.asarray(im).astype(np.uint8)
+# --------------------------------------------------------------------------------------------- sources
+
+def _sized(svg):
+    """Everkinetic's width/height are in pt; give resvg plain px that match the viewBox."""
+    vb = re.search(r'viewBox="[\d.\-]+ [\d.\-]+ ([\d.]+) ([\d.]+)"', svg)
+    return re.sub(r'width="[^"]*" height="[^"]*"', 'width="%s" height="%s"' % (vb.group(1), vb.group(2)), svg, count=1)
+
+
+def wg_frames(src, slug):
+    """[(d, ink mask)] for each workout-guide frame; `d` is exactly the file's path data."""
+    base = Path(src) / "wg" / "packages" / "workout-guide" / "assets" / slug
+    out = []
+    for i in range(1, 9):
+        f = base / ("frame-%d.svg" % i)
+        if not f.exists():
+            break
+        text = f.read_text(encoding="utf-8")
+        d = re.search(r'<path[^>]* d="([^"]*)"', text).group(1)
+        out.append((d, _render(text, width=WG_SIZE) > 127))
+    return out
+
+
+def ek_frames(src, ident, tracer):
+    """[(d, ink mask)] for the relaxation and tension poses, both rendered into one shared box."""
+    base = Path(src) / "ek" / "dist" / "svg"
+    texts = [(base / ("%s-%s.svg" % (ident, n))).read_text(encoding="utf-8") for n in ("relaxation", "tension")]
+    masks = [_render(_sized(t), zoom=EK_ZOOM) < 128 for t in texts]
+    h, w = max(m.shape[0] for m in masks), max(m.shape[1] for m in masks)
+    masks = [np.pad(m, ((0, h - m.shape[0]), (0, w - m.shape[1]))) for m in masks]
+    return [(tracer(m), m) for m in masks]
+
+
+OWNER_WIDTH = 1024     # owner-made drawings are rendered or resampled to this width before tracing
+
+
+def owner_files(folder, slug):
+    """The owner's frames for one movement, in order: <slug>-1.svg|png, <slug>-2..., contiguous from 1."""
+    out = []
+    for i in range(1, 9):
+        found = [p for ext in ("svg", "png") for p in [Path(folder) / ("%s-%d.%s" % (slug, i, ext))] if p.exists()]
+        if not found:
+            break
+        out.append(found[0])
+    return out
+
+
+def _owner_mask(path):
+    """One owner drawing -> ink mask at OWNER_WIDTH. Ink is the alpha channel; an opaque image is read as dark-on-light
+    or light-on-dark by its corners."""
+    if path.suffix == ".svg":
+        b = resvg_py.svg_to_bytes(svg_path=str(path), width=OWNER_WIDTH)
+        im = Image.open(io.BytesIO(b)).convert("RGBA")
     else:
-        im = Image.open(src / "wg" / "packages" / "workout-guide" / "assets" / ident / ("frame-%d.png" % (index + 1))).convert("RGBA")
-        a = np.asarray(im)[:, :, 3].astype(np.uint8)
-    return normalise(a)
+        im = Image.open(path).convert("RGBA")
+        im = im.resize((OWNER_WIDTH, max(1, round(im.height * OWNER_WIDTH / im.width))), Image.LANCZOS)
+    a = np.asarray(im)
+    if a[:, :, 3].min() < 250:
+        return a[:, :, 3] > 127
+    lum = np.asarray(im.convert("L"))
+    corner = float(np.median([lum[0, 0], lum[0, -1], lum[-1, 0], lum[-1, -1]]))
+    return lum < 128 if corner > 127 else lum > 127
 
 
-def normalise(a):
-    """Some frames are drawn faint; lift each so its strong strokes reach full ink, keeping the frames comparable."""
-    strong = a[a > THRESHOLD]
-    if strong.size:
-        p = float(np.percentile(strong, 98))
-        if 40 < p < 230:
-            a = np.clip(a.astype(np.float32) * (255.0 / p), 0, 255).astype(np.uint8)
-    return a
+def owner_frames(folder, slug, tracer):
+    """[(d, ink mask)] for an owner-made movement, traced exactly as the Everkinetic poses are."""
+    masks = [_owner_mask(p) for p in owner_files(folder, slug)]
+    if not masks:
+        raise FileNotFoundError("no owner frames for " + slug)
+    h, w = max(m.shape[0] for m in masks), max(m.shape[1] for m in masks)
+    masks = [np.pad(m, ((0, h - m.shape[0]), (0, w - m.shape[1]))) for m in masks]
+    return [(tracer(m), m) for m in masks]
 
 
-def strip(frames, max_side=MAX_SIDE, threshold=THRESHOLD):
-    """Frames -> (PIL 'L' image of all cells side by side, cell width, cell height)."""
-    ys, xs = [], []
-    for a in frames:
-        m = a > threshold
-        rows, cols = np.where(m.any(1))[0], np.where(m.any(0))[0]
-        ys += [rows[0], rows[-1]]
-        xs += [cols[0], cols[-1]]
-    y0, y1, x0, x1 = min(ys), max(ys) + 1, min(xs), max(xs) + 1
-    w, h = x1 - x0, y1 - y0
-    s = max_side / max(w, h)
-    cw, ch = max(1, round(w * s)), max(1, round(h * s))
-    out = Image.new("L", (cw * len(frames), ch))
-    for i, a in enumerate(frames):
-        cell = Image.fromarray(a[y0:y1, x0:x1], "L").resize((cw, ch), Image.LANCZOS)
-        out.paste(cell, (i * cw, 0))
-    return out, cw, ch
+def trace(mask, turdsize=10, tolerance=0.9):
+    """Ink mask -> compact SVG path data, one path for the whole pose (potrace; holes by even-odd)."""
+    import potrace
+    try:
+        plist = potrace.Bitmap(~mask).trace(turdsize=turdsize, alphamax=1.0, opticurve=True, opttolerance=tolerance)
+    except ValueError:
+        # potracer's curve optimiser can take a square root of a negative on a near-degenerate corner; trace unoptimised.
+        plist = potrace.Bitmap(~mask).trace(turdsize=turdsize, alphamax=1.0, opticurve=False)
+
+    def p(v):
+        return str(int(round(v)))
+
+    parts = []
+    for curve in plist:
+        s = curve.start_point
+        parts.append("M%s %s" % (p(s.x), p(s.y)))
+        for seg in curve.segments:
+            if seg.is_corner:
+                parts.append("L%s %s L%s %s" % (p(seg.c.x), p(seg.c.y), p(seg.end_point.x), p(seg.end_point.y)))
+            else:
+                parts.append("C%s %s %s %s %s %s" % (p(seg.c1.x), p(seg.c1.y), p(seg.c2.x), p(seg.c2.y),
+                                                     p(seg.end_point.x), p(seg.end_point.y)))
+        parts.append("Z")
+    return "".join(parts)
 
 
-def quantise(img):
-    a = np.asarray(img).astype(np.float32)
-    q = np.round(a / 255.0 * (LEVELS - 1)) / (LEVELS - 1) * 255.0
-    return Image.fromarray(q.astype(np.uint8), "L")
+# --------------------------------------------------------------------------------------------- analysis
+
+def bounds(mask):
+    """(x0, y0, x1, y1) of the ink, ignoring specks; x1 and y1 are exclusive."""
+    lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    if n == 0:
+        return None
+    sizes = ndimage.sum(mask, lab, range(1, n + 1))
+    keep = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s >= MIN_INK]) if n else mask
+    ys, xs = np.where(keep)
+    if xs.size == 0:
+        return None
+    return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
 
 
-def encode(kind, src, ident, nframes):
-    """-> (webp bytes, cell width, cell height)."""
-    frames = [coverage(kind, src, ident, i) for i in range(nframes)]
-    if kind == "own" and len({a.shape for a in frames}) != 1:
-        raise ValueError("Owner frames must use the same canvas: %s" % ident)
-    img, cw, ch = strip(frames, max_side=1024, threshold=0) if kind == "own" else strip(frames)
-    buf = io.BytesIO()
-    (img if kind == "own" else quantise(img)).convert("RGB").save(buf, "WEBP", lossless=True, quality=100, method=6)
-    return buf.getvalue(), cw, ch
+def stroke_width(mask):
+    """Median stroke width in px: twice the median distance-to-edge along the ink's skeleton ridge."""
+    from skimage.morphology import skeletonize
+    dist = ndimage.distance_transform_edt(mask)
+    sk = skeletonize(mask)
+    return float(2 * np.median(dist[sk])) if sk.any() else 0.0
+
+
+def reweight(mask, target):
+    """Redraws the ink around its centre lines so the median line is `target` px wide. Each line keeps its own taper (its
+    width scales with the frame's), and none is thinner than about a third of the target."""
+    from skimage.morphology import skeletonize
+    sk = skeletonize(mask)
+    if not sk.any():
+        return mask
+    dist = ndimage.distance_transform_edt(mask)
+    scale = np.clip(target / (2 * np.median(dist[sk])), 0.25, 4.0)
+    reach, (iy, ix) = ndimage.distance_transform_edt(~sk, return_indices=True)
+    # A line drawn out to radius r measures 2r + 2 by stroke_width's own count, hence the - 1.
+    return reach <= np.maximum(dist[iy, ix] * scale - 1, target * 0.35)
+
+
+def reweight_paths(text, tracer=None):
+    """A .paths file with every frame redrawn at the house line weight (WEIGHT), retraced in a WEIGHT_RES px window."""
+    (_, _, w, h), frames = read_paths(text)
+    s = WEIGHT_RES / max(w, h)
+    size = (round(w * s), round(h * s))
+    imgs = render_paths(text, width=size[0], height=size[1], ink="#ffffff", ground="#000000")
+    ds = [(tracer or trace)(reweight(np.asarray(i.convert("L")) > 127, WEIGHT * WEIGHT_RES)) for i in imgs]
+    return write_paths((0, 0) + size, [(0, 0)] * len(ds), ds)
+
+
+def halo_score(mask, gap=3):
+    """How much of the figure's outer contour is doubled: a hairline lying just outside the main outline.
+
+    Closing the mask by the hairline's gap welds the two contours into one band. The ink that closing adds within a
+    short way of the silhouette's edge, per unit of edge length, is the score: about 0.5 for a single outline, and
+    1.5 or more when a second contour runs parallel to it.
+    """
+    from skimage.morphology import disk
+    closed = ndimage.binary_closing(np.pad(mask, 8), disk(gap))[8:-8, 8:-8]
+    filled = ndimage.binary_fill_holes(closed)
+    edge = filled & ~ndimage.binary_erosion(filled)
+    band = ndimage.binary_dilation(edge, disk(14)) & filled
+    return float((closed & ~mask & band).sum() / max(1, edge.sum()))
+
+
+FAT = 6.0      # strokes wider than this, at a 400 px figure, are noted as the heavy style (noted, never dropped)
+HALO = 1.4     # a halo score above this is noted as a doubled outline (noted, never dropped)
+
+
+def analyse(masks):
+    """Which of an exercise's frames are usable: ([bool], [note], [stroke width, halo score]).
+
+    The free sets are used as drawn: a frame is dropped only when it is broken, meaning (nearly) empty next to its
+    siblings. A frame in a heavier stroke, or with a doubled outline, is kept and only noted, so the report says where the
+    set's own styles differ.
+    """
+    sizes = []
+    for m in masks:
+        b = bounds(m) or (0, 0, 1, 1)
+        sizes.append(max(b[2] - b[0], b[3] - b[1]))
+    widths = [stroke_width(m) * 400.0 / s for m, s in zip(masks, sizes)]
+    halos = [halo_score(m) for m in masks]
+    areas = [int(m.sum()) for m in masks]
+    floor = 0.25 * float(np.median(areas))
+    ok, why = [], []
+    for a, w, h in zip(areas, widths, halos):
+        ok.append(a >= floor and a >= MIN_INK)
+        note = []
+        if a < floor or a < MIN_INK:
+            note.append("broken: nearly empty")
+        if w > FAT:
+            note.append("heavy strokes %.1f" % w)
+        if h > HALO:
+            note.append("doubled outline %.2f" % h)
+        why.append("; ".join(note))
+    return ok, why, [(round(w, 1), round(h, 2)) for w, h in zip(widths, halos)]
+
+
+# --------------------------------------------------------------------------------------------- registration
+
+def register(items, hanging):
+    """items: [(d, mask)] of the kept frames -> (window, [(dx, dy)]).
+
+    Every frame is shifted so its ground line (lowest ink row; the top for hanging movements) and the horizontal centre of
+    its ink agree with the first frame's. Only translation: scale is shared by construction, the geometry untouched.
+    """
+    bs = [bounds(m) for _, m in items]
+    ref = bs[0]
+    shifts = []
+    for b in bs:
+        dx = (ref[0] + ref[2]) / 2 - (b[0] + b[2]) / 2
+        dy = (ref[1] - b[1]) if hanging else (ref[3] - b[3])
+        shifts.append((dx, dy))
+    x0 = min(b[0] + s[0] for b, s in zip(bs, shifts))
+    y0 = min(b[1] + s[1] for b, s in zip(bs, shifts))
+    x1 = max(b[2] + s[0] for b, s in zip(bs, shifts))
+    y1 = max(b[3] + s[1] for b, s in zip(bs, shifts))
+    pad = 0.015 * max(x1 - x0, y1 - y0)
+    window = (x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad)
+    return window, shifts
+
+
+def fmt(v):
+    s = ("%.2f" % v).rstrip("0").rstrip(".")
+    return "0" if s in ("-0", "") else s
+
+
+def write_paths(window, shifts, ds):
+    lines = ["v1 " + " ".join(fmt(v) for v in window)]
+    for (dx, dy), d in zip(shifts, ds):
+        lines.append("%s %s %s" % (fmt(dx), fmt(dy), d))
+    return "\r\n".join(lines) + "\r\n"
+
+
+def read_paths(text):
+    """-> (window, [(dx, dy, d)])"""
+    rows = [r for r in text.splitlines() if r.strip()]
+    head = rows[0].split()
+    assert head[0] == "v1"
+    window = tuple(float(v) for v in head[1:5])
+    frames = []
+    for r in rows[1:]:
+        a, b, d = r.split(" ", 2)
+        frames.append((float(a), float(b), d))
+    return window, frames
+
+
+def build_one(kind, src, ident, hanging, tracer=trace):
+    """-> (file text, kept source frame indices, report dict) for one drawing."""
+    if kind == "wg":
+        items = wg_frames(src, ident)
+    elif kind == "own":
+        items = owner_frames(src, ident, tracer)
+    else:
+        items = ek_frames(src, ident, tracer)
+    ok, why, widths = analyse([m for _, m in items])
+    keep = [i for i, g in enumerate(ok) if g]
+    if not keep:
+        keep = [max(range(len(items)), key=lambda i: int(items[i][1].sum()))]
+    sel = [items[i] for i in keep]
+    window, shifts = register(sel, hanging)
+    text = reweight_paths(write_paths(window, shifts, [d for d, _ in sel]), tracer)
+    return text, keep, {"source": len(items), "kept": keep, "why": why, "stroke": [list(w) for w in widths],
+                        "window": [round(v, 1) for v in window]}
+
+
+def render_paths(text, height=None, width=None, ink="#e8e0cf", ground="#121110"):
+    """Render a .paths file's frames to PIL images through resvg (the same path strings the app parses)."""
+    (x, y, w, h), frames = read_paths(text)
+    out = []
+    for dx, dy, d in frames:
+        svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%s %s %s %s"><rect x="%s" y="%s" width="%s" height="%s" fill="%s"/>'
+               '<path fill="%s" fill-rule="evenodd" transform="translate(%s %s)" d="%s"/></svg>'
+               % (x, y, w, h, x, y, w, h, ground, ink, dx, dy, d))
+        b = resvg_py.svg_to_bytes(svg_string=svg, width=width, height=height)
+        out.append(Image.open(io.BytesIO(b)).convert("RGB"))
+    return out

@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""Writes the brief for every drawing the free sets do not have: tools/exercise_art/missing.json and docs/art/missing-exercise-art.md.
+
+    python -P tools/exercise_art/missing.py            (from tools/exercise_art/.venv)
+
+The gaps are every catalogue movement and Codex technique with no exact drawing: techniques on a proxy drawing or the
+pictogram, and movements on the placeholder. Pose text comes from poses.json (reviewable data); the style guide below was
+written from the Workout Guide SVGs themselves (see the numbers it cites, measured over 80 of its exercises).
+build.py reads missing.json to map owner-made files in owner/ to the movement they fill, so it is regenerated, never edited.
+"""
+import json
+import re
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import build  # noqa: E402
+
+ROOT = HERE.parents[1]
+KT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "ironvellum" / "app"
+DOC = ROOT / "docs" / "art" / "missing-exercise-art.md"
+
+REFERENCES = [
+    ("bodyweight-squat/frame-1.svg", "front view, standing and squatting figure: the reference for anatomy, head, shorts, hands and line weight"),
+    ("bulgarian-split-squat/frame-1.svg", "three-quarter view with a bench: the reference for how furniture and a loaded dumbbell are drawn"),
+    ("archer-push-up/frame-1.svg", "side view on the floor: the reference for prone figures, long horizontal framing and bare feet"),
+    ("dead-hang/frame-1.svg", "front view hanging from a bar: the reference for a fixed bar, straight arms and a hanging body"),
+    ("l-sit-hold/frame-1.svg", "front view on parallel bars: the reference for bars as tubes and a held, supported body"),
+    ("handstand-push-up/frame-1.svg", "inverted figure: the reference for upside-down anatomy and balance on the hands"),
+]
+
+STYLE = {
+    "source": "The Workout Guide set (bryllim/workout-guide, packages/workout-guide/assets/<slug>/frame-N.svg), the dominant set in the app. "
+              "Everkinetic's own poses are drawn in the same manner and are the origin of its first frames.",
+    "canvas": "Square 512 x 512, viewBox 0 0 512 512. Transparent background. The figure and its equipment are centred and fill about 70% "
+              "of the width and 78% of the height on average (margins of 11-16% on each side; wide floor exercises such as push-ups "
+              "run nearly edge to edge, tall ones such as pull-ups nearly top to bottom). Nothing is cropped by the canvas, and nothing "
+              "else is on it: no floor line, no shadow, no scenery, no text, no arrows, no motion lines, no labels.",
+    "geometry": "Each frame is a single <path fill=\"#fff\" fill-rule=\"evenodd\"> of roughly 300 curve commands: no stroke attribute, no groups, "
+                "no transform, no gradients. The linework is a FILLED shape: every line is a thin white ribbon (a traced outline), so what "
+                "looks like a line drawing is the filled area of the path, and the interior of the body is the empty background.",
+    "lineWeight": "One even weight of about 4 units on the 512 canvas (0.8% of its width), the same for the body outline, the muscle lines and "
+                  "the equipment. Contours are closed, slightly hand-inked (a gentle wobble, tapered line ends), never mechanical vector "
+                  "strokes. Muscle-separation marks and fabric folds are short tapered strokes of the same weight, never filled shading or hatching.",
+    "figure": "One athletic, muscular adult male, heroic but anatomical proportions (about 7.5 heads tall). The head is a smooth FACELESS egg-shaped "
+              "oval: no eyes, nose, mouth, hair or ears, only a neck line where it joins the trapezius. Defined deltoids, pecs, a six-pack with "
+              "serratus lines, forearm and calf muscle separations, drawn as short contour lines, not shaded. Hands show the fingers as separate "
+              "contour shapes; feet are bare (toe lines visible) or plain low shoes with a single contour and no logo. He wears plain "
+              "mid-thigh shorts with a few fold lines and nothing else (no shirt, no belt, no wristbands).",
+    "equipment": "Drawn in the same single line weight, outline only, no fill and no shading. Barbells are a straight bar with plate discs as nested "
+                 "ellipses at each end and a short collar; dumbbells have two rounded or hexagonal heads on a short handle; benches are a flat or "
+                 "inclined pad outline on two or four tubular legs; pull-up bars, parallettes and dip bars are plain tubes with end caps; machines "
+                 "are drawn as tubular frames with a seat pad, weight stack as stacked slabs, and cables as single thin lines; rings are two "
+                 "circles on straps hung from above. Only the equipment the movement needs is drawn.",
+    "views": "Chosen per exercise as in a classic exercise guide: front, side profile (facing either way), three-quarter front or back, or back. "
+             "The camera never moves between the frames of one exercise: the same view, the same figure size, the same equipment position; "
+             "only the athlete moves (and the bar/rings stay put for a hang).",
+    "frames": "Three frames per exercise, numbered in order: 1 = start, 2 = mid, 3 = end (a hold shows: set-up, arriving, full hold). The app "
+              "plays 1, 2, 3, 2 and registers the frames to one ground line, centre and scale, so keep the figure the same size in all three.",
+}
+
+BASE_PROMPT = (
+    "Black-and-white exercise-guide line illustration in the classic anatomical-guide style, drawn as a clean outline: a single uniform line "
+    "weight of about 0.8% of the image width, slightly hand-inked contours with tapered ends, white lines on a fully transparent background "
+    "(or, if transparency is unavailable, black lines on pure white). Square 1:1 canvas; the whole figure and its equipment are centred, "
+    "fill about 70-80% of the canvas, and are never cropped; no floor line, shadow, shading, hatching, fills, gradients, colour, text, "
+    "arrows, labels or motion lines. One athletic, muscular adult male with realistic anatomical proportions and a smooth faceless "
+    "egg-shaped head (no eyes, nose, mouth, hair or ears), defined deltoids, pecs, abs with serratus lines and forearm and calf muscle "
+    "separations drawn as short contour lines only, fingers drawn as separate shapes, bare feet with toe lines, plain mid-thigh shorts "
+    "with a few fold lines, no shirt. Any equipment is drawn in the same single line weight, outline only: barbells as a straight bar "
+    "with plates shown as nested ellipses, dumbbells with two rounded heads, benches as a padded outline on tubular legs, bars and "
+    "parallettes as plain tubes, rings as two circles on straps, machines as tubular frames with single thin cables. The camera is "
+    "fixed: the same view, figure size and equipment position in every frame of the exercise."
+)
+
+FRAME_WORD = {False: ("start", "mid", "end"), True: ("set-up", "arriving", "full hold")}
+LINE_ORDER = ["Planche", "Lever", "Handstand", "Rings", "Movement", "Pull", "Push", "Core", "Mobility", "Legs", "Squat", "Bench", "Press", "Deadlift"]
+
+
+def slugify(name):
+    return build.slugify(name)
+
+
+def gaps():
+    lib, mp, _ = build.load()
+    report = json.loads(build.REPORT.read_text(encoding="utf-8"))
+    drawn = {k.lower() for k in build.art_table(lib, mp, report)}
+    seed = (KT / "data" / "Seed.kt").read_text(encoding="utf-8")
+    skills = re.findall(r'SkillDef\(\s*"([^"]+)",\s*(\d+),\s*"([^"]+)"', (KT / "domain" / "Skills.kt").read_text(encoding="utf-8"))
+    skill_names = {s[0] for s in skills}
+    out = []
+    for name, tier, line in skills:
+        if name.lower() not in drawn:
+            t = mp["techniques"].get(name)
+            now = "proxy drawing of %s" % t["exercise"] if t and t.get("proxy") else "pictogram"
+            out.append({"name": name, "kind": "technique", "priority": 1, "line": line, "tier": int(tier), "currently": now})
+    for name, grp in re.findall(r'ExerciseEntity\(name = "([^"]+)", muscleGroup = MuscleGroup\.(\w+)', seed):
+        if name not in skill_names and name.lower() not in drawn:
+            out.append({"name": name, "kind": "movement", "priority": 2, "group": grp, "currently": "placeholder"})
+    for name, grp in re.findall(r'activity\("([^"]+)",\s*"([^"]+)"', seed):
+        if name.lower() not in drawn:
+            out.append({"name": name, "kind": "activity", "priority": 3, "group": grp, "currently": "placeholder"})
+    out.sort(key=lambda e: (e["priority"], LINE_ORDER.index(e["line"]) if e.get("line") in LINE_ORDER else 99, e.get("tier", 0), e["name"]))
+    return out
+
+
+def prompt_for(e, pose, frame=None):
+    words = FRAME_WORD[bool(pose["hold"])]
+    lines = [BASE_PROMPT, "",
+             "Subject: %s (%s). View: %s. Equipment: %s." % (e["name"], "a static hold" if pose["hold"] else "a repetition movement",
+                                                              pose["view"], pose["equipment"]),
+             ""]
+    for i, f in enumerate(pose["frames"]):
+        if frame is None or frame == i:
+            lines.append("Frame %d of 3 (%s): %s" % (i + 1, words[i], f))
+    lines.append("Must get right: " + pose["note"])
+    if frame is None:
+        lines += ["", "Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera "
+                      "angle, the figure size and the equipment position identical across the three."]
+    else:
+        lines += ["", "Draw ONLY this frame, as one image; it is frame %d of 3 of one exercise, so keep the athlete's proportions, the camera "
+                      "angle and the figure size exactly as in the other frames." % (frame + 1)]
+    return "\n".join(lines)
+
+
+def main():
+    poses = json.loads((HERE / "poses.json").read_text(encoding="utf-8"))
+    entries = []
+    for e in gaps():
+        p = poses[e["name"]]
+        slug = slugify(e["name"])
+        owner = HERE / "owner"
+        filled = any((owner / ("%s-1.%s" % (slug, ext))).exists() for ext in ("svg", "png"))
+        entries.append(dict(e, slug=slug, filled=filled, view=p["view"], equipment=p["equipment"], hold=p["hold"],
+                            hanging=p["hanging"], frameCount=3, files=["%s-%d.svg" % (slug, i) for i in (1, 2, 3)],
+                            poses=p["frames"], note=p["note"], prompt=prompt_for(e, p),
+                            prompts=[prompt_for(e, p, i) for i in range(3)]))
+    doc = {
+        "about": "Every catalogue movement and Codex technique with no exact drawing. Drop owner-made frames in tools/exercise_art/owner/ "
+                 "named by `files` (or the same names with .png), then run build.py --owner-only. Generated by missing.py; do not edit.",
+        "style": STYLE,
+        "basePrompt": BASE_PROMPT,
+        "references": [{"file": "packages/workout-guide/assets/" + r, "why": w} for r, w in REFERENCES],
+        "fileConvention": {
+            "folder": "tools/exercise_art/owner/",
+            "names": "<slug>-1.svg, <slug>-2.svg, <slug>-3.svg (or .png), numbered in frame order; two frames are accepted, up to eight",
+            "svg": "any SVG; it is rendered at 1024 px wide and its ALPHA is the ink, so line colour does not matter",
+            "png": "RGBA with a transparent background and at least 512 px wide (1024 recommended); an opaque PNG is read as dark-on-light "
+                   "or light-on-dark from its corners",
+            "framing": "the same canvas size and the same camera for every frame of an exercise; the build registers the frames to one ground line, centre and scale",
+        },
+        "counts": {
+            "total": len(entries),
+            "priority1_codexTechniques": sum(1 for e in entries if e["priority"] == 1),
+            "priority2_movements": sum(1 for e in entries if e["priority"] == 2),
+            "priority3_activities": sum(1 for e in entries if e["priority"] == 3),
+        },
+        "entries": entries,
+    }
+    (HERE / "missing.json").write_bytes((json.dumps(doc, indent=1, ensure_ascii=False) + chr(10)).replace(chr(10), chr(13) + chr(10)).encode("utf-8"))
+    DOC.write_bytes(render_md(doc).replace(chr(10), chr(13) + chr(10)).encode("utf-8"))
+    print(doc["counts"])
+
+
+def render_md(doc):
+    s = doc["style"]
+    out = ["# Missing exercise art", "",
+           "Every catalogue movement and Codex technique the free drawings (Workout Guide and Everkinetic, CC BY-SA 4.0) do not draw, "
+           "with everything needed to generate each one in the SAME style, so the app keeps one look. Generated by "
+           "`tools/exercise_art/missing.py` from `poses.json`; the machine-readable twin is `tools/exercise_art/missing.json`.", "",
+           "Counts: %d drawings to make: %d Codex techniques (priority 1), %d gym movements (priority 2), %d sports and classes (priority 3)." % (
+               doc["counts"]["total"], doc["counts"]["priority1_codexTechniques"], doc["counts"]["priority2_movements"],
+               doc["counts"]["priority3_activities"]), "",
+           "## How to hand art back", "",
+           "1. Generate the frames (three per exercise: start, mid, end; a hold shows set-up, arriving, full hold).",
+           "2. Save each as `tools/exercise_art/owner/<slug>-1.svg`, `-2`, `-3` (PNG also accepted: RGBA, transparent background, 512 px or wider, 1024 recommended). "
+           "An SVG is read by its alpha, so its colour does not matter.",
+           "3. Run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`. It traces each frame to one vector path "
+           "exactly as it does Everkinetic's, registers the frames to one ground line, centre and scale, maps them to the movement, and "
+           "regenerates the Kotlin index; a technique that was on a proxy drawing or the pictogram switches to the new drawing.",
+           "4. Rebuild the app. Owner-made art is the project's own and is recorded as such in `docs/ART_ATTRIBUTION.md`.", "",
+           "## Style guide", "",
+           "Derived from the Workout Guide SVGs themselves (measured over 80 of its exercises: ink covers about 6% of the canvas; the figure spans 70% x 78% "
+           "of it on average; the median path has about 310 curve commands).", ""]
+    for k, label in (("canvas", "Canvas and framing"), ("geometry", "What the file is"), ("lineWeight", "Line weight"), ("figure", "The figure"),
+                     ("equipment", "Equipment"), ("views", "Views"), ("frames", "Frames")):
+        out += ["**%s.** %s" % (label, s[k]), ""]
+    out += ["### Style references to attach", "",
+            "Attach these files from the Workout Guide repository (`bryllim/workout-guide`, CC BY-SA 4.0) to every generation as style references, "
+            "frame 1 of each being the cleanest, single-contour drawing in the set:", ""]
+    for r in doc["references"]:
+        out.append("- `%s`: %s" % (r["file"], r["why"]))
+    out += ["", "### Base prompt", "", "Paste this first in every prompt (each entry's full prompt below already includes it):", "", "```", doc["basePrompt"], "```", ""]
+    groups = {1: "Priority 1: Codex techniques (calisthenics skills)", 2: "Priority 2: gym and conditioning movements",
+              3: "Priority 3: sports, classes and the long tail"}
+    for pr in (1, 2, 3):
+        es = [e for e in doc["entries"] if e["priority"] == pr]
+        out += ["## %s (%d)" % (groups[pr], len(es)), ""]
+        for e in es:
+            out += ["### %s%s" % (e["name"], " (done)" if e["filled"] else ""), "",
+                    "- Slug: `%s`. Files: %s. Now shows: %s." % (e["slug"], ", ".join("`%s`" % f for f in e["files"]), e["currently"]),
+                    "- View: %s. Equipment: %s. %s." % (e["view"], e["equipment"], "Static hold" if e["hold"] else "Repetition"),
+                    "- Frame 1: " + e["poses"][0], "- Frame 2: " + e["poses"][1], "- Frame 3: " + e["poses"][2],
+                    "- Must get right: " + e["note"], "", "Prompt:", "", "```", e["prompt"], "```", ""]
+    return "\n".join(out) + "\n"
+
+
+if __name__ == "__main__":
+    main()
