@@ -101,12 +101,12 @@
       "updatedAt": "2026-10-12T03:33:31.822266+00:00"
     },
     {
-      "status": "pending",
-      "reviewer": "Assistant",
-      "note": "Rebuilt from scratch after rejection. Corrected to open tuck: hips and knees bent around 90 degrees, flat back, chest down. Awaiting user review.",
+      "status": "approved",
+      "reviewer": "You",
+      "note": "Approved by user in chat.",
       "id": "advanced-tuck-back-lever-1.png",
       "sha256": "ccbe9bea9f742ed9ee97b7c4297a19dc473c45fa59d1be4daf35f5fc4ec9fda0",
-      "updatedAt": "2026-10-12T03:37:41.230869+00:00"
+      "updatedAt": "2026-10-12T03:42:18.511272+00:00"
     },
     {
       "id": "advanced-tuck-front-lever-1.png",

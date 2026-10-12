@@ -6128,6 +6128,321 @@
    356.9
   ]
  },
+ "own_advanced-tuck-back-lever": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.0,
+    0.23
+   ]
+  ],
+  "window": [
+   96.7,
+   83.7,
+   913.6,
+   798.6
+  ]
+ },
+ "own_advanced-tuck-front-lever": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    4.2,
+    0.17
+   ]
+  ],
+  "window": [
+   123.6,
+   132.6,
+   781.8,
+   764.8
+  ]
+ },
+ "own_advanced-tuck-planche": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.35
+   ]
+  ],
+  "window": [
+   13.5,
+   243.5,
+   997.0,
+   547.0
+  ]
+ },
+ "own_crow-pose": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.1,
+    0.22
+   ]
+  ],
+  "window": [
+   110.4,
+   179.4,
+   867.3,
+   761.3
+  ]
+ },
+ "own_elbow-lever": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.8
+   ]
+  ],
+  "window": [
+   14.5,
+   288.5,
+   995.0,
+   460.0
+  ]
+ },
+ "own_frog-stand": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.37
+   ]
+  ],
+  "window": [
+   31.9,
+   178.9,
+   966.1,
+   737.1
+  ]
+ },
+ "own_front-row-hold": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.3
+   ]
+  ],
+  "window": [
+   18.6,
+   213.6,
+   988.8,
+   554.8
+  ]
+ },
+ "own_full-planche": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.77
+   ]
+  ],
+  "window": [
+   21.7,
+   381.7,
+   981.6,
+   413.6
+  ]
+ },
+ "own_one-leg-planche": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.35
+   ]
+  ],
+  "window": [
+   5.2,
+   242.2,
+   1013.5,
+   556.5
+  ]
+ },
+ "own_planche-lean": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.39
+   ]
+  ],
+  "window": [
+   29.8,
+   229.8,
+   972.3,
+   563.3
+  ]
+ },
+ "own_planche-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.81
+   ]
+  ],
+  "window": [
+   30.8,
+   447.8,
+   976.4,
+   313.4
+  ]
+ },
+ "own_skin-the-cat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    4.1,
+    0.26
+   ]
+  ],
+  "window": [
+   179.4,
+   139.4,
+   725.1,
+   720.1
+  ]
+ },
+ "own_straddle-planche": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.47
+   ]
+  ],
+  "window": [
+   20.7,
+   267.7,
+   981.6,
+   543.6
+  ]
+ },
+ "own_tuck-back-lever": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    4.1,
+    0.18
+   ]
+  ],
+  "window": [
+   111.3,
+   129.3,
+   801.3,
+   745.3
+  ]
+ },
+ "own_tuck-planche": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.17
+   ]
+  ],
+  "window": [
+   156.9,
+   141.9,
+   762.2,
+   747.2
+  ]
+ },
  "wg_active-hang": {
   "source": 3,
   "kept": [
