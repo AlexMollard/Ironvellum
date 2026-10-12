@@ -1,7 +1,6 @@
 package com.ironvellum.app.ui.titles
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -384,8 +382,7 @@ private fun SkillNode(
             Modifier.size(NodeSize),
             contentAlignment = Alignment.Center,
         ) {
-            val artwork = techniqueArtwork(skill.name)
-            val animation = techniqueAnimation(skill.name)
+            val drawing = techniqueDrawing(skill.name)
             val art = when (state) {
                 NodeState.MASTERED -> ArtState.MASTERED
                 NodeState.NEXT -> ArtState.OPEN
@@ -406,17 +403,9 @@ private fun SkillNode(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                if (artwork != null) {
-                    Image(
-                        painter = painterResource(artwork),
-                        contentDescription = null,
-                        colorFilter = artFilter(art),
-                        alpha = artAlpha(art),
-                        modifier = Modifier.size(NodeSize - 10.dp),
-                    )
-                } else if (animation != null) {
+                if (drawing != null) {
                     // A tree node is a thumbnail: the first pose, still. The sheet is where it moves.
-                    ExerciseStill(animation, Modifier.size(NodeSize - 10.dp), alpha = artAlpha(art))
+                    ExerciseStill(drawing, Modifier.size(NodeSize - 10.dp), alpha = artAlpha(art))
                 } else {
                     SkillGlyph(
                         family = glyphFamily(skill),
