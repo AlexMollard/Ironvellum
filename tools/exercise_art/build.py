@@ -266,7 +266,8 @@ def apply_owner(mp):
     import art
     for e in json.loads(MISSING.read_text(encoding="utf-8"))["entries"]:
         files = art.owner_files(OWNER, e["slug"])
-        if not files:
+        # A set still being drawn stays out until every frame the entry asks for is there.
+        if len(files) < e.get("frameCount", 1):
             continue
         aid = "own_" + e["slug"]
         owned[aid] = bool(e.get("hanging"))
