@@ -213,6 +213,9 @@ object ExportReader {
         isWeighted = o.bool("isWeighted") ?: true,
         metric = o.str("metric") ?: "REPS",
         category = o.str("category") ?: "",
+        custom = o.bool("custom") ?: false,
+        gear = o.str("gear") ?: "",
+        muscles = o.str("muscles") ?: "",
     )
 
     // Tolerant defaults: a hand-edited archive missing one idle field must

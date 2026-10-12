@@ -28,6 +28,28 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun byName(name: String): ExerciseEntity?
 
+    @Update
+    suspend fun update(exercise: ExerciseEntity)
+
+    /** Only a custom row is ever deleted, and only when [usage] is zero: every table below cascades from it. */
+    @Query("DELETE FROM exercises WHERE id = :id AND custom = 1")
+    suspend fun deleteCustom(id: Long): Int
+
+    /** Sets logged against the exercise, done or not: what its metric is reinterpreted by. */
+    @Query("SELECT COUNT(*) FROM set_logs WHERE exerciseId = :id")
+    suspend fun loggedSets(id: Long): Int
+
+    /**
+     * Everything that would be taken with the exercise if it were deleted (the FKs cascade): logged sets, rite
+     * entries and trial notes. Delete is only offered at zero, so history and rites are never orphaned.
+     */
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM set_logs WHERE exerciseId = :id) + " +
+            "(SELECT COUNT(*) FROM preset_entries WHERE exerciseId = :id) + " +
+            "(SELECT COUNT(*) FROM session_exercise_notes WHERE exerciseId = :id)",
+    )
+    suspend fun usage(id: Long): Int
+
     /** Marks the named rows weighted; returns how many were still unweighted. */
     @Query("UPDATE exercises SET isWeighted = 1 WHERE name COLLATE NOCASE IN (:names) AND isWeighted = 0")
     suspend fun markWeighted(names: List<String>): Int

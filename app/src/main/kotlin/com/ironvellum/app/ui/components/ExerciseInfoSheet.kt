@@ -37,6 +37,8 @@ internal fun ExerciseInfoSheet(
     onPick: (() -> Unit)?,
     confirmLabel: String = "Add",
     modifiers: String = "",
+    /** Shown for the lifter's own movements: opens the exercise form on this one. */
+    onEdit: (() -> Unit)? = null,
 ) {
     val skill = Skills.forName(exercise.name)
     val art = ExerciseArtIndex.forName(exercise.name)
@@ -45,6 +47,7 @@ internal fun ExerciseInfoSheet(
         add(InfoChip(exercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() }))
         add(InfoChip(metricWord(exercise.metric).replaceFirstChar { it.uppercase() }))
         add(InfoChip(if (exercise.isWeighted) "Weighted" else "Bodyweight"))
+        if (exercise.custom) add(InfoChip("Yours"))
         if (skill != null) add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))
     }
 
@@ -54,6 +57,7 @@ internal fun ExerciseInfoSheet(
         chips = chips,
         actions = buildList {
             add(InfoAction("Close", onDismiss, quiet = true))
+            if (onEdit != null) add(InfoAction("Edit", onEdit, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
         // Two pages: the gear rides on About, and how to, cues and mistakes share Form. The

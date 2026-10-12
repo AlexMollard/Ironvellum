@@ -108,4 +108,21 @@ class ExercisePickerLogicTest {
         val plank = Exercise(3, "Plank", MuscleGroup.CORE, false, ExerciseMetric.HOLD)
         assertEquals("45s · yesterday", lastLoggedLine(hold, plank, now, ZoneOffset.UTC))
     }
+
+    @Test
+    fun `yours pins at the top, stays in its category, and only shows when nothing narrows the list`() {
+        val mine = Exercise(9, "Reverse hyper", MuscleGroup.LEGS, isWeighted = true, custom = true)
+        val list = listOf(ex(1, "Pull-up"), mine, Exercise(10, "Zebra stretch", MuscleGroup.CORE, false, custom = true))
+        val view = buildPickerView(list, "", PickerFilters(), null, emptyList(), emptySet())
+        assertEquals(listOf("Reverse hyper", "Zebra stretch"), view.yours.map { it.name })
+        assertTrue("still in its normal category", mine in view.grouped.single().second)
+        assertEquals("the count is distinct exercises", 3, view.count)
+        assertTrue(buildPickerView(list, "hyper", PickerFilters(), null, emptyList(), emptySet()).yours.isEmpty())
+        assertTrue(buildPickerView(list, "", PickerFilters(group = MuscleGroup.LEGS), null, emptyList(), emptySet()).yours.isEmpty())
+        assertEquals(
+            "a favourite of your own shows in both",
+            listOf(9L),
+            buildPickerView(list, "", PickerFilters(), null, emptyList(), setOf(9L)).let { v -> v.yours.map { it.id }.intersect(v.favourites.map { it.id }.toSet()).toList() },
+        )
+    }
 }

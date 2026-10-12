@@ -24,6 +24,8 @@ internal class PickerView(
     val recents: List<Exercise>,
     val grouped: List<Pair<String, List<Exercise>>>,
     val count: Int,
+    /** The lifter's own movements, A to Z; unlike a pinned row they stay in their category below as well. */
+    val yours: List<Exercise> = emptyList(),
 )
 
 /** True when a lifter with [equipment] (null = none saved) can do [exercise], or when that is not knowable. */
@@ -38,7 +40,8 @@ internal fun gearFits(exercise: Exercise, equipment: Equipment?): Boolean =
  * FAVOURITES and RECENT only pin when nothing narrows the list: under a
  * query or a content chip they would float above rows that already answer
  * the question. A pinned row is left out of the groups below, so no
- * exercise shows twice. Recents keep their most-recent-first order and are
+ * exercise shows twice. YOURS (the lifter's own movements) pins on the same rule
+ * but is the one exception: it is a shortcut, so the movement still sits in its own category too. Recents keep their most-recent-first order and are
  * NOT re-sorted; ids the catalogue no longer has drop out silently. Pinned
  * rows still respect the gear filter, so "All gear" is the one way to see them all.
  */
@@ -79,11 +82,12 @@ internal fun buildPickerView(
     } else {
         emptyList()
     }
+    val yours = if (pinned) ordered.filter { it.custom }.sortedBy { it.name.lowercase() } else emptyList()
     val shown = (favourites + recents).mapTo(HashSet()) { it.id }
     val grouped = activityCategoryOrder(exercises)
         .map { c -> c to ordered.filter { it.category == c && it.id !in shown } }
         .filter { (_, list) -> list.isNotEmpty() }
-    return PickerView(favourites, recents, grouped, ordered.size)
+    return PickerView(favourites, recents, grouped, ordered.size, yours)
 }
 
 /** "" (strength) first, then the known activity groups, then anything novel alphabetically. */

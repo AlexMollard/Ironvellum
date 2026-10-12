@@ -166,6 +166,12 @@ object GearRequirements {
         "dumbbell step-up" to "Bulgarian Split Squat",
     )
 
+    /** The catalogue's alternatives for [name], else the lifter's own custom movement's; null when neither states any. */
+    private fun alternativesFor(name: String): List<Set<Gear>>? {
+        val key = name.trim().lowercase()
+        return requirements[key] ?: CustomExercises.gear(key)
+    }
+
     /** Whether the movement's catalogue row is machine, cable, sled, Smith or assisted. */
     private fun isMachine(name: String): Boolean =
         name.trim().lowercase().startsWith("assisted") ||
@@ -177,7 +183,7 @@ object GearRequirements {
         if (equipment.fullGym) return true
         if (isMachine(name)) return false
         if (needsPair(name) && !equipment.dumbbellPair) return false
-        val alternatives = requirements[name]
+        val alternatives = alternativesFor(name)
         if (alternatives == null) return !isWeighted
         return alternatives.any { alternative -> equipment.gear.containsAll(alternative) }
     }
@@ -193,7 +199,7 @@ object GearRequirements {
     fun fits(exerciseName: String, isWeighted: Boolean, category: String, equipment: Equipment): Boolean {
         if (category.isNotBlank()) return true
         val name = exerciseName.trim().lowercase()
-        if (isWeighted && !isMachine(name) && name !in requirements) return true
+        if (isWeighted && !isMachine(name) && alternativesFor(name) == null) return true
         return allows(exerciseName, isWeighted, equipment)
     }
 
@@ -202,7 +208,7 @@ object GearRequirements {
 
     /** The alternative gear sets the movement needs (each set must be fully owned); empty when unlisted or nothing is needed. */
     fun needs(exerciseName: String): List<Set<Gear>> =
-        requirements[exerciseName.trim().lowercase()].orEmpty().filter { it.isNotEmpty() }
+        alternativesFor(exerciseName).orEmpty().filter { it.isNotEmpty() }
 
     /** True when every way of doing the movement uses a barbell: the live trial's plate calculator is for these. */
     fun isBarbellLift(exerciseName: String): Boolean =

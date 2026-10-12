@@ -34,6 +34,12 @@ data class Exercise(
     val metric: ExerciseMetric = ExerciseMetric.REPS,
     /** "" for lifting; otherwise e.g. "Cardio", "Sport", "Climbing", "Water", "Mobility". */
     val category: String = "",
+    /** True for a movement the lifter made themselves; see [CustomExercises]. */
+    val custom: Boolean = false,
+    /** What a custom movement needs; empty for the catalogue (its gear lives in [GearRequirements]). */
+    val needs: Set<CustomNeed> = emptySet(),
+    /** A custom movement's own muscle shares, MAIN 1.0 and ASSIST 0.5; empty for the catalogue. */
+    val shares: Map<Muscle, Double> = emptyMap(),
 )
 
 data class PresetEntry(

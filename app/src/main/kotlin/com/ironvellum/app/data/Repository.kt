@@ -36,6 +36,9 @@ import com.ironvellum.app.domain.ActivityScore
 import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Evidence
+import com.ironvellum.app.domain.CustomExercises
+import com.ironvellum.app.domain.CustomSave
+import com.ironvellum.app.domain.CustomSpec
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
@@ -196,7 +199,7 @@ class Repository(
         if (profileDao.get() == null) {
             profileDao.upsert(ProfileEntity(name = "Ironbound", totalXp = 0, currentTitleId = null))
         }
-        val existingNames = exerciseDao.observeAll().first().map { it.name }.toSet()
+        val existingNames = exerciseDao.observeAll().first().syncCustomExercises().map { it.name }.toSet()
         val missing = Seed.exercises.filterNot { it.name in existingNames }
         if (missing.isNotEmpty()) {
             exerciseDao.insertAll(missing)
@@ -333,7 +336,7 @@ class Repository(
      * needs the whole catalogue to tell a run from a set of pull-ups.
      */
     private suspend fun exerciseCatalogue(): Map<Long, Exercise> =
-        exerciseDao.observeAll().first().associate { it.id to it.toDomain() }
+        exerciseDao.observeAll().first().syncCustomExercises().associate { it.id to it.toDomain() }
 
     /** Live catalogue names for the CSV import's movement picker. */
     fun observeCatalogueNames(): Flow<List<String>> =
@@ -359,12 +362,72 @@ class Repository(
         isWeighted = isWeighted,
         metric = ExerciseMetric.entries.firstOrNull { it.name == metric } ?: ExerciseMetric.REPS,
         category = category,
+        custom = custom,
+        needs = if (custom) CustomExercises.decodeNeeds(gear) else emptySet(),
+        shares = if (custom) CustomExercises.decodeShares(muscles) else emptyMap(),
     )
 
     // ---------------------------------------------------------------- exercises
 
     fun observeExercises(): Flow<List<Exercise>> =
-        exerciseDao.observeAll().map { list -> list.map { it.toDomain() } }
+        exerciseDao.observeAll().map { list -> list.syncCustomExercises().map { it.toDomain() } }
+
+    /**
+     * Saves a movement the lifter made: its group and category come from the type, its metric from Logged as, and
+     * weighted is derived from the gear ([CustomExercises.isWeighted]). The name is checked against the whole
+     * catalogue and the lifter's own, case-insensitively, inside the same transaction as the insert.
+     */
+    suspend fun createCustomExercise(spec: CustomSpec): CustomSave = db.withTransaction {
+        val catalogue = exerciseDao.observeAll().first()
+        CustomExercises.nameProblem(spec.name, catalogue.map { it.name })
+            ?.let { return@withTransaction CustomSave.Rejected(it) }
+        val row = customRow(spec, id = 0)
+        val id = exerciseDao.insertAll(listOf(row)).first()
+        (catalogue + row.copy(id = id)).syncCustomExercises()
+        CustomSave.Saved(row.copy(id = id).toDomain())
+    }
+
+    /**
+     * Edits one of the lifter's own movements. Its metric is locked once any set is logged against it, because
+     * reps, seconds and metres are stored in different columns and a change would reread history.
+     */
+    suspend fun updateCustomExercise(id: Long, spec: CustomSpec): CustomSave = db.withTransaction {
+        val before = exerciseDao.byId(id)?.takeIf { it.custom }
+            ?: return@withTransaction CustomSave.Rejected("That exercise is not one of yours.")
+        val catalogue = exerciseDao.observeAll().first()
+        CustomExercises.nameProblem(spec.name, catalogue.map { it.name }, own = before.name)
+            ?.let { return@withTransaction CustomSave.Rejected(it) }
+        if (spec.logged.metric.name != before.metric && exerciseDao.loggedSets(id) > 0) {
+            return@withTransaction CustomSave.Rejected("Sets are already logged for it, so how it is measured is fixed.")
+        }
+        val row = customRow(spec, id)
+        exerciseDao.update(row)
+        catalogue.map { if (it.id == id) row else it }.syncCustomExercises()
+        CustomSave.Saved(row.toDomain())
+    }
+
+    /** How many logged sets, rite entries and trial notes hold the exercise; delete is only possible at zero. */
+    suspend fun customExerciseUsage(id: Long): Int = exerciseDao.usage(id)
+
+    /** Deletes one of the lifter's own movements when nothing references it; false (and nothing deleted) otherwise. */
+    suspend fun deleteCustomExercise(id: Long): Boolean = db.withTransaction {
+        if (exerciseDao.usage(id) > 0) return@withTransaction false
+        val deleted = exerciseDao.deleteCustom(id) > 0
+        exerciseDao.observeAll().first().syncCustomExercises()
+        deleted
+    }
+
+    private fun customRow(spec: CustomSpec, id: Long) = ExerciseEntity(
+        id = id,
+        name = CustomExercises.cleanName(spec.name),
+        muscleGroup = spec.type.group.name,
+        isWeighted = CustomExercises.isWeighted(spec.needs),
+        metric = spec.logged.metric.name,
+        category = spec.type.category,
+        custom = true,
+        gear = CustomExercises.encodeNeeds(spec.needs),
+        muscles = CustomExercises.encodeShares(spec.shares),
+    )
 
     // ---------------------------------------------------------------- presets
 
@@ -1672,7 +1735,7 @@ class Repository(
             val bodyweightAt = SetRecords.bodyweightLookup(
                 stats.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) },
             )
-            val metrics = exerciseDao.observeAll().first().associate { row ->
+            val metrics = exerciseDao.observeAll().first().syncCustomExercises().associate { row ->
                 row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
                     .getOrDefault(ExerciseMetric.REPS)
             }
@@ -2568,6 +2631,9 @@ class Repository(
                 isWeighted = it.isWeighted,
                 metric = it.metric,
                 category = it.category,
+                custom = it.custom,
+                gear = it.gear,
+                muscles = it.muscles,
             )
         }
         val idleRow = idleDao.get()
@@ -2707,6 +2773,9 @@ class Repository(
                                 metric = runCatching { ExerciseMetric.valueOf(metric) }
                                     .getOrDefault(ExerciseMetric.REPS).name,
                                 category = meta?.category ?: "",
+                                custom = meta?.custom ?: false,
+                                gear = meta?.gear ?: "",
+                                muscles = meta?.muscles ?: "",
                             ),
                         ),
                     ).first()
@@ -2719,6 +2788,10 @@ class Repository(
                     }
                     return newId
                 }
+
+                // A custom exercise nothing references yet is still the lifter's: restore it, not only the ones
+                // a set or rite names.
+                archive.exercises.filter { it.custom }.forEach { resolveExercise(it.name) }
 
                 var restoredSets = 0
                 val presetIdByOldId = mutableMapOf<Long, Long>()
@@ -2934,6 +3007,7 @@ class Repository(
                     reconcileCrests(queue = false)
                 }
 
+                exerciseDao.observeAll().first().syncCustomExercises()
                 ImportResult(
                     presets = archive.presets.size,
                     sessions = archive.sessions.size,
@@ -2975,6 +3049,8 @@ class Repository(
                     muscleGroup = MuscleGroup.CORE.name,
                     isWeighted = false,
                     metric = metric.name,
+                    // The same kind of row the form makes, with no muscles or gear chosen yet.
+                    custom = true,
                 ),
             ),
         ).first()

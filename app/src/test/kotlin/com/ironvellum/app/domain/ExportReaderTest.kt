@@ -198,6 +198,31 @@ class ExportReaderTest {
     }
 
     @Test
+    fun `v9 archive with set kinds and no custom exercises still reads`() {
+        val v9 = """
+            {"formatVersion":9,"exportedAtMs":42,
+             "profile":{"name":"Old Lifter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "exercises":[{"name":"Back Squat","muscleGroup":"LEGS","isWeighted":true,"metric":"REPS","category":""}],
+             "sessions":[{"label":"Legs","startedAtMs":1,"completedAtMs":2,"sets":[
+               {"exerciseId":1,"exerciseName":"Back Squat","setIndex":0,"reps":8,"weightKg":60.0,"done":true,"warmup":true},
+               {"exerciseId":1,"exerciseName":"Back Squat","setIndex":1,"reps":5,"weightKg":100.0,"done":true},
+               {"exerciseId":1,"exerciseName":"Back Squat","setIndex":2,"reps":6,"weightKg":80.0,"done":true,"kind":"drop"}]}]}
+        """.trimIndent()
+
+        val archive = ExportReader.read(v9).getOrThrow()
+
+        assertEquals(9, archive.formatVersion)
+        assertEquals(
+            listOf(SetKind.WARMUP, SetKind.WORKING, SetKind.DROP),
+            archive.sessions.single().second.map { it.kind },
+        )
+        assertTrue("a v9 archive has no custom exercises", archive.exercises.none { it.custom })
+        assertEquals("", archive.exercises.single().muscles)
+    }
+
+    @Test
     fun `v7 relics carry no house id and are placed in houses without losing one`() {
         val v7 = """
             {"formatVersion":7,"exportedAtMs":42,

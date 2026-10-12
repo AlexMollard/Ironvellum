@@ -20,6 +20,10 @@ import com.ironvellum.app.domain.isStrength
  * unknown muscle group as CORE rather than failing the caller.
  */
 internal class SessionScoring(catalogue: List<ExerciseEntity>) {
+    init {
+        catalogue.syncCustomExercises()
+    }
+
     private val metrics = catalogue.associate { row ->
         row.id to runCatching { ExerciseMetric.valueOf(row.metric) }.getOrDefault(ExerciseMetric.REPS)
     }

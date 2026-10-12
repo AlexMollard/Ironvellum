@@ -157,6 +157,7 @@ fun ExerciseExplorerScreen(
                     append(selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() })
                     append(" · ")
                     append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
+                    if (selectedExercise.custom) append(" · yours")
                     if (skill != null) append(" · technique tier ${Skills.tierLabel(skill.tier)}")
                 },
                 style = MaterialTheme.typography.bodySmall,

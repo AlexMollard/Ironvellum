@@ -231,7 +231,7 @@ object MovementDifficulty {
      * would be one more table to drift.
      */
     fun loadFactor(exerciseName: String): Double =
-        loadFactors[key(exerciseName)] ?: FREE_WEIGHT_LOAD
+        loadFactors[key(exerciseName)] ?: CustomExercises.loadFactor(exerciseName) ?: FREE_WEIGHT_LOAD
 
     /**
      * Whether this tree movement's tier is load-priced down to its unloaded
@@ -372,11 +372,11 @@ object MovementDifficulty {
 
     /**
      * A load-priced override first, then the skill tree, then the catalogue,
-     * then [DEFAULT_TIER].
+     * then a lifter's own custom movement ([CustomExercises.TIER]), then [DEFAULT_TIER].
      */
     fun tier(exerciseName: String): Int {
         val k = key(exerciseName)
-        return loadPricedTiers[k] ?: skillsByKey[k]?.tier ?: catalogueTiers[k] ?: DEFAULT_TIER
+        return loadPricedTiers[k] ?: skillsByKey[k]?.tier ?: catalogueTiers[k] ?: CustomExercises.tier(k) ?: DEFAULT_TIER
     }
 
     /**
