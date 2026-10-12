@@ -1,34 +1,4 @@
 {
- "ek_0053": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.28
-   ],
-   [
-    4.7,
-    0.19
-   ]
-  ],
-  "window": [
-   41.6,
-   55.6,
-   716.9,
-   553.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
  "ek_0061": {
   "source": 2,
   "kept": [
@@ -6114,6 +6084,27 @@
    40.1,
    1022.8,
    948.8
+  ]
+ },
+ "own_decline-dumbbell-fly": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.4
+   ]
+  ],
+  "window": [
+   3.2,
+   242.2,
+   1018.7,
+   686.7
   ]
  },
  "own_decline-dumbbell-press": {

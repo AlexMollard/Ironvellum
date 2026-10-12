@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 5,
-  "status": "awaiting-user-review",
+  "status": "batch-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -765,7 +765,7 @@
     {
       "id": "decline-dumbbell-fly-1.png",
       "pose": "Redraw the selected source pose for Decline Dumbbell Fly, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "chest-dip-1.png",
@@ -2979,12 +2979,13 @@
         "incline-hammer-grip-dumbbell-press-1.png",
         "incline-cable-fly-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 50,
       "blocked": [],
-      "pending": 1,
-      "approved": 49,
-      "redo": 0
+      "pending": 0,
+      "approved": 50,
+      "redo": 0,
+      "approvedAt": "2026-10-12T23:21:39.216952+00:00"
     },
     {
       "batch": 6,
@@ -3455,15 +3456,13 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "157 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "158 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 5,
     "remainingRedo": 0,
-    "correctedAwaitingReview": [
-      "decline-dumbbell-fly-1.png"
-    ],
-    "note": "49 approved; new side-view decline fly awaits user review"
+    "correctedAwaitingReview": [],
+    "note": "All 50 batch 5 stills approved by user"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
