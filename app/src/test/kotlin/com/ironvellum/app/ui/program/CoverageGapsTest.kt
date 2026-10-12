@@ -105,6 +105,7 @@ class CoverageGapsTest {
     fun `every judged muscle has a region on the figure`() {
         // A judged muscle without a region is flagged in the list but never
         // coloured, so the figure would show it as trained when it is not.
-        assertEquals(emptyList<Muscle>(), JUDGED.filterNot { it in DRAWN })
+        val drawn = BodyFigures.MALE.drawn intersect BodyFigures.FEMALE.drawn
+        assertEquals(emptyList<Muscle>(), JUDGED.filterNot { it in drawn })
     }
 }

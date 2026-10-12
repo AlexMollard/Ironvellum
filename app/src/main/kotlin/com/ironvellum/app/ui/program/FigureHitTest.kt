@@ -98,19 +98,20 @@ private fun distanceToSegment(px: Float, py: Float, ax: Float, ay: Float, bx: Fl
 }
 
 /**
- * Where [muscle] sits on the canvas, for the accessibility node that stands for it: the right-hand
- * piece's bounds in the front view, or the back view when the front does not show it.
+ * Where [muscle] sits on the canvas in [view], for the accessibility node that stands for it there: the
+ * right-hand piece's bounds, or null when that view does not show the muscle.
  */
-internal fun muscleBounds(g: FigureGeometry, muscle: Muscle): Rect? {
-    for (view in FigureView.entries) {
-        val points = g.figure.regionsOf(muscle, view).flatMap { it.points }
-        if (points.isEmpty()) continue
-        val a = g.toCanvas(view, points.minOf { abs(it.first) }, points.minOf { it.second })
-        val b = g.toCanvas(view, points.maxOf { abs(it.first) }, points.maxOf { it.second })
-        return Rect(a.x, a.y, maxOf(b.x, a.x + 1f), maxOf(b.y, a.y + 1f))
-    }
-    return null
+internal fun muscleBounds(g: FigureGeometry, muscle: Muscle, view: FigureView): Rect? {
+    val points = g.figure.regionsOf(muscle, view).flatMap { it.points }
+    if (points.isEmpty()) return null
+    val a = g.toCanvas(view, points.minOf { abs(it.first) }, points.minOf { it.second })
+    val b = g.toCanvas(view, points.maxOf { abs(it.first) }, points.maxOf { it.second })
+    return Rect(a.x, a.y, maxOf(b.x, a.x + 1f), maxOf(b.y, a.y + 1f))
 }
+
+/** Every view that shows [muscle]: a two-sided muscle (the shoulders, the traps) appears in both. */
+internal fun viewsOf(figure: BodyFigure, muscle: Muscle): List<FigureView> =
+    FigureView.entries.filter { figure.regionsOf(muscle, it).isNotEmpty() }
 
 /** Tap on [tapped] while [current] is selected: the same muscle again, or empty space, clears. */
 internal fun nextSelection(current: Muscle?, tapped: Muscle?): Muscle? =
