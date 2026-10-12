@@ -117,9 +117,12 @@ class ProgramBuilderStateTest {
         add.performSemanticsAction(SemanticsActions.OnClick)
         add.performSemanticsAction(SemanticsActions.OnClick)
 
-        await("the save to land") { runBlocking { app.repository.presetCount() } > before && !vm.saving.value }
+        await("the save to land") { runBlocking { app.repository.presetCount() } > before }
+        // A third tap after the write landed, while the screen is still up, must not save again either.
+        add.performSemanticsAction(SemanticsActions.OnClick)
         driver.settle(4)
         assertEquals("one tap pair, one rite", before + 1, runBlocking { app.repository.presetCount() })
+        assertTrue("a landed save keeps the button locked", vm.saving.value)
     }
 
     @Test

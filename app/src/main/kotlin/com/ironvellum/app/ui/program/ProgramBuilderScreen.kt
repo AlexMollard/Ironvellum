@@ -518,19 +518,22 @@ class ProgramBuilderViewModel(
     ) {
         if (!_saving.compareAndSet(false, true)) return
         viewModelScope.launch {
+            var landed = false
             try {
                 val written = runCatching { write() }
                 if (written.isFailure) {
                     _error.value = "$failure: ${written.exceptionOrNull()?.message}. Nothing was written."
                     return@launch
                 }
+                landed = true
                 val bookkeeping = runCatching { after() }
                 _error.value = bookkeeping.exceptionOrNull()?.let {
                     "Saved, but your answers could not be remembered: ${it.message}"
                 }
                 onDone()
             } finally {
-                _saving.value = false
+                // A landed save stays locked: [onDone] leaves the screen, and a tap before that frame must not save twice.
+                if (!landed) _saving.value = false
             }
         }
     }
