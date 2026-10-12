@@ -58,7 +58,7 @@ object ProgramGenerator {
 
     // ---------------------------------------------------------------- roles
 
-    private enum class Role { FULL_BODY, UPPER, LOWER, PUSH_DAY, PULL_DAY, LEGS_DAY }
+    internal enum class Role { FULL_BODY, UPPER, LOWER, PUSH_DAY, PULL_DAY, LEGS_DAY }
 
     private fun roleLabel(role: Role): String = when (role) {
         Role.FULL_BODY -> "Full Body"
@@ -184,7 +184,7 @@ object ProgramGenerator {
      * for lifters who cannot yet do the bodyweight movement. Machines only
      * reach the pool with a full gym. With no loading gear (no full gym,
      * dumbbells or barbell) everything is bodyweight and scores 0. */
-    private fun fitScore(exercise: Exercise, equipment: Equipment): Int {
+    internal fun fitScore(exercise: Exercise, equipment: Equipment): Int {
         val canLoad = equipment.fullGym || Gear.DUMBBELLS in equipment.gear || Gear.BARBELL in equipment.gear
         return when {
             !canLoad -> 0
@@ -266,7 +266,7 @@ object ProgramGenerator {
 
     // ----------------------------------------------------------- session draft
 
-    private class Draft(val day: Int?, val role: Role?) {
+    internal class Draft(val day: Int?, val role: Role?) {
         val entries = mutableListOf<PlannedEntry>()
         val names = mutableSetOf<String>()
 
@@ -274,7 +274,7 @@ object ProgramGenerator {
         val fits = mutableMapOf<String, Int>()
     }
 
-    private class Ctx(
+    internal class Ctx(
         val request: ProgramRequest,
         val pool: List<Exercise>,
         val strength: StrengthProfile,
@@ -307,7 +307,7 @@ object ProgramGenerator {
 
     // ------------------------------------------------------------- selection
 
-    private fun profileOf(exercise: Exercise): ExerciseProfile =
+    internal fun profileOf(exercise: Exercise): ExerciseProfile =
         MuscleMap.profile(exercise.name) ?: error("unprofiled ${exercise.name} reached selection")
 
     /**
@@ -326,7 +326,7 @@ object ProgramGenerator {
      * cannot happen. Different patterns may use different implements freely
      * (a barbell hinge beside a machine leg curl is normal programming).
      */
-    private fun ranked(
+    internal fun rankCandidates(
         ctx: Ctx,
         session: Draft,
         pattern: MovementPattern?,
@@ -394,13 +394,59 @@ object ProgramGenerator {
                 .thenBy { it.name },
         )
 
+    /**
+     * The slot's pick: option 0 of [suggest] for the same slot (the ranking
+     * is shared, so the tags are not computed on the generator's hot path).
+     */
     private fun pick(
         ctx: Ctx,
         session: Draft,
         pattern: MovementPattern?,
         muscle: Muscle?,
         exclude: Set<String> = emptySet(),
-    ): Exercise? = ranked(ctx, session, pattern, muscle, exclude).firstOrNull()
+    ): Exercise? = rankCandidates(ctx, session, pattern, muscle, exclude).firstOrNull()
+
+    /** A draft holding [session]'s movements, so a ranking sees what the session already has. */
+    internal fun draftOf(ctx: Ctx, session: PlannedPreset?): Draft {
+        val draft = Draft(session?.scheduledDay, null)
+        for (entry in session?.entries.orEmpty()) {
+            draft.entries += entry
+            draft.names += entry.exerciseName
+            ctx.pool.firstOrNull { it.name.equals(entry.exerciseName, ignoreCase = true) }
+                ?.let { draft.fits[entry.exerciseName] = fitScore(it, ctx.request.equipment) }
+        }
+        return draft
+    }
+
+    /** The full ranking behind a [Slot.Pick], best first: what the generator itself would walk down. */
+    internal fun rankPool(
+        request: ProgramRequest,
+        catalogue: List<Exercise>,
+        strength: StrengthProfile,
+        session: PlannedPreset? = null,
+        pattern: MovementPattern? = null,
+        muscle: Muscle? = null,
+        exclude: Set<String> = emptySet(),
+    ): List<Exercise> {
+        val ctx = Ctx(request, prescribable(catalogue, request), strength)
+        return rankCandidates(ctx, draftOf(ctx, session), pattern, muscle, exclude)
+    }
+
+    /**
+     * Up to three ranked options for [slot], best first, each with at most
+     * two reasons. Option 0 is what [week] and [session] would pick; the
+     * surfaces that offer a movement (a slot pick, a swap, a stand-in, a
+     * short muscle, a replacement for a removed one) all read this.
+     * [week] is the lifter's current presets: the session a slot belongs to
+     * and the coverage its reasons are judged against.
+     */
+    fun suggest(
+        request: ProgramRequest,
+        slot: Slot,
+        week: List<PlannedPreset>,
+        catalogue: List<Exercise>,
+        strength: StrengthProfile,
+    ): Ranked = ProgramSuggestions.suggest(request, slot, week, catalogue, strength)
 
     /** STRENGTH and GENERAL lead their main-lift patterns with the lift itself. */
     private fun wantsMainLift(ctx: Ctx, pattern: MovementPattern): Boolean =
@@ -1181,7 +1227,7 @@ object ProgramGenerator {
 
         fun addNew(s: Draft, maxWaste: Double): Boolean {
             if (s.entries.size >= ctx.cap) return false
-            val candidate = ranked(ctx, s, null, muscle)
+            val candidate = rankCandidates(ctx, s, null, muscle)
                 .filter { groupFitsSession(s.role, it.muscleGroup) && !redundantIn(s, it) }
                 .filter { waste(it.name) <= maxWaste && roomFor(s, it, startSets(ctx, it, muscle)) }
                 .sortedBy { waste(it.name) }
@@ -1233,7 +1279,7 @@ object ProgramGenerator {
             if (bump(s, i)) return Grow.GREW
         }
         val anyCandidate = fitting.any { s ->
-            ranked(ctx, s, null, muscle).any { groupFitsSession(s.role, it.muscleGroup) && !redundantIn(s, it) }
+            rankCandidates(ctx, s, null, muscle).any { groupFitsSession(s.role, it.muscleGroup) && !redundantIn(s, it) }
         }
         return if (sawMovement || anyCandidate) Grow.NO_ROOM else Grow.NO_MOVEMENT
     }
@@ -1335,7 +1381,7 @@ object ProgramGenerator {
      * all. A push day carrying rows (or a pull day carrying diamond push-ups,
      * as a 6-day week once did) breaks the split the lifter chose.
      */
-    private fun groupFitsSession(role: Role?, group: MuscleGroup): Boolean {
+    internal fun groupFitsSession(role: Role?, group: MuscleGroup): Boolean {
         if (role == null || role == Role.FULL_BODY) return true
         return when (group) {
             MuscleGroup.LEGS -> role == Role.LOWER || role == Role.LEGS_DAY
@@ -1397,7 +1443,7 @@ object ProgramGenerator {
      * that evidence for it. A null [muscle] (a pattern slot) takes the flag
      * as it stands.
      */
-    private fun stretchesFor(exercise: Exercise, muscle: Muscle?): Boolean {
+    internal fun stretchesFor(exercise: Exercise, muscle: Muscle?): Boolean {
         val profile = profileOf(exercise)
         return profile.stretchBias && (muscle == null || dominantMuscle(profile) == muscle)
     }
@@ -1458,7 +1504,7 @@ object ProgramGenerator {
                     val planned = (existing[other] ?: 0.0) + (weeklyVolumeOf(listOf(draft))[other] ?: 0.0)
                     planned >= ctx.targetFor(other)
                 }.toSet()
-                val exercise = ranked(ctx, draft, null, muscle).firstOrNull { candidate ->
+                val exercise = rankCandidates(ctx, draft, null, muscle).firstOrNull { candidate ->
                     profileOf(candidate).muscles.none { (other, share) -> other in served && share >= 0.5 }
                 } ?: pick(ctx, draft, null, muscle) ?: continue
                 var sets = startSets(ctx, exercise, muscle)
@@ -1476,7 +1522,7 @@ object ProgramGenerator {
             // fill giving way when the cap is full.
             if (draft.entries.isNotEmpty() && draft.entries.none { isCompoundEntry(it) }) {
                 for ((muscle, weeklyDeficit) in under) {
-                    val anchor = ranked(ctx, draft, null, muscle).firstOrNull { profileOf(it).compound } ?: continue
+                    val anchor = rankCandidates(ctx, draft, null, muscle).firstOrNull { profileOf(it).compound } ?: continue
                     val full = draft.entries.size >= ctx.cap
                     val rest = if (full) draft.entries.dropLast(1) else draft.entries
                     if (ProgramRules.sessionSeconds(rest, ctx.focus) + 2 * ProgramRules.setSeconds(ctx.focus, anchor.name) >
@@ -1561,7 +1607,7 @@ object ProgramGenerator {
         }
     }
 
-    private fun dominantMuscle(profile: ExerciseProfile): Muscle? =
+    internal fun dominantMuscle(profile: ExerciseProfile): Muscle? =
         profile.muscles.filterValues { it > 0.0 }
             .entries
             .maxWithOrNull(compareBy { it.value })?.key
@@ -1574,7 +1620,7 @@ object ProgramGenerator {
      * hip abductions are lower-body work; Pallof presses and leg raises are
      * trunk work, which fits any day.
      */
-    private fun trainedScope(entries: List<PlannedEntry>): List<Muscle> {
+    internal fun trainedScope(entries: List<PlannedEntry>): List<Muscle> {
         val lowerMuscles = setOf(
             Muscle.QUADS, Muscle.HAMSTRINGS, Muscle.GLUTES, Muscle.CALVES, Muscle.ADDUCTORS,
             Muscle.ABDUCTORS, Muscle.TIBIALIS,
@@ -1602,7 +1648,7 @@ object ProgramGenerator {
      * is neither (full body, upper, lower, legs, or empty): only a lone push
      * or lone pull split is policed.
      */
-    private fun dayRoleOf(groups: Set<MuscleGroup>): Role? = when {
+    internal fun dayRoleOf(groups: Set<MuscleGroup>): Role? = when {
         MuscleGroup.LEGS in groups -> null
         MuscleGroup.PUSH in groups && MuscleGroup.PULL !in groups -> Role.PUSH_DAY
         MuscleGroup.PULL in groups && MuscleGroup.PUSH !in groups -> Role.PULL_DAY
@@ -1632,17 +1678,18 @@ object ProgramGenerator {
     /**
      * The compound or skill movement closest to an isolation entry's
      * [profile] - any pattern, since an isolation pattern has no compound
-     * twin - or null when none clears [COMPOUND_ONLY_MIN_SIMILARITY]. Never
+     * twin - or none when nothing clears [COMPOUND_ONLY_MIN_SIMILARITY]. Never
      * one already in the session ([taken], lowercase), and never a press on
      * a pull session or a pull on a press session ([dayGroups]): the split
-     * stays distinct.
+     * stays distinct. Every such movement, closest first: the first is the
+     * stand-in, the next two are the alternatives the lifter is offered.
      */
-    private fun compoundStandIn(
+    internal fun compoundStandIns(
         ctx: Ctx,
         profile: ExerciseProfile,
         taken: Set<String>,
         dayGroups: Set<MuscleGroup>,
-    ): Exercise? = ctx.pool
+    ): List<Exercise> = ctx.pool
         .filter { it.name.trim().lowercase() !in taken }
         .filter { candidate ->
             val group = candidate.muscleGroup
@@ -1650,12 +1697,12 @@ object ProgramGenerator {
                 !(group == MuscleGroup.PULL && MuscleGroup.PUSH in dayGroups && MuscleGroup.PULL !in dayGroups)
         }
         .filter { similarity(profile, profileOf(it)) >= COMPOUND_ONLY_MIN_SIMILARITY }
-        .maxWithOrNull(
-            compareBy<Exercise> { similarity(profile, profileOf(it)) }
-                .thenBy { if (profileOf(it).compound) 1 else 0 }
-                .thenBy { -fitScore(it, ctx.request.equipment) }
-                .thenBy { -MovementDifficulty.tier(it.name) }
-                .thenByDescending { it.name },
+        .sortedWith(
+            compareByDescending<Exercise> { similarity(profile, profileOf(it)) }
+                .thenByDescending { if (profileOf(it).compound) 1 else 0 }
+                .thenByDescending { -fitScore(it, ctx.request.equipment) }
+                .thenByDescending { -MovementDifficulty.tier(it.name) }
+                .thenBy { it.name },
         )
 
     /**
@@ -1703,9 +1750,17 @@ object ProgramGenerator {
      * a stated load, so no rep range, swap or set top-up applies to them,
      * but their profile still counts toward the week's coverage. With [ProgramRequest.compoundOnly] each of
      * the lifter's own isolation entries becomes its closest compound or
-     * skill stand-in ([compoundStandIn]) or is removed - unless removing
+     * skill stand-in ([compoundStandIns]) or is removed - unless removing
      * would empty the session, in which case they stay. Idempotent by
      * construction: run it on its own output and nothing changes.
+     *
+     * The result is a list of independent [PlanChange]s, not one all-or-nothing
+     * preset: each is one edit (a removal, a swap, a set count, a rep target, a
+     * load, an addition, a pull-up move) with its tags, coverage effect and
+     * ranked options, and [Improvement.apply] builds the preset for any ticked
+     * subset. The walk above runs once over the whole preset, so additions and
+     * top-ups are proposed against the preset with every other change in;
+     * a change that builds on another says so in [PlanChange.requires].
      */
     fun improve(
         target: PlannedPreset,
@@ -1716,8 +1771,17 @@ object ProgramGenerator {
     ): Improvement {
         val pool = prescribable(catalogue, request)
         val ctx = Ctx(request, pool, strength)
-        val changes = mutableListOf<PlanChange>()
+        val weekBefore = ProgramRules.weeklyVolume(restOfWeek + listOf(target))
+        // One record per entry as given, filled as the walk decides what its
+        // changes are; each becomes its own PlanChange at the end.
+        val records = target.entries.map { EntryRecord() }
         val result = mutableListOf<PlannedEntry>()
+        // Parallel to result: the index of the given entry it came from, null for an addition.
+        val origin = mutableListOf<Int?>()
+        val replan = mutableSetOf<String>()
+        val trimOrder = mutableListOf<String>()
+        val capRemovals = mutableListOf<Pair<Int, String>>()
+        val additions = mutableListOf<AddRecord>()
         // First entry per (dominant muscle, pattern) -> its prescribed sets.
         val dominantSeen = mutableMapOf<Pair<Muscle, MovementPattern>, Int>()
         val signatureCeiling = mutableMapOf<Pair<Muscle, MovementPattern>, Int>()
@@ -1725,6 +1789,7 @@ object ProgramGenerator {
         // Compound & skill only: every isolation entry's stand-in, decided
         // before the walk so two entries never claim the same movement.
         val standIns = mutableMapOf<Int, Exercise?>()
+        val standInOptions = mutableMapOf<Int, Ranked>()
         if (request.compoundOnly) {
             val taken = target.entries.map { it.exerciseName.trim().lowercase() }.toMutableSet()
             val dayGroups = target.entries
@@ -1734,9 +1799,13 @@ object ProgramGenerator {
             target.entries.forEachIndexed { index, entry ->
                 if (!MovementDifficulty.isIsolation(entry.exerciseName)) return@forEachIndexed
                 val profile = MuscleMap.profile(entry.exerciseName) ?: return@forEachIndexed
-                val standIn = compoundStandIn(ctx, profile, taken, dayGroups)
+                val candidates = compoundStandIns(ctx, profile, taken, dayGroups)
+                val standIn = candidates.firstOrNull()
                 standIn?.let { taken += it.name.trim().lowercase() }
                 standIns[index] = standIn
+                standInOptions[index] = ProgramSuggestions.rank(
+                    ctx, candidates, dominantMuscle(profile), profile, weekBefore, standInFor = entry.exerciseName,
+                )
             }
         }
         // Never an empty session: when nothing but isolation without a
@@ -1744,12 +1813,14 @@ object ProgramGenerator {
         val dropAllowed = target.entries.indices.any { it !in standIns || standIns[it] != null }
 
         for ((index, entry) in target.entries.withIndex()) {
+            val record = records[index]
             // Modifiers count: a deficit push-up is already long-length work.
             val profile = MuscleMap.profile(entry)
             if (profile == null || !redosable(entry, catalogue)) {
                 // Unknown movement, a hold, an activity or a milestone: kept,
                 // untouched, modifiers intact.
                 result += entry
+                origin += index
                 continue
             }
             var name = entry.exerciseName
@@ -1757,90 +1828,76 @@ object ProgramGenerator {
             var reps = entry.reps
             var load = entry.targetWeightKg
             var loadNote = entry.loadNote
-            var swapNote: String? = null
 
             if (index in standIns) {
                 val standIn = standIns[index]
                 if (standIn != null) {
-                    swapNote = "Swapped for ${standIn.name}: compound & technique only, and it trains the same " +
-                        "muscles - Gentil 2015"
+                    record.swap = SwapRecord(
+                        standIn,
+                        "Swapped for ${standIn.name}: compound & technique only, and it trains the same " +
+                            "muscles - Gentil 2015",
+                        standInOptions.getValue(index),
+                        clearsLoad = true,
+                    )
                     name = standIn.name
                     // The isolation load says nothing about the stand-in.
                     load = null
                     loadNote = null
                 } else if (dropAllowed) {
-                    changes += PlanChange(
-                        PlanChange.Kind.REMOVED, entry.exerciseName,
-                        "Removed: with Compound & technique only on, nothing replaces its muscles - Gentil 2015",
-                    )
+                    record.removal = "Removed: with Compound & technique only on, nothing replaces its muscles - Gentil 2015"
                     continue
                 }
             }
 
             // Specificity guard: a STRENGTH main lift is never swapped away.
             val swapAllowed = !(request.focus == TrainingFocus.STRENGTH && isMainLift(name))
-            if (swapNote == null && swapAllowed && !profile.stretchBias) {
-                val primary = dominantMuscle(profile)
-                val replacement = pool
-                    .filter { profileOf(it).pattern == profile.pattern && profileOf(it).stretchBias }
-                    .filter { it.name != name }
-                    // Never onto a movement the preset already holds: one
-                    // exercise appears once per session.
-                    // (nor onto one a compound-only stand-in has already claimed)
-                    .filter { candidate ->
-                        (target.entries.map { it.exerciseName } + result.map { it.exerciseName } +
-                            standIns.values.mapNotNull { it?.name })
-                            .none { it.equals(candidate.name, ignoreCase = true) }
-                    }
-                    .filter {
-                        primary == null || (profileOf(it).muscles[primary] ?: 0.0) >=
-                            (profile.muscles[primary] ?: 0.0)
-                    }
-                    .maxWithOrNull(
-                        compareBy(
-                            { if (profileOf(it).compound) 1 else 0 },
-                            { -fitScore(it, request.equipment) },
-                            { -MovementDifficulty.tier(it.name) },
-                            { it.name },
-                        ),
-                    )
+            if (record.swap == null && swapAllowed && !profile.stretchBias) {
+                // Never onto a movement the preset already holds: one
+                // exercise appears once per session (nor onto one a
+                // compound-only stand-in has already claimed).
+                val twins = ProgramSuggestions.stretchTwins(
+                    ctx, name, profile,
+                    target.entries.map { it.exerciseName } + result.map { it.exerciseName } +
+                        standIns.values.mapNotNull { it?.name },
+                )
+                val replacement = twins.firstOrNull()
                 if (replacement != null) {
-                    swapNote = "Swapped for ${replacement.name}: loads the " +
-                        "${dominantMuscle(profile)?.label?.lowercase() ?: "target muscle"} stretched, " +
-                        "where it grows more - ${longLengthEvidence(dominantMuscle(profile))}"
+                    record.swap = SwapRecord(
+                        replacement,
+                        "Swapped for ${replacement.name}: loads the " +
+                            "${dominantMuscle(profile)?.label?.lowercase() ?: "target muscle"} stretched, " +
+                            "where it grows more - ${longLengthEvidence(dominantMuscle(profile))}",
+                        ProgramSuggestions.rank(ctx, twins, dominantMuscle(profile), profile, weekBefore),
+                        clearsLoad = false,
+                    )
                     name = replacement.name
                 }
             }
             val newProfile = MuscleMap.profile(name, entry.modifiers) ?: profile
 
-            var adjusted = false
             val range = repRange(request.focus, newProfile.compound)
+            var repsAdjusted = false
             // A dumbbell-capped entry sits above the range on purpose: its
             // load cannot go up, so the extra reps keep the set near failure.
             if (reps !in range && !(atDumbbellCap(name, load, request.equipment) && reps > range.last)) {
                 reps = if (reps < range.first) range.first else range.last
-                adjusted = true
+                repsAdjusted = true
+                record.reps = reps to adjustReason(request.focus, newProfile.compound, reps, range)
             }
             if (sets < 2) {
                 sets = 2
-                adjusted = true
-            }
-            if (adjusted) {
-                changes += PlanChange(
-                    PlanChange.Kind.ADJUSTED, name,
-                    adjustReason(request.focus, newProfile.compound, reps, range),
-                )
+                record.sets = sets to if (repsAdjusted) {
+                    "Sets ${entry.sets} → 2: one set is too little work to progress on"
+                } else {
+                    adjustReason(request.focus, newProfile.compound, reps, range)
+                }
             }
             val ceiling = ceilingOf(request, entry, name)
             if (sets > ceiling) {
-                changes += PlanChange(
-                    PlanChange.Kind.ADJUSTED, name,
-                    "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single trial; " +
-                        "the rest belongs on another exercise or day - Remmert 2025",
-                )
+                record.sets = ceiling to "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single trial; " +
+                    "the rest belongs on another exercise or day - Remmert 2025"
                 sets = ceiling
             }
-            swapNote?.let { changes += PlanChange(PlanChange.Kind.SWAPPED, name, it) }
 
             if (load == null) {
                 val exercise = pool.firstOrNull { it.name.equals(name, ignoreCase = true) }
@@ -1851,8 +1908,8 @@ object ProgramGenerator {
                         load = filled.kg
                         reps = filled.reps
                         loadNote = filled.note
-                        changes += PlanChange(
-                            PlanChange.Kind.LOAD_SET, name,
+                        record.load = LoadRecord(
+                            filled.kg, filled.reps, filled.note,
                             "Load set from your logged sets (${filled.note}) - Zourdos 2016",
                         )
                     }
@@ -1870,20 +1927,22 @@ object ProgramGenerator {
                 // muscle through this pattern and the first copy has sets to
                 // spare (Gentil 2015). At its set ceiling a second variant
                 // is the only way to add volume, as in the week generator.
-                changes += PlanChange(
-                    PlanChange.Kind.REMOVED, entry.exerciseName,
-                    "Removed: another exercise already trains ${dominant.label.lowercase()} the same way - Gentil 2015",
-                )
+                record.removal =
+                    "Removed: another exercise already trains ${dominant.label.lowercase()} the same way - Gentil 2015"
+                record.swap = null
                 continue
             }
             if (signature != null && firstSets == null) {
                 dominantSeen[signature] = sets
                 signatureCeiling[signature] = rangeTop(request, entry, name)
             }
-            result += ProgramRules.withPlan(
+            val planned = ProgramRules.withPlan(
                 entry.copy(exerciseName = name, sets = sets, reps = reps, targetWeightKg = load, loadNote = loadNote),
                 request.volume, request.focus,
             )
+            result += planned
+            origin += index
+            replan += planned.exerciseName.trim().lowercase()
         }
 
         // The cap the lifter asked for: a preset over it gives up, one at a
@@ -1892,17 +1951,16 @@ object ProgramGenerator {
             val week = ProgramRules.weeklyVolume(restOfWeek + listOf(target.copy(entries = result)))
             val drop = capTrimIndex(result, week, ProgramRules.COVERAGE_BAND) ?: break
             val cost = capTrimCost(result[drop], week, ProgramRules.COVERAGE_BAND)
-            val gone = result.removeAt(drop)
+            result.removeAt(drop)
+            val gone = origin.removeAt(drop)!!
             // Its swap, rep or load lines described an entry that is gone.
-            changes.removeAll { it.kind != PlanChange.Kind.REMOVED && it.exerciseName == gone.exerciseName }
-            changes += PlanChange(
-                PlanChange.Kind.REMOVED, gone.exerciseName,
-                if (cost < 1e-9) {
-                    "Removed: over your ${ctx.cap}-exercise cap, and the cycle already covers its muscles - Pelland 2026"
-                } else {
-                    "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
-                },
-            )
+            records[gone].dropped = true
+            trimOrder += target.entries[gone].exerciseName
+            capRemovals += gone to if (cost < 1e-9) {
+                "Removed: over your ${ctx.cap}-exercise cap, and the cycle already covers its muscles - Pelland 2026"
+            } else {
+                "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
+            }
         }
 
         // Additions: tracked muscles this session's role trains that the
@@ -1929,8 +1987,8 @@ object ProgramGenerator {
             draft.names += result.map { it.exerciseName }
             // Never a pull on a push preset or a press on a pull preset: the
             // split the lifter built stays distinct, as in week().
-            val exercise = ranked(ctx, draft, null, muscle)
-                .firstOrNull { groupFitsSession(dayRole, it.muscleGroup) } ?: continue
+            val fitting = rankCandidates(ctx, draft, null, muscle).filter { groupFitsSession(dayRole, it.muscleGroup) }
+            val exercise = fitting.firstOrNull() ?: continue
             val seconds = ProgramRules.sessionSeconds(result, request.focus) +
                 3 * ProgramRules.setSeconds(request.focus, exercise.name)
             if (seconds > ctx.budgetSeconds) continue
@@ -1947,12 +2005,15 @@ object ProgramGenerator {
             } else {
                 added.copy(reps = added.reps.coerceIn(range))
             }
-            result += inRange
-            changes += PlanChange(
-                PlanChange.Kind.ADDED, exercise.name,
-                "Added ${exercise.name}: the week was ${setsPhrase(deficit)} short on " +
+            additions += AddRecord(
+                resultIndex = result.size,
+                exerciseName = exercise.name,
+                detail = "Added ${exercise.name}: the week was ${setsPhrase(deficit)} short on " +
                     "${muscle.label.lowercase()} - Pelland 2026",
+                options = ProgramSuggestions.rank(ctx, fitting, muscle, null, weekBefore),
             )
+            result += inRange
+            origin += null
         }
 
         // Top-ups: a muscle this session already trains that the week still
@@ -1993,28 +2054,142 @@ object ProgramGenerator {
                 raisedFor.getValue(index) += muscle
             }
         }
+        // A raise on an entry from the preset is one SETS change from its given sets; on an
+        // addition it is already in the added entry.
+        val topUps = mutableListOf<Int>()
         result.indices.filter { result[it].sets > originalSets[it] }.forEach { i ->
+            val from = origin[i] ?: return@forEach
             val muscles = raisedFor.getValue(i).joinToString(" and ") { it.label.lowercase() }
-            changes += PlanChange(
-                PlanChange.Kind.ADJUSTED, result[i].exerciseName,
-                "Sets ${originalSets[i]} → ${result[i].sets}: the week was short on $muscles - Pelland 2026",
-            )
+            records[from].sets = result[i].sets to
+                "Sets ${target.entries[from].sets} → ${result[i].sets}: the week was short on $muscles - Pelland 2026"
+            records[from].topUp = raisedFor.getValue(i).toList()
+            topUps += from
         }
 
         // Owner rule: no two pull-up variants back to back. Each exercise
         // moved up to split them says so.
         val spaced = spacePullUps(result)
+        val spacing = mutableListOf<PlannedEntry>()
         spaced.forEachIndexed { at, entry ->
-            if (at < result.indexOfFirst { it === entry }) {
-                changes += PlanChange(
-                    PlanChange.Kind.ADJUSTED, entry.exerciseName,
-                    "Moved up so no two pull-up variants run back to back",
+            if (at < result.indexOfFirst { it === entry }) spacing += entry
+        }
+
+        // ---- the independent changes, one per edit.
+        val changes = mutableListOf<PlanChange>()
+        val swapIds = mutableMapOf<Int, String?>()
+
+        fun change(kind: PlanChange.Kind, name: String, detail: String, op: ChangeOp, tags: List<ReasonTag> = emptyList(),
+                   requires: String? = null, options: Ranked = Ranked(emptyList())): PlanChange {
+            val made = PlanChange(
+                id = PlanChange.idOf(name, kind, op), kind = kind, exerciseName = name, detail = detail,
+                tags = tags.take(2), op = op, requires = requires, options = options,
+            )
+            changes += made
+            return made
+        }
+
+        target.entries.forEachIndexed { index, entry ->
+            val record = records[index]
+            if (record.dropped) return@forEachIndexed
+            record.removal?.let {
+                change(
+                    PlanChange.Kind.REMOVED, entry.exerciseName, it, ChangeOp.RemoveEntry(entry.exerciseName),
+                    tags = if (it.contains("already trains")) listOf(ReasonTag(Reason.SAME_PATTERN_AS_MAIN)) else emptyList(),
+                )
+                return@forEachIndexed
+            }
+            var name = entry.exerciseName
+            var swapId: String? = null
+            record.swap?.let { swap ->
+                name = swap.to.name
+                val to = entry.copy(
+                    exerciseName = swap.to.name,
+                    targetWeightKg = if (swap.clearsLoad) null else entry.targetWeightKg,
+                    loadNote = if (swap.clearsLoad) null else entry.loadNote,
+                )
+                swapId = change(
+                    PlanChange.Kind.SWAPPED, name, swap.detail, ChangeOp.SwapEntry(entry.exerciseName, to),
+                    tags = swap.options.options.firstOrNull()?.tags.orEmpty(), options = swap.options,
+                ).id
+                swapIds[index] = swapId
+            }
+            record.reps?.let { (value, detail) ->
+                change(PlanChange.Kind.ADJUSTED, name, detail, ChangeOp.SetReps(name, value), requires = swapId)
+            }
+            if (record.topUp == null) {
+                record.sets?.let { (value, detail) ->
+                    change(PlanChange.Kind.ADJUSTED, name, detail, ChangeOp.SetSets(name, value), requires = swapId)
+                }
+            }
+            record.load?.let { load ->
+                change(
+                    PlanChange.Kind.LOAD_SET, name, load.detail, ChangeOp.SetLoad(name, load.kg, load.reps, load.note),
+                    tags = if (name.trim().lowercase() in strength.bestE1rmKg) listOf(ReasonTag(Reason.YOU_LOG_THIS)) else emptyList(),
+                    requires = swapId,
                 )
             }
         }
-        val after = target.copy(entries = spaced)
-        return Improvement(before = target, after = after, changes = changes)
+        for ((gone, detail) in capRemovals) {
+            val name = target.entries[gone].exerciseName
+            change(PlanChange.Kind.REMOVED, name, detail, ChangeOp.RemoveEntry(name))
+        }
+        for (addition in additions) {
+            val entry = result[addition.resultIndex]
+            change(
+                PlanChange.Kind.ADDED, addition.exerciseName, addition.detail, ChangeOp.AddEntry(entry),
+                tags = addition.options.options.firstOrNull()?.tags.orEmpty(), options = addition.options,
+            )
+        }
+        for (index in topUps) {
+            val record = records[index]
+            val name = record.swap?.to?.name ?: target.entries[index].exerciseName
+            val (value, detail) = record.sets!!
+            change(
+                PlanChange.Kind.ADJUSTED, name, detail, ChangeOp.SetSets(name, value),
+                tags = record.topUp!!.map { ReasonTag(Reason.FILLS_SHORT_MUSCLE, it) }, requires = swapIds[index],
+            )
+        }
+        for (entry in spacing) {
+            change(
+                PlanChange.Kind.ADJUSTED, entry.exerciseName, "Moved up so no two pull-up variants run back to back",
+                ChangeOp.SpaceEntry(entry.exerciseName),
+            )
+        }
+
+        val plan = ApplyPlan(request.volume, request.focus, ctx.cap, trimOrder, replan)
+        // Each change's own effect on the week: itself, and what it requires, applied alone.
+        val withDeltas = changes.map { made ->
+            val alone = ProgramChanges.apply(target, changes, plan, ProgramChanges.closure(changes, made.id))
+            val delta = ProgramRules.weeklyVolume(listOf(alone)).let { now ->
+                val was = ProgramRules.weeklyVolume(listOf(target))
+                (now.keys + was.keys).associateWith { (now[it] ?: 0.0) - (was[it] ?: 0.0) }
+                    .filterValues { kotlin.math.abs(it) > 1e-9 }
+            }
+            made.copy(coverageDelta = delta)
+        }
+        return Improvement(before = target, changes = withDeltas, plan = plan)
     }
+
+    /** What improve decided for one entry as given, before it becomes independent changes. */
+    private class EntryRecord {
+        var swap: SwapRecord? = null
+        var reps: Pair<Int, String>? = null
+        var sets: Pair<Int, String>? = null
+        var load: LoadRecord? = null
+        var removal: String? = null
+
+        /** Muscles a top-up raised the sets for, when one did (it owns [sets]). */
+        var topUp: List<Muscle>? = null
+
+        /** Trimmed by the cap: nothing else about it is reported. */
+        var dropped = false
+    }
+
+    private class SwapRecord(val to: Exercise, val detail: String, val options: Ranked, val clearsLoad: Boolean)
+
+    private class LoadRecord(val kg: Double?, val reps: Int, val note: String?, val detail: String)
+
+    private class AddRecord(val resultIndex: Int, val exerciseName: String, val detail: String, val options: Ranked)
 
     // ------------------------------------------------------------------ note
 

@@ -248,17 +248,84 @@ data class StrengthProfile(val bestE1rmKg: Map<String, Double> = emptyMap())
 /** A logged working set, the raw material of a [StrengthProfile]. */
 data class LoggedLift(val exerciseName: String, val weightKg: Double, val reps: Int)
 
-/** One line of an improve pass: what changed on which movement, and why. */
-data class PlanChange(val kind: Kind, val exerciseName: String, val detail: String) {
+/**
+ * One independent change of an improve pass: what changes on which movement,
+ * and why. Every change can be ticked on its own ([Improvement.apply]):
+ *  - [id] is stable for the same preset and request (movement name, kind, and
+ *    for ADJUSTED the sort of adjustment), so a screen can keep its ticks;
+ *  - [exerciseName] is the movement as it reads once the change is in;
+ *  - [tags] are at most two reasons, [coverageDelta] the weekly hard sets per
+ *    muscle this change alone adds or removes;
+ *  - [op] is the edit itself as data;
+ *  - [requires] is the id of the change this one builds on (a load set for a
+ *    swapped-in movement needs the swap): it stands only while that one does;
+ *  - [options] are the ranked movements for a swap or an addition, best first.
+ *    Option 0 is the movement [op] uses.
+ */
+data class PlanChange(
+    val id: String,
+    val kind: Kind,
+    val exerciseName: String,
+    val detail: String,
+    val tags: List<ReasonTag> = emptyList(),
+    val coverageDelta: Map<Muscle, Double> = emptyMap(),
+    val op: ChangeOp,
+    val requires: String? = null,
+    val options: Ranked = Ranked(emptyList()),
+) {
     enum class Kind { ADDED, REMOVED, SWAPPED, ADJUSTED, LOAD_SET }
+
+    companion object {
+        /** The id every change of this movement, kind and sort of edit gets. */
+        fun idOf(exerciseName: String, kind: Kind, op: ChangeOp): String {
+            val sort = when (op) {
+                is ChangeOp.SetSets -> "|sets"
+                is ChangeOp.SetReps -> "|reps"
+                is ChangeOp.SpaceEntry -> "|space"
+                else -> ""
+            }
+            return "$exerciseName|$kind$sort"
+        }
+    }
 }
 
-/** A preset before and after an improve pass. [changes] is empty when nothing needed changing. */
+/**
+ * What [Improvement.apply] needs besides the changes: how entries are
+ * re-planned, the entry cap, which entries give way to it first, and which
+ * entries the improve pass re-planned.
+ */
+data class ApplyPlan(
+    val volume: VolumeLevel = VolumeLevel.STANDARD,
+    val focus: TrainingFocus = TrainingFocus.MUSCLE,
+    val cap: Int = Int.MAX_VALUE,
+    /** Movements (as the preset gave them) that give way first when a subset leaves the preset over [cap]. */
+    val trimOrder: List<String> = emptyList(),
+    /** Lowercase names of the movements whose set range and effort cue are re-derived. */
+    val replan: Set<String> = emptySet(),
+)
+
+/**
+ * A preset and the independent changes proposed for it. [before] is what to
+ * restore on undo, [after] is every change applied, and [apply] gives any
+ * ticked subset, consistent whatever was left out. [changes] is empty when
+ * nothing needed changing.
+ */
 data class Improvement(
     val before: PlannedPreset,
-    val after: PlannedPreset,
     val changes: List<PlanChange>,
-)
+    val plan: ApplyPlan = ApplyPlan(),
+) {
+    val after: PlannedPreset = apply(changes.map { it.id }.toSet())
+
+    /**
+     * [before] with the changes in [selectedIds] applied, in the canonical
+     * order (remove, swap, sets, reps, load, add), then tidied: no movement
+     * twice, the entry cap held, pull-ups kept apart. A change whose
+     * [PlanChange.requires] is not in the set is left out too; unknown ids
+     * are ignored; nothing selected gives [before].
+     */
+    fun apply(selectedIds: Set<String>): PlannedPreset = ProgramChanges.apply(before, changes, plan, selectedIds)
+}
 
 /**
  * A hand-authored program, written for a full gym at [authoredVolume] and
