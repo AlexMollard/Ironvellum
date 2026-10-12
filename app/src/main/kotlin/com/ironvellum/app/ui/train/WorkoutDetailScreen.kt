@@ -694,8 +694,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         .toSortedMap()
         .map { (_, groupSets) -> groupSets.sortedBy { it.setIndex } }
     // Supersets are numbered in the order the trial reached them.
-    val supersetNumber = groups.mapNotNull { it.firstOrNull()?.supersetGroup }.distinct()
-        .withIndex().associate { (i, group) -> group to i + 1 }
+    val supersetNumber = com.ironvellum.app.domain.Supersets.numbers(groups.map { it.firstOrNull()?.supersetGroup })
     // The first movement opens; the rest fold to one line each until tapped.
     var open by remember { mutableStateOf(setOf(0)) }
     groups.forEachIndexed { groupIndex, groupSets ->
@@ -724,7 +723,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
             else -> setFigure(metric, 0, totals.secondsWorked, null).figure
         }
         val subline = listOfNotNull(
-            supersetNumber[first.supersetGroup]?.let { "Superset $it" },
+            supersetNumber[groupIndex]?.let { "Superset $it" },
             "${doneWorking.size}/${working.size}",
             summary,
         ).joinToString(" · ")
