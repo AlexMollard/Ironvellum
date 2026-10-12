@@ -11,8 +11,9 @@ object ExportWriter {
     // exercise notes. 8: lifetime essence, and the pacing state the Veil needs to
     // come back whole (draw counters, round level mark, purchases, grant version).
     // 9: per-set kind (drop, failure, rest-pause; a warm-up still writes warmup:true).
-    // ExportReader still accepts 8 and below.
-    const val FORMAT_VERSION = 9
+    // 10: custom exercises carry their flag, needs and muscle shares.
+    // ExportReader still accepts 9 and below.
+    const val FORMAT_VERSION = 10
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -21,6 +22,10 @@ object ExportWriter {
         val isWeighted: Boolean,
         val metric: String,
         val category: String,
+        /** v10. True for a lifter-made movement; [gear] and [muscles] are its stored needs and shares. */
+        val custom: Boolean = false,
+        val gear: String = "",
+        val muscles: String = "",
     )
 
     data class IdleSnapshot(
@@ -169,6 +174,11 @@ object ExportWriter {
             append(",\"isWeighted\":").append(e.isWeighted)
             append(",\"metric\":").appendEscaped(e.metric)
             append(",\"category\":").appendEscaped(e.category)
+            if (e.custom) {
+                append(",\"custom\":true")
+                append(",\"gear\":").appendEscaped(e.gear)
+                append(",\"muscles\":").appendEscaped(e.muscles)
+            }
             append("}")
         }
         append("]")

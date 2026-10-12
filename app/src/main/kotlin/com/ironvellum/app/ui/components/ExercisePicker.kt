@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.StarBorder
@@ -40,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +53,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.CustomExercises
+import com.ironvellum.app.domain.CustomSave
+import com.ironvellum.app.domain.CustomSpec
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseArtIndex
@@ -62,6 +67,7 @@ import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -108,6 +114,14 @@ internal class ExercisePickerViewModel(
     fun setFavourite(exerciseId: Long, favourite: Boolean) {
         viewModelScope.launch { repo.setFavourite(exerciseId, favourite) }
     }
+
+    suspend fun createExercise(spec: CustomSpec): CustomSave = repo.createCustomExercise(spec)
+
+    suspend fun updateExercise(id: Long, spec: CustomSpec): CustomSave = repo.updateCustomExercise(id, spec)
+
+    suspend fun exerciseUsage(id: Long): Int = repo.customExerciseUsage(id)
+
+    suspend fun deleteExercise(id: Long): Boolean = repo.deleteCustomExercise(id)
 }
 
 @Composable
@@ -123,6 +137,39 @@ private class PickerControls(defaultMyGear: Boolean) {
     var query by mutableStateOf("")
     var filters by mutableStateOf(PickerFilters(myGear = defaultMyGear))
     var filtersOpen by mutableStateOf(false)
+
+    /** The exercise form, open for a new movement (edit null, name prefilled) or for one of the lifter's own. */
+    var form by mutableStateOf<FormRequest?>(null)
+}
+
+private class FormRequest(val edit: Exercise?, val name: String)
+
+/**
+ * The exercise form for whatever [PickerControls.form] asks. A saved NEW movement goes to [onCreated] (the host
+ * picks it, so making one is also adding it); a saved edit or a delete just closes the sheet.
+ */
+@Composable
+private fun CustomExerciseHost(
+    exercises: List<Exercise>,
+    controls: PickerControls,
+    vm: ExercisePickerViewModel,
+    onCreated: (Exercise) -> Unit,
+) {
+    val request = controls.form ?: return
+    val names = remember(exercises) { exercises.map { it.name } }
+    CustomExerciseSheet(
+        editing = request.edit,
+        prefillName = request.name,
+        existingNames = names,
+        onSave = { spec -> request.edit?.let { vm.updateExercise(it.id, spec) } ?: vm.createExercise(spec) },
+        onDelete = { request.edit?.let { vm.deleteExercise(it.id) } ?: false },
+        usage = vm::exerciseUsage,
+        onSaved = { saved ->
+            controls.form = null
+            if (request.edit == null) onCreated(saved)
+        },
+        onDismiss = { controls.form = null },
+    )
 }
 
 @Composable
@@ -178,8 +225,13 @@ fun ExercisePickerSheet(
             PickerFilterBar(exercises, controls, data.equipment)
             Spacer(Modifier.height(12.dp))
         }
-        exerciseRows(view, data, controls.query, gearHidAll, browse = false, onPick, vm::setFavourite)
+        exerciseRows(
+            view, data, controls.query, gearHidAll, browse = false, onPick, vm::setFavourite,
+            onNew = { controls.form = FormRequest(null, it) },
+            onEdit = { controls.form = FormRequest(it, "") },
+        )
     }
+    CustomExerciseHost(exercises, controls, vm, onCreated = onPick)
 }
 
 /**
@@ -224,9 +276,14 @@ fun ExercisePickerPanel(
         PickerFilterBar(exercises, controls, data.equipment)
         Spacer(Modifier.height(12.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-            exerciseRows(view, data, controls.query, gearHidAll, browse = true, onPick, vm::setFavourite)
+            exerciseRows(
+                view, data, controls.query, gearHidAll, browse = true, onPick, vm::setFavourite,
+                onNew = { controls.form = FormRequest(null, it) },
+                onEdit = { controls.form = FormRequest(it, "") },
+            )
         }
     }
+    CustomExerciseHost(exercises, controls, vm, onCreated = onPick)
 }
 
 /**
@@ -289,7 +346,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
 }
 
 @Composable
-private fun FilterGroup(label: String, chips: @Composable () -> Unit) {
+internal fun FilterGroup(label: String, chips: @Composable () -> Unit) {
     Spacer(Modifier.height(8.dp))
     Text(
         label,
@@ -321,6 +378,8 @@ private fun LazyListScope.exerciseRows(
     browse: Boolean,
     onPick: (Exercise) -> Unit,
     onFavourite: (Long, Boolean) -> Unit,
+    onNew: (String) -> Unit,
+    onEdit: (Exercise) -> Unit,
 ) {
     val now = System.currentTimeMillis()
     // One Vault card per section, its rows divided by InkDivider.
@@ -339,11 +398,26 @@ private fun LazyListScope.exerciseRows(
                             browse = browse,
                             onPick = onPick,
                             onFavourite = { onFavourite(exercise.id, it) },
+                            onEdit = { onEdit(exercise) },
                         )
                     }
                 }
             }
         }
+    }
+    // Under Filters, above every list: making a movement is always one tap away.
+    item(key = "new_exercise") {
+        InkPanel(contentPadding = PaddingValues(0.dp)) {
+            ListRow(
+                label = "New exercise",
+                subline = "Your own movement, muscles and armoury",
+                icon = Icons.Outlined.Add,
+                onClick = { onNew("") },
+            )
+        }
+    }
+    if (view.yours.isNotEmpty()) {
+        section("yours", "Yours", "yours", view.yours)
     }
     if (view.favourites.isNotEmpty()) {
         section("favourites", "Favourites", "fav", view.favourites)
@@ -368,6 +442,20 @@ private fun LazyListScope.exerciseRows(
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(vertical = 12.dp),
             )
+        }
+        // A search that found nothing is the moment to make it; the gear filter emptying the list is not that.
+        if (query.isNotBlank() && !gearHidAll) {
+            item(key = "create_from_query") {
+                val name = CustomExercises.cleanName(query).take(CustomExercises.MAX_NAME)
+                InkPanel(contentPadding = PaddingValues(0.dp)) {
+                    ListRow(
+                        label = "Create \"$name\"",
+                        subline = "Your own movement, muscles and armoury",
+                        icon = Icons.Outlined.Add,
+                        onClick = { onNew(name) },
+                    )
+                }
+            }
         }
     }
 }
@@ -461,6 +549,7 @@ private fun PickerRow(
     browse: Boolean,
     onPick: (Exercise) -> Unit,
     onFavourite: (Boolean) -> Unit,
+    onEdit: () -> Unit,
 ) {
     val skill = Skills.forName(exercise.name)
     var showInfo by remember { mutableStateOf(false) }
@@ -481,13 +570,17 @@ private fun PickerRow(
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                exercise.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    exercise.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (exercise.custom) YoursTag()
+            }
             // What the lifter will be asked to log sits with the muscle group,
             // so the right edge holds only the two things that can be pressed.
             Text(
@@ -562,8 +655,37 @@ private fun PickerRow(
                 onPick(exercise)
             },
             confirmLabel = if (browse) "Choose" else "Add",
+            onEdit = if (exercise.custom) {
+                {
+                    showInfo = false
+                    onEdit()
+                }
+            } else {
+                null
+            },
         )
     }
+}
+
+/** The outlined ink mark on a movement the lifter made: never gold, which is for what is earned. */
+@Composable
+internal fun YoursTag(modifier: Modifier = Modifier) {
+    Text(
+        "YOURS",
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 9.sp,
+        lineHeight = 12.sp,
+        letterSpacing = 1.5.sp,
+        color = IronvellumColors.Ink,
+        maxLines = 1,
+        softWrap = false,
+        modifier = modifier
+            .padding(start = 8.dp)
+            .inkBorder(IronvellumColors.InkMuted, MaterialTheme.shapes.extraSmall, 1.dp)
+            .padding(horizontal = 5.dp, vertical = 1.dp),
+    )
 }
 
 internal fun metricWord(metric: ExerciseMetric): String = when (metric) {

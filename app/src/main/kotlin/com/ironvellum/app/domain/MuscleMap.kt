@@ -77,14 +77,16 @@ object MuscleMap {
 
     /**
      * Case-insensitive lookup. Every catalogue row has a profile; null means
-     * a user-created movement, which improve() passes through untouched.
+     * a user-created movement with no muscles chosen, which improve() passes through
+     * untouched; a custom movement WITH muscles is profiled from [CustomExercises].
      * Holds, activities, load-priced milestones and metre skills are profiled
      * so the lifter sees what they work and so they count toward the
      * coverage of his own presets and logs, but the generator never
      * prescribes them ([ProgramGenerator.eligible]) and improve() leaves
      * them as the lifter wrote them.
      */
-    fun profile(exerciseName: String): ExerciseProfile? = profiles[key(exerciseName)]
+    fun profile(exerciseName: String): ExerciseProfile? =
+        profiles[key(exerciseName)] ?: CustomExercises.profile(exerciseName)
 
     /**
      * [exerciseName]'s profile as the lifter actually performs it. Modifiers

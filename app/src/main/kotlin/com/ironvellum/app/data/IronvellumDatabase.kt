@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 39
+        const val VERSION = 40
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -600,6 +600,18 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Custom exercises: a flag, the gear a custom movement needs and its own muscle shares. Every existing row
+         * is catalogue or an earlier import, so none is flagged (flagging would reprice history).
+         */
+        private val MIGRATION_39_40 = object : Migration(39, 40) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE exercises ADD COLUMN custom INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE exercises ADD COLUMN gear TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE exercises ADD COLUMN muscles TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -629,6 +641,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_36_37,
             MIGRATION_37_38,
             MIGRATION_38_39,
+            MIGRATION_39_40,
         )
 
         const val NAME = "ironvellum.db"

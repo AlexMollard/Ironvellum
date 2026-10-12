@@ -69,7 +69,7 @@ fun exerciseMuscleSummary(shares: Map<Muscle, Double>): String {
 }
 
 @Composable
-private fun MuscleLine(level: ShareLevel, muscles: List<Muscle>) {
+internal fun MuscleLine(level: ShareLevel, muscles: List<Muscle>) {
     if (muscles.isEmpty()) return
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(

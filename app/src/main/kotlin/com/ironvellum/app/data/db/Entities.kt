@@ -17,6 +17,12 @@ data class ExerciseEntity(
     val metric: String = "REPS",
     /** "" for lifting; otherwise e.g. "Cardio", "Sport". */
     val category: String = "",
+    /** True for a movement the lifter made; false for every catalogue row. */
+    val custom: Boolean = false,
+    /** A custom row's needs as [com.ironvellum.app.domain.CustomExercises.encodeNeeds]; "" for the catalogue. */
+    val gear: String = "",
+    /** A custom row's muscle shares as [com.ironvellum.app.domain.CustomExercises.encodeShares]; "" for the catalogue. */
+    val muscles: String = "",
 )
 
 @Entity(tableName = "presets")

@@ -71,6 +71,7 @@ Settings keeps the name **Settings**.
 | **Open Trial** | A trial not begun from a rite | "Begin an Open Trial"; unnamed ones are called "Open Trial" | quick workout, blank workout, freeform |
 | **Seal** | Finishing a trial | button "Seal the Trial", header "SEALED", "Tick a set to seal the trial", "Seal anyway?" | finish, claim victory, victory, conquered, quest complete |
 | **Chronicle** | The history of sealed trials | "FULL CHRONICLE", "Trial of 12 Sep", "erased from the Chronicle", imported ones: "Imported trial" | log, workout log, record, history, lifetime record, activity log |
+| **Yours** | An exercise the lifter made | tag "YOURS", picker section "Yours", row "New exercise" | custom, user-created, homemade |
 | **Peak** | A personal best on an exercise | "NEW PEAK", "first peak", "PEAKS PER SET" | PR, new record, personal record |
 | **Oath** | Consecutive days kept | "Oath · 12 days kept", "Your oath holds", "Keep a 7-day oath" | streak |
 | **Respite** | A day the cycle leaves free | "RESPITE", "Your oath holds through respite" | rest day, rest up (rest *between sets* stays plain) |

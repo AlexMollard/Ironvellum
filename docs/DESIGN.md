@@ -218,6 +218,28 @@ leading icon. For secondary actions in a header ("Open trial", "Share",
 
 **Tag.** Small caps text with no box ("NEW PEAK" in gold). It never takes a tap.
 
+**Yours tag.** An exercise the lifter made carries an outlined `Ink` "YOURS" mark
+beside its name: 9sp caps, a 1dp `InkMuted` rule, 3dp-ish corners. It is a mark of
+ownership, not an award, so it is never gold and it never takes a tap. The picker also pins a
+"Yours" section above Favourites; those exercises still sit in their normal category too.
+
+**Exercise form.** A full-screen sheet over the picker (not a route): Name with a
+`13 / 40` counter, then Type, Logged as and Needs as underline chips, then the
+front and back figure to tap. A tap on a muscle cycles assist, main, off (MAIN reads
+1.0, ASSIST 0.5, the library rows' own scale), with the MAIN and ASSIST lines beside the figure. Weighted is
+never asked: any barbell, dumbbells or machine or cable makes it weighted. "New exercise"
+sits under Filters in every picker, and a search that finds nothing offers
+`Create "<query>"` with the name filled in. Edit lives on the info sheet; Delete only
+appears when no set, rite or note uses the exercise, so history is never orphaned.
+
+**Custom exercise scoring.** A custom exercise is priced at tier I (intensity 1, the
+cheapest tier a catalogue movement has, where curls and raises sit) and a machine
+or cable one at the sled load band (0.70). Inventing a name can therefore never earn more per
+rep than the cheapest real movement; the lifter's own history, peaks and charts are
+unaffected. Its name may never match a catalogue, library, skill-tree or board
+name (case-insensitive), which is also what keeps it off every ally board. It is never prescribed by
+the Forge. Cardio and Mobility ones are activities and use the activity pricing.
+
 **Pushed screen header.** Title on the left and the BACK chip on the right
 (`NavChip`), the same on every pushed screen. No left arrows.
 

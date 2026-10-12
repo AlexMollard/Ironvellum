@@ -771,15 +771,16 @@ private fun ReorderHandle(
     }
 }
 
-/** A flat field: a small label over the text and a Rune rule underneath, no box. */
+/** A flat field: a small label over the text and a Rune rule underneath, no box. [counter] sits at the right of the line ("13 / 40"). */
 @Composable
-private fun UnderlineField(
+internal fun UnderlineField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+    counter: String? = null,
 ) {
     Column(modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 8.dp))
@@ -792,11 +793,14 @@ private fun UnderlineField(
             keyboardOptions = keyboardOptions,
             modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
             decorationBox = { inner ->
-                Box(Modifier.heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
-                    if (value.isEmpty() && placeholder != null) {
-                        Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+                Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (value.isEmpty() && placeholder != null) {
+                            Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+                        }
+                        inner()
                     }
-                    inner()
+                    if (counter != null) Text(counter, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 }
             },
         )

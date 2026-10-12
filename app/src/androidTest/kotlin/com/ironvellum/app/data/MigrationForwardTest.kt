@@ -913,4 +913,31 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 39 -> 40, custom exercises: every existing exercise gains the flag, gear and muscles columns
+     * unflagged and empty, so no catalogue row or earlier import is repriced. Nothing is dropped.
+     */
+    @Test
+    fun upgradeTo40LeavesEveryExistingExerciseUnflagged() = runTest {
+        helper.createDatabase(dbName, 39).use { old ->
+            old.execSQL("INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) VALUES (1, 'Back Squat', 'LEGS', 1, 'REPS', '')")
+            old.execSQL("INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) VALUES (2, 'My Old Import', 'CORE', 0, 'DURATION', '')")
+        }
+        helper.runMigrationsAndValidate(dbName, 40, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name, isWeighted, metric, custom, gear, muscles FROM exercises ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("Back Squat", c.getString(0))
+                assertEquals(1, c.getInt(1))
+                assertEquals("REPS", c.getString(2))
+                assertEquals("not custom", 0, c.getInt(3))
+                assertEquals("", c.getString(4))
+                assertEquals("", c.getString(5))
+                assertTrue(c.moveToNext())
+                assertEquals("My Old Import", c.getString(0))
+                assertEquals("an earlier import is not flagged", 0, c.getInt(3))
+                assertEquals("DURATION", c.getString(2))
+            }
+        }
+    }
 }

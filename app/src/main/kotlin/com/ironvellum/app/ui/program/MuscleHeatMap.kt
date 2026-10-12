@@ -204,7 +204,7 @@ enum class ShareLevel(val label: String) { MAIN("MAIN"), ASSIST("ASSIST") }
  */
 fun shareLevel(share: Double): ShareLevel = if (share >= 0.7) ShareLevel.MAIN else ShareLevel.ASSIST
 
-private fun shareFill(share: Double?): Color = when {
+internal fun shareFill(share: Double?): Color = when {
     share == null || share <= 0.0 -> IronvellumColors.Rune
     shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.Emerald.copy(alpha = 0.9f)
     else -> IronvellumColors.Emerald.copy(alpha = 0.4f)

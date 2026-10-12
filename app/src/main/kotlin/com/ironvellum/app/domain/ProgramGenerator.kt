@@ -234,6 +234,7 @@ object ProgramGenerator {
         catalogue.filter {
             dosable(it) &&
                 !ExerciseLibrary.isLibraryOnly(it.name) &&
+                !CustomExercises.isCustom(it.name) &&
                 equipmentAllows(it, equipment) &&
                 MuscleMap.profile(it.name) != null &&
                 (focus == TrainingFocus.SKILL || !MuscleMap.isTechnique(it.name)) &&
