@@ -1,5 +1,6 @@
 """Build and serve the art review on this computer only."""
 import argparse
+import json
 import subprocess
 import sys
 from functools import partial
@@ -8,9 +9,11 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--port', type=int, default=18765)
-parser.add_argument('--batch', type=int, default=1)
+parser.add_argument('--batch', type=int)
 args = parser.parse_args()
 folder = Path(__file__).resolve().parent
+if args.batch is None:
+    args.batch = json.loads((folder.parent / 'generation-review.json').read_text(encoding='utf-8'))['currentBatch']
 subprocess.run([sys.executable, str(folder / 'build.py'), '--batch', str(args.batch)], check=True)
 
 class Handler(SimpleHTTPRequestHandler):

@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
-  "batch": 1,
-  "exportedAt": "2026-10-12T01:46:37.566652+00:00",
-  "batchComplete": true,
+  "batch": 2,
+  "exportedAt": "2026-10-12T02:30:28.490620+00:00",
+  "batchComplete": false,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -171,6 +171,158 @@
       "reviewer": "You",
       "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "note": "Approved by user in chat after reviewing the corrected batch. Completed hold frame reviewed against the straddle sequence."
+    },
+    {
+      "id": "full-planche-1.png",
+      "sha256": "a6c83aa642f27bc0c95260af99c771076ad5e6cfc8ee043bfa38c4c4294a776e",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "planche-push-up-1.png",
+      "sha256": "c4467298d2ccb636918cc5f3dc95ba34b2569aeca544f401a4d17a787d7a8907",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "planche-push-up-2.png",
+      "sha256": "90687976f29159ec075b31ca0e9429d3453b0357e5deab1b9fbacc782336a1fe",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "planche-push-up-3.png",
+      "sha256": "503e55e28124fee7009f3ddb47fdc4a48448e455fa6aef606b4427724905d409",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "front-row-hold-1.png",
+      "sha256": "54c5dc03a30912b76c6fffcc04e740bae55dca34d47fd061db261f33c9b7af46",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "front-row-hold-2.png",
+      "sha256": "62ad4a3fd5a7361dce23acf2d15a73d191d0753b821b57a41895a6c24b388de3",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "sha256": "82a1db3518f5245144db4f201a6c21c2b2cda1be84583217fc8fe838e33e8534",
+      "status": "redo",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": "Chest should finish closer to bar; review the top hold."
+    },
+    {
+      "id": "skin-the-cat-1.png",
+      "sha256": "4efda055799138455f75f1b5bf899ce4625b20ff3f42c1a34a242a47ddc1b904",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "skin-the-cat-2.png",
+      "sha256": "8689a37530171594f03b43a569dd5f20256caaa9c3318cddd2acf47b6bd35912",
+      "status": "redo",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": "Check that the inverted transition clearly shows legs passing between the arms."
+    },
+    {
+      "id": "skin-the-cat-3.png",
+      "sha256": "53e180cdb53a666a000888d846c2419a6016c7d235f5beb2be42743f3fa0bdb1",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "tuck-back-lever-1.png",
+      "sha256": "31eef67cbdf0e64b163fcdc88ec61143fc47e062535ecb308ca199a6aed51369",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "tuck-back-lever-2.png",
+      "sha256": "88a10ea6a3eb2ebf7b6613eb9a8871ec5b580e6e58880e79a04349d2067bce4e",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "advanced-tuck-back-lever-1.png",
+      "sha256": "76e9e19294958f0ccc851d3306d79f297d26db03a50dd729dfb0953d9a25e709",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "advanced-tuck-back-lever-2.png",
+      "sha256": "47ffb53697c513e871e4b26e16ba5ab7662eed293db3a2995b2221e8f8c311b5",
+      "status": "redo",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": "Bent knees point upward during the transition; review movement continuity."
+    },
+    {
+      "id": "advanced-tuck-back-lever-3.png",
+      "sha256": "61f074d9505670d9d3e17b34f34a421e628e81bd27ed21a0e31b8860b1d3fcc8",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "sha256": "ee341b0f0ca24804f423ed09d125937904664abe5c6db5c957de39d8885655d7",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "advanced-tuck-front-lever-2.png",
+      "sha256": "c89e8363dc554cf9d279edeb4a41b4b6bbb1043fa0097507fe1748c028d081c3",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "advanced-tuck-front-lever-3.png",
+      "sha256": "361d3c569b10260416f57e5181501b86761ec2c7ef9e5c788eb963fa0fa069ca",
+      "status": "pending",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": ""
+    },
+    {
+      "id": "crow-pose-1.png",
+      "sha256": "45a11146fbf80172e8a138f1ced8fd2a05e158bc65c270508bdb146528eb9405",
+      "status": "redo",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T02:30:28.490620+00:00",
+      "note": "Small ear contour remains; compare with the blank-head reference."
     }
   ]
 }
