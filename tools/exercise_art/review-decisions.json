@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 3,
-  "exportedAt": "2026-10-12T04:57:55.399Z",
+  "exportedAt": "2026-10-12T05:17:26.451Z",
   "batchComplete": false,
   "frames": [
     {
@@ -191,10 +191,10 @@
     {
       "id": "wall-handstand-1.png",
       "sha256": "fa0e82bd6d8b0e24fc9c4cf687f206327899de77fc10f8a99b59bdc3690cd808",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement awaiting review. Previous feedback: Too close to the wall the ROM would be impossible",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:17:06.415Z"
     },
     {
       "id": "pike-press-1.png",
@@ -223,10 +223,10 @@
     {
       "id": "wall-hspu-negative-1.png",
       "sha256": "a897878a310fddba17a385b3ba6b5eb9fe3ce7d51f99257a30160cedcb3e1015",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement awaiting review. Previous feedback: Same issue to close to the wall and dont draw the ground",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:17:03.319Z"
     },
     {
       "id": "crow-to-handstand-1.png",
@@ -246,11 +246,11 @@
     },
     {
       "id": "one-arm-handstand-1.png",
-      "sha256": "f38845aad04dcb4a58f3a74cf3aa671add388efac69c61f331b3be48810a226d",
+      "sha256": "298080636b068b5b19cff53eac12b514e2c323f7dfe2a97a068eabab6302eaf7",
       "status": "pending",
-      "note": "Replacement awaiting review. Previous feedback: Knees and feet are 180degrees backwards",
+      "note": "Replacement awaiting review. Previous feedback: Head is upside down",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "updatedAt": "2026-10-12T05:20:40.636126+00:00"
     },
     {
       "id": "straddle-press-to-handstand-1.png",
@@ -279,10 +279,10 @@
     {
       "id": "ring-row-1.png",
       "sha256": "9e1dede4aa32e2bd7ee5eab80257330db157109b59af75f7389810ab2f8b57aa",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement awaiting review. Previous feedback: Head is facing backwards",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:16:31.107Z"
     },
     {
       "id": "ring-dip-1.png",
@@ -318,11 +318,11 @@
     },
     {
       "id": "kip-up-1.png",
-      "sha256": "cad0d1d76f90d043dc10e34736d4b5e80c94369999cfc7df304bd7ac59c0fea6",
+      "sha256": "a33309053d62d8fe7d948d283641af0c3d9fcf96a82b488e0d31f91645191652",
       "status": "pending",
-      "note": "Replacement awaiting review. Previous feedback: Hands are in the wrong spot they would be above the head on the ground",
+      "note": "Replacement awaiting review. Previous feedback: Hands are so broken",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "updatedAt": "2026-10-12T05:20:40.636126+00:00"
     },
     {
       "id": "handstand-to-bridge-1.png",
@@ -359,18 +359,18 @@
     {
       "id": "strict-muscle-up-1.png",
       "sha256": "935fd9590c672d9577c8d3e985615f068d483debc42bdd6669570ce456e95e39",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement awaiting review. Previous feedback: Bars look like a dip bar as i cant see other arm",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:16:48.530Z"
     },
     {
       "id": "inverted-muscle-up-1.png",
       "sha256": "43992c8553973faf52ca9b192b0895390d361457f64107f1a179fce788c6cb1d",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement awaiting review. Previous feedback: legs are backwards",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:09:15.660927+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:16:27.733Z"
     },
     {
       "id": "one-arm-hang-1.png",

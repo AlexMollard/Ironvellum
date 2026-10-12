@@ -129,7 +129,7 @@
     },
     {
       "id": "wall-handstand-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Chest-to-wall handstand in side profile facing RIGHT toward a wall at the far RIGHT. Hands are planted a full FOREARM LENGTH (about 35-45 cm) LEFT of the wall, leaving a clearly visible wide gap between wall and wrists. Arms locked straight, shoulders over wrists, torso tall with a gentle lean toward wall, legs straight together rising diagonally slightly right, only pointed toes touch wall. Chest and kneecaps face wall/right, toes point toward wall/right, heels left. Head neutral between shoulders, no chin turned backwards. Show ONLY a single vertical wall line well separated from body and hands; absolutely NO floor line, baseboard, corner, horizontal line or ground."
     },
     {
@@ -149,7 +149,7 @@
     },
     {
       "id": "wall-hspu-negative-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Bottom position of chest-to-wall handstand push-up in side profile facing RIGHT, wall on far RIGHT. Hands planted about a FOREARM LENGTH (35-45 cm) LEFT of wall, giving room for a tripod. Elbows bent 90 degrees, forearms near vertical, head lowered LEFT/in front of wrists to form wide stable tripod; crown near imaginary floor, face naturally toward wall/right. Torso upright, hips high, legs together straight leaning gently right to wall, toes touch wall. Clearly visible gap between wrists and wall at least one head width. Only one vertical wall line, absolutely no horizontal floor/ground line or baseboard."
     },
     {
@@ -165,7 +165,7 @@
     {
       "id": "one-arm-handstand-1.png",
       "status": "pending",
-      "pose": "Adult gymnast in ONE ARM HANDSTAND, viewed directly from FRONT, with chest, kneecaps, shins and TOPS OF FEET all facing viewer consistently. Athlete inverted on right arm: right hand flat, right elbow locked, supporting shoulder stacked over hand, hips above shoulders. Left arm reaches sideways for balance. Legs straight, only slightly spread. Kneecaps face viewer like chest; ankles extended with toes pointed toward top of canvas and toe tops visible, NOT soles; heels behind away from viewer. Never rotate legs at waist or knees. Show front chest and front thighs, same continuous anatomical front surface from shoulders to toes. Blank smooth oval head."
+      "pose": "One-arm handstand with anatomically inverted head: chin points upward toward sternum, rounded crown points downward toward floor, neck enters upper edge of head."
     },
     {
       "id": "straddle-press-to-handstand-1.png",
@@ -184,7 +184,7 @@
     },
     {
       "id": "ring-row-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Adult athlete doing RING ROW top position, side profile. Feet at lower LEFT touching imaginary ground, body in one straight slanted line heels-hips-shoulders-head toward upper RIGHT. Chest faces UP toward ceiling, shoulder blades retracted. Elbows bent behind ribs, hands grasp two rings at chest height, straps vertically upward. Head in line with torso, face points diagonally UP AND LEFT in same direction as chest. Blank oval head, subtle chin at its UPPER LEFT edge toward sternum, nape at LOWER RIGHT continuous with upper back; cranium above-right of neck. No backwards chin on lower-right side, no ears, no face details. Two full arms, hands, legs. No floor line."
     },
     {
@@ -210,7 +210,7 @@
     {
       "id": "kip-up-1.png",
       "status": "pending",
-      "pose": "Gymnast at preparatory kick phase of a KIP-UP on imaginary floor in side profile. Upper BACK and shoulders lie low on floor, head to LEFT, hips raised to RIGHT, straight legs kick UP and slightly right. Both elbows deeply bent and point upward; BOTH PALMS planted on floor immediately BESIDE the EARS at far LEFT above/behind the head, fingers point toward shoulders/right. Hands must be left of shoulder joints and near head, never down by waist or hips. Head normal aligned with spine, chin tucked toward chest on right. No ground line or text. Show both distinct hands close to head and full straight pointed legs."
+      "pose": "Kip-up preparation with shoulders down, hips lifted, legs raised, elbows bent and two distinct natural palms planted beside ears, fingers toward shoulders."
     },
     {
       "id": "handstand-to-bridge-1.png",
@@ -234,12 +234,12 @@
     },
     {
       "id": "strict-muscle-up-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Top support position of STRICT BAR MUSCLE-UP shown FRONT THREE-QUARTER view, adult chest faces viewer, head front neutral. One SINGLE long HORIZONTAL STRAIGHT BAR runs LEFT TO RIGHT across hips/upper thighs. BOTH hands clearly visible gripping SAME BAR at shoulder width, distinct left and right straight locked arms visible in front of torso sides, shoulders above hands. Both legs hang down together straight, torso vertical. This is a single pull-up bar, not two parallel bars: show BOTH bar ends extending past hands, no rails in depth, no dip-bar structure. No ground."
     },
     {
       "id": "inverted-muscle-up-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Adult gymnast at completed INVERTED MUSCLE-UP, in straight handstand over one horizontal bar, DIRECT FRONT view. Both hands firmly grip single bar at bottom, arms fully straight, shoulders-hips-toes stacked vertically. Show front chest, belly, FRONT THIGHS, KNEECAPS and TOPS OF FEET all facing viewer, never back of pelvis or buttocks. Legs together straight with pointed toes upward; soles face away from viewer, heel contours behind ankles; front kneecaps align with chest. Plain shorts front waistband and central fly, no buttock seams. Faceless smooth egg head neutral between arms. Anatomically continuous front orientation from torso through knees and feet."
     },
     {
@@ -429,8 +429,8 @@
       "status": "awaiting-user-review",
       "available": 50,
       "blocked": [],
-      "approved": 43,
-      "pending": 7
+      "approved": 48,
+      "pending": 2
     }
   ],
   "hosting": "local",
