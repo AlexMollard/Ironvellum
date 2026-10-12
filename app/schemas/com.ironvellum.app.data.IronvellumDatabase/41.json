@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 41,
-    "identityHash": "04027120822c30af2d5b3d40d54060c3",
+    "identityHash": "e7d2f04dbafc55aa1b5d82b28d47c0b9",
     "entities": [
       {
         "tableName": "exercises",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isWeighted` INTEGER NOT NULL, `metric` TEXT NOT NULL, `category` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `muscleGroup` TEXT NOT NULL, `isWeighted` INTEGER NOT NULL, `metric` TEXT NOT NULL, `category` TEXT NOT NULL, `custom` INTEGER NOT NULL, `gear` TEXT NOT NULL, `muscles` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -41,6 +41,24 @@
           {
             "fieldPath": "category",
             "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "custom",
+            "columnName": "custom",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gear",
+            "columnName": "gear",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "muscles",
+            "columnName": "muscles",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -989,7 +1007,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '04027120822c30af2d5b3d40d54060c3')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e7d2f04dbafc55aa1b5d82b28d47c0b9')"
     ]
   }
 }
