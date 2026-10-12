@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 5,
-  "exportedAt": "2026-10-12T23:08:49.335015+00:00",
+  "exportedAt": "2026-10-12T23:13:48.095124+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1206,11 +1206,11 @@
     },
     {
       "id": "decline-dumbbell-fly-1.png",
-      "sha256": "688b288c8dfa45b245347afa74ea8f04dfc2d880111d14641316795e01446cd4",
+      "sha256": "0db34390d03bd7705abc92efd15db324a85693f13cf4f528a5b3a933b73a0595",
       "status": "pending",
-      "note": "Redrawn leg/pad overlap following: ankles still in the bars at teh end",
+      "note": "Redrawn feet under restraint following: feet and ankles should be under it",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T23:08:49.335015+00:00"
+      "updatedAt": "2026-10-12T23:13:48.095124+00:00"
     },
     {
       "id": "chest-dip-1.png",
