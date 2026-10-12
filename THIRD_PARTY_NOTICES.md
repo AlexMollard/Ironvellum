@@ -48,8 +48,9 @@ SOFTWARE.
   `licenses/CC-BY-SA-4.0-exercise-art.txt`.
 - Taken from them: the drawings in `app/src/main/assets/exercise_art/` and, for the movements the library adds, the
   step-by-step text adapted from Everkinetic's records (`LibraryGuides.kt`).
-- Changed: converted to ink masks, cropped, scaled, reduced to four levels and recoloured at draw time; faint frames
-  brightened; instruction text lightly edited. Built by `tools/exercise_art/`.
+- Changed: Workout Guide's geometry is used unmodified (path data copied verbatim, a registering translation stored
+  beside it); Everkinetic's poses are rasterised, cropped and vector-traced; both are recoloured at draw time;
+  instruction text lightly edited. Built by `tools/exercise_art/`.
 - The adaptations stay under CC BY-SA 4.0; everything else is GPL-3.0-or-later.
 
 ## Chakra Petch font

@@ -31,9 +31,10 @@ Exercise drawings and instructions (app/src/main/assets/exercise_art/, domain/Li
     instructions that the app's added movements are adapted from.
   - Workout Guide by Bryl Lim (https://github.com/bryllim/workout-guide, assets under CC BY-SA 4.0 via its
     LICENSE-ASSETS; its code is MIT). It expands the Everkinetic poses with more exercises and animation frames.
-  Changes made: each frame was converted to a one-channel ink mask, cropped to the figure, scaled to at most 256 px,
-  reduced to four ink levels and packed with its sibling frames into one WebP; the app paints the mask in its own
-  ink colour at draw time. Some faint frames were brightened. The drawings and the instruction text adapted from them
+  Changes made: Workout Guide's drawings are used with their geometry unmodified (each frame's path data is copied
+  verbatim; only a translation that registers an exercise's frames to one ground line and centre is stored beside it).
+  Everkinetic's poses were rasterised into one shared crop box, thresholded and vector-traced into one path each. The app
+  fills the paths in its own ink colour at draw time. The drawings and the instruction text adapted from them
   stay under CC BY-SA 4.0; the rest of the app is GPL-3.0-or-later. Details and the per-drawing record:
   docs/ART_ATTRIBUTION.md and tools/exercise_art/.
 

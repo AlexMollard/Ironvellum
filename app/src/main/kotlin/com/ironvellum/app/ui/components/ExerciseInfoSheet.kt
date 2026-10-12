@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.domain.ExerciseArtIndex
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.LiftBoards
@@ -41,7 +40,6 @@ internal fun ExerciseInfoSheet(
     onEdit: (() -> Unit)? = null,
 ) {
     val skill = Skills.forName(exercise.name)
-    val art = ExerciseArtIndex.forName(exercise.name)
     val boards = LiftBoards.boardsFor(exercise.name)
     val chips = buildList {
         add(InfoChip(exercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() }))
@@ -65,8 +63,8 @@ internal fun ExerciseInfoSheet(
         pages = listOf(
             InfoPage("About") {
                 // The drawing leads: what the movement looks like before anything is said about it.
-                if (art != null) {
-                    section(null) { ExerciseAnimation(art, Modifier.fillMaxWidth().height(200.dp)) }
+                section(null) {
+                    ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp), animated = true)
                 }
                 if (lastLine != null) text("LAST TRIAL", lastLine)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
