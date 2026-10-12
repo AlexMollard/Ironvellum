@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 3,
-  "status": "awaiting-user-review",
+  "status": "batch-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -164,7 +164,7 @@
     },
     {
       "id": "one-arm-handstand-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "One-arm handstand with anatomically inverted head: chin points upward toward sternum, rounded crown points downward toward floor, neck enters upper edge of head."
     },
     {
@@ -209,7 +209,7 @@
     },
     {
       "id": "kip-up-1.png",
-      "status": "pending",
+      "status": "approved",
       "pose": "Kip-up preparation with shoulders down, hips lifted, legs raised, elbows bent and two distinct natural palms planted beside ears, fingers toward shoulders."
     },
     {
@@ -426,30 +426,30 @@
         "front-split-1.png",
         "pancake-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 50,
       "blocked": [],
-      "approved": 48,
-      "pending": 2
+      "approved": 50,
+      "pending": 0
     }
   ],
   "hosting": "local",
   "localReviewUrl": "http://127.0.0.1:18765",
-  "approvedAt": "2026-10-12T01:46:37.566652+00:00",
+  "approvedAt": "2026-10-12T05:23:26.214589+00:00",
   "frameConsistency": {
     "canvas": "Same square canvas dimensions for every frame in a movement",
     "camera": "Fixed camera and athlete scale within a movement",
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "Vector pipeline available; approved stills can be imported"
+    "ownerImportStatus": "All 65 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
-    "batch": 2,
+    "batch": 3,
     "correctedAwaitingReview": [],
     "remainingRedo": 0,
     "missing": [],
-    "note": "Batch 2 fully approved by user."
+    "note": "Batch 3 fully approved by user in chat."
   },
   "artMode": "single-still",
   "framesPerExercise": 1

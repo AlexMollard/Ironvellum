@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 3,
-  "exportedAt": "2026-10-12T05:17:26.451Z",
-  "batchComplete": false,
+  "exportedAt": "2026-10-12T05:23:26.214589+00:00",
+  "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -247,10 +247,10 @@
     {
       "id": "one-arm-handstand-1.png",
       "sha256": "298080636b068b5b19cff53eac12b514e2c323f7dfe2a97a068eabab6302eaf7",
-      "status": "pending",
-      "note": "Replacement awaiting review. Previous feedback: Head is upside down",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:20:40.636126+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:23:26.214589+00:00"
     },
     {
       "id": "straddle-press-to-handstand-1.png",
@@ -319,10 +319,10 @@
     {
       "id": "kip-up-1.png",
       "sha256": "a33309053d62d8fe7d948d283641af0c3d9fcf96a82b488e0d31f91645191652",
-      "status": "pending",
-      "note": "Replacement awaiting review. Previous feedback: Hands are so broken",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T05:20:40.636126+00:00"
+      "status": "approved",
+      "note": "User approved all remaining replacements in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T05:23:26.214589+00:00"
     },
     {
       "id": "handstand-to-bridge-1.png",
