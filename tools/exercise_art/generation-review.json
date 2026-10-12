@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 20,
   "currentBatch": 1,
-  "status": "review-applied",
+  "status": "approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -145,5 +145,8 @@
         "straddle-planche-3.png"
       ]
     }
-  ]
+  ],
+  "hosting": "local",
+  "localReviewUrl": "http://127.0.0.1:18765",
+  "approvedAt": "2026-10-12T01:46:37.566652+00:00"
 }

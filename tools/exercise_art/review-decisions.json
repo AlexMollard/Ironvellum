@@ -1,63 +1,63 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 1,
-  "exportedAt": "2026-10-12T01:43:06.633839+00:00",
+  "exportedAt": "2026-10-12T01:46:37.566652+00:00",
   "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
       "sha256": "65270e23e3d6635e242fb0b22a6cdd1449a2a57cdc06bb8c50083b3bf315e44a",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202149+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "frog-stand-2.png",
       "sha256": "4210d37a49107a19f086188f9f75643f4aa90ff59143065d6fd68e2b4baa8305",
       "status": "approved",
-      "note": "",
-      "updatedAt": "2026-10-12T01:31:06.202161+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
       "id": "frog-stand-3.png",
       "sha256": "21b195e63c3400da7febccf27444b8460c13e6e73a6439da6293274feaf481aa",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202163+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "elbow-lever-1.png",
       "sha256": "3022d8f839398dddf4d05d63c19ede1893507ab8917ad783525c6e40f5eeebf0",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "elbow-lever-2.png",
       "sha256": "903c65390bcd09b566a610dea85c818a74a8d3c0bdfb0c16537501f7639856a4",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00",
-      "reviewer": "Assistant"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
     },
     {
       "id": "elbow-lever-3.png",
       "sha256": "4ed6ce2a6cf728663d50a416847ae9f955d772a97e754ea4b5df962efd998ad6",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202165+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "planche-lean-1.png",
       "sha256": "51a0e500065cc3ec1ca9be951832ad25a3dc754b41c320291a8f642df4c7b46b",
       "status": "approved",
-      "note": "I dont think this one needs a animation and can just be the first frame only, deelete the other 2 and keep in mind some other exercises can also be like this",
-      "updatedAt": "2026-10-12T01:31:06.202166+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. I dont think this one needs a animation and can just be the first frame only, deelete the other 2 and keep in mind some other exercises can also be like this",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
@@ -80,97 +80,97 @@
       "id": "advanced-tuck-planche-1.png",
       "sha256": "adb3be49c3b5b2c563cccbfdb827333be4660469fc35a931f9665192c79b0ad8",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202170+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "advanced-tuck-planche-2.png",
       "sha256": "55fcd2951d9c611073a30dee54e533f30cb37f8277c04d87ac8ae6a0f1769ae7",
       "status": "approved",
-      "note": "",
-      "updatedAt": "2026-10-12T01:31:06.202170+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
       "id": "advanced-tuck-planche-3.png",
       "sha256": "de8a98a2ec87cc7602792fb9e7695a69f45580bb6d78e609c935dcdc130d30ea",
       "status": "approved",
-      "note": "",
-      "updatedAt": "2026-10-12T01:31:06.202171+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
       "id": "tuck-planche-1.png",
       "sha256": "e8c8a77e0fb72c3735dec1763fdd9f0db3d606a02f5c00f73675068dce940225",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202172+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "tuck-planche-2.png",
       "sha256": "63993442bf0a8ae20a8a75f42b8c5d7a986a9a249e5fef6227954f71f81cc6c4",
       "status": "approved",
-      "note": "",
-      "updatedAt": "2026-10-12T01:31:06.202172+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
       "id": "tuck-planche-3.png",
       "sha256": "229f9706f8849ca1d6d571c98253fd111f0e9c2cbf38cc85a7b87eaeb81dbe3a",
       "status": "approved",
-      "note": "Assistant reviewed pose and style continuity against the approved frames.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:31:06.202173+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "one-leg-planche-1.png",
       "sha256": "8f79aa6eb92826b52a27f86b2e2ff9ad9943907e4326708d8160c0e067e15d11",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00",
-      "reviewer": "Assistant"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
     },
     {
       "id": "one-leg-planche-2.png",
       "sha256": "062cf49afba0953b0427154326b263101b712c33b81d3d87027358d2cd63ccb7",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "one-leg-planche-3.png",
       "sha256": "9c4849dbd4cbdc0bd9e831693e7c32b371ba0e8d77319de4d61f664e1c53b84d",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "straddle-planche-1.png",
       "sha256": "5ec00bbf58ce627b39d2dc74e0e13b4d20c8fd84580ffdd16dd2df8173b1a6ff",
       "status": "approved",
-      "note": "Pretty good might want to lean forward a little more",
-      "updatedAt": "2026-10-12T01:31:06.202176+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. Pretty good might want to lean forward a little more",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
       "reviewer": "You"
     },
     {
       "id": "straddle-planche-2.png",
       "sha256": "d3ad5821da27bd719edce05447f74607c9238a9a814d546b8575d265c8ec2a34",
       "status": "approved",
-      "note": "Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00"
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
     },
     {
       "id": "straddle-planche-3.png",
       "sha256": "ca6d76f1ba3a2d42e1c5b921e5d6cca05eeaeee862663287b27c20436f5d7f0b",
       "status": "approved",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T01:43:06.633839+00:00",
-      "note": "Completed hold frame reviewed against the straddle sequence."
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. Completed hold frame reviewed against the straddle sequence."
     }
   ]
 }
