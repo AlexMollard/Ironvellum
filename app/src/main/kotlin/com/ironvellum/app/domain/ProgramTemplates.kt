@@ -8,9 +8,10 @@ package com.ironvellum.app.domain
  * movement with the allowed movement of the closest [MuscleMap] profile and
  * the same pattern (a strength main lift becomes the closest pattern
  * equivalent, and its `why` says so). At its authored volume the weekly
- * fractional volume of each MUSCLE template sits inside that level's target
- * range for every tracked muscle ([ProgramRules.weeklySetTarget], Pelland
- * 2026 / Schoenfeld 2017); [build] scales it to the lifter's level. Every
+ * fractional volume of each MUSCLE template covers every tracked muscle with
+ * at least [ProgramRules.COVERED_MIN] hard sets and flags none Heavy
+ * (Pelland 2026 / Schoenfeld 2017); [build] scales its sets into the
+ * lifter's level ([ProgramRules.setRange]). Every
  * STRENGTH template practises the squat and the bench at least twice a week
  * and the deadlift at least once (Grgic 2018).
  *
@@ -303,15 +304,17 @@ object ProgramTemplates {
      * [compoundOnly] an isolation entry becomes its closest same-pattern
      * compound or skill movement, or is dropped when there is none.
      *
-     * Sets scale by the ratio of the chosen level's weekly range to the one
-     * the template was written at (midpoints; STRENGTH ranges are equal, so
-     * strength templates keep their sets). Scaling up never pushes a day
-     * past the session time budget or its own authored length, whichever is
-     * longer, and any muscle left under the chosen floor is named in the
-     * routine's note.
+     * Each entry's sets scale by the ratio of the chosen level's per-movement
+     * set range ([ProgramRules.setRange], midpoints, compound or single-joint
+     * as the entry is) to the one the template was written at, and land
+     * inside the chosen range - except that a template read at or above its
+     * own volume keeps sets it authored past the range top (a 5x3 bench). Scaling up never pushes a day
+     * past the session [sessionMinutes] time budget or its own authored
+     * length, whichever is longer, and any muscle left under four hard sets
+     * is named in the routine's note.
      *
-     * A day with more movements than [ProgramRules.exerciseCap] of the volume
-     * level and the lifter's [maxExercises] gives up, one at a time, the entry
+     * A day with more movements than the lifter's [maxExercises]
+     * ([ProgramRules.movementCap]) gives up, one at a time, the entry
      * whose loss leaves the fewest tracked sets short once the repair
      * pass has regrown what it can - never its first, the day's primary
      * lift. The day's note says it was trimmed.
@@ -324,14 +327,13 @@ object ProgramTemplates {
         strength: StrengthProfile,
         compoundOnly: Boolean = false,
         maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
+        sessionMinutes: Int = ProgramRules.DEFAULT_SESSION_MINUTES,
     ): RoutinePlan {
         val pool = ProgramGenerator.prescribable(
             catalogue, ProgramRequest(template.focus, volume, equipment, compoundOnly = compoundOnly),
         )
-        val rir = ProgramRules.targetRir(volume, template.focus)
-        val chosenRange = ProgramRules.weeklySetTarget(volume, template.focus)
-        val factor = midpoint(chosenRange) /
-            midpoint(ProgramRules.weeklySetTarget(template.authoredVolume, template.focus))
+        val range = ProgramRules.COVERAGE_BAND
+        val budget = ProgramRules.sessionBudgetSeconds(sessionMinutes)
         val presets = template.days.mapNotNull { day ->
             // Two gym movements must not collapse onto one substitute in the
             // same day (bench and incline press both becoming "Push-up").
@@ -361,7 +363,8 @@ object ProgramTemplates {
                 // The dumbbell cap lives in fillWithCap: an over-cap movement
                 // becomes its harder variant when the pool has one.
                 val (filledExercise, load) = ProgramGenerator.fillWithCap(
-                    exercise, pool, strength, entry.reps, rir, equipment, taken = used,
+                    exercise, pool, strength, entry.reps,
+                    ProgramRules.loadRir(MuscleMap.profile(exercise.name)?.compound ?: true), equipment, taken = used,
                 )
                 val capSwapped = filledExercise !== exercise
                 if (capSwapped) used += filledExercise.name
@@ -400,26 +403,29 @@ object ProgramTemplates {
             if (entries.isEmpty()) return@mapNotNull null
             // Same rest/RIR guidance the generator writes, matched to the
             // template's goal and volume; the summary stays on the template.
+            val planned = entries.map { entry ->
+                ProgramRules.withPlan(
+                    entry.copy(sets = scaledSets(entry, template.authoredVolume, volume)),
+                    volume, template.focus,
+                )
+            }
             val scaled = day.copy(
-                entries = entries.map { entry ->
-                    entry.copy(
-                        sets = kotlin.math.round(entry.sets * factor).toInt()
-                            .coerceIn(2, ProgramRules.maxSetsPerEntry(entry.exerciseName)),
-                    )
-                },
+                entries = planned,
                 note = ProgramGenerator.presetNote(volume, template.focus),
             )
-            scaled to entries.map { ProgramRules.maxSetsPerEntry(it.exerciseName) }
+            scaled to planned.map { it.setsMax }
         }
-        val cap = ProgramRules.exerciseCap(volume, maxExercises)
+        val cap = ProgramRules.movementCap(maxExercises)
         val work = presets.map { (day, caps) -> day.entries.toMutableList() to caps.toMutableList() }
         val trimmed = mutableSetOf<Int>()
         // Tracked sets the week still lacks under the floor once the repair
         // pass below has regrown what it can: the loss a trim really costs.
         fun shortAfterRepair(days: List<Pair<List<PlannedEntry>, List<Int>>>): Double {
-            val repaired = fitToRange(days.map { PlannedPreset("", "", null, it.first) }, days.map { it.second }, template.focus, chosenRange)
+            val repaired = fitToRange(
+                days.map { PlannedPreset("", "", null, it.first) }, days.map { it.second }, template.focus, range, budget,
+            )
             val vol = ProgramRules.weeklyVolume(repaired)
-            return ProgramRules.TRACKED.sumOf { maxOf(0.0, chosenRange.start - (vol[it] ?: 0.0)) }
+            return ProgramRules.TRACKED.sumOf { maxOf(0.0, range.start - (vol[it] ?: 0.0)) }
         }
         for ((d, day) in work.withIndex()) {
             val (entries, caps) = day
@@ -436,7 +442,7 @@ object ProgramTemplates {
                 // the smaller unrepaired loss, then single-joint work, then later.
                 val drop = (1 until entries.size).minWithOrNull(
                     compareBy<Int> { short.getValue(it) }
-                        .thenBy { ProgramGenerator.capTrimCost(entries[it], week, chosenRange) }
+                        .thenBy { ProgramGenerator.capTrimCost(entries[it], week, range) }
                         .thenBy { if (MuscleMap.profile(entries[it])?.compound == false) 0 else 1 }
                         .thenByDescending { it },
                 ) ?: break
@@ -451,9 +457,9 @@ object ProgramTemplates {
                 note = if (d in trimmed) day.note + " Trimmed to your $cap-exercise cap." else day.note,
             )
         }
-        val fitted = fitToRange(capped, work.map { it.second }, template.focus, chosenRange)
+        val fitted = fitToRange(capped, work.map { it.second }, template.focus, range, budget)
         val shortfall = ProgramGenerator.shortfallNote(
-            ProgramRules.weeklyVolume(fitted), chosenRange, "forge a cycle to fill them.",
+            ProgramRules.weeklyVolume(fitted), "forge a cycle to fill them.",
         )
         return RoutinePlan(
             fitted.map { day -> day.copy(entries = ProgramGenerator.spacePullUps(day.entries)) },
@@ -461,7 +467,24 @@ object ProgramTemplates {
         )
     }
 
-    private fun midpoint(range: ClosedFloatingPointRange<Double>) = (range.start + range.endInclusive) / 2.0
+    private fun midpoint(range: IntRange) = (range.first + range.last) / 2.0
+
+    /**
+     * [entry]'s sets moved from the level it was authored at to [volume]:
+     * scaled by the ratio of the two set ranges' midpoints for its kind of
+     * movement, then held inside the chosen range. Scaling up to or past the
+     * authored level keeps what the template wrote beyond the range top.
+     */
+    private fun scaledSets(entry: PlannedEntry, authored: VolumeLevel, volume: VolumeLevel): Int {
+        val compound = MuscleMap.profile(entry.exerciseName)?.compound ?: true
+        val from = ProgramRules.setRange(authored, compound)
+        val to = ProgramRules.setRange(volume, compound)
+        val factor = midpoint(to) / midpoint(from)
+        val top = if (factor >= 1.0) maxOf(to.last, entry.sets) else to.last
+        return kotlin.math.round(entry.sets * factor).toInt()
+            .coerceIn(to.first, top)
+            .coerceAtMost(ProgramRules.ENTRY_SANITY_MAX_SETS)
+    }
 
     /** Upper bound on repair steps; each moves one set, so it only bounds a bug. */
     private const val MAX_FIT_STEPS = 300
@@ -474,7 +497,8 @@ object ProgramTemplates {
      * a day has time and the session's muscle ceiling allows
      * ([ProgramRules.sessionMuscleRoom]), and muscles over the top of the
      * range give sets back where that leaves every muscle at its floor.
-     * [caps] bounds each entry ([ProgramRules.maxSetsPerEntry]). Uniform scaling alone rounded
+     * [caps] bounds each entry (its own [PlannedEntry.setsMax]); [budget] is
+     * the session clock in seconds. Uniform scaling alone rounded
      * 2- and 3-set entries away and left hamstrings at 11 of 12; the authored
      * upper/lower days ran 90 minutes. A day still over the budget with every
      * entry at two sets drops its last single-joint entry, and says so when
@@ -485,11 +509,11 @@ object ProgramTemplates {
         caps: List<List<Int>>,
         focus: TrainingFocus,
         range: ClosedFloatingPointRange<Double>,
+        budget: Int = ProgramRules.sessionBudgetSeconds(ProgramRules.DEFAULT_SESSION_MINUTES),
     ): List<PlannedPreset> {
         val work = days.map { it.entries.toMutableList() }
         val capsWork = caps.map { it.toMutableList() }
         val overBudget = mutableSetOf<Int>()
-        val budget = ProgramRules.SESSION_BUDGET_SECONDS
         fun result() = days.mapIndexed { d, day ->
             day.copy(
                 entries = work[d],

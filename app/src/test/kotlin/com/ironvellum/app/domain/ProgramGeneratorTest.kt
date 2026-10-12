@@ -87,10 +87,11 @@ class ProgramGeneratorTest {
     // ------------------------------------------------- acceptance example 1
 
     @Test
-    fun `three days that cannot fit the intermediate dose name every short muscle instead of cramming`() {
-        // Three full-body days share twelve muscles; inside the session time
-        // budget they cannot all reach 12 sets. The plan must stay finishable
-        // and say which muscles land short, rather than silently padding.
+    fun `three days with an arms priority stay finishable, name what is short and push the arms past the rest`() {
+        // Three full-body days share twelve muscles inside the session time
+        // budget. The plan must stay finishable, say which muscles land under
+        // four hard sets rather than silently padding, and a priority aims
+        // at twice the minimum.
         // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
@@ -106,29 +107,27 @@ class ProgramGeneratorTest {
             )
         }
         val volume = volumeOf(plan)
-        val range = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
-        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 0.5 }
-        assertTrue("expected a capacity-limited week", short.isNotEmpty())
-        val note = plan.note
+        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 }
         short.forEach { muscle ->
-            assertTrue("note does not name ${muscle.label}: $note", muscle.label.lowercase() in note)
+            assertTrue("note does not name ${muscle.label}: ${plan.note}", muscle.label.lowercase() in plan.note)
         }
-        // Short, but spread fairly: nothing starved while others overflow.
-        ProgramRules.TRACKED.forEach { muscle ->
-            assertTrue("$muscle starved at ${volume[muscle]}", (volume[muscle] ?: 0.0) >= 0.7 * range.start)
-            assertTrue("$muscle over at ${volume[muscle]}", (volume[muscle] ?: 0.0) <= range.endInclusive)
-        }
-        // The prioritised arms out-volume every unprioritised upper muscle.
+        assertEquals(plan.note, short.isEmpty(), "below 4 hard sets" !in plan.note)
+        assertTrue(
+            "heavy: ${ProgramRules.coverage(plan.presets).values.filter { it.heavy }}",
+            ProgramRules.coverage(plan.presets).values.none { it.heavy },
+        )
+        // The prioritised arms reach their own aim and out-volume every unprioritised upper muscle.
         val arms = minOf(volume[Muscle.BICEPS]!!, volume[Muscle.TRICEPS]!!)
+        assertTrue("arms at $arms", arms >= 8.0 - 1e-9)
         listOf(Muscle.MID_CHEST, Muscle.SIDE_DELTS, Muscle.REAR_DELTS).forEach {
             assertTrue("arms $arms did not out-volume $it ${volume[it]}", arms > (volume[it] ?: 0.0))
         }
     }
 
     @Test
-    fun `every muscle a generated week leaves under the floor is named in its routine note, never a workout's`() {
-        // The coverage map calls any muscle below the floor UNDER, even 11.6
-        // of 12; a plan that shows UNDER there without saying so here reads
+    fun `every muscle a generated week leaves under four hard sets is named in its routine note, never a workout's`() {
+        // The coverage map calls any muscle below four hard sets BELOW_MINIMUM,
+        // even 3.9; a plan that shows that there without saying so here reads
         // as a generator bug rather than an honest capacity limit. The line
         // is routine-wide advice: saved into the first workout's note it
         // became a permanent mantra on that day.
@@ -139,9 +138,8 @@ class ProgramGeneratorTest {
                         ProgramRequest(TrainingFocus.MUSCLE, tier, equipment, days, split = split), catalogue, strength,
                     )
                     val volume = volumeOf(plan)
-                    val floor = ProgramRules.weeklySetTarget(tier, TrainingFocus.MUSCLE).start
                     val note = plan.note
-                    ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor }.forEach { muscle ->
+                    ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 }.forEach { muscle ->
                         assertTrue(
                             "$tier $equipment $split ${days}d: ${muscle.label} at ${volume[muscle]} not in note: $note",
                             muscle.label.lowercase() in note,
@@ -157,10 +155,10 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `four intermediate days fill the upper muscles inside the session time budget`() {
+    fun `four intermediate days cover every muscle inside the session time budget`() {
         // The session limit is clock time, not a set count: isolation sets
-        // rest 90 s where compounds rest 150 s. A flat 24-set cap left five
-        // upper muscles at 10.5-11 sets while the lower days ended early.
+        // rest 90 s where compounds rest 150 s. Four hard sets per muscle is
+        // well inside four 75-minute days, so none may be short.
         // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, maxExercises = 8,
@@ -170,16 +168,10 @@ class ProgramGeneratorTest {
             val seconds = ProgramRules.sessionSeconds(preset.entries, TrainingFocus.MUSCLE)
             assertTrue("${preset.name} runs ${seconds / 60} min", seconds <= ProgramRules.SESSION_BUDGET_SECONDS)
         }
-        // A lateral raise stops at its set ceiling, so the side delts can
-        // land a set under the rest once every upper day is out of time;
-        // they are then named in the note rather than stacked.
         val volume = volumeOf(plan)
-        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < 10.5 }
-        assertTrue("under 10.5 sets: ${short.map { it to volume[it] }}", short.isEmpty())
-        val floor = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE).start
-        ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor }.forEach {
-            assertTrue("${it.label} short but not named: ${plan.note}", it.label.lowercase() in plan.note)
-        }
+        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 }
+        assertTrue("under four hard sets: ${short.map { it to volume[it] }}", short.isEmpty())
+        assertEquals("", plan.note)
     }
 
     @Test
@@ -201,7 +193,7 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `intermediate muscle five days with an arms priority lands every tracked muscle in range`() {
+    fun `intermediate muscle five days with an arms priority cover every tracked muscle and push the arms to eight`() {
         // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
@@ -211,19 +203,16 @@ class ProgramGeneratorTest {
         assertEquals(5, plan.presets.size)
 
         val volume = volumeOf(plan)
-        val range = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
         for (muscle in ProgramRules.TRACKED) {
             val sets = volume[muscle] ?: 0.0
-            // Half a set of slack below the floor: fractional counting of
-            // 0.5-share movements cannot land every muscle on an integer.
             assertTrue(
-                "$muscle at $sets fractional sets/week, outside $range",
-                sets >= range.start - 0.5 && sets <= range.endInclusive,
+                "$muscle at $sets fractional sets/week, outside ${ProgramRules.COVERAGE_BAND}",
+                sets >= ProgramRules.COVERED_MIN - 1e-9 && sets <= ProgramRules.HEAVY_WEEK,
             )
         }
-        // Priorities are pushed toward the TOP of the range, not just inside it.
-        assertTrue("biceps ${(volume[Muscle.BICEPS])} not near the top", volume[Muscle.BICEPS]!! >= 15.0)
-        assertTrue("triceps ${(volume[Muscle.TRICEPS])} not near the top", volume[Muscle.TRICEPS]!! >= 15.0)
+        // Priorities are pushed to twice the minimum, not just covered.
+        assertTrue("biceps ${(volume[Muscle.BICEPS])} not at the priority aim", volume[Muscle.BICEPS]!! >= 8.0 - 1e-9)
+        assertTrue("triceps ${(volume[Muscle.TRICEPS])} not at the priority aim", volume[Muscle.TRICEPS]!! >= 8.0 - 1e-9)
 
         // Hamstrings come from dedicated long-length work, never a squat.
         val entries = entriesOf(plan)
@@ -331,26 +320,34 @@ class ProgramGeneratorTest {
             PlannedEntry("Romanian Deadlift", 3, 8, null),
             PlannedEntry("Standing Calf Raise", 2, 12, null),
         ))
-        // The rest of the week serves every lower muscle except calves (8).
+        // The rest of the week serves every lower muscle except calves (1).
         val restOfWeek = listOf(PlannedPreset("Other", "", 4, listOf(
             PlannedEntry("Leg Press", 9, 10, null),
             PlannedEntry("Seated Leg Curl", 9, 12, null),
             PlannedEntry("Hip Thrust", 9, 10, null),
-            PlannedEntry("Standing Calf Raise", 8, 12, null),
+            PlannedEntry("Standing Calf Raise", 2, 12, null),
             PlannedEntry("Hanging Knee Raise", 12, 12, null),
         )))
         val improvement = ProgramGenerator.improve(lower, restOfWeek, request, catalogue, strength)
         val calf = improvement.after.entries.first { it.exerciseName == "Standing Calf Raise" }
-        // 8 + 2 = 10 of a 12-set minimum: two more sets on the calf raise.
-        assertEquals(4, calf.sets)
+        // 2 + 2 = 4 of a 4-set minimum: covered, so improve leaves the calf raise alone.
+        assertEquals(2, calf.sets)
+        // With the rest of the week at one set the week is 3 of 4: one more set.
+        val thinWeek = listOf(restOfWeek.single().let { rest ->
+            rest.copy(entries = rest.entries.map { if (it.exerciseName == "Standing Calf Raise") it.copy(sets = 1) else it })
+        })
+        val raised = ProgramGenerator.improve(lower, thinWeek, request, catalogue, strength)
+        val raisedCalf = raised.after.entries.first { it.exerciseName == "Standing Calf Raise" }
+        assertEquals(3, raisedCalf.sets)
+        assertEquals("the raised entry keeps its range", 3, raisedCalf.setsMax)
         assertTrue(
-            "no set change explained: ${improvement.changes}",
-            improvement.changes.any {
+            "no set change explained: ${raised.changes}",
+            raised.changes.any {
                 it.kind == PlanChange.Kind.ADJUSTED && it.exerciseName == "Standing Calf Raise" &&
                     "calves" in it.detail
             },
         )
-        val second = ProgramGenerator.improve(improvement.after, restOfWeek, request, catalogue, strength)
+        val second = ProgramGenerator.improve(raised.after, thinWeek, request, catalogue, strength)
         assertTrue("second improve changed: ${second.changes}", second.changes.isEmpty())
     }
 
@@ -457,18 +454,20 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `auto session tops up a real generated week that sits just under target`() {
-        // Four intermediate days leave the upper muscles 1-1.5 sets short of
-        // 12. Measuring a per-session share against the weekly volume called
-        // that week complete and built nothing ("cannot fill this workout").
+    fun `auto session tops up a real generated week that sits under four hard sets`() {
+        // A generated four-day week covers every muscle, so lose its second
+        // lower day: the leg muscles land short. Measuring a per-session
+        // share against the weekly volume once called such a week complete
+        // and built nothing ("cannot fill this workout").
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, maxExercises = 8,
         )
-        val week = ProgramGenerator.week(request, catalogue, strength).presets
+        val full = ProgramGenerator.week(request, catalogue, strength).presets
+        val week = full.filter { it.name != "Lower B" }
         val before = ProgramRules.weeklyVolume(week)
-        val range = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
-        val short = ProgramRules.TRACKED.filter { (before[it] ?: 0.0) < range.start }
-        assertTrue("fixture broken: the 4-day week is complete", short.isNotEmpty())
+        val short = ProgramRules.TRACKED.filter { (before[it] ?: 0.0) < ProgramRules.COVERED_MIN }
+        assertTrue("fixture broken: the week is complete", short.isNotEmpty())
 
         val session = ProgramGenerator.session(request, SessionKind.AUTO, 6, week, catalogue, strength)
         assertNotNull("AUTO built nothing for a week with short muscles", session)
@@ -477,8 +476,10 @@ class ProgramGeneratorTest {
             assertTrue("$muscle not raised: ${before[muscle]} -> ${after[muscle]}", after[muscle]!! > before[muscle]!!)
         }
         ProgramRules.TRACKED.forEach { muscle ->
-            assertTrue("$muscle pushed over the range: ${after[muscle]}", (after[muscle] ?: 0.0) <= range.endInclusive)
+            assertTrue("$muscle pushed heavy: ${after[muscle]}", (after[muscle] ?: 0.0) <= ProgramRules.HEAVY_WEEK)
         }
+        val seconds = ProgramRules.sessionSeconds(session.entries, TrainingFocus.MUSCLE)
+        assertTrue("session runs ${seconds / 60} min", seconds <= ProgramRules.SESSION_BUDGET_SECONDS)
     }
 
     @Test
@@ -491,10 +492,9 @@ class ProgramGeneratorTest {
         val once = ProgramGenerator.week(request, catalogue, strength).presets
         val week = once + once
         val volume = ProgramRules.weeklyVolume(week)
-        val range = ProgramRules.weeklySetTarget(VolumeLevel.LOW, TrainingFocus.MUSCLE)
         assertTrue(
             "fixture broken: $volume",
-            ProgramRules.TRACKED.all { (volume[it] ?: 0.0) >= range.start },
+            ProgramRules.TRACKED.all { (volume[it] ?: 0.0) >= ProgramRules.COVERED_MIN },
         )
         assertNull(ProgramGenerator.session(request, SessionKind.AUTO, 6, week, catalogue, strength))
     }
@@ -946,24 +946,25 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `improving a lower day adds no upper work and keeps a second calf variant at the ceiling`() {
+    fun `improving a lower day adds no upper work and keeps a second calf variant at the top of its range`() {
         // Found on device: improving the generated Lower A added a bench press
         // and a lateral raise (leg isolation read as "upper" scope) and cut the
         // seated calf raise beside a standing one at its set ceiling, dropping calves under.
-        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, maxExercises = 8,
         )
-        val week = ProgramGenerator.week(request, catalogue, strength).presets
-        val lower = week.first { it.name == "Lower A" }
+        val top = ProgramRules.setRange(VolumeLevel.STANDARD, compound = false).last
+        val lower = PlannedPreset("Lower A", "", 2, listOf(
+            ProgramRules.withPlan(PlannedEntry("Back Squat", 3, 8, null), VolumeLevel.STANDARD, TrainingFocus.MUSCLE),
+            ProgramRules.withPlan(PlannedEntry("Romanian Deadlift", 3, 8, null), VolumeLevel.STANDARD, TrainingFocus.MUSCLE),
+            ProgramRules.withPlan(PlannedEntry("Standing Calf Raise", top, 12, null), VolumeLevel.STANDARD, TrainingFocus.MUSCLE),
+            ProgramRules.withPlan(PlannedEntry("Seated Calf Raise", 2, 15, null), VolumeLevel.STANDARD, TrainingFocus.MUSCLE),
+        ))
         val calves = lower.entries.filter { (MuscleMap.profile(it.exerciseName)!!.muscles[Muscle.CALVES] ?: 0.0) > 0.0 }
-        assertTrue(
-            "fixture broken: no maxed calf raise in $calves",
-            calves.any { it.sets == ProgramRules.maxSetsPerEntry(it.exerciseName) },
-        )
+        assertTrue("fixture broken: no maxed calf raise in $calves", calves.any { it.sets == it.setsMax })
         assertTrue("fixture broken: one calf variant in $calves", calves.size >= 2)
 
-        val improvement = ProgramGenerator.improve(lower, week - lower, request, catalogue, strength)
+        val improvement = ProgramGenerator.improve(lower, emptyList(), request, catalogue, strength)
         improvement.after.entries.forEach { entry ->
             val group = byName(entry.exerciseName).muscleGroup
             assertFalse(
@@ -1030,7 +1031,7 @@ class ProgramGeneratorTest {
             val notes = (plan.presets.map { it.note } + plan.note).joinToString(" ").lowercase()
             for (helper in ProgramRules.HELPERS) {
                 val sets = volume[helper] ?: 0.0
-                if (sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9) continue
+                if (sets >= ProgramRules.COVERED_MIN - 1e-9) continue
                 lightSeen++
                 assertFalse(
                     "${helper.label} at $sets sets is light, yet the note names it ($kit/$split$days/$focus): $notes",
@@ -1074,7 +1075,7 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `a six-day week lifts every helper to its floor on every kit`() {
+    fun `a six-day week lifts every helper to four hard sets on every kit`() {
         // Six sessions leave the time the helper floors need: none may be
         // left short, whatever the gear.
         for (kit in listOf(Equipment.NOTHING, ownerKit, Equipment.FULL_GYM)) for (focus in TrainingFocus.entries) {
@@ -1086,7 +1087,7 @@ class ProgramGeneratorTest {
                 catalogue, strength,
             )
             val volume = volumeOf(plan)
-            val short = ProgramRules.HELPERS.filter { (volume[it] ?: 0.0) < ProgramRules.HELPER_FLOOR_SETS - 1e-9 }
+            val short = ProgramRules.HELPERS.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 }
                 .map { "$it=${volume[it] ?: 0.0}" }
             assertEquals("helpers under the floor ($kit/$focus)", emptyList<String>(), short)
         }
@@ -1109,15 +1110,22 @@ class ProgramGeneratorTest {
 
     @Test
     fun `the shortfall note names short tracked muscles and never a helper`() {
-        val range = 5.0..15.0
         val everyHelperLight = ProgramRules.TRACKED.associateWith { 5.0 } + ProgramRules.HELPERS.associateWith { 0.0 }
         assertEquals(
-            "", ProgramGenerator.shortfallNote(everyHelperLight, range, "add a day to cover them."),
+            "", ProgramGenerator.shortfallNote(everyHelperLight, "add a day to cover them."),
         )
         val note = ProgramGenerator.shortfallNote(
-            everyHelperLight + (Muscle.QUADS to 3.0), range, "add a day to cover them.",
+            everyHelperLight + (Muscle.QUADS to 3.0), "add a day to cover them.",
         )
-        assertTrue(note, "Short on quads" in note)
+        assertEquals("1 muscle below 4 hard sets (quads) — add a day to cover them.", note)
+        val two = ProgramGenerator.shortfallNote(
+            everyHelperLight + (Muscle.QUADS to 3.9) + (Muscle.ABS to 0.0), "add a day to cover them.",
+        )
+        assertTrue(two, two.startsWith("2 muscles below 4 hard sets (quads and abs)"))
+        assertEquals(
+            "a muscle at exactly four is covered", "",
+            ProgramGenerator.shortfallNote(everyHelperLight + (Muscle.QUADS to 4.0), "x"),
+        )
         ProgramRules.HELPERS.forEach { helper ->
             assertFalse("light ${helper.label} named: $note", helper.label.lowercase() in note)
         }
@@ -1191,7 +1199,7 @@ class ProgramGeneratorTest {
         // set - and no session that could have served it spends time on a helper.
         val plan = strengthPpl3(setOf(MuscleArea.BACK, MuscleArea.SHOULDERS))
         val volume = volumeOf(plan)
-        val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
+        val top = 8.0 // a priority's aim at STANDARD
         // The lats can stop short of the top here: the shoulder priority's
         // prone Y raises share the pull day's 75 minutes. The loop below
         // holds them to "out of time, never spent on a helper".
@@ -1202,7 +1210,7 @@ class ProgramGeneratorTest {
                 if (training.isEmpty()) continue
                 val seconds = ProgramRules.sessionSeconds(preset.entries, TrainingFocus.STRENGTH)
                 training.filter {
-                    it.sets < ProgramRules.maxSetsPerEntry(it.exerciseName) &&
+                    it.sets < it.setsMax &&
                         ProgramRules.sessionMuscleRoom(preset.entries, it.exerciseName, 1)
                 }.forEach { entry ->
                     val oneMore = ProgramRules.setSeconds(TrainingFocus.STRENGTH, entry.exerciseName)
@@ -1211,16 +1219,19 @@ class ProgramGeneratorTest {
                         seconds + oneMore > ProgramRules.SESSION_BUDGET_SECONDS,
                     )
                 }
+                // A helper may only take the room when the muscle's own movements here
+                // are all at the top of their range and the kit has no other for it
+                // (the owner's kit has one lateral raise and no second side-delt movement).
                 val helperFills = preset.entries.filter { filledFor(it) in ProgramRules.HELPERS }
-                assertEquals("${preset.name} feeds helpers while ${muscle.label} is short", emptyList<PlannedEntry>(), helperFills)
+                if (training.any { it.sets < it.setsMax }) {
+                    assertEquals("${preset.name} feeds helpers while ${muscle.label} is short", emptyList<PlannedEntry>(), helperFills)
+                }
             }
         }
         // The side delts' own isolation carries the priority first: it sits
-        // at its set ceiling before any press takes the rest.
-        assertEquals(
-            ProgramRules.maxSetsPerEntry("Lateral Raise"),
-            entriesOf(plan).single { it.exerciseName == "Lateral Raise" }.sets,
-        )
+        // at the top of its range before any press takes the rest.
+        val raise = entriesOf(plan).single { it.exerciseName == "Lateral Raise" }
+        assertEquals(raise.setsMax, raise.sets)
     }
 
     @Test
@@ -1238,15 +1249,12 @@ class ProgramGeneratorTest {
         val prioritised = sixDays(setOf(MuscleArea.SHOULDERS))
         val plain = sixDays(emptySet())
         val volume = volumeOf(prioritised)
-        val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
-        // Within one lateral-raise set of the top: the next would overshoot it.
-        assertTrue("side delts at ${volume[Muscle.SIDE_DELTS]}", volume[Muscle.SIDE_DELTS]!! > top - 1.0)
-        // Lateral raises carry the priority, each block at most its set
-        // ceiling and one of them at it; the prone Y raises the rear-delt
-        // priority brings credit the side delts the rest.
+        // The priority's aim at STANDARD: twice the covered minimum.
+        assertTrue("side delts at ${volume[Muscle.SIDE_DELTS]}", volume[Muscle.SIDE_DELTS]!! >= 8.0 - 1e-9)
+        // Lateral raises carry the priority, each block at most the top of
+        // its range and one of them at it.
         val raises = entriesOf(prioritised).filter { it.exerciseName == "Lateral Raise" }
-        val ceiling = ProgramRules.maxSetsPerEntry("Lateral Raise")
-        assertTrue("lateral raises $raises", raises.all { it.sets <= ceiling } && raises.any { it.sets == ceiling })
+        assertTrue("lateral raises $raises", raises.all { it.sets <= it.setsMax } && raises.any { it.sets == it.setsMax })
         assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!!, volume[Muscle.FRONT_DELTS]!!, 1e-9)
         assertTrue(entriesOf(prioritised).none { filledFor(it) == Muscle.FRONT_DELTS })
     }
