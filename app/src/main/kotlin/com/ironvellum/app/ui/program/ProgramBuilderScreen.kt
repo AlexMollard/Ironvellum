@@ -82,6 +82,7 @@ import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.settings.SettingsSummaries
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -150,6 +151,8 @@ class ProgramBuilderViewModel(
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
     val compoundOnly = MutableStateFlow(false)
     val maxExercises = MutableStateFlow(ProgramRules.DEFAULT_MAX_EXERCISES)
+    /** Minutes one rite may take: 45, 60, 75 or 90. Every generator call reads it. */
+    val sessionMinutes = MutableStateFlow(ProgramRules.DEFAULT_SESSION_MINUTES)
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
     val sessionDay = MutableStateFlow<Int?>(1)
 
@@ -165,6 +168,13 @@ class ProgramBuilderViewModel(
 
     private val _plan = MutableStateFlow<RoutinePlan?>(null)
     val plan: StateFlow<RoutinePlan?> = _plan.asStateFlow()
+
+    /** The proposal a failed generation cleared, kept only so the page can show it greyed out. Never applied. */
+    private val _previousPlan = MutableStateFlow<RoutinePlan?>(null)
+    val previousPlan: StateFlow<RoutinePlan?> = _previousPlan.asStateFlow()
+
+    /** The week generator; a seam so a test can make it refuse. */
+    internal var weekGenerator: (ProgramRequest, List<Exercise>, StrengthProfile) -> RoutinePlan = ProgramGenerator::week
 
     private val _improvement = MutableStateFlow<com.ironvellum.app.domain.Improvement?>(null)
     val improvement: StateFlow<com.ironvellum.app.domain.Improvement?> = _improvement.asStateFlow()
@@ -227,6 +237,7 @@ class ProgramBuilderViewModel(
             priorities.value = saved.priorities
             compoundOnly.value = saved.compoundOnly
             maxExercises.value = saved.maxExercises
+            sessionMinutes.value = saved.sessionMinutes
         }
         // Templates exist only for strength and hypertrophy; a saved or
         // default Skills / Mixed goal would match no template.
@@ -287,6 +298,7 @@ class ProgramBuilderViewModel(
         split = split.value,
         compoundOnly = compoundOnly.value,
         maxExercises = maxExercises.value,
+        sessionMinutes = sessionMinutes.value,
     )
 
     fun setSplit(value: TrainingSplit, days: Int) {
@@ -301,7 +313,7 @@ class ProgramBuilderViewModel(
         focus.value, tier.value, equipment.value, daysPerWeek.value,
         split.value, priorities.value, compoundOnly.value,
         maxExercises.value, sessionKind.value, sessionDay.value,
-        selectedTemplateId.value, selectedPresetId.value,
+        selectedTemplateId.value, selectedPresetId.value, sessionMinutes.value,
     )
 
     private class Generated(val plan: RoutinePlan?, val improvement: Improvement? = null, val improvementFor: Long? = null)
@@ -356,7 +368,7 @@ class ProgramBuilderViewModel(
                     Generated(
                         chosen?.let {
                             ProgramTemplates.build(
-                                it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value,
+                                it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value, sessionMinutes.value,
                             )
                         },
                     )
@@ -405,17 +417,20 @@ class ProgramBuilderViewModel(
                         )
                     }
                 }
-                else -> Generated(ProgramGenerator.week(request(), cat, _strength.value))
+                else -> Generated(weekGenerator(request(), cat, _strength.value))
             }
         }.fold(
             onSuccess = { result ->
                 _error.value = null
+                _previousPlan.value = null
                 _plan.value = result.plan
                 _improvement.value = result.improvement
                 improvementFor = result.improvementFor
             },
             onFailure = {
-                // Whatever was shown was built from answers that no longer stand.
+                // Whatever was shown was built from answers that no longer stand. A copy stays for DISPLAY
+                // only ([previousPlan]); nothing that applies a proposal reads it.
+                _plan.value?.let { _previousPlan.value = it }
                 _plan.value = null
                 _improvement.value = null
                 improvementFor = null
@@ -424,6 +439,12 @@ class ProgramBuilderViewModel(
         )
         generatedPlan.value = _plan.value
         if (baseline.value == null && (_plan.value != null || _improvement.value != null)) baseline.value = answersNow()
+    }
+
+    /** Try again after a refusal: the same answers, generated afresh. */
+    fun retry() {
+        lastKey = null
+        generate()
     }
 
     /** Every hand-authored template for the goal, whatever its split: picking one picks the split. */
@@ -439,6 +460,23 @@ class ProgramBuilderViewModel(
         _plan.value?.withEntryEdited(presetIndex, entryIndex, transform)?.let(::replacePlan)
     }
 
+    /** [exercise] standing in for the movement at the index: same sets, a fresh prescription for the new lift. */
+    fun swapEntry(presetIndex: Int, entryIndex: Int, exercise: Exercise) {
+        editEntry(presetIndex, entryIndex) { old -> newEntryFor(exercise, old.sets) }
+    }
+
+    /** [exercise] appended to the rite at [presetIndex]. */
+    fun addEntry(presetIndex: Int, exercise: Exercise) {
+        val plan = _plan.value ?: return
+        val rite = plan.presets.getOrNull(presetIndex) ?: return
+        val entries = rite.entries + newEntryFor(exercise, null)
+        replacePlan(plan.copy(presets = plan.presets.toMutableList().also { it[presetIndex] = rite.copy(entries = entries) }))
+    }
+
+    private fun newEntryFor(exercise: Exercise, sets: Int?): PlannedEntry = newPlannedEntry(
+        exercise, sets, tier.value, focus.value, equipment.value ?: Equipment.NOTHING, _strength.value,
+    )
+
     fun removeEntry(presetIndex: Int, entryIndex: Int) {
         _plan.value?.withEntryRemoved(presetIndex, entryIndex)?.let(::replacePlan)
     }
@@ -453,7 +491,7 @@ class ProgramBuilderViewModel(
             appContext,
             ProgramAnswers(
                 tier.value, focus.value, gear, daysPerWeek.value, priorities.value, split.value,
-                compoundOnly.value, maxExercises.value,
+                compoundOnly.value, maxExercises.value, sessionMinutes.value,
             ),
         )
     }
@@ -619,6 +657,7 @@ fun ProgramBuilderScreen(
     val priorities by viewModel.priorities.collectAsStateWithLifecycle()
     val compoundOnly by viewModel.compoundOnly.collectAsStateWithLifecycle()
     val maxExercises by viewModel.maxExercises.collectAsStateWithLifecycle()
+    val sessionMinutes by viewModel.sessionMinutes.collectAsStateWithLifecycle()
     val sessionKind by viewModel.sessionKind.collectAsStateWithLifecycle()
     val sessionDay by viewModel.sessionDay.collectAsStateWithLifecycle()
     val templateId by viewModel.selectedTemplateId.collectAsStateWithLifecycle()
@@ -654,8 +693,14 @@ fun ProgramBuilderScreen(
     // Any answer change rebuilds, and generate() itself skips a call whose inputs did not change (a rotation
     // re-runs this effect), so hand edits survive. The tier suggestion has settled by the time the
     // catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, strength, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    LaunchedEffect(mode, catalogue, presets, strength, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionMinutes, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
+    }
+
+    // Forge a cycle is the three-step form, the proposal and the day page; every other mode keeps its one page.
+    if (mode == "week") {
+        ForgeCycleScreen(viewModel, onDone)
+        return
     }
 
     // Something to lose: answers moved off the first proposal's, or its days edited.
@@ -669,7 +714,7 @@ fun ProgramBuilderScreen(
     }
     if (coverageOpen) {
         BackHandler { coverageOpen = false }
-        CoveragePreviewScreen(coveragePresets, tier, focus, priorities) { coverageOpen = false }
+        CoveragePreviewScreen(coveragePresets) { coverageOpen = false }
         return
     }
 
@@ -724,24 +769,14 @@ fun ProgramBuilderScreen(
                 )
             }
 
-            // The split is the headline choice; templates carry their own, so
-            // there it is picked by picking the template below.
-            if (mode == "week") {
-                Question("Week split") {
-                    SplitPicker(split = split, days = daysPerWeek, onPick = viewModel::setSplit)
-                    Spacer(Modifier.height(6.dp))
-                    Caption(splitCaption(split, daysPerWeek))
-                }
-            }
-
-            Question("Weekly volume") {
+            Question("Starting sets") {
                 InkSegmented(
                     options = VolumeLevel.entries.map { it to it.label },
                     selected = tier,
                     onPick = viewModel::setTier,
                 )
                 Spacer(Modifier.height(6.dp))
-                Caption(volumeCaption(tier, focus))
+                Caption(startingSetsCaption(tier))
                 Spacer(Modifier.height(4.dp))
                 Caption(volumeSuggestion(hasHistory, historyYears))
             }
@@ -758,8 +793,8 @@ fun ProgramBuilderScreen(
                 InkDivider()
                 ListRow(
                     label = "More options",
-                    value = (if (compoundOnly) "Compound · " else "") + "$maxExercises per rite",
-                    onClickLabel = "Compound only and exercises per rite",
+                    value = (if (compoundOnly) "Compound · " else "") + "$sessionMinutes min · $maxExercises per rite",
+                    onClickLabel = "Rite length, compound only and exercises per rite",
                     onClick = { moreOpen = true },
                 )
                 InkDivider()
@@ -886,15 +921,17 @@ fun ProgramBuilderScreen(
                     // other session's full movement list.
                     val others = presets.filter { it.id != (selectedPresetId ?: presetId) }
                     val volume = ProgramRules.weeklyVolume(coveragePresets)
-                    val floor = ProgramRules.weeklySetTarget(tier, focus).start
-                    BeforeAfter(current, stillShort = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor })
+                    BeforeAfter(
+                        current,
+                        stillShort = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 },
+                    )
                     Spacer(Modifier.height(10.dp))
                     if (others.isNotEmpty()) {
                         val noun = if (others.size == 1) "rite" else "rites"
                         Caption("Weekly volume includes your ${others.size} other $noun.")
                         Spacer(Modifier.height(6.dp))
                     }
-                    CoverageSummaryRow(coveragePresets, tier, focus, priorities) { coverageOpen = true }
+                    CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = { coverageOpen = true })
                 }
             } else {
                 val current = plan
@@ -912,18 +949,22 @@ fun ProgramBuilderScreen(
                         ProposedDay(
                             preset = preset,
                             editable = true,
+                            equipment = equipment,
                             folded = true,
                             onSets = { entryIndex, delta ->
                                 viewModel.editEntry(presetIndex, entryIndex) { it.withSetsDelta(delta) }
                             },
-                            onReps = { entryIndex, delta ->
-                                viewModel.editEntry(presetIndex, entryIndex) { it.withRepsDelta(delta) }
+                            onLoad = { entryIndex, delta ->
+                                viewModel.editEntry(presetIndex, entryIndex) { entry ->
+                                    val cap = equipment?.let { ProgramGenerator.dumbbellCapKg(entry.exerciseName, it) }
+                                    entry.withLoadDelta(delta, loadStepKg(Units.current), cap)
+                                }
                             },
                             onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    CoverageSummaryRow(coveragePresets, tier, focus, priorities) { coverageOpen = true }
+                    CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = { coverageOpen = true })
                     if (presets.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
                         val noun = if (presets.size == 1) "rite" else "rites"
@@ -956,7 +997,7 @@ fun ProgramBuilderScreen(
         // The action is docked, so it never scrolls away from the proposal it applies. Nothing is docked
         // while there is nothing to apply: the page already says why.
         when (mode) {
-            "week", "template" -> if (plan?.presets?.isNotEmpty() == true) {
+            "template" -> if (plan?.presets?.isNotEmpty() == true) {
                 // With nothing written yet, add and replace are the same
                 // act, and "delete your 0 rites" was a scare for nobody.
                 DockedActionBar(
@@ -1004,54 +1045,17 @@ fun ProgramBuilderScreen(
             onDismissRequest = { moreOpen = false },
             title = { Text("More options") },
             text = {
-                Column {
-                    // The same drawn toggle cell as the gear items.
-                    PickCell(
-                        label = "Compound & technique only",
-                        selected = compoundOnly,
-                        modifier = Modifier.fillMaxWidth(),
-                        description = "Compound & technique only, ${if (compoundOnly) "on" else "off"}",
-                        role = Role.Checkbox,
-                        onClick = { viewModel.compoundOnly.value = !compoundOnly },
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Caption("No curls, raises, calf, bridge or machine isolation work.")
-                    Spacer(Modifier.height(12.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            "Max exercises per rite",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = IronvellumColors.Ink,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TapPad(
-                            label = "−",
-                            description = "Fewer exercises per rite, currently $maxExercises",
-                            onClick = {
-                                viewModel.maxExercises.value =
-                                    (maxExercises - 1).coerceAtLeast(ProgramRules.MAX_EXERCISES_RANGE.first)
-                            },
-                        )
-                        Text(
-                            maxExercises.toString(),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.Ink,
-                        )
-                        TapPad(
-                            label = "+",
-                            description = "More exercises per rite, currently $maxExercises",
-                            onClick = {
-                                viewModel.maxExercises.value =
-                                    (maxExercises + 1).coerceAtMost(ProgramRules.MAX_EXERCISES_RANGE.last)
-                            },
-                        )
-                    }
-                }
+                MoreOptionsBody(
+                    tier = tier,
+                    onTier = viewModel::setTier,
+                    compoundOnly = compoundOnly,
+                    onCompound = { viewModel.compoundOnly.value = it },
+                    maxExercises = maxExercises,
+                    onMaxExercises = { viewModel.maxExercises.value = it },
+                    showTier = false,
+                    sessionMinutes = sessionMinutes,
+                    onSessionMinutes = { viewModel.sessionMinutes.value = it },
+                )
             },
             confirmButton = { IronvellumButton(label = "Done", onClick = { moreOpen = false }) },
         )
