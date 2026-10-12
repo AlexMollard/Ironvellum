@@ -217,6 +217,10 @@ class TodayFitsTest {
         assertDoesNotScroll()
         assertPlaced("veil-hero")
         assertInside("essence")
+        // The relic's name is the hero's last line; a hero too short for it once hid it under the bar.
+        val hero = placed("veil-hero").single().boundsInRoot
+        val name = placed("veil-relic-name").single().boundsInRoot
+        assertTrue("the relic's name spills out of the hero: $name vs $hero", name.bottom <= hero.bottom)
         assertInside("3 inscriptions waiting")
         saveShot("today-respite-relic-crest")
     }
