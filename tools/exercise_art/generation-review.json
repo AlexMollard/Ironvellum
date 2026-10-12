@@ -215,7 +215,7 @@
     {
       "id": "crow-pose-1.png",
       "pose": "Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.",
-      "status": "redo"
+      "status": "pending"
     }
   ],
   "reviewSource": "tools/exercise_art/review-input-batch-002.json",
@@ -290,12 +290,13 @@
   "correctionStatus": {
     "batch": 2,
     "correctedAwaitingReview": [
-      "planche-push-up-2.png"
+      "planche-push-up-2.png",
+      "crow-pose-1.png"
     ],
-    "remainingRedo": 8,
+    "remainingRedo": 7,
     "missing": [
       "tuck-back-lever-3.png"
     ],
-    "blocker": "Image service rejected back-lever correction; other edited candidates failed style/pose checks and were not substituted."
+    "blocker": "Image service rejected several back-lever, front-lever and Skin the Cat anatomy corrections. Row clearance repaired but pose/continuity remains flagged."
   }
 }

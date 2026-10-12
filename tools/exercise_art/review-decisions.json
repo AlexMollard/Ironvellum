@@ -222,11 +222,11 @@
     },
     {
       "id": "front-row-hold-3.png",
-      "sha256": "82a1db3518f5245144db4f201a6c21c2b2cda1be84583217fc8fe838e33e8534",
+      "sha256": "5c7fbbf08a1844b73a080c8bfefb7215d04c9232ad733f51e4930969d67a2198",
       "status": "redo",
-      "note": "Chest should finish closer to bar; review the top hold.",
+      "note": "Head now clears right upright. Still needs full chest-to-bar contact and continuity with frames 1 and 2; retain redo flag.",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T02:30:28.490620+00:00"
+      "updatedAt": "2026-10-12T02:58:11.006242+00:00"
     },
     {
       "id": "skin-the-cat-1.png",
@@ -240,9 +240,9 @@
       "id": "skin-the-cat-2.png",
       "sha256": "8689a37530171594f03b43a569dd5f20256caaa9c3318cddd2acf47b6bd35912",
       "status": "redo",
-      "note": "Check that the inverted transition clearly shows legs passing between the arms.",
+      "note": "User rejected replacement: head backwards and knees look wrong. Original remains flagged; latest anatomy repair blocked by image service.",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T02:30:28.490620+00:00"
+      "updatedAt": "2026-10-12T02:58:11.006242+00:00"
     },
     {
       "id": "skin-the-cat-3.png",
@@ -318,11 +318,11 @@
     },
     {
       "id": "crow-pose-1.png",
-      "sha256": "45a11146fbf80172e8a138f1ced8fd2a05e158bc65c270508bdb146528eb9405",
-      "status": "redo",
-      "note": "Small ear contour remains; compare with the blank-head reference.",
+      "sha256": "78f92b0f71dcb3fe7c01083c047ea32df9d12db21cbb1fca732ca5df005fbb40",
+      "status": "pending",
+      "note": "Replacement removes ear and uses clean transparent white contours; awaiting user review.",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T02:30:28.490620+00:00"
+      "updatedAt": "2026-10-12T02:58:11.006242+00:00"
     }
   ]
 }
