@@ -264,10 +264,11 @@ def apply_owner(mp):
         return owned
     sys.path.insert(0, str(HERE))
     import art
+    approved = set((OWNER / "APPROVED").read_text(encoding="utf-8").split()) if (OWNER / "APPROVED").exists() else set()
     for e in json.loads(MISSING.read_text(encoding="utf-8"))["entries"]:
         files = art.owner_files(OWNER, e["slug"])
-        # A set still being drawn stays out until every frame the entry asks for is there.
-        if len(files) < e.get("frameCount", 1):
+        # Only sets the owner has approved, and only once every frame the entry asks for is there.
+        if e["slug"] not in approved or len(files) < e.get("frameCount", 1):
             continue
         aid = "own_" + e["slug"]
         owned[aid] = bool(e.get("hanging"))
