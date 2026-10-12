@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 2,
-  "exportedAt": "2026-10-12T03:08:06.283Z",
+  "exportedAt": "2026-10-12T03:26:04.416Z",
   "batchComplete": false,
   "frames": [
     {
@@ -224,17 +224,17 @@
       "id": "front-row-hold-3.png",
       "sha256": "2d8cc6ef1c36c2a331e066651181b8e819c637b4d9fa87b41e7c39537afef200",
       "status": "redo",
-      "note": "Removed malformed chest loop and clothing drift. Chest-to-bar contact remains unresolved; keep redo flag.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+      "note": "All of it is completely broken startt this frame from scratch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:14.575Z"
     },
     {
       "id": "skin-the-cat-1.png",
       "sha256": "86d3aa3bf3753ed5bfbf803863db13b3603cd37c8608f7dbc91c4167eb3e56b9",
-      "status": "pending",
-      "note": "Reversed body direction while preserving grip points; awaiting review.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+      "status": "redo",
+      "note": "Make him face the same way as frame 2",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:34.079Z"
     },
     {
       "id": "skin-the-cat-2.png",
@@ -248,17 +248,17 @@
       "id": "skin-the-cat-3.png",
       "sha256": "8e627013310ccea1bc861e527859d31166cab04aed048779a0d0f5a915f9462d",
       "status": "redo",
-      "note": "Head, neck and shoulder redrawn together after user rejected reversed head; orientation still needs review.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+      "note": "Head is on backwards",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:52.470Z"
     },
     {
       "id": "tuck-back-lever-1.png",
       "sha256": "31eef67cbdf0e64b163fcdc88ec61143fc47e062535ecb308ca199a6aed51369",
       "status": "redo",
-      "note": "def not how you get into a tuck back lever",
+      "note": "Facing wrong direction to frame 2",
       "reviewer": "You",
-      "updatedAt": "2026-10-12T03:06:50.869Z"
+      "updatedAt": "2026-10-12T03:24:58.572Z"
     },
     {
       "id": "tuck-back-lever-2.png",
@@ -295,18 +295,18 @@
     {
       "id": "advanced-tuck-front-lever-1.png",
       "sha256": "0945a2e3e6af4f0c73d163dc73ce490cffb52e808321e5cf992a18d953cee5fe",
-      "status": "pending",
+      "status": "approved",
       "note": "Recreated from approved frame 3, facing left for correct start direction; awaiting review.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:25:31.562Z"
     },
     {
       "id": "advanced-tuck-front-lever-2.png",
       "sha256": "f161d1aa68d18ee011d52710186297146333e88482a7ff7f5ad52163e8d4e7f4",
-      "status": "pending",
+      "status": "approved",
       "note": "Recreated from approved frame 3 using same camera and a preceding torso angle; awaiting review.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:25:30.002Z"
     },
     {
       "id": "advanced-tuck-front-lever-3.png",
