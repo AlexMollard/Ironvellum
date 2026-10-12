@@ -147,7 +147,7 @@ object GearRequirements {
         // Cable movements the machine rule cannot see (no loadFactor entry):
         // an empty alternative list means no toggle expresses them - full gym only.
         "face pull" to emptyList(),
-    )
+    ) + ExerciseLibrary.rows.filter { it.gear.isNotEmpty() }.associate { it.name.lowercase() to it.gear }
 
     /** Movements that physically need TWO dumbbells; a single one rules them out. */
     private val pairOnly: Set<String> = setOf(
@@ -203,6 +203,10 @@ object GearRequirements {
     /** The alternative gear sets the movement needs (each set must be fully owned); empty when unlisted or nothing is needed. */
     fun needs(exerciseName: String): List<Set<Gear>> =
         requirements[exerciseName.trim().lowercase()].orEmpty().filter { it.isNotEmpty() }
+
+    /** True when every way of doing the movement uses a barbell: the live trial's plate calculator is for these. */
+    fun isBarbellLift(exerciseName: String): Boolean =
+        needs(exerciseName).let { ways -> ways.isNotEmpty() && ways.all { Gear.BARBELL in it } }
 
     /** Whether the movement has an explicit row - the silent-fallthrough guard. */
     internal fun hasEntry(name: String): Boolean = name.trim().lowercase() in requirements

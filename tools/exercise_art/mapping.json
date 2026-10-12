@@ -1,0 +1,2058 @@
+{
+ "mapped": [
+  {
+   "record": "wg:bench-press",
+   "exercise": "Bench Press",
+   "confidence": "high",
+   "art": "ek_0042",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0042"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:incline-bench-press",
+   "exercise": "Incline Bench Press",
+   "confidence": "high",
+   "art": "ek_0043",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0043"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:incline-dumbbell-press",
+   "exercise": "Incline Dumbbell Press",
+   "confidence": "high",
+   "art": "ek_0061",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0061"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dumbbell-bench-press",
+   "exercise": "Dumbbell Bench Press",
+   "confidence": "high",
+   "art": "ek_0055",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0055"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:machine-chest-press",
+   "exercise": "Machine Chest Press",
+   "confidence": "high",
+   "art": "ek_0066",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0066"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pec-deck",
+   "exercise": "Pec Deck",
+   "confidence": "high",
+   "art": "wg_pec-deck",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "pec-deck"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cable-fly",
+   "exercise": "Cable Fly",
+   "confidence": "high",
+   "art": "ek_0048",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0048"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:push-up",
+   "exercise": "Push-up",
+   "confidence": "high",
+   "art": "ek_0077",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0077"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:overhead-press",
+   "exercise": "Overhead Press",
+   "confidence": "high",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "overhead-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:seated-dumbbell-press",
+   "exercise": "Dumbbell Shoulder Press",
+   "confidence": "medium",
+   "art": "wg_seated-dumbbell-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "seated-dumbbell-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:arnold-press",
+   "exercise": "Arnold Press",
+   "confidence": "high",
+   "art": "wg_arnold-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "arnold-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:lateral-raise",
+   "exercise": "Lateral Raise",
+   "confidence": "high",
+   "art": "ek_0018",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0018"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cable-lateral-raise",
+   "exercise": "Cable Lateral Raise",
+   "confidence": "high",
+   "art": "wg_cable-lateral-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cable-lateral-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:front-raise",
+   "exercise": "Front Raise",
+   "confidence": "high",
+   "art": "ek_0033",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0033"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:rear-delt-fly",
+   "exercise": "Reverse Fly",
+   "confidence": "medium",
+   "art": "wg_rear-delt-fly",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "rear-delt-fly"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:face-pull",
+   "exercise": "Face Pull",
+   "confidence": "high",
+   "art": "wg_face-pull",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "face-pull"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:deadlift",
+   "exercise": "Deadlift",
+   "confidence": "high",
+   "art": "ek_0099",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0099"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:romanian-deadlift",
+   "exercise": "Romanian Deadlift",
+   "confidence": "high",
+   "art": "ek_0118",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0118"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:barbell-row",
+   "exercise": "Barbell Row",
+   "confidence": "high",
+   "art": "ek_0026",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0026"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:t-bar-row",
+   "exercise": "T-Bar Row",
+   "confidence": "high",
+   "art": "ek_0029",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0029"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:one-arm-dumbbell-row",
+   "exercise": "Dumbbell Row",
+   "confidence": "high",
+   "art": "wg_one-arm-dumbbell-row",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "one-arm-dumbbell-row"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:chest-supported-row",
+   "exercise": "Chest-Supported Row",
+   "confidence": "high",
+   "art": "wg_chest-supported-row",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "chest-supported-row"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:seated-row",
+   "exercise": "Seated Cable Row",
+   "confidence": "high",
+   "art": "ek_0025",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0025"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:machine-row",
+   "exercise": "Machine Row",
+   "confidence": "high",
+   "art": "wg_machine-row",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "machine-row"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:lat-pulldown",
+   "exercise": "Lat Pulldown",
+   "confidence": "high",
+   "art": "ek_0093",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0093"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pull-up",
+   "exercise": "Pull-up",
+   "confidence": "high",
+   "art": "ek_0087",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0087"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:assisted-pull-up",
+   "exercise": "Assisted Pull-up",
+   "confidence": "high",
+   "art": "wg_assisted-pull-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "assisted-pull-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:weighted-pull-up",
+   "exercise": "Weighted Pull-up",
+   "confidence": "high",
+   "art": "wg_weighted-pull-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "weighted-pull-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:chin-up",
+   "exercise": "Chin-up",
+   "confidence": "high",
+   "art": "ek_0090",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0090"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:shrug",
+   "exercise": "Barbell Shrug",
+   "confidence": "high",
+   "art": "wg_shrug",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "shrug"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:squat",
+   "exercise": "Back Squat",
+   "confidence": "high",
+   "art": "ek_0122",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0122"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:front-squat",
+   "exercise": "Front Squat",
+   "confidence": "high",
+   "art": "ek_0138",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0138"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hack-squat",
+   "exercise": "Hack Squat",
+   "confidence": "high",
+   "art": "ek_0123",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0123"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:leg-press",
+   "exercise": "Leg Press",
+   "confidence": "high",
+   "art": "ek_0127",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0127"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:bulgarian-split-squat",
+   "exercise": "Bulgarian Split Squat",
+   "confidence": "high",
+   "art": "wg_bulgarian-split-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "bulgarian-split-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:walking-lunge",
+   "exercise": "Walking Lunge",
+   "confidence": "high",
+   "art": "ek_0121",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0121"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:step-up",
+   "exercise": "Dumbbell Step-Up",
+   "confidence": "medium",
+   "art": "ek_0137",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0137"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:leg-extension",
+   "exercise": "Leg Extension",
+   "confidence": "high",
+   "art": "ek_0142",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0142"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:seated-leg-curl",
+   "exercise": "Seated Leg Curl",
+   "confidence": "high",
+   "art": "ek_0119",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0119"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hip-thrust",
+   "exercise": "Hip Thrust",
+   "confidence": "high",
+   "art": "wg_hip-thrust",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hip-thrust"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:glute-bridge",
+   "exercise": "Glute Bridge",
+   "confidence": "high",
+   "art": "ek_0109",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0109"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:good-morning",
+   "exercise": "Good Morning",
+   "confidence": "high",
+   "art": "ek_0101",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0101"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:standing-calf-raise",
+   "exercise": "Standing Calf Raise",
+   "confidence": "high",
+   "art": "ek_0282",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0282"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:seated-calf-raise",
+   "exercise": "Seated Calf Raise",
+   "confidence": "high",
+   "art": "ek_0279",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0279"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:bicep-curl",
+   "exercise": "Bicep Curl",
+   "confidence": "high",
+   "art": "ek_0224",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0224"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hammer-curl",
+   "exercise": "Hammer Curl",
+   "confidence": "high",
+   "art": "ek_0227",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0227"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:preacher-curl",
+   "exercise": "Preacher Curl",
+   "confidence": "high",
+   "art": "ek_0236",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0236"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cable-curl",
+   "exercise": "Cable Curl",
+   "confidence": "high",
+   "art": "ek_0212",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0212"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:reverse-curl",
+   "exercise": "Reverse Curl",
+   "confidence": "high",
+   "art": "wg_reverse-curl",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "reverse-curl"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:wrist-curl",
+   "exercise": "Wrist Curl",
+   "confidence": "high",
+   "art": "wg_wrist-curl",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "wrist-curl"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:tricep-pushdown",
+   "exercise": "Triceps Pushdown",
+   "confidence": "high",
+   "art": "ek_0205",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0205"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:overhead-tricep-extension",
+   "exercise": "Overhead Cable Extension",
+   "confidence": "medium",
+   "art": "wg_overhead-tricep-extension",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "overhead-tricep-extension"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:close-grip-bench-press",
+   "exercise": "Close-Grip Bench Press",
+   "confidence": "high",
+   "art": "ek_0049",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0049"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dip",
+   "exercise": "Dip",
+   "confidence": "high",
+   "art": "ek_0172",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0172"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:assisted-dip",
+   "exercise": "Assisted Dip",
+   "confidence": "high",
+   "art": "ek_0171",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0171"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:plank",
+   "exercise": "Plank",
+   "confidence": "high",
+   "art": "wg_plank",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "plank"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:side-plank",
+   "exercise": "Side Plank",
+   "confidence": "high",
+   "art": "ek_0113",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0113"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hanging-leg-raise",
+   "exercise": "Hanging Leg Raise",
+   "confidence": "high",
+   "art": "wg_hanging-leg-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hanging-leg-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:ab-wheel",
+   "exercise": "Ab Wheel Rollout",
+   "confidence": "high",
+   "art": "ek_0285",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0285"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:running",
+   "exercise": "Running",
+   "confidence": "high",
+   "art": "wg_running",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "running"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:walking",
+   "exercise": "Walking",
+   "confidence": "high",
+   "art": "wg_walking",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "walking"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cycling",
+   "exercise": "Cycling",
+   "confidence": "high",
+   "art": "wg_cycling",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cycling"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:rowing",
+   "exercise": "Rowing",
+   "confidence": "high",
+   "art": "wg_rowing",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "rowing"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:stair-climber",
+   "exercise": "Stair Climbing",
+   "confidence": "high",
+   "art": "wg_stair-climber",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "stair-climber"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dumbbell-fly",
+   "exercise": "Dumbbell Fly",
+   "confidence": "high",
+   "art": "ek_0056",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0056"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:smith-machine-bench-press",
+   "exercise": "Smith Machine Bench Press",
+   "confidence": "high",
+   "art": "ek_0078",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0078"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:weighted-dip",
+   "exercise": "Weighted Dip",
+   "confidence": "high",
+   "art": "wg_weighted-dip",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "weighted-dip"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:machine-shoulder-press",
+   "exercise": "Machine Shoulder Press",
+   "confidence": "high",
+   "art": "wg_machine-shoulder-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "machine-shoulder-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:push-press",
+   "exercise": "Push Press",
+   "confidence": "high",
+   "art": "wg_push-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "push-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pendlay-row",
+   "exercise": "Pendlay Row",
+   "confidence": "high",
+   "art": "wg_pendlay-row",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "pendlay-row"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:inverted-row",
+   "exercise": "Inverted Row",
+   "confidence": "high",
+   "art": "ek_0086",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0086"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:rack-pull",
+   "exercise": "Rack Pull",
+   "confidence": "high",
+   "art": "wg_rack-pull",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "rack-pull"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:back-extension",
+   "exercise": "Back Extension",
+   "confidence": "high",
+   "art": "ek_0103",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0103"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dumbbell-shrug",
+   "exercise": "Dumbbell Shrug",
+   "confidence": "high",
+   "art": "ek_0005",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0005"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:goblet-squat",
+   "exercise": "Goblet Squat",
+   "confidence": "high",
+   "art": "wg_goblet-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "goblet-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:smith-machine-squat",
+   "exercise": "Smith Machine Squat",
+   "confidence": "high",
+   "art": "ek_0124",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0124"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:sumo-deadlift",
+   "exercise": "Sumo Deadlift",
+   "confidence": "high",
+   "art": "wg_sumo-deadlift",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "sumo-deadlift"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:lying-leg-curl",
+   "exercise": "Lying Leg Curl",
+   "confidence": "high",
+   "art": "ek_0117",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0117"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:nordic-hamstring-curl",
+   "exercise": "Nordic Curl",
+   "confidence": "high",
+   "art": "wg_nordic-hamstring-curl",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "nordic-hamstring-curl"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:single-leg-romanian-deadlift",
+   "exercise": "Single-Leg Romanian Deadlift",
+   "confidence": "high",
+   "art": "wg_single-leg-romanian-deadlift",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "single-leg-romanian-deadlift"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:split-squat",
+   "exercise": "Split Squat",
+   "confidence": "high",
+   "art": "wg_split-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "split-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hip-abduction-machine",
+   "exercise": "Hip Abduction",
+   "confidence": "high",
+   "art": "wg_hip-abduction-machine",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hip-abduction-machine"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:single-leg-glute-bridge",
+   "exercise": "Single-Leg Glute Bridge",
+   "confidence": "high",
+   "art": "wg_single-leg-glute-bridge",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "single-leg-glute-bridge"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cable-pull-through",
+   "exercise": "Cable Pull-Through",
+   "confidence": "high",
+   "art": "wg_cable-pull-through",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cable-pull-through"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hip-adduction-machine",
+   "exercise": "Hip Adduction",
+   "confidence": "high",
+   "art": "wg_hip-adduction-machine",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hip-adduction-machine"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:bench-dip",
+   "exercise": "Bench Dip",
+   "confidence": "high",
+   "art": "ek_0162",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0162"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:tricep-kickback",
+   "exercise": "Triceps Kickback",
+   "confidence": "high",
+   "art": "ek_0204",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0204"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dead-bug",
+   "exercise": "Dead Bug",
+   "confidence": "high",
+   "art": "wg_dead-bug",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "dead-bug"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pallof-press",
+   "exercise": "Pallof Press",
+   "confidence": "high",
+   "art": "wg_pallof-press",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "pallof-press"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cable-woodchop",
+   "exercise": "Woodchop",
+   "confidence": "high",
+   "art": "wg_cable-woodchop",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cable-woodchop"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hanging-knee-raise",
+   "exercise": "Hanging Knee Raise",
+   "confidence": "high",
+   "art": "wg_hanging-knee-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hanging-knee-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:elliptical",
+   "exercise": "Elliptical",
+   "confidence": "high",
+   "art": "wg_elliptical",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "elliptical"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:swimming",
+   "exercise": "Swimming",
+   "confidence": "high",
+   "art": "wg_swimming",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "swimming"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:jump-rope",
+   "exercise": "Skipping",
+   "confidence": "high",
+   "art": "wg_jump-rope",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "jump-rope"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:assault-bike",
+   "exercise": "Assault Bike",
+   "confidence": "high",
+   "art": "wg_assault-bike",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "assault-bike"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:skierg",
+   "exercise": "Ski Erg",
+   "confidence": "high",
+   "art": "wg_skierg",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "skierg"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hiking",
+   "exercise": "Hiking",
+   "confidence": "high",
+   "art": "wg_hiking",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hiking"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:incline-push-up",
+   "exercise": "Incline Push-up",
+   "confidence": "high",
+   "art": "wg_incline-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "incline-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:diamond-push-up",
+   "exercise": "Diamond Push-up",
+   "confidence": "high",
+   "art": "wg_diamond-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "diamond-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pike-push-up",
+   "exercise": "Pike Push-up",
+   "confidence": "high",
+   "art": "wg_pike-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "pike-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:archer-push-up",
+   "exercise": "Archer Push-up",
+   "confidence": "high",
+   "art": "wg_archer-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "archer-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:scapular-push-up",
+   "exercise": "Scapular Push-up",
+   "confidence": "high",
+   "art": "wg_scapular-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "scapular-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:wall-handstand-push-up",
+   "exercise": "Wall HSPU",
+   "confidence": "medium",
+   "art": "wg_wall-handstand-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "wall-handstand-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:handstand-push-up",
+   "exercise": "Handstand Push-up",
+   "confidence": "high",
+   "art": "wg_handstand-push-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "handstand-push-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:chair-dip",
+   "exercise": "Bench Dip",
+   "confidence": "medium",
+   "art": "wg_chair-dip",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "chair-dip"
+   },
+   "used": false
+  },
+  {
+   "record": "wg:doorway-row",
+   "exercise": "Door Sheet Row",
+   "confidence": "medium",
+   "art": "wg_doorway-row",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "doorway-row"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:prone-y-raise",
+   "exercise": "Prone Y Raise",
+   "confidence": "high",
+   "art": "wg_prone-y-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "prone-y-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dead-hang",
+   "exercise": "Dead Hang",
+   "confidence": "high",
+   "art": "wg_dead-hang",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "dead-hang"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:active-hang",
+   "exercise": "Active Bar Hang",
+   "confidence": "high",
+   "art": "wg_active-hang",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "active-hang"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:scapular-pull-up",
+   "exercise": "Scapular Pull",
+   "confidence": "high",
+   "art": "wg_scapular-pull-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "scapular-pull-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:negative-pull-up",
+   "exercise": "Negative Pull-up",
+   "confidence": "high",
+   "art": "wg_negative-pull-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "negative-pull-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:l-sit-pull-up",
+   "exercise": "L-sit Pull-up",
+   "confidence": "high",
+   "art": "wg_l-sit-pull-up",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "l-sit-pull-up"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:bodyweight-squat",
+   "exercise": "Bodyweight Squat",
+   "confidence": "high",
+   "art": "wg_bodyweight-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "bodyweight-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:pistol-squat",
+   "exercise": "Pistol Squat",
+   "confidence": "high",
+   "art": "wg_pistol-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "pistol-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:assisted-pistol-squat",
+   "exercise": "Supported Pistol Squat",
+   "confidence": "medium",
+   "art": "wg_assisted-pistol-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "assisted-pistol-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:shrimp-squat",
+   "exercise": "Shrimp Squat",
+   "confidence": "high",
+   "art": "wg_shrimp-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "shrimp-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:cossack-squat",
+   "exercise": "Cossack Squat",
+   "confidence": "high",
+   "art": "wg_cossack-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "cossack-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:sissy-squat",
+   "exercise": "Sissy Squat",
+   "confidence": "high",
+   "art": "wg_sissy-squat",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "sissy-squat"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:single-leg-calf-raise",
+   "exercise": "Single-Leg Calf Raise",
+   "confidence": "high",
+   "art": "wg_single-leg-calf-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "single-leg-calf-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:side-lying-hip-abduction",
+   "exercise": "Side-Lying Hip Abduction",
+   "confidence": "high",
+   "art": "wg_side-lying-hip-abduction",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "side-lying-hip-abduction"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:hollow-body-hold",
+   "exercise": "Hollow Hold",
+   "confidence": "high",
+   "art": "wg_hollow-body-hold",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "hollow-body-hold"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:lying-leg-raise",
+   "exercise": "Lying Leg Raise",
+   "confidence": "high",
+   "art": "wg_lying-leg-raise",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "lying-leg-raise"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:l-sit-hold",
+   "exercise": "L-sit",
+   "confidence": "high",
+   "art": "wg_l-sit-hold",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "l-sit-hold"
+   },
+   "used": true
+  },
+  {
+   "record": "wg:dragon-flag",
+   "exercise": "Dragon Flag",
+   "confidence": "high",
+   "art": "wg_dragon-flag",
+   "frames": 3,
+   "source": {
+    "kind": "wg",
+    "id": "dragon-flag"
+   },
+   "used": true
+  },
+  {
+   "record": "ek:0079",
+   "exercise": "Dumbbell Pullover",
+   "confidence": "medium",
+   "art": "ek_0079",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0079"
+   },
+   "used": true
+  },
+  {
+   "record": "ek:0114",
+   "exercise": "Barbell Lunge",
+   "confidence": "high",
+   "art": "ek_0114",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0114"
+   },
+   "used": true
+  },
+  {
+   "record": "ek:0134",
+   "exercise": "Barbell Step-Up",
+   "confidence": "high",
+   "art": "ek_0134",
+   "frames": 2,
+   "source": {
+    "kind": "ek",
+    "id": "0134"
+   },
+   "used": true
+  }
+ ],
+ "techniques": {
+  "Archer Push-up": {
+   "exercise": "Archer Push-up",
+   "art": "wg_archer-push-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Australian Pull-up": {
+   "exercise": "Inverted Row",
+   "art": "ek_0086",
+   "frames": 2,
+   "confidence": "medium"
+  },
+  "Back Squat": {
+   "exercise": "Back Squat",
+   "art": "ek_0122",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Bench Dip": {
+   "exercise": "Bench Dip",
+   "art": "ek_0162",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Bench Press": {
+   "exercise": "Bench Press",
+   "art": "ek_0042",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Bodyweight Squat": {
+   "exercise": "Bodyweight Squat",
+   "art": "wg_bodyweight-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Bulgarian Split Squat": {
+   "exercise": "Bulgarian Split Squat",
+   "art": "wg_bulgarian-split-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Dead Hang": {
+   "exercise": "Dead Hang",
+   "art": "wg_dead-hang",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Deadlift": {
+   "exercise": "Deadlift",
+   "art": "ek_0099",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Diamond Push-up": {
+   "exercise": "Diamond Push-up",
+   "art": "wg_diamond-push-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Dragon Flag": {
+   "exercise": "Dragon Flag",
+   "art": "wg_dragon-flag",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Elevated Pike Push-up": {
+   "exercise": "Feet-Elevated Pike Push-up",
+   "art": "wg_feet-elevated-pike-push-up",
+   "frames": 3,
+   "confidence": "medium"
+  },
+  "Handstand Push-up": {
+   "exercise": "Handstand Push-up",
+   "art": "wg_handstand-push-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Hanging Knee Raise": {
+   "exercise": "Hanging Knee Raise",
+   "art": "wg_hanging-knee-raise",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Hanging Leg Raise": {
+   "exercise": "Hanging Leg Raise",
+   "art": "wg_hanging-leg-raise",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Hollow Hold": {
+   "exercise": "Hollow Hold",
+   "art": "wg_hollow-body-hold",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Incline Push-up": {
+   "exercise": "Incline Push-up",
+   "art": "wg_incline-push-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "L-sit": {
+   "exercise": "L-sit",
+   "art": "wg_l-sit-hold",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "L-sit Pull-up": {
+   "exercise": "L-sit Pull-up",
+   "art": "wg_l-sit-pull-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Negative Pull-up": {
+   "exercise": "Negative Pull-up",
+   "art": "wg_negative-pull-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Nordic Curl": {
+   "exercise": "Nordic Curl",
+   "art": "wg_nordic-hamstring-curl",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Overhead Press": {
+   "exercise": "Overhead Press",
+   "art": "wg_overhead-press",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Parallel Bar Dip": {
+   "exercise": "Dip",
+   "art": "ek_0172",
+   "frames": 2,
+   "confidence": "medium"
+  },
+  "Pistol Squat": {
+   "exercise": "Pistol Squat",
+   "art": "wg_pistol-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Pull-up": {
+   "exercise": "Pull-up",
+   "art": "ek_0087",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Push-up": {
+   "exercise": "Push-up",
+   "art": "ek_0077",
+   "frames": 2,
+   "confidence": "high"
+  },
+  "Scapular Pull": {
+   "exercise": "Scapular Pull",
+   "art": "wg_scapular-pull-up",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Shrimp Squat": {
+   "exercise": "Shrimp Squat",
+   "art": "wg_shrimp-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Sissy Squat": {
+   "exercise": "Sissy Squat",
+   "art": "wg_sissy-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Split Squat": {
+   "exercise": "Split Squat",
+   "art": "wg_split-squat",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Supported Pistol Squat": {
+   "exercise": "Supported Pistol Squat",
+   "art": "wg_assisted-pistol-squat",
+   "frames": 3,
+   "confidence": "medium"
+  },
+  "Wall HSPU": {
+   "exercise": "Wall HSPU",
+   "art": "wg_wall-handstand-push-up",
+   "frames": 3,
+   "confidence": "medium"
+  },
+  "Weighted Dip": {
+   "exercise": "Weighted Dip",
+   "art": "wg_weighted-dip",
+   "frames": 3,
+   "confidence": "high"
+  },
+  "Weighted Pull-up": {
+   "exercise": "Weighted Pull-up",
+   "art": "wg_weighted-pull-up",
+   "frames": 3,
+   "confidence": "high"
+  }
+ },
+ "dropped": [
+  {
+   "record": "wg:leg-curl",
+   "reason": "generic leg curl; the seated and lying machines are both listed"
+  },
+  {
+   "record": "wg:farmer-carry",
+   "reason": "a loaded carry is scored by distance and load, which this catalogue has no row type for"
+  },
+  {
+   "record": "wg:superman-hold",
+   "reason": "a hold of Superman, same drawing family"
+  },
+  {
+   "record": "wg:heel-tap",
+   "reason": "variant of Toe Touch"
+  },
+  {
+   "record": "wg:half-burpee",
+   "reason": "variant of Burpee"
+  },
+  {
+   "record": "wg:squat-thrust",
+   "reason": "variant of Burpee"
+  },
+  {
+   "record": "wg:skater-hop",
+   "reason": "variant of Lateral Shuffle"
+  },
+  {
+   "record": "wg:fast-feet",
+   "reason": "variant of High Knees"
+  },
+  {
+   "record": "wg:seal-jack",
+   "reason": "variant of Jumping Jack"
+  },
+  {
+   "record": "ek:0030",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0075",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0080",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0095",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0105",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0116",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0135",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0147",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0152",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0155",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0156",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0157",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0173",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0176",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0180",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0184",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0185",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0188",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0191",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0192",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0196",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0197",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0198",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0199",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0231",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0233",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0234",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0235",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0242",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0244",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0246",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0249",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0252",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0255",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0257",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0258",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0260",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0262",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0263",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0267",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0269",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  },
+  {
+   "record": "ek:0294",
+   "reason": "duplicate or near-duplicate of a listed movement"
+  }
+ ],
+ "noDrawing": [
+  "ek:0003",
+  "ek:0006",
+  "ek:0007",
+  "ek:0010",
+  "ek:0011",
+  "ek:0012",
+  "ek:0040",
+  "ek:0047",
+  "ek:0073",
+  "ek:0084",
+  "ek:0088",
+  "ek:0089",
+  "ek:0097",
+  "ek:0200",
+  "ek:0230",
+  "ek:0271",
+  "ek:0283",
+  "ek:0298",
+  "ek:0300",
+  "ek:0302"
+ ],
+ "existingWithoutArt": [
+  "90-Degree Push-up",
+  "Advanced Tuck Back Lever",
+  "Advanced Tuck Front Lever",
+  "Advanced Tuck Planche",
+  "Archer Pull-up",
+  "Australian Pull-up",
+  "Back Lever",
+  "Banded Iron Cross",
+  "Bodyweight Overhead Press",
+  "Bridge",
+  "Crow Pose",
+  "Crow → Handstand",
+  "Deep Squat Hold",
+  "Double-Bodyweight Bench Press",
+  "Double-Bodyweight Deadlift",
+  "Double-Bodyweight Squat",
+  "Dragon Squat",
+  "Dumbbell External Rotation",
+  "Elbow Lever",
+  "Elevated Pike Push-up",
+  "Freestanding Handstand",
+  "Frog Stand",
+  "Front Lever",
+  "Front Row Hold",
+  "Front Split",
+  "Full Planche",
+  "German Hang",
+  "Half Split",
+  "Half-Again Overhead Press",
+  "Hamstring Bridge",
+  "Handstand Walk",
+  "Handstand-to-Bridge",
+  "Heavy Bench Press",
+  "Heavy Deadlift",
+  "Heavy Overhead Press",
+  "Heavy Squat",
+  "Human Flag",
+  "Inverted Muscle-up",
+  "Iron Cross",
+  "Kip-up",
+  "Knee-to-Wall Dorsiflexion",
+  "Manna",
+  "Muscle-up",
+  "Nordic Negative",
+  "One-Arm Front Lever",
+  "One-Arm Handstand",
+  "One-Arm Hang",
+  "One-Arm Negative",
+  "One-Arm Negative Push-up",
+  "One-Arm Pull-up",
+  "One-Arm Push-up",
+  "One-Leg Back Lever",
+  "One-Leg Front Lever",
+  "One-Leg Planche",
+  "Pancake",
+  "Parallel Bar Dip",
+  "Parallel Bar Support Hold",
+  "Pause Squat",
+  "Paused Bench Press",
+  "Pike Press",
+  "Planche Lean",
+  "Planche Push-up",
+  "RTO Support Hold",
+  "Ring Dip",
+  "Ring Muscle-up",
+  "Ring Row",
+  "Ring Support Hold",
+  "Skin the Cat",
+  "Smith Machine Overhead Press",
+  "Smith Machine Row",
+  "Stand-to-Stand Bridge",
+  "Straddle Back Lever",
+  "Straddle Front Lever",
+  "Straddle L-sit",
+  "Straddle Planche",
+  "Straddle Press to Handstand",
+  "Strict Muscle-up",
+  "Tib Raise",
+  "Toes-to-Bar",
+  "Triple-Bodyweight Deadlift",
+  "Triple-Bodyweight Squat",
+  "Tuck Back Lever",
+  "Tuck Front Lever",
+  "Tuck Human Flag",
+  "Tuck L-sit",
+  "Tuck Planche",
+  "V-Sit",
+  "Volume Bench Press",
+  "Volume Deadlift",
+  "Volume Overhead Press",
+  "Wall HSPU Negative",
+  "Wall Handstand",
+  "Weighted Plank",
+  "Wrist Prep"
+ ]
+}

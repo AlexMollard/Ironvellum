@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
@@ -182,8 +183,7 @@ internal fun dayLabel(day: Int): String = DAY_LABELS[day].orEmpty()
 internal fun formatKg(kg: Double?): String =
     when {
         kg == null -> "BW"
-        kg == kg.toLong().toDouble() -> "${kg.toLong()}kg"
-        else -> "${kg}kg"
+        else -> Units.format(kg) + Units.name
     }
 
 @Composable
@@ -472,7 +472,10 @@ private fun TrialRow(
     val detail = listOfNotNull(
         trialLength(trial),
         done.size.takeIf { it > 0 }?.let { if (it == 1) "1 set" else "$it sets" },
-        volumeKg.takeIf { it > 0.0 }?.let { if (it < 1000) "${it.toInt()} kg" else "${"%.1f".format(java.util.Locale.US, it / 1000)} t" },
+        volumeKg.takeIf { it > 0.0 }?.let {
+            if (Units.current == com.ironvellum.app.domain.LoadUnit.LB) Units.volume(it)
+            else if (it < 1000) "${it.toInt()} kg" else "${"%.1f".format(java.util.Locale.US, it / 1000)} t"
+        },
     ).joinToString(" · ")
     Row(
         Modifier

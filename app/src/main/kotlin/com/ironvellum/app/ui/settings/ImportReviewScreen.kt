@@ -75,7 +75,7 @@ data class ImportReviewUi(
 )
 
 /**
- * Full-screen review surface for a parsed Strong/Hevy CSV. Lives inside
+ * Full-screen review surface for a parsed Strong/Hevy/FitNotes CSV. Lives inside
  * Settings (an overlay, not a nav route) because the parsed payload is held
  * in the SettingsViewModel — a route would need a process-wide holder to
  * survive navigation, and this review is a step of the Settings import flow.

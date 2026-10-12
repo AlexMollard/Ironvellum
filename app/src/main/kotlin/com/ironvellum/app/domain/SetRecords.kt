@@ -29,6 +29,16 @@ object SetRecords {
     )
 
     /**
+     * The position [set] is judged at: its set index less the warm-ups of its
+     * movement ahead of it in [siblings]. A ramp of warm-ups never turns working
+     * set 1 into "set 5" and compares it against a record it has nothing to do
+     * with; a trial with no warm-up keeps its set index exactly.
+     */
+    fun position(set: SessionSet, siblings: List<SessionSet>): Int =
+        (set.setIndex - siblings.count { it.exerciseId == set.exerciseId && it.warmup && it.setIndex < set.setIndex })
+            .coerceAtLeast(0)
+
+    /**
      * Keyed by normalised exercise name (lowercased, trimmed) to set index,
      * so casing differences between installs or imports cannot split a
      * record. Completed sets only: an unticked prescription is not a performance.
@@ -69,12 +79,13 @@ object SetRecords {
                     val hold = MovementDifficulty.isHoldSet(metricOf(set), set.exerciseName, set.modifiers)
                     val figure = if (hold) (set.durationSec ?: set.reps) else set.reps
                     val setScore = score(set.exerciseName, figure, set.weightKg, bodyweight, hold)
-                    val key = set.exerciseName.lowercase().trim() to set.setIndex
+                    val position = position(set, sets)
+                    val key = set.exerciseName.lowercase().trim() to position
                     val existing = best[key]
                     if (existing == null || setScore > existing.score) {
                         best[key] = Record(
                             exerciseName = set.exerciseName,
-                            setIndex = set.setIndex,
+                            setIndex = position,
                             score = setScore,
                             reps = figure,
                             weightKg = set.weightKg,

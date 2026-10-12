@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -65,7 +66,6 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumTabPill
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -593,7 +593,7 @@ private fun AllySet.countsReps(): Boolean =
  * reads as its plain kg here — the lifter's bodyweight is private.
  */
 internal fun AllySet.figure(): String {
-    val load = weightKg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" }
+    val load = weightKg?.takeIf { it > 0.0 }?.let { Units.withUnit(it) }
     val metres = distanceM?.takeIf { it > 0.0 }
     val seconds = durationSec?.takeIf { it > 0 }
     return when {

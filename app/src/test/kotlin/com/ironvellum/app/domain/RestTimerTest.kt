@@ -71,7 +71,7 @@ class RestTimerTest {
 
     @Test
     fun `a warm-up never counts as a set still waiting`() {
-        val warmup = set(2, done = false).copy(warmup = true)
+        val warmup = set(2, done = false).copy(kind = SetKind.WARMUP)
         // Set 1 is the last working set: only the warm-up is left, so nothing to rest for.
         assertFalse(RestTimer.startsRest(listOf(set(1, done = false), warmup), setId = 1, nowDone = true))
         assertTrue(RestTimer.startsRest(listOf(set(1, done = false), warmup, set(3, done = false)), setId = 1, nowDone = true))
@@ -87,6 +87,35 @@ class RestTimerTest {
         // Once the other exercise is finished, the closing set has nothing to rest for.
         val onlyOneLeft = listOf(set(1, exerciseId = 1, done = false), set(2, exerciseId = 2, done = true))
         assertFalse(RestTimer.startsRest(onlyOneLeft, setId = 1, nowDone = true))
+    }
+
+    @Test
+    fun `rest off, for everything or for the movement, starts no rest at all`() {
+        val sets = listOf(set(1, done = false), set(2, done = false))
+        fun after(off: Boolean) = RestTimer.restAfterTick(sets, 1, nowDone = true, TrainingFocus.STRENGTH, ExerciseMetric.REPS, true, restOff = off)
+        assertEquals(RestRules.Window(150, 240), after(off = false))
+        assertNull(after(off = true))
+    }
+
+    @Test
+    fun `a tick that starts no rest on its own starts none however rest is set`() {
+        val sets = listOf(set(1, done = false), set(2, done = false))
+        fun after(setId: Long, nowDone: Boolean, metric: ExerciseMetric = ExerciseMetric.REPS, list: List<SessionSet> = sets) =
+            RestTimer.restAfterTick(list, setId, nowDone, TrainingFocus.STRENGTH, metric, true, restOff = false)
+        assertNull("unticking", after(1, nowDone = false))
+        assertNull("the last set", after(2, nowDone = true, list = listOf(set(1, done = true), set(2, done = false))))
+        assertNull("an activity has no rest between sets", after(1, nowDone = true, metric = ExerciseMetric.DISTANCE_TIME))
+    }
+
+    @Test
+    fun `the time left is a function of the clock and the end only, however often it is read`() {
+        val t = RestTimer.start(sessionId = 1, seconds = 90, nowMs = 5_000)
+        // No tick state: reading it late, out of order or repeatedly gives the same answer for the same instant.
+        assertEquals(t.remainingMs(65_000), t.remainingMs(65_000))
+        assertEquals(30_000, t.remainingMs(65_000))
+        assertEquals(60_000, t.remainingMs(35_000))
+        assertEquals(30_000, t.remainingMs(65_000))
+        assertEquals(95_000, t.endsAtMs)
     }
 
     @Test

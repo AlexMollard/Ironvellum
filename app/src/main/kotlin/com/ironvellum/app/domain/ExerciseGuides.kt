@@ -35,6 +35,7 @@ object ExerciseGuides {
             core()
             progressionSteps()
             activities()
+            putAll(LibraryGuides.guides)
         }
     }
 

@@ -11,6 +11,12 @@ internal object OpenSourceNotices {
         "Muscle map body shapes and outlines derived from react-native-body-highlighter, MIT, " +
             "\u00A9 2022 ELABBASSI Hicham."
 
+    /** The exercise drawings and the instructions adapted from them (CC BY-SA 4.0). */
+    const val EXERCISE_ART_CREDIT =
+        "Exercise drawings and instructions adapted from Everkinetic (Greg Priday, github.com/everkinetic/data) and " +
+            "Workout Guide (Bryl Lim, github.com/bryllim/workout-guide), CC BY-SA 4.0. Converted to ink masks and " +
+            "recoloured; shared under the same licence."
+
     /** Where it comes from, for the full-text view. */
     const val BODY_MAP_SOURCE = "https://github.com/HichamELBSI/react-native-body-highlighter"
 

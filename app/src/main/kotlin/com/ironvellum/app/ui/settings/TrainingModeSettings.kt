@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.ui.components.SettingsCaption
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -66,5 +70,13 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
                 WarmupStore(context).enabled = it
             },
         )
+        SectionHeader("Units", topPadding = 16.dp)
+        InkSegmented(
+            options = LoadUnit.entries.map { it to it.label },
+            selected = Units.current,
+            onPick = { Units.set(context.applicationContext, it) },
+        )
+        Spacer(Modifier.height(8.dp))
+        SettingsCaption("Loads and plates. Your history keeps its exact weights; only what you see changes.")
     }
 }

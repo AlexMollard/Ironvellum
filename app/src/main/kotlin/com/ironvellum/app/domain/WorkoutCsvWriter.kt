@@ -77,7 +77,7 @@ object WorkoutCsvWriter {
                             set.durationSec?.toString() ?: "",
                             "",
                             session.note,
-                            if (set.warmup) "warmup" else "",
+                            SetKind.csvType(set.kind),
                         )
                     }
                 }

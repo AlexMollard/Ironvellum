@@ -1,5 +1,8 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -35,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -65,6 +69,8 @@ import com.ironvellum.app.ui.components.gearFacts
 import com.ironvellum.app.ui.components.muscleFacts
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -166,7 +172,7 @@ fun SkillDetailSheet(
             cleared -> "standard cleared"
             // Reps alone cannot judge a bodyweight-multiple bar.
             !SkillGuidance.judgeable(skill, bodyweightKg, female) -> "check the load yourself"
-            bestOverall >= skill.target && needKg != null -> "needs ${if (added) "+" else ""}${formatLoad(needKg)}kg"
+            bestOverall >= skill.target && needKg != null -> "needs ${if (added) "+" else ""}${formatLoad(needKg)}${Units.name}"
             else -> "${SkillGuidance.withUnit(skill.target - bestOverall, skill)} to standard"
         }
     }
@@ -183,13 +189,11 @@ fun SkillDetailSheet(
                         buildString {
                             append("from training ${SkillGuidance.withUnit(t.value, skill)}")
                             val w = t.weightKg
-                            if (w != null && w > 0.0) append(" @ ${formatLoad(w)}kg")
+                            if (w != null && w > 0.0) append(" @ ${formatLoad(w)}${Units.name}")
                         }
                     },
                 ).joinToString(" · "),
-                fill = Brush.horizontalGradient(
-                    listOf(if (cleared) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen, if (cleared) IronvellumColors.SovereignGold else IronvellumColors.Emerald),
-                ),
+                fill = if (cleared) Metal.Fabled.bounds() else emeraldRamp(),
             )
         }
     } else {
@@ -238,20 +242,22 @@ fun SkillDetailSheet(
                 // A female lifter reads her own published bar, not the male default.
                 val standard = sexBar ?: skill.standard
                 val artwork = techniqueArtwork(skill.name)
-                if (artwork != null) {
+                val animation = techniqueAnimation(skill.name)
+                if (artwork != null || animation != null) {
                     // The engraving in its plate, with the standard and the reason beside it: the art fills
                     // the width the text leaves, instead of a band of its own above the text.
                     section(null) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            TechniquePlate(
-                                artwork,
-                                when {
-                                    mastered -> ArtState.MASTERED
-                                    unlocked -> ArtState.OPEN
-                                    else -> ArtState.LOCKED
-                                },
-                                Modifier.weight(0.42f),
-                            )
+                            val plateState = when {
+                                mastered -> ArtState.MASTERED
+                                unlocked -> ArtState.OPEN
+                                else -> ArtState.LOCKED
+                            }
+                            if (artwork != null) {
+                                TechniquePlate(artwork, plateState, Modifier.weight(0.42f))
+                            } else if (animation != null) {
+                                TechniqueAnimationPlate(animation, plateState, Modifier.weight(0.42f))
+                            }
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(0.58f)) {
                                 PanelLabel("CLAIM STANDARD")
@@ -327,7 +333,7 @@ fun SkillDetailSheet(
                         recent.map { entry ->
                             formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
                                 entry.claimed -> "CLAIMED"
-                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}kg"
+                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}${Units.name}"
                                 else -> SkillGuidance.withUnit(entry.value, skill)
                             }
                         },
@@ -437,15 +443,15 @@ private fun AttemptLogger(
             // A barbell lift logs the whole bar; a weighted bodyweight move, what hangs on top.
             MiniLabel(if (barLoad) "BAR LOAD" else "ADDED LOAD")
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepGlyph("−", "Less added load") { onLoad((load - 2.5).coerceAtLeast(0.0)) }
+                StepGlyph("−", "Less added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepDown(load, Units.current, 5.0, 2.5) ?: 0.0 else (load - 2.5).coerceAtLeast(0.0)) }
                 Text(
-                    if (load <= 0.0) (if (barLoad) "0kg" else "BW") else "${formatLoad(load)}kg",
+                    if (load <= 0.0) (if (barLoad) "0${Units.name}" else "BW") else "${formatLoad(load)}${Units.name}",
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
                     color = IronvellumColors.Ink,
                 )
-                StepGlyph("+", "More added load") { onLoad(load + 2.5) }
+                StepGlyph("+", "More added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepUp(load, Units.current, 5.0, 2.5) else load + 2.5) }
             }
         }
     } else {
@@ -503,7 +509,8 @@ internal fun roundToPlate(kg: Double): Double = Math.round(kg / 2.5) * 2.5
 
 /** Plate-stepped load: whole kilograms drop the ".0"; anything else keeps its decimals. */
 internal fun formatLoad(kg: Double): String =
-    if (kg % 1.0 == 0.0) kg.toLong().toString() else formatBodyValue(kg)
+    if (Units.current == LoadUnit.LB) Units.format(kg)
+    else if (kg % 1.0 == 0.0) kg.toLong().toString() else formatBodyValue(kg)
 
 /** Preset attempts around the standard, so common values are one tap away. */
 private fun quickValues(skill: Skills.SkillDef): List<Int> {
@@ -556,7 +563,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
         Modifier
             .heightIn(min = 48.dp)
             .background(Color(0xFF151C19), shape)
-            .inkBorder(color, shape, 1.dp)
+            .inkBorder(if (met) emeraldRamp(0.7f) else SolidColor(color), shape, 1.dp)
             .clickable(role = Role.Button, onClickLabel = "Open $name") { onClick() }
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

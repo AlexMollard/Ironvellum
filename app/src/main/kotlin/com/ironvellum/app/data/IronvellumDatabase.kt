@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 38
+        const val VERSION = 39
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -569,6 +569,37 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Set kinds replace the per-set warm-up flag: Working, Warm-up, Drop, Failure and
+         * Rest-pause, stored as the enum name in `kind`. SQLite before 3.35 (minSdk 29 ships
+         * 3.28) cannot drop a column, so the table is rebuilt: every row is copied with its own
+         * id, a ticked-or-not warm-up becomes WARMUP and everything else WORKING. DDL matches
+         * [SetLogEntity] (the sessionId foreign key cascading, the sessionId index) or Room
+         * refuses to open.
+         */
+        private val MIGRATION_38_39 = object : Migration(38, 39) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `set_logs_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `exercisePosition` INTEGER NOT NULL, " +
+                        "`setIndex` INTEGER NOT NULL, `reps` INTEGER NOT NULL, `weightKg` REAL, `modifiers` TEXT NOT NULL, " +
+                        "`done` INTEGER NOT NULL, `durationSec` INTEGER, `distanceM` REAL, `grade` TEXT, " +
+                        "`kind` TEXT NOT NULL, `supersetGroup` INTEGER, " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "INSERT INTO set_logs_new (id, sessionId, exerciseId, exercisePosition, setIndex, reps, weightKg, " +
+                        "modifiers, done, durationSec, distanceM, grade, kind, supersetGroup) " +
+                        "SELECT id, sessionId, exerciseId, exercisePosition, setIndex, reps, weightKg, modifiers, done, " +
+                        "durationSec, distanceM, grade, CASE WHEN warmup = 1 THEN 'WARMUP' ELSE 'WORKING' END, supersetGroup " +
+                        "FROM set_logs",
+                )
+                db.execSQL("DROP TABLE set_logs")
+                db.execSQL("ALTER TABLE set_logs_new RENAME TO set_logs")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_set_logs_sessionId` ON `set_logs` (`sessionId`)")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -597,6 +628,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_35_36,
             MIGRATION_36_37,
             MIGRATION_37_38,
+            MIGRATION_38_39,
         )
 
         const val NAME = "ironvellum.db"

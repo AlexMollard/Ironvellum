@@ -316,7 +316,7 @@ class SettingsViewModel(
             } finally {
                 _exporting.value = false
             }
-            if (csv != null) onReady("ironvellum_${period.noun}_$today.csv", csv)
+            if (csv != null) onReady("ironvellum_${period.noun}_kg_$today.csv", csv)
         }
     }
 

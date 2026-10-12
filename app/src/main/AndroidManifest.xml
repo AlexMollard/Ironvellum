@@ -23,6 +23,9 @@
     <!-- Held only while a rest between sets counts down, with a timeout, so the
          rest-over buzz is not delayed by deep sleep with the phone locked. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- The buzz that cues the last seconds of a timed set (and the rest alert's
+         own vibration setting). A normal permission, granted at install. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- The mid-workout notification runs as a special-use foreground service:
          it mirrors the live session the lifter has open. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -64,6 +67,12 @@
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
+
+        <!-- The trial notification's Set done, Skip rest and +15 s buttons. Broadcasts
+             run from the lock screen; not exported, only our own PendingIntents. -->
+        <receiver
+            android:name=".TrialActionReceiver"
+            android:exported="false" />
 
         <!-- Live-session companion notification. specialUse because "glanceable
              workout progress" is not one of the platform's fixed FGS types;

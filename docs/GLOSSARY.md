@@ -77,9 +77,17 @@ Settings keeps the name **Settings**.
 | **The Summons** | The daily reminder notification and its setting | "THE SUMMONS · Heavy Pull", settings header THE SUMMONS | daily reminder, quest open, nudge |
 | **The Binding** | First-run setup | step titles: Who you are · How you train · Your cycle | onboarding, setup |
 | **Armoury** | The equipment an Ironbound owns | "YOUR ARMOURY", settings header ARMOURY, picker filter "MY ARMOURY" | gear, my gear, equipment |
+| **Plates** | The plate calculator: a chip on a barbell lift in the live trial that opens a sheet building the load from the bar and plates owned; and the Armoury's "Bar and plates" block | chip "Plates", sheet "Plates", "Closest below", "falls between plates", "Use 102.5 kg", "Heaviest you can load" | plate math |
+| **Units** | kg or lb, a Training mode setting. Storage is kg everywhere; it changes only what is shown and typed | "UNITS · kg lb", "225 lb × 5", "Load (lb)" | imperial, metric |
 | **The Forge** | The builder that makes rites and cycles | "Forge a Cycle", "Forge a Rite", "What my week is missing" | program builder, generate a routine |
 | **Temper** | The Forge improving an existing rite | "Temper this rite", "Before / After" | improve |
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
+| **Set type** | How one set was done: Working, Warm-up, Drop, Failure or Rest-pause. A tag on the set row, changed by tapping it. Only a warm-up is left out of XP, volume and peaks | "Set types", "Mark as warm-up", "Count as a working set", tags W · D · F · R | set kind (in copy), set mode, set flavour |
+| **Warm up** | The action on a loaded exercise's menu that adds warm-up sets before its first working set: the bar for 10 (barbell only), then about 40% for 5, 60% for 3 and 80% for 2 of the working load, rounded to the movement's load step | "Warm up", "Warm-up added · Undo" | ramp, prime, build-up |
+| **Rest timer** | The countdown between sets, to the movement's ready time (the window's max is only a soft ceiling). It can be off for every movement (Settings, DURING A TRIAL) or for one movement (its rite, or its menu in the trial). Rest *between sets* stays plain | "Rest timer", "No rest timer", "Skip rest", "+15", "Rest is over" | cooldown, rest clock |
+| **Rest alert** | How a rest's end is announced: Vibrate, Sound + vibrate or Silent. The same choice cues the last 3 seconds of a timed set | "WHEN A REST ENDS", "Vibrate", "Sound + vibrate", "Silent" | alarm mode, ringtone |
+| **Pocket lock** | A dim cover over the live trial that shows only the rest countdown or the set in hand, and ignores touches until a long hold. The trial keeps running underneath | "Lock the screen", "Hold to unlock", "Unlock the trial" (the TalkBack action) | screen lock, lock mode, kiosk |
+| **Timed set** | A hold or duration set done against a countdown on its row (Start, Pause, Finish); a distance run has a stopwatch (Start stopwatch, Stop) that fills its time. The last 3 seconds and the end cue as the rest alert allows | "Start", "Pause", "Resume", "Finish", "Start stopwatch", "Stop", "LEFT", "ELAPSED" | timer set, interval |
 | **Note** | Free text on a trial or rite | "PRIVATE NOTE", "NOTE · shared with allies", "PUBLIC NOTE" | field note, sealed note, mantra |
 
 ## Codex
@@ -137,8 +145,8 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 These stay plain under the theme. Each needs to be instantly clear, and several
 are compared outside the app.
 
-- **Measurements and science:** exercise names, set, rep, kg, rest between
-  sets, time, load, modifiers, BMI, FFMI, body fat, steps, sleep, calories,
+- **Measurements and science:** exercise names, set, rep, kg, lb, rest between
+  sets, set types (warm-up, drop, failure, rest-pause), time, load, modifiers, BMI, FFMI, body fat, steps, sleep, calories,
   RPE, deload, hypertrophy, 1-rep max, muscle names, muscle coverage. Explain
   them; never rename them.
 - **Game stats:** XP, Level (LV), STR, LEVEL UP, strength score.

@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.isStrength
@@ -135,12 +138,15 @@ internal fun TrialAmendEditor(
                     editingSetId = null
                     onChange { d -> (0 until block.sets.size).fold(d) { acc, _ -> acc.removeSet(blockIdx, 0) } }
                 },
+                onWarmup = null,
+                restOff = null,
+                onRestOff = {},
                 onEdit = { set -> update(set.id.toInt()) { set.asDraftSet() } },
                 onTypeLoad = { set -> loadFor = blockIdx to set.id.toInt() },
                 onTypeFigure = { set, kind -> typing = Triple(blockIdx, set.id.toInt(), kind) },
                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
-                // A warm-up never counts, so marking one takes the tick off.
-                onToggleWarmup = { set -> update(set.id.toInt()) { it.copy(warmup = !it.warmup, done = false) } },
+                // A warm-up never counts, so marking one takes the tick off; the other kinds keep it.
+                onSetKind = { set, kind -> update(set.id.toInt()) { it.copy(kind = kind, done = it.done && kind != SetKind.WARMUP) } },
                 onUnlog = { set ->
                     update(set.id.toInt()) { it.copy(done = false) }
                     editingSetId = null
@@ -272,7 +278,7 @@ private fun TrialDraft.DraftSet.asSessionSet(block: TrialDraft.Block, blockIdx: 
     durationSec = durationSec,
     distanceM = distanceM,
     grade = grade,
-    warmup = warmup,
+    kind = kind,
     supersetGroup = block.supersetGroup,
 )
 
@@ -284,7 +290,7 @@ private fun SessionSet.asDraftSet() = TrialDraft.DraftSet(
     distanceM = distanceM,
     grade = grade,
     done = done && !warmup,
-    warmup = warmup,
+    kind = kind,
 )
 
 /** The quiet row under an open exercise's sets that adds another. */
@@ -380,11 +386,11 @@ private fun AmendLoadDialog(
                 value = field,
                 onValueChange = { field = cleanLoadInput(it) },
                 singleLine = true,
-                label = { Text("Load (kg)") },
+                label = { Text("Load (${Units.name})") },
                 placeholder = { Text("Leave blank for bodyweight") },
                 isError = parsed.isFailure,
                 supportingText = if (parsed.isFailure) {
-                    { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
+                    { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
                 } else {
                     null
                 },

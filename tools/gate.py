@@ -23,6 +23,7 @@ import contextlib
 import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -196,6 +197,33 @@ def declared_tests(pattern: str) -> int:
     return total
 
 
+def cases(pattern: str) -> dict[tuple[str, str], bool]:
+    """Every test case in the result files, keyed by (class, name), True when it passed."""
+    found = {}
+    for path in glob.glob(os.path.join(ROOT, pattern), recursive=True):
+        try:
+            root = ET.parse(path).getroot()
+        except ET.ParseError:
+            continue
+        for case in root.iter("testcase"):
+            failed = case.find("failure") is not None or case.find("error") is not None
+            found[(case.get("classname", ""), case.get("name", ""))] = not failed
+    return found
+
+
+def declared_classes(pattern: str) -> set[str]:
+    """Fully qualified names of the source classes that declare an @Test."""
+    names = set()
+    for path in glob.glob(os.path.join(ROOT, pattern), recursive=True):
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = handle.read()
+        package = re.search(r"^package\s+([\w.]+)", text, re.M)
+        cls = re.search(r"^\s*(?:[\w]+\s+)*class\s+(\w+)", text, re.M)
+        if "@Test" in text and package and cls:
+            names.add(f"{package.group(1)}.{cls.group(1)}")
+    return names
+
+
 def short_run(ran: int, declared: int) -> str | None:
     """Why a run that reported no failures still proves nothing, or None.
 
@@ -232,7 +260,7 @@ def gradle(tasks: list[str], serial: str | None) -> int:
     env.pop("NoDefaultCurrentDirectoryInExePath", None)
     joined = " ".join(tasks)
     gradlew = os.path.join(ROOT, "gradlew.bat")
-    return run(f'cmd /c ""{gradlew}" {joined} --console=plain"', env=env, shell=True)
+    return run(f'cmd /c ""{gradlew}" {joined} --continue --console=plain"', env=env, shell=True)
 
 
 def backend() -> int:
@@ -327,6 +355,34 @@ def backend() -> int:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
+def retry_instrumented(serial: str, fl: str, flavour: str) -> list[str]:
+    """Rerun, once, the instrumented classes that failed or never ran; the classes retried.
+
+    The host emulator dies under load (system_server killed mid-suite while
+    another build compiles), which fails whichever test was running and skips
+    the rest. One rerun of just those classes on a revived emulator separates
+    that from a real failure: a class that fails twice still fails the gate,
+    and the summary names every class that needed the second go.
+    """
+    results = os.path.join(ROOT, "app/build/outputs/androidTest-results/connected/debug/flavors", flavour)
+    first = cases(f"app/build/outputs/androidTest-results/connected/debug/flavors/{flavour}/**/*.xml")
+    failed = {cls for (cls, _), ok in first.items() if not ok}
+    missing = declared_classes("app/src/androidTest/**/*.kt") - {cls for cls, _ in first}
+    retry = sorted(failed | missing)
+    # A broken build, not a broken run: nothing ran, or most of it never did.
+    if not first or not retry or len(retry) > 40:
+        return []
+    keep = os.path.join(ROOT, ".tmp", "inst-first", flavour)
+    shutil.rmtree(keep, ignore_errors=True)
+    shutil.copytree(results, keep)
+    print(f"-- retrying {len(retry)} instrumented classes once")
+    if not revive(serial):
+        return []
+    gradle([f":app:connected{fl}DebugAndroidTest",
+            f"-Pandroid.testInstrumentationRunnerArguments.class={','.join(retry)}"], serial)
+    return retry
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Ironvellum gate locally.")
     parser.add_argument("--serial", help="device to run instrumented tests on")
@@ -371,7 +427,9 @@ def main() -> int:
         if serial and not revive(serial):
             print("\nGATE RED: the device does not answer")
             return 1
-        if gradle(tasks, serial):
+        gradle_failed = gradle(tasks, serial)
+        retried = retry_instrumented(serial, fl, args.flavour) if serial and gradle_failed else []
+        if gradle_failed and not retried:
             failures.append("gradle")
 
     if args.backend:
@@ -388,6 +446,12 @@ def main() -> int:
     inst_total, inst_failed = counts(
         f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml"
     )
+    if retried:
+        merged = {**cases(f".tmp/inst-first/{args.flavour}/**/*.xml"), **cases(
+            f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml")}
+        inst_total, inst_failed = len(merged), sum(1 for ok in merged.values() if not ok)
+        if inst_failed or short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")):
+            failures.append("gradle")
     unit_short = short_run(unit_total, declared_tests("app/src/test/**/*.kt"))
     inst_short = short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")) if serial else None
     print("\n=== gate ===")
@@ -395,6 +459,8 @@ def main() -> int:
     print(f"  unit          {unit_total:>4} tests, {unit_failed} failed" + (f"  !! {unit_short}" if unit_short else ""))
     if serial:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
+        if retried:
+            print(f"  retried       {len(retried)} classes once after a failed run: {', '.join(c.rsplit('.', 1)[1] for c in retried)}")
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")

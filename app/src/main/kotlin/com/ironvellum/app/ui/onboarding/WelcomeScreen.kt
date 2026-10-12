@@ -179,7 +179,7 @@ internal fun WelcomeScreen(
             )
             InkDivider()
             ListRow(
-                "Import from Strong or Hevy",
+                "Import from Strong, Hevy or FitNotes",
                 subline = "Adds your trials from a CSV export. You still set up next.",
                 onClickLabel = "Import trials from a CSV file",
                 onClick = { csvPicker.launch(CSV_MIME_TYPES) },

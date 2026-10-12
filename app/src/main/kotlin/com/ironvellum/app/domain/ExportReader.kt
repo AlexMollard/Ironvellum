@@ -164,8 +164,9 @@ object ExportReader {
             grade = set.str("grade"),
             modifiers = set.str("modifiers") ?: "",
             done = set.bool("done") ?: false,
-            // v6, written only when set: an older archive reads as plain sets.
-            warmup = set.bool("warmup") ?: false,
+            // v6 warmup and v9 kind, each written only when set: an older archive
+            // reads as plain sets, and an unknown kind word reads as a working set.
+            kind = if (set.bool("warmup") == true) SetKind.WARMUP else SetKind.fromWire(set.str("kind")),
             supersetGroup = set.int("supersetGroup"),
         )
     }

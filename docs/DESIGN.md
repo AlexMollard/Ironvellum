@@ -128,8 +128,75 @@ quiet reference line ("Last 6 × 7.5 kg · Peak 6 × 10 kg", with the peak in
 gold), then its rows. The active row is marked with a thin emerald left bar
 and a faint tint, not an outline.
 
+**Set number and type tag.** The number at the start of a set row is also the
+set's type control: tapping it opens a small menu of the five set types
+(Working, Warm-up, Drop, Failure, Rest-pause) and "What are set types?". A warm-up
+reads "W"; Drop, Failure and Rest-pause add a 10sp letter under the number
+(D, F, R) in a muted token (`SystemGreen`, `DangerRed` at 80%, `Ink` at 85%).
+A plain working set adds none, only a faint caret on the active row. The tag is
+a label, never a reward colour, and never sheen. The cell is 24dp wide, the
+WCAG floor for a target, and the row's start padding gives the 2dp back so the two
+steppers still fit a 360dp phone.
+
+**Warm up (exercise menu).** On the open item's overflow menu, "Warm up" adds the
+ramp as Warm-up rows ahead of the first working set (`domain/WarmupRamp.kt`). It
+is offered only before anything on that exercise is logged, on a loaded rep
+movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
+bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
+
+**Lock-screen trial actions.** The trial notification is public on the lock screen
+and carries the movement, the set and its figures, never a note. Its buttons are
+broadcasts, so they run without unlocking: while a set waits, "Set done" (ticks it
+with the figures shown, starting a rest exactly as the log button does); while
+resting, "Skip rest" and "+15 s"; otherwise "Seal", which opens the app. Android
+shows three actions at most, so Seal waits until nothing else is on offer. They
+call the same code as the screen (`data/LiveTrialActions.kt`, `data/RestClock.kt`).
+
+**Pocket lock.** A lock icon in the live trial's header covers the screen with
+`Abyss` at 97%: a lock glyph, the rest countdown (56sp, `Ink` at 85%) or, between
+rests, the set in hand, and "Hold to unlock". It swallows every touch and the back
+button. A finger held for 1.2 seconds unlocks it, shown by a 3dp `Emerald` bar
+filling along the bottom edge; a tap, a swipe or a brush does nothing. Holding is
+not possible for everyone, so it also offers an "Unlock the trial" accessibility
+action and a long-click. Nothing about the trial pauses underneath it. The screen
+stays awake for the whole live trial unless Settings (DURING A TRIAL) turns that off.
+Logging a set gives a `Confirm` haptic and every stepper press a `SegmentTick`, both
+through `LocalHapticFeedback`, so the system's own haptics setting decides.
+
+**Timed set control.** Under the steppers of the active set of a hold or a duration,
+one line: the time left in ChakraPetch bold 22sp (`Ink` while it runs, `InkMuted`
+while idle or paused), a "LEFT" caption, and plain text actions (Start, then Pause and
+Finish; Resume after a pause). A countdown that reaches zero logs the set at its target;
+Finish logs the time actually held. A distance run shows "ELAPSED" and one Start
+stopwatch / Stop action: Stop fills the time and leaves the set for the lifter to tick.
+Ticks on 3, 2 and 1 and a longer cue at 0 follow the rest alert (Vibrate, Sound +
+vibrate or Silent). Its clock is `domain/SetClock.kt`, on the monotonic clock and held
+by the view model. There is no timed control in an amendment.
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
+
+**Units.** Loads are stored in kg and shown in the unit set under Training mode
+(kg or lb). Everything that prints, steps or reads a load goes through one
+helper, `Loads` (`LoadUnits.kt`), reached on screen as `Units`: lb shows to the
+nearest 0.5, typed lb converts at the exact pound (0.45359237 kg) and is kept to
+the gram, and the ± buttons walk 5 lb on compounds and 2.5 lb on small work
+(from the 5 / 2.5 / 1.25 kg progression steps; a sled's 10 kg is 10 lb), where kg
+walks its 2.5 kg plate grid. Progression advice in lb moves on the lb grid, so
+"Last 220.5 lb" is followed by 225 lb. Left in kg on purpose: the CSV export (a
+Strong-format file whose reader assumes kg), body weight and measurements, and
+the Forge's generated load notes and dumbbell limit.
+
+**Plates (`PlateSheet`).** A chip beside the open item's reference line on a barbell
+lift, opening the app's one pop-up frame. A load stepper that only lands on loads
+the plates can make, a tappable bar row (a per-exercise bar), an iron line-art
+barbell drawn in the flat diagonal Iron gradient with a faint wash in each plate
+(no sheen), "25 + 15 kg a side", and, when the load falls between plates, the
+closest build below with "Use X" / "Use Y" for the loads either side. A load is
+loadable when some choice of the pairs owned makes it exactly, heaviest plates
+tried first, so the drawing can always show what the sheet offers. The bar and the
+pairs live under Armoury, "Bar and plates", once Barbell is ticked; kg and lb each
+keep their own set (lb: a 45 lb bar, 45 / 35 / 25 / 10 / 5 / 2.5 lb plates).
 
 **Split action bar.** Docked at the bottom on `VaultHigh`. On the left, a small
 caps label ("NEXT") over what the action does ("Set 2 · 10 kg × 6", in `Ink`).

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseArtIndex
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.MovementDifficulty
@@ -444,6 +446,8 @@ internal fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
+private val PickerArtSize = 36.dp
+
 /**
  * One exercise as a list row: the whole row picks one exercise, like a menu entry, and the info
  * and star buttons sit at its right edge as 44dp targets. Rows are divided by InkDivider inside
@@ -470,6 +474,12 @@ private fun PickerRow(
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // The first pose of the drawing, still; the sheet behind the info button is where it moves. The slot is
+        // kept for movements with no drawing so every name starts on the same edge.
+        Box(Modifier.size(PickerArtSize), contentAlignment = Alignment.Center) {
+            ExerciseArtIndex.forName(exercise.name)?.let { ExerciseStill(it, Modifier.size(PickerArtSize)) }
+        }
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 exercise.name,

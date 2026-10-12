@@ -8,6 +8,7 @@ import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import org.junit.Assert.assertEquals
@@ -45,7 +46,7 @@ class TodayStateTest {
     }
 
     private fun set(position: Int, index: Int, done: Boolean, kg: Double = 60.0, reps: Int = 5, warmup: Boolean = false) =
-        SessionSet(exerciseId = position + 1L, exerciseName = "Lift $position", exercisePosition = position, setIndex = index, reps = reps, weightKg = kg, done = done, warmup = warmup)
+        SessionSet(exerciseId = position + 1L, exerciseName = "Lift $position", exercisePosition = position, setIndex = index, reps = reps, weightKg = kg, done = done, kind = if (warmup) SetKind.WARMUP else SetKind.WORKING)
 
     private val catalogue = (1L..3L).associateWith { Exercise(id = it, name = "Lift ${it - 1}", muscleGroup = MuscleGroup.entries.first(), isWeighted = true) }
 

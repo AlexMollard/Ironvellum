@@ -83,7 +83,7 @@ class WorkoutShareTest {
         durationSec = durationSec,
         distanceM = distanceM,
         grade = grade,
-        warmup = warmup,
+        kind = if (warmup) SetKind.WARMUP else SetKind.WORKING,
     )
 
     private fun card(

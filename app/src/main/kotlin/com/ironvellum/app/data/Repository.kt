@@ -65,6 +65,7 @@ import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
 import com.ironvellum.app.domain.RankUp
@@ -82,6 +83,7 @@ import com.ironvellum.app.domain.carriesFrom
 import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SealedReopen
@@ -143,6 +145,12 @@ data class SkillTrainingEvidence(
     val weightKg: Double?,
     val achievedAtMs: Long,
 )
+
+/** The stored kind; an unknown name reads as a plain working set. */
+internal fun SetLogEntity.setKind(): SetKind = SetKind.fromName(kind)
+
+/** A warm-up is the one kind that is stored unticked and never counts. */
+internal val SetLogEntity.isWarmup: Boolean get() = setKind() == SetKind.WARMUP
 
 /**
  * Which set-position record stands as a movement's evidence. [SetRecords.records]
@@ -781,6 +789,7 @@ class Repository(
             muscleGroup = exercise?.muscleGroup ?: "",
             exerciseName = name,
             lever = lever,
+            unit = Units.current,
         )
     }
 
@@ -800,7 +809,7 @@ class Repository(
         }.toMap()
     }
 
-    private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, warmup)
+    private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, isWarmup)
 
     /**
      * Called with a set's row [before] a write and the row [after] it. Any
@@ -909,7 +918,7 @@ class Repository(
                 durationSec = s.durationSec,
                 distanceM = s.distanceM,
                 grade = s.grade,
-                warmup = s.warmup,
+                kind = s.setKind(),
                 supersetGroup = s.supersetGroup,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
@@ -927,23 +936,79 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.warmup)
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup)
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
     }
 
     /**
-     * Marks a live-trial set as a warm-up, or counts it as a working set. A
-     * warm-up is stored unticked, so it drops out of everything that counts
-     * ticked sets (XP, strength, records); the writers above keep it unticked
-     * whatever a stale screen sends. Counting it again ticks it: a set called
-     * a warm-up was one the lifter had done.
+     * Changes a live-trial set's kind. A warm-up is stored unticked, so it drops
+     * out of everything that counts ticked sets (XP, strength, records); the
+     * writers above keep it unticked whatever a stale screen sends. Making a set
+     * a warm-up unticks it; counting it again ticks it, since a set called a
+     * warm-up was one the lifter had done. Moving between the counting kinds
+     * (Working, Drop, Failure, Rest-pause) leaves the tick as it is.
      */
-    suspend fun setWarmup(setId: Long, warmup: Boolean) = db.withTransaction {
+    suspend fun setKind(setId: Long, kind: SetKind) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        sessionDao.updateSet(current.copy(warmup = warmup, done = !warmup))
+        val wasWarmup = current.isWarmup
+        val done = when {
+            kind == SetKind.WARMUP -> false
+            wasWarmup -> true
+            else -> current.done
+        }
+        sessionDao.updateSet(current.copy(kind = kind.name, done = done))
+    }
+
+    /**
+     * Adds the warm-up ramp ([WarmupRamp]) before [exerciseId]'s first working set in a
+     * live trial and returns the ids it made, lightest first: empty when the movement is
+     * not loaded work, has no working load set, already has warm-ups or the trial is
+     * sealed. The movement's own sets move down to make room, so the warm-ups sit first
+     * and the working sets keep their order. Warm-ups are stored unticked, so they never
+     * earn XP; records judge a working set by its place less the warm-ups ahead of it.
+     */
+    suspend fun addWarmupRamp(sessionId: Long, exerciseId: Long): List<Long> = db.withTransaction {
+        if (isSealed(sessionId)) return@withTransaction emptyList()
+        val exercise = exerciseDao.byId(exerciseId) ?: return@withTransaction emptyList()
+        val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
+        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
+        if (rows.isEmpty() || rows.any { it.isWarmup }) return@withTransaction emptyList()
+        val first = rows.first()
+        val plan = WarmupRamp.planFor(exercise.name, exercise.muscleGroup, metric, first.weightKg)
+        if (plan.isEmpty()) return@withTransaction emptyList()
+        rows.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + plan.size)) }
+        val made = plan.mapIndexed { index, step ->
+            SetLogEntity(
+                sessionId = sessionId,
+                exerciseId = exerciseId,
+                exercisePosition = first.exercisePosition,
+                setIndex = index,
+                reps = step.reps,
+                weightKg = step.weightKg,
+                modifiers = first.modifiers,
+                done = false,
+                kind = SetKind.WARMUP.name,
+                supersetGroup = first.supersetGroup,
+            )
+        }
+        sessionDao.insertSets(made)
+    }
+
+    /**
+     * Takes [setIds] back out of a live trial (Undo for the ramp) and closes the gap in
+     * their movement's set numbers. Refused when the trial is sealed.
+     */
+    suspend fun removeSets(setIds: List<Long>) = db.withTransaction {
+        val rows = setIds.mapNotNull { sessionDao.setById(it) }
+        val first = rows.firstOrNull() ?: return@withTransaction
+        if (isSealed(first.sessionId)) return@withTransaction
+        rows.forEach { sessionDao.deleteSet(it.id) }
+        sessionDao.setsFor(first.sessionId).filter { it.exerciseId == first.exerciseId }
+            .sortedBy { it.setIndex }
+            .forEachIndexed { index, row -> if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index)) }
     }
 
     /**
@@ -962,7 +1027,7 @@ class Repository(
             reps = 0,
             durationSec = seconds.coerceAtLeast(0),
             weightKg = weightKg,
-            done = done && !current.warmup,
+            done = done && !current.isWarmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
@@ -1019,7 +1084,7 @@ class Repository(
             distanceM = distanceM?.coerceAtLeast(0.0),
             grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
             weightKg = weightKg,
-            done = done && !current.warmup,
+            done = done && !current.isWarmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
@@ -1323,6 +1388,7 @@ class Repository(
                 modifiers = s.modifiers,
                 done = s.done,
                 durationSec = s.durationSec,
+                kind = s.setKind(),
             )
         }
         val changes = RoutineUpdate.propose(entries, sets) { id ->
@@ -1419,7 +1485,7 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
-                    warmup = s.warmup,
+                    kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
                 )
             }
@@ -1508,8 +1574,8 @@ class Repository(
 
     /** The Strength Rank written out ([Rank.breakdown]); null while unranked. */
     fun observeRankBreakdown(): Flow<RankBreakdown?> =
-        combine(observeHistory(), observeStats(), observeBodyProfile(), observeSkillPractices()) { history, stats, body, practices ->
-            Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices)
+        combine(observeHistory(), observeStats(), observeBodyProfile(), observeSkillPractices(), Units.flow) { history, stats, body, practices, unit ->
+            Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices, unit)
         }
 
     private suspend fun rankNow(): String? = Rank.current(
@@ -2350,7 +2416,7 @@ class Repository(
                     durationSec = s.durationSec?.coerceAtLeast(0),
                     distanceM = s.distanceM?.coerceAtLeast(0.0),
                     grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
-                    warmup = s.warmup,
+                    kind = s.kind.name,
                     supersetGroup = block.supersetGroup,
                 )
             }
@@ -2408,7 +2474,7 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
-                    warmup = s.warmup,
+                    kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
                 )
             }
@@ -2724,7 +2790,7 @@ class Repository(
                                 durationSec = s.durationSec,
                                 distanceM = s.distanceM,
                                 grade = s.grade,
-                                warmup = s.warmup,
+                                kind = s.kind.name,
                                 supersetGroup = s.supersetGroup,
                             )
                         },
@@ -2915,7 +2981,7 @@ class Repository(
     }
 
     /**
-     * APPENDS parsed Strong/Hevy history to the lifter's log. This is the one
+     * APPENDS parsed Strong/Hevy/FitNotes history to the lifter's log. This is the one
      * import path that clears nothing: pre-existing sessions, presets, stats
      * and titles are untouched, and [importArchive] (a destructive replace) is
      * never involved.
@@ -2955,8 +3021,6 @@ class Repository(
             val mapped = workout.sets.mapNotNull { set ->
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
                 val mods = buildList {
-                    if (set.setType == "dropset") add("dropset")
-                    if (set.setType == "failure") add("failure")
                     set.rpe?.let { add("RPE ${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()}") }
                     set.notes.takeIf { it.isNotBlank() }?.let { add(it) }
                 }.joinToString(", ")
@@ -2979,7 +3043,7 @@ class Repository(
             )
             val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second })
             val setEntities = mapped.zip(placements) { (set, exerciseId, mods), (position, index) ->
-                val warmup = set.setType == "warmup"
+                val kind = SetKind.fromImport(set.setType)
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = exerciseId,
@@ -2989,11 +3053,11 @@ class Repository(
                     weightKg = set.weightKg,
                     modifiers = mods,
                     // A warm-up is kept, unticked, so nothing that counts sets counts it.
-                    done = !warmup,
+                    done = kind.countsAsWork,
                     durationSec = set.durationSec,
                     distanceM = set.distanceM,
                     grade = null,
-                    warmup = warmup,
+                    kind = kind.name,
                     supersetGroup = set.supersetGroup,
                 )
             }

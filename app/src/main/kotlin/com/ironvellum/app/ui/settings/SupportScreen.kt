@@ -102,12 +102,14 @@ fun SupportScreen(onBack: () -> Unit) {
 
         Spacer(Modifier.height(12.dp))
         SettingsCaption(
-            "Chakra Petch font, SIL Open Font License 1.1. Artwork is " +
-                "original or generated for Ironvellum, released under " +
-                "the same licence.",
+            "Chakra Petch font, SIL Open Font License 1.1. Apart from the " +
+                "exercise drawings credited below, artwork is original or " +
+                "generated for Ironvellum, released under the same licence.",
         )
         Spacer(Modifier.height(8.dp))
         SettingsCaption(OpenSourceNotices.BODY_MAP_CREDIT)
+        Spacer(Modifier.height(8.dp))
+        SettingsCaption(OpenSourceNotices.EXERCISE_ART_CREDIT)
         IronvellumButton(
             label = if (showMit) "Hide the licence text" else "Show the licence text",
             onClick = { showMit = !showMit },

@@ -1,97 +1,10 @@
 {
   "tool": "Codex built-in imagegen",
   "style_reference": "exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png",
-  "count": 119,
-  "total_bytes": 5556656,
+  "count": 85,
+  "total_bytes": 3969912,
   "format": "RGBA WebP, max edge 640 px, quality 88",
   "assets": [
-    {
-      "name": "Dead Hang",
-      "path": "Pull",
-      "resource": "skill_dead_hang",
-      "source": "exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png",
-      "prompt": null,
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "notes": "Original pilot prompt not captured in this batch; approved source retained.",
-      "width": 427,
-      "height": 640,
-      "bytes": 35232,
-      "alpha_min": 0,
-      "sha256": "f3c17612f3f638bd82a942e8ee4566830e63d280a10f547f832b53fe08d5695c"
-    },
-    {
-      "name": "Scapular Pull",
-      "path": "Pull",
-      "resource": "skill_scapular_pull",
-      "source": "exec-4ab482f6-1bdd-4677-8f40-1a15e88ea375.png",
-      "prompt": null,
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "notes": "Original pilot prompt not captured in this batch; approved source retained.",
-      "width": 427,
-      "height": 640,
-      "bytes": 39708,
-      "alpha_min": 0,
-      "sha256": "1c98ade41b856fac2fc04cb3c29f881cc4f2e8701fa760716bd936a7d5a0b4a5"
-    },
-    {
-      "name": "Australian Pull-up",
-      "path": "Pull",
-      "resource": "skill_australian_pull_up",
-      "source": "exec-0651605c-46ab-4c95-9846-74a1ae0b22ae.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Australian Pull-up.\nPose: Side three-quarter view of an inverted bodyweight row under a low horizontal bar supported at its ends. Both feet resting on floor, legs and torso form one straight diagonal line, both hands gripping bar, elbows bent with chest at the bar.\nApp's technique standard: 3 sets of 12 reps, chest touches the bar, body straight",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 54436,
-      "alpha_min": 0,
-      "sha256": "863db8b50613261368c2244471aeb2e2ef5b2bba5e981fa3e24f373cb94f52b8"
-    },
-    {
-      "name": "Negative Pull-up",
-      "path": "Pull",
-      "resource": "skill_negative_pull_up",
-      "source": "exec-53248480-9613-4471-a890-98301f302e63.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Negative Pull-up.\nPose: Three-quarter side view of controlled lowering from a high pull-up: both hands overhead grasping a horizontal bar, elbows partly bent, chin just below bar level, long legs together. One static descending phase, no arrows or extra figures.\nApp's technique standard: 5 negatives, each 5s from chin over the bar to a dead hang",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 42822,
-      "alpha_min": 0,
-      "sha256": "8e57544413c11fa44e74aa0ea74d60fb121e4cd233b0f54ef3e5903c3e26c7a5"
-    },
-    {
-      "name": "Pull-up",
-      "path": "Pull",
-      "resource": "skill_pull_up",
-      "source": "exec-61b90c29-9d14-45da-b873-f387fa0004a2.png",
-      "prompt": null,
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "notes": "Original pilot prompt not captured in this batch; approved source retained.",
-      "width": 427,
-      "height": 640,
-      "bytes": 39952,
-      "alpha_min": 0,
-      "sha256": "84eac1b93878cad707034270da625b552d8d57e25fb6cfd5eca0b384685750f8"
-    },
-    {
-      "name": "L-sit Pull-up",
-      "path": "Pull",
-      "resource": "skill_l_sit_pull_up",
-      "source": "exec-76da453e-8995-4765-9994-e9998cb2c081.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: L-sit Pull-up.\nPose: Three-quarter side view at top of a two-handed pull-up, chin above bar and elbows bent, both straight legs extended horizontally forward at hip height with pointed feet, forming clear L silhouette.\nApp's technique standard: 5 reps holding an L-sit throughout, no swing",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 46260,
-      "alpha_min": 0,
-      "sha256": "eab10fd5e6b4cb1cfc00936e543138efa6762df1b6ed2804798f870acc92f0a8"
-    },
     {
       "name": "Archer Pull-up",
       "path": "Pull",
@@ -105,20 +18,6 @@
       "bytes": 44614,
       "alpha_min": 0,
       "sha256": "008366cc1489cb28a1fd397fe21c185355de8030980f0196494f78816fbc35dc"
-    },
-    {
-      "name": "Weighted Pull-up",
-      "path": "Pull",
-      "resource": "skill_weighted_pull_up",
-      "source": "exec-c03346dd-53f9-44be-aaef-c59573d3c5ab.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Weighted Pull-up.\nPose: Top of two-hand bar pull-up, chin above bar, elbows bent; visible dipping belt with chain and a single weight plate hanging between thighs. Feet together below plate.\nApp technique standard: 5 reps with a third of your bodyweight added, chin over bar every rep\nPurpose: External load builds the absolute strength ceiling of the whole path, scaled to the body pulling it.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 46794,
-      "alpha_min": 0,
-      "sha256": "a43a6744f1ea141e973dbc4428fbc1924495c1f133f5329c55b565e3527fdd33"
     },
     {
       "name": "One-Arm Negative",
@@ -163,62 +62,6 @@
       "sha256": "a5771ee62034047c15d749aa17679f6943971e041ea9e1489d6dfe0867c455c5"
     },
     {
-      "name": "Incline Push-up",
-      "path": "Push",
-      "resource": "skill_incline_push_up",
-      "source": "exec-a7af4802-2294-46f7-be75-fc91b908bd8b.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Incline Push-up.\nPose: Side view push-up with both hands on raised bench, feet on ground, straight inclined body and elbows bent.\nApp technique standard: 3 sets of 15 reps, hands elevated, chest to hands\nPurpose: Grooves the pressing pattern at a fraction of bodyweight.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 33558,
-      "alpha_min": 0,
-      "sha256": "64d1bc809420bbd97e843c4816add4e8cd76f5ec5c81c1c930905e91993df882"
-    },
-    {
-      "name": "Push-up",
-      "path": "Push",
-      "resource": "skill_push_up",
-      "source": "exec-8c548cc1-5f79-4e91-9af9-8daf817f183a.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Push-up.\nPose: Side three-quarter push-up near bottom, palms flat on ground shoulder width, elbows bent, toes on ground, torso hips legs in one straight line.\nApp technique standard: 20 clean reps, chest to floor, hips locked in line\nPurpose: The baseline press everything above it scales from.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 640,
-      "height": 427,
-      "bytes": 43646,
-      "alpha_min": 0,
-      "sha256": "b8219851c722ee820fe8f8b52d0db42a3c220d193e0d7125b8f56fd1f45a3f55"
-    },
-    {
-      "name": "Diamond Push-up",
-      "path": "Push",
-      "resource": "skill_diamond_push_up",
-      "source": "exec-a8eeae51-2e1b-4c89-84e5-331d5893873c.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Diamond Push-up.\nPose: Front three-quarter close-enough full body low push-up, hands close together below sternum with thumbs and index fingers forming a diamond, feet on ground, elbows bent.\nApp technique standard: 15 clean reps, hands together under the sternum\nPurpose: Loads the triceps and narrows the base on the way to one-arm work.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 52694,
-      "alpha_min": 0,
-      "sha256": "9b3b11905510570943f37cdaf7c6d44e97395a9b765298c18d9f794aa0d2ac71"
-    },
-    {
-      "name": "Archer Push-up",
-      "path": "Push",
-      "resource": "skill_archer_push_up",
-      "source": "exec-2d81ae16-ca1b-4a0d-8fb6-3b7bed9af870.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Archer Push-up.\nPose: Wide-hand push-up shifted toward one hand, working elbow bent under shoulder while opposite elbow is locked completely straight sideways, legs and torso straight.\nApp technique standard: 8 reps per side, working arm bending, other arm straight\nPurpose: Puts most of your bodyweight on one arm before the full one-arm press.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 640,
-      "height": 427,
-      "bytes": 40792,
-      "alpha_min": 0,
-      "sha256": "c4ebbf868df4d53d391f44b642f09dbc0b598eab13650f533de50ec9f8758349"
-    },
-    {
       "name": "One-Arm Negative Push-up",
       "path": "Push",
       "resource": "skill_one_arm_negative_push_up",
@@ -247,20 +90,6 @@
       "sha256": "86920079db2a543cc5341e197e6448de4d8bb65ac52381929f805a052a49597b"
     },
     {
-      "name": "Bench Dip",
-      "path": "Push",
-      "resource": "skill_bench_dip",
-      "source": "exec-adf01ae9-4edf-4014-8446-3cf77b346b82.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Bench Dip.\nPose: Hands gripping front edge of bench behind hips, elbows bent while hips lower in front of bench, legs extended forward with heels on ground.\nApp technique standard: 3 sets of 15 reps, elbows to 90 degrees\nPurpose: First straight-down press that wakes the triceps and elbows up.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 49512,
-      "alpha_min": 0,
-      "sha256": "d23c210d56ab5615803bccae7233ce564debfde19bbfe5fad5c0aed6207454fb"
-    },
-    {
       "name": "Parallel Bar Support Hold",
       "path": "Push",
       "resource": "skill_parallel_bar_support_hold",
@@ -273,34 +102,6 @@
       "bytes": 57338,
       "alpha_min": 0,
       "sha256": "6956e7de915fe3c610bca11025e9e027b8b250f257eef06daa77e7e65d6ad712"
-    },
-    {
-      "name": "Parallel Bar Dip",
-      "path": "Push",
-      "resource": "skill_parallel_bar_dip",
-      "source": "exec-6783c296-c811-456f-a9cb-d7a7f0dc1e74.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Parallel Bar Dip.\nPose: At low phase of parallel-bar dip, bent elbows beside torso, hands on separate parallel rails, upper body leaning slightly forward, feet hanging.\nApp technique standard: 10 clean reps, shoulders below elbows at the bottom\nPurpose: Full-bodyweight pressing volume that builds the dip chain.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 57248,
-      "alpha_min": 0,
-      "sha256": "44d73208c40679b6beb0c695d4a914c742c9eb4aca368b8f5d3bf4f3f429c6a2"
-    },
-    {
-      "name": "Weighted Dip",
-      "path": "Push",
-      "resource": "skill_weighted_dip",
-      "source": "exec-e6428f95-e938-4649-8ae7-b0de822574f5.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Weighted Dip.\nPose: Dip on two parallel rails with bent elbows; dip belt and chain suspending weight plate between legs.\nApp technique standard: 5 reps with a third of your bodyweight added, full depth every rep\nPurpose: Overloaded pressing strength that carries into every ring and planche technique.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 60734,
-      "alpha_min": 0,
-      "sha256": "a6b7d498a6d8d5dd5e51f150db230e14b7fa15b73c796ab1b49c0400abf11d69"
     },
     {
       "name": "Wall Handstand",
@@ -346,38 +147,9 @@
       "sha256": "809cfc0d1807cf8f308f76690081ddd38a7249a0b3f57dee16130ce48998c066"
     },
     {
-      "name": "Elevated Pike Push-up",
-      "path": "Handstand",
-      "resource": "skill_elevated_pike_push_up",
-      "source": "exec-be0bd74e-6ab6-40df-b2b2-bb09066bf3a4.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Elevated Pike Push-up.\nPose: Inverted V pike push-up with both feet elevated on bench, hands on floor, hips high and elbows bent.\nApp technique standard: 8 reps, feet on a box at hip height, hips stacked over hands, head to floor\nPurpose: Raising the feet puts more of your bodyweight over the hands - the bridge from the pike to the wall.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 49314,
-      "alpha_min": 0,
-      "sha256": "99b7c905ff8df97531b65c28e30c727bce23c2c17093198cdb89fba930dad1c6"
-    },
-    {
       "name": "Wall HSPU Negative",
       "path": "Handstand",
       "resource": "skill_wall_hspu_negative",
-      "source": "exec-d32d790c-760a-455b-a562-0a2846c6b6e8.png",
-      "prompt": "Image 1 is the USER-APPROVED illustration. It is the EXACT anatomy, athlete identity, shading and style anchor, not just mood inspiration. Preserve its consistent RIGHT-facing head, chest, knees, ankles and toe orientation; calves and heels stay LEFT, and its natural neck position and wavy hair. Preserve detailed warm ivory-and-charcoal ink engraving, dark tank top/shorts, crisp transparent silhouette, no glow. Repose this SAME correctly oriented athlete only as required below. Do not introduce twisted thighs, backward knees, rotated skull or mismatched chest/leg orientation. One full-body figure, all hands/feet/equipment inside portrait canvas with margins. Genuinely transparent alpha ZERO everywhere outside subject and equipment. No halo/haze/lighting/background/shadow/text/arrows. Technique: wall_hspu_negative. WALL HANDSTAND PUSH-UP NEGATIVE halfway lowering. Preserve wall RIGHT and only toe tips contacting it. Move palms LEFT farther away from wall about 40cm to allow movement. Elbows partially bent about 120 degrees, forearms almost vertical, head slightly forward/right of palms but well ABOVE ground, shoulders lower than locked handstand. Slightly inclined straight torso and joined legs reach wall with toes only. Clear air gap for head, chest, pelvis and knees. Head, torso and legs keep EXACT approved anatomical orientation.",
-      "tool": "built-in imagegen",
-      "review": "Owner-approved in the labelled four-image approval sheet on 2026-10-05; RGBA WebP dimensions, transparency and checksum verified",
-      "width": 427,
-      "height": 640,
-      "bytes": 33668,
-      "alpha_min": 0,
-      "sha256": "81168778b4336f35c414a108063ccb2453ae4147408d319b6d8546737b600783",
-      "notes": "Regenerated 2026-10-05 to correct reversed head and limb anatomy; matched approved Dead Hang engraving style. Owner approved the shared mid-repetition wall press pose for HSPU and negative."
-    },
-    {
-      "name": "Wall HSPU",
-      "path": "Handstand",
-      "resource": "skill_wall_hspu",
       "source": "exec-d32d790c-760a-455b-a562-0a2846c6b6e8.png",
       "prompt": "Image 1 is the USER-APPROVED illustration. It is the EXACT anatomy, athlete identity, shading and style anchor, not just mood inspiration. Preserve its consistent RIGHT-facing head, chest, knees, ankles and toe orientation; calves and heels stay LEFT, and its natural neck position and wavy hair. Preserve detailed warm ivory-and-charcoal ink engraving, dark tank top/shorts, crisp transparent silhouette, no glow. Repose this SAME correctly oriented athlete only as required below. Do not introduce twisted thighs, backward knees, rotated skull or mismatched chest/leg orientation. One full-body figure, all hands/feet/equipment inside portrait canvas with margins. Genuinely transparent alpha ZERO everywhere outside subject and equipment. No halo/haze/lighting/background/shadow/text/arrows. Technique: wall_hspu_negative. WALL HANDSTAND PUSH-UP NEGATIVE halfway lowering. Preserve wall RIGHT and only toe tips contacting it. Move palms LEFT farther away from wall about 40cm to allow movement. Elbows partially bent about 120 degrees, forearms almost vertical, head slightly forward/right of palms but well ABOVE ground, shoulders lower than locked handstand. Slightly inclined straight torso and joined legs reach wall with toes only. Clear air gap for head, chest, pelvis and knees. Head, torso and legs keep EXACT approved anatomical orientation.",
       "tool": "built-in imagegen",
@@ -432,21 +204,6 @@
       "alpha_min": 0,
       "sha256": "0f454a82c9797c84dd285d5291bd657cccd9260cbd232c74c6a3429ad2d82d97",
       "notes": "Replaced backwards-knee handstand art using approved Wall Handstand engraving reference; final straddle uses a three-quarter mid-press pose."
-    },
-    {
-      "name": "Handstand Push-up",
-      "path": "Handstand",
-      "resource": "skill_handstand_push_up",
-      "source": "exec-b629bb70-bbdc-446f-a1cc-dd37c9553bc2.png",
-      "prompt": "Image 1 is the USER-APPROVED illustration. It is the EXACT anatomy, athlete identity, shading and style anchor, not just mood inspiration. Preserve its consistent RIGHT-facing head, chest, knees, ankles and toe orientation; calves and heels stay LEFT, and its natural neck position and wavy hair. Preserve detailed warm ivory-and-charcoal ink engraving, dark tank top/shorts, crisp transparent silhouette, no glow. Repose this SAME correctly oriented athlete only as required below. Do not introduce twisted thighs, backward knees, rotated skull or mismatched chest/leg orientation. One full-body figure, all hands/feet/equipment inside portrait canvas with margins. Genuinely transparent alpha ZERO everywhere outside subject and equipment. No halo/haze/lighting/background/shadow/text/arrows. Technique: wall_hspu_negative. WALL HANDSTAND PUSH-UP NEGATIVE halfway lowering. Preserve wall RIGHT and only toe tips contacting it. Move palms LEFT farther away from wall about 40cm to allow movement. Elbows partially bent about 120 degrees, forearms almost vertical, head slightly forward/right of palms but well ABOVE ground, shoulders lower than locked handstand. Slightly inclined straight torso and joined legs reach wall with toes only. Clear air gap for head, chest, pelvis and knees. Head, torso and legs keep EXACT approved anatomical orientation.\n\nUse case: precise-object-edit. Remove ONLY the vertical wall from this exact illustration. Keep the athlete completely unchanged: same natural RIGHT-facing head/torso/knee/toe anatomy, same elbow bend, same hand placement, same clothing, same ink engraving. Now it represents a freestanding handstand push-up MID-REPETITION. Do NOT mirror or reposition head, no added objects. Preserve exact crisp transparent background, no glow/halo/haze/shadow. Output only the full athlete.",
-      "tool": "built-in imagegen",
-      "review": "Owner-approved in the labelled four-image approval sheet on 2026-10-05; RGBA WebP dimensions, transparency and checksum verified",
-      "width": 427,
-      "height": 640,
-      "bytes": 25290,
-      "alpha_min": 0,
-      "sha256": "4f1045f4addfc749cfd3fa8da380308f108cd84ae8f731db6f72c762f1076b46",
-      "notes": "Regenerated 2026-10-05 to correct reversed head and limb anatomy; matched approved Dead Hang engraving style."
     },
     {
       "name": "90-Degree Push-up",
@@ -1012,104 +769,6 @@
       "notes": "Regenerated 2026-10-05 to correct reversed head and limb anatomy; matched approved Dead Hang engraving style."
     },
     {
-      "name": "Bodyweight Squat",
-      "path": "Legs",
-      "resource": "skill_bodyweight_squat",
-      "source": "exec-355af13e-f866-4892-9033-48fcfb2e7cac.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Bodyweight Squat.\nPose: Three-quarter standing squat at bottom, feet flat shoulder width, knees flexed and hips below knees, arms extended forward.\nApp technique standard: 3 sets of 25 reps, full depth, heels down\nPurpose: Baseline knee and hip mobility before any single-leg loading.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 55024,
-      "alpha_min": 0,
-      "sha256": "514cc9af529bc0657fd4265e3e35cc144d876c937380e664cd9fce5d61d13f65"
-    },
-    {
-      "name": "Split Squat",
-      "path": "Legs",
-      "resource": "skill_split_squat",
-      "source": "exec-5229d217-bf0b-4cc4-ac62-b7d3585fd164.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Split Squat.\nPose: Split stance static lunge, front foot flat and front knee bent, rear toes on ground with rear knee near floor, upright torso.\nApp technique standard: 3 sets of 12 reps per leg, rear knee to the floor\nPurpose: Staggers the stance to load one leg at a time with balance demands.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 59508,
-      "alpha_min": 0,
-      "sha256": "1fb6216455ab7e597a2de7a1c05843752d44da7840803d8c2d605d986b022f36"
-    },
-    {
-      "name": "Bulgarian Split Squat",
-      "path": "Legs",
-      "resource": "skill_bulgarian_split_squat",
-      "source": "exec-1b9cd452-50c2-4d4b-b3b0-545a47f6b1c7.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Bulgarian Split Squat.\nPose: Split squat with rear foot resting on bench, front foot flat on floor and front knee bent, upright torso.\nApp technique standard: 3 sets of 10 reps per leg, rear foot on a bench, front heel down\nPurpose: Most of the bodyweight on the front leg - the single-leg base the shrimp and the pistol build on.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 59770,
-      "alpha_min": 0,
-      "sha256": "96c7ed8bdf377f21a942a59fe2c4419d04d3c9f6e879c6a3a229114ef83de007"
-    },
-    {
-      "name": "Supported Pistol Squat",
-      "path": "Legs",
-      "resource": "skill_supported_pistol_squat",
-      "source": "exec-0ff5fe12-ac61-4655-902c-f7c0dbc1cc64.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Supported Pistol Squat.\nPose: Low single-leg pistol squat, working foot flat and knee deeply bent, other leg straight forward above floor; one hand grasping pole for support.\nApp technique standard: 8 reps per leg to full depth, one hand on a post for balance\nPurpose: The pistol's depth and line with the balance taken off, so strength is the only thing being trained.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 51346,
-      "alpha_min": 0,
-      "sha256": "2fe5ac1385e7f21fd0e6ba8108d081d23b0eb621a20c18d1a4e27ee48a56a323"
-    },
-    {
-      "name": "Sissy Squat",
-      "path": "Legs",
-      "resource": "skill_sissy_squat",
-      "source": "exec-4e05bfdd-7d7f-4efa-b171-9333378fe4d3.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Sissy Squat.\nPose: Leaning-back knee-dominant squat, heels raised, knees far forward and bent, hips extended in line with torso, arms forward for balance.\nApp technique standard: 12 reps, knees forward, torso in line with thighs\nPurpose: Loads the quads through the knee-forward range most people avoid.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 55142,
-      "alpha_min": 0,
-      "sha256": "adc4f5fb8be727e838558f1536fa1e024b25acadb9f1b0e7219eebeee0e979a2"
-    },
-    {
-      "name": "Shrimp Squat",
-      "path": "Legs",
-      "resource": "skill_shrimp_squat",
-      "source": "exec-669aa82a-46e3-4675-b6c7-feda381fde72.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Shrimp Squat.\nPose: Single-leg squat, free leg bent behind and held by hand at ankle, rear knee hovering near floor, supporting foot planted.\nApp technique standard: 8 reps per leg, rear knee kissing the floor\nPurpose: Single-leg strength plus hip-flexor and quad length.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 56488,
-      "alpha_min": 0,
-      "sha256": "780f1fe72da6fe90d6134a19470edb7f134d776c6cfa2f57cca9e42957fb5bab"
-    },
-    {
-      "name": "Pistol Squat",
-      "path": "Legs",
-      "resource": "skill_pistol_squat",
-      "source": "exec-d74c2b9a-37ca-43d8-bfd0-1cd55a06d596.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Pistol Squat.\nPose: Deep single-leg squat, supporting foot flat, free leg straight out horizontally in front, arms forward for balance.\nApp technique standard: 8 reps per leg, hamstring to calf, heel down\nPurpose: The single-leg strength standard, plus ankle mobility.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 51274,
-      "alpha_min": 0,
-      "sha256": "05fd06fe77994eeeceb24cf94d7d80a53dfbb5966d8e5f2882bfa6225cfc69a4"
-    },
-    {
       "name": "Dragon Squat",
       "path": "Legs",
       "resource": "skill_dragon_squat",
@@ -1150,34 +809,6 @@
       "bytes": 40366,
       "alpha_min": 0,
       "sha256": "c656d8716a98ac142a6830bb0670453f341262d96bc844979d93c9107c0c667e"
-    },
-    {
-      "name": "Nordic Curl",
-      "path": "Legs",
-      "resource": "skill_nordic_curl",
-      "source": "exec-1611d298-6d04-40dc-a31c-162798247ad5.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Nordic Curl.\nPose: Kneeling hamstring curl with ankles secured beneath low padded anchor, body straight from knees to head leaning forward near horizontal, arms crossed on chest.\nApp technique standard: 3 reps lowering and pulling back up under control, no hands\nPurpose: Eccentric hamstring strength; serious injury insurance.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 35240,
-      "alpha_min": 0,
-      "sha256": "23d6271c39d27135ec8df756812db26fc3e00f9de07223facb0c0c86bb371d18"
-    },
-    {
-      "name": "Back Squat",
-      "path": "Squat",
-      "resource": "skill_back_squat",
-      "source": "exec-6b1b4f6d-0b36-4f76-a072-1642a88f6dcb.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Back Squat.\nPose: Bottom of barbell back squat, bar across upper back gripped by both hands, feet planted, hips below knees, balanced modest plates both ends.\nApp technique standard: 5 reps at your bodyweight, hips below knees every rep\nPurpose: The lift every other leg technique is measured against, learned before it is loaded.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 47466,
-      "alpha_min": 0,
-      "sha256": "abc5637d5a5ae79e01131f974112c3cbc28a5ce920d27aa0001346a87d439c36"
     },
     {
       "name": "Pause Squat",
@@ -1236,20 +867,6 @@
       "sha256": "aa8225ff308c7b7499ce9a3990c5d8b5e3bc92dd691f6ede39d0071dd4e96069"
     },
     {
-      "name": "Bench Press",
-      "path": "Bench",
-      "resource": "skill_bench_press",
-      "source": "exec-d912ac94-d17d-435e-b428-7083eee32854.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Bench Press.\nPose: Supine on flat bench, feet planted on floor, barbell held over lower chest with elbows bent, evenly loaded plates, no rack obscuring pose.\nApp technique standard: 5 reps at three quarters of your bodyweight, bar touches the chest\nPurpose: The upper-body benchmark lift, owned with a full-range touch before it is loaded.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 53974,
-      "alpha_min": 0,
-      "sha256": "236c4cdd4f5f572b1552ea2669645c48a93477cba46ef13447aa5f8c80807304"
-    },
-    {
       "name": "Volume Bench Press",
       "path": "Bench",
       "resource": "skill_volume_bench_press",
@@ -1304,20 +921,6 @@
       "bytes": 57012,
       "alpha_min": 0,
       "sha256": "21d0ee8563f8ab6fa81c4a3ef9bd4c4a824373441df91c433ca9e721d83e1a0f"
-    },
-    {
-      "name": "Overhead Press",
-      "path": "Press",
-      "resource": "skill_overhead_press",
-      "source": "exec-a1e82b55-fa9d-437a-82eb-a91d2dcf3740.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Overhead Press.\nPose: Standing barbell strict overhead press at mid press, bar just above forehead, elbows below bar, legs straight and torso braced, equal plates.\nApp technique standard: 5 reps at half your bodyweight, strict, no leg drive\nPurpose: Strict overhead strength is shoulder health and pressing power in one bar.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 49362,
-      "alpha_min": 0,
-      "sha256": "12d4bebfe595cf9d28924cd36f5d8707c30b41e6c849529a57c13bb527cc8a1c"
     },
     {
       "name": "Volume Overhead Press",
@@ -1376,20 +979,6 @@
       "sha256": "537ea78ef4b5f2394b5f2d4a8cf834b3fa5992e6f504d9feda119d1272baa3ce"
     },
     {
-      "name": "Deadlift",
-      "path": "Deadlift",
-      "resource": "skill_deadlift",
-      "source": "exec-7d4c36e2-5c97-4c75-b4e3-2b617e01246e.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Deadlift.\nPose: Side three-quarter conventional barbell deadlift starting just below knees, arms straight down gripping bar, neutral straight back, hips hinged and knees partly bent.\nApp technique standard: 5 reps at your bodyweight, flat back, no straps\nPurpose: The purest full-body strength test there is, learned hinge-first before it is loaded.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 56734,
-      "alpha_min": 0,
-      "sha256": "6a2400cf7aee31423d9a304fa098e1df2a77f4fc9900a367baf086fe3ff44949"
-    },
-    {
       "name": "Volume Deadlift",
       "path": "Deadlift",
       "resource": "skill_volume_deadlift",
@@ -1446,20 +1035,6 @@
       "sha256": "f0f8703df316e1293f5b966f82fd94d3ff4977b20a9740cf03ac080f23569271"
     },
     {
-      "name": "Hollow Hold",
-      "path": "Core",
-      "resource": "skill_hollow_hold",
-      "source": "exec-b593b910-4a9c-4277-8865-3a723dce4539.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Hollow Hold.\nPose: Supine hollow body hold, lower back contacting floor, arms straight overhead near ears, straight legs hovering above floor, shoulders raised.\nApp technique standard: Hold 60s, lower back pressed flat, shoulders and feet off the floor\nPurpose: The foundational body line every lever, press and handstand passes through.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 26784,
-      "alpha_min": 0,
-      "sha256": "d761517e2c44eeeeb96bfa8dfb511cede2c4c7a406afc2d4cd017a05e15a5637"
-    },
-    {
       "name": "Tuck L-sit",
       "path": "Core",
       "resource": "skill_tuck_l_sit",
@@ -1472,20 +1047,6 @@
       "bytes": 63554,
       "alpha_min": 0,
       "sha256": "5e580ac8c9970a4dcda98d11013e5553fc3964ea70cd2ac39049c3056d28ea32"
-    },
-    {
-      "name": "L-sit",
-      "path": "Core",
-      "resource": "skill_l_sit",
-      "source": "exec-e71ff4c8-bfc3-4683-bf5a-1c4bf5c3327e.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: L-sit.\nPose: Straight-arm support on two low parallettes, torso upright and both straight legs together horizontal forward at hip height.\nApp technique standard: Hold 20s, legs straight and parallel to the floor\nPurpose: Compression strength that unlocks V-sit, manna and press work.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 56260,
-      "alpha_min": 0,
-      "sha256": "c7006fcc2ab4f490fe7d5ccfaa8503f69eabf77c01aab18b95048c27698b598e"
     },
     {
       "name": "Straddle L-sit",
@@ -1530,34 +1091,6 @@
       "sha256": "a32d9709def9d409e3845961da8e9689df7346d3d502183cd7677ecfc763b0f2"
     },
     {
-      "name": "Hanging Knee Raise",
-      "path": "Core",
-      "resource": "skill_hanging_knee_raise",
-      "source": "exec-9d68723f-c7b6-439b-b1e5-5de4bfbe47c3.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Hanging Knee Raise.\nPose: Hanging on two straight arms from overhead bar, knees bent and lifted toward chest, no elbow flexion.\nApp technique standard: 3 sets of 12 reps, knees to chest, no swing\nPurpose: First hanging core load that teaches the pelvis to curl under control.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 39542,
-      "alpha_min": 0,
-      "sha256": "d2c299deef4ac35add3a949f3bd0922c362974a91066c5afa8d66a3616f998ff"
-    },
-    {
-      "name": "Hanging Leg Raise",
-      "path": "Core",
-      "resource": "skill_hanging_leg_raise",
-      "source": "exec-cf85926f-9d12-4583-8e9e-5246b9db1432.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Hanging Leg Raise.\nPose: Hanging on two straight arms from bar, legs straight together lifted forward horizontally to hip height.\nApp technique standard: 3 sets of 10 reps, legs straight to horizontal, no swing\nPurpose: Straight-leg compression from a hang — the road to toes-to-bar.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 48038,
-      "alpha_min": 0,
-      "sha256": "506638b5d86c43bdbce9bfa85217cbd8ce435348a23bf40b660985e25cd81920"
-    },
-    {
       "name": "Toes-to-Bar",
       "path": "Core",
       "resource": "skill_toes_to_bar",
@@ -1572,20 +1105,6 @@
       "sha256": "08f7ad03f205077ea439cd2a0395e5bedddd1469ec2ce4a13f72a2043aeab165",
       "supersedes_source": "exec-a1781ad0-c97c-4fe9-a180-ef4a82716553.png",
       "edit_reference": "exec-74513df1-22a5-4e78-bacc-1b7b2349f28a.png"
-    },
-    {
-      "name": "Dragon Flag",
-      "path": "Core",
-      "resource": "skill_dragon_flag",
-      "source": "exec-6e85f1a1-afff-4938-87f7-44fbb633b0ab.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Dragon Flag.\nPose: Upper back on bench, hands gripping bench behind head, rigid straight torso and legs raised as one diagonal unit, hips entirely above bench.\nApp technique standard: 5 controlled reps, body straight throughout\nPurpose: Hardest anterior-core lever — protects your spine under everything else.",
-      "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
-      "height": 640,
-      "bytes": 33132,
-      "alpha_min": 0,
-      "sha256": "f9171db5bdecf598f34f79495cb77a4286bcff7fce8a43c46247721f91eeceb9"
     },
     {
       "name": "Deep Squat Hold",
@@ -1705,5 +1224,180 @@
       "alpha_min": 0,
       "sha256": "2b3c71df3e79d0f071b5b17ec302e1e09650c7fdb777a42f46528ff556a70a4d"
     }
-  ]
+  ],
+  "replaced_by_exercise_art": {
+    "note": "These Codex illustrations were removed; the technique now uses the animated Everkinetic / Workout Guide drawing (CC BY-SA 4.0, see docs/ART_ATTRIBUTION.md). Their entries are no longer in assets.",
+    "techniques": [
+      {
+        "name": "Archer Push-up",
+        "drawing": "wg_archer-push-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Australian Pull-up",
+        "drawing": "ek_0086",
+        "confidence": "medium"
+      },
+      {
+        "name": "Back Squat",
+        "drawing": "ek_0122",
+        "confidence": "high"
+      },
+      {
+        "name": "Bench Dip",
+        "drawing": "ek_0162",
+        "confidence": "high"
+      },
+      {
+        "name": "Bench Press",
+        "drawing": "ek_0042",
+        "confidence": "high"
+      },
+      {
+        "name": "Bodyweight Squat",
+        "drawing": "wg_bodyweight-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Bulgarian Split Squat",
+        "drawing": "wg_bulgarian-split-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Dead Hang",
+        "drawing": "wg_dead-hang",
+        "confidence": "high"
+      },
+      {
+        "name": "Deadlift",
+        "drawing": "ek_0099",
+        "confidence": "high"
+      },
+      {
+        "name": "Diamond Push-up",
+        "drawing": "wg_diamond-push-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Dragon Flag",
+        "drawing": "wg_dragon-flag",
+        "confidence": "high"
+      },
+      {
+        "name": "Elevated Pike Push-up",
+        "drawing": "wg_feet-elevated-pike-push-up",
+        "confidence": "medium"
+      },
+      {
+        "name": "Handstand Push-up",
+        "drawing": "wg_handstand-push-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Hanging Knee Raise",
+        "drawing": "wg_hanging-knee-raise",
+        "confidence": "high"
+      },
+      {
+        "name": "Hanging Leg Raise",
+        "drawing": "wg_hanging-leg-raise",
+        "confidence": "high"
+      },
+      {
+        "name": "Hollow Hold",
+        "drawing": "wg_hollow-body-hold",
+        "confidence": "high"
+      },
+      {
+        "name": "Incline Push-up",
+        "drawing": "wg_incline-push-up",
+        "confidence": "high"
+      },
+      {
+        "name": "L-sit",
+        "drawing": "wg_l-sit-hold",
+        "confidence": "high"
+      },
+      {
+        "name": "L-sit Pull-up",
+        "drawing": "wg_l-sit-pull-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Negative Pull-up",
+        "drawing": "wg_negative-pull-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Nordic Curl",
+        "drawing": "wg_nordic-hamstring-curl",
+        "confidence": "high"
+      },
+      {
+        "name": "Overhead Press",
+        "drawing": "wg_overhead-press",
+        "confidence": "high"
+      },
+      {
+        "name": "Parallel Bar Dip",
+        "drawing": "ek_0172",
+        "confidence": "medium"
+      },
+      {
+        "name": "Pistol Squat",
+        "drawing": "wg_pistol-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Pull-up",
+        "drawing": "ek_0087",
+        "confidence": "high"
+      },
+      {
+        "name": "Push-up",
+        "drawing": "ek_0077",
+        "confidence": "high"
+      },
+      {
+        "name": "Scapular Pull",
+        "drawing": "wg_scapular-pull-up",
+        "confidence": "high"
+      },
+      {
+        "name": "Shrimp Squat",
+        "drawing": "wg_shrimp-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Sissy Squat",
+        "drawing": "wg_sissy-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Split Squat",
+        "drawing": "wg_split-squat",
+        "confidence": "high"
+      },
+      {
+        "name": "Supported Pistol Squat",
+        "drawing": "wg_assisted-pistol-squat",
+        "confidence": "medium"
+      },
+      {
+        "name": "Wall HSPU",
+        "drawing": "wg_wall-handstand-push-up",
+        "confidence": "medium"
+      },
+      {
+        "name": "Weighted Dip",
+        "drawing": "wg_weighted-dip",
+        "confidence": "high"
+      },
+      {
+        "name": "Weighted Pull-up",
+        "drawing": "wg_weighted-pull-up",
+        "confidence": "high"
+      }
+    ]
+  }
 }

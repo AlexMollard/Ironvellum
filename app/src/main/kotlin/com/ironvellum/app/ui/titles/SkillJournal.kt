@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -175,7 +176,7 @@ fun SkillJournal(
                         (def?.let { " · ${it.line} · ${Skills.tierLabel(it.tier)}" } ?: ""),
                     value = when {
                         entry.claimed -> "Claimed"
-                        entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @${formatLoad(entry.weightKg)}kg"
+                        entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @${formatLoad(entry.weightKg)}${Units.name}"
                         else -> def?.let { SkillGuidance.withUnit(entry.value, it) } ?: "${entry.value}"
                     },
                     valueColor = if (entry.claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,

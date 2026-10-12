@@ -44,9 +44,9 @@ internal fun stepWhole(current: String, delta: Int, max: Int): String =
     ((DecimalInput.parseWhole(current) ?: 0) + delta).coerceIn(1, max).toString()
 
 /** One tap of a kg or km stepper: [delta] steps of [step]; at or below zero it clears (bodyweight, no target). */
-internal fun stepDecimal(current: String, delta: Int, step: Double): String {
+internal fun stepDecimal(current: String, delta: Int, step: Double, max: Double = MAX_LOAD_KG): String {
     val next = Math.round(((DecimalInput.parse(current) ?: 0.0) + delta * step) * 100) / 100.0
-    return if (next <= 0.0) "" else formatSteppedFigure(next.coerceAtMost(MAX_LOAD_KG))
+    return if (next <= 0.0) "" else formatSteppedFigure(next.coerceAtMost(max))
 }
 
 /** "60" for a whole figure, "62.5" otherwise. */
@@ -144,6 +144,7 @@ internal fun DecimalStepper(
     more: String,
     step: Double,
     error: Boolean,
+    max: Double = MAX_LOAD_KG,
     onValue: (String) -> Unit,
 ) = StepperRow(
     label = label,
@@ -155,8 +156,8 @@ internal fun DecimalStepper(
     decimal = true,
     maxDigits = 0,
     onValue = onValue,
-    onLess = { onValue(stepDecimal(value, -1, step)) },
-    onMore = { onValue(stepDecimal(value, 1, step)) },
+    onLess = { onValue(stepDecimal(value, -1, step, max)) },
+    onMore = { onValue(stepDecimal(value, 1, step, max)) },
 )
 
 /**

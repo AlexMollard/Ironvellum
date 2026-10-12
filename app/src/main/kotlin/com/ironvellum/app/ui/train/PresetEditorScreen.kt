@@ -1,5 +1,8 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +43,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.data.TrialPrefs
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -78,6 +83,7 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.WholeStepper
@@ -293,14 +299,46 @@ private const val MAX_REPS = 500
 /** How far a reorder drag travels before the row swaps with its neighbour. */
 private val DRAG_STEP = 56.dp
 
+/** A rite's stored kg target as the lifter reads it: "225 lb", or the text as typed when it is not a number yet. */
+private fun loadTarget(kgText: String): String =
+    DecimalInput.parse(kgText)?.let { Units.withUnit(it) } ?: "$kgText ${Units.name}"
+
+/**
+ * The rite editor's load target. It is stored as kg text, so in lb the stepper works on lb text kept
+ * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
+ */
+@Composable
+private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, onKgText: (String) -> Unit) {
+    val unit = Units.current
+    if (unit == LoadUnit.KG) {
+        DecimalStepper("Load", kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
+        return
+    }
+    fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
+    fun kgOf(lb: String) = Loads.parse(lb, unit, MAX_LOAD_KG).getOrNull()
+    var typed by remember { mutableStateOf(lbText(kgText)) }
+    // The stored kg is the truth; if the typed lb no longer matches it (the card reopened on another
+    // value), show the stored one. A half-typed figure ("132.") matches nothing yet and stays as typed.
+    val typedKg = kgOf(typed)
+    val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
+    val shown = if (inSync) typed else lbText(kgText)
+    DecimalStepper(
+        "Load", shown, "lb", "Lighter load", "Heavier load", gridLb, error,
+        max = Loads.toUnit(MAX_LOAD_KG, unit),
+    ) { lb ->
+        typed = lb
+        if (lb.isBlank()) onKgText("") else kgOf(lb)?.let { onKgText(formatSteppedFigure(it)) }
+    }
+}
+
 /** The folded row's second line: the targets the metric uses, "–" where one is not typed yet. */
 internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
     fun v(s: String) = s.ifBlank { "–" }
     return when (metric) {
         ExerciseMetric.REPS ->
-            "${v(entry.sets)} × ${v(entry.reps)}" + if (entry.weight.isBlank()) "" else " · ${entry.weight} kg"
+            "${v(entry.sets)} × ${v(entry.reps)}" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
         ExerciseMetric.HOLD ->
-            "${v(entry.sets)} × ${v(entry.reps)} s" + if (entry.weight.isBlank()) "" else " · ${entry.weight} kg"
+            "${v(entry.sets)} × ${v(entry.reps)} s" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
         ExerciseMetric.DURATION -> "${v(entry.sets)} × ${v(entry.reps)} min"
         ExerciseMetric.DISTANCE_TIME -> "${v(entry.sets)} × ${v(entry.weight)} km"
         ExerciseMetric.ATTEMPTS_GRADE -> "${v(entry.sets)} × ${v(entry.reps)} attempts"
@@ -414,7 +452,7 @@ fun PresetEditorScreen(
                 if (ui.name.isNotBlank() && ui.entries.isNotEmpty() && !ui.canSave()) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "Fill in the marked targets to save. Kg tops out at ${MAX_LOAD_KG.toInt()}.",
+                        "Fill in the marked targets to save. Loads top out at ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.",
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -595,6 +633,7 @@ private fun EntryItem(
 ) {
     val name = entry.exerciseName.ifBlank { "Pick exercise" }
     val bad = missingTargets(entry, metric)
+    val context = LocalContext.current
     if (!open) {
         Row(
             Modifier
@@ -648,10 +687,24 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                DecimalStepper("Load", entry.weight, "kg", "Lighter load", "Heavier load", 2.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
+        }
+        // Activities have no rest between sets, so only the lifting movements are asked.
+        if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) {
+            val prefs = remember { TrialPrefs(context) }
+            var restOff by remember(entry.exerciseName) { mutableStateOf(prefs.restOffFor(entry.exerciseName)) }
+            SettingsSwitchRow(
+                label = "No rest timer",
+                caption = "Ticking a set of ${entry.exerciseName.ifBlank { "this movement" }} starts no rest, in any rite.",
+                checked = restOff,
+                onCheckedChange = {
+                    restOff = it
+                    prefs.setRestOffFor(entry.exerciseName, it)
+                },
+            )
         }
         UnderlineField(
             label = "Modifiers",

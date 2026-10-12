@@ -27,9 +27,11 @@ data class TrialDraft(val blocks: List<Block>) {
         val distanceM: Double? = null,
         val grade: String? = null,
         val done: Boolean = true,
-        /** A warm-up: shown as one and never ticked. */
-        val warmup: Boolean = false,
-    )
+        /** A warm-up is shown as one and never ticked; the other kinds count as working sets. */
+        val kind: SetKind = SetKind.WORKING,
+    ) {
+        val warmup: Boolean get() = kind == SetKind.WARMUP
+    }
 
     val tickedCount: Int get() = blocks.sumOf { b -> b.sets.count { it.done } }
 
@@ -42,7 +44,7 @@ data class TrialDraft(val blocks: List<Block>) {
     /** A copy of the block's last set, unticked, so the lifter decides whether it counted. */
     fun addSet(block: Int): TrialDraft = replaceBlock(block) { b ->
         val template = b.sets.lastOrNull() ?: DraftSet(reps = 0)
-        b.copy(sets = b.sets + template.copy(done = false, warmup = false))
+        b.copy(sets = b.sets + template.copy(done = false, kind = SetKind.WORKING))
     }
 
     /** Removing a block's last set removes the movement. */
@@ -107,7 +109,7 @@ data class TrialDraft(val blocks: List<Block>) {
                                 distanceM = it.distanceM,
                                 grade = it.grade,
                                 done = it.done,
-                                warmup = it.warmup,
+                                kind = it.kind,
                             )
                         },
                     )
@@ -127,7 +129,7 @@ data class TrialDraft(val blocks: List<Block>) {
         }
 
         /** One set carried across a metric change: the new metric's figure is always set. */
-        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = reshapeFigures(set, to).copy(warmup = set.warmup)
+        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = reshapeFigures(set, to).copy(kind = set.kind)
 
         private fun reshapeFigures(set: DraftSet, to: ExerciseMetric): DraftSet = when (to) {
             ExerciseMetric.HOLD -> DraftSet(

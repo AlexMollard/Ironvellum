@@ -146,6 +146,8 @@ object Progression {
         lever: Lever = Lever.LOAD,
         /** Consecutive trials cleared, the latest included: rotates the cue of a movement with several levers. */
         clearedRun: Int = 0,
+        /** The unit the advice is worded in; lb moves loads on the lb grid, so "225 lb" follows "220.5 lb". */
+        unit: LoadUnit = LoadUnit.KG,
     ): Recommendation {
         val band = repBand(mode, targetReps)
         val weight = lastWeightKg
@@ -161,12 +163,12 @@ object Progression {
             // Grinding a load you have already failed three times is how people
             // stay stuck: back it off and climb again.
             if (stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight > 0.0) {
-                val backedOff = roundToStep(weight * (1 - DELOAD_FRACTION), step)
+                val backedOff = roundToStep(weight * (1 - DELOAD_FRACTION), step, unit)
                 val rebuild = if (hold) "rebuild the $targetReps s hold" else "rebuild from ${band.first} reps"
                 return Recommendation(
                     backedOff,
                     if (hold) targetReps else band.first,
-                    "Stalled ${stalls + 1} trials — deload to $backedOff kg, $rebuild",
+                    "Stalled ${stalls + 1} trials — deload to ${Loads.withUnit(backedOff, unit)}, $rebuild",
                     deload = true,
                     changed = true,
                 )
@@ -214,7 +216,7 @@ object Progression {
             if (lever == Lever.REPS_THEN_LOAD && lastReps >= BODYWEIGHT_REP_CEILING) {
                 return Recommendation(
                     weight, lastReps,
-                    "Reps are high enough — add ${kgLabel(WEIGHT_STEP_KG)} kg or take a harder variation",
+                    "Reps are high enough — add ${Loads.withUnit(firstStepKg(unit), unit)} or take a harder variation",
                     changed = true,
                 )
             }
@@ -222,15 +224,15 @@ object Progression {
             val nextReps = if (lever == Lever.REPS_THEN_LOAD) climbed.coerceAtMost(BODYWEIGHT_REP_CEILING) else climbed
             return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", changed = true)
         }
-        val loaded = nextLoad(weight, step)
-        val addedLabel = kgLabel(loaded - weight)
+        val loaded = nextLoad(weight, step, unit)
+        val addedLabel = Loads.withUnit(loaded - weight, unit)
         return when (mode) {
             TrainingMode.STRENGTH -> {
                 val nextReps = band.first
                 Recommendation(
                     loaded,
                     nextReps,
-                    "Target cleared — add $addedLabel kg, drop to $nextReps reps",
+                    "Target cleared — add $addedLabel, drop to $nextReps reps",
                     changed = true,
                 )
             }
@@ -239,7 +241,7 @@ object Progression {
                     Recommendation(
                         loaded,
                         targetReps,
-                        "Rep ceiling reached — add $addedLabel kg, back to $targetReps reps",
+                        "Rep ceiling reached — add $addedLabel, back to $targetReps reps",
                         changed = true,
                     )
                 } else {
@@ -255,21 +257,26 @@ object Progression {
      * when it is finer). 16 kg + 2.5 kg is 18.5 kg, which no rack holds; this
      * gives 17.5 kg. Always at least one grid point above the current load.
      */
-    private fun nextLoad(weightKg: Double, step: Double): Double {
+    private fun nextLoad(weightKg: Double, step: Double, unit: LoadUnit = LoadUnit.KG): Double {
+        if (unit == LoadUnit.LB) return Loads.stepUp(weightKg, unit, Loads.lbGrid(step), WEIGHT_STEP_KG)
         val grid = minOf(step, WEIGHT_STEP_KG)
         val snapped = Math.floor((weightKg + step) / grid + 1e-9) * grid
         val oneUp = (Math.floor(weightKg / grid + 1e-9) + 1) * grid
         return maxOf(snapped, oneUp)
     }
 
-    private fun kgLabel(kg: Double): String {
-        val rounded = Math.round(kg * 100) / 100.0
-        return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
-    }
+    /** The smallest bar jump the first loaded step of a bodyweight movement is quoted as, in kg. */
+    private fun firstStepKg(unit: LoadUnit): Double =
+        if (unit == LoadUnit.LB) Loads.toKg(Loads.lbGrid(WEIGHT_STEP_KG), unit) else WEIGHT_STEP_KG
 
     /** Keeps deloaded loads on the bar's real increments. */
-    private fun roundToStep(weightKg: Double, step: Double): Double =
-        (Math.round(weightKg / step) * step).coerceAtLeast(step)
+    private fun roundToStep(weightKg: Double, step: Double, unit: LoadUnit = LoadUnit.KG): Double {
+        if (unit == LoadUnit.LB) {
+            val grid = Loads.lbGrid(step)
+            return Loads.toKg((Math.round(Loads.snap(weightKg, unit) / grid) * grid).coerceAtLeast(grid), unit)
+        }
+        return (Math.round(weightKg / step) * step).coerceAtLeast(step)
+    }
 
     /**
      * Recommendation from logged history, newest session first. Earlier
@@ -283,6 +290,7 @@ object Progression {
         muscleGroup: String = "",
         exerciseName: String = "",
         lever: Lever = Lever.LOAD,
+        unit: LoadUnit = LoadUnit.KG,
     ): Recommendation {
         val latest = sessions.firstOrNull().orEmpty()
         val last = latest.lastOrNull()
@@ -311,6 +319,7 @@ object Progression {
             stalls = stalls,
             lever = lever,
             clearedRun = clearedRun,
+            unit = unit,
         )
     }
 
@@ -323,5 +332,6 @@ object Progression {
         muscleGroup: String = "",
         exerciseName: String = "",
         lever: Lever = Lever.LOAD,
-    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever)
+        unit: LoadUnit = LoadUnit.KG,
+    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever, unit)
 }

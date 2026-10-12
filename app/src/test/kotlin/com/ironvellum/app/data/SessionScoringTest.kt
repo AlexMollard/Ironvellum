@@ -6,10 +6,12 @@ import com.ironvellum.app.domain.ActivityScore
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.isStrength
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -136,9 +138,33 @@ class SessionScoringTest {
         // The exclusion is the stored shape, not a filter: a warm-up never carries done = true
         // (the live screen's writers and the amend editor both keep it unticked), so the
         // ticked-sets rule above leaves it out. A heavy one must change nothing.
-        val warmup = set(1, 3, 12, 140.0, done = false).copy(warmup = true)
+        val warmup = set(1, 3, 12, 140.0, done = false).copy(kind = "WARMUP")
         assertEquals(scoring.xp(fixture, 80.0), scoring.xp(fixture + warmup, 80.0))
         assertEquals(scoring.strength(fixture, 80.0, Sex.MALE), scoring.strength(fixture + warmup, 80.0, Sex.MALE))
+    }
+
+    @Test
+    fun `drop failure and rest-pause sets count as working sets and only a warm-up is left out`() {
+        val scoring = SessionScoring(catalogue)
+        val plain = listOf(set(1, 0, 8, 80.0))
+        val base = scoring.xp(plain, 80.0)
+        listOf("DROP", "FAILURE", "REST_PAUSE").forEach { kind ->
+            val withKind = plain + set(1, 1, 8, 80.0).copy(kind = kind)
+            val asWorking = plain + set(1, 1, 8, 80.0)
+            assertEquals(kind, scoring.xp(asWorking, 80.0), scoring.xp(withKind, 80.0))
+            assertEquals(kind, scoring.strength(asWorking, 80.0, Sex.MALE), scoring.strength(withKind, 80.0, Sex.MALE))
+            assertTrue("$kind earns XP", scoring.xp(withKind, 80.0) > base)
+        }
+        // Even a warm-up a stale write ticked pays nothing.
+        val tickedWarmup = plain + set(1, 1, 8, 80.0).copy(kind = "WARMUP", done = true)
+        assertEquals(base, scoring.xp(tickedWarmup, 80.0))
+        assertEquals(scoring.strength(plain, 80.0, Sex.MALE), scoring.strength(tickedWarmup, 80.0, Sex.MALE))
+    }
+
+    @Test
+    fun `an unknown stored kind reads as working and the entity default is working`() {
+        assertEquals(SetKind.WORKING.name, set(1, 0, 5).kind)
+        assertEquals(SetKind.WORKING, set(1, 0, 5).copy(kind = "NOPE").setKind())
     }
 
     private companion object {

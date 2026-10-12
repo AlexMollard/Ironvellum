@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
@@ -87,11 +88,8 @@ fun dayLabel(scheduledDay: Int?): String =
 
 private fun entryScheme(entry: PlannedEntry): String = buildString {
     append("${entry.sets}\u00D7${entry.reps}")
-    entry.targetWeightKg?.let { append(" @ ${formatKg(it)} kg") }
+    entry.targetWeightKg?.let { append(" @ ${Units.withUnit(it)}") }
 }
-
-private fun formatKg(kg: Double): String =
-    if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 /**
  * One proposed training day: a header line (the weekday, the rite, how many exercises), then one

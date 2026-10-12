@@ -1,5 +1,6 @@
 package com.ironvellum.app
 
+import com.ironvellum.app.data.Units
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.RestClock
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.workingNumber
@@ -215,6 +217,13 @@ class WorkoutSessionService : Service() {
         )
     }
 
+    /** A button that does something without opening the app. Identity ignores extras, so each action has its own code. */
+    private fun broadcast(action: String, sessionId: Long, setId: Long, requestCode: Int): PendingIntent =
+        PendingIntent.getBroadcast(
+            this, requestCode, TrialActionReceiver.intent(this, action, sessionId, setId),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
     /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
     private fun nextLine(next: SessionSet?, sets: List<SessionSet>): String? = next?.let {
         buildString {
@@ -254,6 +263,9 @@ class WorkoutSessionService : Service() {
             .setContentText(body)
             .setSubText("TRIAL · $done / $total $setWord")
             .setProgress(total.coerceAtLeast(1), done, total == 0)
+            // Public on the lock screen, so the set in hand and the buttons below show
+            // there. It carries only the movement, the set and its figures: never a note.
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -272,7 +284,21 @@ class WorkoutSessionService : Service() {
         // Sealing pays XP, shows the victory and offers to update the rite, and
         // a hasty seal asks first: none of that can happen in the shade. The
         // action opens the trial with its seal prompt instead.
-        if (done > 0) {
+        //
+        // Three actions at most show, so Seal waits for a moment with nothing else
+        // on offer. Set done, Skip rest and +15 s are broadcasts: they run from the
+        // lock screen, and do what the trial screen's buttons do (TrialActionReceiver).
+        if (next != null) {
+            builder.addAction(0, "Set done", broadcast(TrialActionReceiver.ACTION_SET_DONE, sessionId, next.id, Notifications.REQUEST_SET_DONE))
+        }
+        if (resting) {
+            builder.addAction(0, "Skip rest", broadcast(TrialActionReceiver.ACTION_SKIP_REST, sessionId, -1L, Notifications.REQUEST_SKIP_REST))
+            builder.addAction(
+                0,
+                "+${RestTimer.EXTEND_SECONDS} s",
+                broadcast(TrialActionReceiver.ACTION_EXTEND_REST, sessionId, -1L, Notifications.REQUEST_EXTEND_REST),
+            )
+        } else if (done > 0) {
             builder.addAction(0, "Seal", trialIntent(sessionId, seal = true, requestCode = Notifications.REQUEST_SEAL))
         }
         return builder.build()
@@ -280,7 +306,8 @@ class WorkoutSessionService : Service() {
 
     private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
         val next = sets.firstOrNull { it.isPending }
-        return NotificationCompat.Builder(this, Notifications.CHANNEL_REST)
+        // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
+        return NotificationCompat.Builder(this, Notifications.restChannel(TrialPrefs(this).restAlert))
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
             .setContentTitle("Rest is over")
@@ -294,7 +321,7 @@ class WorkoutSessionService : Service() {
     }
 
     private fun formatLoad(kg: Double): String =
-        if (kg == kg.toLong().toDouble()) "${kg.toLong()}kg" else "${kg}kg"
+        Units.format(kg) + Units.name
 
     override fun onDestroy() {
         releaseWake()

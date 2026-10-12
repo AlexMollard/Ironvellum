@@ -1,12 +1,12 @@
-# 05: Import from Strong and Hevy
+# 05: Import from Strong, Hevy and FitNotes
 
-**Goal:** a lifter switching from Strong or Hevy brings their whole history,
+**Goal:** a lifter switching from Strong, Hevy or FitNotes brings their whole history,
 and arrives with their PRs, strength history and level intact. Losing years
 of logged sets is what keeps people on the tracker they already use.
 
 **Done when:**
 
-- Settings → DATA → IMPORT FROM ANOTHER APP accepts a Strong or Hevy CSV,
+- Settings → DATA → IMPORT FROM ANOTHER APP accepts a Strong, Hevy or FitNotes CSV,
   shows a review step for unmatched exercise names, and then **adds** the
   sessions without touching existing ones;
 - re-importing the same file adds nothing;
@@ -36,9 +36,12 @@ of logged sets is what keeps people on the tracker they already use.
 
 ## Formats
 
-Sources: https://help.strongapp.io/article/235-export-workout-data and
-https://help.hevyapp.com/hc/en-us/articles/35687878672663. Both are one row
-per set, with workout fields repeated on every row.
+Sources: https://help.strongapp.io/article/235-export-workout-data,
+https://help.hevyapp.com/hc/en-us/articles/35687878672663 and, for FitNotes,
+the app's own exporter (decompiled FitNotes 25.1 in
+github.com/stoyanov-x/fitnotes-research) checked against real exports (see
+`CsvWorkoutReader`). All are one row per set; Strong and Hevy repeat the
+workout fields on every row, FitNotes has none.
 
 | | Strong | Hevy |
 |---|---|---|
@@ -47,6 +50,30 @@ per set, with workout fields repeated on every row.
 | Weight | `Weight`, **no unit column**; follows the exporter's app setting | `weight_kg` or `weight_lbs` |
 | Distance / time | `Distance`, `Seconds` | `distance_km` or `distance_miles`, `duration_seconds` |
 | Extras | `Notes`, `Workout Notes`, `RPE` (newer exports) | `set_type` (normal/warmup/dropset/failure), `rpe`, `superset_id` |
+
+### FitNotes
+
+Header `Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,
+Time[,Comment]`; `Comment` is present only when "Include comments in export"
+was ticked. Older files put the unit in the header (`Weight (kgs)`), and
+FitNotes iOS writes `Weight (kg)` + `Weight (lbs)` and `Notes`; all are read.
+
+- **Workout:** the file has a date and no workout name or time of day, so all
+  rows of one `Date` are one trial ("FitNotes workout", 12:00 local). Sets stay
+  in file order.
+- **Unit:** `kgs` / `lbs` on every row (blank when the movement has no
+  weight), so there is no unit question, as with Hevy.
+- **Cardio and holds:** `Distance` + `Distance Unit` (m, km, ft, mi) become
+  metres; `Time` (`H:MM:SS`) becomes seconds. They are stored on the set as
+  Strong and Hevy distance and time are, whatever the matched movement is.
+- **Comment:** rides its set, like Strong's `Notes`.
+- Sniffed by a first column `Date` plus `Exercise`, `Category` and a `Weight*`
+  column, checked after Strong (`Set Order`) and Hevy (`title`), so neither
+  can be taken for it. FitNotes' Body Tracker export (`Date,Time,Measurement,...`)
+  is not a workout log and is rejected.
+
+`[UNCERTAIN]`: a FitNotes Android build that wrote pounds under a `Weight (kgs)`
+header (one third-party importer's claim, unconfirmed); the header is trusted.
 
 Strong's unit is ambiguous, so the review step asks "Were these weights in kg
 or lb?" before import. It pre-selects lb when the median working weight of a

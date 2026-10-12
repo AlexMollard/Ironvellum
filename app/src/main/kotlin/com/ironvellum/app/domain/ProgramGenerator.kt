@@ -233,6 +233,7 @@ object ProgramGenerator {
     ): List<Exercise> =
         catalogue.filter {
             dosable(it) &&
+                !ExerciseLibrary.isLibraryOnly(it.name) &&
                 equipmentAllows(it, equipment) &&
                 MuscleMap.profile(it.name) != null &&
                 (focus == TrainingFocus.SKILL || !MuscleMap.isTechnique(it.name)) &&

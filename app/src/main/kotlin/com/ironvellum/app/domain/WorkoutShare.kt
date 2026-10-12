@@ -88,6 +88,7 @@ object WorkoutShare {
         targets: Map<Long, Int> = emptyMap(),
         exerciseNotes: Map<Long, String> = emptyMap(),
         includeNotes: Boolean = false,
+        unit: LoadUnit = LoadUnit.KG,
     ): String = buildString {
         val at = session.completedAtMs ?: session.startedAtMs
 
@@ -106,7 +107,7 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: "Movement" }
                 val peak = peakByName[full.trim().lowercase(Locale.ENGLISH)]
-                val body = movementBody(working, exercise, targets[id], peak) ?: return@mapNotNull null
+                val body = movementBody(working, exercise, targets[id], peak, unit) ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
                 Triple(shortName(full), body, note)
             }
@@ -190,6 +191,7 @@ object WorkoutShare {
         exercise: Exercise?,
         target: Int?,
         peak: SessionPeaks.Peak?,
+        unit: LoadUnit,
     ): String? {
         val done = working.filter { it.done }
         return when (exercise?.metric ?: ExerciseMetric.REPS) {
@@ -227,7 +229,7 @@ object WorkoutShare {
                         else -> HIT
                     }
                 }
-                listOf(squares, figures(done.map(::figure), hold), load(done, exercise))
+                listOf(squares, figures(done.map(::figure), hold), load(done, exercise, unit))
                     .filter { it.isNotEmpty() }
                     .joinToString(" ")
             }
@@ -255,10 +257,10 @@ object WorkoutShare {
      * dropped: the 1.25 kg isolation step lands on 8.75 kg, and one place would
      * print "8.8kg", a load nobody can rack.
      */
-    private fun load(done: List<SessionSet>, exercise: Exercise?): String {
+    private fun load(done: List<SessionSet>, exercise: Exercise?, unit: LoadUnit): String {
         val loads = done.map { it.weightKg?.takeIf { kg -> kg > 0.0 } ?: 0.0 }
         val top = loads.maxOrNull()?.takeIf { it > 0.0 } ?: return ""
-        val text = (if (exercise?.isWeighted == true) "" else "+") + trimmed(top) + "kg"
+        val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit) else trimmed(top)) + unit.label
         return if (loads.distinct().size > 1) "@ top $text" else "@ $text"
     }
 

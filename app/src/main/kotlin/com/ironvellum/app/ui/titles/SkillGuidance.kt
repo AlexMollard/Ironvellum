@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.data.Units
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.ironvellum.app.domain.SkillPractice
@@ -95,7 +96,7 @@ object SkillGuidance {
         if (best == null || best.value <= 0 || !judgeable(skill, bodyweightKg, female)) return null
         val load = best.weightKg?.takeIf { it > 0.0 && Skills.loadBar(skill.name, female) != null }
         return "best ${best.value}/${withUnit(skill.target, skill)}" +
-            (load?.let { " @ ${formatLoad(it)}kg" } ?: "")
+            (load?.let { " @ ${formatLoad(it)}${Units.name}" } ?: "")
     }
 
     /**
@@ -123,7 +124,7 @@ object SkillGuidance {
     /** An effort as the lifter reads it: "5 reps @ 100kg", or "40s" for an unloaded one. */
     fun effortText(skill: Skills.SkillDef, effort: Effort, female: Boolean = false): String {
         val load = effort.weightKg?.takeIf { it > 0.0 && Skills.loadBar(skill.name, female) != null }
-        return withUnit(effort.value, skill) + (load?.let { " @ ${formatLoad(it)}kg" } ?: "")
+        return withUnit(effort.value, skill) + (load?.let { " @ ${formatLoad(it)}${Units.name}" } ?: "")
     }
 
     /** Available and not yet mastered: where the next claim on a path can come from. */

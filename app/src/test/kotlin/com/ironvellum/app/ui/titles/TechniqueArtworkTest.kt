@@ -8,10 +8,14 @@ import org.junit.Test
 class TechniqueArtworkTest {
     @Test
     fun everyPublishedTechniqueHasItsOwnIllustration() {
+        // A technique is a still picture or an animated drawing, never both and never neither.
         val illustrations = Skills.ALL.map { skill ->
-            requireNotNull(techniqueArtwork(skill.name)) { "Missing artwork for ${skill.name}" }
+            val still = techniqueArtwork(skill.name)
+            val moving = techniqueAnimation(skill.name)
+            require((still != null) != (moving != null)) { "${skill.name} needs exactly one illustration" }
+            still?.toString() ?: moving!!.id
         }
-        assertTrue(illustrations.all { it != 0 })
+        assertTrue(illustrations.all { it != "0" })
         assertEquals("Techniques must not silently share an illustration", illustrations.size, illustrations.toSet().size)
     }
 }

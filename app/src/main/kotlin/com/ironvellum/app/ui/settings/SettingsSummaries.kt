@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.settings
 
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.ui.components.formatBodyValue
 
@@ -22,6 +23,9 @@ object SettingsSummaries {
             shown.joinToString(", ") + if (owned.size > 2) " +${owned.size - 2}" else ""
         }
     }
+
+    /** The rest between sets at a glance: "Rest off", or the way its end is announced. */
+    fun trial(restOff: Boolean, alert: RestAlert): String = if (restOff) "Rest off" else "Rest · ${alert.label.lowercase()}"
 
     /** "Sam · 180 cm · Male"; a missing height says so, since Today asks for it. */
     fun profile(name: String?, heightCm: Double?, sex: Sex): String = listOfNotNull(

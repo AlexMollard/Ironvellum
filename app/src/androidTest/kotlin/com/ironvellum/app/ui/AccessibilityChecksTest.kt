@@ -15,6 +15,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.db.GachaStateEntity
+import com.ironvellum.app.data.db.IdleStateEntity
+import com.ironvellum.app.data.db.OwnedCrestFrameEntity
+import com.ironvellum.app.domain.CrestSource
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -388,6 +393,130 @@ class AccessibilityChecksTest {
         assertEquals("screens with no heading to navigate by", emptyList<String>(), without)
     }
 
+    /**
+     * Runs [paths] like the sweep above and returns what it found, so the Veil pages (which need a
+     * seeded lifter) can share the checks without being tied to the plain-install sweep.
+     */
+    private fun sweepVeilPaths(
+        paths: List<List<String>>,
+        unlabelled: MutableList<String>,
+        tooSmall: MutableList<String>,
+        visited: MutableList<String>,
+    ) {
+        for (path in paths) {
+            returnToNavigation()
+            compose.onNodeWithContentDescription(path.first()).performClick()
+            if (path.drop(1).any { !openSurface(it) }) continue
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            val where = path.joinToString("/")
+            visited += where
+            unlabelled += unlabelledControls().map { "$where: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
+            // The buy and houses sheets are windows over a page, not routes: back would leave
+            // the page with the sheet still up, so close each by its own button.
+            for (dismiss in listOf("Cancel", "Got it")) {
+                val button = compose.onAllNodesWithText(dismiss)
+                if (button.fetchSemanticsNodes().isNotEmpty()) {
+                    button.onFirst().performClick()
+                    compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+                }
+            }
+        }
+    }
+
+    /**
+     * Holds the Veil in a known state for [block]: Iron worn, Silver locked, essence enough to buy.
+     * A plain install owns no crest and no essence, so the worn and locked sheets and the buy sheet
+     * would otherwise be unreachable. The lifter's own rows are put back afterwards.
+     */
+    private fun withVeilSeeded(block: () -> Unit) {
+        val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as IronvellumApp)
+            .database
+        val frames = runBlocking { db.gachaDao().ownedFrames() }
+        val gacha = runBlocking { db.gachaDao().get() }
+        val idle = runBlocking { db.idleDao().get() }
+        runBlocking {
+            db.gachaDao().clearFrames()
+            db.gachaDao().insertFrame(OwnedCrestFrameEntity("iron", 1L, CrestSource.Ladder.id))
+            db.gachaDao().upsert((gacha ?: GachaStateEntity()).copy(equippedFrame = "iron", rolls = 0))
+            db.idleDao().upsert(
+                IdleStateEntity(
+                    essence = SEEDED_ESSENCE,
+                    lifetimeEssence = SEEDED_ESSENCE,
+                    lastCollectedAtMs = System.currentTimeMillis(),
+                ),
+            )
+        }
+        try {
+            block()
+        } finally {
+            runBlocking {
+                db.gachaDao().clearFrames()
+                frames.forEach { db.gachaDao().insertFrame(it) }
+                if (gacha != null) db.gachaDao().upsert(gacha) else db.gachaDao().clearRolls()
+                if (idle != null) db.idleDao().upsert(idle) else db.idleDao().clearAll()
+            }
+        }
+    }
+
+    /**
+     * The newer Veil pages: the rate breakdown, both Collection tabs, the houses sheet, a worn and a
+     * locked crest sheet, and the buy sheet. Same two questions as every other screen.
+     */
+    @Test
+    fun veilPagesAreAnnounceableAndHittable() {
+        val unlabelled = mutableListOf<String>()
+        val tooSmall = mutableListOf<String>()
+        val visited = mutableListOf<String>()
+
+        withVeilSeeded {
+            sweepVeilPaths(VEIL_SURFACES, unlabelled, tooSmall, visited)
+        }
+
+        assertEquals(
+            "veil surfaces the sweep could not reach: ${VEIL_SURFACES.map { it.joinToString("/") } - visited.toSet()}",
+            VEIL_SURFACES.size,
+            visited.size,
+        )
+        assertEquals(
+            "controls an accessibility service cannot announce, on the Veil pages",
+            emptyList<String>(),
+            unlabelled,
+        )
+        assertEquals(
+            "controls below the WCAG floor of ${WCAG_FLOOR_DP.toInt()}dp, on the Veil pages",
+            emptyList<String>(),
+            tooSmall,
+        )
+    }
+
+    /**
+     * The Collection page's Relics and Crests tabs mark the open one with an underline a screen
+     * reader cannot see: each must report itself selected, and only it.
+     */
+    @Test
+    fun collectionTabsSayWhichTabIsOpen() {
+        withVeilSeeded {
+            returnToNavigation()
+            compose.onNodeWithContentDescription("Today").performClick()
+            assertEquals("could not reach the Veil", true, openSurface("The Veil"))
+            assertEquals("could not reach the Collection", true, openSurface("Open your collection"))
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+
+            val tabs = listOf("Relics", "Crests")
+            for (tab in tabs) {
+                compose.onAllNodesWithText(tab, substring = true).onFirst().performClick()
+                compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+                val selected = tabs.filter { candidate ->
+                    compose.onAllNodesWithText(candidate, substring = true)
+                        .fetchSemanticsNodes()
+                        .any { it.config.valueOrNull(SemanticsProperties.Selected) == true }
+                }
+                assertEquals("in Collection, opening $tab should leave exactly it selected", listOf(tab), selected)
+            }
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> SemanticsConfiguration.valueOrNull(key: SemanticsPropertyKey<T>): T? =
         firstOrNull { it.key == key }?.value as? T
@@ -446,6 +575,20 @@ class AccessibilityChecksTest {
             "Codex" to listOf("DEEDS", "PATHS", "JOURNAL"),
             "Ledger" to listOf("BODY", "TRAINING", "DAILY"),
         )
+        /**
+         * The Veil pages, reached from Today. The paths lean on the seeded state of [withVeilSeeded]:
+         * "Iron Crest, worn" and "Silver Crest, locked" are the two crest rows' own descriptions.
+         */
+        val VEIL_SURFACES = listOf(
+            listOf("Today", "The Veil", "Why this rate"),
+            listOf("Today", "The Veil", "Open your collection"),
+            listOf("Today", "The Veil", "Open your collection", "How houses work"),
+            listOf("Today", "The Veil", "Open your collection", "Crests"),
+            listOf("Today", "The Veil", "Open your collection", "Crests", "Iron Crest, worn"),
+            listOf("Today", "The Veil", "Open your collection", "Crests", "Silver Crest, locked"),
+            listOf("Today", "The Veil", "Buy an inscription"),
+        )
+        const val SEEDED_ESSENCE = 1_000_000L
         const val FRAME_BUDGET_MS = 1_200L
         const val SURFACE_POLLS = 10
         const val SURFACE_POLL_MS = 200L

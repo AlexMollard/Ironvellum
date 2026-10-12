@@ -6,12 +6,13 @@
 
 **An offline-first strength training app that scores what you actually lift.**
 
-![Gate](https://img.shields.io/badge/gate-1183%20unit%20%2B%20218%20instrumented-2E7D32)
-![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
-![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
-![minSdk](https://img.shields.io/badge/minSdk-29-3DDC84?logo=android&logoColor=white)
-![Offline first](https://img.shields.io/badge/offline-first-2E7D32)
+<a href="https://f-droid.org/packages/com.ironvellum.app/"><img src="docs/images/badge_fdroid.png" height="60" alt="Get it on F-Droid" /></a>
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.ironvellum.app%22%2C%22url%22%3A%22https%3A%2F%2Ff-droid.org%2Fpackages%2Fcom.ironvellum.app%2F%22%2C%22author%22%3A%22AlexMollard%22%2C%22name%22%3A%22Ironvellum%22%7D"><img src="docs/images/badge_obtainium.png" height="60" alt="Get it on Obtainium" /></a>
+
+[![F-Droid version](https://img.shields.io/f-droid/v/com.ironvellum.app?label=F-Droid)](https://f-droid.org/packages/com.ironvellum.app/)
+[![Licence: GPL-3.0-or-later](https://img.shields.io/badge/licence-GPL--3.0--or--later-blue)](LICENSE)
+![Android 10+](https://img.shields.io/badge/Android-10%2B-3DDC84?logo=android&logoColor=white)
+![Tests: local gate](https://img.shields.io/badge/tests-local%20gate-2E7D32)
 
 </div>
 
@@ -133,13 +134,14 @@ Optional, and only with an account.
 - Everything is stored on the phone first.
 - Export a full JSON archive or a CSV of your trials, and import the archive
   again.
-- Import trials from a Strong or Hevy CSV.
+- Import trials from a Strong, Hevy or FitNotes CSV.
 - Delete your cloud account from inside the app at any time.
 
 ## Install
 
-- **F-Droid:** the listing is still in review with F-Droid, so it is not in
-  the store yet. The `foss` build carries no proprietary libraries.
+- **F-Droid:** [Ironvellum on F-Droid](https://f-droid.org/packages/com.ironvellum.app/).
+  The `foss` build carries no proprietary libraries.
+- **Obtainium:** [add Ironvellum](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.ironvellum.app%22%2C%22url%22%3A%22https%3A%2F%2Ff-droid.org%2Fpackages%2Fcom.ironvellum.app%2F%22%2C%22author%22%3A%22AlexMollard%22%2C%22name%22%3A%22Ironvellum%22%7D) to track the F-Droid build.
 - **Releases:** tagged versions are on
   [GitHub Releases](https://github.com/AlexMollard/Ironvellum/releases).
 - **From source:** needs a JDK and the Android SDK.
@@ -225,7 +227,10 @@ that licence; see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md). The Chakra
 Petch font is under the SIL Open Font License 1.1, and the muscle map's body
 shapes derive from
 [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
-(MIT). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+(MIT). The exercise drawings, and the instructions adapted from them, come from
+[Everkinetic](https://github.com/everkinetic/data) and
+[Workout Guide](https://github.com/bryllim/workout-guide), both CC BY-SA 4.0, recoloured and converted for the app
+(see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md)). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Bug reports and pull requests are welcome in
 [Issues](https://github.com/AlexMollard/Ironvellum/issues). To help keep the

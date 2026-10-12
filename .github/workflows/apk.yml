@@ -6,9 +6,9 @@
 # already gets the full CI gate, so building an APK on push too would burn
 # runner minutes producing an artifact nobody asked for.
 #
-# Debug variant by design. The release keystore is a credential and never
-# enters CI (see ci.yml), and an unsigned release APK cannot be installed, so
-# a release build here would produce a file that does not work on a phone.
+# Debug variant by design. The release keystore is only ever read by
+# release.yml, behind the release environment's approval, and an unsigned
+# release APK cannot be installed, so a release build here would not work.
 name: APK
 
 on:

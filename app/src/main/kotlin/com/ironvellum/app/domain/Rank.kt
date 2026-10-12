@@ -95,6 +95,7 @@ object Rank {
         sex: Sex,
         nowMs: Long,
         practices: List<SkillPractice> = emptyList(),
+        unit: LoadUnit = LoadUnit.KG,
     ): RankBreakdown? {
         fun inWindow(at: Long) = at <= nowMs && at > nowMs - WINDOW_MS
 
@@ -139,8 +140,8 @@ object Rank {
             val skillStep = skill?.let(::skillStep) ?: -1
             val step = maxOf(liftStep, skillStep)
             if (step < 0) return@mapNotNull null
-            val source = if (liftStep >= skillStep) liftSource(lifts.filter { it.step == liftStep }.maxBy { it.ratio }) else skill!!.name
-            PatternScore(pattern, step, source, liftTarget(lifts.filter { it.step == step }, step, sex), skillTarget(pattern, step, cleared))
+            val source = if (liftStep >= skillStep) liftSource(lifts.filter { it.step == liftStep }.maxBy { it.ratio }, unit) else skill!!.name
+            PatternScore(pattern, step, source, liftTarget(lifts.filter { it.step == step }, step, sex, unit), skillTarget(pattern, step, cleared))
         }
         if (patterns.isEmpty()) return null
 
@@ -161,18 +162,18 @@ object Rank {
         )
     }
 
-    private fun liftSource(s: LiftBoards.TieredScore): String {
+    private fun liftSource(s: LiftBoards.TieredScore, unit: LoadUnit): String {
         val load = if (LiftBoards.movesBodyweight(s.lift)) {
             val added = s.movedKg - s.bodyweightKg
-            if (added < 0.05) "BW" else "+${kg(added)} kg"
+            if (added < 0.05) "BW" else "+${load(added, unit)}"
         } else {
-            "${kg(s.movedKg)} kg"
+            load(s.movedKg, unit)
         }
         return "${s.exerciseName} ${s.reps} × $load"
     }
 
     /** The smallest added load, over the pattern's lifts, that scores [step] + 1 at the same reps. */
-    private fun liftTarget(lifts: List<LiftBoards.TieredScore>, step: Int, sex: Sex): String? {
+    private fun liftTarget(lifts: List<LiftBoards.TieredScore>, step: Int, sex: Sex, unit: LoadUnit): String? {
         if (step >= LiftBoards.MAX_STEP) return null
         return lifts
             .map { s ->
@@ -180,7 +181,7 @@ object Rank {
                 s to roundUpTenth(needed - s.movedKg)
             }
             .minByOrNull { it.second }
-            ?.let { (s, delta) -> "+${kg(delta)} kg on ${s.exerciseName} × ${s.reps}" }
+            ?.let { (s, delta) -> "+${loadUp(delta, unit)} on ${s.exerciseName} × ${s.reps}" }
     }
 
     /**
@@ -200,6 +201,19 @@ object Rank {
 
     /** Up to the next 0.1 kg, so meeting the target always clears the boundary. */
     private fun roundUpTenth(kg: Double): Double = (ceil(kg * 10 - 1e-9) / 10).coerceAtLeast(0.1)
+
+    /** A load to one place in kg, or the nearest 0.5 in lb; "+" text appends the unit. */
+    private fun load(value: Double, unit: LoadUnit): String =
+        if (unit == LoadUnit.LB) Loads.withUnit(value, unit) else "${kg(value)} kg"
+
+    /** A target load rounded UP at display precision, so meeting it always clears the boundary. */
+    private fun loadUp(kgValue: Double, unit: LoadUnit): String =
+        if (unit == LoadUnit.LB) {
+            val lb = ceil(Loads.toUnit(kgValue, unit) * 2 - 1e-9) / 2
+            "${Loads.format(Loads.toKg(lb, unit), unit)} lb"
+        } else {
+            "${kg(kgValue)} kg"
+        }
 
     private fun kg(value: Double): String {
         val r = Math.round(value * 10) / 10.0

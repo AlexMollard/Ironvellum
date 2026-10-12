@@ -1,5 +1,10 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -29,7 +34,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.lastLoggedFigure
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -85,7 +89,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import com.ironvellum.app.ui.theme.InkPressIndication
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.text.TextAutoSize
@@ -114,7 +122,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import android.os.SystemClock
 import com.ironvellum.app.data.FirstRunPrefs
+import com.ironvellum.app.data.LiveTrialActions
 import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
@@ -127,6 +137,10 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
+import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.SetClock
+import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
@@ -348,52 +362,44 @@ class SessionViewModel(
         .map { it?.takeIf { t -> t.sessionId == sessionId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    private val actions = LiveTrialActions(repo, appContext, sessionId)
+
+    /**
+     * The clocks running on timed sets, by set id. Held here, not in the row, so a card folding
+     * or the screen turning does not stop a hold being timed. In memory only: a trial reopened
+     * after the process died starts its timers fresh.
+     */
+    private val _clocks = MutableStateFlow<Map<Long, SetClock>>(emptyMap())
+    val clocks: StateFlow<Map<Long, SetClock>> = _clocks
+
+    fun setClock(setId: Long, clock: SetClock?) {
+        _clocks.value = if (clock == null) _clocks.value - setId else _clocks.value + (setId to clock)
+    }
+
     fun extendRest() = RestClock.extend(sessionId)
 
     fun shortenRest() = RestClock.shorten(sessionId)
 
     fun skipRest() = RestClock.cancel(sessionId)
 
-    /** A set ticked done, with sets still waiting, starts its movement's prescribed rest. */
-    private fun noteTick(setId: Long, done: Boolean) {
-        val sets = ui.value.sets
-        if (!RestTimer.startsRest(sets, setId, done)) return
-        val set = sets.first { it.id == setId }
-        val exercise = exercises.value.firstOrNull { it.id == set.exerciseId }
-        val window = RestTimer.window(set.exerciseName, focus.value, exercise?.metric, exercise?.isWeighted)
-        // An activity (a run) has no rest between sets: no timer.
-        if (window.isNone) return
-        RestClock.start(sessionId, window.ready, window.max)
-    }
-
-    fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
-    }
-
-    /** A hold's figure is seconds; writing it as reps is the bug this replaces. */
-    fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateHoldSet(setId, seconds, weightKg, done) }
-    }
-
     /**
-     * One route for every activity edit. The caller hands back the set's whole
-     * shape — including the fields its metric does not edit — because the
-     * repository writes all columns together and a null here would erase a
-     * duration, distance or grade a neighbouring stepper did not touch.
+     * Every set write the screen makes: the steppers, the log button, Undo, un-log and the
+     * typed entries. [LiveTrialActions] routes it by metric, passing the set's current values
+     * for the columns its metric does not own, and starts the rest a tick earns, the same
+     * path the lock-screen "Set done" takes.
      */
-    fun updateActivitySet(
-        setId: Long,
-        reps: Int,
-        durationSec: Int?,
-        distanceM: Double?,
-        grade: String?,
-        weightKg: Double?,
-        done: Boolean,
-    ) {
-        noteTick(setId, done)
-        viewModelScope.launch { repo.updateActivitySet(setId, reps, durationSec, distanceM, grade, weightKg, done) }
+    fun commit(set: SessionSet, metric: ExerciseMetric) {
+        viewModelScope.launch { actions.commit(set, metric) }
+    }
+
+    /** "Warm up" on an exercise's menu; [onAdded] gets the new sets' ids for the Undo bar, and is not called when none were added. */
+    fun addWarmupRamp(exerciseId: Long, onAdded: (List<Long>) -> Unit) {
+        viewModelScope.launchGuarded("add warm-up ramp") { repo.addWarmupRamp(sessionId, exerciseId).takeIf { it.isNotEmpty() }?.let(onAdded) }
+    }
+
+    /** Undo for the ramp. */
+    fun removeSets(setIds: List<Long>) {
+        viewModelScope.launchGuarded("remove warm-up ramp") { repo.removeSets(setIds) }
     }
 
     fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
@@ -417,9 +423,9 @@ class SessionViewModel(
         viewModelScope.launchGuarded("restore sets") { repo.restoreSets(removed) }
     }
 
-    /** "Mark as warm-up" and "Count as a working set" on a set's edit row. */
-    fun setWarmup(setId: Long, warmup: Boolean) {
-        viewModelScope.launchGuarded("mark warm-up") { repo.setWarmup(setId, warmup) }
+    /** The kind tag's menu, and "Mark as warm-up" / "Count as a working set" on a set's edit row. */
+    fun setKind(setId: Long, kind: SetKind) {
+        viewModelScope.launchGuarded("change set type") { repo.setKind(setId, kind) }
     }
 
     fun setModifiers(exerciseId: Long, modifiers: String) {
@@ -585,6 +591,7 @@ fun SessionScreen(
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
+    val clocks by viewModel.clocks.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var confirmReopen by remember { mutableStateOf(false) }
@@ -594,6 +601,7 @@ fun SessionScreen(
     var showRiteMuscles by remember { mutableStateOf(false) }
     var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
+    var platesFor by remember { mutableStateOf<Long?>(null) }
     var typing by remember { mutableStateOf<Pair<SessionSet, FigureKind>?>(null) }
     var showName by rememberSaveable { mutableStateOf(false) }
     var showNote by rememberSaveable { mutableStateOf(false) }
@@ -611,17 +619,17 @@ fun SessionScreen(
     fun metricOf(exerciseId: Long): ExerciseMetric =
         exercises.firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
 
-    // One route per metric, each passing the set's current values for the
-    // columns it does not own, so no edit erases a neighbour's figure. Every
-    // write the screen makes goes through here: the steppers, the log button,
-    // Undo, un-log and the typed entries.
+    // Every write the screen makes goes through here: the steppers, the log
+    // button, Undo, un-log and the typed entries. The view model routes it by
+    // metric (LiveTrialActions), the way the lock-screen "Set done" does.
+    val haptic = LocalHapticFeedback.current
     fun commit(set: SessionSet) {
-        val metric = metricOf(set.exerciseId)
-        when {
-            metric == ExerciseMetric.HOLD -> viewModel.updateHoldSet(set.id, set.durationSec ?: 0, set.weightKg, set.done)
-            metric.isStrength -> viewModel.updateSet(set.id, set.reps, set.weightKg, set.done)
-            else -> viewModel.updateActivitySet(set.id, set.reps, set.durationSec, set.distanceM, set.grade, set.weightKg, set.done)
+        // A tick the lifter feels: only a set going from not logged to logged. The system's
+        // own haptics setting decides whether it is felt at all.
+        if (set.done && ui.sets.firstOrNull { it.id == set.id }?.done == false) {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
         }
+        viewModel.commit(set, metricOf(set.exerciseId))
     }
 
     fun applyLoad(set: SessionSet, kg: Double?) = commit(set.copy(weightKg = kg))
@@ -636,7 +644,19 @@ fun SessionScreen(
     // the system prompt, which gets one chance: that is what the asked flag
     // spends. "Not now" spends nothing and asks again on the next trial, up to
     // FirstRun.MAX_NOTIFICATION_ASKS times in all (Settings can still grant it).
-    val restAccess = rememberNotificationAccess(Notifications.CHANNEL_REST)
+    val trialPrefs = remember { TrialPrefs(screenContext) }
+    // The pocket lock: a dim cover that ignores touches until held. Survives rotation.
+    var locked by rememberSaveable { mutableStateOf(false) }
+    // A phone that sleeps between sets hides the rest timer; the setting defaults on.
+    val view = LocalView.current
+    val keepAwake = remember { trialPrefs.keepScreenOn }
+    DisposableEffect(view, keepAwake) {
+        val before = view.keepScreenOn
+        view.keepScreenOn = keepAwake
+        onDispose { view.keepScreenOn = before }
+    }
+    var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
+    val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted) WorkoutSessionService.start(screenContext, sessionId)
@@ -739,9 +759,11 @@ fun SessionScreen(
         if (!claiming && completion == null) slideReset++
     }
 
-    fun logActive() {
+    // [seconds] is a timed set's figure when its clock logged it; otherwise the set's own.
+    fun logActive(seconds: Int? = null) {
         val set = activeSet ?: return
-        commit(set.copy(done = true))
+        commit(set.copy(durationSec = seconds ?: set.durationSec, done = true))
+        viewModel.setClock(set.id, null)
         undoSerial++
         undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // The card moves on once its last set is logged.
@@ -751,6 +773,11 @@ fun SessionScreen(
     fun offerRemovedUndo(message: String, removed: Repository.RemovedSets) {
         undoSerial++
         undo = UndoPrompt.Removed(undoSerial, message, removed)
+    }
+
+    fun offerRampUndo(setIds: List<Long>) {
+        undoSerial++
+        undo = UndoPrompt.Ramp(undoSerial, setIds)
     }
 
     fun undoLog(prompt: UndoPrompt.Logged) {
@@ -788,6 +815,7 @@ fun SessionScreen(
                 startedAtMs = session.startedAtMs,
                 onBack = onExit,
                 onMuscles = { showRiteMuscles = true },
+                onLock = { locked = true },
                 onAbandon = { confirmAbandon = true },
             )
             Column(
@@ -800,7 +828,7 @@ fun SessionScreen(
                 rest?.let {
                     // The countdown in the footer still runs, but the buzz at its end cannot arrive.
                     NotificationBlockedNotice(
-                        channelId = Notifications.CHANNEL_REST,
+                        channelId = Notifications.restChannel(trialPrefs.restAlert),
                         access = restAccess,
                         blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
                         modifier = Modifier.padding(top = 12.dp),
@@ -855,6 +883,22 @@ fun SessionScreen(
                                 } else {
                                     null
                                 },
+                                // Before anything is logged, on a loaded movement with no warm-up yet.
+                                onWarmup = if (
+                                    exercise != null && block.sets.none { it.warmup || it.done } &&
+                                    WarmupRamp.planFor(exercise.name, exercise.muscleGroup.name, metric, first.weightKg).isNotEmpty()
+                                ) {
+                                    { viewModel.addWarmupRamp(block.id, ::offerRampUndo) }
+                                } else {
+                                    null
+                                },
+                                restOff = if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) restOffMovements.contains(first.exerciseName.trim().lowercase()) else null,
+                                onRestOff = { off ->
+                                    trialPrefs.setRestOffFor(first.exerciseName, off)
+                                    restOffMovements = trialPrefs.restOffNames()
+                                    // Turning it off mid-rest ends the rest that is running.
+                                    if (off) viewModel.skipRest()
+                                },
                                 onAddSet = {
                                     // A duplicate carries the block's own figure: a hold's
                                     // seconds, an activity's duration — a copy of a Yoga set
@@ -880,11 +924,17 @@ fun SessionScreen(
                                 onRemoveExercise = {
                                     viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
                                 },
+                                onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
                                 onEdit = ::commit,
+                                timed = true,
+                                clocks = clocks,
+                                timedAlert = trialPrefs.restAlert,
+                                onClock = viewModel::setClock,
+                                onTimedLog = { seconds -> logActive(seconds) },
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
-                                onToggleWarmup = { set -> viewModel.setWarmup(set.id, !set.warmup) },
+                                onSetKind = { set, kind -> viewModel.setKind(set.id, kind) },
                                 onUnlog = { set ->
                                     commit(set.copy(done = false))
                                     editingSetId = null
@@ -963,12 +1013,27 @@ fun SessionScreen(
                             viewModel.restoreSets(prompt.removed)
                             undo = null
                         }
+                        is UndoPrompt.Ramp -> {
+                            viewModel.removeSets(prompt.setIds)
+                            undo = null
+                        }
                     }
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
                     .padding(bottom = FOOTER_HEIGHT + 8.dp),
+            )
+        }
+        // Last child, so nothing above it (the Undo bar included) can take a touch while locked.
+        if (locked) {
+            PocketLockOverlay(
+                rest = rest,
+                nextLine = activeSet?.let { set ->
+                    "Set ${set.workingNumber(ui.sets)} · ${set.exerciseName} · " +
+                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                },
+                onUnlock = { locked = false },
             )
         }
     }
@@ -1038,6 +1103,23 @@ fun SessionScreen(
         )
     }
 
+    platesFor?.let { exerciseId ->
+        val sets = ui.sets.filter { it.exerciseId == exerciseId && !it.warmup }
+        val set = sets.firstOrNull { it.isPending } ?: sets.lastOrNull()
+        if (set != null) {
+            PlateSheet(
+                exerciseName = set.exerciseName,
+                setLabel = "set ${set.workingNumber(ui.sets)}",
+                loadKg = set.weightKg,
+                onUse = { kg ->
+                    commit(set.copy(weightKg = kg))
+                    platesFor = null
+                },
+                onDismiss = { platesFor = null },
+            )
+        }
+    }
+
     editLoadFor?.let { target ->
         val initial = target.weightKg?.let { loadText(it) }.orEmpty()
         var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
@@ -1086,11 +1168,11 @@ fun SessionScreen(
                     value = field,
                     onValueChange = { field = cleanLoadInput(it) },
                     singleLine = true,
-                    label = { Text("Load (kg)") },
+                    label = { Text("Load (${Units.name})") },
                     placeholder = { Text("Leave blank for bodyweight") },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
-                        { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
+                        { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
                     } else {
                         null
                     },
@@ -1296,6 +1378,7 @@ fun SessionScreen(
                             targets = targets,
                             exerciseNotes = notes,
                             includeNotes = includeNotes,
+                            unit = Units.current,
                         )
                     }
                 },
@@ -1366,27 +1449,28 @@ internal const val LOAD_INPUT_DECIMALS = 3
 internal fun cleanLoadInput(typed: TextFieldValue): TextFieldValue =
     typed.copy(text = DecimalInput.sanitize(typed.text, LOAD_INPUT_DECIMALS, LOAD_INPUT_MAX_CHARS))
 
-internal fun stepDownKg(kg: Double?): Double? =
-    kg?.let { (kotlin.math.ceil(it / LOAD_STEP_KG - 1e-9) - 1) * LOAD_STEP_KG }?.takeIf { it > 0.0 }
+internal fun stepDownKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double? =
+    Loads.stepDown(kg, unit, gridLb, LOAD_STEP_KG)
 
-internal fun stepUpKg(kg: Double?): Double =
-    (kotlin.math.floor((kg ?: 0.0) / LOAD_STEP_KG + 1e-9) + 1) * LOAD_STEP_KG
+internal fun stepUpKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double =
+    Loads.stepUp(kg, unit, gridLb, LOAD_STEP_KG)
+
+/** In lb the ± buttons walk 5 lb on compounds and 2.5 lb on small work, from the movement's kg progression step. */
+internal const val LOAD_STEP_LB = 5.0
+
+internal fun loadGridLb(exerciseName: String): Double = Loads.lbGrid(Progression.weightStepKg("", exerciseName))
 
 /**
  * A typed load: blank is bodyweight (0.0), a comma is a decimal point, and
  * the value is kept to the gram. Anything else, or out of range, fails.
  */
-internal fun parseLoadKg(text: String): Result<Double> {
-    if (text.isBlank()) return Result.success(0.0)
-    val kg = DecimalInput.parse(text)
-        ?: return Result.failure(IllegalArgumentException("not a number: $text"))
-    if (kg < 0.0 || kg > MAX_LOAD_KG) return Result.failure(IllegalArgumentException("out of range: $text"))
-    return Result.success(Math.round(kg * 1000.0) / 1000.0)
-}
+internal fun parseLoadKg(text: String, unit: LoadUnit = Units.current): Result<Double> =
+    Loads.parse(text, unit, MAX_LOAD_KG)
 
 /** A load as the dialog shows it for editing: no unit, no trailing ".0". */
-internal fun loadText(kg: Double): String =
-    if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
+internal fun loadText(kg: Double, unit: LoadUnit = Units.current): String =
+    if (unit == LoadUnit.LB) Loads.fieldText(kg, unit)
+    else if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 
 private const val TITLE_CAP = 80
@@ -1412,6 +1496,11 @@ private sealed interface UndoPrompt {
     }
 
     data class Removed(override val serial: Int, override val message: String, val removed: Repository.RemovedSets) : UndoPrompt
+
+    /** "Warm-up added": Undo takes the ramp's sets back out. */
+    data class Ramp(override val serial: Int, val setIds: List<Long>) : UndoPrompt {
+        override val message: String get() = "Warm-up added"
+    }
 }
 
 /** What a stepper moves. LOAD has its own entry dialog; the others share one. */
@@ -1448,11 +1537,11 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
-            value = kg?.let { formatLoadKg(it) } ?: if (weighted) "0" else "BW",
-            unit = if (kg != null || weighted) "kg" else "",
+            value = kg?.let { Units.format(it) } ?: if (weighted) "0" else "BW",
+            unit = if (kg != null || weighted) Units.name else "",
             what = "load",
-            minus = set.copy(weightKg = stepDownKg(set.weightKg)),
-            plus = set.copy(weightKg = stepUpKg(set.weightKg)),
+            minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
+            plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
         )
     }
     fun minutes(): Figure {
@@ -1529,7 +1618,7 @@ internal fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = 
 private fun FigureKind.typable(): Boolean = this != FigureKind.KM
 
 /** "10 kg", or "BW" for a bodyweight set. */
-internal fun kgLabel(kg: Double?): String = kg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" } ?: "BW"
+internal fun kgLabel(kg: Double?): String = Units.label(kg)
 
 /** A set as its row reads: "10 kg × 6". */
 internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
@@ -1596,7 +1685,7 @@ private fun newPeakSetIds(
             SetRecords.score(earlier.exerciseName, figure(earlier), earlier.weightKg, bw, hold)
         }
         SetRecords.delta(
-            records, set.exerciseName, set.setIndex, figure(set), set.weightKg, bw,
+            records, set.exerciseName, SetRecords.position(set, sets), figure(set), set.weightKg, bw,
             isHold = hold,
             bestEarlierThisWorkout = bestEarlier,
         ).isRecord
@@ -1620,8 +1709,8 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
         }
         done.isNotEmpty() -> "${done.size}/$total ${plural(total, "set", "sets")}"
         else -> when (metric) {
-            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
-            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
+            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
             ExerciseMetric.DURATION -> "$total × ${(first.durationSec ?: 0) / 60} min"
             ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> "$total ${plural(total, "set", "sets")}"
         }
@@ -1642,6 +1731,7 @@ private fun TrialHeader(
     startedAtMs: Long,
     onBack: () -> Unit,
     onMuscles: () -> Unit,
+    onLock: () -> Unit,
     onAbandon: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp)) {
@@ -1668,6 +1758,9 @@ private fun TrialHeader(
                 onClick = onBack,
                 modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
             )
+            InkIconButton(onClick = onLock, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.Lock, contentDescription = "Lock the screen", tint = IronvellumColors.InkMuted)
+            }
             var menuOpen by remember { mutableStateOf(false) }
             Box {
                 InkIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
@@ -1753,6 +1846,10 @@ internal fun OpenExerciseCard(
     onEditModifiers: () -> Unit,
     onMove: (up: Boolean) -> Unit,
     onEditLoad: (() -> Unit)?,
+    onWarmup: (() -> Unit)?,
+    /** This movement's rest switch (null where none applies, as in an amendment or for an activity). */
+    restOff: Boolean?,
+    onRestOff: (Boolean) -> Unit,
     onAddSet: () -> Unit,
     onRemoveSet: (SessionSet) -> Unit,
     onRemoveExercise: () -> Unit,
@@ -1760,7 +1857,7 @@ internal fun OpenExerciseCard(
     onTypeLoad: (SessionSet) -> Unit,
     onTypeFigure: (SessionSet, FigureKind) -> Unit,
     onToggleEdit: (SessionSet) -> Unit,
-    onToggleWarmup: (SessionSet) -> Unit,
+    onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     modifier: Modifier = Modifier,
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
@@ -1768,6 +1865,14 @@ internal fun OpenExerciseCard(
     onChangeExercise: (() -> Unit)? = null,
     onLog: (SessionSet) -> Unit = {},
     footer: (@Composable () -> Unit)? = null,
+    onPlates: (() -> Unit)? = null,
+    /** The live trial only: the active timed set gets a countdown or a stopwatch. An amendment has none. */
+    timed: Boolean = false,
+    clocks: Map<Long, SetClock> = emptyMap(),
+    timedAlert: RestAlert = RestAlert.DEFAULT,
+    onClock: (setId: Long, SetClock?) -> Unit = { _, _ -> },
+    /** Logs the active set with the seconds its countdown ended on. */
+    onTimedLog: (seconds: Int) -> Unit = {},
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
@@ -1820,20 +1925,31 @@ internal fun OpenExerciseCard(
                 onModifiers = if (modifiersEditable) onEditModifiers else null,
                 onEditLoad = onEditLoad,
                 // Amending has its own Add set row under the sets.
+                onWarmup = if (amend) null else onWarmup,
                 onAddSet = if (amend) null else onAddSet,
                 // Only a set not yet logged: removing a logged one loses its log.
                 // An amendment may drop any set; Save is the commit.
                 onRemoveLastSet = block.sets.last().takeIf { block.sets.size > 1 && (amend || !it.done) }?.let { last -> { onRemoveSet(last) } },
                 onRemoveExercise = onRemoveExercise,
+                restOff = restOff.takeIf { !amend },
+                onRestOff = onRestOff,
             )
         }
         Column(Modifier.padding(horizontal = 16.dp)) {
-            if (reference != null) {
-                Text(
-                    reference,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
+            if (reference != null || onPlates != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (reference != null) {
+                        Text(
+                            reference,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    onPlates?.let { InkChip("Plates", clickLabel = "Open the plate calculator", onClick = it) }
+                }
             }
             // What the last trial that left a note on this exercise said.
             if (lastNote != null) {
@@ -1890,11 +2006,16 @@ internal fun OpenExerciseCard(
                     onTypeLoad = { onTypeLoad(set) },
                     onTypeFigure = { kind -> onTypeFigure(set, kind) },
                     onToggleEdit = { onToggleEdit(set) },
-                    onToggleWarmup = { onToggleWarmup(set) },
+                    onSetKind = { kind -> onSetKind(set, kind) },
                     onUnlog = { onUnlog(set) },
                     onRemove = { onRemoveSet(set) },
                     amend = amend,
                     onLog = { onLog(set) },
+                    timed = timed,
+                    clock = clocks[set.id],
+                    timedAlert = timedAlert,
+                    onClock = { onClock(set.id, it) },
+                    onTimedLog = onTimedLog,
                 )
             }
         }
@@ -1941,9 +2062,13 @@ private fun ExerciseMenu(
     onMoveDown: (() -> Unit)?,
     onModifiers: (() -> Unit)?,
     onEditLoad: (() -> Unit)?,
+    onWarmup: (() -> Unit)?,
     onAddSet: (() -> Unit)?,
     onRemoveLastSet: (() -> Unit)?,
     onRemoveExercise: () -> Unit,
+    /** The movement's own rest switch: whether its rest is off, and flipping it; null for an activity. */
+    restOff: Boolean? = null,
+    onRestOff: (Boolean) -> Unit = {},
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -1966,11 +2091,13 @@ private fun ExerciseMenu(
                     },
                 )
             }
+            onWarmup?.let { item("Warm up", action = it) }
             onAddSet?.let { item("Add set", action = it) }
             onEditLoad?.let { item("Edit load", action = it) }
             onModifiers?.let { item("Edit modifiers", action = it) }
             onMoveUp?.let { item("Move up", action = it) }
             onMoveDown?.let { item("Move down", action = it) }
+            restOff?.let { off -> item(if (off) "Turn rest timer on" else "Turn rest timer off") { onRestOff(!off) } }
             onRemoveLastSet?.let { item("Remove last set", action = it) }
             item("Remove exercise", IronvellumColors.DangerRed, onRemoveExercise)
         }
@@ -1994,11 +2121,16 @@ private fun TrialSetRow(
     onTypeLoad: () -> Unit,
     onTypeFigure: (FigureKind) -> Unit,
     onToggleEdit: () -> Unit,
-    onToggleWarmup: () -> Unit,
+    onSetKind: (SetKind) -> Unit,
     onUnlog: () -> Unit,
     onRemove: () -> Unit,
     amend: Boolean = false,
     onLog: () -> Unit = {},
+    timed: Boolean = false,
+    clock: SetClock? = null,
+    timedAlert: RestAlert = RestAlert.DEFAULT,
+    onClock: (SetClock?) -> Unit = {},
+    onTimedLog: (seconds: Int) -> Unit = {},
 ) {
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
@@ -2009,14 +2141,15 @@ private fun TrialSetRow(
                 .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
                 .padding(vertical = 4.dp),
         ) {
-            Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(22.dp),
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                SetNumberCell(
+                    label = label,
+                    kind = set.kind,
+                    onKind = onSetKind,
+                    tone = IronvellumColors.Ink,
+                    showHint = true,
+                    numberStyle = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.width(24.dp),
                 )
                 figures.forEach { figure ->
                     FigureStepper(
@@ -2040,6 +2173,20 @@ private fun TrialSetRow(
                     )
                 }
             }
+            // A hold or duration counts down to its figure and a distance run has a stopwatch;
+            // only on the set in hand, and only in the live trial.
+            if (timed && state == RowState.ACTIVE && (SetClock.countsDown(metric) || SetClock.countsUp(metric))) {
+                TimedSetControl(
+                    metric = metric,
+                    targetSec = set.durationSec ?: 0,
+                    clock = clock,
+                    alert = timedAlert,
+                    onClock = onClock,
+                    onLog = onTimedLog,
+                    onFill = { seconds -> onEdit(set.copy(durationSec = seconds)) },
+                    modifier = Modifier.padding(start = 36.dp, end = 4.dp),
+                )
+            }
             if (state == RowState.EDITING) {
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                     // A warm-up was never logged, so there is nothing to un-log.
@@ -2052,7 +2199,10 @@ private fun TrialSetRow(
                     RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
                 }
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RowAction(if (set.warmup) "Count as a working set" else "Mark as warm-up", IronvellumColors.Ink, onToggleWarmup)
+                    RowAction(
+                        if (set.warmup) "Count as a working set" else "Mark as warm-up",
+                        IronvellumColors.Ink,
+                    ) { onSetKind(if (set.warmup) SetKind.WORKING else SetKind.WARMUP) }
                 }
             }
         }
@@ -2084,13 +2234,12 @@ private fun TrialSetRow(
             textAlign = TextAlign.Center,
             modifier = Modifier.width(18.dp),
         )
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = ChakraPetch,
-            color = tone,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(start = 6.dp).width(22.dp),
+        SetNumberCell(
+            label = label,
+            kind = set.kind,
+            onKind = onSetKind,
+            tone = tone,
+            modifier = Modifier.padding(start = 4.dp).width(24.dp),
         )
         Text(
             setFigureText(set, metric, weighted),
@@ -2168,6 +2317,7 @@ private fun FigureStepper(
 
 @Composable
 private fun StepButton(symbol: String, description: String, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
     Box(
         Modifier
             .size(width = 44.dp, height = 48.dp)
@@ -2175,7 +2325,10 @@ private fun StepButton(symbol: String, description: String, onClick: () -> Unit)
                 interactionSource = remember { MutableInteractionSource() },
                 indication = InkPressIndication,
                 role = Role.Button,
-                onClick = onClick,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                },
             )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -2219,7 +2372,7 @@ private fun GradeField(value: String, onChange: (String) -> Unit, modifier: Modi
 }
 
 @Composable
-private fun RowAction(label: String, color: Color, onClick: () -> Unit) {
+internal fun RowAction(label: String, color: Color, onClick: () -> Unit) {
     Box(
         Modifier
             .heightIn(min = 48.dp)
@@ -2512,7 +2665,7 @@ private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
 
 /** The clock of the rest in the footer: ticks while one runs, and only then. */
 @Composable
-private fun restNow(timer: RestTimer?): Long {
+internal fun restNow(timer: RestTimer?): Long {
     var now by remember(timer) { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     LaunchedEffect(timer) {
         while (timer != null && !timer.isOver(now)) {

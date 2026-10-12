@@ -170,6 +170,25 @@ class ImportMergeTest {
         assertTrue(CloudSync.pendingForPush(history, pushed).isEmpty())
     }
 
+    /** Hevy's dropset and failure rows become real kinds, count as working sets and no longer leave modifier text. */
+    @Test
+    fun importedSetTypesBecomeKinds() = runBlocking {
+        val csv = listOf(
+            "\"title\",\"start_time\",\"end_time\",\"description\",\"exercise_title\",\"superset_id\",\"exercise_notes\",\"set_index\",\"set_type\",\"weight_kg\",\"reps\",\"distance_km\",\"duration_seconds\",\"rpe\"",
+            "\"Chest day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press (Barbell)\",,\"\",0,\"warmup\",40,10,0,0,",
+            "\"Chest day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press (Barbell)\",,\"\",1,\"normal\",80,5,0,0,",
+            "\"Chest day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press (Barbell)\",,\"\",2,\"dropset\",60,8,0,0,",
+            "\"Chest day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press (Barbell)\",,\"\",3,\"failure\",60,6,0,0,",
+        ).joinToString("\n")
+        val parsed = CsvWorkoutReader.read(csv)
+        val bench = repo.exerciseIdByName("Bench Press")!!
+        repo.mergeImported(parsed, mapOf("bench press (barbell)" to bench))
+        val sets = db.sessionDao().observeCompletedWithSets().first().single { it.session.label == "Chest day" }.sets.sortedBy { it.setIndex }
+        assertEquals(listOf("WARMUP", "WORKING", "DROP", "FAILURE"), sets.map { it.kind })
+        assertEquals("only the warm-up is unticked", listOf(false, true, true, true), sets.map { it.done })
+        assertTrue("the kind replaced the modifier text", sets.all { it.modifiers.isBlank() })
+    }
+
     private companion object {
         const val TEST_DB = "ironvellum-import-merge-test.db"
     }

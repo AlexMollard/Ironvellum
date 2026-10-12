@@ -1,5 +1,12 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.ui.components.rackFooter
+import com.ironvellum.app.ui.components.PairRow
+import com.ironvellum.app.ui.components.BarChooser
+import com.ironvellum.app.domain.PlateSizes
+import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.PlateStore
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -40,5 +47,28 @@ internal fun ArmourySettings(onBack: () -> Unit) {
                 onChange = { ProgramAnswersStore.saveEquipment(context.applicationContext, it) },
             )
         }
+        if (savedGear?.let { it.fullGym || Gear.BARBELL in it.gear } == true) BarAndPlates()
+    }
+}
+
+/** The bar and plates the plate calculator builds loads from, in the unit the lifter reads. */
+@Composable
+private fun BarAndPlates() {
+    val context = LocalContext.current
+    val unit = Units.current
+    val setups by PlateStore.setups.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { PlateStore.load(context.applicationContext) }
+    val setup = setups.getValue(unit)
+    val rack = PlateStore.rack(setup, unit)
+    SettingsGroup("Bar") {
+        BarChooser(unit, setup.bar) { PlateStore.setBar(context.applicationContext, unit, it) }
+    }
+    SettingsGroup("Plates you own") {
+        SettingsCaption("Pairs of each. The plate calculator builds loads from these.")
+        PlateSizes.sizes(unit).forEach { size ->
+            PairRow(size, unit, setup.pairs[size] ?: 0) { PlateStore.setPairs(context.applicationContext, unit, size, it) }
+        }
+        Spacer(Modifier.height(4.dp))
+        SettingsCaption(rackFooter(rack))
     }
 }
