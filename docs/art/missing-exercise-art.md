@@ -6,9 +6,9 @@ Counts: 108 drawings to make: 69 Codex techniques (priority 1), 6 gym movements 
 
 ## How to hand art back
 
-1. Generate the frames (three per exercise: start, mid, end; a hold shows set-up, arriving, full hold).
-2. Save each as `tools/exercise_art/owner/<slug>-1.svg`, `-2`, `-3` (PNG also accepted: RGBA, transparent background, 512 px or wider, 1024 recommended). An SVG is read by its alpha, so its colour does not matter.
-3. Run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`. It traces each frame to one vector path exactly as it does Everkinetic's, registers the frames to one ground line, centre and scale, maps them to the movement, and regenerates the Kotlin index; a technique that was on a proxy drawing or the pictogram switches to the new drawing.
+1. Generate one representative still per exercise: a full hold or clear defining repetition position.
+2. Save it as `tools/exercise_art/owner/<slug>-1.svg` (PNG also accepted: RGBA, transparent background, 512 px or wider, 1024 recommended). An SVG is read by its alpha, so its colour does not matter.
+3. After approval, add the slug to `tools/exercise_art/owner/APPROVED`, then run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`. It traces each frame to one vector path exactly as it does Everkinetic's, registers the frames to one ground line, centre and scale, maps them to the movement, and regenerates the Kotlin index; a technique that was on a proxy drawing or the pictogram switches to the new drawing.
 4. Rebuild the app. Owner-made art is the project's own and is recorded as such in `docs/ART_ATTRIBUTION.md`.
 
 ## Style guide
@@ -19,7 +19,7 @@ Derived from the Workout Guide SVGs themselves (measured over 80 of its exercise
 
 **What the file is.** Each frame is a single <path fill="#fff" fill-rule="evenodd"> of roughly 300 curve commands: no stroke attribute, no groups, no transform, no gradients. The linework is a FILLED shape: every line is a thin white ribbon (a traced outline), so what looks like a line drawing is the filled area of the path, and the interior of the body is the empty background.
 
-**Line weight.** One even weight of about 4 units on the 512 canvas (0.8% of its width), the same for the body outline, the muscle lines and the equipment. Contours are closed, slightly hand-inked (a gentle wobble, tapered line ends), never mechanical vector strokes. Muscle-separation marks and fabric folds are short tapered strokes of the same weight, never filled shading or hatching. The build redraws every frame at exactly this weight, so close is good enough; what it cannot fix is shading, fills or a double outline.
+**Line weight.** One even weight of about 4 units on the 512 canvas (0.8% of its width), the same for the body outline, the muscle lines and the equipment. Contours are closed, slightly hand-inked (a gentle wobble, tapered line ends), never mechanical vector strokes. Muscle-separation marks and fabric folds are short tapered strokes of the same weight, never filled shading or hatching.
 
 **The figure.** One athletic, muscular adult male, heroic but anatomical proportions (about 7.5 heads tall). The head is a smooth FACELESS egg-shaped oval: no eyes, nose, mouth, hair or ears, only a neck line where it joins the trapezius. Defined deltoids, pecs, a six-pack with serratus lines, forearm and calf muscle separations, drawn as short contour lines, not shaded. Hands show the fingers as separate contour shapes; feet are bare (toe lines visible) or plain low shoes with a single contour and no logo. He wears plain mid-thigh shorts with a few fold lines and nothing else (no shirt, no belt, no wristbands).
 
@@ -27,7 +27,7 @@ Derived from the Workout Guide SVGs themselves (measured over 80 of its exercise
 
 **Views.** Chosen per exercise as in a classic exercise guide: front, side profile (facing either way), three-quarter front or back, or back. The camera never moves between the frames of one exercise: the same view, the same figure size, the same equipment position; only the athlete moves (and the bar/rings stay put for a hang).
 
-**Frames.** Three frames per exercise, numbered in order: 1 = start, 2 = mid, 3 = end (a hold shows: set-up, arriving, full hold). The app plays 1, 2, 3, 2 and registers the frames to one ground line, centre and scale, so keep the figure the same size in all three.
+**Frames.** One representative still per exercise, numbered 1. A hold shows the full hold; a repetition shows a clear defining position. Frame-count overrides in frame-counts.json are authoritative. No animation frames are needed for a still.
 
 ### Style references to attach
 
@@ -52,11 +52,9 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 ### Frog Stand
 
-- Slug: `frog-stand`. Files: `frog-stand-1.svg`, `frog-stand-2.svg`, `frog-stand-3.svg`. Now shows: pictogram.
+- Slug: `frog-stand`. Files: `frog-stand-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Deep squat facing right with the hands flat on the floor shoulder width apart, fingers pointing forward. Knees wide, hips low, the elbows bent and angled out to the sides, head lifted and looking forward. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Frog Stand.
-- Frame 2: Leaning forward: the shoulders move well forward of the wrists, the knees move onto the backs of the upper arms and rest on the elbows. The heels are lifting and the toes start to leave the floor.
-- Frame 3: Full hold: the feet are off the floor and the toes pointed together behind the hips, the knees resting on the backs of the bent elbows. The elbows are bent at about 90 degrees angled out, the torso tilted forward, the back rounded and the head lifted looking forward.
+- Frame 1: Full hold: the feet are off the floor and the toes pointed together behind the hips, the knees resting on the backs of the bent elbows. The elbows are bent at about 90 degrees angled out, the torso tilted forward, the back rounded and the head lifted looking forward.
 - Must get right: The knees rest on the elbows, not high on the upper arms like crow pose.
 
 Prompt:
@@ -66,21 +64,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Frog Stand (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Deep squat facing right with the hands flat on the floor shoulder width apart, fingers pointing forward. Knees wide, hips low, the elbows bent and angled out to the sides, head lifted and looking forward. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Frog Stand.
-Frame 2 of 3 (arriving): Leaning forward: the shoulders move well forward of the wrists, the knees move onto the backs of the upper arms and rest on the elbows. The heels are lifting and the toes start to leave the floor.
-Frame 3 of 3 (full hold): Full hold: the feet are off the floor and the toes pointed together behind the hips, the knees resting on the backs of the bent elbows. The elbows are bent at about 90 degrees angled out, the torso tilted forward, the back rounded and the head lifted looking forward.
+Representative still: Full hold: the feet are off the floor and the toes pointed together behind the hips, the knees resting on the backs of the bent elbows. The elbows are bent at about 90 degrees angled out, the torso tilted forward, the back rounded and the head lifted looking forward.
 Must get right: The knees rest on the elbows, not high on the upper arms like crow pose.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Elbow Lever
 
-- Slug: `elbow-lever`. Files: `elbow-lever-1.svg`, `elbow-lever-2.svg`, `elbow-lever-3.svg`. Now shows: pictogram.
+- Slug: `elbow-lever`. Files: `elbow-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Crouching facing right with the hands on the floor, fingers pointing back toward the feet, the elbows bent and tucked into the hips. The torso is leaning forward over the hands, the head lifted looking ahead.
-- Frame 2: Leaning forward: the elbows are pressed into the stomach and the hips, the weight shifting onto the hands. The torso tilts toward horizontal and the feet start to lift off the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Elbow Lever clearly in this side (facing right) view.
-- Frame 3: Full hold: the body is horizontal and straight, supported on the hands with the elbows bent at about 90 degrees and set into the hips. Legs together and straight, extended behind, the feet are off the floor and the head is lifted looking forward with the torso level.
+- Frame 1: Full hold: the body is horizontal and straight, supported on the hands with the elbows bent at about 90 degrees and set into the hips. Legs together and straight, extended behind, the feet are off the floor and the head is lifted looking forward with the torso level.
 - Must get right: The hands point back toward the feet, the elbows sit in the hips, and the body is horizontal.
 
 Prompt:
@@ -90,21 +84,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Elbow Lever (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Crouching facing right with the hands on the floor, fingers pointing back toward the feet, the elbows bent and tucked into the hips. The torso is leaning forward over the hands, the head lifted looking ahead.
-Frame 2 of 3 (arriving): Leaning forward: the elbows are pressed into the stomach and the hips, the weight shifting onto the hands. The torso tilts toward horizontal and the feet start to lift off the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Elbow Lever clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the body is horizontal and straight, supported on the hands with the elbows bent at about 90 degrees and set into the hips. Legs together and straight, extended behind, the feet are off the floor and the head is lifted looking forward with the torso level.
+Representative still: Full hold: the body is horizontal and straight, supported on the hands with the elbows bent at about 90 degrees and set into the hips. Legs together and straight, extended behind, the feet are off the floor and the head is lifted looking forward with the torso level.
 Must get right: The hands point back toward the feet, the elbows sit in the hips, and the body is horizontal.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Planche Lean
 
-- Slug: `planche-lean`. Files: `planche-lean-1.svg`, `planche-lean-2.svg`, `planche-lean-3.svg`. Now shows: pictogram.
+- Slug: `planche-lean`. Files: `planche-lean-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Push-up plank position facing right with the hands on the floor under the shoulders, the fingers pointing forward or slightly outward. Arms straight, the body in a straight line from head to heels, the feet together on the toes.
-- Frame 2: Leaning forward: the arms stay locked straight as the shoulders move forward past the wrists. The body remains a straight rigid line, the heels stretching back, the weight shifting onto the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Planche Lean clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight and the shoulders are far ahead of the hands, about a hand-length past the wrists. The body is straight from the head to the toes, tilted forward and downward, the toes still on the floor, the shoulders protracted and the hips level.
+- Frame 1: Full hold: the arms are locked straight and the shoulders are far ahead of the hands, about a hand-length past the wrists. The body is straight from the head to the toes, tilted forward and downward, the toes still on the floor, the shoulders protracted and the hips level.
 - Must get right: The arms stay locked, the shoulders are far past the wrists, and the toes stay on the floor.
 
 Prompt:
@@ -114,21 +104,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Planche Lean (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Push-up plank position facing right with the hands on the floor under the shoulders, the fingers pointing forward or slightly outward. Arms straight, the body in a straight line from head to heels, the feet together on the toes.
-Frame 2 of 3 (arriving): Leaning forward: the arms stay locked straight as the shoulders move forward past the wrists. The body remains a straight rigid line, the heels stretching back, the weight shifting onto the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Planche Lean clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight and the shoulders are far ahead of the hands, about a hand-length past the wrists. The body is straight from the head to the toes, tilted forward and downward, the toes still on the floor, the shoulders protracted and the hips level.
+Representative still: Full hold: the arms are locked straight and the shoulders are far ahead of the hands, about a hand-length past the wrists. The body is straight from the head to the toes, tilted forward and downward, the toes still on the floor, the shoulders protracted and the hips level.
 Must get right: The arms stay locked, the shoulders are far past the wrists, and the toes stay on the floor.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Advanced Tuck Planche
 
-- Slug: `advanced-tuck-planche`. Files: `advanced-tuck-planche-1.svg`, `advanced-tuck-planche-2.svg`, `advanced-tuck-planche-3.svg`. Now shows: pictogram.
+- Slug: `advanced-tuck-planche`. Files: `advanced-tuck-planche-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Tuck planche set position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the hands, the knees tucked to the chest with the feet just off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Planche.
-- Frame 2: Opening up: the arms stay locked and the hips lower to shoulder height, the back flattening. The knees begin to move away from the chest, the thighs rotating down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Planche clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight, the shoulders far ahead of the hands, and the back is flat and horizontal. The hips are open so that the thighs are in line with the back, the knees bent at about 90 degrees with the shins pointing straight back, feet off the floor.
+- Frame 1: Full hold: the arms are locked straight, the shoulders far ahead of the hands, and the back is flat and horizontal. The hips are open so that the thighs are in line with the back, the knees bent at about 90 degrees with the shins pointing straight back, feet off the floor.
 - Must get right: The back must be flat and horizontal with the thighs in line, not rounded like the tuck.
 
 Prompt:
@@ -138,21 +124,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Advanced Tuck Planche (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Tuck planche set position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the hands, the knees tucked to the chest with the feet just off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Planche.
-Frame 2 of 3 (arriving): Opening up: the arms stay locked and the hips lower to shoulder height, the back flattening. The knees begin to move away from the chest, the thighs rotating down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Planche clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight, the shoulders far ahead of the hands, and the back is flat and horizontal. The hips are open so that the thighs are in line with the back, the knees bent at about 90 degrees with the shins pointing straight back, feet off the floor.
+Representative still: Full hold: the arms are locked straight, the shoulders far ahead of the hands, and the back is flat and horizontal. The hips are open so that the thighs are in line with the back, the knees bent at about 90 degrees with the shins pointing straight back, feet off the floor.
 Must get right: The back must be flat and horizontal with the thighs in line, not rounded like the tuck.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tuck Planche
 
-- Slug: `tuck-planche`. Files: `tuck-planche-1.svg`, `tuck-planche-2.svg`, `tuck-planche-3.svg`. Now shows: pictogram.
+- Slug: `tuck-planche`. Files: `tuck-planche-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Frog stand position facing right, the hands flat on the floor, fingers forward, the arms straight but the knees close to the chest. The shoulders are leaned far ahead of the wrists and the toes are on the floor.
-- Frame 2: Rising: the arms are locked straight and the shoulders are forward of the hands. The hips rise to shoulder height as the feet lift off the floor with the knees tucked to the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Planche clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight and the shoulders are pushed forward past the hands. The knees are tucked tight to the chest with the hips bent, the back is rounded slightly, the hips level with the shoulders and the feet are off the floor.
+- Frame 1: Full hold: the arms are locked straight and the shoulders are pushed forward past the hands. The knees are tucked tight to the chest with the hips bent, the back is rounded slightly, the hips level with the shoulders and the feet are off the floor.
 - Must get right: The arms are fully locked and the hips are at shoulder height, not piked up.
 
 Prompt:
@@ -162,21 +144,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tuck Planche (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Frog stand position facing right, the hands flat on the floor, fingers forward, the arms straight but the knees close to the chest. The shoulders are leaned far ahead of the wrists and the toes are on the floor.
-Frame 2 of 3 (arriving): Rising: the arms are locked straight and the shoulders are forward of the hands. The hips rise to shoulder height as the feet lift off the floor with the knees tucked to the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Planche clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight and the shoulders are pushed forward past the hands. The knees are tucked tight to the chest with the hips bent, the back is rounded slightly, the hips level with the shoulders and the feet are off the floor.
+Representative still: Full hold: the arms are locked straight and the shoulders are pushed forward past the hands. The knees are tucked tight to the chest with the hips bent, the back is rounded slightly, the hips level with the shoulders and the feet are off the floor.
 Must get right: The arms are fully locked and the hips are at shoulder height, not piked up.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Leg Planche
 
-- Slug: `one-leg-planche`. Files: `one-leg-planche-1.svg`, `one-leg-planche-2.svg`, `one-leg-planche-3.svg`. Now shows: pictogram.
+- Slug: `one-leg-planche`. Files: `one-leg-planche-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Advanced tuck planche position facing right: the arms locked straight and the shoulders ahead of the hands, the back flat, the knees bent with the shins pointing back and the feet off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the One-Leg Planche.
-- Frame 2: Extending: the arms stay locked and the body stays horizontal. One leg begins to straighten backward from the hip while the other knee stays bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Planche clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight and the body is horizontal over the hands. One leg is straight and extended behind in line with the torso with the toes pointed, the other leg is tucked with the knee bent into the chest. The hips are level with the shoulders and the shoulders are forward of the hands.
+- Frame 1: Full hold: the arms are locked straight and the body is horizontal over the hands. One leg is straight and extended behind in line with the torso with the toes pointed, the other leg is tucked with the knee bent into the chest. The hips are level with the shoulders and the shoulders are forward of the hands.
 - Must get right: One leg is straight and in line with the torso and the other is tucked, hips not piked.
 
 Prompt:
@@ -186,21 +164,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Leg Planche (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Advanced tuck planche position facing right: the arms locked straight and the shoulders ahead of the hands, the back flat, the knees bent with the shins pointing back and the feet off the floor. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the One-Leg Planche.
-Frame 2 of 3 (arriving): Extending: the arms stay locked and the body stays horizontal. One leg begins to straighten backward from the hip while the other knee stays bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Planche clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight and the body is horizontal over the hands. One leg is straight and extended behind in line with the torso with the toes pointed, the other leg is tucked with the knee bent into the chest. The hips are level with the shoulders and the shoulders are forward of the hands.
+Representative still: Full hold: the arms are locked straight and the body is horizontal over the hands. One leg is straight and extended behind in line with the torso with the toes pointed, the other leg is tucked with the knee bent into the chest. The hips are level with the shoulders and the shoulders are forward of the hands.
 Must get right: One leg is straight and in line with the torso and the other is tucked, hips not piked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Straddle Planche
 
-- Slug: `straddle-planche`. Files: `straddle-planche-1.svg`, `straddle-planche-2.svg`, `straddle-planche-3.svg`. Now shows: pictogram.
+- Slug: `straddle-planche`. Files: `straddle-planche-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Planche lean position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the wrists. The legs are wide apart on the floor behind with the feet on the toes. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Straddle Planche.
-- Frame 2: Lifting: the arms stay straight and the shoulders push forward. The hips rise to shoulder height and the straight legs lift off the floor, spreading wide. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Planche clearly in this side (facing right) view.
-- Frame 3: Full hold: the body is horizontal and the arms locked straight under the shoulders pushed forward. Both legs are straight, spread wide in a straddle of about 60 to 90 degrees behind the body, toes pointed, the hips level with the shoulders and the head neutral.
+- Frame 1: Full hold: the body is horizontal and the arms locked straight under the shoulders pushed forward. Both legs are straight, spread wide in a straddle of about 60 to 90 degrees behind the body, toes pointed, the hips level with the shoulders and the head neutral.
 - Must get right: Legs stay straight and wide, and the body stays horizontal with the arms locked.
 
 Prompt:
@@ -210,21 +184,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Straddle Planche (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Planche lean position facing right, the hands on the floor, the arms locked straight, the shoulders ahead of the wrists. The legs are wide apart on the floor behind with the feet on the toes. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Straddle Planche.
-Frame 2 of 3 (arriving): Lifting: the arms stay straight and the shoulders push forward. The hips rise to shoulder height and the straight legs lift off the floor, spreading wide. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Planche clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the body is horizontal and the arms locked straight under the shoulders pushed forward. Both legs are straight, spread wide in a straddle of about 60 to 90 degrees behind the body, toes pointed, the hips level with the shoulders and the head neutral.
+Representative still: Full hold: the body is horizontal and the arms locked straight under the shoulders pushed forward. Both legs are straight, spread wide in a straddle of about 60 to 90 degrees behind the body, toes pointed, the hips level with the shoulders and the head neutral.
 Must get right: Legs stay straight and wide, and the body stays horizontal with the arms locked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Full Planche
 
-- Slug: `full-planche`. Files: `full-planche-1.svg`, `full-planche-2.svg`, `full-planche-3.svg`. Now shows: pictogram.
+- Slug: `full-planche`. Files: `full-planche-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Planche lean facing right: the arms locked straight, the hands flat on the floor with the fingers pointing forward. The body is in a straight line, the shoulders far ahead of the wrists and the toes still touching the floor.
-- Frame 2: Rising: the arms stay locked as the weight shifts forward and the feet lift off. The legs together and straight, the body rising toward horizontal, the shoulders leaning ahead of the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Full Planche clearly in this side (facing right) view.
-- Frame 3: Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.
+- Frame 1: Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.
 - Must get right: The body is one straight line with the legs together, no pike and no arched back.
 
 Prompt:
@@ -234,21 +204,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Full Planche (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Planche lean facing right: the arms locked straight, the hands flat on the floor with the fingers pointing forward. The body is in a straight line, the shoulders far ahead of the wrists and the toes still touching the floor.
-Frame 2 of 3 (arriving): Rising: the arms stay locked as the weight shifts forward and the feet lift off. The legs together and straight, the body rising toward horizontal, the shoulders leaning ahead of the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Full Planche clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.
+Representative still: Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.
 Must get right: The body is one straight line with the legs together, no pike and no arched back.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Planche Push-up
 
-- Slug: `planche-push-up`. Files: `planche-push-up-1.svg`, `planche-push-up-2.svg`, `planche-push-up-3.svg`. Now shows: pictogram.
+- Slug: `planche-push-up`. Files: `planche-push-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.
-- Frame 2: Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.
-- Frame 3: Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.
+- Frame 1: Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.
 - Must get right: The body stays horizontal and the feet stay off the floor throughout the rep.
 
 Prompt:
@@ -258,21 +224,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Planche Push-up (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.
-Frame 2 of 3 (mid): Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.
-Frame 3 of 3 (end): Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.
+Representative still: Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.
 Must get right: The body stays horizontal and the feet stay off the floor throughout the rep.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Front Row Hold
 
-- Slug: `front-row-hold`. Files: `front-row-hold-1.svg`, `front-row-hold-2.svg`, `front-row-hold-3.svg`. Now shows: pictogram.
+- Slug: `front-row-hold`. Files: `front-row-hold-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: a low bar at waist height, feet on the floor. Static hold.
-- Frame 1: Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.
-- Frame 2: Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.
-- Frame 3: Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.
+- Frame 1: Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.
 - Must get right: The body must be a rigid horizontal plank with no sagging hips and no bent knees.
 
 Prompt:
@@ -282,21 +244,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Front Row Hold (a static hold). View: side (facing right). Equipment: a low bar at waist height, feet on the floor.
 
-Frame 1 of 3 (set-up): Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.
-Frame 2 of 3 (arriving): Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.
-Frame 3 of 3 (full hold): Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.
+Representative still: Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.
 Must get right: The body must be a rigid horizontal plank with no sagging hips and no bent knees.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Skin the Cat
 
-- Slug: `skin-the-cat`. Files: `skin-the-cat-1.svg`, `skin-the-cat-2.svg`, `skin-the-cat-3.svg`. Now shows: pictogram.
+- Slug: `skin-the-cat`. Files: `skin-the-cat-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.
-- Frame 2: Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.
-- Frame 3: Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.
+- Frame 1: Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.
 - Must get right: The arms remain straight all the way through the rotation, with the shoulders opening fully behind.
 
 Prompt:
@@ -306,21 +264,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Skin the Cat (a repetition movement). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.
-Frame 2 of 3 (mid): Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.
-Frame 3 of 3 (end): Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.
+Representative still: Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.
 Must get right: The arms remain straight all the way through the rotation, with the shoulders opening fully behind.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tuck Back Lever
 
-- Slug: `tuck-back-lever`. Files: `tuck-back-lever-1.svg`, `tuck-back-lever-2.svg`, `tuck-back-lever-3.svg`. Now shows: pictogram.
+- Slug: `tuck-back-lever`. Files: `tuck-back-lever-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.
-- Frame 2: Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.
-- Frame 3: Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension.
+- Frame 1: Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension.
 - Must get right: The torso must be horizontal and the arms straight; do not show a rounded back or sagging hips.
 
 Prompt:
@@ -330,21 +284,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tuck Back Lever (a static hold). View: side (facing left). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.
-Frame 2 of 3 (arriving): Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension.
+Representative still: Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension.
 Must get right: The torso must be horizontal and the arms straight; do not show a rounded back or sagging hips.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Advanced Tuck Back Lever
 
-- Slug: `advanced-tuck-back-lever`. Files: `advanced-tuck-back-lever-1.svg`, `advanced-tuck-back-lever-2.svg`, `advanced-tuck-back-lever-3.svg`. Now shows: pictogram.
+- Slug: `advanced-tuck-back-lever`. Files: `advanced-tuck-back-lever-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.
-- Frame 2: Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.
-- Frame 3: Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral.
+- Frame 1: Full advanced tuck back lever: flat horizontal back, shoulders and hips level, torso facing the floor. Hips bent around 90 degrees with thighs descending below pelvis; knees bent around 90 degrees with shins extending behind. Straight arms extend behind the torso to the bar. Neutral neck and head.
 - Must get right: The thighs must be in line with the back, unlike the tight tuck, with no arch.
 
 Prompt:
@@ -354,21 +304,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Advanced Tuck Back Lever (a static hold). View: side (facing left). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.
-Frame 2 of 3 (arriving): Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral.
+Representative still: Full advanced tuck back lever: flat horizontal back, shoulders and hips level, torso facing the floor. Hips bent around 90 degrees with thighs descending below pelvis; knees bent around 90 degrees with shins extending behind. Straight arms extend behind the torso to the bar. Neutral neck and head.
 Must get right: The thighs must be in line with the back, unlike the tight tuck, with no arch.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Advanced Tuck Front Lever
 
-- Slug: `advanced-tuck-front-lever`. Files: `advanced-tuck-front-lever-1.svg`, `advanced-tuck-front-lever-2.svg`, `advanced-tuck-front-lever-3.svg`. Now shows: pictogram.
+- Slug: `advanced-tuck-front-lever`. Files: `advanced-tuck-front-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.
-- Frame 2: Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.
-- Frame 3: Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.
+- Frame 1: Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.
 - Must get right: The back must be flat and the thighs in line with the torso, which differs from the tight tuck.
 
 Prompt:
@@ -378,21 +324,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Advanced Tuck Front Lever (a static hold). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.
-Frame 2 of 3 (arriving): Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.
+Representative still: Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.
 Must get right: The back must be flat and the thighs in line with the torso, which differs from the tight tuck.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Leg Back Lever
 
-- Slug: `one-leg-back-lever`. Files: `one-leg-back-lever-1.svg`, `one-leg-back-lever-2.svg`, `one-leg-back-lever-3.svg`. Now shows: pictogram.
+- Slug: `one-leg-back-lever`. Files: `one-leg-back-lever-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand grip with the arms straight. The body is rolled back into the inverted hang with the knees tucked, the hips above the bar and the arms straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the One-Leg Back Lever.
-- Frame 2: Lowering: the body rotates down to face the floor, the arms straight. One leg begins extending backward from the hip while the other knee remains bent into the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Back Lever clearly in this side (facing left) view.
-- Frame 3: Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension.
+- Frame 1: Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension.
 - Must get right: One leg straight in line with the body and the other tucked, with the hips level.
 
 Prompt:
@@ -402,21 +344,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Leg Back Lever (a static hold). View: side (facing left). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand grip with the arms straight. The body is rolled back into the inverted hang with the knees tucked, the hips above the bar and the arms straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the One-Leg Back Lever.
-Frame 2 of 3 (arriving): Lowering: the body rotates down to face the floor, the arms straight. One leg begins extending backward from the hip while the other knee remains bent into the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Back Lever clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension.
+Representative still: Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension.
 Must get right: One leg straight in line with the body and the other tucked, with the hips level.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tuck Front Lever
 
-- Slug: `tuck-front-lever`. Files: `tuck-front-lever-1.svg`, `tuck-front-lever-2.svg`, `tuck-front-lever-3.svg`. Now shows: pictogram.
+- Slug: `tuck-front-lever`. Files: `tuck-front-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip, the arms straight, shoulders packed down. The knees are lifted toward the chest with the hips bent, the body curled in a ball and the body hanging vertically beneath the bar.
-- Frame 2: Rotating up: the straight arms stay locked as the hips and the tucked knees rise toward the bar height, the torso tilting back toward horizontal. The shoulders are pulled down, the back stays flat, the knees remain tight to the chest.
-- Frame 3: Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat.
+- Frame 1: Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat.
 - Must get right: Arms stay straight and the back flat and horizontal, with no rounded back or bent elbows.
 
 Prompt:
@@ -426,21 +364,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tuck Front Lever (a static hold). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip, the arms straight, shoulders packed down. The knees are lifted toward the chest with the hips bent, the body curled in a ball and the body hanging vertically beneath the bar.
-Frame 2 of 3 (arriving): Rotating up: the straight arms stay locked as the hips and the tucked knees rise toward the bar height, the torso tilting back toward horizontal. The shoulders are pulled down, the back stays flat, the knees remain tight to the chest.
-Frame 3 of 3 (full hold): Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat.
+Representative still: Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat.
 Must get right: Arms stay straight and the back flat and horizontal, with no rounded back or bent elbows.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Leg Front Lever
 
-- Slug: `one-leg-front-lever`. Files: `one-leg-front-lever-1.svg`, `one-leg-front-lever-2.svg`, `one-leg-front-lever-3.svg`. Now shows: pictogram.
+- Slug: `one-leg-front-lever`. Files: `one-leg-front-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip, arms straight, shoulders packed down. The legs are together, bent in a tuck, with the body hanging vertically beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the One-Leg Front Lever.
-- Frame 2: Rising to horizontal: arms locked, the torso tilting up to horizontal and the hips lifting level. One leg extends straight back from the hip while the other knee stays tucked into the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Front Lever clearly in this side (facing right) view.
-- Frame 3: Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down.
+- Frame 1: Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down.
 - Must get right: One leg is straight and in line with the torso, and the other is tucked, not a straddle.
 
 Prompt:
@@ -450,21 +384,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Leg Front Lever (a static hold). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip, arms straight, shoulders packed down. The legs are together, bent in a tuck, with the body hanging vertically beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the One-Leg Front Lever.
-Frame 2 of 3 (arriving): Rising to horizontal: arms locked, the torso tilting up to horizontal and the hips lifting level. One leg extends straight back from the hip while the other knee stays tucked into the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Leg Front Lever clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down.
+Representative still: Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down.
 Must get right: One leg is straight and in line with the torso, and the other is tucked, not a straddle.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Straddle Back Lever
 
-- Slug: `straddle-back-lever`. Files: `straddle-back-lever-1.svg`, `straddle-back-lever-2.svg`, `straddle-back-lever-3.svg`. Now shows: pictogram.
+- Slug: `straddle-back-lever`. Files: `straddle-back-lever-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip and straight arms. The body is rolled back into an inverted tuck, hips above the bar, the knees pulled to the chest. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Straddle Back Lever.
-- Frame 2: Lowering: the arms stay straight while the body rotates down to face the floor. The legs open and extend to the sides, spreading wide as the hips pass level with the shoulders. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Back Lever clearly in this side (facing left) view.
-- Frame 3: Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral.
+- Frame 1: Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral.
 - Must get right: Both legs are straight and wide with the hips level, and the arms stay straight.
 
 Prompt:
@@ -474,21 +404,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Straddle Back Lever (a static hold). View: side (facing left). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip and straight arms. The body is rolled back into an inverted tuck, hips above the bar, the knees pulled to the chest. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Straddle Back Lever.
-Frame 2 of 3 (arriving): Lowering: the arms stay straight while the body rotates down to face the floor. The legs open and extend to the sides, spreading wide as the hips pass level with the shoulders. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Back Lever clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral.
+Representative still: Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral.
 Must get right: Both legs are straight and wide with the hips level, and the arms stay straight.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Straddle Front Lever
 
-- Slug: `straddle-front-lever`. Files: `straddle-front-lever-1.svg`, `straddle-front-lever-2.svg`, `straddle-front-lever-3.svg`. Now shows: pictogram.
+- Slug: `straddle-front-lever`. Files: `straddle-front-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip, arms straight and the shoulders packed. The body is in a tuck, the knees pulled to the chest, hanging vertically beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Straddle Front Lever.
-- Frame 2: Rising: the arms stay straight and the body rotates toward horizontal. The legs extend and open out to the sides while the hips lift, the torso flattening and approaching horizontal. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Front Lever clearly in this side (facing right) view.
-- Frame 3: Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral.
+- Frame 1: Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral.
 - Must get right: Both legs are straight and wide apart with the hips level, not sagging or piked.
 
 Prompt:
@@ -498,21 +424,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Straddle Front Lever (a static hold). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip, arms straight and the shoulders packed. The body is in a tuck, the knees pulled to the chest, hanging vertically beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Straddle Front Lever.
-Frame 2 of 3 (arriving): Rising: the arms stay straight and the body rotates toward horizontal. The legs extend and open out to the sides while the hips lift, the torso flattening and approaching horizontal. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle Front Lever clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral.
+Representative still: Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral.
 Must get right: Both legs are straight and wide apart with the hips level, not sagging or piked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Back Lever
 
-- Slug: `back-lever`. Files: `back-lever-1.svg`, `back-lever-2.svg`, `back-lever-3.svg`. Now shows: pictogram.
+- Slug: `back-lever`. Files: `back-lever-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with an overhand shoulder-width grip with straight arms. The body is rolled backward into an inverted pike with the legs pointing up, the hips above the bar and the arms straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Back Lever.
-- Frame 2: Lowering: the arms stay straight while the straight body rotates down behind the bar. The legs together and extended, the body about 45 degrees from the floor, the shoulders in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Back Lever clearly in this side (facing left) view.
-- Frame 3: Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral.
+- Frame 1: Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral.
 - Must get right: The body is straight and horizontal with no pike at the hips and no bent arms.
 
 Prompt:
@@ -522,21 +444,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Back Lever (a static hold). View: side (facing left). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with an overhand shoulder-width grip with straight arms. The body is rolled backward into an inverted pike with the legs pointing up, the hips above the bar and the arms straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Back Lever.
-Frame 2 of 3 (arriving): Lowering: the arms stay straight while the straight body rotates down behind the bar. The legs together and extended, the body about 45 degrees from the floor, the shoulders in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Back Lever clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral.
+Representative still: Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral.
 Must get right: The body is straight and horizontal with no pike at the hips and no bent arms.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Front Lever
 
-- Slug: `front-lever`. Files: `front-lever-1.svg`, `front-lever-2.svg`, `front-lever-3.svg`. Now shows: pictogram.
+- Slug: `front-lever`. Files: `front-lever-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar by an overhand shoulder-width grip, arms straight and the shoulders packed down. The legs hang together, slightly bent, with the body vertical beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Front Lever.
-- Frame 2: Rising: the arms stay locked straight as the straight body lifts toward horizontal. Legs together and extended, the hips rising, the torso and legs forming one line at about 45 degrees to the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Front Lever clearly in this side (facing right) view.
-- Frame 3: Full hold: the entire body in one perfectly straight horizontal line from the head to the pointed toes, facing down. The arms are straight and vertical to the bar, the legs together and straight, the shoulders pushed down, the head neutral and the hips level.
+- Frame 1: Full hold: the entire body in one perfectly straight horizontal line from the head to the pointed toes, facing down. The arms are straight and vertical to the bar, the legs together and straight, the shoulders pushed down, the head neutral and the hips level.
 - Must get right: The line is perfectly horizontal and straight, with no pike at the hips or sag.
 
 Prompt:
@@ -546,21 +464,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Front Lever (a static hold). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar by an overhand shoulder-width grip, arms straight and the shoulders packed down. The legs hang together, slightly bent, with the body vertical beneath the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Front Lever.
-Frame 2 of 3 (arriving): Rising: the arms stay locked straight as the straight body lifts toward horizontal. Legs together and extended, the hips rising, the torso and legs forming one line at about 45 degrees to the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Front Lever clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the entire body in one perfectly straight horizontal line from the head to the pointed toes, facing down. The arms are straight and vertical to the bar, the legs together and straight, the shoulders pushed down, the head neutral and the hips level.
+Representative still: Full hold: the entire body in one perfectly straight horizontal line from the head to the pointed toes, facing down. The arms are straight and vertical to the bar, the legs together and straight, the shoulders pushed down, the head neutral and the hips level.
 Must get right: The line is perfectly horizontal and straight, with no pike at the hips or sag.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Front Lever
 
-- Slug: `one-arm-front-lever`. Files: `one-arm-front-lever-1.svg`, `one-arm-front-lever-2.svg`, `one-arm-front-lever-3.svg`. Now shows: pictogram.
+- Slug: `one-arm-front-lever`. Files: `one-arm-front-lever-1.svg`. Now shows: pictogram.
 - View: front. Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Hanging from the bar with one hand on the bar in overhand grip, the other arm held to the side. The straight arm is locked, the shoulder packed down and the body hangs vertically with the legs together and slightly in front.
-- Frame 2: Rising: the one arm stays straight as the body lifts toward horizontal. The legs and torso rise together, the free arm held out to the side or across the chest, the hips rotating slightly. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Arm Front Lever clearly in this front view.
-- Frame 3: Full hold: the body in one straight horizontal line from the head to the pointed toes, hanging from one straight arm on the bar. The torso rotated slightly toward the bar side, the free arm extended away from the body, the legs together and the shoulder pressed down.
+- Frame 1: Full hold: the body in one straight horizontal line from the head to the pointed toes, hanging from one straight arm on the bar. The torso rotated slightly toward the bar side, the free arm extended away from the body, the legs together and the shoulder pressed down.
 - Must get right: Only one hand holds the bar, and the body is horizontal and straight.
 
 Prompt:
@@ -570,21 +484,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Front Lever (a static hold). View: front. Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Hanging from the bar with one hand on the bar in overhand grip, the other arm held to the side. The straight arm is locked, the shoulder packed down and the body hangs vertically with the legs together and slightly in front.
-Frame 2 of 3 (arriving): Rising: the one arm stays straight as the body lifts toward horizontal. The legs and torso rise together, the free arm held out to the side or across the chest, the hips rotating slightly. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the One-Arm Front Lever clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the body in one straight horizontal line from the head to the pointed toes, hanging from one straight arm on the bar. The torso rotated slightly toward the bar side, the free arm extended away from the body, the legs together and the shoulder pressed down.
+Representative still: Full hold: the body in one straight horizontal line from the head to the pointed toes, hanging from one straight arm on the bar. The torso rotated slightly toward the bar side, the free arm extended away from the body, the legs together and the shoulder pressed down.
 Must get right: Only one hand holds the bar, and the body is horizontal and straight.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Crow Pose
 
-- Slug: `crow-pose`. Files: `crow-pose-1.svg`, `crow-pose-2.svg`, `crow-pose-3.svg`. Now shows: pictogram.
+- Slug: `crow-pose`. Files: `crow-pose-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Deep squat facing right with the hands flat on the floor shoulder width apart, fingers spread and pointing forward. Knees are wide and pressed against the outside of the upper arms, hips low, heels off the floor, head lifted and eyes ahead.
-- Frame 2: Weight shifting forward: the shoulders move ahead of the wrists, elbows bending slightly. Knees stay high and tight on the upper arms close to the armpits, one foot and then the other lifting off the floor as the toes leave the ground.
-- Frame 3: Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.
+- Frame 1: Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.
 - Must get right: Knees must sit high on the upper arms, not down at the elbows.
 
 Prompt:
@@ -594,21 +504,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Crow Pose (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Deep squat facing right with the hands flat on the floor shoulder width apart, fingers spread and pointing forward. Knees are wide and pressed against the outside of the upper arms, hips low, heels off the floor, head lifted and eyes ahead.
-Frame 2 of 3 (arriving): Weight shifting forward: the shoulders move ahead of the wrists, elbows bending slightly. Knees stay high and tight on the upper arms close to the armpits, one foot and then the other lifting off the floor as the toes leave the ground.
-Frame 3 of 3 (full hold): Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.
+Representative still: Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.
 Must get right: Knees must sit high on the upper arms, not down at the elbows.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Wall Handstand
 
-- Slug: `wall-handstand`. Files: `wall-handstand-1.svg`, `wall-handstand-2.svg`, `wall-handstand-3.svg`. Now shows: proxy drawing of Wall HSPU.
+- Slug: `wall-handstand`. Files: `wall-handstand-1.svg`. Now shows: proxy drawing of Wall HSPU.
 - View: side (facing left). Equipment: a flat wall, floor space in front of it. Static hold.
-- Frame 1: Standing facing the wall about a foot away, then folded forward with the hands placed on the floor about 20 cm from the wall, shoulder width apart, fingers spread and pointing at the wall. One leg kicked up, the other foot still on the floor, hips high.
-- Frame 2: Both legs travelling up the wall chest-to-wall: arms straight and locked, shoulders open and pushing tall, the torso turning toward the wall. Heels reach the wall, toes pointed, hips stacked over the shoulders, head between the arms.
-- Frame 3: Full hold chest-to-wall: arms straight vertical, shoulders open and pushed up by the ears, the body in one straight line from hands to pointed toes, only the toes touching the wall. Hands about 20 cm from the wall, head neutral looking between the hands.
+- Frame 1: Full hold chest-to-wall: arms straight vertical, shoulders open and pushed up by the ears, the body in one straight line from hands to pointed toes, only the toes touching the wall. Hands about 20 cm from the wall, head neutral looking between the hands.
 - Must get right: The body must be straight and chest facing the wall, not banana-arched or belly-out.
 
 Prompt:
@@ -618,21 +524,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Wall Handstand (a static hold). View: side (facing left). Equipment: a flat wall, floor space in front of it.
 
-Frame 1 of 3 (set-up): Standing facing the wall about a foot away, then folded forward with the hands placed on the floor about 20 cm from the wall, shoulder width apart, fingers spread and pointing at the wall. One leg kicked up, the other foot still on the floor, hips high.
-Frame 2 of 3 (arriving): Both legs travelling up the wall chest-to-wall: arms straight and locked, shoulders open and pushing tall, the torso turning toward the wall. Heels reach the wall, toes pointed, hips stacked over the shoulders, head between the arms.
-Frame 3 of 3 (full hold): Full hold chest-to-wall: arms straight vertical, shoulders open and pushed up by the ears, the body in one straight line from hands to pointed toes, only the toes touching the wall. Hands about 20 cm from the wall, head neutral looking between the hands.
+Representative still: Full hold chest-to-wall: arms straight vertical, shoulders open and pushed up by the ears, the body in one straight line from hands to pointed toes, only the toes touching the wall. Hands about 20 cm from the wall, head neutral looking between the hands.
 Must get right: The body must be straight and chest facing the wall, not banana-arched or belly-out.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Pike Press
 
-- Slug: `pike-press`. Files: `pike-press-1.svg`, `pike-press-2.svg`, `pike-press-3.svg`. Now shows: proxy drawing of Pike Push-up.
+- Slug: `pike-press`. Files: `pike-press-1.svg`. Now shows: proxy drawing of Pike Push-up.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Pike position facing right with the hands on the floor shoulder width apart and the feet about hip width on the floor. Hips lifted high in an inverted V, arms straight, back flat, legs nearly straight, head between the arms.
-- Frame 2: Lowering midway: elbows bend forward and out to about 90 degrees, the head travels forward and down between the hands. Hips stay high and stacked over the hands, the heels stay on the floor and the legs stay almost straight.
-- Frame 3: Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top.
+- Frame 1: Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top.
 - Must get right: This is a pike push-up with feet on the floor, not a press to handstand; keep hips high over the hands.
 
 Prompt:
@@ -642,21 +544,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Pike Press (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Pike position facing right with the hands on the floor shoulder width apart and the feet about hip width on the floor. Hips lifted high in an inverted V, arms straight, back flat, legs nearly straight, head between the arms.
-Frame 2 of 3 (mid): Lowering midway: elbows bend forward and out to about 90 degrees, the head travels forward and down between the hands. Hips stay high and stacked over the hands, the heels stay on the floor and the legs stay almost straight.
-Frame 3 of 3 (end): Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top.
+Representative still: Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top.
 Must get right: This is a pike push-up with feet on the floor, not a press to handstand; keep hips high over the hands.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Freestanding Handstand
 
-- Slug: `freestanding-handstand`. Files: `freestanding-handstand-1.svg`, `freestanding-handstand-2.svg`, `freestanding-handstand-3.svg`. Now shows: pictogram.
+- Slug: `freestanding-handstand`. Files: `freestanding-handstand-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Standing tall facing right with the arms overhead, then stepping into a lunge: the front knee bent, the back leg straight behind. Hands reaching down to the floor shoulder width apart, fingers spread and pointing forward, the hips above the shoulders.
-- Frame 2: Kicking up: the back leg swings up, the front leg follows, arms straight and locked under the shoulders. Hips travelling over the shoulders, legs together and nearly vertical, toes pointing, head between the arms and eyes to the fingertips.
-- Frame 3: Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms.
+- Frame 1: Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms.
 - Must get right: No wall; the line must be dead vertical, not arched, and the legs together with the toes pointed.
 
 Prompt:
@@ -666,21 +564,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Freestanding Handstand (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Standing tall facing right with the arms overhead, then stepping into a lunge: the front knee bent, the back leg straight behind. Hands reaching down to the floor shoulder width apart, fingers spread and pointing forward, the hips above the shoulders.
-Frame 2 of 3 (arriving): Kicking up: the back leg swings up, the front leg follows, arms straight and locked under the shoulders. Hips travelling over the shoulders, legs together and nearly vertical, toes pointing, head between the arms and eyes to the fingertips.
-Frame 3 of 3 (full hold): Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms.
+Representative still: Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms.
 Must get right: No wall; the line must be dead vertical, not arched, and the legs together with the toes pointed.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Handstand Walk
 
-- Slug: `handstand-walk`. Files: `handstand-walk-1.svg`, `handstand-walk-2.svg`, `handstand-walk-3.svg`. Now shows: pictogram.
+- Slug: `handstand-walk`. Files: `handstand-walk-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Handstand facing right with arms straight and the body in a vertical line, weight on both hands, legs together and toes pointed. Head neutral between the arms with eyes toward the floor just beyond the hands, shoulders open.
-- Frame 2: Mid step: the weight shifts onto the left hand while the right hand lifts and reaches forward, the right arm kept straight. The legs split slightly with the hips staying over the supporting shoulder, one leg angled forward to counterbalance and toes pointed.
-- Frame 3: Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed.
+- Frame 1: Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed.
 - Must get right: The arms stay straight and each step is short and controlled, and the line does not arch.
 
 Prompt:
@@ -690,21 +584,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Handstand Walk (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Handstand facing right with arms straight and the body in a vertical line, weight on both hands, legs together and toes pointed. Head neutral between the arms with eyes toward the floor just beyond the hands, shoulders open.
-Frame 2 of 3 (mid): Mid step: the weight shifts onto the left hand while the right hand lifts and reaches forward, the right arm kept straight. The legs split slightly with the hips staying over the supporting shoulder, one leg angled forward to counterbalance and toes pointed.
-Frame 3 of 3 (end): Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed.
+Representative still: Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed.
 Must get right: The arms stay straight and each step is short and controlled, and the line does not arch.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Wall HSPU Negative
 
-- Slug: `wall-hspu-negative`. Files: `wall-hspu-negative-1.svg`, `wall-hspu-negative-2.svg`, `wall-hspu-negative-3.svg`. Now shows: proxy drawing of Wall HSPU.
+- Slug: `wall-hspu-negative`. Files: `wall-hspu-negative-1.svg`. Now shows: proxy drawing of Wall HSPU.
 - View: side (facing left). Equipment: a flat wall, with the floor in front of it. Repetition.
-- Frame 1: Handstand against the wall facing it, chest-to-wall, hands on the floor about 20 cm from the wall shoulder width apart, arms locked straight, the body in a straight vertical line, toes lightly touching the wall, head between the arms.
-- Frame 2: Lowering slowly, midway: elbows bend to about 90 degrees and flare slightly. The head travels forward and down toward the floor, the hips stay stacked above the shoulders, the body kept straight and the toes remain in contact with the wall.
-- Frame 3: Bottom: head lowered so the crown touches the floor in front of the hands, forming a tripod with the hands, elbows bent past 90 degrees. Body still straight and vertical chest toward the wall, toes on the wall, feet together and pointed.
+- Frame 1: Bottom: head lowered so the crown touches the floor in front of the hands, forming a tripod with the hands, elbows bent past 90 degrees. Body still straight and vertical chest toward the wall, toes on the wall, feet together and pointed.
 - Must get right: Show a controlled slow descent in a straight body, not a collapse or arched back.
 
 Prompt:
@@ -714,21 +604,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Wall HSPU Negative (a repetition movement). View: side (facing left). Equipment: a flat wall, with the floor in front of it.
 
-Frame 1 of 3 (start): Handstand against the wall facing it, chest-to-wall, hands on the floor about 20 cm from the wall shoulder width apart, arms locked straight, the body in a straight vertical line, toes lightly touching the wall, head between the arms.
-Frame 2 of 3 (mid): Lowering slowly, midway: elbows bend to about 90 degrees and flare slightly. The head travels forward and down toward the floor, the hips stay stacked above the shoulders, the body kept straight and the toes remain in contact with the wall.
-Frame 3 of 3 (end): Bottom: head lowered so the crown touches the floor in front of the hands, forming a tripod with the hands, elbows bent past 90 degrees. Body still straight and vertical chest toward the wall, toes on the wall, feet together and pointed.
+Representative still: Bottom: head lowered so the crown touches the floor in front of the hands, forming a tripod with the hands, elbows bent past 90 degrees. Body still straight and vertical chest toward the wall, toes on the wall, feet together and pointed.
 Must get right: Show a controlled slow descent in a straight body, not a collapse or arched back.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Crow → Handstand
 
-- Slug: `crow-to-handstand`. Files: `crow-to-handstand-1.svg`, `crow-to-handstand-2.svg`, `crow-to-handstand-3.svg`. Now shows: pictogram.
+- Slug: `crow-to-handstand`. Files: `crow-to-handstand-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Crow pose facing right: hands flat on the floor shoulder width apart, arms nearly straight, knees high on the upper arms, feet off the floor and together. Shoulders ahead of the wrists, back rounded, head lifted and looking forward.
-- Frame 2: Pressing up: the hips rise above the shoulders as the legs begin to extend upward behind the body. Arms stay straight and locked, the shoulders pushed forward over the hands, knees only partly straightened, toes pointing down toward the floor behind.
-- Frame 3: Handstand reached: arms locked straight and vertical, shoulders open by the ears, the body in one straight vertical line from the hands to the pointed toes. Legs together and straight above the hips, head between the arms, eyes toward the hands.
+- Frame 1: Handstand reached: arms locked straight and vertical, shoulders open by the ears, the body in one straight vertical line from the hands to the pointed toes. Legs together and straight above the hips, head between the arms, eyes toward the hands.
 - Must get right: The legs rise by hip shifting without a jump or kick, and the arms must stay locked.
 
 Prompt:
@@ -738,21 +624,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Crow → Handstand (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Crow pose facing right: hands flat on the floor shoulder width apart, arms nearly straight, knees high on the upper arms, feet off the floor and together. Shoulders ahead of the wrists, back rounded, head lifted and looking forward.
-Frame 2 of 3 (mid): Pressing up: the hips rise above the shoulders as the legs begin to extend upward behind the body. Arms stay straight and locked, the shoulders pushed forward over the hands, knees only partly straightened, toes pointing down toward the floor behind.
-Frame 3 of 3 (end): Handstand reached: arms locked straight and vertical, shoulders open by the ears, the body in one straight vertical line from the hands to the pointed toes. Legs together and straight above the hips, head between the arms, eyes toward the hands.
+Representative still: Handstand reached: arms locked straight and vertical, shoulders open by the ears, the body in one straight vertical line from the hands to the pointed toes. Legs together and straight above the hips, head between the arms, eyes toward the hands.
 Must get right: The legs rise by hip shifting without a jump or kick, and the arms must stay locked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### 90-Degree Push-up
 
-- Slug: `90-degree-push-up`. Files: `90-degree-push-up-1.svg`, `90-degree-push-up-2.svg`, `90-degree-push-up-3.svg`. Now shows: pictogram.
+- Slug: `90-degree-push-up`. Files: `90-degree-push-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: a pair of parallettes. Repetition.
-- Frame 1: Handstand on parallettes facing right, arms locked straight, shoulders open, body in one vertical line from the hands to pointed toes. The hands are gripping the parallette tops, fingers forward, head neutral between the arms. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the 90-Degree Push-up.
-- Frame 2: Lowering midway: the body slowly tilts forward while the elbows bend and the shoulders travel forward and down. Legs and hips kept together stretched straight overhead, the torso tipping toward horizontal, the head moving forward of the hands.
-- Frame 3: Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line.
+- Frame 1: Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line.
 - Must get right: Elbows must reach exactly 90 degrees and stay tucked, with the body straight and not piked.
 
 Prompt:
@@ -762,21 +644,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: 90-Degree Push-up (a repetition movement). View: side (facing right). Equipment: a pair of parallettes.
 
-Frame 1 of 3 (start): Handstand on parallettes facing right, arms locked straight, shoulders open, body in one vertical line from the hands to pointed toes. The hands are gripping the parallette tops, fingers forward, head neutral between the arms. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the 90-Degree Push-up.
-Frame 2 of 3 (mid): Lowering midway: the body slowly tilts forward while the elbows bend and the shoulders travel forward and down. Legs and hips kept together stretched straight overhead, the torso tipping toward horizontal, the head moving forward of the hands.
-Frame 3 of 3 (end): Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line.
+Representative still: Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line.
 Must get right: Elbows must reach exactly 90 degrees and stay tucked, with the body straight and not piked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Handstand
 
-- Slug: `one-arm-handstand`. Files: `one-arm-handstand-1.svg`, `one-arm-handstand-2.svg`, `one-arm-handstand-3.svg`. Now shows: pictogram.
+- Slug: `one-arm-handstand`. Files: `one-arm-handstand-1.svg`. Now shows: pictogram.
 - View: back. Equipment: none (floor only). Static hold.
-- Frame 1: Two-arm handstand seen from behind: both arms straight and locked, hands shoulder width apart on the floor, the body in a vertical line with the legs together and toes pointed. The head neutral between the arms.
-- Frame 2: Transferring the weight: the body shifts sideways over the right hand, the right arm stays vertical and locked. The left hand lifts a few centimetres off the floor and the legs open slightly with the feet moving left to counterbalance, hips staying over the supporting hand.
-- Frame 3: Full hold on the right hand only: the right arm straight and vertical, the shoulder open, the body in a straight line above it with the feet pointing up, legs slightly apart for balance. The left arm is held out to the side or beside the thigh, head neutral.
+- Frame 1: Full hold on the right hand only: the right arm straight and vertical, the shoulder open, the body in a straight line above it with the feet pointing up, legs slightly apart for balance. The left arm is held out to the side or beside the thigh, head neutral.
 - Must get right: Only one hand touches the floor, and the body must stay stacked over that hand.
 
 Prompt:
@@ -786,21 +664,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Handstand (a static hold). View: back. Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Two-arm handstand seen from behind: both arms straight and locked, hands shoulder width apart on the floor, the body in a vertical line with the legs together and toes pointed. The head neutral between the arms.
-Frame 2 of 3 (arriving): Transferring the weight: the body shifts sideways over the right hand, the right arm stays vertical and locked. The left hand lifts a few centimetres off the floor and the legs open slightly with the feet moving left to counterbalance, hips staying over the supporting hand.
-Frame 3 of 3 (full hold): Full hold on the right hand only: the right arm straight and vertical, the shoulder open, the body in a straight line above it with the feet pointing up, legs slightly apart for balance. The left arm is held out to the side or beside the thigh, head neutral.
+Representative still: Full hold on the right hand only: the right arm straight and vertical, the shoulder open, the body in a straight line above it with the feet pointing up, legs slightly apart for balance. The left arm is held out to the side or beside the thigh, head neutral.
 Must get right: Only one hand touches the floor, and the body must stay stacked over that hand.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Straddle Press to Handstand
 
-- Slug: `straddle-press-to-handstand`. Files: `straddle-press-to-handstand-1.svg`, `straddle-press-to-handstand-2.svg`, `straddle-press-to-handstand-3.svg`. Now shows: pictogram.
+- Slug: `straddle-press-to-handstand`. Files: `straddle-press-to-handstand-1.svg`. Now shows: pictogram.
 - View: front. Equipment: none (floor only). Repetition.
-- Frame 1: Standing in a wide straddle fold facing the camera, legs straight and wide apart, the hands flat on the floor shoulder width apart between the feet. The hips are above the hands, the head down between the arms, the weight starting to shift forward over the hands.
-- Frame 2: Pressing up: the shoulders move forward over the wrists, arms locked, and the straight legs lift off the floor in a straddle, rising to horizontal. The hips are raised above the shoulders, the toes pointed and the legs wide apart.
-- Frame 3: Handstand finish: the legs close together overhead to meet in a vertical line. The arms are locked straight, the shoulders open, the body is straight from the hands to the pointed toes, the head is neutral between the arms and the legs are together.
+- Frame 1: Handstand finish: the legs close together overhead to meet in a vertical line. The arms are locked straight, the shoulders open, the body is straight from the hands to the pointed toes, the head is neutral between the arms and the legs are together.
 - Must get right: Legs stay straight in the straddle, and no jump or bent knees are allowed.
 
 Prompt:
@@ -810,21 +684,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Straddle Press to Handstand (a repetition movement). View: front. Equipment: none (floor only).
 
-Frame 1 of 3 (start): Standing in a wide straddle fold facing the camera, legs straight and wide apart, the hands flat on the floor shoulder width apart between the feet. The hips are above the hands, the head down between the arms, the weight starting to shift forward over the hands.
-Frame 2 of 3 (mid): Pressing up: the shoulders move forward over the wrists, arms locked, and the straight legs lift off the floor in a straddle, rising to horizontal. The hips are raised above the shoulders, the toes pointed and the legs wide apart.
-Frame 3 of 3 (end): Handstand finish: the legs close together overhead to meet in a vertical line. The arms are locked straight, the shoulders open, the body is straight from the hands to the pointed toes, the head is neutral between the arms and the legs are together.
+Representative still: Handstand finish: the legs close together overhead to meet in a vertical line. The arms are locked straight, the shoulders open, the body is straight from the hands to the pointed toes, the head is neutral between the arms and the legs are together.
 Must get right: Legs stay straight in the straddle, and no jump or bent knees are allowed.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Ring Support Hold
 
-- Slug: `ring-support-hold`. Files: `ring-support-hold-1.svg`, `ring-support-hold-2.svg`, `ring-support-hold-3.svg`. Now shows: pictogram.
+- Slug: `ring-support-hold`. Files: `ring-support-hold-1.svg`. Now shows: pictogram.
 - View: front. Equipment: pair of gymnastic rings hung from straps hung at hip height. Static hold.
-- Frame 1: Standing between two rings hung at hip height, facing the camera, gripping a ring in each hand with the thumbs wrapped around and the palms facing in. Arms straight, knees slightly bent, ready to jump up.
-- Frame 2: Jumping up into support: the feet leave the floor, the arms press straight and the shoulders push down. The knees tuck behind the body, the rings still held beside the hips. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Ring Support Hold clearly in this front view.
-- Frame 3: Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral.
+- Frame 1: Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral.
 - Must get right: Rings stay beside the hips with the arms locked, and the shoulders must be pressed down.
 
 Prompt:
@@ -834,21 +704,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Ring Support Hold (a static hold). View: front. Equipment: pair of gymnastic rings hung from straps hung at hip height.
 
-Frame 1 of 3 (set-up): Standing between two rings hung at hip height, facing the camera, gripping a ring in each hand with the thumbs wrapped around and the palms facing in. Arms straight, knees slightly bent, ready to jump up.
-Frame 2 of 3 (arriving): Jumping up into support: the feet leave the floor, the arms press straight and the shoulders push down. The knees tuck behind the body, the rings still held beside the hips. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Ring Support Hold clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral.
+Representative still: Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral.
 Must get right: Rings stay beside the hips with the arms locked, and the shoulders must be pressed down.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### RTO Support Hold
 
-- Slug: `rto-support-hold`. Files: `rto-support-hold-1.svg`, `rto-support-hold-2.svg`, `rto-support-hold-3.svg`. Now shows: pictogram.
+- Slug: `rto-support-hold`. Files: `rto-support-hold-1.svg`. Now shows: pictogram.
 - View: front. Equipment: pair of gymnastic rings hung from straps hung at hip height. Static hold.
-- Frame 1: Standing between the two rings hung at hip height, facing the camera, gripping the rings with the thumbs wrapped, arms straight. The knees are slightly bent, ready to jump into support. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the RTO Support Hold.
-- Frame 2: Rising into support: the feet leave the floor, the arms lock out and the hands turn so the palms rotate out to the front and the rings angle outward. The shoulders push down and away from the ears.
-- Frame 3: Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor.
+- Frame 1: Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor.
 - Must get right: Rings are rotated fully out with the palms facing forward, not neutral.
 
 Prompt:
@@ -858,21 +724,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: RTO Support Hold (a static hold). View: front. Equipment: pair of gymnastic rings hung from straps hung at hip height.
 
-Frame 1 of 3 (set-up): Standing between the two rings hung at hip height, facing the camera, gripping the rings with the thumbs wrapped, arms straight. The knees are slightly bent, ready to jump into support. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the RTO Support Hold.
-Frame 2 of 3 (arriving): Rising into support: the feet leave the floor, the arms lock out and the hands turn so the palms rotate out to the front and the rings angle outward. The shoulders push down and away from the ears.
-Frame 3 of 3 (full hold): Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor.
+Representative still: Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor.
 Must get right: Rings are rotated fully out with the palms facing forward, not neutral.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Ring Row
 
-- Slug: `ring-row`. Files: `ring-row-1.svg`, `ring-row-2.svg`, `ring-row-3.svg`. Now shows: proxy drawing of Inverted Row.
+- Slug: `ring-row`. Files: `ring-row-1.svg`. Now shows: proxy drawing of Inverted Row.
 - View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung at waist height. Repetition.
-- Frame 1: Lying under the rings facing up, the hands gripping the rings with neutral palms, arms straight overhead above the chest. The body is a straight line from the heels to the head with the heels on the floor, hanging at about 45 degrees.
-- Frame 2: Pulling up: the elbows bend and travel back along the ribs as the chest rises toward the rings. The body stays a straight plank, the heels stay on the floor and the shoulder blades begin to pull together.
-- Frame 3: Top position: the chest is touching the rings at the ribs, the elbows are bent behind the torso and the shoulder blades are squeezed together. The body is a straight line from the heels to the head, the head neutral, the feet on the floor.
+- Frame 1: Top position: the chest is touching the rings at the ribs, the elbows are bent behind the torso and the shoulder blades are squeezed together. The body is a straight line from the heels to the head, the head neutral, the feet on the floor.
 - Must get right: The body stays straight with no sagging hips, and the chest meets the rings.
 
 Prompt:
@@ -882,21 +744,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Ring Row (a repetition movement). View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung at waist height.
 
-Frame 1 of 3 (start): Lying under the rings facing up, the hands gripping the rings with neutral palms, arms straight overhead above the chest. The body is a straight line from the heels to the head with the heels on the floor, hanging at about 45 degrees.
-Frame 2 of 3 (mid): Pulling up: the elbows bend and travel back along the ribs as the chest rises toward the rings. The body stays a straight plank, the heels stay on the floor and the shoulder blades begin to pull together.
-Frame 3 of 3 (end): Top position: the chest is touching the rings at the ribs, the elbows are bent behind the torso and the shoulder blades are squeezed together. The body is a straight line from the heels to the head, the head neutral, the feet on the floor.
+Representative still: Top position: the chest is touching the rings at the ribs, the elbows are bent behind the torso and the shoulder blades are squeezed together. The body is a straight line from the heels to the head, the head neutral, the feet on the floor.
 Must get right: The body stays straight with no sagging hips, and the chest meets the rings.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Ring Dip
 
-- Slug: `ring-dip`. Files: `ring-dip-1.svg`, `ring-dip-2.svg`, `ring-dip-3.svg`. Now shows: pictogram.
+- Slug: `ring-dip`. Files: `ring-dip-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung at about head height. Repetition.
-- Frame 1: Support position on the rings facing right: the arms locked straight with the rings beside the hips, the palms facing in. The shoulders are pressed down, the chest tall, the legs together straight below, slightly in front, the feet off the floor.
-- Frame 2: Lowering midway: the elbows bend back and the torso tilts slightly forward. The upper arms near parallel to the floor, the rings staying close to the ribs, the legs straight and together. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Ring Dip clearly in this side (facing right) view.
-- Frame 3: Bottom position: the shoulders below the elbows, the elbows bent beyond 90 degrees and tucked behind the ribs, the rings close to the chest. The torso leans slightly forward, the head neutral and the legs together and slightly in front. Press up to straight arms.
+- Frame 1: Bottom position: the shoulders below the elbows, the elbows bent beyond 90 degrees and tucked behind the ribs, the rings close to the chest. The torso leans slightly forward, the head neutral and the legs together and slightly in front. Press up to straight arms.
 - Must get right: The rings stay close to the body and the shoulders drop below the elbows at the bottom.
 
 Prompt:
@@ -906,21 +764,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Ring Dip (a repetition movement). View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung at about head height.
 
-Frame 1 of 3 (start): Support position on the rings facing right: the arms locked straight with the rings beside the hips, the palms facing in. The shoulders are pressed down, the chest tall, the legs together straight below, slightly in front, the feet off the floor.
-Frame 2 of 3 (mid): Lowering midway: the elbows bend back and the torso tilts slightly forward. The upper arms near parallel to the floor, the rings staying close to the ribs, the legs straight and together. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Ring Dip clearly in this side (facing right) view.
-Frame 3 of 3 (end): Bottom position: the shoulders below the elbows, the elbows bent beyond 90 degrees and tucked behind the ribs, the rings close to the chest. The torso leans slightly forward, the head neutral and the legs together and slightly in front. Press up to straight arms.
+Representative still: Bottom position: the shoulders below the elbows, the elbows bent beyond 90 degrees and tucked behind the ribs, the rings close to the chest. The torso leans slightly forward, the head neutral and the legs together and slightly in front. Press up to straight arms.
 Must get right: The rings stay close to the body and the shoulders drop below the elbows at the bottom.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Banded Iron Cross
 
-- Slug: `banded-iron-cross`. Files: `banded-iron-cross-1.svg`, `banded-iron-cross-2.svg`, `banded-iron-cross-3.svg`. Now shows: pictogram.
+- Slug: `banded-iron-cross`. Files: `banded-iron-cross-1.svg`. Now shows: pictogram.
 - View: front. Equipment: pair of gymnastic rings hung from straps with a resistance band looped over a bar overhead and under the feet or hips. Static hold.
-- Frame 1: Hanging from the rings in support with the arms straight beside the hips, the band attached at the hips or feet and running up overhead. The body is vertical, the shoulders pressed down and the chest tall.
-- Frame 2: Opening the arms: the straight arms begin to travel out to the sides, the rings moving away from the hips. The body rises slightly, supported by the band, the shoulders staying pressed down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Banded Iron Cross clearly in this front view.
-- Frame 3: Full hold: the arms are straight and spread out horizontally to the sides in a T, the rings at shoulder height. The body is vertical between the rings, the legs together, the band pulling upward from the hips to take part of the weight, and the head neutral.
+- Frame 1: Full hold: the arms are straight and spread out horizontally to the sides in a T, the rings at shoulder height. The body is vertical between the rings, the legs together, the band pulling upward from the hips to take part of the weight, and the head neutral.
 - Must get right: The arms are straight and horizontal in a T shape, with the band visibly supporting the body.
 
 Prompt:
@@ -930,21 +784,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Banded Iron Cross (a static hold). View: front. Equipment: pair of gymnastic rings hung from straps with a resistance band looped over a bar overhead and under the feet or hips.
 
-Frame 1 of 3 (set-up): Hanging from the rings in support with the arms straight beside the hips, the band attached at the hips or feet and running up overhead. The body is vertical, the shoulders pressed down and the chest tall.
-Frame 2 of 3 (arriving): Opening the arms: the straight arms begin to travel out to the sides, the rings moving away from the hips. The body rises slightly, supported by the band, the shoulders staying pressed down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Banded Iron Cross clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the arms are straight and spread out horizontally to the sides in a T, the rings at shoulder height. The body is vertical between the rings, the legs together, the band pulling upward from the hips to take part of the weight, and the head neutral.
+Representative still: Full hold: the arms are straight and spread out horizontally to the sides in a T, the rings at shoulder height. The body is vertical between the rings, the legs together, the band pulling upward from the hips to take part of the weight, and the head neutral.
 Must get right: The arms are straight and horizontal in a T shape, with the band visibly supporting the body.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Ring Muscle-up
 
-- Slug: `ring-muscle-up`. Files: `ring-muscle-up-1.svg`, `ring-muscle-up-2.svg`, `ring-muscle-up-3.svg`. Now shows: pictogram.
+- Slug: `ring-muscle-up`. Files: `ring-muscle-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung overhead. Repetition.
-- Frame 1: Dead hang from the rings with a false grip, the wrists over the rings, the arms straight and the shoulders packed down. The body hangs vertically with the legs together and slightly in front of the body.
-- Frame 2: Mid pull: the elbows pull hard down and back as the rings travel to the lower chest. The torso leans back slightly, the rings close to the ribs, the chest rising above the rings and the wrists rolling over the rings.
-- Frame 3: Top position: arms locked straight in support with the rings beside the hips, the wrists over the rings and the shoulders above the rings. The chest tall, the shoulders pressed down, legs together and slightly in front, the body vertical and still.
+- Frame 1: Top position: arms locked straight in support with the rings beside the hips, the wrists over the rings and the shoulders above the rings. The chest tall, the shoulders pressed down, legs together and slightly in front, the body vertical and still.
 - Must get right: A false grip with the wrists over the rings, and the rings stay close in the transition without a swing.
 
 Prompt:
@@ -954,21 +804,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Ring Muscle-up (a repetition movement). View: side (facing right). Equipment: pair of gymnastic rings hung from straps hung overhead.
 
-Frame 1 of 3 (start): Dead hang from the rings with a false grip, the wrists over the rings, the arms straight and the shoulders packed down. The body hangs vertically with the legs together and slightly in front of the body.
-Frame 2 of 3 (mid): Mid pull: the elbows pull hard down and back as the rings travel to the lower chest. The torso leans back slightly, the rings close to the ribs, the chest rising above the rings and the wrists rolling over the rings.
-Frame 3 of 3 (end): Top position: arms locked straight in support with the rings beside the hips, the wrists over the rings and the shoulders above the rings. The chest tall, the shoulders pressed down, legs together and slightly in front, the body vertical and still.
+Representative still: Top position: arms locked straight in support with the rings beside the hips, the wrists over the rings and the shoulders above the rings. The chest tall, the shoulders pressed down, legs together and slightly in front, the body vertical and still.
 Must get right: A false grip with the wrists over the rings, and the rings stay close in the transition without a swing.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Iron Cross
 
-- Slug: `iron-cross`. Files: `iron-cross-1.svg`, `iron-cross-2.svg`, `iron-cross-3.svg`. Now shows: pictogram.
+- Slug: `iron-cross`. Files: `iron-cross-1.svg`. Now shows: pictogram.
 - View: front. Equipment: pair of gymnastic rings hung from straps hung overhead. Static hold.
-- Frame 1: Support position in the rings facing the camera: arms locked straight, the rings beside the hips and the palms facing in, shoulders pressed down. The body is vertical, the legs together and the feet off the floor.
-- Frame 2: Opening the arms: the straight arms travel out to the sides and upward as the rings move apart. The body stays vertical, the chest pressed forward and the shoulders pulled down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Iron Cross clearly in this front view.
-- Frame 3: Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall.
+- Frame 1: Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall.
 - Must get right: The arms are straight and horizontal at shoulder level, not sloping down to the hips.
 
 Prompt:
@@ -978,21 +824,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Iron Cross (a static hold). View: front. Equipment: pair of gymnastic rings hung from straps hung overhead.
 
-Frame 1 of 3 (set-up): Support position in the rings facing the camera: arms locked straight, the rings beside the hips and the palms facing in, shoulders pressed down. The body is vertical, the legs together and the feet off the floor.
-Frame 2 of 3 (arriving): Opening the arms: the straight arms travel out to the sides and upward as the rings move apart. The body stays vertical, the chest pressed forward and the shoulders pulled down. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Iron Cross clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall.
+Representative still: Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall.
 Must get right: The arms are straight and horizontal at shoulder level, not sloping down to the hips.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Kip-up
 
-- Slug: `kip-up`. Files: `kip-up-1.svg`, `kip-up-2.svg`, `kip-up-3.svg`. Now shows: pictogram.
+- Slug: `kip-up`. Files: `kip-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Lying flat on the back facing up on the floor, the arms stretched overhead along the floor, the legs straight together. The head is resting on the floor and the body is relaxed. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Kip-up.
-- Frame 2: Mid movement: the hips and legs are kicked up and over so that the legs point to the ceiling at about 45 degrees over the hips. The hands push the floor near the hips while the back is lifted onto the shoulders.
-- Frame 3: Finish: the legs snap down and the feet land on the floor with the knees bent in a deep squat as the hands push off the floor. The chest rises up to standing tall, the arms swinging forward for balance.
+- Frame 1: Finish: the legs snap down and the feet land on the floor with the knees bent in a deep squat as the hands push off the floor. The chest rises up to standing tall, the arms swinging forward for balance.
 - Must get right: The legs and hips drive explosively with the hands pushing, and the feet land under the hips.
 
 Prompt:
@@ -1002,21 +844,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Kip-up (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Lying flat on the back facing up on the floor, the arms stretched overhead along the floor, the legs straight together. The head is resting on the floor and the body is relaxed. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Kip-up.
-Frame 2 of 3 (mid): Mid movement: the hips and legs are kicked up and over so that the legs point to the ceiling at about 45 degrees over the hips. The hands push the floor near the hips while the back is lifted onto the shoulders.
-Frame 3 of 3 (end): Finish: the legs snap down and the feet land on the floor with the knees bent in a deep squat as the hands push off the floor. The chest rises up to standing tall, the arms swinging forward for balance.
+Representative still: Finish: the legs snap down and the feet land on the floor with the knees bent in a deep squat as the hands push off the floor. The chest rises up to standing tall, the arms swinging forward for balance.
 Must get right: The legs and hips drive explosively with the hands pushing, and the feet land under the hips.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Handstand-to-Bridge
 
-- Slug: `handstand-to-bridge`. Files: `handstand-to-bridge-1.svg`, `handstand-to-bridge-2.svg`, `handstand-to-bridge-3.svg`. Now shows: pictogram.
+- Slug: `handstand-to-bridge`. Files: `handstand-to-bridge-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Handstand facing right: arms straight and locked, the hands shoulder width apart on the floor, the body in a vertical line. The legs together, toes pointed and the head between the arms. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Handstand-to-Bridge.
-- Frame 2: Lowering midway: the legs start to fall over the head, the back arching and the hips pushing forward. The shoulders open and the arms stay straight, the legs bending slightly and the feet moving toward the floor.
-- Frame 3: Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent.
+- Frame 1: Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent.
 - Must get right: The arms stay straight and the back arches in a smooth controlled fall, not a collapse.
 
 Prompt:
@@ -1026,21 +864,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Handstand-to-Bridge (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Handstand facing right: arms straight and locked, the hands shoulder width apart on the floor, the body in a vertical line. The legs together, toes pointed and the head between the arms. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Handstand-to-Bridge.
-Frame 2 of 3 (mid): Lowering midway: the legs start to fall over the head, the back arching and the hips pushing forward. The shoulders open and the arms stay straight, the legs bending slightly and the feet moving toward the floor.
-Frame 3 of 3 (end): Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent.
+Representative still: Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent.
 Must get right: The arms stay straight and the back arches in a smooth controlled fall, not a collapse.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Muscle-up
 
-- Slug: `muscle-up`. Files: `muscle-up-1.svg`, `muscle-up-2.svg`, `muscle-up-3.svg`. Now shows: pictogram.
+- Slug: `muscle-up`. Files: `muscle-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Dead hang from the bar by an overhand shoulder-width grip, arms straight and shoulders packed down. The body hangs vertically with the legs together and slightly in front, with a small kip in the hips. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Muscle-up.
-- Frame 2: Mid transition: the explosive pull brings the chest up to the bar, the elbows are behind the bar and the torso leans forward over the bar. The wrists roll over the bar while the chest passes above the bar.
-- Frame 3: Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view.
+- Frame 1: Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view.
 - Must get right: The chest travels over the bar in a smooth transition and the bar ends at the hips with straight arms.
 
 Prompt:
@@ -1050,21 +884,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Muscle-up (a repetition movement). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Dead hang from the bar by an overhand shoulder-width grip, arms straight and shoulders packed down. The body hangs vertically with the legs together and slightly in front, with a small kip in the hips. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Muscle-up.
-Frame 2 of 3 (mid): Mid transition: the explosive pull brings the chest up to the bar, the elbows are behind the bar and the torso leans forward over the bar. The wrists roll over the bar while the chest passes above the bar.
-Frame 3 of 3 (end): Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view.
+Representative still: Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view.
 Must get right: The chest travels over the bar in a smooth transition and the bar ends at the hips with straight arms.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tuck Human Flag
 
-- Slug: `tuck-human-flag`. Files: `tuck-human-flag-1.svg`, `tuck-human-flag-2.svg`, `tuck-human-flag-3.svg`. Now shows: pictogram.
+- Slug: `tuck-human-flag`. Files: `tuck-human-flag-1.svg`. Now shows: pictogram.
 - View: back. Equipment: a vertical pole, no other equipment. Static hold.
-- Frame 1: Standing beside a vertical pole facing the camera. The top hand grips the pole overhead with an overhand grip, the bottom hand holds the pole at about chest height, the palm facing out. The arms are slightly bent and the feet are on the floor.
-- Frame 2: Lifting off: the bottom arm pushes straight and the top arm pulls. The body tilts sideways as the hips rise toward the level of the hands and the knees tuck toward the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Human Flag clearly in this back view.
-- Frame 3: Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor.
+- Frame 1: Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor.
 - Must get right: The hips are level with the hands and the knees are tucked, not hanging down.
 
 Prompt:
@@ -1074,21 +904,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tuck Human Flag (a static hold). View: back. Equipment: a vertical pole, no other equipment.
 
-Frame 1 of 3 (set-up): Standing beside a vertical pole facing the camera. The top hand grips the pole overhead with an overhand grip, the bottom hand holds the pole at about chest height, the palm facing out. The arms are slightly bent and the feet are on the floor.
-Frame 2 of 3 (arriving): Lifting off: the bottom arm pushes straight and the top arm pulls. The body tilts sideways as the hips rise toward the level of the hands and the knees tuck toward the chest. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Human Flag clearly in this back view.
-Frame 3 of 3 (full hold): Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor.
+Representative still: Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor.
 Must get right: The hips are level with the hands and the knees are tucked, not hanging down.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Human Flag
 
-- Slug: `human-flag`. Files: `human-flag-1.svg`, `human-flag-2.svg`, `human-flag-3.svg`. Now shows: pictogram.
+- Slug: `human-flag`. Files: `human-flag-1.svg`. Now shows: pictogram.
 - View: back. Equipment: a vertical pole, no other equipment. Static hold.
-- Frame 1: Standing beside a vertical pole facing the camera. The top hand grips the pole overhead with an overhand grip, the bottom hand grips at chest height with the palm out, the arms slightly bent and the feet together on the floor.
-- Frame 2: Lifting: the bottom arm pushes against the pole and the top arm pulls down. The body tips sideways and the legs lift off the floor, rising with the hips as the body swings toward horizontal. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Human Flag clearly in this back view.
-- Frame 3: Full hold: the whole body is straight and horizontal out to the side from the pole, like a flag. The bottom arm is straight pushing, the top arm is pulling slightly bent, the legs are together and straight with the toes pointed, the head is turned toward the floor and the hips are level.
+- Frame 1: Full hold: the whole body is straight and horizontal out to the side from the pole, like a flag. The bottom arm is straight pushing, the top arm is pulling slightly bent, the legs are together and straight with the toes pointed, the head is turned toward the floor and the hips are level.
 - Must get right: The body is one straight horizontal line, with no piked hips and no bent legs.
 
 Prompt:
@@ -1098,21 +924,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Human Flag (a static hold). View: back. Equipment: a vertical pole, no other equipment.
 
-Frame 1 of 3 (set-up): Standing beside a vertical pole facing the camera. The top hand grips the pole overhead with an overhand grip, the bottom hand grips at chest height with the palm out, the arms slightly bent and the feet together on the floor.
-Frame 2 of 3 (arriving): Lifting: the bottom arm pushes against the pole and the top arm pulls down. The body tips sideways and the legs lift off the floor, rising with the hips as the body swings toward horizontal. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Human Flag clearly in this back view.
-Frame 3 of 3 (full hold): Full hold: the whole body is straight and horizontal out to the side from the pole, like a flag. The bottom arm is straight pushing, the top arm is pulling slightly bent, the legs are together and straight with the toes pointed, the head is turned toward the floor and the hips are level.
+Representative still: Full hold: the whole body is straight and horizontal out to the side from the pole, like a flag. The bottom arm is straight pushing, the top arm is pulling slightly bent, the legs are together and straight with the toes pointed, the head is turned toward the floor and the hips are level.
 Must get right: The body is one straight horizontal line, with no piked hips and no bent legs.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Strict Muscle-up
 
-- Slug: `strict-muscle-up`. Files: `strict-muscle-up-1.svg`, `strict-muscle-up-2.svg`, `strict-muscle-up-3.svg`. Now shows: pictogram.
+- Slug: `strict-muscle-up`. Files: `strict-muscle-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Dead hang from the bar by an overhand grip, arms straight and the shoulders packed down. The body hangs still and vertical with the legs together and straight, with no swing at all. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Strict Muscle-up.
-- Frame 2: Mid transition: a slow pull brings the chest to the bar with the elbows driven back, the torso leaning forward over the bar. The legs hang straight and still and the body is not swinging. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Strict Muscle-up clearly in this side (facing right) view.
-- Frame 3: Top position: the arms locked straight in support over the bar, the bar at the hips, the shoulders pressed down and the chest tall. The legs are together and straight, the body vertical and still. The faceless head stays in line with the spine, and the limb angles of the Strict Muscle-up must read clearly from the side (facing right) view.
+- Frame 1: Top position: the arms locked straight in support over the bar, the bar at the hips, the shoulders pressed down and the chest tall. The legs are together and straight, the body vertical and still. The faceless head stays in line with the spine, and the limb angles of the Strict Muscle-up must read clearly from the side (facing right) view.
 - Must get right: No kip or hip swing; the legs hang still through the slow transition.
 
 Prompt:
@@ -1122,21 +944,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Strict Muscle-up (a repetition movement). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Dead hang from the bar by an overhand grip, arms straight and the shoulders packed down. The body hangs still and vertical with the legs together and straight, with no swing at all. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Strict Muscle-up.
-Frame 2 of 3 (mid): Mid transition: a slow pull brings the chest to the bar with the elbows driven back, the torso leaning forward over the bar. The legs hang straight and still and the body is not swinging. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Strict Muscle-up clearly in this side (facing right) view.
-Frame 3 of 3 (end): Top position: the arms locked straight in support over the bar, the bar at the hips, the shoulders pressed down and the chest tall. The legs are together and straight, the body vertical and still. The faceless head stays in line with the spine, and the limb angles of the Strict Muscle-up must read clearly from the side (facing right) view.
+Representative still: Top position: the arms locked straight in support over the bar, the bar at the hips, the shoulders pressed down and the chest tall. The legs are together and straight, the body vertical and still. The faceless head stays in line with the spine, and the limb angles of the Strict Muscle-up must read clearly from the side (facing right) view.
 Must get right: No kip or hip swing; the legs hang still through the slow transition.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Inverted Muscle-up
 
-- Slug: `inverted-muscle-up`. Files: `inverted-muscle-up-1.svg`, `inverted-muscle-up-2.svg`, `inverted-muscle-up-3.svg`. Now shows: pictogram.
+- Slug: `inverted-muscle-up`. Files: `inverted-muscle-up-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Dead hang from the bar with an overhand shoulder-width grip, arms straight, shoulders packed. The body hangs vertically with the legs together and slightly in front. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Inverted Muscle-up.
-- Frame 2: Mid movement: the athlete pulls the hips and legs up and over, the body inverted with the legs above the head. The chest is above the bar and the elbows bend while the shoulders rise above the bar.
-- Frame 3: Finish: the hands on the bar and the arms pressed straight with the body in a vertical handstand directly above the bar. The legs together and pointing up, the body straight, the shoulders open and the head between the arms.
+- Frame 1: Finish: the hands on the bar and the arms pressed straight with the body in a vertical handstand directly above the bar. The legs together and pointing up, the body straight, the shoulders open and the head between the arms.
 - Must get right: The finish is a straight handstand over the bar with the arms locked, not a pike.
 
 Prompt:
@@ -1146,21 +964,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Inverted Muscle-up (a repetition movement). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Dead hang from the bar with an overhand shoulder-width grip, arms straight, shoulders packed. The body hangs vertically with the legs together and slightly in front. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Inverted Muscle-up.
-Frame 2 of 3 (mid): Mid movement: the athlete pulls the hips and legs up and over, the body inverted with the legs above the head. The chest is above the bar and the elbows bend while the shoulders rise above the bar.
-Frame 3 of 3 (end): Finish: the hands on the bar and the arms pressed straight with the body in a vertical handstand directly above the bar. The legs together and pointing up, the body straight, the shoulders open and the head between the arms.
+Representative still: Finish: the hands on the bar and the arms pressed straight with the body in a vertical handstand directly above the bar. The legs together and pointing up, the body straight, the shoulders open and the head between the arms.
 Must get right: The finish is a straight handstand over the bar with the arms locked, not a pike.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Hang
 
-- Slug: `one-arm-hang`. Files: `one-arm-hang-1.svg`, `one-arm-hang-2.svg`, `one-arm-hang-3.svg`. Now shows: proxy drawing of Dead Hang.
+- Slug: `one-arm-hang`. Files: `one-arm-hang-1.svg`. Now shows: proxy drawing of Dead Hang.
 - View: front. Equipment: straight bar overhead, no other equipment. Static hold.
-- Frame 1: Standing under a high bar and reaching up with the right arm to grip it overhand, the left hand still on the bar beside it. Feet on the floor, knees slightly bent, torso upright and facing forward, ready to lift the feet away.
-- Frame 2: Both feet lifting off the floor, the left hand releasing from the bar and moving out to the side. The right arm is fully straight and takes the whole body weight, the shoulder starting to pack down, legs hanging together.
-- Frame 3: Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still.
+- Frame 1: Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still.
 - Must get right: Show an active packed shoulder, not a shrugged passive one, and keep the free hand off the bar.
 
 Prompt:
@@ -1170,21 +984,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Hang (a static hold). View: front. Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (set-up): Standing under a high bar and reaching up with the right arm to grip it overhand, the left hand still on the bar beside it. Feet on the floor, knees slightly bent, torso upright and facing forward, ready to lift the feet away.
-Frame 2 of 3 (arriving): Both feet lifting off the floor, the left hand releasing from the bar and moving out to the side. The right arm is fully straight and takes the whole body weight, the shoulder starting to pack down, legs hanging together.
-Frame 3 of 3 (full hold): Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still.
+Representative still: Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still.
 Must get right: Show an active packed shoulder, not a shrugged passive one, and keep the free hand off the bar.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Archer Pull-up
 
-- Slug: `archer-pull-up`. Files: `archer-pull-up-1.svg`, `archer-pull-up-2.svg`, `archer-pull-up-3.svg`. Now shows: proxy drawing of Pull-up.
+- Slug: `archer-pull-up`. Files: `archer-pull-up-1.svg`. Now shows: proxy drawing of Pull-up.
 - View: front. Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Dead hang from a wide overhand grip, hands about twice shoulder width. Both arms fully straight, shoulders packed down, body vertical with legs together and slightly in front, feet off the floor, head neutral and facing forward.
-- Frame 2: Torso rising toward the bar while pulling to the athlete's right. The right elbow bends deeply beside the ribs and the right shoulder moves up to the right hand. The left arm stays completely straight and angled out along the bar. Head level with the bar.
-- Frame 3: Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down.
+- Frame 1: Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down.
 - Must get right: The non-working arm must stay locked straight the whole rep, never bent into a wide pull-up.
 
 Prompt:
@@ -1194,21 +1004,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Archer Pull-up (a repetition movement). View: front. Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Dead hang from a wide overhand grip, hands about twice shoulder width. Both arms fully straight, shoulders packed down, body vertical with legs together and slightly in front, feet off the floor, head neutral and facing forward.
-Frame 2 of 3 (mid): Torso rising toward the bar while pulling to the athlete's right. The right elbow bends deeply beside the ribs and the right shoulder moves up to the right hand. The left arm stays completely straight and angled out along the bar. Head level with the bar.
-Frame 3 of 3 (end): Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down.
+Representative still: Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down.
 Must get right: The non-working arm must stay locked straight the whole rep, never bent into a wide pull-up.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Negative
 
-- Slug: `one-arm-negative`. Files: `one-arm-negative-1.svg`, `one-arm-negative-2.svg`, `one-arm-negative-3.svg`. Now shows: proxy drawing of Negative Pull-up.
+- Slug: `one-arm-negative`. Files: `one-arm-negative-1.svg`. Now shows: proxy drawing of Negative Pull-up.
 - View: front. Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Top position hanging from the bar by one hand only, overhand grip, working arm fully bent with the chin over the bar and the elbow tucked down. The free arm hangs relaxed at the side and the legs hang together, slightly bent at the knee.
-- Frame 2: Lowering slowly, midway: working elbow bent about 90 degrees, forearm vertical, chest level with the bar. The free arm stays away from the bar and the body, torso squared to the camera, legs together and hanging, no swing.
-- Frame 3: Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight.
+- Frame 1: Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight.
 - Must get right: Only one hand touches the bar; the free hand must not grab the wrist or the bar.
 
 Prompt:
@@ -1218,21 +1024,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Negative (a repetition movement). View: front. Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Top position hanging from the bar by one hand only, overhand grip, working arm fully bent with the chin over the bar and the elbow tucked down. The free arm hangs relaxed at the side and the legs hang together, slightly bent at the knee.
-Frame 2 of 3 (mid): Lowering slowly, midway: working elbow bent about 90 degrees, forearm vertical, chest level with the bar. The free arm stays away from the bar and the body, torso squared to the camera, legs together and hanging, no swing.
-Frame 3 of 3 (end): Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight.
+Representative still: Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight.
 Must get right: Only one hand touches the bar; the free hand must not grab the wrist or the bar.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Pull-up
 
-- Slug: `one-arm-pull-up`. Files: `one-arm-pull-up-1.svg`, `one-arm-pull-up-2.svg`, `one-arm-pull-up-3.svg`. Now shows: proxy drawing of Pull-up.
+- Slug: `one-arm-pull-up`. Files: `one-arm-pull-up-1.svg`. Now shows: proxy drawing of Pull-up.
 - View: front. Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: One-arm dead hang by the right hand on the bar, overhand grip, arm fully straight and shoulder packed. The free left arm is held out to the side, away from the bar and the body. Legs together hanging straight down, feet off the floor, torso square to the front.
-- Frame 2: Mid pull: right elbow bent about 90 degrees and driving down and in toward the ribs, chest rising to bar height, torso turning slightly toward the working side. The free arm stays out wide and open, legs together and still, no kick or swing.
-- Frame 3: Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip.
+- Frame 1: Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip.
 - Must get right: The free hand must never touch the wrist, bar or body, and the legs must not swing for momentum.
 
 Prompt:
@@ -1242,21 +1044,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Pull-up (a repetition movement). View: front. Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): One-arm dead hang by the right hand on the bar, overhand grip, arm fully straight and shoulder packed. The free left arm is held out to the side, away from the bar and the body. Legs together hanging straight down, feet off the floor, torso square to the front.
-Frame 2 of 3 (mid): Mid pull: right elbow bent about 90 degrees and driving down and in toward the ribs, chest rising to bar height, torso turning slightly toward the working side. The free arm stays out wide and open, legs together and still, no kick or swing.
-Frame 3 of 3 (end): Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip.
+Representative still: Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip.
 Must get right: The free hand must never touch the wrist, bar or body, and the legs must not swing for momentum.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Parallel Bar Support Hold
 
-- Slug: `parallel-bar-support-hold`. Files: `parallel-bar-support-hold-1.svg`, `parallel-bar-support-hold-2.svg`, `parallel-bar-support-hold-3.svg`. Now shows: pictogram.
+- Slug: `parallel-bar-support-hold`. Files: `parallel-bar-support-hold-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: pair of parallel bars at hip height. Static hold.
-- Frame 1: Standing between parallel bars at hip height, facing right, hands gripping the bars beside the hips with neutral palms facing in. Arms straight and bent slightly, about to jump or step up so the feet come off the floor, torso upright.
-- Frame 2: Rising into support: the athlete presses up so the feet leave the floor, arms straightening fully and the shoulders pushing down away from the ears. Knees bent slightly behind the body, torso upright, head neutral looking forward.
-- Frame 3: Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral.
+- Frame 1: Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral.
 - Must get right: Shoulders must be depressed down, not shrugged up around the ears.
 
 Prompt:
@@ -1266,21 +1064,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Parallel Bar Support Hold (a static hold). View: side (facing right). Equipment: pair of parallel bars at hip height.
 
-Frame 1 of 3 (set-up): Standing between parallel bars at hip height, facing right, hands gripping the bars beside the hips with neutral palms facing in. Arms straight and bent slightly, about to jump or step up so the feet come off the floor, torso upright.
-Frame 2 of 3 (arriving): Rising into support: the athlete presses up so the feet leave the floor, arms straightening fully and the shoulders pushing down away from the ears. Knees bent slightly behind the body, torso upright, head neutral looking forward.
-Frame 3 of 3 (full hold): Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral.
+Representative still: Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral.
 Must get right: Shoulders must be depressed down, not shrugged up around the ears.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Negative Push-up
 
-- Slug: `one-arm-negative-push-up`. Files: `one-arm-negative-push-up-1.svg`, `one-arm-negative-push-up-2.svg`, `one-arm-negative-push-up-3.svg`. Now shows: proxy drawing of Push-up.
+- Slug: `one-arm-negative-push-up`. Files: `one-arm-negative-push-up-1.svg`. Now shows: proxy drawing of Push-up.
 - View: side (facing left). Equipment: none (floor only). Repetition.
-- Frame 1: Top of a one-arm push-up facing left: body in one straight plank line from head to heels, working right arm locked straight under the shoulder, the free left arm held behind the back with the hand resting on the lower back. Feet set wide apart for balance, hips square to the floor.
-- Frame 2: Lowering slowly, midway: the right elbow bends to about 90 degrees and stays tucked near the ribs, chest and hips travel down together. Body stays straight and square to the floor, the free arm remains behind the back, feet wide on the toes.
-- Frame 3: Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead.
+- Frame 1: Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead.
 - Must get right: Hips must stay square to the floor, not rotated open, and the free hand must not touch the ground.
 
 Prompt:
@@ -1290,21 +1084,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Negative Push-up (a repetition movement). View: side (facing left). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Top of a one-arm push-up facing left: body in one straight plank line from head to heels, working right arm locked straight under the shoulder, the free left arm held behind the back with the hand resting on the lower back. Feet set wide apart for balance, hips square to the floor.
-Frame 2 of 3 (mid): Lowering slowly, midway: the right elbow bends to about 90 degrees and stays tucked near the ribs, chest and hips travel down together. Body stays straight and square to the floor, the free arm remains behind the back, feet wide on the toes.
-Frame 3 of 3 (end): Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead.
+Representative still: Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead.
 Must get right: Hips must stay square to the floor, not rotated open, and the free hand must not touch the ground.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### One-Arm Push-up
 
-- Slug: `one-arm-push-up`. Files: `one-arm-push-up-1.svg`, `one-arm-push-up-2.svg`, `one-arm-push-up-3.svg`. Now shows: proxy drawing of Push-up.
+- Slug: `one-arm-push-up`. Files: `one-arm-push-up-1.svg`. Now shows: proxy drawing of Push-up.
 - View: side (facing left). Equipment: none (floor only). Repetition.
-- Frame 1: Start at the top facing left in a plank on one arm: right arm locked straight under the shoulder, free left hand behind the lower back. Feet set wide apart on the toes, body in one straight line from head to heels, hips level and square to the floor.
-- Frame 2: Lowering midway: right elbow bent to about 90 degrees and tucked close to the ribs, the chest and hips descending together as one plank. Feet remain wide, the free arm stays behind the back, the head stays in line with the spine.
-- Frame 3: Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag.
+- Frame 1: Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag.
 - Must get right: The free arm must stay off the floor, and the hips must not twist toward the free side.
 
 Prompt:
@@ -1314,21 +1104,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: One-Arm Push-up (a repetition movement). View: side (facing left). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Start at the top facing left in a plank on one arm: right arm locked straight under the shoulder, free left hand behind the lower back. Feet set wide apart on the toes, body in one straight line from head to heels, hips level and square to the floor.
-Frame 2 of 3 (mid): Lowering midway: right elbow bent to about 90 degrees and tucked close to the ribs, the chest and hips descending together as one plank. Feet remain wide, the free arm stays behind the back, the head stays in line with the spine.
-Frame 3 of 3 (end): Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag.
+Representative still: Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag.
 Must get right: The free arm must stay off the floor, and the hips must not twist toward the free side.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tuck L-sit
 
-- Slug: `tuck-l-sit`. Files: `tuck-l-sit-1.svg`, `tuck-l-sit-2.svg`, `tuck-l-sit-3.svg`. Now shows: proxy drawing of L-sit.
+- Slug: `tuck-l-sit`. Files: `tuck-l-sit-1.svg`. Now shows: proxy drawing of L-sit.
 - View: side (facing right). Equipment: a pair of parallettes. Static hold.
-- Frame 1: Sitting on the floor between the parallettes facing right, the hands gripping the parallettes beside the hips, the arms straight. The legs extended in front on the floor, the torso upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Tuck L-sit.
-- Frame 2: Lifting: the arms press straight and the shoulders push down, lifting the hips off the floor. The knees are pulled toward the chest and the feet come off the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck L-sit clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral.
+- Frame 1: Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral.
 - Must get right: The arms are locked, the shoulders pressed down and the hips clear of the floor.
 
 Prompt:
@@ -1338,21 +1124,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tuck L-sit (a static hold). View: side (facing right). Equipment: a pair of parallettes.
 
-Frame 1 of 3 (set-up): Sitting on the floor between the parallettes facing right, the hands gripping the parallettes beside the hips, the arms straight. The legs extended in front on the floor, the torso upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Tuck L-sit.
-Frame 2 of 3 (arriving): Lifting: the arms press straight and the shoulders push down, lifting the hips off the floor. The knees are pulled toward the chest and the feet come off the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck L-sit clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral.
+Representative still: Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral.
 Must get right: The arms are locked, the shoulders pressed down and the hips clear of the floor.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Straddle L-sit
 
-- Slug: `straddle-l-sit`. Files: `straddle-l-sit-1.svg`, `straddle-l-sit-2.svg`, `straddle-l-sit-3.svg`. Now shows: proxy drawing of L-sit.
+- Slug: `straddle-l-sit`. Files: `straddle-l-sit-1.svg`. Now shows: proxy drawing of L-sit.
 - View: front. Equipment: a pair of parallettes. Static hold.
-- Frame 1: Sitting on the floor between parallettes facing the camera with the hands gripping the parallettes beside the hips, arms straight and the legs spread wide on the floor in front. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Straddle L-sit.
-- Frame 2: Lifting: the arms push straight and the shoulders press down, the hips lift off the floor. The legs lift off the floor, still wide apart and straight. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle L-sit clearly in this front view.
-- Frame 3: Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright.
+- Frame 1: Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright.
 - Must get right: The legs are straight and at horizontal, spread wide in front of the body.
 
 Prompt:
@@ -1362,21 +1144,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Straddle L-sit (a static hold). View: front. Equipment: a pair of parallettes.
 
-Frame 1 of 3 (set-up): Sitting on the floor between parallettes facing the camera with the hands gripping the parallettes beside the hips, arms straight and the legs spread wide on the floor in front. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Straddle L-sit.
-Frame 2 of 3 (arriving): Lifting: the arms push straight and the shoulders press down, the hips lift off the floor. The legs lift off the floor, still wide apart and straight. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Straddle L-sit clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright.
+Representative still: Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright.
 Must get right: The legs are straight and at horizontal, spread wide in front of the body.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Toes-to-Bar
 
-- Slug: `toes-to-bar`. Files: `toes-to-bar-1.svg`, `toes-to-bar-2.svg`, `toes-to-bar-3.svg`. Now shows: proxy drawing of Hanging Leg Raise.
+- Slug: `toes-to-bar`. Files: `toes-to-bar-1.svg`. Now shows: proxy drawing of Hanging Leg Raise.
 - View: side (facing right). Equipment: straight bar overhead, no other equipment. Repetition.
-- Frame 1: Dead hang from the bar by an overhand shoulder-width grip, the arms straight and the shoulders packed down. The legs together, hanging straight down below the hips. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Toes-to-Bar.
-- Frame 2: Mid movement: the straight legs lift in front of the body and the hips pike, the toes rising toward the bar. The arms stay straight, the lats pull down and the legs are at about 90 degrees to the torso.
-- Frame 3: Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands.
+- Frame 1: Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands.
 - Must get right: The legs stay straight and the toes touch the bar, with a controlled swing-free descent.
 
 Prompt:
@@ -1386,21 +1164,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Toes-to-Bar (a repetition movement). View: side (facing right). Equipment: straight bar overhead, no other equipment.
 
-Frame 1 of 3 (start): Dead hang from the bar by an overhand shoulder-width grip, the arms straight and the shoulders packed down. The legs together, hanging straight down below the hips. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Toes-to-Bar.
-Frame 2 of 3 (mid): Mid movement: the straight legs lift in front of the body and the hips pike, the toes rising toward the bar. The arms stay straight, the lats pull down and the legs are at about 90 degrees to the torso.
-Frame 3 of 3 (end): Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands.
+Representative still: Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands.
 Must get right: The legs stay straight and the toes touch the bar, with a controlled swing-free descent.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### V-Sit
 
-- Slug: `v-sit`. Files: `v-sit-1.svg`, `v-sit-2.svg`, `v-sit-3.svg`. Now shows: proxy drawing of L-sit.
+- Slug: `v-sit`. Files: `v-sit-1.svg`. Now shows: proxy drawing of L-sit.
 - View: side (facing right). Equipment: a pair of parallettes. Static hold.
-- Frame 1: Sitting on the floor between parallettes facing right, the hands on the parallettes beside the hips, the arms straight. The legs extended on the floor in front, the torso upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the V-Sit.
-- Frame 2: Lifting: the arms press straight, the hips lift off the floor and the straight legs rise toward horizontal and above. The torso leans back slightly as the legs rise. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the V-Sit clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor.
+- Frame 1: Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor.
 - Must get right: The straight legs must be above horizontal with the hips off the floor, not the 90-degree L-sit.
 
 Prompt:
@@ -1410,21 +1184,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: V-Sit (a static hold). View: side (facing right). Equipment: a pair of parallettes.
 
-Frame 1 of 3 (set-up): Sitting on the floor between parallettes facing right, the hands on the parallettes beside the hips, the arms straight. The legs extended on the floor in front, the torso upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the V-Sit.
-Frame 2 of 3 (arriving): Lifting: the arms press straight, the hips lift off the floor and the straight legs rise toward horizontal and above. The torso leans back slightly as the legs rise. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the V-Sit clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor.
+Representative still: Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor.
 Must get right: The straight legs must be above horizontal with the hips off the floor, not the 90-degree L-sit.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Manna
 
-- Slug: `manna`. Files: `manna-1.svg`, `manna-2.svg`, `manna-3.svg`. Now shows: pictogram.
+- Slug: `manna`. Files: `manna-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: a pair of parallettes or the floor. Static hold.
-- Frame 1: V-sit on the hands facing right: the arms are straight, the hips lifted, and the straight legs are raised about 45 degrees in front. The torso is leaning back slightly. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Manna.
-- Frame 2: Rising: the hands push into the floor, the shoulders push down and the hips rise higher. The legs pike up toward the chest and the torso leans back. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Manna clearly in this side (facing right) view.
-- Frame 3: Full hold: the arms are straight, the hands are by the hips pointing back, the hips are high above the hands. The straight legs are lifted up overhead in front of the face, the body folded and the torso leaning back, the head neutral.
+- Frame 1: Full hold: the arms are straight, the hands are by the hips pointing back, the hips are high above the hands. The straight legs are lifted up overhead in front of the face, the body folded and the torso leaning back, the head neutral.
 - Must get right: The hips are above the hands and the legs are overhead, much higher than a V-sit.
 
 Prompt:
@@ -1434,21 +1204,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Manna (a static hold). View: side (facing right). Equipment: a pair of parallettes or the floor.
 
-Frame 1 of 3 (set-up): V-sit on the hands facing right: the arms are straight, the hips lifted, and the straight legs are raised about 45 degrees in front. The torso is leaning back slightly. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Manna.
-Frame 2 of 3 (arriving): Rising: the hands push into the floor, the shoulders push down and the hips rise higher. The legs pike up toward the chest and the torso leans back. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Manna clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the arms are straight, the hands are by the hips pointing back, the hips are high above the hands. The straight legs are lifted up overhead in front of the face, the body folded and the torso leaning back, the head neutral.
+Representative still: Full hold: the arms are straight, the hands are by the hips pointing back, the hips are high above the hands. The straight legs are lifted up overhead in front of the face, the body folded and the torso leaning back, the head neutral.
 Must get right: The hips are above the hands and the legs are overhead, much higher than a V-sit.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Deep Squat Hold
 
-- Slug: `deep-squat-hold`. Files: `deep-squat-hold-1.svg`, `deep-squat-hold-2.svg`, `deep-squat-hold-3.svg`. Now shows: proxy drawing of Bodyweight Squat.
+- Slug: `deep-squat-hold`. Files: `deep-squat-hold-1.svg`. Now shows: proxy drawing of Bodyweight Squat.
 - View: front. Equipment: none (floor only). Static hold.
-- Frame 1: Standing tall facing the camera, the feet about shoulder width apart, the toes turned out slightly and the arms held out in front for balance. The chest is up and the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Deep Squat Hold.
-- Frame 2: Descending: the knees bend and move out over the toes and the hips drop back and down. The heels stay flat and the chest stays tall, the arms reaching forward. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Deep Squat Hold clearly in this front view.
-- Frame 3: Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight.
+- Frame 1: Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight.
 - Must get right: The heels stay flat on the floor and the chest stays upright.
 
 Prompt:
@@ -1458,21 +1224,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Deep Squat Hold (a static hold). View: front. Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Standing tall facing the camera, the feet about shoulder width apart, the toes turned out slightly and the arms held out in front for balance. The chest is up and the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Deep Squat Hold.
-Frame 2 of 3 (arriving): Descending: the knees bend and move out over the toes and the hips drop back and down. The heels stay flat and the chest stays tall, the arms reaching forward. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Deep Squat Hold clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight.
+Representative still: Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight.
 Must get right: The heels stay flat on the floor and the chest stays upright.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### German Hang
 
-- Slug: `german-hang`. Files: `german-hang-1.svg`, `german-hang-2.svg`, `german-hang-3.svg`. Now shows: pictogram.
+- Slug: `german-hang`. Files: `german-hang-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: a pair of gymnastic rings or a straight bar overhead. Static hold.
-- Frame 1: Hanging from the rings with the arms straight overhead, the body vertical. The hips pike up and the legs lift toward the rings while the knees tuck to the chest. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the German Hang.
-- Frame 2: Rotating: the hips and legs pass between the arms and the body inverts. The arms remain straight, the shoulders rotate behind the body, the legs begin to lower behind. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the German Hang clearly in this side (facing right) view.
-- Frame 3: Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral.
+- Frame 1: Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral.
 - Must get right: The arms are straight, the shoulders are open behind the back and the back is arched.
 
 Prompt:
@@ -1482,21 +1244,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: German Hang (a static hold). View: side (facing right). Equipment: a pair of gymnastic rings or a straight bar overhead.
 
-Frame 1 of 3 (set-up): Hanging from the rings with the arms straight overhead, the body vertical. The hips pike up and the legs lift toward the rings while the knees tuck to the chest. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the German Hang.
-Frame 2 of 3 (arriving): Rotating: the hips and legs pass between the arms and the body inverts. The arms remain straight, the shoulders rotate behind the body, the legs begin to lower behind. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the German Hang clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral.
+Representative still: Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral.
 Must get right: The arms are straight, the shoulders are open behind the back and the back is arched.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Wrist Prep
 
-- Slug: `wrist-prep`. Files: `wrist-prep-1.svg`, `wrist-prep-2.svg`, `wrist-prep-3.svg`. Now shows: pictogram.
+- Slug: `wrist-prep`. Files: `wrist-prep-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: On hands and knees facing right, the hands on the floor shoulder width apart with the fingers pointing forward, the arms straight. The knees are under the hips and the back is flat. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Wrist Prep.
-- Frame 2: Rocking forward: the shoulders move forward past the wrists while the palms stay flat on the floor. The fingers stay spread and the wrists extend, the elbows locked straight. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Wrist Prep clearly in this side (facing right) view.
-- Frame 3: Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction.
+- Frame 1: Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction.
 - Must get right: The palms stay flat on the floor and the elbows stay straight throughout.
 
 Prompt:
@@ -1506,21 +1264,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Wrist Prep (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): On hands and knees facing right, the hands on the floor shoulder width apart with the fingers pointing forward, the arms straight. The knees are under the hips and the back is flat. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Wrist Prep.
-Frame 2 of 3 (mid): Rocking forward: the shoulders move forward past the wrists while the palms stay flat on the floor. The fingers stay spread and the wrists extend, the elbows locked straight. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Wrist Prep clearly in this side (facing right) view.
-Frame 3 of 3 (end): Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction.
+Representative still: Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction.
 Must get right: The palms stay flat on the floor and the elbows stay straight throughout.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Bridge
 
-- Slug: `bridge`. Files: `bridge-1.svg`, `bridge-2.svg`, `bridge-3.svg`. Now shows: pictogram.
+- Slug: `bridge`. Files: `bridge-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: none (floor only). Static hold.
-- Frame 1: Lying on the back on the floor facing up, the knees bent and the feet flat about shoulder width apart near the hips. The hands are placed on the floor beside the head with the fingers pointing toward the shoulders.
-- Frame 2: Pressing up: the hands and feet push into the floor and the hips lift. The head lifts off the floor, the arms begin to straighten and the back arches. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Bridge clearly in this side (facing left) view.
-- Frame 3: Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands.
+- Frame 1: Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands.
 - Must get right: The arms are straight and the shoulders open over the hands, not a low arch of the lower back.
 
 Prompt:
@@ -1530,21 +1284,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Bridge (a static hold). View: side (facing left). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Lying on the back on the floor facing up, the knees bent and the feet flat about shoulder width apart near the hips. The hands are placed on the floor beside the head with the fingers pointing toward the shoulders.
-Frame 2 of 3 (arriving): Pressing up: the hands and feet push into the floor and the hips lift. The head lifts off the floor, the arms begin to straighten and the back arches. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Bridge clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands.
+Representative still: Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands.
 Must get right: The arms are straight and the shoulders open over the hands, not a low arch of the lower back.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Half Split
 
-- Slug: `half-split`. Files: `half-split-1.svg`, `half-split-2.svg`, `half-split-3.svg`. Now shows: pictogram.
+- Slug: `half-split`. Files: `half-split-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Kneeling on the left knee on the floor facing right, the right leg extended straight in front with the heel on the floor and the toes pointing up. The torso is upright and the hands rest on the floor.
-- Frame 2: Folding: the hips shift back over the left knee while the right leg stays straight. The torso hinges forward from the hips and the hands walk forward along the right leg. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Half Split clearly in this side (facing right) view.
-- Frame 3: Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square.
+- Frame 1: Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square.
 - Must get right: The front leg stays straight and the hips stay square, not twisted.
 
 Prompt:
@@ -1554,21 +1304,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Half Split (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Kneeling on the left knee on the floor facing right, the right leg extended straight in front with the heel on the floor and the toes pointing up. The torso is upright and the hands rest on the floor.
-Frame 2 of 3 (arriving): Folding: the hips shift back over the left knee while the right leg stays straight. The torso hinges forward from the hips and the hands walk forward along the right leg. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Half Split clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square.
+Representative still: Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square.
 Must get right: The front leg stays straight and the hips stay square, not twisted.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Front Split
 
-- Slug: `front-split`. Files: `front-split-1.svg`, `front-split-2.svg`, `front-split-3.svg`. Now shows: pictogram.
+- Slug: `front-split`. Files: `front-split-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Static hold.
-- Frame 1: Lunge position facing right: the right leg bent forward in front, the left leg extended behind with the knee on the floor. The torso is upright and the hands are on the floor beside the front foot.
-- Frame 2: Sliding down: the right leg slides forward and straightens while the left leg slides back. The hips lower toward the floor and the hands support the body on the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Front Split clearly in this side (facing right) view.
-- Frame 3: Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front.
+- Frame 1: Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front.
 - Must get right: Both legs stay straight in a 180-degree line, and the hips stay square.
 
 Prompt:
@@ -1578,21 +1324,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Front Split (a static hold). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Lunge position facing right: the right leg bent forward in front, the left leg extended behind with the knee on the floor. The torso is upright and the hands are on the floor beside the front foot.
-Frame 2 of 3 (arriving): Sliding down: the right leg slides forward and straightens while the left leg slides back. The hips lower toward the floor and the hands support the body on the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Front Split clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front.
+Representative still: Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front.
 Must get right: Both legs stay straight in a 180-degree line, and the hips stay square.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Pancake
 
-- Slug: `pancake`. Files: `pancake-1.svg`, `pancake-2.svg`, `pancake-3.svg`. Now shows: pictogram.
+- Slug: `pancake`. Files: `pancake-1.svg`. Now shows: pictogram.
 - View: front. Equipment: none (floor only). Static hold.
-- Frame 1: Sitting upright on the floor facing the camera with the legs straight and spread wide in a straddle, the toes pointing up. The hands are on the floor between the legs and the back is straight.
-- Frame 2: Folding: the hips tilt forward and the torso hinges from the hips toward the floor. The arms walk forward along the floor, the legs remain straight and wide. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Pancake clearly in this front view.
-- Frame 3: Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long.
+- Frame 1: Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long.
 - Must get right: The fold comes from the hips with a long spine, not a rounded back.
 
 Prompt:
@@ -1602,21 +1344,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Pancake (a static hold). View: front. Equipment: none (floor only).
 
-Frame 1 of 3 (set-up): Sitting upright on the floor facing the camera with the legs straight and spread wide in a straddle, the toes pointing up. The hands are on the floor between the legs and the back is straight.
-Frame 2 of 3 (arriving): Folding: the hips tilt forward and the torso hinges from the hips toward the floor. The arms walk forward along the floor, the legs remain straight and wide. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Pancake clearly in this front view.
-Frame 3 of 3 (full hold): Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long.
+Representative still: Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long.
 Must get right: The fold comes from the hips with a long spine, not a rounded back.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Stand-to-Stand Bridge
 
-- Slug: `stand-to-stand-bridge`. Files: `stand-to-stand-bridge-1.svg`, `stand-to-stand-bridge-2.svg`, `stand-to-stand-bridge-3.svg`. Now shows: pictogram.
+- Slug: `stand-to-stand-bridge`. Files: `stand-to-stand-bridge-1.svg`. Now shows: pictogram.
 - View: side (facing left). Equipment: none (floor only). Repetition.
-- Frame 1: Standing tall facing left with the feet about shoulder width apart and the arms raised overhead by the ears. The chest is open and the legs are straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Stand-to-Stand Bridge.
-- Frame 2: Lowering midway: the hips push forward as the arms reach back overhead, the back arches and the knees bend slightly. The head tilts back and the body leans backward toward the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Stand-to-Stand Bridge clearly in this side (facing left) view.
-- Frame 3: Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.
+- Frame 1: Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.
 - Must get right: The movement is a controlled lowering with the arms by the ears, not a fall.
 
 Prompt:
@@ -1626,21 +1364,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Stand-to-Stand Bridge (a repetition movement). View: side (facing left). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Standing tall facing left with the feet about shoulder width apart and the arms raised overhead by the ears. The chest is open and the legs are straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Stand-to-Stand Bridge.
-Frame 2 of 3 (mid): Lowering midway: the hips push forward as the arms reach back overhead, the back arches and the knees bend slightly. The head tilts back and the body leans backward toward the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Stand-to-Stand Bridge clearly in this side (facing left) view.
-Frame 3 of 3 (end): Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.
+Representative still: Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.
 Must get right: The movement is a controlled lowering with the arms by the ears, not a fall.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Hamstring Bridge
 
-- Slug: `hamstring-bridge`. Files: `hamstring-bridge-1.svg`, `hamstring-bridge-2.svg`, `hamstring-bridge-3.svg`. Now shows: proxy drawing of Glute Bridge.
+- Slug: `hamstring-bridge`. Files: `hamstring-bridge-1.svg`. Now shows: proxy drawing of Glute Bridge.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Lying on the back facing up, the knees bent at about 90 degrees with the heels pulled in toward the hips, the feet flat on the floor. The arms rest on the floor by the sides, the hips on the floor.
-- Frame 2: Lifting: the heels dig into the floor and the hips rise off the floor as the glutes squeeze. The knees stay bent at about 90 degrees, the arms flat on the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Hamstring Bridge clearly in this side (facing right) view.
-- Frame 3: Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.
+- Frame 1: Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.
 - Must get right: The heels stay close to the hips, and the hips are fully extended, not sagging.
 
 Prompt:
@@ -1650,21 +1384,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Hamstring Bridge (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Lying on the back facing up, the knees bent at about 90 degrees with the heels pulled in toward the hips, the feet flat on the floor. The arms rest on the floor by the sides, the hips on the floor.
-Frame 2 of 3 (mid): Lifting: the heels dig into the floor and the hips rise off the floor as the glutes squeeze. The knees stay bent at about 90 degrees, the arms flat on the floor. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Hamstring Bridge clearly in this side (facing right) view.
-Frame 3 of 3 (end): Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.
+Representative still: Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.
 Must get right: The heels stay close to the hips, and the hips are fully extended, not sagging.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Nordic Negative
 
-- Slug: `nordic-negative`. Files: `nordic-negative-1.svg`, `nordic-negative-2.svg`, `nordic-negative-3.svg`. Now shows: proxy drawing of Nordic Curl.
+- Slug: `nordic-negative`. Files: `nordic-negative-1.svg`. Now shows: proxy drawing of Nordic Curl.
 - View: side (facing right). Equipment: a pad on the floor for the knees, with the feet anchored under a fixed support. Repetition.
-- Frame 1: Kneeling upright on a pad facing right with the ankles anchored under a fixed bar. The body is straight from the knees to the head, the arms bent in front of the chest, the hips extended.
-- Frame 2: Lowering midway: the body leans forward as a straight line from the knees to the head while the hamstrings control the descent. The hips stay extended, the arms reach forward, the angle is about 45 degrees.
-- Frame 3: Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.
+- Frame 1: Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.
 - Must get right: The body stays straight with the hips extended, and it is not folded at the hips.
 
 Prompt:
@@ -1674,21 +1404,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Nordic Negative (a repetition movement). View: side (facing right). Equipment: a pad on the floor for the knees, with the feet anchored under a fixed support.
 
-Frame 1 of 3 (start): Kneeling upright on a pad facing right with the ankles anchored under a fixed bar. The body is straight from the knees to the head, the arms bent in front of the chest, the hips extended.
-Frame 2 of 3 (mid): Lowering midway: the body leans forward as a straight line from the knees to the head while the hamstrings control the descent. The hips stay extended, the arms reach forward, the angle is about 45 degrees.
-Frame 3 of 3 (end): Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.
+Representative still: Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.
 Must get right: The body stays straight with the hips extended, and it is not folded at the hips.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Dragon Squat
 
-- Slug: `dragon-squat`. Files: `dragon-squat-1.svg`, `dragon-squat-2.svg`, `dragon-squat-3.svg`. Now shows: pictogram.
+- Slug: `dragon-squat`. Files: `dragon-squat-1.svg`. Now shows: pictogram.
 - View: side (facing right). Equipment: none (floor only). Repetition.
-- Frame 1: Standing tall facing right, the arms held out in front for balance. Weight on the right foot, the left leg slightly lifted off the floor and the body upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Dragon Squat.
-- Frame 2: Lowering midway: the right knee bends deeply, the hips drop and move back, the torso leans forward. The left leg swings out and behind the body, straight and off the floor, the arms still in front.
-- Frame 3: Bottom: the right knee is deeply bent with the right thigh below parallel, the heel down. The left leg is extended straight behind and off the floor, hovering above it, the torso is leaning forward and the arms extended forward.
+- Frame 1: Bottom: the right knee is deeply bent with the right thigh below parallel, the heel down. The left leg is extended straight behind and off the floor, hovering above it, the torso is leaning forward and the arms extended forward.
 - Must get right: The rear leg stays straight and off the floor, and the standing heel stays down.
 
 Prompt:
@@ -1698,23 +1424,19 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Dragon Squat (a repetition movement). View: side (facing right). Equipment: none (floor only).
 
-Frame 1 of 3 (start): Standing tall facing right, the arms held out in front for balance. Weight on the right foot, the left leg slightly lifted off the floor and the body upright. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Dragon Squat.
-Frame 2 of 3 (mid): Lowering midway: the right knee bends deeply, the hips drop and move back, the torso leans forward. The left leg swings out and behind the body, straight and off the floor, the arms still in front.
-Frame 3 of 3 (end): Bottom: the right knee is deeply bent with the right thigh below parallel, the heel down. The left leg is extended straight behind and off the floor, hovering above it, the torso is leaning forward and the arms extended forward.
+Representative still: Bottom: the right knee is deeply bent with the right thigh below parallel, the heel down. The left leg is extended straight behind and off the floor, hovering above it, the torso is leaning forward and the arms extended forward.
 Must get right: The rear leg stays straight and off the floor, and the standing heel stays down.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ## Priority 2: gym and conditioning movements (6)
 
 ### Dumbbell External Rotation
 
-- Slug: `dumbbell-external-rotation`. Files: `dumbbell-external-rotation-1.svg`, `dumbbell-external-rotation-2.svg`, `dumbbell-external-rotation-3.svg`. Now shows: placeholder.
+- Slug: `dumbbell-external-rotation`. Files: `dumbbell-external-rotation-1.svg`. Now shows: placeholder.
 - View: front. Equipment: a light dumbbell, with a rolled towel under the upper arm. Repetition.
-- Frame 1: Standing facing the camera, the right elbow bent to 90 degrees and tucked against the side with a rolled towel between the elbow and the ribs. The forearm points forward across the stomach, holding the dumbbell with the palm facing in.
-- Frame 2: Rotating out: the forearm swings away from the stomach toward the outside, the elbow staying pinned at the side. The upper arm stays still and the dumbbell travels in an arc to about 45 degrees away from the belly.
-- Frame 3: End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.
+- Frame 1: End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.
 - Must get right: The elbow stays pinned to the ribs at 90 degrees, and only the forearm rotates.
 
 Prompt:
@@ -1724,21 +1446,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Dumbbell External Rotation (a repetition movement). View: front. Equipment: a light dumbbell, with a rolled towel under the upper arm.
 
-Frame 1 of 3 (start): Standing facing the camera, the right elbow bent to 90 degrees and tucked against the side with a rolled towel between the elbow and the ribs. The forearm points forward across the stomach, holding the dumbbell with the palm facing in.
-Frame 2 of 3 (mid): Rotating out: the forearm swings away from the stomach toward the outside, the elbow staying pinned at the side. The upper arm stays still and the dumbbell travels in an arc to about 45 degrees away from the belly.
-Frame 3 of 3 (end): End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.
+Representative still: End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.
 Must get right: The elbow stays pinned to the ribs at 90 degrees, and only the forearm rotates.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Knee-to-Wall Dorsiflexion
 
-- Slug: `knee-to-wall-dorsiflexion`. Files: `knee-to-wall-dorsiflexion-1.svg`, `knee-to-wall-dorsiflexion-2.svg`, `knee-to-wall-dorsiflexion-3.svg`. Now shows: placeholder.
+- Slug: `knee-to-wall-dorsiflexion`. Files: `knee-to-wall-dorsiflexion-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a flat wall, floor space in front of it. Static hold.
-- Frame 1: Standing facing the wall in a split stance seen from the side, the front foot about a hand-width from the wall with the toes pointing straight at it. The back foot is a stride behind, the hands resting on the wall at chest height, the torso upright.
-- Frame 2: Lunging: the front knee bends and travels forward toward the wall over the second toe. The front heel stays flat on the floor, the back leg is straight and the torso stays upright. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Knee-to-Wall Dorsiflexion clearly in this side (facing left) view.
-- Frame 3: Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.
+- Frame 1: Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.
 - Must get right: The front heel stays flat on the floor and the knee tracks over the second toe.
 
 Prompt:
@@ -1748,21 +1466,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Knee-to-Wall Dorsiflexion (a static hold). View: side (facing left). Equipment: a flat wall, floor space in front of it.
 
-Frame 1 of 3 (set-up): Standing facing the wall in a split stance seen from the side, the front foot about a hand-width from the wall with the toes pointing straight at it. The back foot is a stride behind, the hands resting on the wall at chest height, the torso upright.
-Frame 2 of 3 (arriving): Lunging: the front knee bends and travels forward toward the wall over the second toe. The front heel stays flat on the floor, the back leg is straight and the torso stays upright. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Knee-to-Wall Dorsiflexion clearly in this side (facing left) view.
-Frame 3 of 3 (full hold): Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.
+Representative still: Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.
 Must get right: The front heel stays flat on the floor and the knee tracks over the second toe.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Smith Machine Overhead Press
 
-- Slug: `smith-machine-overhead-press`. Files: `smith-machine-overhead-press-1.svg`, `smith-machine-overhead-press-2.svg`, `smith-machine-overhead-press-3.svg`. Now shows: placeholder.
+- Slug: `smith-machine-overhead-press`. Files: `smith-machine-overhead-press-1.svg`. Now shows: placeholder.
 - View: front. Equipment: a Smith machine with a fixed barbell on vertical rails, and a bench with the back upright. Repetition.
-- Frame 1: Seated on the upright bench facing the camera inside the Smith machine, the feet flat on the floor. The barbell is held at the collarbone level with an overhand grip slightly wider than the shoulders, the elbows bent below the bar and the forearms vertical.
-- Frame 2: Pressing: the bar rises along its vertical rails past the face, the elbows extending as the head moves slightly back and forward. The forearms stay vertical, the back stays against the pad. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Smith Machine Overhead Press clearly in this front view.
-- Frame 3: Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.
+- Frame 1: Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.
 - Must get right: The bar travels straight up on the machine rails, and the forearms stay vertical.
 
 Prompt:
@@ -1772,21 +1486,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Smith Machine Overhead Press (a repetition movement). View: front. Equipment: a Smith machine with a fixed barbell on vertical rails, and a bench with the back upright.
 
-Frame 1 of 3 (start): Seated on the upright bench facing the camera inside the Smith machine, the feet flat on the floor. The barbell is held at the collarbone level with an overhand grip slightly wider than the shoulders, the elbows bent below the bar and the forearms vertical.
-Frame 2 of 3 (mid): Pressing: the bar rises along its vertical rails past the face, the elbows extending as the head moves slightly back and forward. The forearms stay vertical, the back stays against the pad. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Smith Machine Overhead Press clearly in this front view.
-Frame 3 of 3 (end): Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.
+Representative still: Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.
 Must get right: The bar travels straight up on the machine rails, and the forearms stay vertical.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Smith Machine Row
 
-- Slug: `smith-machine-row`. Files: `smith-machine-row-1.svg`, `smith-machine-row-2.svg`, `smith-machine-row-3.svg`. Now shows: placeholder.
+- Slug: `smith-machine-row`. Files: `smith-machine-row-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a Smith machine with a fixed barbell on vertical rails. Repetition.
-- Frame 1: Standing facing the bar from the side, hinged forward at the hips about 45 degrees with the knees slightly bent. The arms are straight, the hands gripping the bar with an overhand grip shoulder width apart, the back flat and the head neutral.
-- Frame 2: Pulling: the elbows bend and drive back as the bar rises toward the lower ribs. The torso stays at the same hinge angle and the back stays flat, the knees stay slightly bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Smith Machine Row clearly in this side (facing right) view.
-- Frame 3: Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.
+- Frame 1: Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.
 - Must get right: The back stays flat in the hinge, and the torso does not rise as the bar is pulled.
 
 Prompt:
@@ -1796,21 +1506,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Smith Machine Row (a repetition movement). View: side (facing right). Equipment: a Smith machine with a fixed barbell on vertical rails.
 
-Frame 1 of 3 (start): Standing facing the bar from the side, hinged forward at the hips about 45 degrees with the knees slightly bent. The arms are straight, the hands gripping the bar with an overhand grip shoulder width apart, the back flat and the head neutral.
-Frame 2 of 3 (mid): Pulling: the elbows bend and drive back as the bar rises toward the lower ribs. The torso stays at the same hinge angle and the back stays flat, the knees stay slightly bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Smith Machine Row clearly in this side (facing right) view.
-Frame 3 of 3 (end): Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.
+Representative still: Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.
 Must get right: The back stays flat in the hinge, and the torso does not rise as the bar is pulled.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tib Raise
 
-- Slug: `tib-raise`. Files: `tib-raise-1.svg`, `tib-raise-2.svg`, `tib-raise-3.svg`. Now shows: placeholder.
+- Slug: `tib-raise`. Files: `tib-raise-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a flat wall behind, floor space in front. Repetition.
-- Frame 1: Standing with the back against a wall seen from the side, the heels about 30 cm out from the wall. The legs are straight, the feet flat on the floor about hip width apart, the arms hanging at the sides.
-- Frame 2: Raising: the toes lift off the floor toward the shins, the heels stay on the floor. The ankles flex and the toes rise about 30 degrees above the floor, the legs straight and the back against the wall.
-- Frame 3: Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.
+- Frame 1: Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.
 - Must get right: The legs stay straight and the back stays on the wall, with only the toes moving.
 
 Prompt:
@@ -1820,21 +1526,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tib Raise (a repetition movement). View: side (facing right). Equipment: a flat wall behind, floor space in front.
 
-Frame 1 of 3 (start): Standing with the back against a wall seen from the side, the heels about 30 cm out from the wall. The legs are straight, the feet flat on the floor about hip width apart, the arms hanging at the sides.
-Frame 2 of 3 (mid): Raising: the toes lift off the floor toward the shins, the heels stay on the floor. The ankles flex and the toes rise about 30 degrees above the floor, the legs straight and the back against the wall.
-Frame 3 of 3 (end): Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.
+Representative still: Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.
 Must get right: The legs stay straight and the back stays on the wall, with only the toes moving.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Weighted Plank
 
-- Slug: `weighted-plank`. Files: `weighted-plank-1.svg`, `weighted-plank-2.svg`, `weighted-plank-3.svg`. Now shows: placeholder.
+- Slug: `weighted-plank`. Files: `weighted-plank-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a weight plate resting on the lower back. Static hold.
-- Frame 1: Kneeling on all fours facing right, the forearms on the floor with the elbows under the shoulders. A weight plate sits on the floor beside the athlete and the body is ready to extend. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Weighted Plank.
-- Frame 2: Extending: the knees lift and the legs extend back to the toes as the body forms a line. A partner or the athlete places the weight plate flat on the lower back and the hips stay level.
-- Frame 3: Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.
+- Frame 1: Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.
 - Must get right: The back stays flat with the hips level under the plate, no sag and no pike.
 
 Prompt:
@@ -1844,23 +1546,19 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Weighted Plank (a static hold). View: side (facing right). Equipment: a weight plate resting on the lower back.
 
-Frame 1 of 3 (set-up): Kneeling on all fours facing right, the forearms on the floor with the elbows under the shoulders. A weight plate sits on the floor beside the athlete and the body is ready to extend. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Weighted Plank.
-Frame 2 of 3 (arriving): Extending: the knees lift and the legs extend back to the toes as the body forms a line. A partner or the athlete places the weight plate flat on the lower back and the hips stay level.
-Frame 3 of 3 (full hold): Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.
+Representative still: Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.
 Must get right: The back stays flat with the hips level under the plate, no sag and no pike.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ## Priority 3: sports, classes and the long tail (33)
 
 ### Badminton
 
-- Slug: `badminton`. Files: `badminton-1.svg`, `badminton-2.svg`, `badminton-3.svg`. Now shows: placeholder.
+- Slug: `badminton`. Files: `badminton-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a badminton racket, a shuttlecock, a net. Repetition.
-- Frame 1: A player in a ready stance seen from the side, the knees bent and the feet wide apart. The racket is held up in front of the body with the right hand at chest height and the left hand out for balance, the eyes on the shuttle above.
-- Frame 2: Preparation: the player jumps back with the racket cocked behind the head, the elbow bent high and the body arched back. The left arm points up at the shuttlecock above and the knees are bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Badminton clearly in this side (facing right) view.
-- Frame 3: Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
+- Frame 1: Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
 - Must get right: An overhead jump smash with the racket contacting the shuttle at full arm extension.
 
 Prompt:
@@ -1870,21 +1568,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Badminton (a repetition movement). View: side (facing right). Equipment: a badminton racket, a shuttlecock, a net.
 
-Frame 1 of 3 (start): A player in a ready stance seen from the side, the knees bent and the feet wide apart. The racket is held up in front of the body with the right hand at chest height and the left hand out for balance, the eyes on the shuttle above.
-Frame 2 of 3 (mid): Preparation: the player jumps back with the racket cocked behind the head, the elbow bent high and the body arched back. The left arm points up at the shuttlecock above and the knees are bent. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Badminton clearly in this side (facing right) view.
-Frame 3 of 3 (end): Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
+Representative still: Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
 Must get right: An overhead jump smash with the racket contacting the shuttle at full arm extension.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Basketball
 
-- Slug: `basketball`. Files: `basketball-1.svg`, `basketball-2.svg`, `basketball-3.svg`. Now shows: placeholder.
+- Slug: `basketball`. Files: `basketball-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a basketball and a hoop on a backboard. Repetition.
-- Frame 1: A player standing in a jump shot stance seen from the side, the knees bent, holding the ball with both hands at chest height in front. The right hand is under the ball, the left hand beside it and the eyes are on the hoop.
-- Frame 2: The jump: the player rises into the air with the legs extended, the ball lifted above the forehead. The right elbow is bent at 90 degrees under the ball, the left hand steadies the ball and the eyes on the rim.
-- Frame 3: Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.
+- Frame 1: Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.
 - Must get right: A one-handed jump shot with the elbow under the ball and a wrist snap on release.
 
 Prompt:
@@ -1894,21 +1588,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Basketball (a repetition movement). View: side (facing right). Equipment: a basketball and a hoop on a backboard.
 
-Frame 1 of 3 (start): A player standing in a jump shot stance seen from the side, the knees bent, holding the ball with both hands at chest height in front. The right hand is under the ball, the left hand beside it and the eyes are on the hoop.
-Frame 2 of 3 (mid): The jump: the player rises into the air with the legs extended, the ball lifted above the forehead. The right elbow is bent at 90 degrees under the ball, the left hand steadies the ball and the eyes on the rim.
-Frame 3 of 3 (end): Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.
+Representative still: Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.
 Must get right: A one-handed jump shot with the elbow under the ball and a wrist snap on release.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Bouldering
 
-- Slug: `bouldering`. Files: `bouldering-1.svg`, `bouldering-2.svg`, `bouldering-3.svg`. Now shows: placeholder.
+- Slug: `bouldering`. Files: `bouldering-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a bouldering wall with colored holds, a thick crash mat, and chalk. Repetition.
-- Frame 1: A climber at the base of an overhanging boulder wall seen from the side, standing on the mat with both hands gripping two holds at head height. The knees are bent and the weight is on the feet with the arms slightly bent.
-- Frame 2: Dynamic move: the climber pushes through the legs and reaches the right hand up to a higher hold. The left hand and both feet are still on holds, the hips are pressed close to the wall and the body is stretched out.
-- Frame 3: Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.
+- Frame 1: Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.
 - Must get right: Show a short problem on a boulder wall with a crash mat below, and no rope or harness.
 
 Prompt:
@@ -1918,21 +1608,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Bouldering (a repetition movement). View: side (facing left). Equipment: a bouldering wall with colored holds, a thick crash mat, and chalk.
 
-Frame 1 of 3 (start): A climber at the base of an overhanging boulder wall seen from the side, standing on the mat with both hands gripping two holds at head height. The knees are bent and the weight is on the feet with the arms slightly bent.
-Frame 2 of 3 (mid): Dynamic move: the climber pushes through the legs and reaches the right hand up to a higher hold. The left hand and both feet are still on holds, the hips are pressed close to the wall and the body is stretched out.
-Frame 3 of 3 (end): Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.
+Representative still: Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.
 Must get right: Show a short problem on a boulder wall with a crash mat below, and no rope or harness.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Boxing
 
-- Slug: `boxing`. Files: `boxing-1.svg`, `boxing-2.svg`, `boxing-3.svg`. Now shows: placeholder.
+- Slug: `boxing`. Files: `boxing-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a heavy bag, boxing gloves, hand wraps. Repetition.
-- Frame 1: A boxer in a fighting stance seen from the side, the left foot forward and the right foot back with the knees bent. Both gloves are up by the chin, the elbows are tucked in to the ribs and the chin is tucked down.
-- Frame 2: Mid jab-cross: the left glove has shot straight out at shoulder height and the right hand begins to rotate. The hips begin to turn, the back heel pivots and the chin remains tucked behind the left shoulder.
-- Frame 3: Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.
+- Frame 1: Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.
 - Must get right: The hands return to guard at the chin and the chin stays tucked, with the cross driven by hip rotation.
 
 Prompt:
@@ -1942,21 +1628,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Boxing (a repetition movement). View: side (facing right). Equipment: a heavy bag, boxing gloves, hand wraps.
 
-Frame 1 of 3 (start): A boxer in a fighting stance seen from the side, the left foot forward and the right foot back with the knees bent. Both gloves are up by the chin, the elbows are tucked in to the ribs and the chin is tucked down.
-Frame 2 of 3 (mid): Mid jab-cross: the left glove has shot straight out at shoulder height and the right hand begins to rotate. The hips begin to turn, the back heel pivots and the chin remains tucked behind the left shoulder.
-Frame 3 of 3 (end): Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.
+Representative still: Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.
 Must get right: The hands return to guard at the chin and the chin stays tucked, with the cross driven by hip rotation.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Brazilian Jiu-Jitsu
 
-- Slug: `brazilian-jiu-jitsu`. Files: `brazilian-jiu-jitsu-1.svg`, `brazilian-jiu-jitsu-2.svg`, `brazilian-jiu-jitsu-3.svg`. Now shows: placeholder.
+- Slug: `brazilian-jiu-jitsu`. Files: `brazilian-jiu-jitsu-1.svg`. Now shows: placeholder.
 - View: top-down. Equipment: a pair of grappling partners in gi on a mat. Repetition.
-- Frame 1: Two athletes in white gi on a mat seen from above. One partner is on the back with the legs wrapped around the other in a closed guard, the other kneeling between the legs of the first with the hands gripping the lapel.
-- Frame 2: The athlete on the back breaks the posture of the partner by pulling the head down with the hands on the collar. The hips lift and rotate toward the side, the legs open and one leg moves up to the partner's shoulder.
-- Frame 3: Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.
+- Frame 1: Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.
 - Must get right: The two grapplers wear gis, and the arm bar is shown in control without any strike.
 
 Prompt:
@@ -1966,21 +1648,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Brazilian Jiu-Jitsu (a repetition movement). View: top-down. Equipment: a pair of grappling partners in gi on a mat.
 
-Frame 1 of 3 (start): Two athletes in white gi on a mat seen from above. One partner is on the back with the legs wrapped around the other in a closed guard, the other kneeling between the legs of the first with the hands gripping the lapel.
-Frame 2 of 3 (mid): The athlete on the back breaks the posture of the partner by pulling the head down with the hands on the collar. The hips lift and rotate toward the side, the legs open and one leg moves up to the partner's shoulder.
-Frame 3 of 3 (end): Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.
+Representative still: Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.
 Must get right: The two grapplers wear gis, and the arm bar is shown in control without any strike.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Cricket
 
-- Slug: `cricket`. Files: `cricket-1.svg`, `cricket-2.svg`, `cricket-3.svg`. Now shows: placeholder.
+- Slug: `cricket`. Files: `cricket-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a cricket bat, a cricket ball, pads, helmet and stumps. Repetition.
-- Frame 1: A batsman at the crease in a ready stance seen from the side, wearing pads and a helmet. The feet are shoulder width apart with the knees slightly bent, the bat held with both hands and its blade resting on the ground, the head turned toward the bowler.
-- Frame 2: Backswing: the batsman lifts the bat back above the right shoulder, the left elbow high. The weight shifts onto the back foot and the front shoulder points toward the bowler while the eyes are on the ball.
-- Frame 3: Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.
+- Frame 1: Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.
 - Must get right: A straight drive with the front foot stepping toward the ball and the bat finishing high.
 
 Prompt:
@@ -1990,21 +1668,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Cricket (a repetition movement). View: side (facing right). Equipment: a cricket bat, a cricket ball, pads, helmet and stumps.
 
-Frame 1 of 3 (start): A batsman at the crease in a ready stance seen from the side, wearing pads and a helmet. The feet are shoulder width apart with the knees slightly bent, the bat held with both hands and its blade resting on the ground, the head turned toward the bowler.
-Frame 2 of 3 (mid): Backswing: the batsman lifts the bat back above the right shoulder, the left elbow high. The weight shifts onto the back foot and the front shoulder points toward the bowler while the eyes are on the ball.
-Frame 3 of 3 (end): Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.
+Representative still: Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.
 Must get right: A straight drive with the front foot stepping toward the ball and the bat finishing high.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Dancing
 
-- Slug: `dancing`. Files: `dancing-1.svg`, `dancing-2.svg`, `dancing-3.svg`. Now shows: placeholder.
+- Slug: `dancing`. Files: `dancing-1.svg`. Now shows: placeholder.
 - View: front. Equipment: none (open studio floor). Repetition.
-- Frame 1: A dancer standing in a ready pose facing the camera, the feet together and the arms relaxed by the sides. The knees are slightly bent, the chest is lifted and the head is up. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Dancing.
-- Frame 2: Mid step: the dancer steps to the right with the right foot as the right arm sweeps up and out to the side at shoulder height. The left arm bends across the chest, the hips shift to the right and the torso tilts slightly.
-- Frame 3: Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.
+- Frame 1: Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.
 - Must get right: A single expressive step and arm sweep into a turn, with an upright torso and open arms.
 
 Prompt:
@@ -2014,21 +1688,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Dancing (a repetition movement). View: front. Equipment: none (open studio floor).
 
-Frame 1 of 3 (start): A dancer standing in a ready pose facing the camera, the feet together and the arms relaxed by the sides. The knees are slightly bent, the chest is lifted and the head is up. The head is faceless and neutral, in line with the spine, with every limb position readable from this front view of the Dancing.
-Frame 2 of 3 (mid): Mid step: the dancer steps to the right with the right foot as the right arm sweeps up and out to the side at shoulder height. The left arm bends across the chest, the hips shift to the right and the torso tilts slightly.
-Frame 3 of 3 (end): Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.
+Representative still: Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.
 Must get right: A single expressive step and arm sweep into a turn, with an upright torso and open arms.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Football (Soccer)
 
-- Slug: `football-soccer`. Files: `football-soccer-1.svg`, `football-soccer-2.svg`, `football-soccer-3.svg`. Now shows: placeholder.
+- Slug: `football-soccer`. Files: `football-soccer-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a soccer ball, boots, and a pitch. Repetition.
-- Frame 1: A player in a soccer kit running toward a ball seen from the side, the ball on the ground in front. The torso leans forward slightly, the arms swing for balance, the left foot is about to plant beside the ball.
-- Frame 2: Backswing: the left foot is planted beside the ball with the knee bent slightly. The right leg is swung back with the knee bent and the foot behind the hips, the arms out for balance, the torso leaning over the ball.
-- Frame 3: Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.
+- Frame 1: Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.
 - Must get right: The standing foot is beside the ball and the strike is with the laces of the boot.
 
 Prompt:
@@ -2038,21 +1708,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Football (Soccer) (a repetition movement). View: side (facing right). Equipment: a soccer ball, boots, and a pitch.
 
-Frame 1 of 3 (start): A player in a soccer kit running toward a ball seen from the side, the ball on the ground in front. The torso leans forward slightly, the arms swing for balance, the left foot is about to plant beside the ball.
-Frame 2 of 3 (mid): Backswing: the left foot is planted beside the ball with the knee bent slightly. The right leg is swung back with the knee bent and the foot behind the hips, the arms out for balance, the torso leaning over the ball.
-Frame 3 of 3 (end): Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.
+Representative still: Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.
 Must get right: The standing foot is beside the ball and the strike is with the laces of the boot.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Golf
 
-- Slug: `golf`. Files: `golf-1.svg`, `golf-2.svg`, `golf-3.svg`. Now shows: placeholder.
+- Slug: `golf`. Files: `golf-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a golf club, a golf ball on a tee. Repetition.
-- Frame 1: A golfer addressing the ball seen from the side, standing with the feet shoulder width apart, the knees flexed and the torso bent forward from the hips. Both hands grip the club with the clubhead resting behind the ball, the arms hanging straight.
-- Frame 2: Top of the backswing: the shoulders turned about 90 degrees away from the target with the back facing the target. The arms are lifted and the club is overhead, pointing about parallel to the ground, the left arm straight, the knees flexed.
-- Frame 3: Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.
+- Frame 1: Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.
 - Must get right: A full swing with the chest turned fully away at the top and facing the target at the finish.
 
 Prompt:
@@ -2062,21 +1728,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Golf (a repetition movement). View: side (facing left). Equipment: a golf club, a golf ball on a tee.
 
-Frame 1 of 3 (start): A golfer addressing the ball seen from the side, standing with the feet shoulder width apart, the knees flexed and the torso bent forward from the hips. Both hands grip the club with the clubhead resting behind the ball, the arms hanging straight.
-Frame 2 of 3 (mid): Top of the backswing: the shoulders turned about 90 degrees away from the target with the back facing the target. The arms are lifted and the club is overhead, pointing about parallel to the ground, the left arm straight, the knees flexed.
-Frame 3 of 3 (end): Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.
+Representative still: Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.
 Must get right: A full swing with the chest turned fully away at the top and facing the target at the finish.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Judo
 
-- Slug: `judo`. Files: `judo-1.svg`, `judo-2.svg`, `judo-3.svg`. Now shows: placeholder.
+- Slug: `judo`. Files: `judo-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a pair of athletes in judo gi on a tatami mat. Repetition.
-- Frame 1: Two judoka in judo gi face each other seen from the side, each gripping the other's sleeve and lapel. The knees are slightly bent, the torsos are upright and the feet are shoulder width apart. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Judo.
-- Frame 2: Entry: the thrower pulls the opponent forward with the sleeve and the lapel, steps in and turns the back to the opponent. The hips drop below the opponent's hips and the knees bend as the thrower pivots.
-- Frame 3: Throw: the thrower bends forward, the opponent is lifted over the thrower's back and is rotating in the air toward the mat. The thrower holds the sleeve with one hand, the legs are straight and the hips are above the opponent.
+- Frame 1: Throw: the thrower bends forward, the opponent is lifted over the thrower's back and is rotating in the air toward the mat. The thrower holds the sleeve with one hand, the legs are straight and the hips are above the opponent.
 - Must get right: A hip throw with the thrower's hips lower than the opponent's, and the grips on the sleeve and lapel.
 
 Prompt:
@@ -2086,21 +1748,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Judo (a repetition movement). View: side (facing right). Equipment: a pair of athletes in judo gi on a tatami mat.
 
-Frame 1 of 3 (start): Two judoka in judo gi face each other seen from the side, each gripping the other's sleeve and lapel. The knees are slightly bent, the torsos are upright and the feet are shoulder width apart. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Judo.
-Frame 2 of 3 (mid): Entry: the thrower pulls the opponent forward with the sleeve and the lapel, steps in and turns the back to the opponent. The hips drop below the opponent's hips and the knees bend as the thrower pivots.
-Frame 3 of 3 (end): Throw: the thrower bends forward, the opponent is lifted over the thrower's back and is rotating in the air toward the mat. The thrower holds the sleeve with one hand, the legs are straight and the hips are above the opponent.
+Representative still: Throw: the thrower bends forward, the opponent is lifted over the thrower's back and is rotating in the air toward the mat. The thrower holds the sleeve with one hand, the legs are straight and the hips are above the opponent.
 Must get right: A hip throw with the thrower's hips lower than the opponent's, and the grips on the sleeve and lapel.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Karate
 
-- Slug: `karate`. Files: `karate-1.svg`, `karate-2.svg`, `karate-3.svg`. Now shows: placeholder.
+- Slug: `karate`. Files: `karate-1.svg`. Now shows: placeholder.
 - View: front. Equipment: a karate gi and black belt on a dojo floor. Repetition.
-- Frame 1: A karateka in a white gi stands in a front stance facing the camera, the left leg bent forward and the right leg straight behind. The left arm is in a block position in front and the right fist is chambered at the hip.
-- Frame 2: Mid technique: the hips rotate forward as the right fist begins to travel straight out from the hip. The left hand pulls back to the left hip, the back leg stays straight and the stance stays low.
-- Frame 3: Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.
+- Frame 1: Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.
 - Must get right: A reverse punch in a deep front stance, with the opposite fist chambered at the hip.
 
 Prompt:
@@ -2110,21 +1768,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Karate (a repetition movement). View: front. Equipment: a karate gi and black belt on a dojo floor.
 
-Frame 1 of 3 (start): A karateka in a white gi stands in a front stance facing the camera, the left leg bent forward and the right leg straight behind. The left arm is in a block position in front and the right fist is chambered at the hip.
-Frame 2 of 3 (mid): Mid technique: the hips rotate forward as the right fist begins to travel straight out from the hip. The left hand pulls back to the left hip, the back leg stays straight and the stance stays low.
-Frame 3 of 3 (end): Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.
+Representative still: Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.
 Must get right: A reverse punch in a deep front stance, with the opposite fist chambered at the hip.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Kickboxing
 
-- Slug: `kickboxing`. Files: `kickboxing-1.svg`, `kickboxing-2.svg`, `kickboxing-3.svg`. Now shows: placeholder.
+- Slug: `kickboxing`. Files: `kickboxing-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a pair of boxing gloves, shin guards and a kick pad held by a partner. Repetition.
-- Frame 1: A kickboxer in a fighting stance seen from the side, the left foot forward and the right foot back, the knees bent. Both gloves are up by the chin, the elbows tucked in, the chin down and the weight evenly spread.
-- Frame 2: Chambering the kick: the athlete pivots on the left foot and the hips rotate. The right knee lifts and bends to about 90 degrees across the body, the guard remains up at the chin and the torso leans back slightly.
-- Frame 3: Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.
+- Frame 1: Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.
 - Must get right: A roundhouse kick landing with the shin, with the standing foot pivoted and the hands staying up.
 
 Prompt:
@@ -2134,21 +1788,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Kickboxing (a repetition movement). View: side (facing right). Equipment: a pair of boxing gloves, shin guards and a kick pad held by a partner.
 
-Frame 1 of 3 (start): A kickboxer in a fighting stance seen from the side, the left foot forward and the right foot back, the knees bent. Both gloves are up by the chin, the elbows tucked in, the chin down and the weight evenly spread.
-Frame 2 of 3 (mid): Chambering the kick: the athlete pivots on the left foot and the hips rotate. The right knee lifts and bends to about 90 degrees across the body, the guard remains up at the chin and the torso leans back slightly.
-Frame 3 of 3 (end): Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.
+Representative still: Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.
 Must get right: A roundhouse kick landing with the shin, with the standing foot pivoted and the hands staying up.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Martial Arts Class
 
-- Slug: `martial-arts-class`. Files: `martial-arts-class-1.svg`, `martial-arts-class-2.svg`, `martial-arts-class-3.svg`. Now shows: placeholder.
+- Slug: `martial-arts-class`. Files: `martial-arts-class-1.svg`. Now shows: placeholder.
 - View: front. Equipment: a mat floor, uniforms, and several students in a row. Repetition.
-- Frame 1: A row of students in white uniforms stands facing the camera in a ready stance, the feet shoulder width apart. The fists are held at the hips, the backs are straight and the instructor stands in front of the row.
-- Frame 2: Mid technique: the students step forward with the left leg into a front stance in unison. The right fists begin to extend from the hips and the left arms are pulled back to the sides. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Martial Arts Class clearly in this front view.
-- Frame 3: Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.
+- Frame 1: Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.
 - Must get right: All the students move in unison, and the instructor stands at the front of the line.
 
 Prompt:
@@ -2158,21 +1808,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Martial Arts Class (a repetition movement). View: front. Equipment: a mat floor, uniforms, and several students in a row.
 
-Frame 1 of 3 (start): A row of students in white uniforms stands facing the camera in a ready stance, the feet shoulder width apart. The fists are held at the hips, the backs are straight and the instructor stands in front of the row.
-Frame 2 of 3 (mid): Mid technique: the students step forward with the left leg into a front stance in unison. The right fists begin to extend from the hips and the left arms are pulled back to the sides. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Martial Arts Class clearly in this front view.
-Frame 3 of 3 (end): Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.
+Representative still: Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.
 Must get right: All the students move in unison, and the instructor stands at the front of the line.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Mobility Flow
 
-- Slug: `mobility-flow`. Files: `mobility-flow-1.svg`, `mobility-flow-2.svg`, `mobility-flow-3.svg`. Now shows: placeholder.
+- Slug: `mobility-flow`. Files: `mobility-flow-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a mat on the floor. Repetition.
-- Frame 1: A person on hands and knees on the mat seen from the side in a table position, the hands under the shoulders and the knees under the hips. The back is flat and the head is neutral.
-- Frame 2: Cat phase: the spine rounds up toward the ceiling, the head drops toward the chest and the hips tuck under. The arms stay straight and the hands and knees stay in place. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Mobility Flow clearly in this side (facing right) view.
-- Frame 3: Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.
+- Frame 1: Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.
 - Must get right: A cat-cow spinal flow with the hands and knees fixed, and the spine moving through its full range.
 
 Prompt:
@@ -2182,21 +1828,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Mobility Flow (a repetition movement). View: side (facing right). Equipment: a mat on the floor.
 
-Frame 1 of 3 (start): A person on hands and knees on the mat seen from the side in a table position, the hands under the shoulders and the knees under the hips. The back is flat and the head is neutral.
-Frame 2 of 3 (mid): Cat phase: the spine rounds up toward the ceiling, the head drops toward the chest and the hips tuck under. The arms stay straight and the hands and knees stay in place. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Mobility Flow clearly in this side (facing right) view.
-Frame 3 of 3 (end): Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.
+Representative still: Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.
 Must get right: A cat-cow spinal flow with the hands and knees fixed, and the spine moving through its full range.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Pilates
 
-- Slug: `pilates`. Files: `pilates-1.svg`, `pilates-2.svg`, `pilates-3.svg`. Now shows: placeholder.
+- Slug: `pilates`. Files: `pilates-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a Pilates mat. Static hold.
-- Frame 1: A person lying on their back on a Pilates mat seen from the side, the knees bent and the feet flat on the mat. The arms rest by the sides and the head rests on the mat, the spine neutral.
-- Frame 2: Rolling up: the athlete lifts the head and shoulders off the mat and the legs rise to a tabletop position with the knees bent at 90 degrees above the hips. The arms reach forward beside the thighs and the belly draws in.
-- Frame 3: The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.
+- Frame 1: The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.
 - Must get right: The Hundred is shown with the legs extended at 45 degrees and the lower back pressed into the mat.
 
 Prompt:
@@ -2206,21 +1848,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Pilates (a static hold). View: side (facing right). Equipment: a Pilates mat.
 
-Frame 1 of 3 (set-up): A person lying on their back on a Pilates mat seen from the side, the knees bent and the feet flat on the mat. The arms rest by the sides and the head rests on the mat, the spine neutral.
-Frame 2 of 3 (arriving): Rolling up: the athlete lifts the head and shoulders off the mat and the legs rise to a tabletop position with the knees bent at 90 degrees above the hips. The arms reach forward beside the thighs and the belly draws in.
-Frame 3 of 3 (full hold): The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.
+Representative still: The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.
 Must get right: The Hundred is shown with the legs extended at 45 degrees and the lower back pressed into the mat.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Rugby
 
-- Slug: `rugby`. Files: `rugby-1.svg`, `rugby-2.svg`, `rugby-3.svg`. Now shows: placeholder.
+- Slug: `rugby`. Files: `rugby-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a rugby ball, boots, a pitch. Repetition.
-- Frame 1: A rugby player running with the ball seen from the side, the ball held in both hands at the right hip. The torso leans slightly forward, the knees are bent in a stride and the eyes are up looking at the field.
-- Frame 2: Passing: the shoulders rotate to the left and the ball is swung across the body in both hands. The hips are turned, the arms are extended in front and the player continues running. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Rugby clearly in this side (facing right) view.
-- Frame 3: Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.
+- Frame 1: Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.
 - Must get right: A spin pass thrown across the body to the side while running, with both hands on the ball.
 
 Prompt:
@@ -2230,21 +1868,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Rugby (a repetition movement). View: side (facing right). Equipment: a rugby ball, boots, a pitch.
 
-Frame 1 of 3 (start): A rugby player running with the ball seen from the side, the ball held in both hands at the right hip. The torso leans slightly forward, the knees are bent in a stride and the eyes are up looking at the field.
-Frame 2 of 3 (mid): Passing: the shoulders rotate to the left and the ball is swung across the body in both hands. The hips are turned, the arms are extended in front and the player continues running. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Rugby clearly in this side (facing right) view.
-Frame 3 of 3 (end): Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.
+Representative still: Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.
 Must get right: A spin pass thrown across the body to the side while running, with both hands on the ball.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Skateboarding
 
-- Slug: `skateboarding`. Files: `skateboarding-1.svg`, `skateboarding-2.svg`, `skateboarding-3.svg`. Now shows: placeholder.
+- Slug: `skateboarding`. Files: `skateboarding-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a skateboard and a flat skate park surface. Repetition.
-- Frame 1: A skater standing on a skateboard seen from the side, the front foot over the front bolts and the back foot on the tail. The knees are bent in a crouch, the arms are out slightly, the board on the ground.
-- Frame 2: Pop: the skater snaps the back foot down on the tail and the board tilts up with the nose rising. The knees are bent deeply, the arms swing up and the front foot slides up the board.
-- Frame 3: In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.
+- Frame 1: In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.
 - Must get right: An ollie with both feet staying on the board, which rises level beneath them.
 
 Prompt:
@@ -2254,21 +1888,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Skateboarding (a repetition movement). View: side (facing right). Equipment: a skateboard and a flat skate park surface.
 
-Frame 1 of 3 (start): A skater standing on a skateboard seen from the side, the front foot over the front bolts and the back foot on the tail. The knees are bent in a crouch, the arms are out slightly, the board on the ground.
-Frame 2 of 3 (mid): Pop: the skater snaps the back foot down on the tail and the board tilts up with the nose rising. The knees are bent deeply, the arms swing up and the front foot slides up the board.
-Frame 3 of 3 (end): In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.
+Representative still: In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.
 Must get right: An ollie with both feet staying on the board, which rises level beneath them.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Skiing
 
-- Slug: `skiing`. Files: `skiing-1.svg`, `skiing-2.svg`, `skiing-3.svg`. Now shows: placeholder.
+- Slug: `skiing`. Files: `skiing-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a pair of skis, ski poles, ski boots, a snowy slope. Repetition.
-- Frame 1: A skier on a snowy slope seen from the side, both skis parallel and the ski poles held at the sides, the arms bent in front. The knees are bent, the torso leans slightly forward and the weight is over the center of the skis.
-- Frame 2: Turn initiation: the skier plants the downhill pole and rises slightly, then the skis begin to tilt on their edges. The knees angle into the turn, the hips are shifted and the upper body faces downhill.
-- Frame 3: Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.
+- Frame 1: Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.
 - Must get right: A parallel carved turn with a pole plant, both skis staying parallel.
 
 Prompt:
@@ -2278,21 +1908,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Skiing (a repetition movement). View: side (facing right). Equipment: a pair of skis, ski poles, ski boots, a snowy slope.
 
-Frame 1 of 3 (start): A skier on a snowy slope seen from the side, both skis parallel and the ski poles held at the sides, the arms bent in front. The knees are bent, the torso leans slightly forward and the weight is over the center of the skis.
-Frame 2 of 3 (mid): Turn initiation: the skier plants the downhill pole and rises slightly, then the skis begin to tilt on their edges. The knees angle into the turn, the hips are shifted and the upper body faces downhill.
-Frame 3 of 3 (end): Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.
+Representative still: Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.
 Must get right: A parallel carved turn with a pole plant, both skis staying parallel.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Snowboarding
 
-- Slug: `snowboarding`. Files: `snowboarding-1.svg`, `snowboarding-2.svg`, `snowboarding-3.svg`. Now shows: placeholder.
+- Slug: `snowboarding`. Files: `snowboarding-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a snowboard with bindings, boots, and a snowy slope. Repetition.
-- Frame 1: A snowboarder standing on a snowy slope seen from the side, the feet strapped into the bindings across the board. The knees are bent, the weight is slightly on the front foot and the arms are out for balance.
-- Frame 2: Carving: the snowboarder leans into the turn with the body tilted. The board is on its edge, the knees are bent deeply, the front arm points down the slope and the back arm is out, the head turned downhill.
-- Frame 3: Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.
+- Frame 1: Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.
 - Must get right: A carved turn with the board on its edge and the knees bent, with a rider facing sideways on the board.
 
 Prompt:
@@ -2302,21 +1928,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Snowboarding (a repetition movement). View: side (facing right). Equipment: a snowboard with bindings, boots, and a snowy slope.
 
-Frame 1 of 3 (start): A snowboarder standing on a snowy slope seen from the side, the feet strapped into the bindings across the board. The knees are bent, the weight is slightly on the front foot and the arms are out for balance.
-Frame 2 of 3 (mid): Carving: the snowboarder leans into the turn with the body tilted. The board is on its edge, the knees are bent deeply, the front arm points down the slope and the back arm is out, the head turned downhill.
-Frame 3 of 3 (end): Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.
+Representative still: Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.
 Must get right: A carved turn with the board on its edge and the knees bent, with a rider facing sideways on the board.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Sport Climbing
 
-- Slug: `sport-climbing`. Files: `sport-climbing-1.svg`, `sport-climbing-2.svg`, `sport-climbing-3.svg`. Now shows: placeholder.
+- Slug: `sport-climbing`. Files: `sport-climbing-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a vertical climbing wall with bolted quickdraws, a rope, a harness, climbing shoes and a chalk bag. Repetition.
-- Frame 1: A climber on a vertical wall seen from the side, wearing a harness with a rope tied in. The left hand grips a hold at head height, the right hand is clipping nothing yet, the feet are on small footholds and the body is close to the wall.
-- Frame 2: Clipping: the climber hangs from the left hand on a straight arm and the left foot, the hips against the wall. The right hand pulls a rope loop from the harness and clips it into a quickdraw bolted at waist height.
-- Frame 3: Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.
+- Frame 1: Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.
 - Must get right: The climber is tied into a rope on a bolted wall, clipping quickdraws as the lead climber.
 
 Prompt:
@@ -2326,21 +1948,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Sport Climbing (a repetition movement). View: side (facing left). Equipment: a vertical climbing wall with bolted quickdraws, a rope, a harness, climbing shoes and a chalk bag.
 
-Frame 1 of 3 (start): A climber on a vertical wall seen from the side, wearing a harness with a rope tied in. The left hand grips a hold at head height, the right hand is clipping nothing yet, the feet are on small footholds and the body is close to the wall.
-Frame 2 of 3 (mid): Clipping: the climber hangs from the left hand on a straight arm and the left foot, the hips against the wall. The right hand pulls a rope loop from the harness and clips it into a quickdraw bolted at waist height.
-Frame 3 of 3 (end): Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.
+Representative still: Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.
 Must get right: The climber is tied into a rope on a bolted wall, clipping quickdraws as the lead climber.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Squash
 
-- Slug: `squash`. Files: `squash-1.svg`, `squash-2.svg`, `squash-3.svg`. Now shows: placeholder.
+- Slug: `squash`. Files: `squash-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a squash racket, a small rubber ball, a walled court. Repetition.
-- Frame 1: A player in a squash court seen from the side, standing in a ready stance near the center line. The knees are bent, the racket is held up in front at chest height with the wrist cocked and the eyes watching the ball on the wall.
-- Frame 2: Backswing: the player steps toward the side wall with the right leg and rotates the shoulders. The racket is taken back above shoulder height with the wrist cocked and the elbow bent, the left arm out for balance.
-- Frame 3: Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.
+- Frame 1: Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.
 - Must get right: A forehand drive with a lunge toward the front wall, with the racket wrist cocked.
 
 Prompt:
@@ -2350,21 +1968,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Squash (a repetition movement). View: side (facing right). Equipment: a squash racket, a small rubber ball, a walled court.
 
-Frame 1 of 3 (start): A player in a squash court seen from the side, standing in a ready stance near the center line. The knees are bent, the racket is held up in front at chest height with the wrist cocked and the eyes watching the ball on the wall.
-Frame 2 of 3 (mid): Backswing: the player steps toward the side wall with the right leg and rotates the shoulders. The racket is taken back above shoulder height with the wrist cocked and the elbow bent, the left arm out for balance.
-Frame 3 of 3 (end): Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.
+Representative still: Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.
 Must get right: A forehand drive with a lunge toward the front wall, with the racket wrist cocked.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Stretching
 
-- Slug: `stretching`. Files: `stretching-1.svg`, `stretching-2.svg`, `stretching-3.svg`. Now shows: placeholder.
+- Slug: `stretching`. Files: `stretching-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a mat on the floor. Static hold.
-- Frame 1: A person standing tall facing right with the feet together and the arms by the sides, the knees straight. The head is neutral and the back is straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Stretching.
-- Frame 2: Folding: the person hinges forward from the hips with the knees straight and the back flat, the arms reaching toward the floor. The chest moves toward the thighs and the head hangs forward. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Stretching clearly in this side (facing right) view.
-- Frame 3: Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.
+- Frame 1: Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.
 - Must get right: A standing forward fold with a hinge at the hips, with the knees straight and the neck relaxed.
 
 Prompt:
@@ -2374,21 +1988,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Stretching (a static hold). View: side (facing right). Equipment: a mat on the floor.
 
-Frame 1 of 3 (set-up): A person standing tall facing right with the feet together and the arms by the sides, the knees straight. The head is neutral and the back is straight. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Stretching.
-Frame 2 of 3 (arriving): Folding: the person hinges forward from the hips with the knees straight and the back flat, the arms reaching toward the floor. The chest moves toward the thighs and the head hangs forward. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Stretching clearly in this side (facing right) view.
-Frame 3 of 3 (full hold): Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.
+Representative still: Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.
 Must get right: A standing forward fold with a hinge at the hips, with the knees straight and the neck relaxed.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Surfing
 
-- Slug: `surfing`. Files: `surfing-1.svg`, `surfing-2.svg`, `surfing-3.svg`. Now shows: placeholder.
+- Slug: `surfing`. Files: `surfing-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a surfboard on a breaking ocean wave. Repetition.
-- Frame 1: A surfer paddling prone on a surfboard seen from the side on an approaching wave, the chest lifted off the board with the arms stroking in the water. The legs are straight and the board is angled toward the shore.
-- Frame 2: Pop-up: the surfer pushes up with both hands on the board near the chest and the feet jump under the body. The back foot lands near the tail and the front foot in the middle of the board with the knees bent.
-- Frame 3: Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.
+- Frame 1: Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.
 - Must get right: The pop-up goes from prone to a crouched stance with the feet on the board's stringer line.
 
 Prompt:
@@ -2398,21 +2008,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Surfing (a repetition movement). View: side (facing left). Equipment: a surfboard on a breaking ocean wave.
 
-Frame 1 of 3 (start): A surfer paddling prone on a surfboard seen from the side on an approaching wave, the chest lifted off the board with the arms stroking in the water. The legs are straight and the board is angled toward the shore.
-Frame 2 of 3 (mid): Pop-up: the surfer pushes up with both hands on the board near the chest and the feet jump under the body. The back foot lands near the tail and the front foot in the middle of the board with the knees bent.
-Frame 3 of 3 (end): Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.
+Representative still: Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.
 Must get right: The pop-up goes from prone to a crouched stance with the feet on the board's stringer line.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Table Tennis
 
-- Slug: `table-tennis`. Files: `table-tennis-1.svg`, `table-tennis-2.svg`, `table-tennis-3.svg`. Now shows: placeholder.
+- Slug: `table-tennis`. Files: `table-tennis-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a table tennis paddle, a small ball, a table with a net. Repetition.
-- Frame 1: A player standing at the end of a table seen from the side in a ready stance, the knees bent and the feet wide. The paddle is held in front at waist height with the right hand and the eyes on the ball.
-- Frame 2: Backswing: the shoulders turn to the right and the paddle is taken back behind the right hip. The knees are bent, the weight is on the back foot, the left arm is bent in front for balance and the eyes on the ball.
-- Frame 3: Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.
+- Frame 1: Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.
 - Must get right: A forehand loop with a short compact swing and the paddle finishing near the opposite shoulder.
 
 Prompt:
@@ -2422,21 +2028,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Table Tennis (a repetition movement). View: side (facing right). Equipment: a table tennis paddle, a small ball, a table with a net.
 
-Frame 1 of 3 (start): A player standing at the end of a table seen from the side in a ready stance, the knees bent and the feet wide. The paddle is held in front at waist height with the right hand and the eyes on the ball.
-Frame 2 of 3 (mid): Backswing: the shoulders turn to the right and the paddle is taken back behind the right hip. The knees are bent, the weight is on the back foot, the left arm is bent in front for balance and the eyes on the ball.
-Frame 3 of 3 (end): Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.
+Representative still: Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.
 Must get right: A forehand loop with a short compact swing and the paddle finishing near the opposite shoulder.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Tennis
 
-- Slug: `tennis`. Files: `tennis-1.svg`, `tennis-2.svg`, `tennis-3.svg`. Now shows: placeholder.
+- Slug: `tennis`. Files: `tennis-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a tennis racket, a tennis ball, a court. Repetition.
-- Frame 1: A player on a court in a ready stance seen from the side, facing the net. The feet are shoulder width apart with the knees bent, holding the racket with both hands in front of the body at waist height, the head up looking at the ball.
-- Frame 2: Backswing: the shoulders turn sideways to the net and the racket is taken back behind the right hip. The left arm points forward, the weight on the back foot and the knees bent, the eyes on the ball.
-- Frame 3: Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.
+- Frame 1: Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.
 - Must get right: A forehand groundstroke with a full swing and a high follow-through over the opposite shoulder.
 
 Prompt:
@@ -2446,21 +2048,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Tennis (a repetition movement). View: side (facing right). Equipment: a tennis racket, a tennis ball, a court.
 
-Frame 1 of 3 (start): A player on a court in a ready stance seen from the side, facing the net. The feet are shoulder width apart with the knees bent, holding the racket with both hands in front of the body at waist height, the head up looking at the ball.
-Frame 2 of 3 (mid): Backswing: the shoulders turn sideways to the net and the racket is taken back behind the right hip. The left arm points forward, the weight on the back foot and the knees bent, the eyes on the ball.
-Frame 3 of 3 (end): Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.
+Representative still: Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.
 Must get right: A forehand groundstroke with a full swing and a high follow-through over the opposite shoulder.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Top Rope
 
-- Slug: `top-rope`. Files: `top-rope-1.svg`, `top-rope-2.svg`, `top-rope-3.svg`. Now shows: placeholder.
+- Slug: `top-rope`. Files: `top-rope-1.svg`. Now shows: placeholder.
 - View: side (facing left). Equipment: a vertical climbing wall with an anchor above and a rope running through it down to a belayer, harness, climbing shoes. Repetition.
-- Frame 1: A climber at the bottom of a vertical wall seen from the side, wearing a harness and a rope tied to the harness that runs up to an anchor above. Both hands hold a hold at chest height and the feet on small holds.
-- Frame 2: Climbing: the right foot steps up onto a higher hold and the left hand reaches to a hold above the head. The body is extended up the wall, the rope taut above the head going up to the anchor.
-- Frame 3: Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.
+- Frame 1: Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.
 - Must get right: The rope runs from the harness straight up to a fixed anchor above, not trailing below.
 
 Prompt:
@@ -2470,21 +2068,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Top Rope (a repetition movement). View: side (facing left). Equipment: a vertical climbing wall with an anchor above and a rope running through it down to a belayer, harness, climbing shoes.
 
-Frame 1 of 3 (start): A climber at the bottom of a vertical wall seen from the side, wearing a harness and a rope tied to the harness that runs up to an anchor above. Both hands hold a hold at chest height and the feet on small holds.
-Frame 2 of 3 (mid): Climbing: the right foot steps up onto a higher hold and the left hand reaches to a hold above the head. The body is extended up the wall, the rope taut above the head going up to the anchor.
-Frame 3 of 3 (end): Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.
+Representative still: Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.
 Must get right: The rope runs from the harness straight up to a fixed anchor above, not trailing below.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Trail Running
 
-- Slug: `trail-running`. Files: `trail-running-1.svg`, `trail-running-2.svg`, `trail-running-3.svg`. Now shows: placeholder.
+- Slug: `trail-running`. Files: `trail-running-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a rough dirt trail with rocks and roots, running shoes. Repetition.
-- Frame 1: A runner on an uneven dirt trail seen from the side, the left foot planted on the ground and the knee slightly bent. The torso leans forward slightly, the arms bent at 90 degrees, the right knee driving forward and the eyes watching the trail ahead.
-- Frame 2: Flight phase: both feet are off the ground, the right knee lifted high to step over a root, the left leg extended behind. The arms swing opposite the legs, the torso upright and the head up.
-- Frame 3: Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.
+- Frame 1: Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.
 - Must get right: The athlete steps on a rough trail, not a flat road, with a short stride under the hips.
 
 Prompt:
@@ -2494,21 +2088,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Trail Running (a repetition movement). View: side (facing right). Equipment: a rough dirt trail with rocks and roots, running shoes.
 
-Frame 1 of 3 (start): A runner on an uneven dirt trail seen from the side, the left foot planted on the ground and the knee slightly bent. The torso leans forward slightly, the arms bent at 90 degrees, the right knee driving forward and the eyes watching the trail ahead.
-Frame 2 of 3 (mid): Flight phase: both feet are off the ground, the right knee lifted high to step over a root, the left leg extended behind. The arms swing opposite the legs, the torso upright and the head up.
-Frame 3 of 3 (end): Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.
+Representative still: Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.
 Must get right: The athlete steps on a rough trail, not a flat road, with a short stride under the hips.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Versaclimber
 
-- Slug: `versaclimber`. Files: `versaclimber-1.svg`, `versaclimber-2.svg`, `versaclimber-3.svg`. Now shows: placeholder.
+- Slug: `versaclimber`. Files: `versaclimber-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a Versaclimber vertical climbing machine with moving handles and pedals. Repetition.
-- Frame 1: An athlete on a Versaclimber facing right, gripping the two handles with the arms in opposing positions. The left arm is reaching high overhead and the right arm is down near the hip. The left foot is on its pedal up high and the right foot is low.
-- Frame 2: Mid stroke: the arms pass each other at chest height as the machine handles and pedals switch. Both knees are bent, the torso leans slightly toward the handles and the athlete drives the left leg down.
-- Frame 3: End of stroke: the right arm reaches high overhead and the left arm has pulled down to the hip. The right knee is lifted high with the right foot on its upper pedal, the left leg is extended low, the torso leaning forward and the head neutral.
+- Frame 1: End of stroke: the right arm reaches high overhead and the left arm has pulled down to the hip. The right knee is lifted high with the right foot on its upper pedal, the left leg is extended low, the torso leaning forward and the head neutral.
 - Must get right: Opposite arm and leg move together in a climbing rhythm on the machine.
 
 Prompt:
@@ -2518,21 +2108,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Versaclimber (a repetition movement). View: side (facing right). Equipment: a Versaclimber vertical climbing machine with moving handles and pedals.
 
-Frame 1 of 3 (start): An athlete on a Versaclimber facing right, gripping the two handles with the arms in opposing positions. The left arm is reaching high overhead and the right arm is down near the hip. The left foot is on its pedal up high and the right foot is low.
-Frame 2 of 3 (mid): Mid stroke: the arms pass each other at chest height as the machine handles and pedals switch. Both knees are bent, the torso leans slightly toward the handles and the athlete drives the left leg down.
-Frame 3 of 3 (end): End of stroke: the right arm reaches high overhead and the left arm has pulled down to the hip. The right knee is lifted high with the right foot on its upper pedal, the left leg is extended low, the torso leaning forward and the head neutral.
+Representative still: End of stroke: the right arm reaches high overhead and the left arm has pulled down to the hip. The right knee is lifted high with the right foot on its upper pedal, the left leg is extended low, the torso leaning forward and the head neutral.
 Must get right: Opposite arm and leg move together in a climbing rhythm on the machine.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Volleyball
 
-- Slug: `volleyball`. Files: `volleyball-1.svg`, `volleyball-2.svg`, `volleyball-3.svg`. Now shows: placeholder.
+- Slug: `volleyball`. Files: `volleyball-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a volleyball, a net. Repetition.
-- Frame 1: A player standing close to the net seen from the side, the knees bent and the arms down. The eyes are on the ball tossed above and ahead, the weight on the toes ready to jump.
-- Frame 2: Jump: the player leaps up with the legs extended and the left arm pointing up at the ball. The right arm is cocked back behind the head with the elbow high and bent, the back arched.
-- Frame 3: Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
+- Frame 1: Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
 - Must get right: An attack spike with a high arm contact and the ball above the net.
 
 Prompt:
@@ -2542,21 +2128,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Volleyball (a repetition movement). View: side (facing right). Equipment: a volleyball, a net.
 
-Frame 1 of 3 (start): A player standing close to the net seen from the side, the knees bent and the arms down. The eyes are on the ball tossed above and ahead, the weight on the toes ready to jump.
-Frame 2 of 3 (mid): Jump: the player leaps up with the legs extended and the left arm pointing up at the ball. The right arm is cocked back behind the head with the elbow high and bent, the back arched.
-Frame 3 of 3 (end): Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
+Representative still: Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.
 Must get right: An attack spike with a high arm contact and the ball above the net.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Water Polo
 
-- Slug: `water-polo`. Files: `water-polo-1.svg`, `water-polo-2.svg`, `water-polo-3.svg`. Now shows: placeholder.
+- Slug: `water-polo`. Files: `water-polo-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a swimming pool with a goal, a water polo ball and a swim cap. Repetition.
-- Frame 1: A player treading water in the pool, the head and shoulders above the surface seen from the side, wearing a swim cap. The legs are doing an eggbeater kick beneath the surface and the right hand holds the ball above the water at shoulder height.
-- Frame 2: Winding up: the player lifts higher out of the water with a strong eggbeater kick. The right arm is cocked back with the elbow bent at 90 degrees and the ball in the hand behind the head, the left arm out for balance.
-- Frame 3: Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.
+- Frame 1: Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.
 - Must get right: The player stays upright in the water, treading with an eggbeater kick, and throws one-handed.
 
 Prompt:
@@ -2566,21 +2148,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Water Polo (a repetition movement). View: side (facing right). Equipment: a swimming pool with a goal, a water polo ball and a swim cap.
 
-Frame 1 of 3 (start): A player treading water in the pool, the head and shoulders above the surface seen from the side, wearing a swim cap. The legs are doing an eggbeater kick beneath the surface and the right hand holds the ball above the water at shoulder height.
-Frame 2 of 3 (mid): Winding up: the player lifts higher out of the water with a strong eggbeater kick. The right arm is cocked back with the elbow bent at 90 degrees and the ball in the hand behind the head, the left arm out for balance.
-Frame 3 of 3 (end): Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.
+Representative still: Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.
 Must get right: The player stays upright in the water, treading with an eggbeater kick, and throws one-handed.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Weighted Skipping
 
-- Slug: `weighted-skipping`. Files: `weighted-skipping-1.svg`, `weighted-skipping-2.svg`, `weighted-skipping-3.svg`. Now shows: placeholder.
+- Slug: `weighted-skipping`. Files: `weighted-skipping-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a skipping rope and a weighted vest. Repetition.
-- Frame 1: An athlete wearing a weighted vest stands upright seen from the side, holding the rope handles at hip height with the elbows near the ribs. The rope rests on the floor behind the heels, the feet together, knees slightly bent.
-- Frame 2: Rope passing overhead: the athlete springs up a few centimetres on the balls of the feet. The rope arcs above the head, the wrists are turning small circles beside the hips, the knees are bent slightly and the torso is upright.
-- Frame 3: Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.
+- Frame 1: Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.
 - Must get right: Small low jumps on the balls of the feet, with the weighted vest visible on the torso.
 
 Prompt:
@@ -2590,21 +2168,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Weighted Skipping (a repetition movement). View: side (facing right). Equipment: a skipping rope and a weighted vest.
 
-Frame 1 of 3 (start): An athlete wearing a weighted vest stands upright seen from the side, holding the rope handles at hip height with the elbows near the ribs. The rope rests on the floor behind the heels, the feet together, knees slightly bent.
-Frame 2 of 3 (mid): Rope passing overhead: the athlete springs up a few centimetres on the balls of the feet. The rope arcs above the head, the wrists are turning small circles beside the hips, the knees are bent slightly and the torso is upright.
-Frame 3 of 3 (end): Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.
+Representative still: Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.
 Must get right: Small low jumps on the balls of the feet, with the weighted vest visible on the torso.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Wrestling
 
-- Slug: `wrestling`. Files: `wrestling-1.svg`, `wrestling-2.svg`, `wrestling-3.svg`. Now shows: placeholder.
+- Slug: `wrestling`. Files: `wrestling-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a wrestling mat, singlets and wrestling shoes. Repetition.
-- Frame 1: Two wrestlers in singlets face each other in a staggered stance seen from the side, knees deeply bent. The hands are up in front at chest height, the torsos are leaning forward and the heads are close together.
-- Frame 2: The shot: one wrestler lowers the level and lunges forward with the lead knee to the mat, arms reaching to wrap behind the opponent's knees. The head is up against the opponent's ribs and the back is straight.
-- Frame 3: Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.
+- Frame 1: Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.
 - Must get right: A double-leg takedown with a level change, a straight back and the head up against the ribs.
 
 Prompt:
@@ -2614,21 +2188,17 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Wrestling (a repetition movement). View: side (facing right). Equipment: a wrestling mat, singlets and wrestling shoes.
 
-Frame 1 of 3 (start): Two wrestlers in singlets face each other in a staggered stance seen from the side, knees deeply bent. The hands are up in front at chest height, the torsos are leaning forward and the heads are close together.
-Frame 2 of 3 (mid): The shot: one wrestler lowers the level and lunges forward with the lead knee to the mat, arms reaching to wrap behind the opponent's knees. The head is up against the opponent's ribs and the back is straight.
-Frame 3 of 3 (end): Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.
+Representative still: Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.
 Must get right: A double-leg takedown with a level change, a straight back and the head up against the ribs.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
 ### Yoga
 
-- Slug: `yoga`. Files: `yoga-1.svg`, `yoga-2.svg`, `yoga-3.svg`. Now shows: placeholder.
+- Slug: `yoga`. Files: `yoga-1.svg`. Now shows: placeholder.
 - View: side (facing right). Equipment: a yoga mat. Static hold.
-- Frame 1: A person standing at the front of the yoga mat in mountain pose facing right, the feet together and the arms by the sides. The back is straight, the head is neutral and the palms face forward.
-- Frame 2: Moving into the pose: the athlete steps the left foot back about a metre into a lunge and the arms sweep overhead. The front knee is bent at 90 degrees over the ankle and the back leg is straight with the heel lifted.
-- Frame 3: Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.
+- Frame 1: Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.
 - Must get right: A warrior I pose with the front knee over the ankle and the back foot angled on the mat.
 
 Prompt:
@@ -2638,11 +2208,9 @@ Black-and-white exercise-guide line illustration in the classic anatomical-guide
 
 Subject: Yoga (a static hold). View: side (facing right). Equipment: a yoga mat.
 
-Frame 1 of 3 (set-up): A person standing at the front of the yoga mat in mountain pose facing right, the feet together and the arms by the sides. The back is straight, the head is neutral and the palms face forward.
-Frame 2 of 3 (arriving): Moving into the pose: the athlete steps the left foot back about a metre into a lunge and the arms sweep overhead. The front knee is bent at 90 degrees over the ankle and the back leg is straight with the heel lifted.
-Frame 3 of 3 (full hold): Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.
+Representative still: Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.
 Must get right: A warrior I pose with the front knee over the ankle and the back foot angled on the mat.
 
-Draw ONLY frame N of 3 now (N = 1, then 2, then 3 as separate images), keeping the athlete's proportions, the camera angle, the figure size and the equipment position identical across the three.
+Draw ONLY this representative still as one standalone image. No animation or additional frames.
 ```
 
