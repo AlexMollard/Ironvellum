@@ -192,13 +192,18 @@ Logging a set gives a `Confirm` haptic and every stepper press a `SegmentTick`, 
 through `LocalHapticFeedback`, so the system's own haptics setting decides.
 
 **Timed set control.** Under the steppers of the active set of a hold or a duration,
-one line: the time left in ChakraPetch bold 22sp (`Ink` while it runs, `InkMuted`
-while idle or paused), a "LEFT" caption, and plain text actions (Start, then Pause and
-Finish; Resume after a pause). A countdown that reaches zero logs the set at its target;
-Finish logs the time actually held. A distance run shows "ELAPSED" and one Start
-stopwatch / Stop action: Stop fills the time and leaves the set for the lifter to tick.
-Ticks on 3, 2 and 1 and a longer cue at 0 follow the rest alert (Vibrate, Sound +
-vibrate or Silent). Its clock is `domain/SetClock.kt`, on the monotonic clock and held
+one line: the time in ChakraPetch bold 22sp (`Ink` while it runs, `InkMuted` while idle),
+a caption, and a plain text action. Start opens a 5-second "GET READY" (5, 4, 3, 2, 1, ticks
+on 3, 2, 1 and a short cue at go), then the clock counts up from 0:00 under "TARGET 1:00",
+the set's figure as a reference. Reaching it cues once, turns the time `SovereignGold` and
+the caption to "TARGET REACHED" (words as well as colour, announced once); the clock keeps
+counting and never logs. Stop during the get-ready records nothing; after it, Stop opens the
+adjust step: the stopped time, -1s and +1s (hold to repeat, 1 s floor, no ceiling), "Log 0:42"
+and Discard. A timed set can always be logged without the clock: ticking the row logs the figure in
+it. Ticking while the clock counts stops it into the adjust step; ticking in the adjust step
+logs its figure. A distance run shows "ELAPSED" and one Start stopwatch / Stop action: Stop
+fills the time and leaves the set for the lifter to tick. Cues follow the rest alert (Vibrate,
+Sound + vibrate or Silent). Its clock is `domain/SetClock.kt`, on the monotonic clock and held
 by the view model. There is no timed control in an amendment.
 
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +

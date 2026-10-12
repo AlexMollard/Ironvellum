@@ -798,9 +798,23 @@ fun SessionScreen(
     }
 
     // [seconds] is a timed set's figure when its clock logged it; otherwise the set's own.
+    // Ticking the row (no [seconds]) logs a hold at the figure in its row with no timer needed; a
+    // hold being counted stops into the adjust step first, and an open adjust step logs its figure.
     fun logActive(seconds: Int? = null) {
         val set = activeSet ?: return
-        commit(set.copy(durationSec = seconds ?: set.durationSec, done = true))
+        var logSeconds = seconds
+        if (seconds == null) {
+            val clock = viewModel.clocks.value[set.id]
+            if (clock != null) {
+                val tick = clock.onRowLog(SystemClock.elapsedRealtime())
+                if (!tick.log) {
+                    viewModel.setClock(set.id, tick.clock)
+                    return
+                }
+                logSeconds = tick.seconds
+            }
+        }
+        commit(set.copy(durationSec = logSeconds ?: set.durationSec, done = true))
         viewModel.setClock(set.id, null)
         if (EffortSetting.enabled) effortFor = set.id
         undoSerial++
