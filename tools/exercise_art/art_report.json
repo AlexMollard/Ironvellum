@@ -6254,6 +6254,27 @@
    436.1
   ]
  },
+ "own_badminton": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    0.9,
+    0.86
+   ]
+  ],
+  "window": [
+   170.0,
+   27.0,
+   804.0,
+   960.0
+  ]
+ },
  "own_banded-iron-cross": {
   "source": 1,
   "kept": [
@@ -6275,6 +6296,90 @@
    1015.6
   ]
  },
+ "own_basketball": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    1.05
+   ]
+  ],
+  "window": [
+   354.0,
+   22.0,
+   662.1,
+   964.1
+  ]
+ },
+ "own_bouldering": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.24
+   ]
+  ],
+  "window": [
+   175.6,
+   20.6,
+   672.9,
+   991.9
+  ]
+ },
+ "own_boxing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.54
+   ]
+  ],
+  "window": [
+   113.4,
+   -14.6,
+   838.3,
+   1005.3
+  ]
+ },
+ "own_brazilian-jiu-jitsu": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.39
+   ]
+  ],
+  "window": [
+   82.4,
+   95.4,
+   934.2,
+   844.2
+  ]
+ },
  "own_bridge": {
   "source": 1,
   "kept": [
@@ -6294,6 +6399,27 @@
    202.4,
    866.2,
    670.2
+  ]
+ },
+ "own_cricket": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.62
+   ]
+  ],
+  "window": [
+   75.4,
+   -0.6,
+   895.1,
+   1000.1
   ]
  },
  "own_crow-pose": {
@@ -6338,6 +6464,27 @@
    901.2
   ]
  },
+ "own_dancing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.5
+   ]
+  ],
+  "window": [
+   33.1,
+   37.1,
+   956.9,
+   953.9
+  ]
+ },
  "own_deep-squat-hold": {
   "source": 1,
   "kept": [
@@ -6359,6 +6506,27 @@
    870.4
   ]
  },
+ "own_dumbbell-external-rotation": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.53
+   ]
+  ],
+  "window": [
+   276.7,
+   21.7,
+   569.5,
+   979.5
+  ]
+ },
  "own_elbow-lever": {
   "source": 1,
   "kept": [
@@ -6378,6 +6546,27 @@
    288.5,
    995.0,
    460.0
+  ]
+ },
+ "own_football-soccer": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    1.0
+   ]
+  ],
+  "window": [
+   54.0,
+   67.0,
+   958.9,
+   906.9
   ]
  },
  "own_freestanding-handstand": {
@@ -6527,6 +6716,27 @@
    1024.8
   ]
  },
+ "own_golf": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.7
+   ]
+  ],
+  "window": [
+   193.3,
+   42.3,
+   549.4,
+   941.4
+  ]
+ },
  "own_half-split": {
   "source": 1,
   "kept": [
@@ -6546,6 +6756,27 @@
    324.8,
    978.5,
    609.5
+  ]
+ },
+ "own_hamstring-bridge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.45
+   ]
+  ],
+  "window": [
+   22.8,
+   337.8,
+   974.4,
+   485.4
   ]
  },
  "own_handstand-to-bridge": {
@@ -6653,6 +6884,69 @@
    1016.6
   ]
  },
+ "own_judo": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.25
+   ]
+  ],
+  "window": [
+   10.4,
+   66.4,
+   1003.2,
+   907.2
+  ]
+ },
+ "own_karate": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.63
+   ]
+  ],
+  "window": [
+   259.0,
+   29.0,
+   585.0,
+   963.0
+  ]
+ },
+ "own_kickboxing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.42
+   ]
+  ],
+  "window": [
+   13.3,
+   104.3,
+   1010.4,
+   842.4
+  ]
+ },
  "own_kip-up": {
   "source": 1,
   "kept": [
@@ -6693,6 +6987,48 @@
    258.1,
    957.9,
    690.9
+  ]
+ },
+ "own_martial-arts-class": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.76
+   ]
+  ],
+  "window": [
+   -10.1,
+   134.9,
+   1036.2,
+   844.2
+  ]
+ },
+ "own_mobility-flow": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.58
+   ]
+  ],
+  "window": [
+   16.6,
+   173.6,
+   990.9,
+   727.9
   ]
  },
  "own_muscle-up": {
@@ -6989,6 +7325,27 @@
    747.0
   ]
  },
+ "own_pilates": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.48
+   ]
+  ],
+  "window": [
+   15.5,
+   308.5,
+   994.0,
+   474.9
+  ]
+ },
  "own_planche-lean": {
   "source": 1,
   "kept": [
@@ -7136,6 +7493,69 @@
    1018.7
   ]
  },
+ "own_rugby": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.2
+   ]
+  ],
+  "window": [
+   97.6,
+   44.6,
+   825.8,
+   919.8
+  ]
+ },
+ "own_skateboarding": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.47
+   ]
+  ],
+  "window": [
+   40.0,
+   136.0,
+   961.0,
+   752.0
+  ]
+ },
+ "own_skiing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    1.15
+   ]
+  ],
+  "window": [
+   6.4,
+   121.4,
+   1000.1,
+   833.1
+  ]
+ },
  "own_skin-the-cat": {
   "source": 1,
   "kept": [
@@ -7155,6 +7575,111 @@
    139.4,
    725.1,
    720.1
+  ]
+ },
+ "own_smith-machine-overhead-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    1.25
+   ]
+  ],
+  "window": [
+   62.1,
+   -1.9,
+   904.8,
+   1022.8
+  ]
+ },
+ "own_snowboarding": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    1.11
+   ]
+  ],
+  "window": [
+   37.5,
+   96.5,
+   995.0,
+   883.0
+  ]
+ },
+ "own_sport-climbing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.88
+   ]
+  ],
+  "window": [
+   277.6,
+   -15.4,
+   457.7,
+   1054.7
+  ]
+ },
+ "own_squash": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.78
+   ]
+  ],
+  "window": [
+   46.9,
+   211.9,
+   966.1,
+   656.1
+  ]
+ },
+ "own_stand-to-stand-bridge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.52
+   ]
+  ],
+  "window": [
+   34.1,
+   173.1,
+   955.8,
+   762.8
   ]
  },
  "own_straddle-back-lever": {
@@ -7262,6 +7787,27 @@
    690.8
   ]
  },
+ "own_stretching": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.2
+   ]
+  ],
+  "window": [
+   45.4,
+   142.4,
+   933.2,
+   784.2
+  ]
+ },
  "own_strict-muscle-up": {
   "source": 1,
   "kept": [
@@ -7283,6 +7829,90 @@
    967.2
   ]
  },
+ "own_surfing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.12
+   ]
+  ],
+  "window": [
+   4.1,
+   168.1,
+   1024.8,
+   769.9
+  ]
+ },
+ "own_table-tennis": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.5
+   ]
+  ],
+  "window": [
+   64.2,
+   84.2,
+   950.7,
+   883.7
+  ]
+ },
+ "own_tennis": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.0,
+    1.27
+   ]
+  ],
+  "window": [
+   214.5,
+   34.5,
+   765.9,
+   923.9
+  ]
+ },
+ "own_tib-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.36
+   ]
+  ],
+  "window": [
+   314.6,
+   17.6,
+   352.7,
+   986.7
+  ]
+ },
  "own_toes-to-bar": {
   "source": 1,
   "kept": [
@@ -7302,6 +7932,48 @@
    84.1,
    815.8,
    793.8
+  ]
+ },
+ "own_top-rope": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.36
+   ]
+  ],
+  "window": [
+   277.0,
+   -5.0,
+   482.9,
+   1026.9
+  ]
+ },
+ "own_trail-running": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.39
+   ]
+  ],
+  "window": [
+   60.0,
+   39.0,
+   927.0,
+   962.0
   ]
  },
  "own_tuck-back-lever": {
@@ -7430,6 +8102,48 @@
    769.7
   ]
  },
+ "own_versaclimber": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.93
+   ]
+  ],
+  "window": [
+   284.0,
+   -6.0,
+   483.0,
+   1031.0
+  ]
+ },
+ "own_volleyball": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.34
+   ]
+  ],
+  "window": [
+   181.1,
+   40.1,
+   783.8,
+   952.8
+  ]
+ },
  "own_wall-handstand": {
   "source": 1,
   "kept": [
@@ -7472,6 +8186,90 @@
    969.2
   ]
  },
+ "own_water-polo": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.26
+   ]
+  ],
+  "window": [
+   22.5,
+   128.5,
+   995.0,
+   555.0
+  ]
+ },
+ "own_weighted-plank": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.79
+   ]
+  ],
+  "window": [
+   26.7,
+   382.7,
+   981.6,
+   348.6
+  ]
+ },
+ "own_weighted-skipping": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.27
+   ]
+  ],
+  "window": [
+   313.0,
+   31.0,
+   407.1,
+   964.1
+  ]
+ },
+ "own_wrestling": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.51
+   ]
+  ],
+  "window": [
+   24.5,
+   90.5,
+   992.9,
+   866.9
+  ]
+ },
  "own_wrist-prep": {
   "source": 1,
   "kept": [
@@ -7491,6 +8289,27 @@
    126.5,
    755.0,
    790.0
+  ]
+ },
+ "own_yoga": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.45
+   ]
+  ],
+  "window": [
+   68.1,
+   21.1,
+   887.8,
+   955.8
   ]
  },
  "wg_active-hang": {
