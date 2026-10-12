@@ -85,6 +85,9 @@ class RoutineUpdateOfferFlowTest {
         }
 
         assertTrue("the logged set never landed in the database", bumped)
+        // The database can hold the tick before the screen has recomposed with it; the slider only takes "Seal the trial"
+        // once the screen knows a set is done.
+        driver.awaitText("left · slide to seal")
         compose.onAllNodesWithContentDescription("Seal the trial").onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         driver.awaitText("Seal anyway")
