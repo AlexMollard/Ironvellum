@@ -349,38 +349,37 @@ object ProgramRules {
     // loaded work; Singer 2024: growth benefit above ~60 s, flat near 90 s).
 
     /**
-     * Reps in reserve per focus. Hypertrophy lives at 1-3 RIR (Robinson 2024,
-     * Refalo 2023: failure adds nothing and costs recovery); strength at ~2
-     * RIR on the practice sets (Zourdos 2016: trust the RIR report near
-     * failure); beginners get the conservative end (ACSM 2009: never program
-     * failure for novices).
+     * Reps in reserve the LOAD is computed for: compounds stop about 2 short
+     * of failure (Zourdos 2016: trust the RIR report near failure; Robinson
+     * 2024, Refalo 2023: failure adds little and costs recovery on big
+     * lifts), single-joint work is cheap to take to failure (Refalo 2023).
+     * The lifter sees the same split as an [EffortCue].
      */
-    fun targetRir(tier: VolumeLevel, focus: TrainingFocus): Int =
-        if (focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LOW) 3 else 2
-
-    /** Per-session exercise cap by volume level: 6 low, 8 standard, 9
-     * high. Practical scheduling heuristic - the evidence brief lists no
-     * verified per-session ceiling; it exists so a generated session stays
-     * finishable in roughly an hour. */
-    @Deprecated("The time budget (sessionBudgetSeconds) and the movement cap replace the per-level count.")
-    fun sessionCap(tier: VolumeLevel): Int = when (tier) {
-        VolumeLevel.LOW -> 6
-        VolumeLevel.STANDARD -> 8
-        VolumeLevel.HIGH -> 9
-    }
+    fun loadRir(compound: Boolean): Int = if (compound) 2 else 0
 
     /** The lifter's own movements-per-workout ceiling: 5 by default, 3 to 8 allowed. */
     const val DEFAULT_MAX_EXERCISES = 5
     val MAX_EXERCISES_RANGE = 3..8
 
+    /** Hard safety cap on movements in one workout, whatever any setting says. */
+    const val MOVEMENT_SAFETY_CAP = 10
+
     /**
-     * Movements one session may hold: the volume level's [sessionCap], or
-     * the lifter's own [maxExercises] when that is lower (clamped to
-     * [MAX_EXERCISES_RANGE]). Every generator and template path reads this.
+     * Movements one session may hold: the lifter's own [maxExercises]
+     * (clamped to [MAX_EXERCISES_RANGE]), under the safety cap. The time
+     * budget ([sessionBudgetSeconds]) is what limits a session's work; this
+     * is only the count the lifter asked for. Every generator and template
+     * path reads this.
      */
-    @Deprecated("The time budget (sessionBudgetSeconds) and maxExercises replace the per-level count.")
-    fun exerciseCap(tier: VolumeLevel, maxExercises: Int): Int =
-        minOf(sessionCap(tier), maxExercises.coerceIn(MAX_EXERCISES_RANGE))
+    fun movementCap(maxExercises: Int): Int =
+        maxExercises.coerceIn(MAX_EXERCISES_RANGE).coerceAtMost(MOVEMENT_SAFETY_CAP)
+
+    /**
+     * Sets no entry may carry whatever its range says: a sanity ceiling for
+     * hand-edited or scaled prescriptions, not a dose. The per-movement
+     * ceilings are gone; [setRange] is where the dose lives.
+     */
+    const val ENTRY_SANITY_MAX_SETS = 6
 
     /**
      * Most sets one entry may carry: [COMPOUND_MAX_SETS] for bilateral
@@ -419,15 +418,16 @@ object ProgramRules {
      * never cut for it - so a deficit the gate refuses moves to another
      * session, or lands in the plan note as short.
      */
-    const val SESSION_MUSCLE_CEILING = 10.0
+    const val SESSION_MUSCLE_CEILING = 10.0 // same figure as HEAVY_SESSION
 
     /**
-     * Whether [sets] more sets of [exerciseName] keep every tracked muscle
-     * it trains at or under [SESSION_MUSCLE_CEILING] in the session [entries].
+     * Whether [sets] more sets of [exerciseName] keep every muscle it trains
+     * (the coverage map's heavy flag looks at all of them) at or under
+     * [SESSION_MUSCLE_CEILING] in the session [entries].
      */
     fun sessionMuscleRoom(entries: List<PlannedEntry>, exerciseName: String, sets: Int): Boolean {
         val profile = MuscleMap.profile(exerciseName) ?: return true
-        return TRACKED.all { muscle ->
+        return Muscle.entries.all { muscle ->
             val share = profile.muscles[muscle] ?: 0.0
             if (share <= 0.0) return@all true
             val now = entries.sumOf { (MuscleMap.profile(it)?.muscles?.get(muscle) ?: 0.0) * it.sets }
@@ -490,6 +490,9 @@ object ProgramRules {
 
     /** Fractional hard sets in one session past which a muscle is flagged heavy (Remmert 2025). Soft. */
     const val HEAVY_SESSION = 10.0
+
+    /** A muscle's weekly hard sets are covered from [COVERED_MIN] and heavy past [HEAVY_WEEK]. */
+    val COVERAGE_BAND: ClosedFloatingPointRange<Double> = COVERED_MIN..HEAVY_WEEK
 
     /**
      * Sets one movement may carry at a volume level: compounds LOW 2-3,
@@ -563,6 +566,27 @@ object ProgramRules {
         TrainingFocus.MUSCLE -> if (compound) 6..10 else 10..15
         TrainingFocus.STRENGTH -> if (compound) 3..6 else 8..12
         TrainingFocus.GENERAL, TrainingFocus.SKILL -> if (compound) 5..8 else 10..15
+    }
+
+    /**
+     * [entry] with the planning fields the lifter sees filled from the level
+     * and focus: the set range (widened to hold the planned [PlannedEntry.sets]),
+     * the effort cue (compounds 0-2 reps in reserve, single-joint work to
+     * failure) and the rep window (widened to hold the anchor [PlannedEntry.reps]).
+     * Unprofiled movements count as compounds, as everywhere else. The one
+     * place the generator and the templates write these fields.
+     */
+    fun withPlan(entry: PlannedEntry, volume: VolumeLevel, focus: TrainingFocus): PlannedEntry {
+        val compound = MuscleMap.profile(entry)?.compound ?: true
+        val sets = setRange(volume, compound)
+        val reps = repWindow(focus, compound)
+        return entry.copy(
+            setsMin = minOf(sets.first, entry.sets),
+            setsMax = maxOf(sets.last, entry.sets),
+            effort = if (compound) EffortCue.RIR_0_2 else EffortCue.TO_FAILURE,
+            repLow = minOf(reps.first, entry.reps),
+            repHigh = maxOf(reps.last, entry.reps),
+        )
     }
 }
 

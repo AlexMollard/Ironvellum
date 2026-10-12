@@ -186,9 +186,9 @@ class ProgramAuditFixesTest {
     // ------------------------------------------------ D5, D11: templates
 
     @Test
-    fun `template days stay under the volume level's own exercise cap`() {
+    fun `template days stay under the lifter's own exercise cap`() {
         for (template in ProgramTemplates.ALL) for (volume in VolumeLevel.entries) {
-            val cap = ProgramRules.exerciseCap(volume, maxExercises = 8)
+            val cap = ProgramRules.movementCap(8)
             val plan = ProgramTemplates.build(template, volume, Equipment.FULL_GYM, catalogue, StrengthProfile(), maxExercises = 8)
             plan.presets.forEach {
                 assertTrue("${template.id}/$volume ${it.name} holds ${it.entries.size} > $cap", it.entries.size <= cap)
@@ -465,13 +465,12 @@ class ProgramAuditFixesTest {
             )
             val plan = ProgramGenerator.week(request, catalogue, strength)
             val volume = ProgramRules.weeklyVolume(plan.presets)
-            val range = ProgramRules.weeklySetTarget(VolumeLevel.HIGH, focus)
             val priorityMuscles = priorities.flatMap { it.muscles }.toSet()
             for (muscle in ProgramRules.TRACKED) {
-                val target = if (muscle in priorityMuscles) range.endInclusive else range.start
+                val target = if (muscle in priorityMuscles) 8.0 else ProgramRules.COVERED_MIN
                 val sets = volume[muscle] ?: 0.0
                 // Priorities aim high but are only judged against the floor.
-                if (sets >= range.start - 1e-9) continue
+                if (sets >= ProgramRules.COVERED_MIN - 1e-9) continue
                 assertTrue(
                     "$kit/$focus: ${muscle.label} at $sets of $target, note: ${plan.note}",
                     muscle.label.lowercase() in plan.note,
