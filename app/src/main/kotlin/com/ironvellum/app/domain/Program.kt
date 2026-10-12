@@ -11,6 +11,7 @@ package com.ironvellum.app.domain
  * One piece of gear the lifter owns, one toggle each: coarse levels hid the
  * real answer ("pull-up bar but no rings, parallettes, a 24 kg dumbbell").
  * Machines and cables are never toggles - they only come with a full gym.
+ * Persisted by constant name (ProgramAnswers), so never rename a constant.
  */
 enum class Gear(val label: String) {
     PULL_UP_BAR("Pull-up bar"),
@@ -42,7 +43,10 @@ data class Equipment(
     }
 }
 
-/** What the lifter is training for; decides rep ranges, rest and slot mix. */
+/**
+ * What the lifter is training for; decides rep ranges, rest and slot mix.
+ * Persisted by constant name (ProgramAnswers), so never rename a constant.
+ */
 enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
 
 /**
@@ -51,6 +55,7 @@ enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
  * three years STANDARD, beyond that HIGH), so the app suggests the level from
  * logged history - but it is the lifter's dose to pick, not a rank. It also
  * sets reps in reserve, movements per session and bodyweight progressions.
+ * Persisted by constant name (ProgramAnswers), so never rename a constant.
  */
 enum class VolumeLevel(val label: String) {
     LOW("Low"),
@@ -62,7 +67,8 @@ enum class VolumeLevel(val label: String) {
  * How the week is divided - the headline choice of the builder. With weekly
  * volume equated the split barely changes growth (Pelland 2026; Schoenfeld
  * 2019), so it is a scheduling preference, and each split offers only the
- * day counts it fits.
+ * day counts it fits. Persisted by constant name (ProgramAnswers), so never
+ * rename a constant.
  */
 enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
     FULL_BODY("Full body", listOf(1, 2, 3)),

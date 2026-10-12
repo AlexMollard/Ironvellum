@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
@@ -34,14 +35,17 @@ data class ProgramAnswers(
 
 /**
  * Process-wide store over SharedPreferences ("program_answers"). Enum names
- * travel as strings; anything missing, unknown or corrupt makes the whole
- * answer read back null - a stale hand-edited value must never crash a read.
+ * travel as strings and each field is read on its own: an unknown gear or
+ * priority token is dropped, an unknown or corrupt single value reads as
+ * missing, and a missing volume, split, focus or day count makes the whole
+ * answer read back null - but the gear still reads, so one stale
+ * hand-edited token never voids the rest or crashes a read.
  * The old single "equipment" key (BODYWEIGHT / HOME_WEIGHTS / FULL_GYM) is
  * deliberately unread: it cannot express per-item gear, so an old value
  * reads as "no answers yet" and the builder falls back to its defaults.
- * The StateFlow mirrors the latest get/save so view models observe changes
- * without re-reading prefs, the same way OnboardingViewModel keeps its
- * dismissed flag.
+ * The equipment StateFlow mirrors the latest get/save so view models observe
+ * changes without re-reading prefs, the same way OnboardingViewModel keeps
+ * its dismissed flag.
  */
 object ProgramAnswersStore {
 
@@ -58,11 +62,7 @@ object ProgramAnswersStore {
     private const val KEY_COMPOUND_ONLY = "compoundOnly"
     private const val KEY_MAX_EXERCISES = "maxExercises"
 
-    private val _answers = MutableStateFlow<ProgramAnswers?>(null)
     private val _equipment = MutableStateFlow<Equipment?>(null)
-
-    /** Latest known answers, or null before the first read and when unset. */
-    val answers: StateFlow<ProgramAnswers?> = _answers.asStateFlow()
 
     /**
      * The lifter's gear on its own. Settings can set it without the rest of
@@ -72,60 +72,61 @@ object ProgramAnswersStore {
     val equipment: StateFlow<Equipment?> = _equipment.asStateFlow()
 
     fun get(context: Context): ProgramAnswers? {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val parsed = runCatching {
-            val volume = prefs.getString(KEY_VOLUME, null)?.let { VolumeLevel.valueOf(it) }
-            val split = prefs.getString(KEY_SPLIT, null)?.let { TrainingSplit.valueOf(it) }
-            val focus = prefs.getString(KEY_FOCUS, null)?.let { TrainingFocus.valueOf(it) }
-            val fullGym =
-                if (prefs.contains(KEY_FULL_GYM)) prefs.getBoolean(KEY_FULL_GYM, false) else null
-            val gear = prefs.getString(KEY_GEAR, null)
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.filter { it.isNotEmpty() }
-                ?.map { Gear.valueOf(it) }
-                ?.toSet()
-            val dumbbellMaxKg = prefs.getString(KEY_DUMBBELL_MAX, null)?.toDoubleOrNull()
-            val dumbbellPair =
-                if (prefs.contains(KEY_DUMBBELL_PAIR)) prefs.getBoolean(KEY_DUMBBELL_PAIR, true) else null
-            val days = prefs.getInt(KEY_DAYS, -1)
-            val priorities = prefs.getString(KEY_PRIORITIES, null)
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.filter { it.isNotEmpty() }
-                ?.map { MuscleArea.valueOf(it) }
-                ?.toSet()
-                ?: emptySet()
-            // Absent on answers saved before the toggle existed: off.
-            val compoundOnly = prefs.getBoolean(KEY_COMPOUND_ONLY, false)
-            // Absent before the setting existed: the default; a hand-edited
-            // value outside the range clamps rather than voiding the answers.
-            val maxExercises = prefs.getInt(KEY_MAX_EXERCISES, ProgramRules.DEFAULT_MAX_EXERCISES)
-                .coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
-            _equipment.value = fullGym?.let {
-                Equipment(
-                    fullGym = it,
-                    gear = gear ?: emptySet(),
-                    dumbbellMaxKg = dumbbellMaxKg,
-                    dumbbellPair = dumbbellPair ?: true,
-                )
-            }
-            val equipment = _equipment.value
-            if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
-                null
-            } else {
-                ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises)
-            }
-        }.getOrNull()
-        _answers.value = parsed
-        return parsed
+        val (equipment, answers) = parse(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
+        _equipment.value = equipment
+        return answers
+    }
+
+    /** One field, read on its own: a value of the wrong stored type reads as missing. */
+    private fun <T> field(read: () -> T?): T? = runCatching(read).getOrNull()
+
+    private inline fun <reified E : Enum<E>> enumOf(name: String?): E? =
+        name?.let { token -> enumValues<E>().firstOrNull { it.name == token } }
+
+    /** A comma-separated list of enum names; a token no enum knows is dropped. */
+    private inline fun <reified E : Enum<E>> enumsOf(csv: String?): Set<E> =
+        csv?.split(",")?.mapNotNull { enumOf<E>(it.trim()) }?.toSet().orEmpty()
+
+    /**
+     * The gear the prefs hold (null until it was first saved) and, when every
+     * answer parses, the whole of them. Gear never waits on the other fields.
+     */
+    internal fun parse(prefs: SharedPreferences): Pair<Equipment?, ProgramAnswers?> {
+        val volume = field { enumOf<VolumeLevel>(prefs.getString(KEY_VOLUME, null)) }
+        val split = field { enumOf<TrainingSplit>(prefs.getString(KEY_SPLIT, null)) }
+        val focus = field { enumOf<TrainingFocus>(prefs.getString(KEY_FOCUS, null)) }
+        val fullGym = field { if (prefs.contains(KEY_FULL_GYM)) prefs.getBoolean(KEY_FULL_GYM, false) else null }
+        val gear = field { enumsOf<Gear>(prefs.getString(KEY_GEAR, null)) }
+        val dumbbellMaxKg = field { prefs.getString(KEY_DUMBBELL_MAX, null)?.toDoubleOrNull() }
+        val dumbbellPair = field { if (prefs.contains(KEY_DUMBBELL_PAIR)) prefs.getBoolean(KEY_DUMBBELL_PAIR, true) else null }
+        val days = field { prefs.getInt(KEY_DAYS, -1) } ?: -1
+        val priorities = field { enumsOf<MuscleArea>(prefs.getString(KEY_PRIORITIES, null)) }.orEmpty()
+        // Absent on answers saved before the toggle existed: off.
+        val compoundOnly = field { prefs.getBoolean(KEY_COMPOUND_ONLY, false) } ?: false
+        // Absent before the setting existed: the default; a hand-edited
+        // value outside the range clamps rather than voiding the answers.
+        val maxExercises = (field { prefs.getInt(KEY_MAX_EXERCISES, ProgramRules.DEFAULT_MAX_EXERCISES) }
+            ?: ProgramRules.DEFAULT_MAX_EXERCISES).coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
+        val equipment = fullGym?.let {
+            Equipment(
+                fullGym = it,
+                gear = gear ?: emptySet(),
+                dumbbellMaxKg = dumbbellMaxKg,
+                dumbbellPair = dumbbellPair ?: true,
+            )
+        }
+        val answers = if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
+            null
+        } else {
+            ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises)
+        }
+        return equipment to answers
     }
 
     /** Gear only; the other answers are left as they are. */
     fun saveEquipment(context: Context, equipment: Equipment) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putEquipment(equipment) }
         _equipment.value = equipment
-        _answers.value = _answers.value?.copy(equipment = equipment)
     }
 
     private fun android.content.SharedPreferences.Editor.putEquipment(equipment: Equipment) {
@@ -146,7 +147,6 @@ object ProgramAnswersStore {
             putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
             putInt(KEY_MAX_EXERCISES, answers.maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE))
         }
-        _answers.value = answers
         _equipment.value = answers.equipment
     }
 }
