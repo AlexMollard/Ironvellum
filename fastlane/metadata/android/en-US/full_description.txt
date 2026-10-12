@@ -1,67 +1,20 @@
-An Android training tracker that scores what you actually lift. Seal a trial,
-get a number that means something.
+Ironvellum is a free, offline strength tracker. It plans your training, makes logging fast, and shows you what’s working.
 
-Most trackers add up kilograms, which rewards being heavy.
+PLAN
+• Answer a few questions and get a weekly plan for your goal and the gear you own, from a full gym to a pull-up bar.
+• See which muscles your week covers, and fill any gap in a tap.
 
-Ironvellum scores a set by what it costs you:
+TRAIN
+• Log a set with one tap; last session’s numbers carry over.
+• Rest timers, warm-ups, timed holds and notes built in.
+• It tells you when to add weight.
 
-- Body-scaled: a rep is worth reps × (bodyweight + added) / bodyweight^0.67,
-  the allometric exponent, so a lighter body is not outranked for being light.
-- Priced per implement: a marked kilogram is not the same load on every
-  machine. The plate you see is converted to the load you actually carry.
-- Difficulty-weighted: a handstand push-up and a push-up are not the same rep.
-  Tiers come from the Paths, the app's technique tree.
-- Per-sex standards: strength score is normalised by muscle group using
-  published gaps, and every strength deed states the bar for the person
-  reading it.
+GROW
+• Hundreds of exercises with drawings, and bodyweight skills on progression paths.
+• Earn XP, levels and deeds as you train.
+• Charts for your lifts and bodyweight, with optional Health Connect.
 
-Everything works offline. An account is optional and only ever backs up
-training.
-
-The app keeps its own words. A saved workout is a rite, your weekly plan
-is a cycle, and a workout you perform is a trial, sealed when you finish and
-written into your chronicle.
-
-Features:
-
-- The Binding, a guided first run: pick your split, weekly volume, armoury
-  (the equipment you own) and goal, and the app proposes an editable cycle
-  built from the real catalogue. No cycle is imposed on you.
-- The Forge, an evidence-based builder: full body, upper/lower and
-  push/pull/legs for strength or muscle, fitted to your volume and armoury,
-  from a full gym to a pull-up bar. Forge a cycle or a rite, or temper one you
-  have. Every pick cites 2020-2026 research.
-- Weekly coverage: an anatomical body map, male or female to match your
-  profile, of the sets each muscle gets, in your cycle or from the last seven
-  days, as one list with the short muscles first and a Forge a rite bar. Tap a
-  muscle on any figure to light it. Every exercise and technique has a
-  swipeable info sheet showing the muscles it works.
-- Live trials: type a set's exact load and it carries to your later sets. Rest
-  by each movement's own window with a ready buzz, trim it by 15 s, mark
-  warm-up sets, add a warm-up step, keep a note per exercise and Undo a
-  removed set. Continue a trial you left. After a trial, pick which changes
-  and which swapped exercises go back into your cycle.
-- 256 exercises: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
-  assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
-- 119 techniques on fourteen paths, shown as game-style nodes, each gated on
-  the one before it and carrying a written claim standard.
-- 105 deeds: level, volume, oath (days kept in a row), strength and activity
-  milestones, with progress you can watch rather than a surprise.
-- Progressive overload: strength and hypertrophy schools with their own rep
-  bands, per-exercise load steps and a stall rule that deloads instead of
-  repeating a failed trial. Control and mobility moves progress on range,
-  tempo or hold time, and bodyweight reps cap at 15 before load.
-- The Ledger: scrubbable charts for weight, body fat, BMI and FFMI, a training
-  calendar and lift records; optional Health Connect read (weight, body fat,
-  resting heart rate, steps, distance, energy and sleep), including past
-  history and a background refresh while the app is closed.
-- A flat Clean look, bottom sheets and accent pairs you can change.
-- Shareable trials: a plain text card shaped after Wordle, no link and no
-  image, that states only what you did.
-- Optional cloud: sign in to back up training, follow your allies' tidings,
-  form a circle with a weekly goal and stand in the Reckoning, a leaderboard
-  for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app
-  at any time.
-
-Ironvellum is free software (GPL-3.0-or-later) with no ads, trackers or
-paid tier. Source: https://github.com/AlexMollard/Ironvellum
+YOURS
+• Works fully offline. No ads, no trackers, no paid tier.
+• Optional account to back up and train with friends.
+• Free and open source (GPL-3.0).

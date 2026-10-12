@@ -1,1 +1,1 @@
-Strength training with a ledger that remembers everything.
+Strength tracker that plans your week and scores every set. No ads, offline.
