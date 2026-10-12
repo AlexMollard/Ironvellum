@@ -273,7 +273,14 @@ object ProgramGenerator {
         val pool: List<Exercise>,
         val strength: StrengthProfile,
         val cap: Int,
+        /** Per-movement familiarity from logged sets, 0..1; empty until the history is wired in. */
+        val familiarity: Map<String, Double> = emptyMap(),
+        /** Movements the lifter keeps removing: ranked lower, never excluded. */
+        val demoted: Set<String> = emptySet(),
     ) {
+        /** The session clock this request allows; roomFor and session() read it from chunk 2 on. */
+        val budgetSeconds: Int = ProgramRules.sessionBudgetSeconds(request.sessionMinutes)
+
         val volume get() = request.volume
         val focus get() = request.focus
         val priorityMuscles: Set<Muscle> = request.priorities.flatMap { it.muscles }.toSet()

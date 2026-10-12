@@ -27,6 +27,7 @@ class ProgramAnswersParseTest {
         "priorities" to "CHEST,ARMS",
         "compoundOnly" to true,
         "maxExercises" to 6,
+        "sessionMinutes" to 90,
     )
 
     private fun parse(vararg overrides: Pair<String, Any?>) =
@@ -76,6 +77,55 @@ class ProgramAnswersParseTest {
     }
 
     @Test
+    fun `session minutes read back, default to 75 when missing, and snap when odd`() {
+        assertEquals(90, parse().second!!.sessionMinutes)
+        assertEquals(75, ProgramAnswersStore.parse(MapPrefs(good - "sessionMinutes")).second!!.sessionMinutes)
+        assertEquals(45, parse("sessionMinutes" to 20).second!!.sessionMinutes)
+        assertEquals(60, parse("sessionMinutes" to 55).second!!.sessionMinutes)
+        assertEquals(90, parse("sessionMinutes" to 500).second!!.sessionMinutes)
+        assertEquals(75, parse("sessionMinutes" to 74).second!!.sessionMinutes)
+    }
+
+    @Test
+    fun `a garbage session minutes value defaults to 75 and voids nothing else`() {
+        val (equipment, answers) = parse("sessionMinutes" to "an hour")
+        assertNotNull(equipment)
+        assertEquals(75, answers!!.sessionMinutes)
+        assertEquals(6, answers.maxExercises)
+        assertEquals(4, answers.daysPerWeek)
+        assertEquals(setOf(MuscleArea.CHEST, MuscleArea.ARMS), answers.priorities)
+    }
+
+    @Test
+    fun `a saved answer set round-trips including session minutes`() {
+        val saved = mutableMapOf<String, Any?>()
+        val answers = ProgramAnswers(
+            volume = VolumeLevel.HIGH,
+            focus = TrainingFocus.STRENGTH,
+            equipment = Equipment(fullGym = true),
+            daysPerWeek = 6,
+            priorities = setOf(MuscleArea.BACK),
+            split = TrainingSplit.PUSH_PULL_LEGS,
+            compoundOnly = false,
+            maxExercises = 7,
+            sessionMinutes = 60,
+        )
+        with(ProgramAnswersStore) { MapEditor(saved).putAnswers(answers) }
+        assertEquals(answers, ProgramAnswersStore.parse(MapPrefs(saved)).second)
+    }
+
+    @Test
+    fun `saving an off-menu session length stores the nearest option`() {
+        val saved = mutableMapOf<String, Any?>()
+        val answers = ProgramAnswers(
+            VolumeLevel.LOW, TrainingFocus.MUSCLE, Equipment(fullGym = true), 3, emptySet(), TrainingSplit.FULL_BODY,
+            sessionMinutes = 100,
+        )
+        with(ProgramAnswersStore) { MapEditor(saved).putAnswers(answers) }
+        assertEquals(90, saved["sessionMinutes"])
+    }
+
+    @Test
     fun `nothing saved reads as no gear and no answers`() {
         val (equipment, answers) = ProgramAnswersStore.parse(MapPrefs(emptyMap()))
         assertNull(equipment)
@@ -96,4 +146,18 @@ private class MapPrefs(private val data: Map<String, Any?>) : SharedPreferences 
     override fun edit(): SharedPreferences.Editor = throw UnsupportedOperationException()
     override fun registerOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener?) = Unit
     override fun unregisterOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener?) = Unit
+}
+
+/** An [SharedPreferences.Editor] that writes straight into a map, for round-trip tests. */
+private class MapEditor(private val out: MutableMap<String, Any?>) : SharedPreferences.Editor {
+    override fun putString(key: String?, value: String?) = apply { out[key!!] = value }
+    override fun putStringSet(key: String?, values: MutableSet<String>?) = apply { out[key!!] = values }
+    override fun putInt(key: String?, value: Int) = apply { out[key!!] = value }
+    override fun putLong(key: String?, value: Long) = apply { out[key!!] = value }
+    override fun putFloat(key: String?, value: Float) = apply { out[key!!] = value }
+    override fun putBoolean(key: String?, value: Boolean) = apply { out[key!!] = value }
+    override fun remove(key: String?) = apply { out.remove(key) }
+    override fun clear() = apply { out.clear() }
+    override fun commit(): Boolean = true
+    override fun apply() = Unit
 }

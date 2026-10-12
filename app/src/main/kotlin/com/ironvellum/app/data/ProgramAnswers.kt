@@ -31,6 +31,8 @@ data class ProgramAnswers(
     val compoundOnly: Boolean = false,
     /** Most movements per workout, 3..8. */
     val maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
+    /** Minutes one workout may take: 45, 60, 75 or 90. */
+    val sessionMinutes: Int = ProgramRules.DEFAULT_SESSION_MINUTES,
 )
 
 /**
@@ -61,6 +63,7 @@ object ProgramAnswersStore {
     private const val KEY_PRIORITIES = "priorities"
     private const val KEY_COMPOUND_ONLY = "compoundOnly"
     private const val KEY_MAX_EXERCISES = "maxExercises"
+    private const val KEY_SESSION_MINUTES = "sessionMinutes"
 
     private val _equipment = MutableStateFlow<Equipment?>(null)
 
@@ -107,6 +110,10 @@ object ProgramAnswersStore {
         // value outside the range clamps rather than voiding the answers.
         val maxExercises = (field { prefs.getInt(KEY_MAX_EXERCISES, ProgramRules.DEFAULT_MAX_EXERCISES) }
             ?: ProgramRules.DEFAULT_MAX_EXERCISES).coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
+        // Absent before the setting existed, or unreadable: the default; any
+        // other number snaps to the nearest option rather than voiding the answers.
+        val sessionMinutes = field { prefs.getInt(KEY_SESSION_MINUTES, ProgramRules.DEFAULT_SESSION_MINUTES) }
+            ?.let { snapSessionMinutes(it) } ?: ProgramRules.DEFAULT_SESSION_MINUTES
         val equipment = fullGym?.let {
             Equipment(
                 fullGym = it,
@@ -118,10 +125,15 @@ object ProgramAnswersStore {
         val answers = if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
             null
         } else {
-            ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises)
+            ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises, sessionMinutes)
         }
         return equipment to answers
     }
+
+    /** The nearest of [ProgramRules.SESSION_MINUTES_OPTIONS]. */
+    internal fun snapSessionMinutes(minutes: Int): Int =
+        ProgramRules.SESSION_MINUTES_OPTIONS.minByOrNull { kotlin.math.abs(it - minutes) }
+            ?: ProgramRules.DEFAULT_SESSION_MINUTES
 
     /** Gear only; the other answers are left as they are. */
     fun saveEquipment(context: Context, equipment: Equipment) {
@@ -137,16 +149,19 @@ object ProgramAnswersStore {
     }
 
     fun save(context: Context, answers: ProgramAnswers) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
-            putString(KEY_VOLUME, answers.volume.name)
-            putString(KEY_SPLIT, answers.split.name)
-            putString(KEY_FOCUS, answers.focus.name)
-            putEquipment(answers.equipment)
-            putInt(KEY_DAYS, answers.daysPerWeek)
-            putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
-            putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
-            putInt(KEY_MAX_EXERCISES, answers.maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE))
-        }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putAnswers(answers) }
         _equipment.value = answers.equipment
+    }
+
+    internal fun SharedPreferences.Editor.putAnswers(answers: ProgramAnswers) {
+        putString(KEY_VOLUME, answers.volume.name)
+        putString(KEY_SPLIT, answers.split.name)
+        putString(KEY_FOCUS, answers.focus.name)
+        putEquipment(answers.equipment)
+        putInt(KEY_DAYS, answers.daysPerWeek)
+        putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
+        putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
+        putInt(KEY_MAX_EXERCISES, answers.maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE))
+        putInt(KEY_SESSION_MINUTES, snapSessionMinutes(answers.sessionMinutes))
     }
 }

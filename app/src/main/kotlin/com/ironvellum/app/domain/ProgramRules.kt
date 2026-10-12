@@ -25,6 +25,7 @@ object ProgramRules {
      * training-age tiers (ACSM 2009 / Moesgaard 2022: novices progress on low
      * volume; periodisation adds little for hypertrophy).
      */
+    @Deprecated("Coverage is judged against COVERED_MIN and HEAVY_WEEK; the aim comes from setRange and startingSets.")
     fun weeklySetTarget(tier: VolumeLevel, focus: TrainingFocus): ClosedFloatingPointRange<Double> {
         if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) return 5.0..15.0
         return when (tier) {
@@ -96,6 +97,7 @@ object ProgramRules {
      * lats on a V-taper week is the point, not an overshoot. The floor and
      * the generator's targets are unchanged.
      */
+    @Deprecated("Use coverage(): a muscle is NOT_TRAINED, BELOW_MINIMUM or COVERED, and heavy past HEAVY_WEEK.")
     fun judgedRange(
         muscle: Muscle,
         volume: VolumeLevel,
@@ -360,6 +362,7 @@ object ProgramRules {
      * high. Practical scheduling heuristic - the evidence brief lists no
      * verified per-session ceiling; it exists so a generated session stays
      * finishable in roughly an hour. */
+    @Deprecated("The time budget (sessionBudgetSeconds) and the movement cap replace the per-level count.")
     fun sessionCap(tier: VolumeLevel): Int = when (tier) {
         VolumeLevel.LOW -> 6
         VolumeLevel.STANDARD -> 8
@@ -375,6 +378,7 @@ object ProgramRules {
      * the lifter's own [maxExercises] when that is lower (clamped to
      * [MAX_EXERCISES_RANGE]). Every generator and template path reads this.
      */
+    @Deprecated("The time budget (sessionBudgetSeconds) and maxExercises replace the per-level count.")
     fun exerciseCap(tier: VolumeLevel, maxExercises: Int): Int =
         minOf(sessionCap(tier), maxExercises.coerceIn(MAX_EXERCISES_RANGE))
 
@@ -471,4 +475,106 @@ object ProgramRules {
     /** Estimated clock time of a session; unprofiled movements count as compounds. */
     fun sessionSeconds(entries: List<PlannedEntry>, focus: TrainingFocus): Int =
         entries.sumOf { it.sets * setSeconds(focus, it.exerciseName, weighted = it.targetWeightKg != null) }
+
+    // ------------------------------------------------------- effort-first model
+
+    /**
+     * Hard sets a muscle needs in a week before the plan counts it as covered.
+     * A convention anchored on the low end of the dose-response curve
+     * (Pelland 2026), not a trial result: fewer than this is a maintenance dose.
+     */
+    const val COVERED_MIN = 4.0
+
+    /** Fractional hard sets in a week past which a muscle is flagged heavy. Soft: coverage wins a conflict. */
+    const val HEAVY_WEEK = 20.0
+
+    /** Fractional hard sets in one session past which a muscle is flagged heavy (Remmert 2025). Soft. */
+    const val HEAVY_SESSION = 10.0
+
+    /**
+     * Sets one movement may carry at a volume level: compounds LOW 2-3,
+     * STANDARD 2-4, HIGH 3-5; single-joint work tops out one set lower. A
+     * practical heuristic (ACSM 2009: 1-3 sets for novices, 3-6 advanced),
+     * not a measured dose.
+     */
+    fun setRange(volume: VolumeLevel, compound: Boolean): IntRange {
+        val compoundRange = when (volume) {
+            VolumeLevel.LOW -> 2..3
+            VolumeLevel.STANDARD -> 2..4
+            VolumeLevel.HIGH -> 3..5
+        }
+        if (compound) return compoundRange
+        val top = compoundRange.last - 1
+        return minOf(compoundRange.first, top)..top
+    }
+
+    /**
+     * Where a new movement starts inside its [setRange]: LOW at the floor,
+     * STANDARD at the midpoint (rounded up), HIGH at the top. A [priority]
+     * muscle always starts at the top.
+     */
+    fun startingSets(volume: VolumeLevel, compound: Boolean, priority: Boolean): Int {
+        val range = setRange(volume, compound)
+        if (priority) return range.last
+        return when (volume) {
+            VolumeLevel.LOW -> range.first
+            VolumeLevel.STANDARD -> (range.first + range.last + 1) / 2
+            VolumeLevel.HIGH -> range.last
+        }
+    }
+
+    /**
+     * Per-muscle weekly and busiest-session fractional hard sets of [presets],
+     * for every [Muscle] (untouched ones read NOT_TRAINED).
+     */
+    fun coverage(presets: List<PlannedPreset>): Map<Muscle, MuscleLoad> {
+        val weekly = HardSets.planned(presets)
+        val busiest = mutableMapOf<Muscle, Double>()
+        for (preset in presets) {
+            for ((muscle, sets) in HardSets.planned(listOf(preset))) {
+                if (sets > (busiest[muscle] ?: 0.0)) busiest[muscle] = sets
+            }
+        }
+        return Muscle.entries.associateWith { MuscleLoad(it, weekly[it] ?: 0.0, busiest[it] ?: 0.0) }
+    }
+
+    /** The lifter's per-workout time choices, in minutes. */
+    val SESSION_MINUTES_OPTIONS = listOf(45, 60, 75, 90)
+    const val DEFAULT_SESSION_MINUTES = 75
+
+    /** The clock a session of [minutes] may use; 75 is the old [SESSION_BUDGET_SECONDS]. */
+    fun sessionBudgetSeconds(minutes: Int): Int = minutes.coerceIn(30, 120) * 60
+
+    /** Clock time of one prescribed movement: its sets at the set clock of [focus]. */
+    fun movementSeconds(entry: PlannedEntry, focus: TrainingFocus = TrainingFocus.GENERAL): Int =
+        entry.sets * setSeconds(focus, entry.exerciseName, weighted = entry.targetWeightKg != null)
+
+    /** Whole minutes (rounded up) a preset takes, warm-up excluded. */
+    fun dayMinutes(preset: PlannedPreset, focus: TrainingFocus = TrainingFocus.GENERAL): Int =
+        (preset.entries.sumOf { movementSeconds(it, focus) } + 59) / 60
+
+    /**
+     * The rep window shown per focus and kind of movement: muscle 6-10 /
+     * 10-15, strength 3-6 / 8-12, general (and skill) 5-8 / 10-15 - heavier
+     * for compounds, lighter for single-joint work, which is cheap to take
+     * near failure (Schoenfeld 2017: growth holds across 5-30 reps).
+     */
+    fun repWindow(focus: TrainingFocus, compound: Boolean): IntRange = when (focus) {
+        TrainingFocus.MUSCLE -> if (compound) 6..10 else 10..15
+        TrainingFocus.STRENGTH -> if (compound) 3..6 else 8..12
+        TrainingFocus.GENERAL, TrainingFocus.SKILL -> if (compound) 5..8 else 10..15
+    }
+}
+
+/** The plain default way a prescription reads; the UI owns its final copy. */
+object Prescription {
+    fun line(entry: PlannedEntry): String {
+        val sets = if (entry.setsMin == entry.setsMax) "${entry.sets} sets" else "${entry.setsMin}-${entry.setsMax} sets"
+        val reps = if (entry.repLow == entry.repHigh) "${entry.repLow} reps" else "${entry.repLow}-${entry.repHigh} reps"
+        val effort = when (entry.effort) {
+            EffortCue.RIR_0_2 -> "0-2 reps in reserve"
+            EffortCue.TO_FAILURE -> "last set to failure"
+        }
+        return "$sets x $reps, $effort"
+    }
 }

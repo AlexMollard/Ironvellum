@@ -191,6 +191,14 @@ data class PlannedEntry(
     val why: String = "",
     /** Where [targetWeightKg] came from, or null when there is no load to state. */
     val loadNote: String? = null,
+    /** The set range this movement may be dosed within; [sets] is the planned midpoint. */
+    val setsMin: Int = sets,
+    val setsMax: Int = sets,
+    /** How hard the sets are taken: compounds leave 0-2 reps in reserve, isolation goes to failure. */
+    val effort: EffortCue = EffortCue.RIR_0_2,
+    /** The rep window shown to the lifter; [reps] stays the anchor the load is computed from. */
+    val repLow: Int = reps,
+    val repHigh: Int = reps,
 )
 
 /** One proposed session, scheduled on an ISO weekday (1 = Monday .. 7 = Sunday) or unscheduled. */
@@ -227,6 +235,8 @@ data class ProgramRequest(
      * [ProgramRules.exerciseCap] of this and the volume level.
      */
     val maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
+    /** Minutes one workout may take, warm-up excluded (45, 60, 75 or 90). */
+    val sessionMinutes: Int = ProgramRules.DEFAULT_SESSION_MINUTES,
 )
 
 /**
