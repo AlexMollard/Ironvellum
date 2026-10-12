@@ -41,6 +41,9 @@ object IronvellumColors {
     val SystemGreen get() = Color(accents.muted) // muted green accent
     val SovereignGold get() = Color(accents.secondary) // earned moments only
     val DangerRed = Color(0xFFEF5350)
+    // Heavy: a soft recovery flag on a muscle (coverage), never danger and never earned.
+    // Amber, fixed - the accent palette is the lifter's to change, a warning is not.
+    val Caution = Color(0xFFE0B25A)
 
     // Ink itself: the structural palette is monochrome by design.
     // Exactly tools/art.py INK_TINT (232, 232, 228): generated artwork and UI

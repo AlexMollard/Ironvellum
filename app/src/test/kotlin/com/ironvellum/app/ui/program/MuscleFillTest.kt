@@ -6,25 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The heat map never scolds: a muscle under its range is a green that grows
- * toward the in-range green, and a rite's figure is a share of the rite.
+ * A rite's figure is a share of the rite: the emerald strengthens with the sets it gives a muscle, relative
+ * to its most worked muscle.
  */
 class MuscleFillTest {
-
-    private val target = 10.0..20.0
-
-    @Test
-    fun `under alpha grows with volume and reaches the in-range opacity at the target`() {
-        val samples = listOf(0.5, 2.0, 5.0, 9.5, 10.0).map { underAlpha(it, target) }
-        assertTrue(samples.zipWithNext().all { (a, b) -> a < b })
-        assertEquals(0.9f, underAlpha(10.0, target), 0.0001f)
-    }
-
-    @Test
-    fun `faint under stays visibly above nothing and never passes full`() {
-        assertTrue(underAlpha(0.1, target) >= 0.3f)
-        assertEquals(0.9f, underAlpha(40.0, target), 0.0001f)
-    }
 
     @Test
     fun `rite alpha is relative to the most worked muscle`() {

@@ -95,14 +95,28 @@ class ProgramEditingTest {
         assertEquals(listOf(3, 4), edited.presets[0].entries.map { it.sets })
     }
 
-    // ---- U10: one set ceiling
+    // ---- U10: the stepper has a sanity range and no dose cap
 
     @Test
-    fun `sets stop at the generator's ceiling for the movement`() {
-        val ceiling = ProgramRules.maxSetsPerEntry("Push-up")
-        assertEquals(ceiling, entry(sets = ceiling).withSetsDelta(1).sets)
+    fun `hard sets step through one to ten and no further`() {
+        assertEquals(10, entry(sets = 9).withSetsDelta(1).sets)
+        assertEquals(10, entry(sets = 10).withSetsDelta(1).sets)
         assertEquals(1, entry(sets = 1).withSetsDelta(-1).sets)
+        // The generator's own stopping point is a suggestion: a lifter may go past it.
+        val stop = ProgramRules.maxSetsPerEntry("Push-up")
+        assertEquals(stop + 1, entry(sets = stop).withSetsDelta(1).sets)
         assertEquals(30, entry(reps = 30).withRepsDelta(1).reps)
+    }
+
+    @Test
+    fun `load steps by the unit and stops at the lifter's own dumbbell`() {
+        val loaded = PlannedEntry("Dumbbell Shoulder Press", 3, 10, 17.5)
+        assertEquals(20.0, loaded.withLoadDelta(1, 2.5, capKg = 20.0).targetWeightKg!!, 1e-9)
+        assertEquals(20.0, loaded.withLoadDelta(1, 2.5, capKg = 20.0).withLoadDelta(1, 2.5, capKg = 20.0).targetWeightKg!!, 1e-9)
+        assertEquals(15.0, loaded.withLoadDelta(-1, 2.5).targetWeightKg!!, 1e-9)
+        // Never below one step, and a bodyweight movement has no load to step.
+        assertEquals(2.5, PlannedEntry("Curl", 3, 10, 2.5).withLoadDelta(-1, 2.5).targetWeightKg!!, 1e-9)
+        assertNull(entry().withLoadDelta(1, 2.5).targetWeightKg)
     }
 
     // ---- U11: one progression rule
@@ -141,5 +155,93 @@ class ProgramEditingTest {
         )
         val names = proposalCoveragePresets("improve", null, rite("Better", 1), saved, 1).map { it.name }
         assertEquals(listOf("Better", "Other"), names)
+    }
+
+    // ---- what a discard would lose
+
+    private fun plan(vararg entries: PlannedEntry) = RoutinePlan(listOf(rite("Upper A", 1, *entries)))
+
+    @Test
+    fun `an untouched proposal has nothing to lose`() {
+        val forged = plan(entry("Bench Press"), entry("Row"))
+        assertEquals(PlanEdits(), planEdits(forged, forged))
+        assertEquals(false, planEdits(forged, forged).any)
+    }
+
+    @Test
+    fun `swaps, set counts and removals are counted apart`() {
+        val forged = plan(entry("Bench Press", 3), entry("Row", 3), entry("Curl", 2), entry("Raise", 2), entry("Dip", 3))
+        val edited = plan(
+            entry("Incline Press", 3),
+            entry("Row", 4),
+            entry("Curl", 3),
+            entry("Dip", 3),
+        )
+        val edits = planEdits(forged, edited)
+        // Bench Press left and Incline Press arrived: one swap. Raise left with nothing in its place: one removal.
+        assertEquals(PlanEdits(swapped = 1, setsChanged = 2, removed = 1), edits)
+        assertEquals(listOf("1 movement swapped", "2 set counts changed", "1 movement removed"), edits.lines())
+    }
+
+    @Test
+    fun `an added movement and a changed load are counted`() {
+        val forged = plan(PlannedEntry("Bench Press", 3, 8, 60.0))
+        val edited = plan(PlannedEntry("Bench Press", 3, 8, 62.5), entry("Dip"))
+        assertEquals(PlanEdits(loadsChanged = 1, added = 1), planEdits(forged, edited))
+        assertEquals(listOf("1 load changed", "1 movement added"), planEdits(forged, edited).lines())
+    }
+
+    @Test
+    fun `a rite removed with its last movement counts its movements as removed`() {
+        val forged = RoutinePlan(listOf(rite("A", 1, entry("Push-up")), rite("B", 2, entry("Pull-up"), entry("Row"))))
+        val edited = RoutinePlan(listOf(rite("A", 1, entry("Push-up"))))
+        assertEquals(PlanEdits(removed = 2), planEdits(forged, edited))
+    }
+
+    @Test
+    fun `no proposal on either side is no edits`() {
+        assertEquals(PlanEdits(), planEdits(null, plan(entry())))
+        assertEquals(PlanEdits(), planEdits(plan(entry()), null))
+    }
+
+    // ---- the days sheet
+
+    private fun saved(name: String, day: Int?) = WorkoutPreset(id = name.hashCode().toLong(), name = name, scheduledDay = day)
+
+    @Test
+    fun `free days read free and a taken day says who holds it and where it moves`() {
+        val week = RoutinePlan(listOf(rite("Upper A", 1), rite("Lower A", 2), rite("Upper B", 4), rite("Lower B", 5)))
+        val cycle = listOf(saved("Push", 1), saved("Pull", 3), saved("Legs", 5))
+        val conflict = dayConflict(week, cycle)
+        assertEquals(true, conflict.hasClash)
+        assertEquals(2, conflict.clashes)
+        assertEquals(
+            listOf(
+                DayPlacement("Upper A", 1, "Push", 6),
+                DayPlacement("Lower A", 2, null, null),
+                DayPlacement("Upper B", 4, null, null),
+                DayPlacement("Lower B", 5, "Legs", 7),
+            ),
+            conflict.placements,
+        )
+        assertEquals(true, conflict.fitsAround)
+    }
+
+    @Test
+    fun `a week that does not collide shows no sheet`() {
+        val week = RoutinePlan(listOf(rite("A", 2), rite("B", 4)))
+        assertEquals(false, dayConflict(week, listOf(saved("Mine", 1))).hasClash)
+        // An unscheduled saved rite holds no day.
+        assertEquals(false, dayConflict(week, listOf(saved("Loose", null))).hasClash)
+    }
+
+    @Test
+    fun `too few free days is said, not offered`() {
+        val week = RoutinePlan(listOf(rite("A", 1), rite("B", 2)))
+        val cycle = (1..6).map { saved("R$it", it) }
+        val conflict = dayConflict(week, cycle)
+        assertEquals(true, conflict.hasClash)
+        assertEquals(false, conflict.fitsAround)
+        assertEquals(listOf(null, null), conflict.placements.map { it.movedTo })
     }
 }

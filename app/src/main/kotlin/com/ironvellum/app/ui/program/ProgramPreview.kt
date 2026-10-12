@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -87,33 +88,31 @@ fun dayLabel(scheduledDay: Int?): String =
     scheduledDay?.let { DAY_NAMES.getOrNull(it - 1) } ?: "Unscheduled"
 
 /** What an exercise row is, apart from where it sits: the movement and its modifiers. */
-private fun entryKey(entry: PlannedEntry): String = "${entry.exerciseName}|${entry.modifiers}"
-
-private fun entryScheme(entry: PlannedEntry): String = buildString {
-    append("${entry.sets}\u00D7${entry.reps}")
-    entry.targetWeightKg?.let { append(" @ ${Units.withUnit(it)}") }
-}
+internal fun entryKey(entry: PlannedEntry): String = "${entry.exerciseName}|${entry.modifiers}"
 
 /**
- * One proposed training day: a header line (the weekday, the rite, how many exercises), then one
- * compact row per exercise. The reason, the steppers and the remove pad stay folded until the
- * lifter taps a row, one row open at a time. Unfolded, every row carried a reason line and five
- * pads, and the first-run review read as a wall of controls eight screens long.
+ * One proposed training day: a header line (the weekday, the rite, how much work it holds), then one
+ * movement row each, written effort-first: the hard sets and how close to failure they are taken, with the
+ * rep guide and load at the right. The header folds the day; with [onOpenEntry] a movement row hands the
+ * movement to the caller (the Forge opens its day page), without it the row unfolds into the editor in place
+ * (first-run review), one row open at a time.
  *
- * [folded] makes the day itself a one-line row that opens its exercises on a tap (the builder's
- * proposal, where seven days would otherwise push the actions off the screen); the default keeps
- * the day open on its own card, as first-run review shows it.
+ * [folded] makes the day itself a one-line row that opens its movements on a tap (the Forge's proposal, where
+ * seven days would otherwise push the actions off the screen); the default keeps the day open on its own card.
  *
- * [showNote] is off where the caller shows the plan's notes once for the
- * whole routine instead of repeating the rest guidance under every day.
+ * [showNote] is off where the caller shows the proposal's notes once for the whole cycle instead of repeating
+ * the rest guidance under every day.
  */
 @Composable
 fun ProposedDay(
     preset: PlannedPreset,
     editable: Boolean,
+    equipment: Equipment?,
     onSets: (entryIndex: Int, delta: Int) -> Unit,
-    onReps: (entryIndex: Int, delta: Int) -> Unit,
     onRemove: (entryIndex: Int) -> Unit,
+    onLoad: ((entryIndex: Int, delta: Int) -> Unit)? = null,
+    onSwap: ((entryIndex: Int) -> Unit)? = null,
+    onOpenEntry: ((entryIndex: Int) -> Unit)? = null,
     showNote: Boolean = true,
     folded: Boolean = false,
     /** A folded day opens on arrival: first-run's review opens its first day so the exercises are in view. */
@@ -123,18 +122,20 @@ fun ProposedDay(
     // would otherwise slide the open card onto its neighbour.
     var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<String?>(null) }
     var dayOpen by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf(startOpen) }
+    val day = dayLabel(preset.scheduledDay)
     val body: @Composable ColumnScope.() -> Unit = {
-        val count = preset.entries.size
         Row(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp)
+                .heightIn(min = 48.dp)
                 .then(
                     if (folded) {
-                        Modifier.clickable(
-                            onClickLabel = if (dayOpen) "Fold ${preset.name}" else "Open ${preset.name}",
-                            role = Role.Button,
-                        ) { dayOpen = !dayOpen }
+                        Modifier
+                            .clickable(
+                                onClickLabel = if (dayOpen) "Fold $day, ${preset.name}" else "Open $day, ${preset.name}",
+                                role = Role.Button,
+                            ) { dayOpen = !dayOpen }
+                            .semantics { stateDescription = if (dayOpen) "Expanded" else "Collapsed" }
                     } else {
                         Modifier
                     },
@@ -143,7 +144,7 @@ fun ProposedDay(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                dayLabel(preset.scheduledDay),
+                day,
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.width(92.dp),
@@ -157,11 +158,19 @@ fun ProposedDay(
                 modifier = Modifier.weight(1f, fill = false),
             )
             Text(
-                "$count ${if (count == 1) "exercise" else "exercises"}",
+                if (dayOpen) hardSetsText(dayHardSets(preset)) else movementsText(preset.entries.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 maxLines = 1,
             )
+            if (folded) {
+                Text(
+                    if (dayOpen) "⌃" else "›",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+            }
         }
         if (dayOpen) {
             // Rest guidance rides every generated preset's note; its papers go to
@@ -178,12 +187,17 @@ fun ProposedDay(
             preset.entries.forEachIndexed { entryIndex, entry ->
                 ProposedEntryRow(
                     entry = entry,
-                    dayName = dayLabel(preset.scheduledDay),
+                    dayName = day,
+                    equipment = equipment,
                     editable = editable,
                     expanded = open == entryKey(entry),
-                    onToggle = { open = if (open == entryKey(entry)) null else entryKey(entry) },
+                    onToggle = {
+                        if (onOpenEntry != null) onOpenEntry(entryIndex)
+                        else open = if (open == entryKey(entry)) null else entryKey(entry)
+                    },
                     onSets = { delta -> onSets(entryIndex, delta) },
-                    onReps = { delta -> onReps(entryIndex, delta) },
+                    onLoad = onLoad?.let { f -> { delta: Int -> f(entryIndex, delta) } },
+                    onSwap = onSwap?.let { f -> { f(entryIndex) } },
                     onRemove = {
                         open = null
                         onRemove(entryIndex)
@@ -211,21 +225,22 @@ fun ProposedDay(
 }
 
 /**
- * One proposed exercise: name and scheme, tappable. Open and [editable], it is the rite editor's
- * card (the same steppers, [EntryCard]): why the exercise is there, Sets and Reps with their pads,
- * and Remove. Every pad clears the 44dp touch floor and names its exercise, because a bare "-" tells
- * a screen reader nothing.
+ * One movement, effort-first: its name over "3 hard sets · stop 0–2 reps short of failure", the rep guide and
+ * load at the right. Open and [editable] it becomes the editor ([EffortEntryEditor]). A row that opens carries
+ * a chevron; every row is a 48dp target.
  */
 @Composable
 fun ProposedEntryRow(
     entry: PlannedEntry,
     dayName: String,
+    equipment: Equipment?,
     editable: Boolean,
     expanded: Boolean,
     onToggle: () -> Unit,
     onSets: (delta: Int) -> Unit,
-    onReps: (delta: Int) -> Unit,
     onRemove: () -> Unit,
+    onLoad: ((delta: Int) -> Unit)? = null,
+    onSwap: (() -> Unit)? = null,
 ) {
     // Why this lift and dose, and where the load came from - without the
     // citations, which [SourcesPanel] lists once per screen.
@@ -233,65 +248,24 @@ fun ProposedEntryRow(
         .map { Evidence.split(it).first }
         .filter { it.isNotBlank() }
     val opens = editable || reasons.isNotEmpty()
-    val reasonLines: @Composable () -> Unit = {
-        reasons.forEach { line ->
-            // A load worked out from a 1-rep max says what that is.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    line,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
-            }
-        }
-    }
     if (expanded && editable) {
-        EntryCard(
-            name = entry.exerciseName,
-            foldLabel = "Close ${entry.exerciseName}",
+        EffortEntryEditor(
+            entry = entry,
+            dayName = dayName,
+            equipment = equipment,
             onFold = onToggle,
-            actions = {
-                Spacer(Modifier.weight(1f))
-                TextAction("Remove exercise", onRemove, description = "Remove ${entry.exerciseName} from $dayName")
-            },
-        ) {
-            reasonLines()
-            StepperRow(
-                label = "Sets",
-                value = entry.sets.toString(),
-                unit = null,
-                less = "Fewer sets for ${entry.exerciseName}",
-                more = "More sets for ${entry.exerciseName}",
-                error = false,
-                decimal = false,
-                maxDigits = 0,
-                onValue = null,
-                onLess = { onSets(-1) },
-                onMore = { onSets(1) },
-            )
-            StepperRow(
-                label = "Reps",
-                value = entry.reps.toString(),
-                unit = null,
-                less = "Fewer reps for ${entry.exerciseName}",
-                more = "More reps for ${entry.exerciseName}",
-                error = false,
-                decimal = false,
-                maxDigits = 0,
-                onValue = null,
-                onLess = { onReps(-1) },
-                onMore = { onReps(1) },
-            )
-        }
+            onSets = onSets,
+            onRemove = onRemove,
+            onLoad = onLoad,
+            onSwap = onSwap,
+        )
         return
     }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp)
+                .heightIn(min = 48.dp)
                 .then(
                     if (opens) {
                         Modifier.clickable(
@@ -302,33 +276,38 @@ fun ProposedEntryRow(
                     } else {
                         Modifier
                     },
-                ),
+                )
+                .padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                entry.exerciseName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    entry.exerciseName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    movementLine(entry),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
             Spacer(Modifier.width(8.dp))
             Text(
-                entryScheme(entry),
+                movementDetail(entry, entry.targetWeightKg?.let { Units.withUnit(it) }),
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
+                textAlign = TextAlign.End,
             )
-            // Collapsed-state hint: onboarding's prose says "Tap an exercise
-            // to adjust it", but the row gave no visible sign it opens.
-            // Decorative - the clickable already announces open/close - and
-            // only on rows that actually open.
+            // Collapsed-state hint: the row gave no visible sign it opens. Decorative - the clickable
+            // already announces open/close - and only on rows that actually open.
             if (opens) {
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    if (expanded) "▾" else "▸",
+                    if (expanded) "⌃" else "›",
                     style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.clearAndSetSemantics {},
@@ -336,22 +315,32 @@ fun ProposedEntryRow(
             }
         }
         if (expanded) {
-            reasonLines()
+            reasons.forEach { line ->
+                // A load worked out from a 1-rep max says what that is.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
+                }
+            }
             Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 /**
- * The small tap target used by the proposal editor. Not IronvellumButton: four
- * steppers per exercise row need a control that stays narrow while clearing
- * the 44dp touch floor, which the 44dp box guarantees on both axes.
+ * The small tap target used by the proposal editor. Not IronvellumButton: a stepper needs a control that stays
+ * narrow while clearing the 48dp touch floor, which the 48dp box guarantees on both axes.
  */
 @Composable
 fun TapPad(
     label: String,
     description: String,
-    minSize: androidx.compose.ui.unit.Dp = 44.dp,
+    minSize: androidx.compose.ui.unit.Dp = 48.dp,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
@@ -373,32 +362,6 @@ fun TapPad(
             modifier = Modifier.semantics { contentDescription = description },
         )
     }
-}
-
-/**
- * The week's coverage in one row: how many muscles the proposal leaves short, and a way into the
- * coverage of that same proposal for the full picture. Judgement stays in words (a count, not a colour),
- * because "legible without colour alone" is an accessibility floor here, not a nice-to-have.
- */
-@Composable
-fun CoverageSummaryRow(
-    presets: List<PlannedPreset>,
-    tier: VolumeLevel,
-    focus: TrainingFocus,
-    priorities: Set<MuscleArea>,
-    onOpen: () -> Unit,
-) {
-    val short = remember(presets, tier, focus, priorities) {
-        shortCount(presets, coverageGoal(tier, focus, priorities))
-    }
-    InkDivider()
-    ListRow(
-        label = shortHeadline(short),
-        value = "Coverage",
-        onClickLabel = "Open coverage of this cycle",
-        onClick = onOpen,
-    )
-    InkDivider()
 }
 
 /** "Load set", not the enum's "Load_set". */
@@ -631,25 +594,6 @@ internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split
     }
     TrainingSplit.UPPER_LOWER_PPL ->
         "PPL is push / pull / legs: those three days, then upper and lower. Every muscle twice in five days."
-}
-
-/**
- * The volume question's caption: the weekly range the level buys for this
- * goal, and who it usually suits. Strength ranges do not move with the level
- * (the strength curve saturates early - Pelland 2026), and the caption says so.
- */
-internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
-    val range = ProgramRules.weeklySetTarget(volume, focus)
-    val sets = "${range.start.toInt()}-${range.endInclusive.toInt()} sets per muscle a week"
-    if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) {
-        // "level" is the XP level everywhere else, so name the setting itself.
-        return "$sets on any setting. Standard and High add exercises."
-    }
-    return when (volume) {
-        VolumeLevel.LOW -> "$sets. Enough for a first year."
-        VolumeLevel.STANDARD -> "$sets. After a year or so of training."
-        VolumeLevel.HIGH -> "$sets. For years of training."
-    }
 }
 
 /**

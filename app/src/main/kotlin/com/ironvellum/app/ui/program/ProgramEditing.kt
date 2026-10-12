@@ -1,8 +1,16 @@
 package com.ironvellum.app.ui.program
 
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.MuscleMap
+import com.ironvellum.app.domain.ProgramGenerator
+import com.ironvellum.app.domain.StrengthProfile
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.ui.train.MAX_LOAD_KG
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
@@ -12,9 +20,26 @@ import com.ironvellum.app.domain.TrainingMode
  * drift apart on set limits, edits or the progression rule.
  */
 
-/** Sets, with the same ceiling the generator itself stops at for this movement. */
+/**
+ * The hard sets one movement may carry. This is a sanity range, not a dose: the lifter decides how much
+ * they will do, and the Forge only refuses a number nobody could finish (the generator's own stopping
+ * point is a suggestion, never a cap on the stepper).
+ */
+internal val SET_SANITY = 1..10
+
 internal fun PlannedEntry.withSetsDelta(delta: Int): PlannedEntry =
-    copy(sets = (sets + delta).coerceIn(1, ProgramRules.maxSetsPerEntry(exerciseName)))
+    copy(sets = (sets + delta).coerceIn(SET_SANITY))
+
+/**
+ * Load stepped by [delta] steps of [stepKg], never above [capKg] (the lifter's own heaviest dumbbell) and
+ * never below one step. A bodyweight movement has no load to step and is returned as it is.
+ */
+internal fun PlannedEntry.withLoadDelta(delta: Int, stepKg: Double, capKg: Double? = null): PlannedEntry {
+    val load = targetWeightKg ?: return this
+    val top = capKg ?: MAX_LOAD_KG
+    val next = (Math.round((load + delta * stepKg) * 4) / 4.0).coerceIn(minOf(stepKg, top), maxOf(top, load))
+    return copy(targetWeightKg = next)
+}
 
 internal fun PlannedEntry.withRepsDelta(delta: Int): PlannedEntry =
     copy(reps = (reps + delta).coerceIn(1, 30))
@@ -90,4 +115,110 @@ internal fun progressionModeFor(focus: TrainingFocus): TrainingMode? = when (foc
 
 internal suspend fun Repository.alignProgressionMode(focus: TrainingFocus) {
     progressionModeFor(focus)?.let { setTrainingMode(it) }
+}
+
+/**
+ * A movement the lifter picked (a swap or an addition), prescribed the way the generator would: the sets they
+ * keep or the level's starting sets, the goal's rep window for the middle of its range, and a load worked from
+ * what they have logged, kept under their own dumbbells. A movement with no load to give is bodyweight.
+ */
+internal fun newPlannedEntry(
+    exercise: Exercise,
+    sets: Int?,
+    tier: VolumeLevel,
+    focus: TrainingFocus,
+    equipment: Equipment,
+    strength: StrengthProfile,
+): PlannedEntry {
+    val compound = MuscleMap.profile(exercise.name)?.compound ?: true
+    val window = ProgramRules.repWindow(focus, compound)
+    val reps = window.first + (window.last - window.first) / 2
+    val fill = ProgramGenerator.fillLoad(exercise, strength, reps, ProgramRules.loadRir(compound), equipment)
+    val entry = PlannedEntry(
+        exerciseName = exercise.name,
+        sets = (sets ?: ProgramRules.startingSets(tier, compound, priority = false)).coerceIn(SET_SANITY),
+        reps = fill?.reps ?: reps,
+        targetWeightKg = fill?.kg,
+        loadNote = fill?.note,
+    )
+    return ProgramRules.withPlan(entry, tier, focus)
+}
+
+/**
+ * What the lifter changed on a proposal since it was forged, for the discard sheet. Movements are matched by
+ * name inside a rite; a movement that left and another that arrived in the same rite read as one swap.
+ */
+internal data class PlanEdits(
+    val swapped: Int = 0,
+    val setsChanged: Int = 0,
+    val loadsChanged: Int = 0,
+    val removed: Int = 0,
+    val added: Int = 0,
+) {
+    val any: Boolean get() = swapped + setsChanged + loadsChanged + removed + added > 0
+
+    /** "2 movements swapped", "3 set counts changed", "1 movement removed": one line per kind of edit. */
+    fun lines(): List<String> = buildList {
+        fun movements(n: Int) = "$n ${if (n == 1) "movement" else "movements"}"
+        if (swapped > 0) add("${movements(swapped)} swapped")
+        if (setsChanged > 0) add("$setsChanged set ${if (setsChanged == 1) "count" else "counts"} changed")
+        if (loadsChanged > 0) add("$loadsChanged ${if (loadsChanged == 1) "load" else "loads"} changed")
+        if (removed > 0) add("${movements(removed)} removed")
+        if (added > 0) add("${movements(added)} added")
+    }
+}
+
+private fun PlannedEntry.editKey(): String = "$exerciseName|$modifiers"
+
+internal fun planEdits(generated: RoutinePlan?, current: RoutinePlan?): PlanEdits {
+    if (generated == null || current == null) return PlanEdits()
+    var swapped = 0
+    var setsChanged = 0
+    var loadsChanged = 0
+    var removed = 0
+    var added = 0
+    for (rite in generated.presets) {
+        val now = current.presets.firstOrNull { it.name == rite.name && it.scheduledDay == rite.scheduledDay }
+        val before = rite.entries
+        val after = now?.entries.orEmpty()
+        val afterKeys = after.map { it.editKey() }
+        val beforeKeys = before.map { it.editKey() }
+        val gone = before.count { it.editKey() !in afterKeys }
+        val arrived = after.count { it.editKey() !in beforeKeys }
+        val swaps = minOf(gone, arrived)
+        swapped += swaps
+        removed += gone - swaps
+        added += arrived - swaps
+        for (entry in before) {
+            val kept = after.firstOrNull { it.editKey() == entry.editKey() } ?: continue
+            if (kept.sets != entry.sets) setsChanged++
+            if (kept.targetWeightKg != entry.targetWeightKg) loadsChanged++
+        }
+    }
+    return PlanEdits(swapped, setsChanged, loadsChanged, removed, added)
+}
+
+/** One new rite against the cycle it joins: its day, whether a saved rite holds it, and where it would move. */
+internal data class DayPlacement(val rite: String, val day: Int, val takenBy: String?, val movedTo: Int?)
+
+/** The days the new week asks for set against the days the saved cycle already uses. */
+internal data class DayConflict(val placements: List<DayPlacement>, val fitsAround: Boolean) {
+    val clashes: Int get() = placements.count { it.takenBy != null }
+    val hasClash: Boolean get() = clashes > 0
+}
+
+/**
+ * Where each new rite would land if it joined [saved]: free days stay, a taken day moves to the next free
+ * one ([avoidingDays]). [DayConflict.fitsAround] is false when the week has too few free days, so the sheet
+ * can say so instead of offering a move that cannot happen.
+ */
+internal fun dayConflict(plan: RoutinePlan, saved: List<WorkoutPreset>): DayConflict {
+    val takenBy = saved.filter { it.scheduledDay != null }.groupBy { it.scheduledDay!! }.mapValues { it.value.first().name }
+    val placed = plan.avoidingDays(takenBy.keys)
+    val rows = plan.presets.mapIndexedNotNull { i, rite ->
+        val day = rite.scheduledDay ?: return@mapIndexedNotNull null
+        val holder = takenBy[day]
+        DayPlacement(rite.name, day, holder, if (holder != null) placed?.presets?.get(i)?.scheduledDay else null)
+    }
+    return DayConflict(rows, fitsAround = placed != null)
 }

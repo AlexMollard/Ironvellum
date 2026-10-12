@@ -56,6 +56,7 @@ internal fun TappableFigure(
     lineFor: (Muscle) -> String,
     modifier: Modifier = Modifier,
     interactive: Boolean = true,
+    decor: ((Muscle) -> RegionLook)? = null,
 ) {
     val slop = HitSlop.of(LocalDensity.current)
     // The tap handler outlives recompositions, so it reads the latest selection rather than the first.
@@ -77,8 +78,8 @@ internal fun TappableFigure(
                 ),
         ) {
             val g = FigureGeometry(figure, size.width, size.height)
-            drawFigure(g, FigureView.FRONT, fill, seed = 11, selected = selected)
-            drawFigure(g, FigureView.BACK, fill, seed = 23, selected = selected)
+            drawFigure(g, FigureView.FRONT, fill, seed = 11, selected = selected, decor = decor)
+            drawFigure(g, FigureView.BACK, fill, seed = 23, selected = selected, decor = decor)
         }
         if (interactive) MuscleNodes(figure, selected, onSelect, lineFor, Modifier.matchParentSize())
     }
