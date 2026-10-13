@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 7,
-  "exportedAt": "2026-10-13T02:33:21.112407+00:00",
+  "exportedAt": "2026-10-13T02:40:07.867322+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1926,11 +1926,11 @@
     },
     {
       "id": "decline-close-grip-bench-to-skull-crusher-1.png",
-      "sha256": "339e3d96efd7662644f631627c8a97ad5862e98bfd5e12a5d26adcf3a11377be",
+      "sha256": "f477664677117afbb1f20aaf8bb33f1b66a438320391f71aa1988549304c67b6",
       "status": "pending",
-      "note": "Replacement for: Arms look weird",
+      "note": "Replacement for: angle is odd",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T02:33:21.112407+00:00"
+      "updatedAt": "2026-10-13T02:40:07.867322+00:00"
     },
     {
       "id": "decline-dumbbell-triceps-extension-1.png",
@@ -1951,10 +1951,10 @@
     {
       "id": "assisted-dip-1.png",
       "sha256": "e6c4c1ed1151ff90f4792ba2833a2295b70fb0b289246a7f8d91928e42ffaf2c",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: bars dont make any sense depth wise",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T02:33:21.112407+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:35:01.192Z"
     },
     {
       "id": "dip-1.png",

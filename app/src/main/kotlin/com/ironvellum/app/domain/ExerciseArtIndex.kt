@@ -47,7 +47,7 @@ object ExerciseArtIndex {
         "arnold press" to ref("wg_arnold-press", 1),
         "assault bike" to ref("wg_assault-bike", 1),
         "assisted chin-up" to ref("wg_assisted-chin-up", 1),
-        "assisted dip" to ref("ek_0171", 1),
+        "assisted dip" to ref("own_assisted-dip", 1),
         "assisted pull-up" to ref("wg_assisted-pull-up", 1),
         "australian pull-up" to ref("own_inverted-row", 1),
         "back extension" to ref("own_back-extension", 1),

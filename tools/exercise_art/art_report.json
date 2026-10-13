@@ -29,36 +29,6 @@
    "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
   }
  },
- "ek_0171": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.16
-   ],
-   [
-    3.8,
-    0.22
-   ]
-  ],
-  "window": [
-   94.6,
-   20.6,
-   490.8,
-   644.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
  "ek_0194": {
   "source": 2,
   "kept": [
@@ -2493,6 +2463,27 @@
    33.0,
    757.0,
    961.0
+  ]
+ },
+ "own_assisted-dip": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    1.03
+   ]
+  ],
+  "window": [
+   185.6,
+   19.6,
+   673.9,
+   991.9
   ]
  },
  "own_back-extension": {

@@ -1230,7 +1230,7 @@
     {
       "id": "assisted-dip-1.png",
       "pose": "Redraw the selected source pose for Assisted Dip, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "dip-1.png",
@@ -3106,8 +3106,8 @@
       "status": "awaiting-user-review",
       "available": 50,
       "blocked": [],
-      "approved": 48,
-      "pending": 2,
+      "approved": 49,
+      "pending": 1,
       "redo": 0
     },
     {
@@ -3463,16 +3463,15 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "256 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "257 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 7,
     "correctedAwaitingReview": [
-      "decline-close-grip-bench-to-skull-crusher-1.png",
-      "assisted-dip-1.png"
+      "decline-close-grip-bench-to-skull-crusher-1.png"
     ],
     "remainingRedo": 0,
-    "note": "48 user approvals imported; two replacements require user approval"
+    "note": "49 user approvals imported; decline camera correction requires user approval"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
