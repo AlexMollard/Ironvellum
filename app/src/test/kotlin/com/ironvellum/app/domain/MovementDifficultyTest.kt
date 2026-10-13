@@ -50,9 +50,10 @@ class MovementDifficultyTest {
         assertEquals(MovementDifficulty.tier("Overhead Press"), MovementDifficulty.tier("Half-Again Overhead Press"))
         assertEquals(MovementDifficulty.tier("Deadlift"), MovementDifficulty.tier("Heavy Deadlift"))
         // The load still pays — through the kilos, not through the name.
+        val best = Xp.History.EMPTY.after(listOf(Xp.SetEffort("Weighted Pull-up", 5, weightKg = 15.0)), 80.0)
         assertTrue(
-            Xp.setXp(Xp.SetEffort("Weighted Pull-up", 5, weightKg = 25.0), 80.0) >
-                Xp.setXp(Xp.SetEffort("Weighted Pull-up", 5), 80.0),
+            Xp.setXp(Xp.SetEffort("Weighted Pull-up", 5, weightKg = 25.0), 80.0, best) >
+                Xp.setXp(Xp.SetEffort("Weighted Pull-up", 5), 80.0, best),
         )
     }
 

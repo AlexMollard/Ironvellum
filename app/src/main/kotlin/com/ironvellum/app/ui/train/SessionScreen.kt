@@ -145,6 +145,13 @@ import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Effort
+import com.ironvellum.app.ui.components.animatorsOn
+import com.ironvellum.app.domain.EffortScale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.domain.WarmupRamp
@@ -158,7 +165,10 @@ import com.ironvellum.app.domain.WarmupStep
 import com.ironvellum.app.data.WarmupStore
 import com.ironvellum.app.domain.SealedReopen
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.RepBook
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
+import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.WorkoutSession
@@ -231,6 +241,27 @@ class SessionViewModel(
         SetRecords.records(history, bodyweightAt, excludeSessionId = sessionId) { metrics[it.exerciseId] }
     }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** What the lifter had lifted before this trial: the one [RepMax] peak rule's benchmark, for the badges and the victory panel. */
+    val peakBook: StateFlow<RepBook> = combine(repo.observeHistory(), repo.observeExercises()) { history, catalogue ->
+        val metrics = catalogue.associate { it.id to it.metric }
+        RepMax.book(history, excludeSessionId = sessionId) { metrics[it.exerciseId] }
+    }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
+     * The live tally's pricer: this trial judged against history as it stands before it,
+     * the same [SessionXp] the seal prices with, so the running total is what the seal awards.
+     */
+    val xpBook: StateFlow<SessionXp?> = combine(
+        repo.observeHistory(),
+        repo.observeStats().map { SetRecords.bodyweightLookup(it) },
+        repo.observeExercises(),
+        repo.observeSession(sessionId).map { it?.startedAtMs },
+    ) { history, bodyweightAt, catalogue, startedAtMs ->
+        // Judged as the seal judges it: against the trials that began before this one.
+        SessionXp(catalogue.associateBy { it.id }, history, bodyweightAt, excludeSessionId = sessionId, beforeMs = startedAtMs)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val ui: StateFlow<SessionUi> = combine(
         repo.observeSession(sessionId),
@@ -493,8 +524,8 @@ class SessionViewModel(
         if (_claiming.value) return
         _claiming.value = true
         // Judged on the live trial's own figures, by the rule its badges used.
-        val metrics = exercises.value.associate { it.id to it.metric }
-        val peaks = SessionPeaks.of(ui.value.sets, records.value, bodyweight.value) { metrics[it.exerciseId] }
+        val byId = exercises.value.associateBy { it.id }
+        val peaks = SessionPeaks.of(ui.value.sets, peakBook.value, bodyweight.value) { byId[it.exerciseId] }
         viewModelScope.launch {
             runCatching { repo.completeSession(sessionId) }
                 .onSuccess {
@@ -594,9 +625,11 @@ fun SessionScreen(
     viewModel: SessionViewModel = rememberSessionViewModel(sessionId),
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
+    val peakBook by viewModel.peakBook.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
+    val xpBook by viewModel.xpBook.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
     val pace by viewModel.pace.collectAsStateWithLifecycle()
@@ -637,6 +670,7 @@ fun SessionScreen(
     var undoSerial by remember { mutableIntStateOf(0) }
     // The set just logged, whose effort the strip asks for (when Settings turns that on); the next set logged takes it over.
     var effortFor by rememberSaveable { mutableStateOf<Long?>(null) }
+    var gainSerial by rememberSaveable { mutableIntStateOf(0) }
     // Bumped when a seal is declined or fails, so the slider comes back to the start.
     var slideReset by remember { mutableIntStateOf(0) }
 
@@ -771,8 +805,32 @@ fun SessionScreen(
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
     val supersetNumbers = remember(groups) { Supersets.numbers(groups) }
-    // The logged set the effort strip is under, while it is still logged and counted.
+    // The logged set whose effort is being asked, while it is still logged and counted.
     val effortSet = effortFor?.let { id -> ui.sets.firstOrNull { it.id == id } }?.takeIf { it.done && !it.warmup }
+    // shortcut: the rest-bar chips cover rep sets only (a hold falls back to the under-row strip); add a hold chip set if holds need rating from the rest bar.
+    // The rest bar asks it by default, whatever Settings says, for a set counted in reps; the old
+    // under-row strip stays for where no rest bar shows (no rest timer, a hold) and only when Settings asks.
+    val restChipsOn = effortSet != null && rest != null && !allLogged && metricOf(effortSet.exerciseId) == ExerciseMetric.REPS
+    val underRowEffort = effortSet?.takeIf { !restChipsOn && EffortSetting.enabled }
+    // The live tally: what the ticked sets have earned, priced by the one function the seal uses.
+    val doneForTally = remember(ui.sets) { ui.sets.filter { it.done && !it.warmup } }
+    // shortcut: the tally re-prices every prefix of the done sets (O(n^2) in sets, fine at trial size); price incrementally if trials reach hundreds of sets.
+    val tally = remember(xpBook, doneForTally, bodyweight) {
+        xpBook?.tally(doneForTally, bodyweight) ?: SessionXp.Tally.EMPTY
+    }
+    var gain by remember { mutableStateOf<LiveGain?>(null) }
+    var gainSeen by remember { mutableStateOf<Set<Long>?>(null) }
+    LaunchedEffect(tally) {
+        val seen = gainSeen
+        gainSeen = tally.gains.keys
+        // The first read is a trial coming back, not a tick: nothing floats for it.
+        if (seen == null) return@LaunchedEffect
+        val fresh = tally.gains.keys - seen
+        val id = fresh.lastOrNull() ?: return@LaunchedEffect
+        val set = ui.sets.firstOrNull { it.id == id } ?: return@LaunchedEffect
+        val amount = tally.gains.getValue(id)
+        if (amount > 0) gain = LiveGain(++gainSerial, set.exerciseName, amount)
+    }
     // In a superset the card follows the round, so ticking one movement opens its partner, whichever
     // door the tick came through.
     LaunchedEffect(nextSet?.id) {
@@ -816,7 +874,7 @@ fun SessionScreen(
         }
         commit(set.copy(durationSec = logSeconds ?: set.durationSec, done = true))
         viewModel.setClock(set.id, null)
-        if (EffortSetting.enabled) effortFor = set.id
+        effortFor = set.id
         undoSerial++
         undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // The card moves on once its last set is logged.
@@ -867,6 +925,7 @@ fun SessionScreen(
                 total = workCount,
                 minutesLeft = minutesLeft,
                 startedAtMs = session.startedAtMs,
+                xp = tally.total,
                 onBack = onExit,
                 onMuscles = { showRiteMuscles = true },
                 onLock = { locked = true },
@@ -918,11 +977,11 @@ fun SessionScreen(
                         if (block.id == openBlock?.id) {
                             Spacer(Modifier.height(12.dp))
                             // In a superset the partner's card opens as soon as a set is logged, so the question follows it.
-                            if (effortSet != null && effortSet.exerciseId != block.id) {
+                            if (underRowEffort != null && underRowEffort.exerciseId != block.id) {
                                 EffortStrip(
-                                    title = "How hard was ${effortSet.exerciseName} set ${effortSet.workingNumber(ui.sets)}?",
-                                    rpe = effortSet.rpe,
-                                    onPick = { viewModel.setRpe(effortSet.id, it) },
+                                    title = "How hard was ${underRowEffort.exerciseName} set ${underRowEffort.workingNumber(ui.sets)}?",
+                                    rpe = underRowEffort.rpe,
+                                    onPick = { viewModel.setRpe(underRowEffort.id, it) },
                                     modifier = Modifier.padding(bottom = 8.dp),
                                 )
                             }
@@ -946,7 +1005,7 @@ fun SessionScreen(
                                 modifiersEditable = modifiersEditable,
                                 activeSetId = if (activeSet?.exerciseId == block.id) activeSet.id else null,
                                 editingSetId = editingSetId,
-                                newPeaks = newPeakSetIds(block.sets, metric, records, bodyweight),
+                                newPeaks = newPeakSetIds(block.sets, metric, peakBook),
                                 canMoveUp = blockIdx > 0,
                                 canMoveDown = blockIdx < blocks.lastIndex,
                                 onInfo = { infoFor = block.id },
@@ -1006,8 +1065,9 @@ fun SessionScreen(
                                 supersetWith = blocks.getOrNull(blockIdx + 1)?.takeIf { Supersets.canLink(groups, blockIdx, blockIdx + 1) }
                                     ?.first?.exerciseName,
                                 onSuperset = { viewModel.linkWithNext(block.id) },
-                                effortSetId = effortSet?.id,
+                                effortSetId = underRowEffort?.id,
                                 onRpe = { set, rpe -> viewModel.setRpe(set.id, rpe) },
+                                xpBySet = tally.gains,
                                 onEdit = ::commit,
                                 timed = true,
                                 clocks = clocks,
@@ -1087,8 +1147,12 @@ fun SessionScreen(
                 onSkip = viewModel::skipRest,
                 onSealed = ::requestSeal,
                 slideReset = slideReset,
+                effortSet = effortSet.takeIf { restChipsOn },
+                effortLabel = effortSet?.let { "Set ${it.workingNumber(ui.sets)}" }.orEmpty(),
+                onRate = { rpe -> effortSet?.let { viewModel.setRpe(it.id, rpe) } },
             )
         }
+        gain?.let { LiveGainTag(it, animatorsOn(LocalContext.current), onGone = { if (gain?.serial == it.serial) gain = null }) }
         undo?.let { prompt ->
             UndoBar(
                 message = prompt.message,
@@ -1108,7 +1172,7 @@ fun SessionScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = FOOTER_HEIGHT + 8.dp),
+                    .padding(bottom = FOOTER_HEIGHT + (if (restChipsOn) EFFORT_BLOCK_HEIGHT + (REST_ROW_HEIGHT_WITH_EFFORT - REST_ROW_HEIGHT) else 0.dp) + 8.dp),
             )
         }
         // Last child, so nothing above it (the Undo bar included) can take a touch while locked.
@@ -1624,6 +1688,15 @@ private val FIGURE_WIDTH = 56.dp
 /** Every footer state is this tall, so the bar never shifts as its slot changes. */
 private val FOOTER_HEIGHT = 76.dp
 
+/** The rest's own row: the footer less its 12dp padding, the 6dp gap and the 3dp sweep. */
+private val REST_ROW_HEIGHT = 43.dp
+
+/** The same row while the effort chips show: the soft-ceiling line needs the room the sweep gap borrows otherwise. */
+private val REST_ROW_HEIGHT_WITH_EFFORT = 52.dp
+
+/** What the rest bar's effort question adds to the footer: its title line and 48dp chips. Fixed, so collapsing it moves nothing. */
+private val EFFORT_BLOCK_HEIGHT = 76.dp
+
 private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
     fun load(): Figure {
         val kg = set.weightKg?.takeIf { it > 0.0 }
@@ -1761,29 +1834,18 @@ private fun referenceLine(
 }
 
 /**
- * The logged sets that beat their position's record and today's earlier sets:
- * a PEAK must also beat this exercise's earlier done sets today, or a repeat
- * of set 2 as set 3 reads NEW PEAK twice. Activity work never scores strength.
+ * The logged sets that are a peak by [RepMax], the one rule the victory panel and the XP bonus also use: a set
+ * must beat history and this exercise's earlier done sets today, so a repeat of set 2 as set 3 reads NEW PEAK
+ * once. Activity work never scores strength.
  */
 private fun newPeakSetIds(
     sets: List<SessionSet>,
     metric: ExerciseMetric,
-    records: Map<Pair<String, Int>, SetRecords.Record>,
-    bodyweight: Double?,
+    book: RepBook,
 ): Set<Long> {
-    val bw = bodyweight?.takeIf { metric.isStrength } ?: return emptySet()
-    val hold = metric == ExerciseMetric.HOLD
-    fun figure(set: SessionSet) = if (hold) set.durationSec ?: 0 else set.reps
-    return sets.filter { it.done }.filter { set ->
-        val bestEarlier = sets.filter { it.done && it.setIndex < set.setIndex }.maxOfOrNull { earlier ->
-            SetRecords.score(earlier.exerciseName, figure(earlier), earlier.weightKg, bw, hold)
-        }
-        SetRecords.delta(
-            records, set.exerciseName, SetRecords.position(set, sets), figure(set), set.weightKg, bw,
-            isHold = hold,
-            bestEarlierThisWorkout = bestEarlier,
-        ).isRecord
-    }.map { it.id }.toSet()
+    if (!metric.isStrength || sets.isEmpty()) return emptySet()
+    val history = book[RepMax.key(sets.first().exerciseName)].orEmpty()
+    return RepMax.hits(sets, history, metric == ExerciseMetric.HOLD).map { it.set.id }.toSet()
 }
 
 /** A folded exercise's second line, by how far along it is. */
@@ -1823,6 +1885,8 @@ private fun TrialHeader(
     total: Int,
     minutesLeft: Int?,
     startedAtMs: Long,
+    /** XP the ticked sets have earned so far; the chip shows once there is some. */
+    xp: Int,
     onBack: () -> Unit,
     onMuscles: () -> Unit,
     onLock: () -> Unit,
@@ -1846,6 +1910,7 @@ private fun TrialHeader(
                     color = IronvellumColors.Ink,
                 )
             }
+            if (xp > 0) XpChip(xp)
             NavChip(
                 "BACK",
                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -1964,6 +2029,8 @@ internal fun OpenExerciseCard(
     effortSetId: Long? = null,
     /** A pick on an effort strip, here or on an opened logged set: the rating, or null to clear it. */
     onRpe: (SessionSet, Int?) -> Unit = { _, _ -> },
+    /** The live trial only: what each ticked set added to the XP tally, by set id. */
+    xpBySet: Map<Long, Int> = emptyMap(),
     /** The live trial only: this exercise's superset (its number and the partner whose turn follows), and Unlink. */
     superset: SupersetLine? = null,
     onUnlink: () -> Unit = {},
@@ -2124,6 +2191,7 @@ internal fun OpenExerciseCard(
                     onClock = { onClock(set.id, it) },
                     onTimedLog = onTimedLog,
                     onRpe = { onRpe(set, it) },
+                    xpGain = xpBySet[set.id]?.takeIf { it > 0 },
                 )
                 if (set.id == effortSetId && state == RowState.DONE) {
                     EffortStrip(
@@ -2283,6 +2351,7 @@ private fun TrialSetRow(
     onClock: (SetClock?) -> Unit = {},
     onTimedLog: (seconds: Int) -> Unit = {},
     onRpe: (Int?) -> Unit = {},
+    xpGain: Int? = null,
 ) {
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
@@ -2432,6 +2501,20 @@ private fun TrialSetRow(
                     color = tone,
                     maxLines = 1,
                     modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            // What this set added to the trial's XP; the header chip carries the running total.
+            if (xpGain != null) {
+                Text(
+                    "+$xpGain",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.SemiBold,
+                    color = IronvellumColors.EmeraldDeep,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(start = 10.dp)
+                        .semantics { contentDescription = "$xpGain XP" },
                 )
             }
         }
@@ -2766,12 +2849,17 @@ private fun TrialFooter(
     onSkip: () -> Unit,
     onSealed: () -> Unit,
     slideReset: Int,
+    /** The set just logged, whose effort the rest bar asks; null when it is not asking. */
+    effortSet: SessionSet? = null,
+    effortLabel: String = "",
+    onRate: (Int?) -> Unit = {},
 ) {
     val now = restNow(rest)
     Box(
         Modifier
             .fillMaxWidth()
-            .height(FOOTER_HEIGHT)
+            // Every state is at least this tall; the rest grows only while its effort chips show.
+            .heightIn(min = FOOTER_HEIGHT)
             .background(IronvellumColors.VaultHigh)
             .drawBehind { drawRect(IronvellumColors.Rune, size = Size(size.width, 1.dp.toPx())) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -2779,7 +2867,7 @@ private fun TrialFooter(
     ) {
         when {
             allLogged -> SlideToSeal(label = "Slide to seal", onSealed = onSealed, resetKey = slideReset)
-            rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip)
+            rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip, effortSet, effortLabel, onRate)
             nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, noRestYet, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
             else -> SlideToSeal(label = "Log a set to seal the trial", onSealed = onSealed, enabled = false)
@@ -2789,10 +2877,19 @@ private fun TrialFooter(
 
 /** The rest between sets, counting down, with its moves: a little less, a little more, or none at all. */
 @Composable
-private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onShorten: () -> Unit, onSkip: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        // The gap above the sweep keeps the soft ceiling's line off the bar.
-        Row(Modifier.fillMaxWidth().weight(1f).padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun RestStrip(
+    timer: RestTimer,
+    now: Long,
+    nextSetNumber: Int?,
+    onExtend: () -> Unit,
+    onShorten: () -> Unit,
+    onSkip: () -> Unit,
+    effortSet: SessionSet? = null,
+    effortLabel: String = "",
+    onRate: (Int?) -> Unit = {},
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().height(if (effortSet != null) REST_ROW_HEIGHT_WITH_EFFORT else REST_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -2830,12 +2927,173 @@ private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend
             FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, onExtend)
             FooterAction("Skip", IronvellumColors.InkMuted, onSkip)
         }
+        if (effortSet != null) RestEffort(effortSet, effortLabel, onRate)
+        // The gap above the sweep keeps the soft ceiling's line off the bar.
+        Spacer(Modifier.height(6.dp))
         // The sweep: what is left of the rest.
         val left = (timer.remainingMs(now).toFloat() / timer.totalMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
         Box(Modifier.fillMaxWidth().height(3.dp).background(IronvellumColors.Rune)) {
             Box(Modifier.fillMaxWidth(left).fillMaxHeight().background(IronvellumColors.InkMuted))
         }
     }
+}
+
+/**
+ * The rest bar's effort question: "Set 2: reps left?" with one-tap chips on the lifter's own scale
+ * (RIR 0 1 2 3 4+, or RPE ≤6 7 8 9 10). A tap rates the set just logged and the chips collapse to a quiet
+ * "RIR 2 ✓" with Change; the block keeps its height either way and the rest keeps counting.
+ */
+@Composable
+private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
+    val scale = EffortSetting.scale
+    var reopened by remember(set.id) { mutableStateOf(false) }
+    val rpe = set.rpe
+    Box(Modifier.fillMaxWidth().height(EFFORT_BLOCK_HEIGHT)) {
+        if (rpe != null && !reopened) {
+            Row(
+                Modifier.fillMaxWidth().height(24.dp).align(Alignment.TopStart),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "$label \u00B7 ${Effort.value(rpe, scale)} \u2713",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = "$label rated ${Effort.caption(rpe, scale)}" },
+                )
+                Text(
+                    "Change",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                        .clickable(onClickLabel = "Change the rating", role = Role.Button) { reopened = true }
+                        .padding(horizontal = 8.dp)
+                        .wrapContentHeight(Alignment.CenterVertically),
+                )
+            }
+        } else {
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (scale == EffortScale.RIR) "$label: reps left?" else "$label: how hard?",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(scale.label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, letterSpacing = 2.sp)
+                }
+                val shape = MaterialTheme.shapes.small
+                Row(Modifier.fillMaxWidth().selectableGroup()) {
+                    restEffortChips(scale).forEach { (value, face) ->
+                        // An old "5 or less" rating reads as the lowest chip.
+                        val chosen = rpe == value || (value == Effort.MIN + 1 && rpe == Effort.MIN)
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .selectable(
+                                    selected = chosen,
+                                    role = Role.RadioButton,
+                                    onClick = {
+                                        reopened = false
+                                        onRate(if (chosen) null else value)
+                                    },
+                                )
+                                .semantics { contentDescription = restEffortSpoken(value, scale) }
+                                .padding(horizontal = 2.dp, vertical = 4.dp)
+                                .clip(shape)
+                                .background(if (chosen) IronvellumColors.Emerald.copy(alpha = 0.16f) else Color.Transparent)
+                                .inkBorder(if (chosen) IronvellumColors.Emerald else IronvellumColors.Rune, shape, 1.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                face,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = ChakraPetch,
+                                fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal,
+                                color = if (chosen) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The rest bar's chips, left to right: the stored RPE and what the chip says. RIR climbs 0 to 4+, RPE climbs to 10. */
+internal fun restEffortChips(scale: EffortScale): List<Pair<Int, String>> = when (scale) {
+    EffortScale.RIR -> listOf(0, 1, 2, 3, 4).map { rir -> Effort.rpeOfRir(rir) to if (rir == 4) "4+" else "$rir" }
+    EffortScale.RPE -> listOf("\u22646" to 6, "7" to 7, "8" to 8, "9" to 9, "10" to 10).map { (face, rpe) -> rpe to face }
+}
+
+private fun restEffortSpoken(rpe: Int, scale: EffortScale): String = when (scale) {
+    EffortScale.RIR -> if (rpe <= Effort.MIN + 1) "4 or more reps in reserve" else "${Effort.rir(rpe)} reps in reserve"
+    EffortScale.RPE -> if (rpe <= Effort.MIN + 1) "RPE 6 or less" else "RPE $rpe"
+}
+
+/** What a tick just earned, floating briefly: the lift and its XP. */
+private data class LiveGain(val serial: Int, val name: String, val amount: Int)
+
+/**
+ * "Pull-up +24" just under the header for a moment after a tick. It sits over the screen, so nothing moves,
+ * and the chip's live region is what a screen reader announces. With animations off it shows and goes without fading.
+ */
+@Composable
+private fun BoxScope.LiveGainTag(gain: LiveGain, motion: Boolean, onGone: () -> Unit) {
+    val alpha = remember(gain.serial) { Animatable(1f) }
+    LaunchedEffect(gain.serial) {
+        delay(1_100)
+        if (motion) alpha.animateTo(0f, tween(500))
+        else delay(500)
+        onGone()
+    }
+    Text(
+        "${gain.name} +${gain.amount}",
+        style = MaterialTheme.typography.labelLarge,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.SemiBold,
+        color = IronvellumColors.EmeraldDeep,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 96.dp, end = 20.dp)
+            .graphicsLayer { this.alpha = alpha.value }
+            .background(IronvellumColors.Abyss)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clearAndSetSemantics { },
+    )
+}
+
+/** "+164 XP" in the trial header: what the ticked sets have earned so far. A polite live region, so it is announced as it grows. */
+@Composable
+private fun XpChip(xp: Int) {
+    val shape = MaterialTheme.shapes.small
+    Text(
+        "+$xp XP",
+        style = MaterialTheme.typography.labelLarge,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.SemiBold,
+        color = IronvellumColors.Emerald,
+        maxLines = 1,
+        modifier = Modifier
+            .padding(end = 8.dp)
+            .clip(shape)
+            .background(IronvellumColors.Emerald.copy(alpha = 0.10f))
+            .inkBorder(IronvellumColors.EmeraldDeep, shape, 1.dp)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .semantics {
+                contentDescription = "$xp XP earned so far"
+                liveRegion = LiveRegionMode.Polite
+            },
+    )
 }
 
 @Composable
@@ -2855,7 +3113,7 @@ private fun FooterAction(label: String, color: Color, onClick: () -> Unit) {
 /** What is next, and the one emerald control: tick the set. Reads as a row you tick, not a slab. */
 @Composable
 private fun NextSetStrip(setNumber: Int, line: String, noRestYet: Boolean, onLog: () -> Unit) {
-    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
                 if (noRestYet) "NEXT · NO REST YET" else "NEXT",

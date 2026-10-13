@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Xp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -103,7 +104,8 @@ class LiveWarmupTest {
         repo.updateSet(sets[0], reps = 8, weightKg = 60.0, done = true)
         val workingOnly = db.sessionDao().setsFor(sessionId).filter { it.id == sets[0] }
         val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)
-        assertEquals(expected, repo.completeSession(sessionId).xpAwarded)
+        // The sets' own pay: the trial-level bonuses (the first trial of the week) are not what a ramp could change.
+        assertEquals(expected - Xp.COMPLETION_BONUS, setsPay(repo.completeSession(sessionId)))
     }
 
     @Test
@@ -121,8 +123,10 @@ class LiveWarmupTest {
 
         val workingOnly = db.sessionDao().setsFor(sessionId).filter { it.id == sets[1] }
         val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)
-        assertEquals(expected, repo.completeSession(sessionId).xpAwarded)
+        assertEquals(expected - Xp.COMPLETION_BONUS, setsPay(repo.completeSession(sessionId)))
     }
+
+    private fun setsPay(result: Repository.CompletionResult) = result.breakdown.of(Xp.Kind.EXERCISE).sumOf { it.xp }
 
     private companion object {
         const val TEST_DB = "live_warmup_test.db"

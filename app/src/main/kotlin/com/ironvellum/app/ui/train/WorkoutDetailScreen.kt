@@ -72,6 +72,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SessionAudience
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
@@ -173,15 +174,15 @@ class WorkoutDetailViewModel(
     ) { history, stats, catalogue ->
         val hit = history.firstOrNull { it.first.id == sessionId } ?: return@combine emptyList()
         val session = hit.first
-        val bodyweightAt = SetRecords.bodyweightLookup(stats)
         val metrics = catalogue.associate { it.id to it.metric }
-        val records = SetRecords.records(
+        val byId = catalogue.associateBy { it.id }
+        val bodyweightAt = SetRecords.bodyweightLookup(stats)
+        val book = RepMax.book(
             history,
-            bodyweightAt,
             excludeSessionId = sessionId,
             beforeMs = session.completedAtMs ?: session.startedAtMs,
         ) { metrics[it.exerciseId] }
-        SessionPeaks.of(hit.second, records, bodyweightAt(session.startedAtMs)) { metrics[it.exerciseId] }
+        SessionPeaks.of(hit.second, book, bodyweightAt(session.startedAtMs)) { byId[it.exerciseId] }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
@@ -59,6 +60,8 @@ import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.DeedsPage
 import com.ironvellum.app.ui.components.Dim
 import com.ironvellum.app.ui.components.Haptics
+import com.ironvellum.app.ui.components.XpReveal
+import com.ironvellum.app.ui.components.XpRevealPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LevelUp
 import com.ironvellum.app.ui.components.LevelUpPage
@@ -207,6 +210,9 @@ internal fun TrialCelebration(
 
 private const val SUMMARY_END = 1_900L
 
+/** When the XP reveal starts on the summary's clock: after the seal, the title and the peak card. */
+private const val XP_REVEAL_AT = 1_050L
+
 /**
  * What the trial paid: the seal closing, the best new peak as the hero, then
  * level, XP and deeds, and the totals. Done leaves; the routine question, when
@@ -226,7 +232,11 @@ private fun SummaryPage(
     onReopen: () -> Unit,
 ) {
     val motion = animatorsOn(LocalContext.current)
-    val t = rememberClock(SUMMARY_END, motion)
+    // The reveal fills one segment per movement and bonus, then the rest of the page lands.
+    val segments = result.breakdown.lines.size
+    val revealEnd = if (segments > 0) XP_REVEAL_AT + XpReveal.durationMs(segments) else 0L
+    val rowsAt = maxOf(XP_REVEAL_AT, revealEnd)
+    val t = rememberClock(maxOf(SUMMARY_END, rowsAt + 900L), motion)
     Haptics(
         motion,
         *buildList {
@@ -241,13 +251,16 @@ private fun SummaryPage(
         delay((reopenUntilMs - System.currentTimeMillis()).coerceAtLeast(0))
         offered = false
     }
-    val best = remember(peaks) { peaks.maxByOrNull { it.deltaScore } }
+    val best = remember(peaks) { peaks.maxWithOrNull(compareBy({ it.xp }, { it.weightKg ?: 0.0 }, { it.figure })) }
     val rows = remember(result, deeds) {
         buildList {
             val tier = result.classAfter.takeIf { it != result.classBefore }?.let { " · $it" }.orEmpty()
             add(Triple("Level", if (result.levelAfter > result.levelBefore) "${result.levelBefore} → ${result.levelAfter}$tier" else "${result.levelAfter}", false))
-            add(Triple("XP", "+${count(result.xpAwarded)}", true))
-            if (result.questBonus) add(Triple("Today's trial", "+${Xp.QUEST_BONUS} bonus", true))
+            // With a breakdown the reveal panel says what earned the XP, quest bonus included.
+            if (result.breakdown.lines.isEmpty()) {
+                add(Triple("XP", "+${count(result.xpAwarded)}", true))
+                if (result.questBonus) add(Triple("Today's trial", "+${Xp.QUEST_BONUS} bonus", true))
+            }
             result.rankUp?.let { add(Triple("Rank up", it, true)) }
             deeds.forEach { add(Triple("Deed", it.name, false)) }
         }
@@ -319,11 +332,23 @@ private fun SummaryPage(
                 Spacer(Modifier.height(28.dp))
                 PeaksCard(best, peaks.size, peaks.filter { it !== best }, Modifier.reveal(t >= 650, motion))
             }
+            if (segments > 0) {
+                Spacer(Modifier.height(22.dp))
+                XpRevealPanel(
+                    breakdown = result.breakdown,
+                    totalXp = result.totalXp,
+                    levelBefore = result.levelBefore,
+                    levelAfter = result.levelAfter,
+                    t = t,
+                    startMs = XP_REVEAL_AT,
+                    modifier = Modifier.reveal(t >= XP_REVEAL_AT, motion),
+                )
+            }
             Spacer(Modifier.height(22.dp))
             Column(Modifier.fillMaxWidth()) {
                 Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune))
                 rows.forEachIndexed { i, (label, value, earned) ->
-                    Column(Modifier.fillMaxWidth().reveal(t >= 1_050 + 150L * i, motion)) {
+                    Column(Modifier.fillMaxWidth().reveal(t >= rowsAt + 150L * i, motion)) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
@@ -353,7 +378,7 @@ private fun SummaryPage(
                 style = MaterialTheme.typography.labelMedium,
                 color = Dim,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.reveal(t >= 1_050 + 150L * rows.size, motion),
+                modifier = Modifier.reveal(t >= rowsAt + 150L * rows.size, motion),
             )
             Spacer(Modifier.height(16.dp))
         }
@@ -436,7 +461,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
             )
         }
         Text(
-            "Set ${best.setIndex + 1} · was ${peakFigure(best.was.reps, best.was.weightKg, best.isHold)}",
+            "Set ${best.setIndex + 1} · ${best.kind.label} · was ${peakFigure(best.was.figure, best.was.weightKg, best.isHold)} · ${peakPay(best)}",
             style = MaterialTheme.typography.bodySmall,
             color = Dim,
             modifier = Modifier.padding(top = 4.dp),
@@ -478,21 +503,24 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
 }
 
 private fun peakDescription(peak: SessionPeaks.Peak): String =
-    "New peak, ${peak.exerciseName}, set ${peak.setIndex + 1}, " +
-        "${peakFigure(peak.figure, peak.weightKg, peak.isHold)}, was ${peakFigure(peak.was.reps, peak.was.weightKg, peak.isHold)}, " +
-        "up ${peakGain(peak)}" + if (peak.count > 1) ", ${peak.count} peaks" else ""
+    "New ${peak.kind.label} peak, ${peak.exerciseName}, set ${peak.setIndex + 1}, " +
+        "${peakFigure(peak.figure, peak.weightKg, peak.isHold)}, was ${peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold)}, " +
+        "up ${peakGain(peak)}, ${peakPay(peak)}" + if (peak.count > 1) ", ${peak.count} peaks" else ""
+
+/** What the lift's peak pays, said honestly: a jump too small to matter pays nothing but is still a peak. */
+internal fun peakPay(peak: SessionPeaks.Peak): String = if (peak.xp > 0) "+${peak.xp} XP" else "no XP"
 
 /**
- * How far past its record the headline set went, in the unit the lifter reads:
- * kg when only the load moved, seconds for a hold, else reps, else the score.
+ * How far past the earlier best the headline set went, in the unit the lifter reads: kg for a heavier
+ * peak, else seconds for a hold, else reps.
  */
 internal fun peakGain(peak: SessionPeaks.Peak): String {
-    val load = (peak.weightKg ?: 0.0) - (peak.was.weightKg ?: 0.0)
+    val load = (peak.weightKg ?: 0.0) - peak.was.weightKg
     return when {
-        peak.isHold && peak.figure > peak.was.reps -> "+${peak.figure - peak.was.reps}s"
-        !peak.isHold && peak.weightKg != null && load > 0.001 -> "+" + Units.withUnit(load)
-        !peak.isHold && peak.figure > peak.was.reps -> "+${peak.figure - peak.was.reps} reps"
-        else -> "+" + "%.1f".fmt(peak.deltaScore)
+        peak.kind == RepMax.Kind.HEAVIER && load > 0.001 -> "+" + Units.withUnit(load)
+        peak.isHold && peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure}s"
+        peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure} reps"
+        else -> "+" + Units.withUnit(load.coerceAtLeast(0.0))
     }
 }
 

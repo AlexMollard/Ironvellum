@@ -258,6 +258,33 @@ On the right, a 52 × 52dp emerald button. It reads as a row you tick, not a
 slab. The bar's slot changes with the state: the rest timer while resting, the
 next set when ready, slide to seal when everything is logged.
 
+**XP in the trial.** The ticked sets' XP runs live, priced by the one function the seal uses
+(`SessionXp.tally`), so the running total is exactly the set-driven part of the award. A
+"+164 XP" chip sits in the trial header (a polite live region), each ticked row ends in a
+small `EmeraldDeep` "+24", and a lift's "Pull-up +24" floats under the chip for about a
+second and goes (it shows and goes without fading when animations are off; it overlays, so
+nothing moves). Bonuses land at the seal. While a rest runs, the rest bar asks the set just
+logged for its effort even with the switch off: a second line under the timer ("Set 2: reps
+left?" on RIR, "how hard?" on RPE), five 48dp chips on the lifter's scale (RIR 0 1 2 3 4+, RPE
+≤6 7 8 9 10) in the `EffortStrip` shape (the `shapes.small` cut, the border following it, the
+chosen one `Emerald` at 16%). A tap rates the set and the line collapses to a quiet
+"Set 2 · 2 RIR ✓" with Change; the block keeps its 76dp so nothing jumps, the footer grows by
+it only while the rest shows, and the rest keeps counting. The under-row strip stays where no
+rest bar shows (no timer, a hold) and only when the switch is on.
+
+**XP reveal (`XpRevealPanel`).** The summary's XP panel: "+N XP" in `Emerald` with the level in
+`SovereignGold` caps, then one bar that fills in the order of the trial, a segment per
+movement in emerald shades (deep to light) and then each named bonus in gold shades, flat, with
+2dp gaps in the dark and the top-left corner cut, continuing from the XP already in the level.
+The segment filling is at 55% and named under the bar ("▲ Chin-up +38"); settled, the line
+reads "248 effort · 110 bonus". Under it an EFFORT section, a row per movement (a diamond in its
+shade, the name, "4 hard sets · +17.7kg", the amount in its shade) and a BONUSES section; rows not
+reached are dimmed with "—", the current one on `Emerald` 8%. A segment that crosses a level
+finishes that bar and carries the rest into a fresh one under "LEVEL 17", and "16 → 17" lands in
+the Fabled gradient. Everything shown is the breakdown the award is the sum of: nothing is
+priced on screen. With animations off the final state shows at once; each row reads whole to a
+screen reader whatever the animation has reached.
+
 **Slide to seal.** For commits that pay out and are costly to undo. A neutral
 track with a centred label. The fill grows from the left, and its leading cap
 (with a chevron) is the knob: one control, not a button sitting on a track.
