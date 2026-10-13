@@ -3,7 +3,7 @@ package com.ironvellum.app.ui.dashboard
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.HouseStanding
-import com.ironvellum.app.domain.LiftRecord
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.RelicHouse
@@ -218,11 +218,8 @@ class TodayStateTest {
         assertEquals(TodayFit(1, 52, fullVeil = false), fitToday(big))
     }
 
-    private fun peak(set: SessionSet?, addsToBody: Boolean, series: List<Double> = listOf(100.0, 112.0), best: Double = 112.0) =
-        LiftRecord(
-            name = "Pull-up", bestE1rmKg = best, bestAtMs = 0, series = series, deltaKg = null, lastAtMs = 0,
-            bestSet = set, bestSetAddsToBody = addsToBody,
-        )
+    private fun peak(set: SessionSet, addsToBody: Boolean, kind: RepMax.Kind = RepMax.Kind.HEAVIER, was: RepMax.Mark = RepMax.Mark(5, 90.0), hold: Boolean = false) =
+        RepMax.Recent(name = set.exerciseName, atMs = 0, hit = RepMax.Hit(set, kind, was), isHold = hold, addsToBody = addsToBody)
 
     @Test
     fun `a peak reads as the set that set it`() {
@@ -233,15 +230,15 @@ class TodayStateTest {
     }
 
     @Test
-    fun `a peak without its set falls back to the estimate`() {
-        assertEquals("est. 112 kg", peakSetText(peak(null, addsToBody = false)))
-    }
-
-    @Test
-    fun `a peak says how far it rose, never zero`() {
-        assertEquals("12 kg", peakGainText(peak(null, false)))
-        assertEquals("2.5 kg", peakGainText(peak(null, false, series = listOf(109.5, 112.0))))
-        assertEquals("0.1 kg", peakGainText(peak(null, false, series = listOf(111.99, 112.0))))
+    fun `a peak says how far it rose in the unit that moved, never zero kilos`() {
+        val squat = SessionSet(exerciseId = 1, exerciseName = "Back Squat", setIndex = 0, reps = 5, weightKg = 112.0, done = true)
+        assertEquals("12 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 100.0))))
+        assertEquals("2.5 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 109.5))))
+        assertEquals("0.1 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 111.99))))
+        assertEquals("2 reps", peakGainText(peak(squat, false, RepMax.Kind.MORE_REPS, RepMax.Mark(3, 112.0))))
+        assertEquals("1 rep", peakGainText(peak(squat, false, RepMax.Kind.MORE_REPS, RepMax.Mark(4, 112.0))))
+        val plank = SessionSet(exerciseId = 3, exerciseName = "Plank", setIndex = 0, reps = 0, durationSec = 45, done = true)
+        assertEquals("15s", peakGainText(peak(plank, true, RepMax.Kind.MORE_REPS, RepMax.Mark(30, 0.0), hold = true)))
     }
 
     @Test

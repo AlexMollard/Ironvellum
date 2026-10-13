@@ -30,7 +30,7 @@ import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.IdleRate
 import com.ironvellum.app.domain.IdleState
-import com.ironvellum.app.domain.LiftRecord
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.PresetEntry
@@ -75,9 +75,9 @@ class TodayFitsTest {
     )
 
     private val bench = SessionSet(exerciseId = 99, exerciseName = "Bench Press", setIndex = 0, reps = 5, weightKg = 100.0, done = true)
-    private val peak = LiftRecord(
-        name = "Bench Press", bestE1rmKg = 116.7, bestAtMs = now - 24 * hour, series = listOf(104.0, 116.7),
-        deltaKg = null, lastAtMs = now, bestSet = bench,
+    private val peak = RepMax.Recent(
+        name = "Bench Press", atMs = now - 24 * hour, hit = RepMax.Hit(bench, RepMax.Kind.HEAVIER, RepMax.Mark(5, 90.0)),
+        isHold = false, addsToBody = false,
     )
     private val trial = WorkoutSession(id = 7, presetId = null, label = "Open Trial", startedAtMs = now - hour)
     /** Nine movements, one set each, the first logged. */

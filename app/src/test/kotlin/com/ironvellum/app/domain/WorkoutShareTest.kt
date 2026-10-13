@@ -26,8 +26,9 @@ class WorkoutShareTest {
         figure = 5,
         weightKg = 80.0,
         isHold = false,
-        was = SetRecords.Record(name, setIndexes.firstOrNull() ?: 0, 0.0, 4, 80.0, 0L, 0L),
-        deltaScore = 1.0,
+        kind = RepMax.Kind.MORE_REPS,
+        was = RepMax.Mark(4, 80.0),
+        xp = 15,
         setIndexes = setIndexes.toSet(),
     )
 

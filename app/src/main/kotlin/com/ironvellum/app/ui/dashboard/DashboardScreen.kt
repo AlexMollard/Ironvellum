@@ -71,7 +71,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.domain.LiftRecord
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.LiftRecords
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Rank
@@ -164,7 +164,7 @@ class DashboardUi(
     /** The catalogue by id, for each movement's metric. */
     val exercises: Map<Long, Exercise> = emptyMap(),
     /** Lifts whose peak was set lately AND beat an earlier trial: a first trial is not a peak. */
-    val newPeaks: List<LiftRecord> = emptyList(),
+    val newPeaks: List<RepMax.Recent> = emptyList(),
 )
 
 /**
@@ -196,16 +196,8 @@ internal fun newPeaks(
     exercises: List<Exercise>,
     nowMs: Long,
     limit: Int = 2,
-): List<LiftRecord> =
-    LiftRecords.board(
-        sessions = history.map { it.first }.filter { it.completedAtMs != null },
-        sessionSets = history.associate { it.first.id to it.second },
-        exercises = exercises.associateBy { it.id },
-        nowMs = nowMs,
-    )
-        .filter { LiftRecords.isFresh(it, nowMs) && it.series.indexOfFirst { v -> v == it.bestE1rmKg } > 0 }
-        .sortedByDescending { it.bestAtMs }
-        .take(limit)
+): List<RepMax.Recent> =
+    RepMax.recent(history, exercises.associateBy { it.id }, nowMs, withinDays = LiftRecords.RECENT_DAYS, limit = limit)
 
 class DashboardViewModel(
     private val repo: Repository,
@@ -1192,7 +1184,7 @@ private fun NextLink(next: WorkoutPreset, chevron: Boolean, onClick: () -> Unit)
  * the set that did it. Opens the lift.
  */
 @Composable
-private fun PeakRow(peak: LiftRecord, onOpen: () -> Unit) {
+private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -1213,7 +1205,7 @@ private fun PeakRow(peak: LiftRecord, onOpen: () -> Unit) {
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("New peak") }
-                    append(" · ${shortWhen(peak.bestAtMs)} · up ${peakGainText(peak)}")
+                    append(" · ${peak.hit.kind.label} · ${shortWhen(peak.atMs)} · up ${peakGainText(peak)}")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
