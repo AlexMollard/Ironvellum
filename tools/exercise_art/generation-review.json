@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 11,
-  "status": "awaiting-user-review",
+  "status": "all-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -2185,7 +2185,7 @@
     {
       "id": "hip-abduction-1.png",
       "pose": "Redraw the selected source pose for Hip Abduction, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "hip-adduction-1.png",
@@ -3446,38 +3446,37 @@
         "wrist-curl-1.png",
         "wrist-extension-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 145,
       "blocked": [],
       "batchSize": 145,
-      "approved": 144,
-      "pending": 1,
+      "approved": 145,
+      "pending": 0,
       "redo": 0,
       "consolidatedFrom": [
         11,
         12,
         13
-      ]
+      ],
+      "approvedAt": "2026-10-13T22:57:20.050210+00:00"
     }
   ],
   "hosting": "local",
   "localReviewUrl": "http://127.0.0.1:18765",
-  "approvedAt": "2026-10-12T06:35:20.903809+00:00",
+  "approvedAt": "2026-10-13T22:57:20.050210+00:00",
   "frameConsistency": {
     "canvas": "Same square canvas dimensions for every frame in a movement",
     "camera": "Fixed camera and athlete scale within a movement",
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "552 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "553 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 11,
     "remainingRedo": 0,
-    "correctedAwaitingReview": [
-      "hip-abduction-1.png"
-    ],
-    "note": "144 approved in batch; new Hip Abduction angle awaits user approval"
+    "correctedAwaitingReview": [],
+    "note": "All 553 single stills approved by user and imported into owner art"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,

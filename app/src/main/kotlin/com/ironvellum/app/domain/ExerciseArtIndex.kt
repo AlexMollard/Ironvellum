@@ -279,7 +279,7 @@ object ExerciseArtIndex {
         "high knees" to ref("own_high-knees", 1),
         "hiking" to ref("own_hiking", 1),
         "hindu push-up" to ref("own_hindu-push-up", 1),
-        "hip abduction" to ref("wg_hip-abduction-machine", 1),
+        "hip abduction" to ref("own_hip-abduction", 1),
         "hip adduction" to ref("own_hip-adduction", 1),
         "hip airplane" to ref("own_hip-airplane", 1),
         "hip thrust" to ref("own_hip-thrust", 1),

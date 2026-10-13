@@ -1,0 +1,18 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 11,
+  "exportedAt": "2026-10-13T22:57:20.050210+00:00",
+  "batchComplete": true,
+  "approvalSource": "User chat",
+  "message": "Approved",
+  "frames": [
+    {
+      "id": "hip-abduction-1.png",
+      "sha256": "90b82311ac840a367b69232f1b5812e299a38ba21a3c41310259e4c407217b64",
+      "status": "approved",
+      "note": "Side-profile Hip Abduction approved by user in chat",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:57:20.050210+00:00"
+    }
+  ]
+}
