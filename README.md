@@ -227,9 +227,10 @@ that licence; see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md). The Chakra
 Petch font is under the SIL Open Font License 1.1, and the muscle map's body
 shapes derive from
 [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
-(MIT). The exercise drawings, and the instructions adapted from them, come from
+(MIT). Exercise illustrations are generated for Ironvellum, inspired by
 [Everkinetic](https://github.com/everkinetic/data) and
-[Workout Guide](https://github.com/bryllim/workout-guide), both CC BY-SA 4.0, recoloured and converted for the app
+[Workout Guide](https://github.com/bryllim/workout-guide). The exercise instructions
+remain adapted from Everkinetic under CC BY-SA 4.0
 (see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md)). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Bug reports and pull requests are welcome in

@@ -1,0 +1,452 @@
+{
+  "tool": "built-in image_gen",
+  "jobs": [
+    {
+      "id": "full-planche-1.png",
+      "name": "Full Planche",
+      "slug": "full-planche",
+      "view": "side (facing right)",
+      "equipment": "none (floor only)",
+      "hold": true,
+      "poses": [
+        "Planche lean facing right: the arms locked straight, the hands flat on the floor with the fingers pointing forward. The body is in a straight line, the shoulders far ahead of the wrists and the toes still touching the floor.",
+        "Rising: the arms stay locked as the weight shifts forward and the feet lift off. The legs together and straight, the body rising toward horizontal, the shoulders leaning ahead of the hands. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Full Planche clearly in this side (facing right) view.",
+        "Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level."
+      ],
+      "note": "The body is one straight line with the legs together, no pike and no arched back.",
+      "number": 1,
+      "pose": "Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.",
+      "still": true
+    },
+    {
+      "id": "planche-push-up-1.png",
+      "name": "Planche Push-up",
+      "slug": "planche-push-up",
+      "view": "side (facing right)",
+      "equipment": "none (floor only)",
+      "hold": false,
+      "poses": [
+        "Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.",
+        "Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.",
+        "Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms."
+      ],
+      "note": "The body stays horizontal and the feet stay off the floor throughout the rep.",
+      "number": 1,
+      "pose": "Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.",
+      "still": false
+    },
+    {
+      "id": "planche-push-up-2.png",
+      "name": "Planche Push-up",
+      "slug": "planche-push-up",
+      "view": "side (facing right)",
+      "equipment": "none (floor only)",
+      "hold": false,
+      "poses": [
+        "Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.",
+        "Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.",
+        "Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms."
+      ],
+      "note": "The body stays horizontal and the feet stay off the floor throughout the rep.",
+      "number": 2,
+      "pose": "Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.",
+      "still": false
+    },
+    {
+      "id": "planche-push-up-3.png",
+      "name": "Planche Push-up",
+      "slug": "planche-push-up",
+      "view": "side (facing right)",
+      "equipment": "none (floor only)",
+      "hold": false,
+      "poses": [
+        "Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.",
+        "Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.",
+        "Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms."
+      ],
+      "note": "The body stays horizontal and the feet stay off the floor throughout the rep.",
+      "number": 3,
+      "pose": "Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.",
+      "still": false
+    },
+    {
+      "id": "front-row-hold-1.png",
+      "name": "Front Row Hold",
+      "slug": "front-row-hold",
+      "view": "side (facing right)",
+      "equipment": "a low bar at waist height, feet on the floor",
+      "hold": true,
+      "poses": [
+        "Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.",
+        "Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.",
+        "Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight."
+      ],
+      "note": "The body must be a rigid horizontal plank with no sagging hips and no bent knees.",
+      "number": 1,
+      "pose": "Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.",
+      "still": false
+    },
+    {
+      "id": "front-row-hold-2.png",
+      "name": "Front Row Hold",
+      "slug": "front-row-hold",
+      "view": "side (facing right)",
+      "equipment": "a low bar at waist height, feet on the floor",
+      "hold": true,
+      "poses": [
+        "Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.",
+        "Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.",
+        "Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight."
+      ],
+      "note": "The body must be a rigid horizontal plank with no sagging hips and no bent knees.",
+      "number": 2,
+      "pose": "Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.",
+      "still": false
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "name": "Front Row Hold",
+      "slug": "front-row-hold",
+      "view": "side (facing right)",
+      "equipment": "a low bar at waist height, feet on the floor",
+      "hold": true,
+      "poses": [
+        "Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.",
+        "Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.",
+        "Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight."
+      ],
+      "note": "The body must be a rigid horizontal plank with no sagging hips and no bent knees.",
+      "number": 3,
+      "pose": "Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.",
+      "still": false
+    },
+    {
+      "id": "skin-the-cat-1.png",
+      "name": "Skin the Cat",
+      "slug": "skin-the-cat",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": false,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.",
+        "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
+        "Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor."
+      ],
+      "note": "The arms remain straight all the way through the rotation, with the shoulders opening fully behind.",
+      "number": 1,
+      "pose": "Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.",
+      "still": false
+    },
+    {
+      "id": "skin-the-cat-2.png",
+      "name": "Skin the Cat",
+      "slug": "skin-the-cat",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": false,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.",
+        "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
+        "Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor."
+      ],
+      "note": "The arms remain straight all the way through the rotation, with the shoulders opening fully behind.",
+      "number": 2,
+      "pose": "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
+      "still": false
+    },
+    {
+      "id": "skin-the-cat-3.png",
+      "name": "Skin the Cat",
+      "slug": "skin-the-cat",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": false,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.",
+        "Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.",
+        "Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor."
+      ],
+      "note": "The arms remain straight all the way through the rotation, with the shoulders opening fully behind.",
+      "number": 3,
+      "pose": "Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.",
+      "still": false
+    },
+    {
+      "id": "tuck-back-lever-1.png",
+      "name": "Tuck Back Lever",
+      "slug": "tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.",
+        "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension."
+      ],
+      "note": "The torso must be horizontal and the arms straight; do not show a rounded back or sagging hips.",
+      "number": 1,
+      "pose": "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.",
+      "still": false
+    },
+    {
+      "id": "tuck-back-lever-2.png",
+      "name": "Tuck Back Lever",
+      "slug": "tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.",
+        "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension."
+      ],
+      "note": "The torso must be horizontal and the arms straight; do not show a rounded back or sagging hips.",
+      "number": 2,
+      "pose": "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
+      "still": false
+    },
+    {
+      "id": "tuck-back-lever-3.png",
+      "name": "Tuck Back Lever",
+      "slug": "tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked into the chest and the body is rolled backward into the inverted hang, the hips above the bar. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Tuck Back Lever.",
+        "Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension."
+      ],
+      "note": "The torso must be horizontal and the arms straight; do not show a rounded back or sagging hips.",
+      "number": 3,
+      "pose": "Full hold: the body faces the floor, the torso flat and horizontal, the arms straight and angled behind in line with the shoulders. The knees are tucked tight to the chest, hips bent, the head neutral with the neck in line with the torso and the shoulders in full extension.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-back-lever-1.png",
+      "name": "Advanced Tuck Back Lever",
+      "slug": "advanced-tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.",
+        "Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral."
+      ],
+      "note": "The thighs must be in line with the back, unlike the tight tuck, with no arch.",
+      "number": 1,
+      "pose": "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-back-lever-2.png",
+      "name": "Advanced Tuck Back Lever",
+      "slug": "advanced-tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.",
+        "Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral."
+      ],
+      "note": "The thighs must be in line with the back, unlike the tight tuck, with no arch.",
+      "number": 2,
+      "pose": "Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-back-lever-3.png",
+      "name": "Advanced Tuck Back Lever",
+      "slug": "advanced-tuck-back-lever",
+      "view": "side (facing left)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar with an overhand shoulder-width grip with the arms straight. The knees are tucked in tight and the body is rotated backward, hips above the bar, inverted. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing left) view of the Advanced Tuck Back Lever.",
+        "Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.",
+        "Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral."
+      ],
+      "note": "The thighs must be in line with the back, unlike the tight tuck, with no arch.",
+      "number": 3,
+      "pose": "Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "name": "Advanced Tuck Front Lever",
+      "slug": "advanced-tuck-front-lever",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
+        "Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.",
+        "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down."
+      ],
+      "note": "The back must be flat and the thighs in line with the torso, which differs from the tight tuck.",
+      "number": 1,
+      "pose": "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-front-lever-2.png",
+      "name": "Advanced Tuck Front Lever",
+      "slug": "advanced-tuck-front-lever",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
+        "Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.",
+        "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down."
+      ],
+      "note": "The back must be flat and the thighs in line with the torso, which differs from the tight tuck.",
+      "number": 2,
+      "pose": "Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.",
+      "still": false
+    },
+    {
+      "id": "advanced-tuck-front-lever-3.png",
+      "name": "Advanced Tuck Front Lever",
+      "slug": "advanced-tuck-front-lever",
+      "view": "side (facing right)",
+      "equipment": "straight bar overhead, no other equipment",
+      "hold": true,
+      "poses": [
+        "Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.",
+        "Rising: the straight arms stay vertical while the body rotates up toward horizontal. The hips open slowly, the thighs move away from the chest as the knees begin to extend backward while the back stays flat.",
+        "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down."
+      ],
+      "note": "The back must be flat and the thighs in line with the torso, which differs from the tight tuck.",
+      "number": 3,
+      "pose": "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.",
+      "still": false
+    },
+    {
+      "id": "crow-pose-1.png",
+      "name": "Crow Pose",
+      "slug": "crow-pose",
+      "view": "side (facing right)",
+      "equipment": "none (floor only)",
+      "hold": true,
+      "poses": [
+        "Deep squat facing right with the hands flat on the floor shoulder width apart, fingers spread and pointing forward. Knees are wide and pressed against the outside of the upper arms, hips low, heels off the floor, head lifted and eyes ahead.",
+        "Weight shifting forward: the shoulders move ahead of the wrists, elbows bending slightly. Knees stay high and tight on the upper arms close to the armpits, one foot and then the other lifting off the floor as the toes leave the ground.",
+        "Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists."
+      ],
+      "note": "Knees must sit high on the upper arms, not down at the elbows.",
+      "number": 1,
+      "pose": "Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.",
+      "still": true
+    }
+  ],
+  "results": [
+    {
+      "id": "full-planche-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5b3561f5-c489-43c7-a428-3320ac444a4d.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. Exercise Full Planche. View side (facing right). Equipment none (floor only). Pose: Full hold: the body is one straight horizontal line from the head to the pointed toes, a hand-length above the floor, supported only on the hands. The arms are locked straight, the shoulders are protracted, the legs are together and straight and the hips are level.. The body is one straight line with the legs together, no pike and no arched back. Whole figure with generous margin. Fixed palms at 65% canvas width and 80% height, head right feet left. Shoulder clearly forward RIGHT of wrists; straight arms slant from palms to shoulders. Single outline per contour, no text, floor or shadow."
+    },
+    {
+      "id": "planche-push-up-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5e0aec5a-c15d-4b06-89f9-876686c159a4.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. Exercise Planche Push-up. View side (facing right). Equipment none (floor only). Pose: Full planche position facing right: the body in a straight horizontal line from the head to the pointed toes, the arms locked straight, the shoulders forward of the hands, the hands on the floor supporting the body with the feet off the floor.. The body stays horizontal and the feet stay off the floor throughout the rep. Whole figure with generous margin. Fixed palms at 65% canvas width and 80% height, head right feet left. Shoulder clearly forward RIGHT of wrists; straight arms slant from palms to shoulders. Single outline per contour, no text, floor or shadow."
+    },
+    {
+      "id": "planche-push-up-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5c86378f-348d-4d4f-9be4-fee521afc046.png",
+      "prompt": "Edit this exercise frame to show Lowering midway: the body stays in the horizontal straight line as the elbows bend to about 90 degrees and tuck beside the ribs. The torso descends toward the floor and the shoulders stay forward of the hands.. Keep exact same canvas, character scale, side camera, and palms locked at exactly the same pixel coordinates. Move the rigid horizontal body downward as elbows bend; feet remain airborne. Match clean white outlines with fully transparent interiors, no fill, texture, glow or shading. No new labels or floor."
+    },
+    {
+      "id": "planche-push-up-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-144341a5-46b1-46a1-9f26-6c7176c49009.png",
+      "prompt": "Edit this exercise frame to show Bottom position: the chest is just above the floor and the elbows bent past 90 degrees pressed into the ribs, the body is still a straight horizontal line with the feet off the floor and the shoulders ahead of the hands. Press back up to straight arms.. Keep exact same canvas, character scale, side camera, and palms locked at exactly the same pixel coordinates. Move the rigid horizontal body downward as elbows bend; feet remain airborne. Match clean white outlines with fully transparent interiors, no fill, texture, glow or shading. No new labels or floor."
+    },
+    {
+      "id": "front-row-hold-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-cd1762a3-d4c8-4c45-a1a2-c85d0c2dd73c.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Exercise Front Row Hold. View side (facing right). Equipment: a low bar at waist height, feet on the floor. Pose Lying on the back under a low bar, facing up, hands gripping the bar overhand shoulder width, arms straight above the chest. The heels rest on the floor, the legs straight, the body in a straight line from the heels to the head, hanging.. The body must be a rigid horizontal plank with no sagging hips and no bent knees.. Bar horizontal, grip fixed at canvas (55%,20%) for overhead bar or (60%,35%) for low bar. Fixed side camera."
+    },
+    {
+      "id": "skin-the-cat-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-68026742-6a92-4d7f-a2f5-bd1ebd26413a.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Exercise Skin the Cat. View side (facing right). Equipment: straight bar overhead, no other equipment. Pose Hanging from the bar by an overhand shoulder-width grip with the arms straight. The hips pike up and the knees are tucked to the chest, the legs lifting toward the bar and the body beginning to curl backward.. The arms remain straight all the way through the rotation, with the shoulders opening fully behind.. Bar horizontal, grip fixed at canvas (55%,20%) for overhead bar or (60%,35%) for low bar. Fixed side camera."
+    },
+    {
+      "id": "front-row-hold-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fcb2866f-3cc0-4d15-8c16-09b6d6a603ea.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference frame for Front Row Hold phase 2: Pulling up: the elbows bend and travel back as the chest rises toward the bar. The body stays a rigid straight plank from the heels to the shoulders, the heels dig into the floor and the head stays in line with the spine.. Keep bar and entire equipment unchanged at EXACT same pixel coordinates, same camera, figure size. Keep grips and heels in exactly same positions, rotate rigid body about heels as elbows bend. Do not make body horizontal at expense of heel contact: rigid inclined plank appropriate. Sparse outlines as reference."
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3ba761d1-fb87-4e01-a0ed-d2e2a3853df1.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference frame for Front Row Hold phase 3: Full hold: the chest touching or just under the bar, elbows bent about 90 degrees tucked behind the ribs, shoulder blades pulled back and together. The body is a flat straight horizontal line from the heels to the head, feet supported on the floor and legs straight.. Keep bar and entire equipment unchanged at EXACT same pixel coordinates, same camera, figure size. Keep grips and heels in exactly same positions, rotate rigid body about heels as elbows bend. Do not make body horizontal at expense of heel contact: rigid inclined plank appropriate. Sparse outlines as reference."
+    },
+    {
+      "id": "skin-the-cat-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-39006b12-178f-40cf-81ec-80b7979daf45.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference frame for Skin the Cat phase 2: Mid rotation: the body inverted beneath the bar, the hips above the head level with the bar and the legs passing between the arms. The shoulders are rotating behind the body and the arms are straight, the back arching slightly as the legs pass over.. Keep exact bar shape, tilt, grip pixel locations, character size and camera. Rotate body about shoulders below fixed hands. The arms remain straight all the way through the rotation, with the shoulders opening fully behind.. No change to equipment."
+    },
+    {
+      "id": "skin-the-cat-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5f5bf10f-008b-4e8a-a0c7-f4c49cf20b59.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference frame for Skin the Cat phase 3: Bottom: the legs lowered down behind in a German hang, the body hanging with the arms straight behind the back and the shoulders in full extension. The hips are below the bar, the back arched slightly, the feet pointing down toward the floor.. Keep exact bar shape, tilt, grip pixel locations, character size and camera. Rotate body about shoulders below fixed hands. The arms remain straight all the way through the rotation, with the shoulders opening fully behind.. No change to equipment."
+    },
+    {
+      "id": "tuck-back-lever-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-84257424-5b6b-4c7f-8b78-43ba2d191fc3.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Exercise Tuck Back Lever. Strict side view head toward LEFT. Equipment straight bar overhead, no other equipment. Inverted tucked entry pose: hands grip fixed bar near (55%,25%) of square canvas; arms fully straight from hands to shoulders below bar; hips raised above shoulders, knees tucked tightly toward chest and feet above head, preparing to rotate backward into a back lever. Full figure and equipment visible. No bent elbows."
+    },
+    {
+      "id": "advanced-tuck-back-lever-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a3359723-8b6a-4c02-b1a5-964209a9b887.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Exercise Advanced Tuck Back Lever. Strict side view head toward LEFT. Equipment straight bar overhead, no other equipment. Inverted tucked entry pose: hands grip fixed bar near (55%,25%) of square canvas; arms fully straight from hands to shoulders below bar; hips raised above shoulders, knees tucked tightly toward chest and feet above head, preparing to rotate backward into a back lever. Full figure and equipment visible. No bent elbows."
+    },
+    {
+      "id": "tuck-back-lever-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-06eafc81-47bb-4e7b-85ba-ef8db4f550fb.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Sports coaching diagram of a healthy adult gymnast performing tuck back lever on a gymnastics bar in a controlled gym exercise. Phase 2: Lowering back: the arms stay straight as the tucked body rotates down behind the bar into a face-down position, hips and knees tucked in, the shoulders moving into extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Tuck Back Lever clearly in this side (facing left) view.. Both hands safely grip same bar, arms straight. Same bar positions, camera, character size as reference. Torso face-down diagonal, head left, knees tucked toward chest below torso. No injury, danger, facial features or text."
+    },
+    {
+      "id": "advanced-tuck-back-lever-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-03b6f3d4-3272-4354-8420-1b6d6afa09d7.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Gymnastics instructional icon, Advanced Tuck Back Lever phase 2. Lowering to horizontal: the arms stay straight while the body rotates face down. The hips begin to open and the thighs move away from the chest while the shoulders are in extension. Keep the faceless head neutral and aligned with the spine, and show every joint angle of the Advanced Tuck Back Lever clearly in this side (facing left) view.. Hands grip gymnastics bar, fixed same bar position and camera as reference. Head toward LEFT, torso extends RIGHT, chest facing floor. Arms straight upward from shoulders to bar. Torso diagonal between inverted pose and horizontal, hips opening. Healthy adult demonstrating controlled athletic exercise."
+    },
+    {
+      "id": "advanced-tuck-back-lever-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-9780bb88-c653-4fd8-aa7c-32596b0902b1.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Gymnastics instructional icon, Advanced Tuck Back Lever phase 3. Full hold: the torso is flat and horizontal facing the floor, the arms straight beneath the shoulders behind the bar. The hips are open so the thighs are in line with the back and the knees bent at about 90 degrees with the shins pointing down. The head is neutral.. Hands grip gymnastics bar, fixed same bar position and camera as reference. Head toward LEFT, torso extends RIGHT, chest facing floor. Arms straight upward from shoulders to bar. Hips open, thighs continue right horizontally from hips, knees bent 90 degrees with lower legs down. Healthy adult demonstrating controlled athletic exercise."
+    },
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ee9fb980-42c1-457c-8f6a-10faa3dc8079.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Advanced Tuck Front Lever, side (facing right). Equipment straight bar overhead, no other equipment. Hanging from the bar by an overhand shoulder-width grip, arms straight, shoulders packed. The knees are pulled tight to the chest in a tuck with the body hanging vertically beneath the bar, the head neutral. The head is faceless and neutral, in line with the spine, with every limb position readable from this side (facing right) view of the Advanced Tuck Front Lever.. The back must be flat and the thighs in line with the torso, which differs from the tight tuck.. Overhand grips on overhead bar at 55% width 18% height, arms straight, knees tucked in front of body, torso vertical."
+    },
+    {
+      "id": "crow-pose-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3dd285c4-d48e-4e40-9866-931e53eb16d0.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Crow Pose, side (facing right). Equipment none (floor only). Full hold: both feet off the floor, toes pointed and touching together behind the hips, shins resting on the backs of the upper arms. Arms straight or almost straight, back rounded and hips high, head lifted and looking ahead, shoulders forward of the wrists.. Knees must sit high on the upper arms, not down at the elbows.. Full hold with knees high against upper arms and both feet lifted, palms at 65% width 80% height."
+    },
+    {
+      "id": "advanced-tuck-front-lever-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fe625c51-452d-4a8c-a08e-a3f9171a8e2d.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference for Advanced Tuck Front Lever, phase 2. Keep exactly same bar, grips, figure proportions, camera and linework. Rotate torso backward until chest faces UP, head to right and hips to left. Torso midway at 45 degrees, knees tucked near chest. Hands stay fixed. This is a controlled gymnastics exercise."
+    },
+    {
+      "id": "advanced-tuck-front-lever-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2c90556d-3f9b-4c8c-b234-47f2cffa7988.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain opaque sports shorts, bare feet. No text floor line or shadow. Full figure and bar visible with generous margin. Edit reference for Advanced Tuck Front Lever, phase 3. Keep exactly same bar, grips, figure proportions, camera and linework. Rotate torso backward until chest faces UP, head to right and hips to left. Torso fully horizontal chest UP, head right, hips left. Thighs extend horizontally LEFT in line with torso, knees bent 90 degrees, lower legs descend vertically. Arms straight upward to bar. Hands stay fixed. This is a controlled gymnastics exercise."
+    }
+  ],
+  "blocked": [
+    {
+      "id": "tuck-back-lever-3.png",
+      "reason": "Image service moderation rejected repeated benign sports illustration requests."
+    },
+    {
+      "id": "wall-handstand-1.png",
+      "reason": "Replacement attempt also rejected; not added to batch."
+    }
+  ]
+}

@@ -1,0 +1,530 @@
+{
+  "schema": 1,
+  "batch": 4,
+  "status": "approved",
+  "createdAt": "2026-10-12T05:27:58.275456+00:00",
+  "jobs": [
+    {
+      "id": "stand-to-stand-bridge-1.png",
+      "slug": "stand-to-stand-bridge",
+      "pose": "Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Stand-to-Stand Bridge. View: side (facing left). Equipment: none (floor only). Pose: Bridge reached: the hands are placed on the floor behind the feet, the arms straight and the legs nearly straight. The hips are pushed high and the back is fully arched, the head hangs between the arms. Reverse to stand again.. Important: The movement is a controlled lowering with the arms by the ears, not a fall.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:31:49.042757+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c69fc48f-0faf-4500-b20a-cdb1053ee3cc.png",
+      "sha256": "f2672327ff395cfd84597354fe1088f7b6f44065d0fe917f09aee1138aea1efd"
+    },
+    {
+      "id": "hamstring-bridge-1.png",
+      "slug": "hamstring-bridge",
+      "pose": "Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Hamstring Bridge. View: side (facing right). Equipment: none (floor only). Pose: Top: the hips are fully extended and the body forms a straight line from the shoulders to the knees. The heels stay close to the hips with the knees bent, the arms flat on the floor and the head resting on the floor.. Important: The heels stay close to the hips, and the hips are fully extended, not sagging.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:31:58.639050+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-050e7aea-6ce7-432a-9cae-e698ff7a979d.png",
+      "sha256": "b2bcd7fd8ebb1ef483ee211932f15ac1ab757e8e0d86ac73d2906d3d0568a80d"
+    },
+    {
+      "id": "nordic-negative-1.png",
+      "slug": "nordic-negative",
+      "pose": "Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Nordic Negative. View: side (facing right). Equipment: a pad on the floor for the knees, with the feet anchored under a fixed support. Pose: Bottom: the body is almost horizontal, still straight from the knees to the head, the chest nearly touching the floor. The hands are out in front of the chest, ready to catch the floor, the ankles anchored under the support.. Important: The body stays straight with the hips extended, and it is not folded at the hips.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:28:11.994853+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-709b009b-ab6e-4bf7-8ad6-7f409d251d0e.png",
+      "sha256": "7d530da74ef8ed9eb29f10f0f43d04445cce0eb8a2e5a3cf5032eacffb01142a",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Clarify the Nordic hamstring negative. Side view facing right. Ankles anchored under padded roller at far left, BOTH knees contact a small knee pad, shins extend left behind knees on imaginary floor. From knees through hips to shoulders and head, body is ONE straight line leaning forward right at about 20 degrees above floor; hips remain fully extended, no plank support. Hands extend ahead near chest, ready to catch. Preserve actual Nordic knee angle opening as body lowers, no extra joints, knees visibly on pad. Keep pad only under knees, not under hips. No floor line.",
+      "revision": 2,
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "nordic-negative-1.png",
+            "sha256": "7f366620e3594a2c750f51bbe440deae090cf06f5a1f9154ed70236af1a1d891",
+            "status": "redo",
+            "note": "The head doesnt match the main style as it has hair and a ear",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T06:20:58.247Z"
+          },
+          "correctionPrompt": "Edit this exercise illustration preserving its clean WHITE single contour line art, transparent background and transparent interiors. No shading, filled areas, textures, glow, floor lines or text. Smooth bald faceless egg-shaped head without ears or hair. Keep square canvas and similar scale. Change ONLY the head to a smooth completely blank faceless egg-shaped head, bald with NO hair, NO ear, NO nose, NO mouth, NO facial lines. Preserve the existing head angle and neck connection, all body contours, pose, hands and equipment exactly.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-709b009b-ab6e-4bf7-8ad6-7f409d251d0e.png",
+          "sha256": "7d530da74ef8ed9eb29f10f0f43d04445cce0eb8a2e5a3cf5032eacffb01142a"
+        }
+      ]
+    },
+    {
+      "id": "dragon-squat-1.png",
+      "slug": "dragon-squat",
+      "pose": "Bottom of a DRAGON SQUAT: right supporting knee deeply bent, heel flat; left non-supporting leg crosses BEHIND and around the right supporting leg and extends straight diagonally to the RIGHT beyond it, hovering off floor. Clear crossed-leg configuration, not a pistol or shrimp squat. Torso leans slightly forward, arms reach forward for balance.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Dragon Squat. View: side (facing right). Equipment: none (floor only). Pose: Bottom of a DRAGON SQUAT: right supporting knee deeply bent, heel flat; left non-supporting leg crosses BEHIND and around the right supporting leg and extends straight diagonally to the RIGHT beyond it, hovering off floor. Clear crossed-leg configuration, not a pistol or shrimp squat. Torso leans slightly forward, arms reach forward for balance.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:31:33.311320+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f9976a85-8346-4c59-91be-197251df1b24.png",
+      "sha256": "c7b1ab1be1ca42926438a9d061be837b0f1e87d735fb12e4f97880d2f1c94ee6",
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "dragon-squat-1.png",
+            "sha256": "48aba2d0dc78beec5121e79273a67db8f7ba941b6de4c81cfdf6a98949ebcdac",
+            "status": "redo",
+            "note": "Dragon squat is defined by one leg going behind the other where this is more representaive of a pistol squat",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T06:21:30.516Z"
+          },
+          "correctionPrompt": "Edit this exercise illustration preserving its clean WHITE single contour line art, transparent background and transparent interiors. No shading, filled areas, textures, glow, floor lines or text. Smooth bald faceless egg-shaped head without ears or hair. Keep square canvas and similar scale. Correct the pose to a DRAGON SQUAT with one free leg crossed BEHIND the supporting leg, rather than a pistol squat. Three-quarter front view makes crossing clearly visible. Athlete balances on deeply bent LEFT leg, LEFT foot flat below hips. RIGHT thigh passes BEHIND the LEFT thigh; RIGHT knee crosses behind the LEFT knee; straight RIGHT lower leg extends diagonally to the athlete's LEFT, emerging past the OUTSIDE of the left shin, with right foot hovering off floor. Supporting leg contours visibly occlude the free leg at the crossing. Show two distinguishable natural legs with clear behind-leg crossing. Arms extend forward for balance, torso leans slightly forward. No free leg extended forward from the hip.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-52acc11a-903a-401e-9f25-a40b51cb24ff.png",
+          "sha256": "99ea2e0cccd975a4eeecf25c1610e77cb2cf78a70a50d83e5a53335a9246b00d"
+        },
+        {
+          "correctionPrompt": "Redraw this athlete as a clearly recognizable DRAGON SQUAT. Change camera to STRAIGHT FRONT VIEW so crossed legs are unmistakable. Deep squat balanced on LEFT leg, located on viewer RIGHT: left knee bent deeply and left foot flat on viewer right. Free RIGHT leg (viewer LEFT hip) passes diagonally BEHIND supporting thigh and knee, then extends straight across to viewer RIGHT, with free foot floating far to viewer RIGHT beyond supporting foot. Right leg must CROSS BEHIND left leg at knee level, visible segments interrupted by supporting leg occlusion. This is a twisted crossed-leg dragon squat. NO straight free leg pointing forward toward camera. Both arms forward and slightly wide for balance. Keep full athlete, plain shorts, bare feet, smooth faceless bald egg head with no ears or hair. Pure WHITE single smooth contour lines, transparent background AND interiors, no fills, no grey, shadows, floor, texture or text.\nFinal cleanup: remove both ears, preserve every other contour.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f9976a85-8346-4c59-91be-197251df1b24.png",
+          "sha256": "c7b1ab1be1ca42926438a9d061be837b0f1e87d735fb12e4f97880d2f1c94ee6"
+        }
+      ]
+    },
+    {
+      "id": "dumbbell-external-rotation-1.png",
+      "slug": "dumbbell-external-rotation",
+      "pose": "End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Dumbbell External Rotation. View: front. Equipment: a light dumbbell, with a rolled towel under the upper arm. Pose: End: the forearm has rotated outward to about 90 degrees away from the stomach, pointing out to the side, the elbow still bent at 90 degrees and pinned against the towel at the ribs. The wrist is neutral, the shoulder is down and the torso upright.. Important: The elbow stays pinned to the ribs at 90 degrees, and only the forearm rotates.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:32:28.157508+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4de2c8cf-5358-4af6-83e6-b2d7b1064852.png",
+      "sha256": "ada2ba71f080b5189f3f6508f85d18181bea16e63df70ddd322bb1cd0b3f0527"
+    },
+    {
+      "id": "knee-to-wall-dorsiflexion-1.png",
+      "slug": "knee-to-wall-dorsiflexion",
+      "pose": "Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Knee-to-Wall Dorsiflexion. View: side (facing left). Equipment: a flat wall, floor space in front of it. Pose: Full hold: the front knee is touching the wall with the front heel flat on the floor, the shin angled far forward over the foot. The foot points straight at the wall, the knee tracks over the second toe, the back leg is straight and the torso upright.. Important: The front heel stays flat on the floor and the knee tracks over the second toe.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:28:11.994853+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2fc7c28e-9015-469a-98eb-8199e8b3d4e6.png",
+      "sha256": "68d31fe86b028e5f1d74f54df383f04c9b8b4f46f622ed3416c3c2e6faf0a27d",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ONLY all horizontal ground lines, corner diagonals and baseboards. Keep the athlete and a single vertical wall line. Preserve front knee touching wall, heel planted, back leg straight and all body anatomy unchanged. Everything except athlete and vertical wall must be transparent.",
+      "revision": 2,
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "knee-to-wall-dorsiflexion-1.png",
+            "sha256": "606e13b27afd1b1f9421329544673a210a8c6591cb95792fa4a6951fb2ada772",
+            "status": "redo",
+            "note": "This is close to perfect but his toes are touching the wall as he should be stand back from the wall slightly with knee reaching over toes",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T06:22:12.336Z"
+          },
+          "correctionPrompt": "Edit this exercise illustration preserving its clean WHITE single contour line art, transparent background and transparent interiors. No shading, filled areas, textures, glow, floor lines or text. Smooth bald faceless egg-shaped head without ears or hair. Keep square canvas and similar scale. Preserve the athlete and vertical wall, but move the FRONT foot slightly BACK from the wall. Visible empty gap roughly 8 cm between toe tips and wall. Front heel remains flat on imaginary floor. Front shin angles forward, knee travels clearly past toes and touches wall. Knee is the only front-leg part touching wall; no toes or forefoot touch wall. Keep back leg, torso, head and arms unchanged. No horizontal ground line.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2fc7c28e-9015-469a-98eb-8199e8b3d4e6.png",
+          "sha256": "68d31fe86b028e5f1d74f54df383f04c9b8b4f46f622ed3416c3c2e6faf0a27d"
+        }
+      ]
+    },
+    {
+      "id": "smith-machine-overhead-press-1.png",
+      "slug": "smith-machine-overhead-press",
+      "pose": "Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Smith Machine Overhead Press. View: front. Equipment: a Smith machine with a fixed barbell on vertical rails, and a bench with the back upright. Pose: Top: the arms are locked straight overhead with the bar above the crown of the head, the elbows fully extended. The shoulders are shrugged up slightly, the back is against the pad and the feet are flat on the floor.. Important: The bar travels straight up on the machine rails, and the forearms stay vertical.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:35:48.899053+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a3d3446d-8275-40be-bad3-a7f9d92697b0.png",
+      "sha256": "40130df583bc0097989fbff82e6de8136c98ff2833749f08418278f09baa6173"
+    },
+    {
+      "id": "smith-machine-row-1.png",
+      "slug": "smith-machine-row",
+      "pose": "Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Smith Machine Row. View: side (facing right). Equipment: a Smith machine with a fixed barbell on vertical rails. Pose: Top: the bar is touching the lower chest or stomach, the elbows bent behind the torso and the shoulder blades squeezed together. The torso is hinged at about 45 degrees with the back flat, the knees slightly bent and the head neutral.. Important: The back stays flat in the hinge, and the torso does not rise as the bar is pulled.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:28:11.994853+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-44c8822c-7fa0-43ca-ae00-eb47eafec2d1.png",
+      "sha256": "f1a89a8de0941e1c085c59d58f6106b948cf5fe02394f7ca1785c4bcc547e2ba",
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "smith-machine-row-1.png",
+            "sha256": "1754112c21a0b3b27d2945edc59a43748f4cb346d66c187689d30bd535599cbe",
+            "status": "redo",
+            "note": "The barbell is clipping into the machine ",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T06:22:42.456Z"
+          },
+          "correctionPrompt": "Edit this exercise illustration preserving its clean WHITE single contour line art, transparent background and transparent interiors. No shading, filled areas, textures, glow, floor lines or text. Smooth bald faceless egg-shaped head without ears or hair. Keep square canvas and similar scale. Correct the Smith machine bar and rail assembly so the bar does NOT pass through the structural uprights. Two slim guide rails inside the outer frame, each with a sliding carriage sleeve at bar height. Bar ends attach coherently to the two sliding carriages; plate sleeves extend outward from those connections and weight plates are OUTSIDE the outer frame. Bar across the athlete's lower ribs, hands firmly on bar, elbows behind torso, hinged flat back, knees slightly bent. Clear depth and occlusion: plates outside rails, bar connected to carriage not penetrating solid posts. Keep natural anatomy and blank faceless head.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-44c8822c-7fa0-43ca-ae00-eb47eafec2d1.png",
+          "sha256": "f1a89a8de0941e1c085c59d58f6106b948cf5fe02394f7ca1785c4bcc547e2ba"
+        }
+      ]
+    },
+    {
+      "id": "tib-raise-1.png",
+      "slug": "tib-raise",
+      "pose": "Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Tib Raise. View: side (facing right). Equipment: a flat wall behind, floor space in front. Pose: Top: the toes are lifted as high as possible toward the shins, the ankles fully flexed, with the heels still on the floor. The legs are straight and the back stays against the wall, the shins tight and the toes pointing up.. Important: The legs stay straight and the back stays on the wall, with only the toes moving.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.206046+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-9e1b24a6-8041-4a5c-ac8f-d94687e887d8.png",
+      "sha256": "bd00d4c726080af043661949482120e5ea28484d94aa3902d2c76271d6239798",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Correct Tib Raise posture in side view: vertical wall behind at LEFT, upper back and hips rest against wall. BOTH heels are planted a comfortable step FORWARD to RIGHT of wall, roughly half a shin length away. Legs stay straight, so body and legs lean back toward wall. Lift forefeet and toes clearly UP off imaginary floor toward shins, heels remain down. Keep natural foot anatomy and full figure. Wall is a SINGLE vertical line only; remove ALL horizontal floor lines, corner and baseboard.",
+      "revision": 2
+    },
+    {
+      "id": "weighted-plank-1.png",
+      "slug": "weighted-plank",
+      "pose": "Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Weighted Plank. View: side (facing right). Equipment: a weight plate resting on the lower back. Pose: Full hold: the body is in a straight line from the head to the heels, supported on the forearms and toes, the elbows under the shoulders at 90 degrees. A weight plate rests flat on the lower back, the hips are level, the head neutral looking down.. Important: The back stays flat with the hips level under the plate, no sag and no pike.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:36:21.871768+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5cd177db-755b-4731-87c5-08f404a50c89.png",
+      "sha256": "ad9e9c56ae0fa837830d5acc1affba1fd22eeecbfda448b221295167a3c543b7"
+    },
+    {
+      "id": "badminton-1.png",
+      "slug": "badminton",
+      "pose": "Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Badminton. View: side (facing right). Equipment: a badminton racket, a shuttlecock, a net. Pose: Smash: at the top of the jump, the right arm extends and the racket strikes the shuttle overhead, the wrist snapping down. The body is rotated forward, the left arm drops to the chest and the feet are in the air.. Important: An overhead jump smash with the racket contacting the shuttle at full arm extension.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:40:47.893863+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d0809d24-b54f-4a0d-b72a-dbe3ddc4c5ce.png",
+      "sha256": "20cad54d1c3d33047571e15d781715c5314e96fad7d0e46f48701afba33d8d3f"
+    },
+    {
+      "id": "basketball-1.png",
+      "slug": "basketball",
+      "pose": "Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Basketball. View: side (facing right). Equipment: a basketball and a hoop on a backboard. Pose: Release: at the top of the jump the right arm extends fully and the wrist snaps forward, the ball leaving the fingertips toward the hoop. The left hand has dropped away, the legs are straight, the right hand is following through toward the rim.. Important: A one-handed jump shot with the elbow under the ball and a wrist snap on release.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:40:49.362837+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-7331c161-92c6-4a76-b2f7-a6c58c567cbc.png",
+      "sha256": "69c97747e0c9926dd91f03b6ffe5f66e089953761855b2460cd55836a2bbb126"
+    },
+    {
+      "id": "bouldering-1.png",
+      "slug": "bouldering",
+      "pose": "Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Bouldering. View: side (facing left). Equipment: a bouldering wall with colored holds, a thick crash mat, and chalk. Pose: Top: the climber has both hands matched on a large top hold above the head, the body extended up along the wall. The feet are on small holds, the knees bent and the hips close to the wall, the head tilted up to look at the hold.. Important: Show a short problem on a boulder wall with a crash mat below, and no rope or harness.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:40:54.837199+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a90530ee-d474-4981-9a0d-a2b189ddda52.png",
+      "sha256": "5028d0c80f90447e93b16d4c4bb162b6e06bf0b5fe4422b32b5e216d9fd89f95"
+    },
+    {
+      "id": "boxing-1.png",
+      "slug": "boxing",
+      "pose": "Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Boxing. View: side (facing right). Equipment: a heavy bag, boxing gloves, hand wraps. Pose: Finish of the cross: the right arm is fully extended at shoulder height hitting the bag, the hips and shoulders rotated square. The back heel is lifted and pivoted, the left glove is back at the chin and the weight is on the front foot.. Important: The hands return to guard at the chin and the chin stays tucked, with the cross driven by hip rotation.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:41:08.300191+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a5dd103b-cecf-474c-b502-23d4000009ef.png",
+      "sha256": "ce01ad3f9422558f5ad95c2d8b50ca47f2c6e11dd342c90ee47e3f3374036fd0"
+    },
+    {
+      "id": "brazilian-jiu-jitsu-1.png",
+      "slug": "brazilian-jiu-jitsu",
+      "pose": "Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Brazilian Jiu-Jitsu. View: top-down. Equipment: a pair of grappling partners in gi on a mat. Pose: Submission: the athlete on the back has the legs and arms controlling the partner's arm in an armbar. One leg over the partner's chest, the other over the face, the hips raised and the partner's arm extended against the hips.. Important: The two grapplers wear gis, and the arm bar is shown in control without any strike.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:41:22.379175+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c7a78a65-3de6-4dc3-b674-b462e4672762.png",
+      "sha256": "e50ea3122337046954237eb1f849526ccd0d18381af125913bff8ea93f4e6672"
+    },
+    {
+      "id": "cricket-1.png",
+      "slug": "cricket",
+      "pose": "Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Cricket. View: side (facing right). Equipment: a cricket bat, a cricket ball, pads, helmet and stumps. Pose: Follow-through: the bat swings down through the ball and finishes high over the left shoulder, the arms extended. The front foot has stepped forward with the knee bent, the weight is on the front leg and the head is over the ball.. Important: A straight drive with the front foot stepping toward the ball and the bat finishing high.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:45:31.485983+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a5138811-44c6-4491-8846-b7bedf57efd8.png",
+      "sha256": "3a74738ffa21c1912268a7465ba77c5498c4e2d69a152f9749f62204900f4f56"
+    },
+    {
+      "id": "dancing-1.png",
+      "slug": "dancing",
+      "pose": "Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Dancing. View: front. Equipment: none (open studio floor). Pose: Finish: the dancer is on the balls of the feet in a spin with both arms extended wide at shoulder height. The right leg is lifted with the knee bent and the toes pointed to the side, the torso is upright and the head is up.. Important: A single expressive step and arm sweep into a turn, with an upright torso and open arms.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:45:31.491441+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6e98d427-c394-40b6-b06c-e1ce1f179ce4.png",
+      "sha256": "63d7ae8f70a312c97433ba12331188154c19c681db94c62839fa2fbf999648c4"
+    },
+    {
+      "id": "football-soccer-1.png",
+      "slug": "football-soccer",
+      "pose": "Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Football (Soccer). View: side (facing right). Equipment: a soccer ball, boots, and a pitch. Pose: Follow-through: the right leg has swung through to strike the ball with the laces and is now extended up in front. The ball is leaving the ground, the standing left leg is straight, the arms are out and the head is down.. Important: The standing foot is beside the ball and the strike is with the laces of the boot.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.209153+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f1006112-a789-4b3d-8d0c-9d1480ba7dd3.png",
+      "sha256": "607791efb9f31236bba7ceb00a7557db44a8b5b066971c42d06c846973a26bb0",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ONLY the entire grass texture and horizontal ground line beneath athlete feet. Preserve athlete, boots, ball, kicking pose, hand positions, head and anatomy exactly. Background and space beneath feet completely transparent. No replacement shadow or ground.",
+      "revision": 2
+    },
+    {
+      "id": "golf-1.png",
+      "slug": "golf",
+      "pose": "Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Golf. View: side (facing left). Equipment: a golf club, a golf ball on a tee. Pose: Finish: the club has swung through the ball and ends high over the front shoulder. The hips and chest face the target, the weight is on the front foot with the back heel lifted, and the body is balanced upright.. Important: A full swing with the chest turned fully away at the top and facing the target at the finish.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:45:31.499335+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2eee1824-b1c5-4878-a670-9b3997f0459f.png",
+      "sha256": "3eb1e012339560c5991153bc64c65f12ba135aa00b4f435eb733c6f264ae1fa7"
+    },
+    {
+      "id": "judo-1.png",
+      "slug": "judo",
+      "pose": "Controlled hip throw in a judo lesson. Two adult partners in plain gi and belts. Thrower grips sleeve and lapel, turns back into partner, bends knees and lowers hips BELOW partner centre of gravity. Partner rotates over thrower hip, legs lift into air, thrower maintains grip for controlled descent. Distinct two bodies with natural joints, no impact or injury.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Judo. View: side (facing right). Equipment: a pair of athletes in judo gi on a tatami mat. Pose: Controlled hip throw in a judo lesson. Two adult partners in plain gi and belts. Thrower grips sleeve and lapel, turns back into partner, bends knees and lowers hips BELOW partner centre of gravity. Partner rotates over thrower hip, legs lift into air, thrower maintains grip for controlled descent. Distinct two bodies with natural joints, no impact or injury.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:45:31.503048+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-47f99dc5-e581-4d9a-91cd-382889fcfbe3.png",
+      "sha256": "ece37b26f144234d999803f8a83e1912395f9d8cbd36db0e244dd1406e48406c"
+    },
+    {
+      "id": "karate-1.png",
+      "slug": "karate",
+      "pose": "Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Karate. View: front. Equipment: a karate gi and black belt on a dojo floor. Pose: Finish: the right fist is fully extended at chest height in a straight punch, the wrist twisted palm down. The left fist is chambered at the left hip, the front knee is bent deeply and the back leg straight, the eyes forward.. Important: A reverse punch in a deep front stance, with the opposite fist chambered at the hip.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:49:52.801488+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c01fc915-e512-42e7-b6b2-cb9f38a8b732.png",
+      "sha256": "a28dfdcb5684f4bd741a5ba989ef340fbb2d9eb398545812a55dd51e04000911"
+    },
+    {
+      "id": "kickboxing-1.png",
+      "slug": "kickboxing",
+      "pose": "Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Kickboxing. View: side (facing right). Equipment: a pair of boxing gloves, shin guards and a kick pad held by a partner. Pose: Roundhouse contact: the right leg extends in a wide arc and the shin strikes a pad held at the waist height. The standing foot pivoted with the heel toward the target, the hips rotated, the torso leaning away and the guard up.. Important: A roundhouse kick landing with the shin, with the standing foot pivoted and the hands staying up.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:49:52.839000+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-bb70567a-5227-4b69-b4e5-615e6b7609bd.png",
+      "sha256": "ebcd89314894684df7e5b18389075b84247c5baf48554e1ed5d32cd7e06eaa88"
+    },
+    {
+      "id": "martial-arts-class-1.png",
+      "slug": "martial-arts-class",
+      "pose": "Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Martial Arts Class. View: front. Equipment: a mat floor, uniforms, and several students in a row. Pose: Finish: all students hold a front stance with the right arm extended in a straight punch at chest height. The left fists are chambered at the hips, the front knees are bent and the back legs are straight in a straight line.. Important: All the students move in unison, and the instructor stands at the front of the line.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:49:52.847425+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b8b464ee-4a83-41b4-9b87-a6d3aaa3a859.png",
+      "sha256": "3973679e37fd13371e1c91fb8ff70e114d1b5dc4bda986744b18d69f396b560f"
+    },
+    {
+      "id": "mobility-flow-1.png",
+      "slug": "mobility-flow",
+      "pose": "Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Mobility Flow. View: side (facing right). Equipment: a mat on the floor. Pose: Cow phase: the spine arches down, the chest lifts and the tailbone tilts up while the head lifts to look forward. The arms stay straight and the hands and knees stay in place. The faceless head stays in line with the spine, and the limb angles of the Mobility Flow must read clearly from the side (facing right) view.. Important: A cat-cow spinal flow with the hands and knees fixed, and the spine moving through its full range.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:49:52.851686+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3769e727-a3ea-448a-b756-e7525d49f325.png",
+      "sha256": "63f311dfe456be76bfe8f84abeee39897781c66fc363b16fd021b1af65a12752"
+    },
+    {
+      "id": "pilates-1.png",
+      "slug": "pilates",
+      "pose": "The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Pilates. View: side (facing right). Equipment: a Pilates mat. Pose: The Hundred: the head and shoulders are lifted off the mat, the legs are extended at about 45 degrees to the floor. The arms are straight at the sides, pumping a few centimetres above the mat, and the abdominals are drawn in.. Important: The Hundred is shown with the legs extended at 45 degrees and the lower back pressed into the mat.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:49:52.854990+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fc59949d-7565-481d-b69c-81d1ff758557.png",
+      "sha256": "f5d8fee5e97d8f606718d4d9dfb6d1a371b6762d1e418f30b11c88b835b59eba"
+    },
+    {
+      "id": "rugby-1.png",
+      "slug": "rugby",
+      "pose": "Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Rugby. View: side (facing right). Equipment: a rugby ball, boots, a pitch. Pose: Release: the player's arms extend fully sideways and the ball is released from the hands toward a teammate on the left. The torso is rotated and the arms follow through, the legs in stride and the eyes on the receiver.. Important: A spin pass thrown across the body to the side while running, with both hands on the ball.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.213365+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b3505fcc-ae11-4470-bf11-b89dd96f38d1.png",
+      "sha256": "97864f7d345d224d625b3dea4146cc2b9db305dcf0894f15c89da2d7a8e5aafe",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ONLY all grass and ground markings beneath feet. Preserve rugby player, kit, ball, pass posture, grips, head and anatomy exactly. Empty transparent background, no ground or shadow.",
+      "revision": 2
+    },
+    {
+      "id": "skateboarding-1.png",
+      "slug": "skateboarding",
+      "pose": "In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Skateboarding. View: side (facing right). Equipment: a skateboard and a flat skate park surface. Pose: In the air: the skater and the board are above the ground with the board level under the feet. The knees are bent and drawn up, the arms are out wide for balance and the eyes are looking ahead.. Important: An ollie with both feet staying on the board, which rises level beneath them.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:54:01.044944+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-dc38dd5f-87a6-46e6-a77b-1d7f4a23b2d9.png",
+      "sha256": "2b500b01d0235d87c07f57a35588b1d66605c13626f8a5972272afed3c6a84f6"
+    },
+    {
+      "id": "skiing-1.png",
+      "slug": "skiing",
+      "pose": "Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Skiing. View: side (facing right). Equipment: a pair of skis, ski poles, ski boots, a snowy slope. Pose: Carving: the skis are fully on edge in a carved arc, the knees angled deeply into the turn and the torso facing down the slope. The outside ski is weighted, the poles are held out and the snow sprays from the ski edges.. Important: A parallel carved turn with a pole plant, both skis staying parallel.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.216883+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-010e2617-4b38-4485-bcbe-5dc646b5a1c0.png",
+      "sha256": "e4d1a53944f9a79361c9ce87cec3e85f21f1b6d4f29832fd566c7f6ca0576506",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ALL snow spray, snow dots, snow specks, splash shapes and ground/slope lines. Preserve athlete, anatomy, skis, boots, bindings, poles and carving stance exactly. Only athlete and sports equipment drawn with white contours on empty transparent background.",
+      "revision": 2
+    },
+    {
+      "id": "snowboarding-1.png",
+      "slug": "snowboarding",
+      "pose": "Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Snowboarding. View: side (facing right). Equipment: a snowboard with bindings, boots, and a snowy slope. Pose: Exit of the turn: the board flattens out and the snowboarder rises with the knees extending. The arms are out wide, the shoulders are parallel to the board and the snow sprays from the board's edge.. Important: A carved turn with the board on its edge and the knees bent, with a rider facing sideways on the board.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.220729+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d1edb86d-34f2-43e8-8b90-f831e32dd359.png",
+      "sha256": "6b653f8a0b197a456f23b67e0a1cfece9db8064ffe6ab2a47d9e82ab56d20c8f",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ALL snow spray, snow dots, snow specks, splash shapes and slope lines. Preserve athlete, anatomy, snowboard, boots, bindings and carving stance exactly. Only athlete and sports equipment drawn with white contours on empty transparent background.",
+      "revision": 2
+    },
+    {
+      "id": "sport-climbing-1.png",
+      "slug": "sport-climbing",
+      "pose": "Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Sport Climbing. View: side (facing left). Equipment: a vertical climbing wall with bolted quickdraws, a rope, a harness, climbing shoes and a chalk bag. Pose: Next move: the right hand reaches high to the next hold and the left foot pushes up onto a higher foothold. The rope trails down to the harness, the hips rise and the body extends upward along the wall.. Important: The climber is tied into a rope on a bolted wall, clipping quickdraws as the lead climber.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:54:01.056934+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-05fd93a6-9601-41fc-95c3-4aa16a0d4e9f.png",
+      "sha256": "5bbb7ba6ed7967aa9d07b941a3268a6b1518b80591dd46583cee86e5a832b7e0"
+    },
+    {
+      "id": "squash-1.png",
+      "slug": "squash",
+      "pose": "Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Squash. View: side (facing right). Equipment: a squash racket, a small rubber ball, a walled court. Pose: Follow-through: the racket swings forward and contacts the ball low and ahead of the body. The player lunges on the front leg with the knee bent, the racket arm extended along the wall and the eyes on the ball.. Important: A forehand drive with a lunge toward the front wall, with the racket wrist cocked.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.224384+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4a1628cd-660b-40ad-be34-2d996a24f557.png",
+      "sha256": "4bbc05dbfc6b7087a4e7a03e57ad0b7e866d45d74e3deb36e458d63d3319f770",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ALL horizontal and diagonal court floor lines beneath athlete. Keep athlete, racket, ball and ONE short vertical wall segment at far right only. Remove horizontal boundary lines and corner lines. Preserve lunge posture, head, anatomy and grip. Empty transparent background.",
+      "revision": 2
+    },
+    {
+      "id": "stretching-1.png",
+      "slug": "stretching",
+      "pose": "Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Stretching. View: side (facing right). Equipment: a mat on the floor. Pose: Full hold: the torso is folded forward over the straight legs with the head toward the shins, the hands resting on the floor or the shins. The knees are straight, the weight is over the balls of the feet and the hips are above the ankles.. Important: A standing forward fold with a hinge at the hips, with the knees straight and the neck relaxed.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:58:03.715577+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f44165a4-e7e3-45de-bba5-968885581e32.png",
+      "sha256": "3c1f4c7b87c03cec4441ffa30cda0ae749186e00fa0974a42d8f170c013c4aef"
+    },
+    {
+      "id": "surfing-1.png",
+      "slug": "surfing",
+      "pose": "Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Surfing. View: side (facing left). Equipment: a surfboard on a breaking ocean wave. Pose: Riding: the surfer stands on the board in a low crouch, the front knee bent over the front foot and the back leg bent over the tail. The arms are out for balance, the shoulders are turned toward the wave and the board rides across the wave face.. Important: The pop-up goes from prone to a crouched stance with the feet on the board's stringer line.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:58:03.719059+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4dd8076d-5ade-494f-9bbb-7017c2ec8ea1.png",
+      "sha256": "bcbbaed8230d9318caf660432c720b71c23c6ff6ddc18e80839947b5410edf2d"
+    },
+    {
+      "id": "table-tennis-1.png",
+      "slug": "table-tennis",
+      "pose": "Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Table Tennis. View: side (facing right). Equipment: a table tennis paddle, a small ball, a table with a net. Pose: Follow-through: the paddle swings forward and up in front of the face after hitting the ball. The weight shifts onto the front foot, the hips and shoulders rotate toward the table and the right arm finishes bent near the left shoulder.. Important: A forehand loop with a short compact swing and the paddle finishing near the opposite shoulder.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:58:03.722572+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1ae45a9e-adad-4fab-af4b-cd458bb95fb9.png",
+      "sha256": "b1a91370f015962328b07be8b1ce0f77076c66746dc73094c29c9738df7c5d14"
+    },
+    {
+      "id": "tennis-1.png",
+      "slug": "tennis",
+      "pose": "Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Tennis. View: side (facing right). Equipment: a tennis racket, a tennis ball, a court. Pose: Follow-through: the racket has swung forward and up over the left shoulder after contact. The weight is on the front foot, the hips and shoulders rotated to face the net, the right arm wrapped across the body and the ball flying forward.. Important: A forehand groundstroke with a full swing and a high follow-through over the opposite shoulder.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:14:54.235454+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-249ad518-5841-44d0-84bd-97f21a746ee4.png",
+      "sha256": "369a1e0bb806ddffe8a7aa768ded183fb8f27c13e20bea69fa91164946def105",
+      "correctionPrompt": "Edit this illustration in exactly the same smooth white contour style. Actual transparent background with empty transparent interiors. No fills, textures, grey, shading or glow. No text or arrows. Remove ONLY all court boundary and floor lines beneath and behind athlete. Keep athlete, racket and ball exactly, including follow-through pose, hands, head and anatomy. No court, floor, shadows or ground markings. Empty transparent background.",
+      "revision": 2
+    },
+    {
+      "id": "top-rope-1.png",
+      "slug": "top-rope",
+      "pose": "Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Top Rope. View: side (facing left). Equipment: a vertical climbing wall with an anchor above and a rope running through it down to a belayer, harness, climbing shoes. Pose: Higher: the climber is high on the wall holding two holds with the arms bent, the feet on footholds and the hips close to the wall. The rope runs straight up from the harness to the anchor above and down to a belayer at the base.. Important: The rope runs from the harness straight up to a fixed anchor above, not trailing below.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:02:10.061075+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-62ba45e7-341a-4e76-b00b-4d3523437d4e.png",
+      "sha256": "863403b7bae1e7994a2e5e835198341c347ea31de2afea68447a40fe048110ff"
+    },
+    {
+      "id": "trail-running-1.png",
+      "slug": "trail-running",
+      "pose": "Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Trail Running. View: side (facing right). Equipment: a rough dirt trail with rocks and roots, running shoes. Pose: Landing: the right foot lands on a flat rock under the hips with the knee bent to absorb. The left leg is trailing behind with the heel up, the arms swing and the torso leans forward slightly with the eyes on the next footing.. Important: The athlete steps on a rough trail, not a flat road, with a short stride under the hips.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:02:10.066404+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8bf5eb29-6cdd-496e-b0f3-908813c01bbf.png",
+      "sha256": "0cf5e3f7d3d71126853b3d9d39fe21ba934af166c74b42205551414669dde693"
+    },
+    {
+      "id": "versaclimber-1.png",
+      "slug": "versaclimber",
+      "pose": "Athlete on vertical Versaclimber machine, holding TWO distinct moving handles and standing on TWO foot pedals. RIGHT arm extended overhead with LEFT knee raised high; LEFT arm bent low with RIGHT leg extended low, opposite arm and leg pattern. Torso upright slightly forward, neutral head, all four contacts clearly visible.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Versaclimber. View: side (facing right). Equipment: a Versaclimber vertical climbing machine with moving handles and pedals. Pose: Athlete on vertical Versaclimber machine, holding TWO distinct moving handles and standing on TWO foot pedals. RIGHT arm extended overhead with LEFT knee raised high; LEFT arm bent low with RIGHT leg extended low, opposite arm and leg pattern. Torso upright slightly forward, neutral head, all four contacts clearly visible.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:02:10.070552+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-96842bb0-a570-441e-a6a6-cb90aceb561a.png",
+      "sha256": "2d19aa9a9c59acecfb4e26e06da86e1fc99f102315117647c49fc7a97236431e"
+    },
+    {
+      "id": "volleyball-1.png",
+      "slug": "volleyball",
+      "pose": "Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Volleyball. View: side (facing right). Equipment: a volleyball, a net. Pose: Spike: at the top of the jump the right arm swings over and the open hand strikes the ball above the net, the arm extended. The body is rotated forward, the left arm drops to the chest and the feet are in the air.. Important: An attack spike with a high arm contact and the ball above the net.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:02:10.073906+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-49dbe877-3f93-436f-99f2-7a54a5f52a2f.png",
+      "sha256": "f44316298432495d409956dea364152da0c5f95cb0679dfd4f8f21521679e317"
+    },
+    {
+      "id": "water-polo-1.png",
+      "slug": "water-polo",
+      "pose": "Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Water Polo. View: side (facing right). Equipment: a swimming pool with a goal, a water polo ball and a swim cap. Pose: Release: the right arm whips forward over the shoulder, the elbow extending and the ball leaving the hand toward the goal. The torso is high out of the water, the left arm pulls back and the eggbeater kick is still working below.. Important: The player stays upright in the water, treading with an eggbeater kick, and throws one-handed.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:08:36.613628+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6c7b6be7-40a1-4622-85a7-99232de7eb9c.png",
+      "sha256": "ff5d535c22842aefc5d73de8739b6313a318355d315f8ada909409c3597259b9",
+      "correctionPrompt": "Edit this water polo illustration. Remove ONLY the entire underwater view: no submerged legs, feet, shorts, hip contours or underwater torso lines visible below the water surface. The athlete is hidden by opaque water at the existing waterline. Keep the above-water head, cap, chest, arms, shooting pose, ball and goal unchanged. Keep only a few clean water surface contour lines. Everything below the surface ripples is empty transparent background. Preserve exactly the smooth WHITE single contour line style, transparent interiors and transparent background. No fills, grey, shading, glow or textures.",
+      "revision": 2
+    },
+    {
+      "id": "weighted-skipping-1.png",
+      "slug": "weighted-skipping",
+      "pose": "Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Weighted Skipping. View: side (facing right). Equipment: a skipping rope and a weighted vest. Pose: Rope passing under the feet: the athlete is in the air with the toes pointed and the feet a few centimetres above the floor. The rope passes beneath the feet, the elbows are tucked by the ribs, the wrists are turning and the vest rides on the torso.. Important: Small low jumps on the balls of the feet, with the weighted vest visible on the torso.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:04:30.085771+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5fb51828-0327-43f0-9f21-c584bba66471.png",
+      "sha256": "1829dfc2f6dbc104fac262413bb27c67035550ced70a6193c5264d0121a5ff07"
+    },
+    {
+      "id": "wrestling-1.png",
+      "slug": "wrestling",
+      "pose": "Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Wrestling. View: side (facing right). Equipment: a wrestling mat, singlets and wrestling shoes. Pose: Takedown finish: the attacking wrestler drives forward with the legs and lifts the opponent's legs off the mat. The opponent is tipped backward toward the mat, the attacker's head is tight to the ribs and the arms clasp behind the knees.. Important: A double-leg takedown with a level change, a straight back and the head up against the ribs.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:04:30.089539+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-67b81b6c-910c-4c36-89a6-51f079deb29a.png",
+      "sha256": "0238c178981cda6a4e63460b725599da5d5047f30a8050426a4d238ee1b9502e"
+    },
+    {
+      "id": "yoga-1.png",
+      "slug": "yoga",
+      "pose": "Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.",
+      "prompt": "Match the reference illustration style exactly. Pure WHITE contour line art on actual transparent background. Smooth single outlines, uniform line weight about 0.8% canvas width. Empty transparent interiors; no fills, grey, shading, hatching, textures, glow, stippling or sketch lines. Athletic adult male, realistic anatomy, smooth faceless egg head with no ears, face or hair. Plain mid-thigh shorts, bare feet unless sport equipment requires boots or shoes. Wear the specified sports uniform only when necessary (gi, singlet, vest, helmet). Partner sports may show two athletes; otherwise a single full figure. Square canvas, full figure and necessary equipment centred with clear margins, fill 70-80%. No text, arrows, motion lines, shadow or ground line. Equipment only clean contours, minimal background. Natural head direction aligned with chest, correct joints and fingers. One representative STILL image only. Exercise: Yoga. View: side (facing right). Equipment: a yoga mat. Pose: Warrior hold: the athlete has the front right knee bent at 90 degrees and the back left leg straight with the foot flat on the mat. The arms are extended overhead with the palms together, the torso is upright and the gaze is forward.. Important: A warrior I pose with the front knee over the ankle and the back foot angled on the mat.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T06:04:30.092826+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-205708d7-1259-4e78-84a0-450ce35edf55.png",
+      "sha256": "0e088bcdc73b500877088874d25a6b0f5ff4ef8c0ec73b2f8a5ae5ee89a92642"
+    }
+  ],
+  "completedAt": "2026-10-12T06:15:50.820558+00:00",
+  "qa": {
+    "visuallyInspected": 43,
+    "corrected": 10,
+    "method": "Grey-background composite inspection; pending owner approval"
+  },
+  "approvedAt": "2026-10-12T06:35:20.903809+00:00"
+}

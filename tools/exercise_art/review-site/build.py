@@ -31,6 +31,8 @@ overrides_path=art/'pose-overrides.json'
 overrides=json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else {}
 reviews_path=art/'review-decisions.json'
 reviews=json.loads(reviews_path.read_text(encoding='utf-8')) if reviews_path.exists() else {'frames':[]}
+review_by_id={f['id']:f for f in reviews.get('frames',[])}
+approved_slugs=set((art/'owner/APPROVED').read_text(encoding='utf-8').split())
 anchors_path=art/'frame-anchors.json'
 anchors=json.loads(anchors_path.read_text(encoding='utf-8'))['sequences'] if anchors_path.exists() else {}
 entries=[]; available=0
@@ -41,6 +43,11 @@ for e in source['entries']:
         name=f"{e['slug']}-{i}.png"
         path=root/'tools/exercise_art/drafts'/f'batch-{a.batch:03d}'/name
         in_batch=name in batch_ids
+        if in_batch and not path.exists() and e['slug'] in approved_slugs:
+            candidate=art/'owner'/name
+            decision=review_by_id.get(name,{})
+            if candidate.is_file() and decision.get('status')=='approved' and hashlib.sha256(candidate.read_bytes()).hexdigest()==decision.get('sha256'):
+                path=candidate
         f={'id':name,'number':i,'pose':overrides.get(name,e['poses'][i-1]),'available':False}
         if path.exists() and in_batch:
             shutil.copy2(path,dist/'frames'/name)
@@ -56,7 +63,7 @@ for e in source['entries']:
         for f, point in zip(frames,alignment['points']):
             f['anchor']=point
     entries.append({'slug':e['slug'],'name':e['name'],'group':e.get('line',e['kind']),'note':e.get('note',''),'frames':frames,'alignment':alignment})
-shutil.copy2(root/'docs/art/style-options/approved.png',dist/'approved.png')
+shutil.copy2(root/generation['reference'],dist/'approved.png')
 active_ids={f['id'] for e in entries for f in e['frames']}
 packaged_ids={f['id'] for e in entries for f in e['frames'] if f['available']}
 for stale in (dist/'frames').glob('*.png'):

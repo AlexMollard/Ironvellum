@@ -1,0 +1,596 @@
+{
+  "batch": 3,
+  "batchSize": 50,
+  "reference": "docs/art/style-options/approved.png",
+  "createdAt": "2026-10-12T03:42:18.511272+00:00",
+  "jobs": [
+    {
+      "id": "one-leg-back-lever-1.png",
+      "slug": "one-leg-back-lever",
+      "pose": "Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Leg Back Lever. Camera: side (facing left). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the torso is flat and horizontal facing the floor, the arms straight beside the ears behind the bar. One leg is fully extended straight back in line with the torso, the other knee is tucked tight to the chest. The hips are level, the head neutral and the shoulders in extension. Pose details: One leg straight in line with the body and the other tucked, with the hips level. Back lever is PRONE: back up, chest and face down. Straight arms reach diagonally behind torso toward bar; natural neck with chin toward sternum. ",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:43:47.872648+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-41a122f6-61ab-4ed1-86e0-20e9f1ed4e02.png",
+      "sha256": "90c2db212230b521906313f29c1654db2da94bbec9707726dd954ed402a221a4"
+    },
+    {
+      "id": "tuck-front-lever-1.png",
+      "slug": "tuck-front-lever",
+      "pose": "Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Tuck Front Lever. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the torso flat and horizontal with the chest facing up, the arms straight and vertical to the bar. The knees tucked tight to the chest with the hips bent around 90 degrees and the thighs close to the torso, the head neutral, shoulders pushed down and the back flat. Pose details: Arms stay straight and the back flat and horizontal, with no rounded back or bent elbows.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:44:33.682535+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-af987bae-4322-46b9-8d77-dc2fee0e5d25.png",
+      "sha256": "1b0ff146b36f99a7c1416c918a33c4abb1350642a724776efce8970d14f13694"
+    },
+    {
+      "id": "one-leg-front-lever-1.png",
+      "slug": "one-leg-front-lever",
+      "pose": "Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Leg Front Lever. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the torso is flat and horizontal with the chest facing up with the arms straight and vertical. One leg is fully extended straight back in line with the body, the other knee is tucked tight to the chest with the foot near the hip. The hips are level, the head neutral and the shoulders pressed down. Pose details: One leg is straight and in line with the torso, and the other is tucked, not a straddle.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:45:20.624762+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ae91fe84-d6c1-4110-83b5-cb69412518fe.png",
+      "sha256": "054e655717956e66f986da9dc59c097eeab5af3c2f2cabe355242531ec03987c"
+    },
+    {
+      "id": "straddle-back-lever-1.png",
+      "slug": "straddle-back-lever",
+      "pose": "Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Straddle Back Lever. Camera: side (facing left). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the torso is flat and horizontal, facing the floor, the arms straight and held behind the body in line with the shoulders. Both legs are straight and spread wide in a straddle of about 60 to 90 degrees, toes pointed, hips level and the head neutral. Pose details: Both legs are straight and wide with the hips level, and the arms stay straight. Back lever is PRONE: back up, chest and face down. Straight arms reach diagonally behind torso toward bar; natural neck with chin toward sternum. ",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:46:02.740110+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-be04aaa3-30ec-47dd-9a58-28753e451f4d.png",
+      "sha256": "204d4678c0b95246697a520b0dba46257af960591978a9c6244ccee712804a4e"
+    },
+    {
+      "id": "straddle-front-lever-1.png",
+      "slug": "straddle-front-lever",
+      "pose": "Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Straddle Front Lever. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the torso is flat and horizontal with the chest facing up, the arms straight and vertical to the bar. Both legs are straight and spread wide in a straddle, around 60 to 90 degrees apart, with toes pointed, the hips level with the shoulders, the head neutral. Pose details: Both legs are straight and wide apart with the hips level, not sagging or piked.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:46:44.006223+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-7bd40ad9-91e9-4398-b9ee-12942bb7798c.png",
+      "sha256": "7e4e0f6bc93e57665e2bb3e77195476663bb574851e264232e6c3846c1fcd276"
+    },
+    {
+      "id": "back-lever-1.png",
+      "slug": "back-lever",
+      "pose": "Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Back Lever. Camera: side (facing left). Equipment: straight bar overhead, no other equipment. Pose: Full hold: the whole body in one straight horizontal line, facing the floor, from the head to the pointed toes. The arms are straight and the legs together, the shoulders in extension, the hips level with the shoulders and the head neutral. Pose details: The body is straight and horizontal with no pike at the hips and no bent arms. Back lever is PRONE: back up, chest and face down. Straight arms reach diagonally behind torso toward bar; natural neck with chin toward sternum. ",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:48:06.132500+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f55c46fd-6408-4e25-b246-dc42d0fe0dd7.png",
+      "sha256": "15ba94e5131a9308b3a7ea738410f7d568bc694dbff9050f13cba2b64631928c"
+    },
+    {
+      "id": "front-lever-1.png",
+      "slug": "front-lever",
+      "pose": "Full front lever: straight horizontal body with CHEST FACING UP, head right, feet left, two straight arms reaching up to bar. Hips and shoulders level, legs together.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Front Lever. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Full front lever: straight horizontal body with CHEST FACING UP, head right, feet left, two straight arms reaching up to bar. Hips and shoulders level, legs together. Pose details: The line is perfectly horizontal and straight, with no pike at the hips or sag.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:48:48.793499+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3a0868ad-d3a3-4d57-88fa-1ad6a749e223.png",
+      "sha256": "817caf60ab9e1045c307521e825c6999e06931faf0f4a574acee316dbe56dabb"
+    },
+    {
+      "id": "one-arm-front-lever-1.png",
+      "slug": "one-arm-front-lever",
+      "pose": "Full one-arm front lever: rigid straight horizontal body, chest facing UP, head right, feet left; one straight arm reaches vertically up to bar, other arm held beside torso.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Front Lever. Camera: front. Equipment: straight bar overhead, no other equipment. Pose: Full one-arm front lever: rigid straight horizontal body, chest facing UP, head right, feet left; one straight arm reaches vertically up to bar, other arm held beside torso. Pose details: Only one hand holds the bar, and the body is horizontal and straight.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:49:37.005226+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-58deb87c-e5c9-4545-bdd6-84bf0d5f08eb.png",
+      "sha256": "eed5249b3a86ec28cd4bef08902f576b10f58362d99a40ef7bf243591ead5f36"
+    },
+    {
+      "id": "wall-handstand-1.png",
+      "slug": "wall-handstand",
+      "pose": "Chest-to-wall handstand in side profile facing RIGHT toward a wall at the far RIGHT. Hands are planted a full FOREARM LENGTH (about 35-45 cm) LEFT of the wall, leaving a clearly visible wide gap between wall and wrists. Arms locked straight, shoulders over wrists, torso tall with a gentle lean toward wall, legs straight together rising diagonally slightly right, only pointed toes touch wall. Chest and kneecaps face wall/right, toes point toward wall/right, heels left. Head neutral between shoulders, no chin turned backwards. Show ONLY a single vertical wall line well separated from body and hands; absolutely NO floor line, baseboard, corner, horizontal line or ground.",
+      "prompt": "Match approved reference's simple white contour illustration style exactly. Pure smooth WHITE line art on transparent background, empty transparent interiors, no fills, shading, hatching, glow or textures. Athletic adult man, plain mid-thigh shorts, barefoot, faceless smooth oval head without ears or hair. Square canvas, complete figure centred with margin. No labels, arrows or text. Chest-to-wall handstand in side profile facing RIGHT toward a wall at the far RIGHT. Hands are planted a full FOREARM LENGTH (about 35-45 cm) LEFT of the wall, leaving a clearly visible wide gap between wall and wrists. Arms locked straight, shoulders over wrists, torso tall with a gentle lean toward wall, legs straight together rising diagonally slightly right, only pointed toes touch wall. Chest and kneecaps face wall/right, toes point toward wall/right, heels left. Head neutral between shoulders, no chin turned backwards. Show ONLY a single vertical wall line well separated from body and hands; absolutely NO floor line, baseboard, corner, horizontal line or ground.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:03:40.962344+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3d76c094-f309-48aa-972b-a594a0d7423b.png",
+      "sha256": "fa0e82bd6d8b0e24fc9c4cf687f206327899de77fc10f8a99b59bdc3690cd808",
+      "revision": 2,
+      "reviewFeedback": "Too close to the wall the ROM would be impossible",
+      "previousReviewedSha256": "d3a6f9647762a3b774a5539578fb7ecb59397f8ba6dd9b62adca770b1c604b17"
+    },
+    {
+      "id": "pike-press-1.png",
+      "slug": "pike-press",
+      "pose": "Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Pike Press. Camera: side (facing right). Equipment: none (floor only). Pose: Bottom: the crown of the head just above or touching the floor, elbows deeply bent and flared, hips still stacked directly over the hands in the inverted V. Feet on the floor, legs nearly straight, torso almost vertical. Press arms fully straight to return to the top. Pose details: This is a pike push-up with feet on the floor, not a press to handstand; keep hips high over the hands.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:51:03.182907+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f86eccba-5777-46e6-a55c-bef3598d2604.png",
+      "sha256": "8dc37514b3fb86d38ab6798cac4ff0015ff7fbbd633a8d7223e52131c8c4575c"
+    },
+    {
+      "id": "freestanding-handstand-1.png",
+      "slug": "freestanding-handstand",
+      "pose": "Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Freestanding Handstand. Camera: side (facing right). Equipment: none (floor only). Pose: Full hold: the body in one vertical line stacked hands, shoulders, hips and pointed toes. Arms locked straight, shoulders open and pushed up by the ears, legs together and straight, gentle pressure through the fingertips, head neutral between the arms. Pose details: No wall; the line must be dead vertical, not arched, and the legs together with the toes pointed.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:54:33.008198+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1389eedf-3e7c-4b34-9b1c-d2228fc9e6ed.png",
+      "sha256": "137210343344a6b28370755e7fd7be6b30cc786dc8a9eb888843ba7738318227"
+    },
+    {
+      "id": "handstand-walk-1.png",
+      "slug": "handstand-walk",
+      "pose": "Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Handstand Walk. Camera: side (facing right). Equipment: none (floor only). Pose: Landing the step: the right hand placed down about a hand-length ahead on the floor, both arms straight and shoulders open again. The legs return together into the vertical line, hips stacked over the hands, the body slightly advanced and toes pointed. Pose details: The arms stay straight and each step is short and controlled, and the line does not arch.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:55:13.939268+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-93978e76-d504-46b3-bc60-adbfc1daf4a0.png",
+      "sha256": "b0703bb88e2b4234d58d79f9b051de72a547a3289cc8795bec8118af0092ad2c"
+    },
+    {
+      "id": "wall-hspu-negative-1.png",
+      "slug": "wall-hspu-negative",
+      "pose": "Bottom position of chest-to-wall handstand push-up in side profile facing RIGHT, wall on far RIGHT. Hands planted about a FOREARM LENGTH (35-45 cm) LEFT of wall, giving room for a tripod. Elbows bent 90 degrees, forearms near vertical, head lowered LEFT/in front of wrists to form wide stable tripod; crown near imaginary floor, face naturally toward wall/right. Torso upright, hips high, legs together straight leaning gently right to wall, toes touch wall. Clearly visible gap between wrists and wall at least one head width. Only one vertical wall line, absolutely no horizontal floor/ground line or baseboard.",
+      "prompt": "Match approved reference's simple white contour illustration style exactly. Pure smooth WHITE line art on transparent background, empty transparent interiors, no fills, shading, hatching, glow or textures. Athletic adult man, plain mid-thigh shorts, barefoot, faceless smooth oval head without ears or hair. Square canvas, complete figure centred with margin. No labels, arrows or text. Bottom position of chest-to-wall handstand push-up in side profile facing RIGHT, wall on far RIGHT. Hands planted about a FOREARM LENGTH (35-45 cm) LEFT of wall, giving room for a tripod. Elbows bent 90 degrees, forearms near vertical, head lowered LEFT/in front of wrists to form wide stable tripod; crown near imaginary floor, face naturally toward wall/right. Torso upright, hips high, legs together straight leaning gently right to wall, toes touch wall. Clearly visible gap between wrists and wall at least one head width. Only one vertical wall line, absolutely no horizontal floor/ground line or baseboard.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:03:47.198942+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ba936d9f-d457-4498-ab61-3009bc6d335f.png",
+      "sha256": "a897878a310fddba17a385b3ba6b5eb9fe3ce7d51f99257a30160cedcb3e1015",
+      "revision": 2,
+      "reviewFeedback": "Same issue to close to the wall and dont draw the ground",
+      "previousReviewedSha256": "625659da4115f198342891970cfd6eae94b6146111b985ccc45e23f693910d9a"
+    },
+    {
+      "id": "crow-to-handstand-1.png",
+      "slug": "crow-to-handstand",
+      "pose": "Pressing up: the hips rise above the shoulders as the legs begin to extend upward behind the body. Arms stay straight and locked, the shoulders pushed forward over the hands, knees only partly straightened, toes pointing down toward the floor behind.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Crow \u2192 Handstand. Camera: side (facing right). Equipment: none (floor only). Pose: Pressing up: the hips rise above the shoulders as the legs begin to extend upward behind the body. Arms stay straight and locked, the shoulders pushed forward over the hands, knees only partly straightened, toes pointing down toward the floor behind. Pose details: The legs rise by hip shifting without a jump or kick, and the arms must stay locked.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:56:41.847692+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a26e493b-4b3d-442e-a4b4-a6d33284de55.png",
+      "sha256": "a8f7da55616575f5a4632197f3e6f7913dde5c2f13f5326a6b5576e6f2517f0d"
+    },
+    {
+      "id": "90-degree-push-up-1.png",
+      "slug": "90-degree-push-up",
+      "pose": "Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: 90-Degree Push-up. Camera: side (facing right). Equipment: a pair of parallettes. Pose: Bottom position: the elbows bent to 90 degrees and held tight in against the ribs, the upper arms parallel to the floor. The shoulders are lowered to the hands' level with the torso tilted forward and the legs raised overhead, the body in a straight diagonal line. Pose details: Elbows must reach exactly 90 degrees and stay tucked, with the body straight and not piked.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:57:25.756403+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-7e7b1a9e-c5e0-4681-a5cb-04cec85478a6.png",
+      "sha256": "085a39b687e0bafe73c6333c294442d5a554f5e8d0d17f724854d770a02e64cd"
+    },
+    {
+      "id": "one-arm-handstand-1.png",
+      "slug": "one-arm-handstand",
+      "pose": "One-arm handstand with anatomically inverted head: chin points upward toward sternum, rounded crown points downward toward floor, neck enters upper edge of head.",
+      "prompt": "Edit the provided exercise illustration in the exact same clean white contour style, square canvas and transparent background. Empty transparent interiors, no filled areas, shading, hatching or glow. Athletic adult male in plain shorts, no face, ears or hair. Preserve the correct body pose and scale. Correct ONLY HEAD AND NECK orientation. The athlete's entire body is inverted, so his head must ALSO be inverted. Keep the front view of his chest, knees, toes and body unchanged. His small CHIN must be at the TOP of the head oval adjacent to chest; the large round CROWN OF SKULL must be at the BOTTOM nearer the floor. Neck connects to UPPER edge of head from shoulders above. Use an upside-down egg outline (broad round end down, narrow chin up). Never draw a normal upright oval with chin at bottom. Neutral cervical alignment, gaze toward supporting hand without twisting neck. No facial features. Keep supporting arm, free arm, legs and feet unchanged.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:20:11.363790+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-512c52da-2bca-418d-8e02-bc0152dc7f2c.png",
+      "sha256": "298080636b068b5b19cff53eac12b514e2c323f7dfe2a97a068eabab6302eaf7",
+      "revision": 3,
+      "reviewFeedback": "Head is upside down",
+      "previousReviewedSha256": "f38845aad04dcb4a58f3a74cf3aa671add388efac69c61f331b3be48810a226d"
+    },
+    {
+      "id": "straddle-press-to-handstand-1.png",
+      "slug": "straddle-press-to-handstand",
+      "pose": "Pressing up: the shoulders move forward over the wrists, arms locked, and the straight legs lift off the floor in a straddle, rising to horizontal. The hips are raised above the shoulders, the toes pointed and the legs wide apart.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Straddle Press to Handstand. Camera: front. Equipment: none (floor only). Pose: Pressing up: the shoulders move forward over the wrists, arms locked, and the straight legs lift off the floor in a straddle, rising to horizontal. The hips are raised above the shoulders, the toes pointed and the legs wide apart. Pose details: Legs stay straight in the straddle, and no jump or bent knees are allowed.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:59:06.366301+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4cdba002-b3db-45fd-8014-38f65d5ae559.png",
+      "sha256": "3162fb8f865cacedb3e9f05545eb56bc9a1406d7f16a6afd6ae1d780f5fcde11"
+    },
+    {
+      "id": "ring-support-hold-1.png",
+      "slug": "ring-support-hold",
+      "pose": "Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Ring Support Hold. Camera: front. Equipment: pair of gymnastic rings hung from straps hung at hip height. Pose: Full hold: arms locked straight with the rings held beside the hips, palms facing in toward the body. The shoulders are pressed down away from the ears, the chest tall, the legs straight and together hanging with the feet off the floor, the head neutral. Pose details: Rings stay beside the hips with the arms locked, and the shoulders must be pressed down.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T03:59:51.611282+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2425a4e4-1d62-4ed4-8bc8-da06c9e6cc14.png",
+      "sha256": "4974d673aa2a328ae31e04f381e43d4336c096667a54ad2c8b723abb31bb02e6"
+    },
+    {
+      "id": "rto-support-hold-1.png",
+      "slug": "rto-support-hold",
+      "pose": "Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: RTO Support Hold. Camera: front. Equipment: pair of gymnastic rings hung from straps hung at hip height. Pose: Full hold: arms locked straight with the rings turned fully out, palms facing forward and the thumbs pointing out and away from the body. The rings are beside the hips, the chest tall, the shoulders pressed down, the legs together and the feet off the floor. Pose details: Rings are rotated fully out with the palms facing forward, not neutral.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:00:37.324147+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-24ad54cf-9ff9-4f0c-a2fd-62371346fbfa.png",
+      "sha256": "11899156014faab870772ea8835a9833fea703bd9dffefcf6bb6c9723d08507e"
+    },
+    {
+      "id": "ring-row-1.png",
+      "slug": "ring-row",
+      "pose": "Adult athlete doing RING ROW top position, side profile. Feet at lower LEFT touching imaginary ground, body in one straight slanted line heels-hips-shoulders-head toward upper RIGHT. Chest faces UP toward ceiling, shoulder blades retracted. Elbows bent behind ribs, hands grasp two rings at chest height, straps vertically upward. Head in line with torso, face points diagonally UP AND LEFT in same direction as chest. Blank oval head, subtle chin at its UPPER LEFT edge toward sternum, nape at LOWER RIGHT continuous with upper back; cranium above-right of neck. No backwards chin on lower-right side, no ears, no face details. Two full arms, hands, legs. No floor line.",
+      "prompt": "Clean instructional gymnastics icon in reference style. Adult athlete in shorts performs a ring row: feet at lower left, body slants up to shoulders and head at upper right, chest faces upward. Both elbows bent and hands gripping two rings at ribs, shoulder blades retracted, legs straight. Natural neutral head aligned with spine, blank smooth oval without ears or hair, chin directed toward upper chest and ceiling, face directed UP rather than toward feet/floor. White outline only on transparent background, empty interiors, no shading or fill, no text, no ground line, full equipment and body visible.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:07:52.235044+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-83fd2886-936d-44c2-99b6-9c7c1006e998.png",
+      "sha256": "9e1dede4aa32e2bd7ee5eab80257330db157109b59af75f7389810ab2f8b57aa",
+      "revision": 2,
+      "reviewFeedback": "Head is facing backwards",
+      "previousReviewedSha256": "09a1d0d87a6cd4e17b6e8e7976a38ba066c510ee629f92c354c470b903c7684a"
+    },
+    {
+      "id": "ring-dip-1.png",
+      "slug": "ring-dip",
+      "pose": "Gymnastics exercise demonstration: adult athlete on two gymnastics rings, at bottom of a dip repetition, both hands firmly grasp rings beside lower ribs, elbows bend 90 degrees behind torso. Chest faces right in three-quarter side view. Legs straight together pointing down; knees and feet fully visible. Two thin equipment straps rise directly from rings to top edge. Anatomically neutral head above shoulders. Plain sports shorts, blank oval head. Ordinary controlled gymnastics strength training.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line.  Pose: Gymnastics exercise demonstration: adult athlete on two gymnastics rings, at bottom of a dip repetition, both hands firmly grasp rings beside lower ribs, elbows bend 90 degrees behind torso. Chest faces right in three-quarter side view. Legs straight together pointing down; knees and feet fully visible. Two thin equipment straps rise directly from rings to top edge. Anatomically neutral head above shoulders. Plain sports shorts, blank oval head. Ordinary controlled gymnastics strength training.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:26:19.111943+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6bb61e00-e532-4f20-bf78-ee470d53cb36.png",
+      "sha256": "faad286afa1725c8f881ebd3e6696f1c04e55206291f649a0e526ee26bcef57f",
+      "previousAttempts": [
+        {
+          "status": "blocked",
+          "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 2c1282b4-83df-4bdc-9783-d61901838911. safety_violations=[violence, self-harm].\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"self-harm\\\",\\n        \\\"violence\\\"\\n      ]\\n    }\\n  }\\n}\")"
+        }
+      ]
+    },
+    {
+      "id": "banded-iron-cross-1.png",
+      "slug": "banded-iron-cross",
+      "pose": "Front view of band-assisted gymnastic iron cross. Athlete vertical, arms fully straight horizontally in a T, hands grip two rings at shoulder height. Two ring straps run vertically upward from rings. A resistance band is stretched from the left ring DOWN under BOTH FEET and UP to the right ring in a wide U/V; feet press securely onto bottom of band. Band stays BELOW the arms and torso. Head and neck entirely clear, with no straps behind or beside head. Legs together straight, toes downward. Single full body.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line.  Pose: Front view of band-assisted gymnastic iron cross. Athlete vertical, arms fully straight horizontally in a T, hands grip two rings at shoulder height. Two ring straps run vertically upward from rings. A resistance band is stretched from the left ring DOWN under BOTH FEET and UP to the right ring in a wide U/V; feet press securely onto bottom of band. Band stays BELOW the arms and torso. Head and neck entirely clear, with no straps behind or beside head. Legs together straight, toes downward. Single full body.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:26:19.914454+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ebe6c4db-d97a-4899-b90c-ed4acde27f8b.png",
+      "sha256": "6dda615b32209011ed085209fabd4a82d6fda44f4a6d8522faf5de39b394491f"
+    },
+    {
+      "id": "ring-muscle-up-1.png",
+      "slug": "ring-muscle-up",
+      "pose": "Gymnastics exercise demonstration: adult athlete at the completed upper support of ring muscle-up, shoulders above rings, elbows locked straight down, hands firmly grip rings alongside hips. Body upright, legs straight together down, toes pointed. Three-quarter side view facing right, full figure. Two thin equipment straps rise from the rings to top edge, clearly separated from body and head. Neutral head, plain sports shorts, blank oval head. Ordinary controlled gymnastics strength training.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line.  Pose: Gymnastics exercise demonstration: adult athlete at the completed upper support of ring muscle-up, shoulders above rings, elbows locked straight down, hands firmly grip rings alongside hips. Body upright, legs straight together down, toes pointed. Three-quarter side view facing right, full figure. Two thin equipment straps rise from the rings to top edge, clearly separated from body and head. Neutral head, plain sports shorts, blank oval head. Ordinary controlled gymnastics strength training.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:26:20.769550+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-108c2c93-5ecc-4bc5-9141-61ee7fca22b2.png",
+      "sha256": "82bb4a4372cde622c41fb6997d8afe04d0cb59324be7da5f2b812a4b96822ab0",
+      "previousAttempts": [
+        {
+          "status": "blocked",
+          "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 90405df5-b610-4021-8479-191a914111b1. safety_violations=[violence, self-harm].\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"self-harm\\\",\\n        \\\"violence\\\"\\n      ]\\n    }\\n  }\\n}\")"
+        }
+      ]
+    },
+    {
+      "id": "iron-cross-1.png",
+      "slug": "iron-cross",
+      "pose": "Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Iron Cross. Camera: front. Equipment: pair of gymnastic rings hung from straps hung overhead. Pose: Full hold: the arms are fully horizontal and straight, spread to both sides at shoulder height in a T shape, holding the rings. The body is vertical and straight between the rings, the legs together with the toes pointed, the head neutral and the chest tall. Pose details: The arms are straight and horizontal at shoulder level, not sloping down to the hips.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:04:43.188768+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8f182353-74c6-46c5-9a9f-75ea1a8dad9b.png",
+      "sha256": "4062f8d319e8470c978fbd97a5751e86cea5f17d9b39b52974d7758328b1e977"
+    },
+    {
+      "id": "kip-up-1.png",
+      "slug": "kip-up",
+      "pose": "Kip-up preparation with shoulders down, hips lifted, legs raised, elbows bent and two distinct natural palms planted beside ears, fingers toward shoulders.",
+      "prompt": "Edit the provided exercise illustration in the exact same clean white contour style, square canvas and transparent background. Empty transparent interiors, no filled areas, shading, hatching or glow. Athletic adult male in plain shorts, no face, ears or hair. Preserve the correct body pose and scale. Completely REDRAW THE TWO ARMS AND HANDS into natural kip-up setup. Side three-quarter camera that lets BOTH separate hands be visible. Athlete lies on upper back with head at LEFT, hips lifted RIGHT, legs raised diagonally up-right. Clearly draw ONE normal hand on EACH side of head, palms flat on imaginary floor beside ears; fingertips directed toward shoulders/right. Hands separated by width of head, each has one thumb and four natural fingers grouped into simple clean contour. Wrists bend naturally, elbows flex above head, upper arms attach to shoulders. Head remains visible BETWEEN hands, not hidden under tangled arms. No extra limbs, overlapping merged hands, finger webs or loops. Crop nothing. No floor line.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:20:12.875849+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3ba5aa79-e973-4da6-ad06-4fc7aef15f89.png",
+      "sha256": "a33309053d62d8fe7d948d283641af0c3d9fcf96a82b488e0d31f91645191652",
+      "revision": 3,
+      "reviewFeedback": "Hands are so broken",
+      "previousReviewedSha256": "cad0d1d76f90d043dc10e34736d4b5e80c94369999cfc7df304bd7ac59c0fea6"
+    },
+    {
+      "id": "handstand-to-bridge-1.png",
+      "slug": "handstand-to-bridge",
+      "pose": "Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Handstand-to-Bridge. Camera: side (facing right). Equipment: none (floor only). Pose: Bridge reached: the feet land on the floor about shoulder width apart, the arms are straight and the hands remain on the floor. The hips are pushed up high, the back is fully arched, the head hangs between the arms and the knees are slightly bent. Pose details: The arms stay straight and the back arches in a smooth controlled fall, not a collapse.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:08:45.776380+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-317accd7-2e01-48d3-9cb5-c2f5caa369a9.png",
+      "sha256": "c691877bf44144a1c17ef5adee14375ea24f98a8f9ad2e0fcee04030516b33d5"
+    },
+    {
+      "id": "muscle-up-1.png",
+      "slug": "muscle-up",
+      "pose": "Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Muscle-up. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Top position: arms locked straight in support above the bar, the bar at the hip level, the chest tall and the shoulders pressed down. The legs together and straight, slightly in front, the head neutral. The faceless head stays in line with the spine, and the limb angles of the Muscle-up must read clearly from the side (facing right) view. Pose details: The chest travels over the bar in a smooth transition and the bar ends at the hips with straight arms.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:08:46.787918+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2ae985f3-57fb-4fcd-a725-2551ef3872aa.png",
+      "sha256": "6765012c219fb0bd37249cb94ec6b465623b1c1db6497c4ef7451da6fa0ad7e5"
+    },
+    {
+      "id": "tuck-human-flag-1.png",
+      "slug": "tuck-human-flag",
+      "pose": "Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Tuck Human Flag. Camera: back. Equipment: a vertical pole, no other equipment. Pose: Full hold: the body is horizontal and sideways from the pole, the bottom arm pushing straight and the top arm pulling, bent slightly. The knees are tucked tight to the chest, the hips are level with the hands, the head is turned toward the floor and the feet are off the floor. Pose details: The hips are level with the hands and the knees are tucked, not hanging down.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:08:47.801230+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ab53daba-d1d7-48e0-9cc7-c8b7ca4ade05.png",
+      "sha256": "eb2000135ef68220706cc62cad36e57928b7741f01ed77203202197c5ffda9d4"
+    },
+    {
+      "id": "human-flag-1.png",
+      "slug": "human-flag",
+      "pose": "Calisthenics HUMAN FLAG sports skill shown from front. A rigid vertical exercise pole at LEFT. Both hands grip pole with wide vertical separation: top hand overhead left and lower hand below left. BOTH elbows fully straight. Shoulder girdle between hands, torso extends horizontally RIGHT from pole, hips and locked straight legs continue in one horizontal line right, feet together pointed right. Body sideways supported by arms, perpendicular to pole. Full figure and pole contained with margins. Blank oval head naturally aligned with torso. Plain shorts.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line.  Pose: Calisthenics HUMAN FLAG sports skill shown from front. A rigid vertical exercise pole at LEFT. Both hands grip pole with wide vertical separation: top hand overhead left and lower hand below left. BOTH elbows fully straight. Shoulder girdle between hands, torso extends horizontally RIGHT from pole, hips and locked straight legs continue in one horizontal line right, feet together pointed right. Body sideways supported by arms, perpendicular to pole. Full figure and pole contained with margins. Blank oval head naturally aligned with torso. Plain shorts.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:26:21.687760+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ad8fa18d-4949-41e6-8e38-49cb35d0fe93.png",
+      "sha256": "c9f374e3b5723f7c41ca68d052130c46136eab4ca45de8eeaca59e51937a3a57",
+      "previousAttempts": [
+        {
+          "status": "blocked",
+          "error": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 8cb92156-a494-46f4-8674-a83f8b5e8af5. safety_violations=[sexual].\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"sexual\\\"\\n      ]\\n    }\\n  }\\n}\")"
+        }
+      ]
+    },
+    {
+      "id": "strict-muscle-up-1.png",
+      "slug": "strict-muscle-up",
+      "pose": "Top support position of STRICT BAR MUSCLE-UP shown FRONT THREE-QUARTER view, adult chest faces viewer, head front neutral. One SINGLE long HORIZONTAL STRAIGHT BAR runs LEFT TO RIGHT across hips/upper thighs. BOTH hands clearly visible gripping SAME BAR at shoulder width, distinct left and right straight locked arms visible in front of torso sides, shoulders above hands. Both legs hang down together straight, torso vertical. This is a single pull-up bar, not two parallel bars: show BOTH bar ends extending past hands, no rails in depth, no dip-bar structure. No ground.",
+      "prompt": "Match approved reference's simple white contour illustration style exactly. Pure smooth WHITE line art on transparent background, empty transparent interiors, no fills, shading, hatching, glow or textures. Athletic adult man, plain mid-thigh shorts, barefoot, faceless smooth oval head without ears or hair. Square canvas, complete figure centred with margin. No labels, arrows or text. Top support position of STRICT BAR MUSCLE-UP shown FRONT THREE-QUARTER view, adult chest faces viewer, head front neutral. One SINGLE long HORIZONTAL STRAIGHT BAR runs LEFT TO RIGHT across hips/upper thighs. BOTH hands clearly visible gripping SAME BAR at shoulder width, distinct left and right straight locked arms visible in front of torso sides, shoulders above hands. Both legs hang down together straight, torso vertical. This is a single pull-up bar, not two parallel bars: show BOTH bar ends extending past hands, no rails in depth, no dip-bar structure. No ground.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:07:35.694366+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8f084e75-f1ad-45d1-b307-e751da603ad0.png",
+      "sha256": "935fd9590c672d9577c8d3e985615f068d483debc42bdd6669570ce456e95e39",
+      "revision": 2,
+      "reviewFeedback": "Bars look like a dip bar as i cant see other arm",
+      "previousReviewedSha256": "d2c7e1ad8c076437197422fca8df9863a382c364e2c0cf50f5580222e12ececa"
+    },
+    {
+      "id": "inverted-muscle-up-1.png",
+      "slug": "inverted-muscle-up",
+      "pose": "Adult gymnast at completed INVERTED MUSCLE-UP, in straight handstand over one horizontal bar, DIRECT FRONT view. Both hands firmly grip single bar at bottom, arms fully straight, shoulders-hips-toes stacked vertically. Show front chest, belly, FRONT THIGHS, KNEECAPS and TOPS OF FEET all facing viewer, never back of pelvis or buttocks. Legs together straight with pointed toes upward; soles face away from viewer, heel contours behind ankles; front kneecaps align with chest. Plain shorts front waistband and central fly, no buttock seams. Faceless smooth egg head neutral between arms. Anatomically continuous front orientation from torso through knees and feet.",
+      "prompt": "Match approved reference's simple white contour illustration style exactly. Pure smooth WHITE line art on transparent background, empty transparent interiors, no fills, shading, hatching, glow or textures. Athletic adult man, plain mid-thigh shorts, barefoot, faceless smooth oval head without ears or hair. Square canvas, complete figure centred with margin. No labels, arrows or text. Adult gymnast at completed INVERTED MUSCLE-UP, in straight handstand over one horizontal bar, DIRECT FRONT view. Both hands firmly grip single bar at bottom, arms fully straight, shoulders-hips-toes stacked vertically. Show front chest, belly, FRONT THIGHS, KNEECAPS and TOPS OF FEET all facing viewer, never back of pelvis or buttocks. Legs together straight with pointed toes upward; soles face away from viewer, heel contours behind ankles; front kneecaps align with chest. Plain shorts front waistband and central fly, no buttock seams. Faceless smooth egg head neutral between arms. Anatomically continuous front orientation from torso through knees and feet.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T05:07:41.308783+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-24456921-9842-4d0a-8d2d-44ac9fd4b86c.png",
+      "sha256": "43992c8553973faf52ca9b192b0895390d361457f64107f1a179fce788c6cb1d",
+      "revision": 2,
+      "reviewFeedback": "legs are backwards",
+      "previousReviewedSha256": "95d081391e73fcc502175e989248b4ddab34fc94136118f0fcd1b650a732aaf4"
+    },
+    {
+      "id": "one-arm-hang-1.png",
+      "slug": "one-arm-hang",
+      "pose": "Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Hang. Camera: front. Equipment: straight bar overhead, no other equipment. Pose: Full hold: hanging by the right hand only, arm fully straight, the shoulder pulled down and engaged away from the ear, torso square to the front. The free left arm extends out to the side, legs together and straight, body vertical and still. Pose details: Show an active packed shoulder, not a shrugged passive one, and keep the free hand off the bar.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:12:04.211903+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0ca473e0-a467-4fac-8d81-e957616afce5.png",
+      "sha256": "cf662231649c6fc82839ec9a503d9e93ead744e34a72e3042e06639fd731bb24"
+    },
+    {
+      "id": "archer-pull-up-1.png",
+      "slug": "archer-pull-up",
+      "pose": "Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Archer Pull-up. Camera: front. Equipment: straight bar overhead, no other equipment. Pose: Top position: chin above the bar on the right side, the head and chest shifted over the right hand. Right elbow fully bent, left arm still straight and extended along the bar, hands still on the bar at original width, legs together straight down. Pose details: The non-working arm must stay locked straight the whole rep, never bent into a wide pull-up.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:12:05.057013+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2918d049-74f9-4e57-bba0-d59a51ba2ee6.png",
+      "sha256": "ab8e64720ee56d836bfb925143fc78fe576e453b7f02e7571fae58710e93dd1e"
+    },
+    {
+      "id": "one-arm-negative-1.png",
+      "slug": "one-arm-negative",
+      "pose": "Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Negative. Camera: front. Equipment: straight bar overhead, no other equipment. Pose: Bottom of the negative: working arm fully straight in a one-arm dead hang, shoulder packed down away from the ear, body hanging vertically and square. Free hand held out to the side, not touching the bar or the wrist. Legs together and straight. Pose details: Only one hand touches the bar; the free hand must not grab the wrist or the bar.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:12:05.922243+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3835aac7-9f55-48e0-a28c-6ee5b9ceb99b.png",
+      "sha256": "cdd73409d327986ba81ca314db65e010156f9b497e6fbcf6fcd83c31f3abec23"
+    },
+    {
+      "id": "one-arm-pull-up-1.png",
+      "slug": "one-arm-pull-up",
+      "pose": "Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Pull-up. Camera: front. Equipment: straight bar overhead, no other equipment. Pose: Top position: chin clearly above the bar, the right elbow fully bent and tucked at the ribs, the right hand still the only contact with the bar. The free left arm is held out to the side, legs together and straight, body vertical with no kip. Pose details: The free hand must never touch the wrist, bar or body, and the legs must not swing for momentum.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:12:06.814656+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1314b754-7ee7-4b86-8512-077880874d22.png",
+      "sha256": "0488c22b00c8cd7eeb9c4906a23587936f87849a81e86500349e33411ce04534"
+    },
+    {
+      "id": "parallel-bar-support-hold-1.png",
+      "slug": "parallel-bar-support-hold",
+      "pose": "Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Parallel Bar Support Hold. Camera: side (facing right). Equipment: pair of parallel bars at hip height. Pose: Full hold: arms locked straight vertical, hands by the hips on the bars, shoulders pressed down and away from the ears, chest tall. Legs straight and together hanging in front of the body just forward of the vertical, feet off the floor, head neutral. Pose details: Shoulders must be depressed down, not shrugged up around the ears.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:15:26.188829+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e5323ace-d9eb-4a98-a9c8-511bda63d170.png",
+      "sha256": "e4a03547b0f7eb99e7d0cf585cd0382fad50e82436e8c28b24007e0a83d4c365"
+    },
+    {
+      "id": "one-arm-negative-push-up-1.png",
+      "slug": "one-arm-negative-push-up",
+      "pose": "Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Negative Push-up. Camera: side (facing left). Equipment: none (floor only). Pose: Bottom position: chest a fist's height off the floor, working right elbow bent past 90 degrees and tucked tight to the torso, body straight from head to heels and not twisted. Left hand still on the lower back, feet wide, head neutral looking down and slightly ahead. Pose details: Hips must stay square to the floor, not rotated open, and the free hand must not touch the ground.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:15:26.883145+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-99f15dc5-abaa-4f75-ac2e-163f567fb5cb.png",
+      "sha256": "0209320ea5bb4178152c5b1e895dc59ec41b32f34e91d637cd9dc6640fcf64de"
+    },
+    {
+      "id": "one-arm-push-up-1.png",
+      "slug": "one-arm-push-up",
+      "pose": "Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: One-Arm Push-up. Camera: side (facing left). Equipment: none (floor only). Pose: Finish at the top after pressing back up: right arm fully extended and locked, shoulder just over the hand, body straight and square from head to heels. The left hand still rests on the lower back, feet wide, no hip twist or sag. Pose details: The free arm must stay off the floor, and the hips must not twist toward the free side.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:15:27.921904+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-56f14b7f-4327-4113-a047-608c473fd7e8.png",
+      "sha256": "bb9a4b30f8f4b79bb14578668e0c17b19476bc7e3ee3c867698b525db46d735c"
+    },
+    {
+      "id": "tuck-l-sit-1.png",
+      "slug": "tuck-l-sit",
+      "pose": "Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Tuck L-sit. Camera: side (facing right). Equipment: a pair of parallettes. Pose: Full hold: the arms are locked straight and vertical, the shoulders pressed down, the hips lifted off the floor. The knees are tucked to the chest with the thighs near horizontal, the feet are off the floor, the back is upright and the head is neutral. Pose details: The arms are locked, the shoulders pressed down and the hips clear of the floor.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:15:29.478894+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4c472f4b-8453-4d11-b925-e0c788903a6e.png",
+      "sha256": "1421e8419d17238abf1e9a4c99ba8186c16ca4ba79b063f44e54f105a061351b"
+    },
+    {
+      "id": "straddle-l-sit-1.png",
+      "slug": "straddle-l-sit",
+      "pose": "Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Straddle L-sit. Camera: front. Equipment: a pair of parallettes. Pose: Full hold: the arms are locked straight, the shoulders pressed down, the hips lifted. Both legs are straight and spread wide in a straddle, lifted to horizontal level with the hips, toes pointed, the torso upright. Pose details: The legs are straight and at horizontal, spread wide in front of the body.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:15:31.546769+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5d6be29b-a0ed-4e9e-ba13-fb535f060387.png",
+      "sha256": "9148cefaed0ac05f52c4be30e79dd78b3c3f2239aa33339d24c45d3ab5901c15"
+    },
+    {
+      "id": "toes-to-bar-1.png",
+      "slug": "toes-to-bar",
+      "pose": "Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Toes-to-Bar. Camera: side (facing right). Equipment: straight bar overhead, no other equipment. Pose: Top: the toes touch the bar, the legs straight and the hips piked to about 45 degrees, the torso leaning back and the arms straight. The back is rounded and the head is neutral, the toes at the level of the hands. Pose details: The legs stay straight and the toes touch the bar, with a controlled swing-free descent.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:18:59.347141+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2a0074c3-c911-4a84-9376-1ce74535af26.png",
+      "sha256": "c0620dfb8b358a97b8dc07d1839fb59a1f71b64ac3724f6b25c975541b458014"
+    },
+    {
+      "id": "v-sit-1.png",
+      "slug": "v-sit",
+      "pose": "Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: V-Sit. Camera: side (facing right). Equipment: a pair of parallettes. Pose: Full hold: the arms are locked straight, the shoulders pressed down. The legs are straight and raised above horizontal at about 45 degrees to the floor, forming a V with the torso, the torso leaning back, the hips lifted off the floor. Pose details: The straight legs must be above horizontal with the hips off the floor, not the 90-degree L-sit.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:19:00.299450+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6c8b8955-90f8-4809-b3a0-865f3159bea0.png",
+      "sha256": "97a04feeb0fcff2149fd9d636f01046c5d08507b74cff18d60eb88b082efd719"
+    },
+    {
+      "id": "manna-1.png",
+      "slug": "manna",
+      "pose": "Perfect side profile of a gymnast performing FULL MANNA static hold on floor. Both palms planted with fingers pointing backwards left, straight arms vertical supporting shoulders. Shoulders at left and hips at right are at SAME HEIGHT, so torso is HORIZONTAL, chest faces UP. Hips pressed FORWARD beyond hands and high at shoulder height. Straight knees locked and legs tightly folded at hip; both legs extend HORIZONTALLY LEFT above chest and head, parallel to floor, toes pointed left. Draw a compressed sideways hairpin shape: horizontal torso below, horizontal straight legs above, connected at right-side hips. Neutral head at left end of torso, chin naturally toward chest. This is the advanced full Manna gymnastics pose with torso and legs both horizontal, not a V-sit. No equipment.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line.  Pose: Perfect side profile of a gymnast performing FULL MANNA static hold on floor. Both palms planted with fingers pointing backwards left, straight arms vertical supporting shoulders. Shoulders at left and hips at right are at SAME HEIGHT, so torso is HORIZONTAL, chest faces UP. Hips pressed FORWARD beyond hands and high at shoulder height. Straight knees locked and legs tightly folded at hip; both legs extend HORIZONTALLY LEFT above chest and head, parallel to floor, toes pointed left. Draw a compressed sideways hairpin shape: horizontal torso below, horizontal straight legs above, connected at right-side hips. Neutral head at left end of torso, chin naturally toward chest. This is the advanced full Manna gymnastics pose with torso and legs both horizontal, not a V-sit. No equipment.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:26:22.681896+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6af72ee5-1b78-49da-9dc0-c9e2794ac9f0.png",
+      "sha256": "4f3b0d5b66721686951eec612ed36b586e123b22c3ccd1f3acc27eff4d757f28"
+    },
+    {
+      "id": "deep-squat-hold-1.png",
+      "slug": "deep-squat-hold",
+      "pose": "Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Deep Squat Hold. Camera: front. Equipment: none (floor only). Pose: Full hold: the hips are lowered between the heels below the knees, the heels flat and the feet turned out. The chest is upright, the elbows are pressed inside the knees with the palms together in front of the chest, and the back is straight. Pose details: The heels stay flat on the floor and the chest stays upright.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:19:02.275492+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a2532b28-b673-4d35-b30e-8a338ca97f44.png",
+      "sha256": "44f7113a1367d992f3817a162c71dd56cf3da5ad369a47c0bfc0e2ab75585c43"
+    },
+    {
+      "id": "german-hang-1.png",
+      "slug": "german-hang",
+      "pose": "Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: German Hang. Camera: side (facing right). Equipment: a pair of gymnastic rings or a straight bar overhead. Pose: Full hold: the body hangs face down behind the rings with the arms straight and the shoulders in full extension behind the back. The back is arched, the hips are below the rings, the legs hang down and the head is neutral. Pose details: The arms are straight, the shoulders are open behind the back and the back is arched.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:19:03.161797+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-55207cc1-102b-4e6e-a927-3a455fa39642.png",
+      "sha256": "033f317a1ddff18452c6f691a9a73f8a2f896b20b588bf020f984e35eb5bde30"
+    },
+    {
+      "id": "wrist-prep-1.png",
+      "slug": "wrist-prep",
+      "pose": "Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Wrist Prep. Camera: side (facing right). Equipment: none (floor only). Pose: Rocking back: the hips shift back toward the heels and the hands turn so the fingers point back toward the knees. The palms stay flat and the arms stay straight, the wrists stretched in the opposite direction. Pose details: The palms stay flat on the floor and the elbows stay straight throughout.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:22:22.378343+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-99cd7127-37d4-4b07-8a88-355ebd8a6e78.png",
+      "sha256": "2d2de683f83c9bb8dac8ffc7edd974650fada4238c3c726b5172bdd84614157d"
+    },
+    {
+      "id": "bridge-1.png",
+      "slug": "bridge",
+      "pose": "Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Bridge. Camera: side (facing left). Equipment: none (floor only). Pose: Full hold: the arms are straight and the legs nearly straight, the feet flat on the floor. The hips are pushed high with the back evenly arched, the head hangs between the arms, the shoulders open and the chest pushed over the hands. Pose details: The arms are straight and the shoulders open over the hands, not a low arch of the lower back.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:22:23.073462+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c67e481c-39d7-4709-abf6-245ec4f773ce.png",
+      "sha256": "8ac50a7627587d719580f63bb2490371f0bf21f8245fefd80148e0d123870f31"
+    },
+    {
+      "id": "half-split-1.png",
+      "slug": "half-split",
+      "pose": "Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Half Split. Camera: side (facing right). Equipment: none (floor only). Pose: Full hold: the right leg is straight in front with the toes pulled back, the left knee is bent under the hips. The torso is folded forward over the right leg with the chest toward the knee, the hands on the floor beside the leg, the hips square. Pose details: The front leg stays straight and the hips stay square, not twisted.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:22:23.786235+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e058e492-5438-4fe5-9ebd-d4754fa3eaa6.png",
+      "sha256": "12c2297464e8669e5002b5a6eca95ba08a6091beea3084067210cc52e96b87fa"
+    },
+    {
+      "id": "front-split-1.png",
+      "slug": "front-split",
+      "pose": "Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Front Split. Camera: side (facing right). Equipment: none (floor only). Pose: Full hold: the hips on the floor, the front right leg straight forward along the floor and the back left leg straight behind with the top of the foot down. The torso is upright and tall with the arms raised overhead and the hips square to the front. Pose details: Both legs stay straight in a 180-degree line, and the hips stay square.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:22:24.616325+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1438c939-bbe6-4793-b074-621133359b1a.png",
+      "sha256": "fe1f2c89f0cbe39b69eaceeea58f8dcfa011d5bd54b486b85d4e8c22c97a0cda"
+    },
+    {
+      "id": "pancake-1.png",
+      "slug": "pancake",
+      "pose": "Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single representative STILL only. Smooth faceless egg-shaped head, absolutely no ears, face or hair. Anatomically natural neck and shoulders. Plain mid-thigh shorts and bare feet. One complete figure and necessary equipment centred with clear margins in square canvas. No text, arrows or floor line. Exercise: Pancake. Camera: front. Equipment: none (floor only). Pose: Full hold: the legs are straight and spread wide, the knees and toes facing up. The torso is folded forward from the hips with the chest close to the floor, the arms extended forward along the floor and the back long. Pose details: The fold comes from the hips with a long spine, not a rounded back.",
+      "status": "generated",
+      "updatedAt": "2026-10-12T04:22:25.502889+00:00",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3a72c669-a0a6-40b2-9978-5914878f5025.png",
+      "sha256": "78bc5fb6417b5013b0cf7f77e2ca7e2f6bd2e6fc2bd36948018d507439b871be"
+    }
+  ],
+  "status": "awaiting-user-review",
+  "completedAt": "2026-10-12T04:27:13.658882+00:00",
+  "qa": {
+    "checked": 50,
+    "method": "Inspected white outlines composited on grey; checked poses, head direction, equipment and transparency. All drafts await user approval.",
+    "replacements": [
+      "banded-iron-cross-1.png",
+      "manna-1.png"
+    ],
+    "references": [
+      "https://www.gymnasticbodies.com/exercises/manna-3/"
+    ]
+  },
+  "correctionRuns": [
+    {
+      "updatedAt": "2026-10-12T05:09:15.660927+00:00",
+      "ids": [
+        "wall-handstand-1.png",
+        "wall-hspu-negative-1.png",
+        "one-arm-handstand-1.png",
+        "ring-row-1.png",
+        "kip-up-1.png",
+        "strict-muscle-up-1.png",
+        "inverted-muscle-up-1.png"
+      ],
+      "failedAttempts": [
+        {
+          "id": "one-arm-handstand-1.png",
+          "status": "rejected",
+          "value": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 1d478b86-bcfc-40ab-b64c-bbb5a67ddf35. safety_violations=[sexual].\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"sexual\\\"\\n      ]\\n    }\\n  }\\n}\")"
+        },
+        {
+          "id": "ring-row-1.png",
+          "status": "rejected",
+          "value": "image generation failed: http 400 Bad Request: Some(\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Your request was rejected by the safety system. If you believe this is an error, contact us at help.openai.com and include the request ID 57bedad8-b9ba-4010-b1ea-36c603e8a95d. safety_violations=[self-harm].\\\",\\n    \\\"type\\\": \\\"image_generation_user_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"moderation_blocked\\\",\\n    \\\"moderation_details\\\": {\\n      \\\"moderation_stage\\\": \\\"output\\\",\\n      \\\"categories\\\": [\\n        \\\"self-harm\\\"\\n      ]\\n    }\\n  }\\n}\")"
+        }
+      ],
+      "qa": "Inspected all seven replacements on grey background for pose, orientation, hand placement, wall clearance and transparency."
+    },
+    {
+      "updatedAt": "2026-10-12T05:20:40.636126+00:00",
+      "ids": [
+        "one-arm-handstand-1.png",
+        "kip-up-1.png"
+      ],
+      "failedAttempts": [],
+      "qa": "Inspected both replacements on grey background for pose, orientation, hand placement, wall clearance and transparency."
+    }
+  ]
+}

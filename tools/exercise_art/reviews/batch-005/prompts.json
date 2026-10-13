@@ -1,0 +1,865 @@
+{
+  "schema": 1,
+  "batch": 5,
+  "status": "approved",
+  "jobs": [
+    {
+      "id": "static-neck-flexion-and-extension-1.png",
+      "slug": "static-neck-flexion-and-extension",
+      "pose": "Redraw the selected source pose for Static Neck Flexion and Extension, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Static Neck Flexion and Extension. Redraw the selected source pose for Static Neck Flexion and Extension, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: An exercise to either build or warm-up front and back neck muscles. Stand or sit with your head in neutral position. Place both of your hands on your forehead. Press your head against your hands and contract your neck muscles. Keep your head from moving forward. Hold for at least 30 seconds. Repeat with hands on the back of your head, pressing against them. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0001",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8fa1f6ea-9359-4bce-98fb-bedc15be5270.png",
+      "sha256": "81ab75a199a6f9c35d99823424196c58b48f44496cfb92e2bbec0573eb4c8251",
+      "updatedAt": "2026-10-12T22:17:02.591840+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:/Users/alex.mollard/.codex/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-186e4529-7cee-4463-a75c-5bcde89b25cc.png",
+          "sha256": "c94ca2756f7a2f0764d7367c3976db813cd76cd0df50b1ae0bc1568e02e0d17a",
+          "updatedAt": "2026-10-12T21:59:58.077972+00:00"
+        }
+      ]
+    },
+    {
+      "id": "static-neck-side-flexion-1.png",
+      "slug": "static-neck-side-flexion",
+      "pose": "Redraw the selected source pose for Static Neck Side Flexion, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Static Neck Side Flexion. Redraw the selected source pose for Static Neck Side Flexion, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand or sit with your head in neutral position. Place your left hand against the left side of your head, above your ear. Push your head against your hand, without moving your head. Repeat with your right hand, right side of your head. Make sure you maintain your chin at a 90 degree angle to your neck. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0002",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c36e5cac-0fbc-40de-ad0b-1cfc21f9bca9.png",
+      "sha256": "a7cf85fa48759e11df9d980acc1dd2fdd6611bda0d01d68224410d8e0871c6f9",
+      "updatedAt": "2026-10-12T22:17:08.461445+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-026e59af-fdf7-4f60-a7b5-282ea74e23e4.png",
+          "sha256": "b9d3f2e8f64736d5dcbe37ed6d1b147b555e8aa0b1c3f7ebfd5a53094b02b028",
+          "updatedAt": "2026-10-12T22:03:01.279360+00:00"
+        }
+      ]
+    },
+    {
+      "id": "seated-military-press-1.png",
+      "slug": "seated-military-press",
+      "pose": "Redraw the selected source pose for Seated Military Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Seated Military Press. Redraw the selected source pose for Seated Military Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Sit on the bench with your toes pointing straight out, back straight and abs drawn in. Grip the bar with your palms facing outwards and your hands shoulder width apart. With bar in front of your head, press upwards extending your arms but not locking them. Pause at the top and then in a controlled movement lower the bar to the starting position. Ensure your hips, knees and ankles are at 90 degree positions to ensure optimal posture. This exercise can also be performed with the bar in the starting position behind your head. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0004",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-844244a9-cb34-4cc2-a0eb-51cc4fd906bd.png",
+      "sha256": "cacf020f7195e7b9ce43c8ead75692bcf6b1069300dbd445074dcd1450090d14",
+      "updatedAt": "2026-10-12T22:03:09.246513+00:00"
+    },
+    {
+      "id": "dumbbell-shrug-1.png",
+      "slug": "dumbbell-shrug",
+      "pose": "Redraw the selected source pose for Dumbbell Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Shrug. Redraw the selected source pose for Dumbbell Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0005",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5939e8b1-9d39-4607-8e52-c822461da037.png",
+      "sha256": "4e658f026f75a3b038e0174284a7b718309754793915a5e3f43b6d1cdfd7a63c",
+      "updatedAt": "2026-10-12T22:17:15.942550+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a6735fc0-3d59-48a5-83fc-43aec2031225.png",
+          "sha256": "26d8f32b3310ee9c707fb1336181c780289e8e19aa038058b695d3e68521fbbe",
+          "updatedAt": "2026-10-12T22:03:15.866927+00:00"
+        }
+      ]
+    },
+    {
+      "id": "cable-front-raise-1.png",
+      "slug": "cable-front-raise",
+      "pose": "Redraw the selected source pose for Cable Front Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Cable Front Raise. Redraw the selected source pose for Cable Front Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place the pulley on the setting just above the floor. Stand with your feet shoulder width apart, your abs drawn in and your knees slightly bent. Starting at waist height, take the pulley in your left hand, palm facing the floor with otherwise known as an overhand grip, and raise your straight arm up towards your left shoulder. At shoulder height pause for a moment. With a controlled movement resist the weight and slowly lower your arm back to starting position at your waist. Repeat the exercise with your right arm. Maintain a good posture at all times during this exercise ensuring not swaying or arching at your back. Do not perform this exercise if you have shoulder pain. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0008",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-06da9af8-3e70-402b-b82a-9a399ed3f38c.png",
+      "sha256": "3982c3df6735c4a43c1ab62a770ae3d4d1df822e527135a714b22e88aaac2cce",
+      "updatedAt": "2026-10-12T22:03:22.622351+00:00"
+    },
+    {
+      "id": "cable-shrug-1.png",
+      "slug": "cable-shrug",
+      "pose": "Redraw the selected source pose for Cable Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Cable Shrug. Redraw the selected source pose for Cable Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Attach a pulley to the lowest setting on cable machine. Stand with your feet shoulder width apart, your abs drawn and your back straight. Start with the pulley at waist height. Grasp the pulley and shrug your shoulders up while keeping your arms extended. Hold this position for a moment then with a controlled motion return to the starting position of the pulley to waist height. Bend your knees slightly when standing. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0009",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a690f48e-da9f-4638-b13a-1041033b7ed9.png",
+      "sha256": "8aa4cd6f32985e03aa34af71af6dc437b83d4fc3eddea102d4ee764af1132b8b",
+      "updatedAt": "2026-10-12T22:06:42.017317+00:00"
+    },
+    {
+      "id": "smith-machine-upright-row-1.png",
+      "slug": "smith-machine-upright-row",
+      "pose": "Redraw the selected source pose for Smith Machine Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Smith Machine Upright Row. Redraw the selected source pose for Smith Machine Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand with your feet shoulder width apart and your abs drawn in. Place the bar on the Smith Machine in the position where your arms are fully extended in front of you. Place your hands shoulder width apart and raise the bar up towards your chin with a controlled motion. Pause at the top for a moment and rotate your shoulder blades together. Lower the bar to the starting position. Ensure you do not arch your back when pulling the bar up towards your chin. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0013",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-98b7db6e-158b-49b0-b6d4-25cb4c86822c.png",
+      "sha256": "2c22e8dbdd1a8288b7bf8a9ac2b404d5f43d35b6b611eb7398a5e8bc32afc789",
+      "updatedAt": "2026-10-12T22:17:22.050512+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fb7c9b66-7fe1-4204-a9c0-5d49784dbb03.png",
+          "sha256": "2241083627bf81223352980be315de5a5913caa1140121fe4cd27c4df12c7a2a",
+          "updatedAt": "2026-10-12T22:06:48.737368+00:00"
+        }
+      ]
+    },
+    {
+      "id": "barbell-upright-row-1.png",
+      "slug": "barbell-upright-row",
+      "pose": "Redraw the selected source pose for Barbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Barbell Upright Row. Redraw the selected source pose for Barbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand with your feet shoulder width apart, your abs drawn in and back straight. Place the bar on rack in the position where your arms are fully extended in front of you with your elbows slightly bent. Place your hands shoulder width apart and raise the bar up towards your chin with a controlled motion. Pause at the top for a moment and rotate your shoulder blades together. Lower the bar to the starting position. Repeat. Do not arch your back when raising the barbell towards your chin. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0014",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-a8259366-3e78-498b-985c-4cf58444b7ef.png",
+      "sha256": "27fc54af9638ecfc858b74f2e44479ecd96e55f71673fb32a5e322f1f602e336",
+      "updatedAt": "2026-10-12T22:06:53.968819+00:00"
+    },
+    {
+      "id": "cable-upright-row-1.png",
+      "slug": "cable-upright-row",
+      "pose": "Redraw the selected source pose for Cable Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Cable Upright Row. Redraw the selected source pose for Cable Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Attach a straight bar to the pulley on the floor. Stand with your feet shoulder width apart, your abs drawn in and your back straight. Grasp the bar with an overhand grasp (your palms facing downwards) and pull it up towards your waist, this is the starting position. Raise the bar up to in line with your shoulders. Pause at the top and rotate your shoulder blades together. Lower the bar in a controlled motion to the starting position. Do not arch your back when raising the bar to your shoulders. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0015",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fa4f07cf-2074-40da-bbd0-88b737b44c6c.png",
+      "sha256": "0099899c74e1f4b6f0eafe00d38b478dba24fd016f577f399a65c24ad796333c",
+      "updatedAt": "2026-10-12T22:20:01.018247+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-fd48e2d1-19bc-45a5-ac13-bbb328dbf9ad.png",
+          "sha256": "3494e9fb6b2bbd94823f929e85d750bdbf9f9e7e35a5430adac2d65830ff5e6b",
+          "updatedAt": "2026-10-12T22:07:00.434508+00:00"
+        }
+      ]
+    },
+    {
+      "id": "dumbbell-upright-row-1.png",
+      "slug": "dumbbell-upright-row",
+      "pose": "Redraw the selected source pose for Dumbbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Upright Row. Redraw the selected source pose for Dumbbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Grasp a dumbbell in each hand with an overhand grip (palms facing downwards) and hold them in front of your thighs. Stand with your feet shoulder width apart, your abs drawn in and your back straight. Starting with the dumbbells at your thighs, slowly raise them up towards your shoulders by bending your elbows. Pause at the top and rotate your shoulder blades together. Lower the dumbbells in a controlled motion to your thighs. Repeat. Do not arch your back when raising the dumbbells towards your shoulders. Ensure the dumbbells are held close to your body throughout the exercise. Do not perform this exercise if you have wrist, shoulder or elbow pain. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0016",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c55352a3-c1ca-4ec0-8d8e-77bcf04dcd4e.png",
+      "sha256": "f770ec17966b09b361758bcca0135b03914f40865a58ae901db294f5464353cd",
+      "updatedAt": "2026-10-12T22:20:12.826646+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5cdaecca-5e92-4ede-acb0-fbed00862bd2.png",
+          "sha256": "e11ab7b8dc944cc5762a8676aa7bbd8739191b1e1cddd9fbc052bf6960fc8943",
+          "updatedAt": "2026-10-12T22:07:06.883878+00:00"
+        }
+      ]
+    },
+    {
+      "id": "bent-over-cable-lateral-raise-1.png",
+      "slug": "bent-over-cable-lateral-raise",
+      "pose": "Redraw the selected source pose for Bent-Over Cable Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Bent-Over Cable Lateral Raise. Redraw the selected source pose for Bent-Over Cable Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Grasp the handle of the low pulley with your right hand. Bend forward from the waist; your upper body should be nearly parallel with the floor. Bend your knees slightly and place your left hand on your left thigh. Let your right arm hang from your shoulder in front of you with your elbow slightly bent. This is your starting position. Lift your right arm, keeping your elbow slightly bent. Keep moving your arm until it is parallel to the floor, in line with your right ear. Slowly bring the weight back down to the starting position. Perform exercise on left arm and then repeat. Start with a lower weight in order to perfect the technique. Ensure your back remains straight throughout this exercise in order to prevent injury. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0017",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-42691973-12b3-4bba-a0c8-98f9e143a34e.png",
+      "sha256": "08b99a6452ffd92261065e966b698c882ace7ba1c9532ab57714e137cd723e82",
+      "updatedAt": "2026-10-12T22:10:06.807120+00:00"
+    },
+    {
+      "id": "lateral-raise-1.png",
+      "slug": "lateral-raise",
+      "pose": "Redraw the selected source pose for Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Lateral Raise. Redraw the selected source pose for Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0018",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2a50435e-af46-4ddd-9e36-13d50b51976d.png",
+      "sha256": "d881fef0ff2393bcc3c58de61167ec040b94eb9585513878fdcf00f5806098de",
+      "updatedAt": "2026-10-12T22:20:22.845071+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-cae27960-dca0-4f62-ad6d-a9899599c72a.png",
+          "sha256": "b48b5b96c410a4f3b5fc15de71b2a196f95a6a3934889f6ce5b633d1b30f5be3",
+          "updatedAt": "2026-10-12T22:10:12.782358+00:00"
+        }
+      ]
+    },
+    {
+      "id": "ball-wall-circles-1.png",
+      "slug": "ball-wall-circles",
+      "pose": "Redraw the selected source pose for Ball Wall Circles, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Ball Wall Circles. Redraw the selected source pose for Ball Wall Circles, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand upright with your feet shoulder width apart. Place a Swiss ball at chest height against a wall and with your left hand, roll the ball in small circles against the wall. Keep your arm fully extended with a slight bend in the elbow. Reverse the direction of the circles. Switch arms. Maintain a good upright posture throughout this exercise. Ensure the swiss ball is inflated enough to allow for smooth rhythmical circles. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0019",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-cc73ab7b-eddc-46de-845a-f3c5d71ecc05.png",
+      "sha256": "04d20afe49201c0a03432cec43bb9ea428a9e8e8b81305e6cefc1446fe4033b6",
+      "updatedAt": "2026-10-12T22:10:14.815683+00:00"
+    },
+    {
+      "id": "banded-reverse-fly-1.png",
+      "slug": "banded-reverse-fly",
+      "pose": "Redraw the selected source pose for Banded Reverse Fly, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Banded Reverse Fly. Redraw the selected source pose for Banded Reverse Fly, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place an exercise band around a post or machine at mid chest height. Stand with your feet shoulder width apart, abs drawn in and knees slightly bent. Stand back from the post so there is tension in the band, grasping the band with your arms extended in front of you and a slight bend in your elbows; this is your starting position. Bring your arms back in a controlled motion till they are parallel at your sides and in line with your shoulders. Slowly return your arms to the starting position in front of your chest. Repeat. Maintain a good upright posture at all times during this exercise ensuring you do not arch your back. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0020",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-cf26239b-0598-4d0d-8908-03aef8f29b3f.png",
+      "sha256": "bb8ce4518d64c8cf957a17d4a58e03319c415a542754ae6f749f7715e33c38aa",
+      "updatedAt": "2026-10-12T22:20:32.449747+00:00",
+      "requestedCorrection": "Remove ears; keep all other artwork unchanged.",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b445ced5-4eda-4f9e-abc5-e13697c2bd94.png",
+          "sha256": "692651438eb34e2fc64122b84e12a1245e81c85cfaba0f87b794d3e55d7a8e5d",
+          "updatedAt": "2026-10-12T22:10:15.711737+00:00"
+        }
+      ]
+    },
+    {
+      "id": "flat-bench-leg-raise-1.png",
+      "slug": "flat-bench-leg-raise",
+      "pose": "Redraw the selected source pose for Flat Bench Leg Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Flat Bench Leg Raise. Redraw the selected source pose for Flat Bench Leg Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie on a flat bench with your hands under your hips supporting your back. Your legs should be unsupported by the bench from below your knees. With your feet together and your toes flexed upwards, raise your straight legs up a few cm off the bench; both of your legs should have no contact with the bench. This is your starting position. Keep your legs straight with a slight bend in the knees and raise your legs to just before 90 degrees with your hips. Pause at the top and lower your legs in slow controlled manner back to the starting position. Repeat. If you are pregnant you should contact your doctor prior to doing this exercise. Ensure your back stays in contact with the bench at all times during this exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0021",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b0a69d34-d78a-472e-8e57-e4292a7b3058.png",
+      "sha256": "1b9b77287f8cd8737191f31fc6fc2721accb79a62b49607311d03fdbfad22996",
+      "updatedAt": "2026-10-12T22:10:16.530637+00:00"
+    },
+    {
+      "id": "smith-machine-rear-delt-row-1.png",
+      "slug": "smith-machine-rear-delt-row",
+      "pose": "Redraw the selected source pose for Smith Machine Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Smith Machine Rear Delt Row. Redraw the selected source pose for Smith Machine Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: This is an exercise for rear deltoid,shoulder, biceps and back strengthening. Set the bar to the lowest setting. Place your feet shoulder width apart with a slight bend in the knees. Bend at the waist while keeping your back straight and chest parallel to the floor. Grasp the bar slightly wider than your shoulders with an overhand grasp and your arms straight with a slight bend in the elbows. Raise the bar with a controlled motion to the lower part of your chest by bending and elevating your elbows. Hold for a moment and then lower to the starting position. Repeat. Ensure you back is straight and that you maintain a good posture throughout this exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0022",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-abab22f8-6343-487a-bbfa-c2a276d51bb0.png",
+      "sha256": "361d85d432638d991b3e278e1bb770fc6f855ed488975f7cc98e9ae12be11228",
+      "updatedAt": "2026-10-12T22:13:37.076305+00:00"
+    },
+    {
+      "id": "lying-rear-lateral-raise-1.png",
+      "slug": "lying-rear-lateral-raise",
+      "pose": "Redraw the selected source pose for Lying Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Lying Rear Lateral Raise. Redraw the selected source pose for Lying Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place the dumbbells at he head of the bench. Lie facedown on a raised bench; raised enough for your arms to move freely beneath the bench. Place your toes on the floor in order to stabilise yourself. Grasp the dumbbells and with a 30 degree bend in your elbows, this is the starting position. Raise your arms to shoulder height, maintaining a controlled motion. Return to starting position and repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0023",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4f686d89-fad2-4204-ba81-f5bbc4b98e0d.png",
+      "sha256": "f271df8cdca62ba78a4bd6880ce13c69e36786c1b5f12a5230a4895488acd86c",
+      "updatedAt": "2026-10-12T22:19:16.988707+00:00",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e93a0159-ae54-4222-adb5-d93bc5016f60.png",
+          "sha256": "05f6ee5149fe8fbf0330fab596d6d2df3e09145a645e024dbaaf550f35adfe88",
+          "updatedAt": "2026-10-12T22:13:47.584312+00:00"
+        }
+      ]
+    },
+    {
+      "id": "dumbbell-rear-delt-row-1.png",
+      "slug": "dumbbell-rear-delt-row",
+      "pose": "Redraw the selected source pose for Dumbbell Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Rear Delt Row. Redraw the selected source pose for Dumbbell Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place your right foot on the floor, rest your left knee and hand on a flat bench. Lean forward so your body's weight is supported by your left arm and knee. Keeping your back flat, reach down and pick up the dumbbell with your right hand. Raise your right arm as close to your chest as possible; while bending and bringing your elbow back as far as you can. Pause at the top for a moment and then lower the dumbbell in a controlled manner to the starting position. Switch arms by doing the opposite positioning. Repeat. maintain a good posture at all times throughout the exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0024",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-df281b77-d64d-46bf-9791-05f285e40e60.png",
+      "sha256": "3e3dfe691e7e0e304f6324e74c3021b6e29e247216cc78eef9d2be0e206f3b4e",
+      "updatedAt": "2026-10-12T22:14:01.078472+00:00"
+    },
+    {
+      "id": "seated-cable-row-1.png",
+      "slug": "seated-cable-row",
+      "pose": "Redraw the selected source pose for Seated Cable Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Seated Cable Row. Redraw the selected source pose for Seated Cable Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0025",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b0021054-cf65-41ee-a7bf-7c156d68b4d6.png",
+      "sha256": "10fcff58ffcf3c0e0aeb8e369e1d9deb2b6a77b547a61cd4f675c672cc82cb45",
+      "updatedAt": "2026-10-12T22:14:14.912801+00:00"
+    },
+    {
+      "id": "barbell-row-1.png",
+      "slug": "barbell-row",
+      "pose": "Redraw the selected source pose for Barbell Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Barbell Row. Redraw the selected source pose for Barbell Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0026",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c4c830ba-6ac0-492e-875b-388d2032f18c.png",
+      "sha256": "940878b9799491a47daa4dc580d1636344400950940bfd73442ff806a4093c70",
+      "updatedAt": "2026-10-12T22:14:23.613823+00:00"
+    },
+    {
+      "id": "abdominal-draw-in-1.png",
+      "slug": "abdominal-draw-in",
+      "pose": "Redraw the selected source pose for Abdominal Draw-In, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Abdominal Draw-In. Redraw the selected source pose for Abdominal Draw-In, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Get down on a mat on your hands and knees, forming a four point rectangle or square shape. Keep your back straight and your hips and pelvis in a neutral position. Draw your abs in, crunching your abs while keeping your back still. Hold for a moment and then release returning to the starting position. Repeat. For this exercise to be maximally effective your back should not move at all through out the contraction and relaxation. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0027",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e419a634-dd28-4e73-92d0-df852bf47169.png",
+      "sha256": "7c4c68420978a6769f1d50ae44bc141c8eaf1f04baa922f0ba324cf00e4566cc",
+      "updatedAt": "2026-10-12T22:19:56.758204+00:00"
+    },
+    {
+      "id": "barbell-rear-delt-row-1.png",
+      "slug": "barbell-rear-delt-row",
+      "pose": "Redraw the selected source pose for Barbell Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Barbell Rear Delt Row. Redraw the selected source pose for Barbell Rear Delt Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place a barbell on the floor in front of you with the resided weights attached. With your knees bent and back straight grasp the bar with a wide overhand grip (palms facing downwards). Keep your chest steady and your arms perpendicular to your chest. Pull the bar as far up to your chest as you can. Hold for a moment than lower the bar in a controlled manner. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0028",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1041112d-60c8-4f7b-bf80-a152564b8da6.png",
+      "sha256": "f2f28f7b95d0c5755ddef9927086e1a4449d5a002cec97f4a5eef0ef279d17b1",
+      "updatedAt": "2026-10-12T22:20:10.289227+00:00"
+    },
+    {
+      "id": "t-bar-row-1.png",
+      "slug": "t-bar-row",
+      "pose": "Redraw the selected source pose for T-Bar Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: T-Bar Row. Redraw the selected source pose for T-Bar Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0029",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-af8808d5-0dec-42aa-b7d7-7b0607b6aa07.png",
+      "sha256": "b8d6018ea1bb6cbd0f19ee3a3e2c19eb1c3af770ee31f83cd1843cb09b690f9f",
+      "updatedAt": "2026-10-12T22:20:20.639112+00:00"
+    },
+    {
+      "id": "incline-dumbbell-shoulder-press-1.png",
+      "slug": "incline-dumbbell-shoulder-press",
+      "pose": "Redraw the selected source pose for Incline Dumbbell Shoulder Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Incline Dumbbell Shoulder Press. Redraw the selected source pose for Incline Dumbbell Shoulder Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie down on an incline bench with your feet flat on the floor and grasp the dumbbells. With your elbows bent raise your arms up until in line with your shoulders this is your starting position. With your abs drawn in, raise the dumbbells as high as you are able above your shoulders. Lower the dumbbells in a slow controlled manner to starting position. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0031",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-25c1016a-0303-43c6-a2e6-6ae896bec8af.png",
+      "sha256": "7f30d6e707f891404b54ddc39c2c03f6b85db564a4ff2ad9c32fbd697a043481",
+      "updatedAt": "2026-10-12T22:20:30.466320+00:00"
+    },
+    {
+      "id": "head-supported-rear-delt-raise-1.png",
+      "slug": "head-supported-rear-delt-raise",
+      "pose": "Redraw the selected source pose for Head-Supported Rear Delt Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Head-Supported Rear Delt Raise. Redraw the selected source pose for Head-Supported Rear Delt Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Rest your forehead on an incline bench in oder to stabilise your movements so you are bent over with your back parallel to the floor, draw your abs in. Grasp dumbbells in your hands with your arms straight and elbows slightly bent ensuring they are not locked. Slowly raise the dumbbells up to shoulder height. Pause for a moment and then return to the starting position. Repeat. ensure your back is straight and parallel to the floor throughout the exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0032",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-5d0f3407-0b81-4f18-9e78-7b009369332b.png",
+      "sha256": "a35c4aa7c8ba53e57f86642d37d55c4f270bb0369d40587037c979603fd40b3e",
+      "updatedAt": "2026-10-12T22:20:37.205476+00:00"
+    },
+    {
+      "id": "front-raise-1.png",
+      "slug": "front-raise",
+      "pose": "Redraw the selected source pose for Front Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Front Raise. Redraw the selected source pose for Front Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0033",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-96ae2598-f688-457e-844c-ae843e1e3a8f.png",
+      "sha256": "98dda3d3e292d0772bce44a831e91351a7a0fdff883cce21e68260fcf5d9bbdb",
+      "updatedAt": "2026-10-12T22:23:51.121279+00:00"
+    },
+    {
+      "id": "cable-internal-rotation-1.png",
+      "slug": "cable-internal-rotation",
+      "pose": "Redraw the selected source pose for Cable Internal Rotation, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Cable Internal Rotation. Redraw the selected source pose for Cable Internal Rotation, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Sit on the floor with your body close to low cable pulley. Grasp the pulley with your left arm and position your elbow bent at 90 degree angle. Pull the cable towards your body and internally rotate your shoulder until your forearm is across your abs. Return to starting position. Repeat with right arm. Ensure your back is straight throughout the exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0034",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8d4ceeb6-e433-4e21-ac39-c28ed96075f5.png",
+      "sha256": "4077e571b08ecb9eae709a05c8b2d295122190119a45c0a143ba754a1eb0c811",
+      "updatedAt": "2026-10-12T22:23:52.166893+00:00"
+    },
+    {
+      "id": "seated-cable-rear-lateral-raise-1.png",
+      "slug": "seated-cable-rear-lateral-raise",
+      "pose": "Redraw the selected source pose for Seated Cable Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Seated Cable Rear Lateral Raise. Redraw the selected source pose for Seated Cable Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Sit on the edge of a bench with your feet on the floor in front of you. Rest your chest on your thighs with your back straight, grasp the cable pulleys with opposite hands. Raise your upper arms to shoulder height. Pause at the top for a moment. Lower your arms to the starting position in a controlled motion. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0035",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f05374c0-c4e7-4946-9b24-b95157d01e42.png",
+      "sha256": "7a41ecd9b65e40d4b003521010e70d6ac9e30c75d113023b1cae0850601ad63b",
+      "updatedAt": "2026-10-12T22:23:53.278618+00:00"
+    },
+    {
+      "id": "lying-one-arm-rear-lateral-raise-1.png",
+      "slug": "lying-one-arm-rear-lateral-raise",
+      "pose": "Redraw the selected source pose for Lying One-Arm Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Lying One-Arm Rear Lateral Raise. Redraw the selected source pose for Lying One-Arm Rear Lateral Raise, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lay face down on a flat bench high enough for your arms to hang down to the floor. Place a dumbbell at your side. Your other hand not grasping the dumbbell can be on the floor stabilising your movements. Grasp the dumbbell in your hand and raise your upper arm to shoulder height. Keep your arm straight and perpendicular to your chest with a slight bend in the elbow. In a slow controlled manner lower your arm to starting position. Ensure your back is straight throughout this exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0037",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-1172d70b-d7a7-421e-8731-0058a91c3395.png",
+      "sha256": "fdf8330fd5a25dca5165c80b1d3d9c4d289a796bd148ef8fadb70988af1d0b3e",
+      "updatedAt": "2026-10-12T22:23:54.602886+00:00"
+    },
+    {
+      "id": "one-arm-dumbbell-shoulder-press-1.png",
+      "slug": "one-arm-dumbbell-shoulder-press",
+      "pose": "Redraw the selected source pose for One-Arm Dumbbell Shoulder Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: One-Arm Dumbbell Shoulder Press. Redraw the selected source pose for One-Arm Dumbbell Shoulder Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand with your feet shoulder width apart, back straight and abs drawn in. Grasp a dumbbell in your hand and lift it with a bent elbow to your shoulder height to start. Lift the dumbbell straight up till your arm is fully extended overhead. Lower in a controlled manner and return to starting position. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0038",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-95fdcab3-03c2-4569-be01-7bb1387e34d3.png",
+      "sha256": "e4d15350be134cc063bb43450dc473e77d3fa485b61a63624fb3250fb0078c48",
+      "updatedAt": "2026-10-12T22:23:55.805052+00:00"
+    },
+    {
+      "id": "one-arm-dumbbell-upright-row-1.png",
+      "slug": "one-arm-dumbbell-upright-row",
+      "pose": "Redraw the selected source pose for One-Arm Dumbbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: One-Arm Dumbbell Upright Row. Redraw the selected source pose for One-Arm Dumbbell Upright Row, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand near a post or other stable tall object. With your one hand, hold the post. Grasp the dumbbell in your other hand with a pronated grip (palms facing backwards). Place the dumbbell in front of your thigh, this is starting position. Lift the dumbbell upward to your shoulder with your elbow pointing away from your body in a rowing motion. Lower your arm to starting position and repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0039",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e70585aa-b93d-4edc-913d-0fe7938fb0b1.png",
+      "sha256": "26cf56a17d29ec66a5565289dba38383283b6d0039dae0dd210e7b21ce65b4e9",
+      "updatedAt": "2026-10-12T22:26:42.246385+00:00"
+    },
+    {
+      "id": "smith-machine-shrug-1.png",
+      "slug": "smith-machine-shrug",
+      "pose": "Redraw the selected source pose for Smith Machine Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Smith Machine Shrug. Redraw the selected source pose for Smith Machine Shrug, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place the barbell at waist height. Stand with your feet shoulder width apart and your abs drawn in. Grasp the bar with an overhand grip and straightened arms. As you lift the bar allow the weight to pull your shoulders down, shrug your shoulders up and to the back. Hold for a moment and then return to starting position. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0041",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-230f3c92-8857-48ef-bb9e-1d343da5222e.png",
+      "sha256": "90f973f05b1d749a11e8c344c0efe896bca2257044e4b4c6e0a724f27dd763d9",
+      "updatedAt": "2026-10-12T22:26:43.058534+00:00"
+    },
+    {
+      "id": "bench-press-1.png",
+      "slug": "bench-press",
+      "pose": "Redraw the selected source pose for Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Bench Press. Redraw the selected source pose for Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0042",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-c4eedc8b-08a2-4e98-98dc-445a95c33b30.png",
+      "sha256": "86e117e5a317ba8b148c9943fad3114ef8eccfe5e3e298c6f9bc897ff996bef3",
+      "updatedAt": "2026-10-12T22:26:43.850107+00:00"
+    },
+    {
+      "id": "incline-bench-press-1.png",
+      "slug": "incline-bench-press",
+      "pose": "Redraw the selected source pose for Incline Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Incline Bench Press. Redraw the selected source pose for Incline Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0043",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-cd556aa3-d40f-49f9-beb3-1b835e3c4e06.png",
+      "sha256": "2b1cd621c33dc42a248b352a968644ef2e231e361db1098ce45e443af0a3b22e",
+      "updatedAt": "2026-10-12T22:26:44.751887+00:00"
+    },
+    {
+      "id": "banded-incline-bench-press-1.png",
+      "slug": "banded-incline-bench-press",
+      "pose": "Redraw the selected source pose for Banded Incline Bench Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Banded Incline Bench Press. Redraw the selected source pose for Banded Incline Bench Press, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Securely fasten the band under the leg of a flat bench, near your head. Lie flat on the bench with your feet flat on the floor in order to stabilise your movements. Grasp one end of the band in each hand and starting with your hands at chest level. Press upwards so your arms are fully extended. With a slow controlled motion return to starting position. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0044",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-311a6948-bb1e-4e1c-813d-0748cd6c320d.png",
+      "sha256": "21b80b39e8f7bf099d51373324a18aab26d3b744748d5b49f76e857ec26a8820",
+      "updatedAt": "2026-10-12T22:26:45.607258+00:00"
+    },
+    {
+      "id": "bent-arm-pullover-1.png",
+      "slug": "bent-arm-pullover",
+      "pose": "Redraw the selected source pose for Bent-Arm Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Bent-Arm Pullover. Redraw the selected source pose for Bent-Arm Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie flat on a bench with your head hanging slightly over the end and your feet flat on the floor. Hold a barbell with a close grip (approximately 14\"), keep your elbows in throughout the exercise. Starting with your arms fully extended over your chest, slowly lower the bar in an arc over your head and towards the floor. Pull the bar back up to chest height in a slow controlled manner and return to starting position. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0045",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0cac31c7-6cff-4d97-a023-573a8a28d343.png",
+      "sha256": "62dc60f629cd3c25fcb07fd1cc44ac0c650f800265b9e863a17a6dc5554277ef",
+      "updatedAt": "2026-10-12T22:29:51.159825+00:00"
+    },
+    {
+      "id": "dumbbell-bent-arm-pullover-1.png",
+      "slug": "dumbbell-bent-arm-pullover",
+      "pose": "Redraw the selected source pose for Dumbbell Bent-Arm Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Bent-Arm Pullover. Redraw the selected source pose for Dumbbell Bent-Arm Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie flat on a bench with your head hanging slightly over the end and your feet flat on the floor. Hold a dumbbell with both hands, keep your elbows in throughout the exercise. Starting with your arms fully extended over your chest, slowly lower the dumbbell in an arc over your head and towards the floor. Pull the dumbbell back up to chest height in a slow controlled manner and return to starting position. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0046",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3ae4b030-7df2-471a-8ce1-dbba3431231a.png",
+      "sha256": "4cc2d8716cbd121f8befd9325ab870ac9256d29d208e69c2af70c37d165cce82",
+      "updatedAt": "2026-10-12T22:56:17.570483+00:00",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-d5e9fc48-c94b-4191-aa1b-177e83594031.png",
+          "sha256": "ae5a9dae489dbbc2bf6a3554d8cf2cc141d34d52660b835efd5f08ea5daa0f03",
+          "updatedAt": "2026-10-12T22:29:51.877614+00:00"
+        }
+      ],
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "dumbbell-bent-arm-pullover-1.png",
+            "sha256": "ae5a9dae489dbbc2bf6a3554d8cf2cc141d34d52660b835efd5f08ea5daa0f03",
+            "status": "redo",
+            "note": "Left arm is detached",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T22:47:12.573Z"
+          },
+          "correctionPrompt": "Create one NEW exercise illustration. Attached reference is STYLE ONLY, do not copy its pose. White pure single contour lines, muscular male in plain shorts, barefoot, transparent background AND transparent interiors, no fills or shading. Smooth featureless egg-shaped head, NO EARS or ear bumps. Square canvas full body and equipment with margin. Anatomically correct exactly TWO ARMS AND TWO LEGS, no detached limbs. The two shoulders are adjacent to the neck at the head end of the torso, both arms originate there. Use a clear overhead oblique three-quarter viewpoint from near the HEAD END so both shoulder attachments are plainly visible. Avoid side views that hide the far shoulder and make its arm appear attached to the middle of the torso. Exercise: bent-arm dumbbell pullover. Athlete lies supine lengthwise on a FLAT bench, feet on floor, knees bent. Both arms extend together above and slightly behind the head, elbows bent about 35 degrees, BOTH hands cup the same end of ONE dumbbell. Show a clear shoulder-to-upperarm-to-elbow-to-forearm-to-hand chain for each arm, with only two arms. Neither elbow connects to the body independently of its upper arm. Natural accurate anatomy.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3ae4b030-7df2-471a-8ce1-dbba3431231a.png",
+          "sha256": "4cc2d8716cbd121f8befd9325ab870ac9256d29d208e69c2af70c37d165cce82",
+          "rejectedAttempt": {
+            "slug": "dumbbell-bent-arm-pullover",
+            "prompt": "Edit target is the attached exercise illustration. Fix only the incorrect arm anatomy, retaining the exercise, equipment, camera, composition, muscular male in plain shorts, and clean white contour drawing. Every arm must attach continuously to its own shoulder, have one upper arm, one elbow, one forearm and one hand, with coherent near/far occlusion. Exactly two arms. Smooth blank oval head with NO EARS, no ear bumps, no face or hair. Pure white single clean strokes on genuine transparent background, including transparent body interiors. No fills, shading, grey, hatching or ghost lines. Square canvas. Bent-arm dumbbell pullover on flat bench: head right, feet left, supine. The far/left arm currently floats disconnected. Reconnect far upper arm anatomically to far shoulder at the upper chest beside the neck; both bent elbows and forearms lead to the hands holding the ONE dumbbell above/behind the head. Keep shoulders resting on bench; neither arm starts at ribs/waist.",
+            "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6f38f831-548f-4305-b0ef-1727dceb1bcf.png",
+            "hint": "Generated images are saved to C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9 as C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6f38f831-548f-4305-b0ef-1727dceb1bcf.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+            "reason": "Arm anatomy still ambiguous or incorrect"
+          }
+        }
+      ],
+      "requestedCorrection": "Left arm is detached"
+    },
+    {
+      "id": "cable-fly-1.png",
+      "slug": "cable-fly",
+      "pose": "Redraw the selected source pose for Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Cable Fly. Redraw the selected source pose for Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0048",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-f519488f-17d0-4b89-b4d3-908774211323.png",
+      "sha256": "0255f6d5f257b5473e5b57884f4c13ac3ccef069a8c8da8e2ec51aee895791bb",
+      "updatedAt": "2026-10-12T22:29:52.756132+00:00"
+    },
+    {
+      "id": "close-grip-bench-press-1.png",
+      "slug": "close-grip-bench-press",
+      "pose": "Redraw the selected source pose for Close-Grip Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Close-Grip Bench Press. Redraw the selected source pose for Close-Grip Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0049",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0cebb6c6-41c4-45f8-9d4a-2cdcb90cbbfe.png",
+      "sha256": "d2c14f134795bd3c639c0e5d158d42c796dbd589b731d486849e4aede33d95f6",
+      "updatedAt": "2026-10-12T22:29:53.574885+00:00"
+    },
+    {
+      "id": "banded-crossover-1.png",
+      "slug": "banded-crossover",
+      "pose": "Redraw the selected source pose for Banded Crossover, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Banded Crossover. Redraw the selected source pose for Banded Crossover, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: This is an exercise for chest, biceps and shoulder strengthening. Secure an exercise to a post (or secure pole) and hold it in each hand. Step forward so the band has some tension, facing away from the post. Your arms at mid chest height and out to the side, palms facing forward this is your starting position. Bring your hands together in front of you. Hold this for a moment and then in a controlled motion return to starting position. Keep your arms straight with a slight bend in your elbows throughout this exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0050",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-82ac27ea-36a0-46f7-ac53-292f924c35f4.png",
+      "sha256": "17053475391faad029520a1b3e70dd7919105e6ea01b44a642420ed4040bf7b0",
+      "updatedAt": "2026-10-12T22:29:54.332236+00:00"
+    },
+    {
+      "id": "decline-bench-press-1.png",
+      "slug": "decline-bench-press",
+      "pose": "Redraw the selected source pose for Decline Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Decline Bench Press. Redraw the selected source pose for Decline Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie on a decline bench with your head lower than your feet. Grasp the bar at a grip 3-6 inches wider than your shoulders. Raise the bar above your chest, keeping your elbows close in. Slowly and with control lower the bar straight to your lower chest. Raise the bar back up to starting position with the bar just above your chest. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0051",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b710f531-f931-44a0-9860-b33f178abf90.png",
+      "sha256": "285defde61326e26c3fcd4d5fddd076040740f46017f338828dae4aef2bcb811",
+      "updatedAt": "2026-10-12T22:56:17.570483+00:00",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-32d39a3b-955a-41ff-b47e-f0212a435b1f.png",
+          "sha256": "56031d3bad7157120d1253dfa21f7d86e57dab6a69930f1e615881210b347ab4",
+          "updatedAt": "2026-10-12T22:32:55.339314+00:00"
+        }
+      ],
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "decline-bench-press-1.png",
+            "sha256": "56031d3bad7157120d1253dfa21f7d86e57dab6a69930f1e615881210b347ab4",
+            "status": "redo",
+            "note": "Left arm is detached",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T22:47:27.769Z"
+          },
+          "correctionPrompt": "Create one NEW exercise illustration. Attached reference is STYLE ONLY, do not copy its pose. White pure single contour lines, muscular male in plain shorts, barefoot, transparent background AND transparent interiors, no fills or shading. Smooth featureless egg-shaped head, NO EARS or ear bumps. Square canvas full body and equipment with margin. Anatomically correct exactly TWO ARMS AND TWO LEGS, no detached limbs. The two shoulders are adjacent to the neck at the head end of the torso, both arms originate there. Use a clear overhead oblique three-quarter viewpoint from near the HEAD END so both shoulder attachments are plainly visible. Avoid side views that hide the far shoulder and make its arm appear attached to the middle of the torso. Exercise: decline barbell bench press. Athlete lies supine lengthwise on a DECLINE bench, head end LOW and foot end HIGH, ankles under padded supports. Exactly two arms start at the two shoulders flanking the neck, hands grip a barbell slightly wider than shoulder width above chest, elbows slightly bent at near-lockout. The bar is perpendicular to spine. Neither arm originates at ribs, abdomen or hip. Accurate equipment and natural anatomy.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b710f531-f931-44a0-9860-b33f178abf90.png",
+          "sha256": "285defde61326e26c3fcd4d5fddd076040740f46017f338828dae4aef2bcb811",
+          "rejectedAttempt": {
+            "slug": "decline-bench-press",
+            "prompt": "Edit target is the attached exercise illustration. Fix only the incorrect arm anatomy, retaining the exercise, equipment, camera, composition, muscular male in plain shorts, and clean white contour drawing. Every arm must attach continuously to its own shoulder, have one upper arm, one elbow, one forearm and one hand, with coherent near/far occlusion. Exactly two arms. Smooth blank oval head with NO EARS, no ear bumps, no face or hair. Pure white single clean strokes on genuine transparent background, including transparent body interiors. No fills, shading, grey, hatching or ghost lines. Square canvas. Decline barbell bench press: feet left elevated, head right lower, athlete supine. The far/left arm currently is detached. Redraw far shoulder and arm as a continuous anatomical chain starting at the far side of the upper chest beside the neck, ending at its own hand on the bar above the chest. Both elbows bent naturally, arms clear of thighs. Keep two hands visibly gripping the straight barbell.",
+            "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-010ab23b-8ff3-4492-bb69-1edf315babd1.png",
+            "hint": "Generated images are saved to C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9 as C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-010ab23b-8ff3-4492-bb69-1edf315babd1.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+            "reason": "Arm anatomy still ambiguous or incorrect"
+          }
+        }
+      ],
+      "requestedCorrection": "Left arm is detached"
+    },
+    {
+      "id": "decline-dumbbell-press-1.png",
+      "slug": "decline-dumbbell-press",
+      "pose": "Redraw the selected source pose for Decline Dumbbell Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Decline Dumbbell Press. Redraw the selected source pose for Decline Dumbbell Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Grasp the dumbbells your hands and lie on a decline bench with your head lower than your feet. Raise the dumbbells above your chest, bringing your elbows close in, this is your starting position. Slowly and with control lower the dumbbells to either side of your lower chest. Raise the dumbbells back up to starting position. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0052",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-529a011d-6c87-4fbb-b3aa-b04c2f1e88d8.png",
+      "sha256": "6036bd0b3f60dd73b6cf78d7af42f302aa6231518093029bd13ec4352ed12596",
+      "updatedAt": "2026-10-12T22:32:56.017225+00:00"
+    },
+    {
+      "id": "decline-dumbbell-fly-1.png",
+      "slug": "decline-dumbbell-fly",
+      "pose": "Redraw the selected source pose for Decline Dumbbell Fly, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Decline Dumbbell Fly. Redraw the selected source pose for Decline Dumbbell Fly, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie on a decline bench with your head lower than your body and your feet firmly on the ground. With dumbbells together above your shoulders and your arms straight out above you as your starting position. Keeping your arms straight and with a slight bend in your elbows lower the dumbbells down towards the floor in an arc, up until just above your shoulders. Return to the starting position in a slow controlled manner. Repeat. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0053",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b92d7f6d-084b-4d04-8835-fd7547634731.png",
+      "sha256": "6fcaf3b3d0b005ceb4c0f383807b12dbb924a6e249644fbd86f62497af367657",
+      "updatedAt": "2026-10-12T23:16:22.270552+00:00",
+      "previousAttempts": [
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-0901a9a4-8903-4e49-9cdd-ccfe396452c0.png",
+          "sha256": "f05625e0cc17289eddaddba9c474acd8c88bf2490cc748d3c764634eb122b431",
+          "updatedAt": "2026-10-12T22:32:56.676516+00:00"
+        },
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8e87692b-0f4c-4969-a679-bd4d025aaedf.png",
+          "sha256": "1b69b71eaeca4d642c95ba2cf489de3a0b3aae0a0c31c655ef6b751d446384e3",
+          "updatedAt": "2026-10-12T22:56:17.570483+00:00"
+        },
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-bcf33fe8-0023-4b3c-8a07-48dabb62efce.png",
+          "sha256": "18fdbb815fecc371b9b0f32e02bb21f17ddb2fbce2386e0a455023b4231fece7",
+          "updatedAt": "2026-10-12T23:00:32.388432+00:00"
+        },
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-70a4c7a1-7249-45dd-a05c-be96f2b1a0a9.png",
+          "sha256": "688b288c8dfa45b245347afa74ea8f04dfc2d880111d14641316795e01446cd4",
+          "updatedAt": "2026-10-12T23:08:49.335015+00:00"
+        },
+        {
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-791bb175-5b45-4450-b2ab-53d906fbc815.png",
+          "sha256": "0db34390d03bd7705abc92efd15db324a85693f13cf4f528a5b3a933b73a0595",
+          "updatedAt": "2026-10-12T23:13:48.095124+00:00"
+        }
+      ],
+      "reviewRevisions": [
+        {
+          "review": {
+            "id": "decline-dumbbell-fly-1.png",
+            "sha256": "f05625e0cc17289eddaddba9c474acd8c88bf2490cc748d3c764634eb122b431",
+            "status": "redo",
+            "note": "Left arm is in his leg",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T22:47:39.026Z"
+          },
+          "correctionPrompt": "Create one NEW exercise illustration. Attached reference is STYLE ONLY, do not copy its pose. White pure single contour lines, muscular male in plain shorts, barefoot, transparent background AND transparent interiors, no fills or shading. Smooth featureless egg-shaped head, NO EARS or ear bumps. Square canvas full body and equipment with margin. Anatomically correct exactly TWO ARMS AND TWO LEGS, no detached limbs. The two shoulders are adjacent to the neck at the head end of the torso, both arms originate there. Use a clear overhead oblique three-quarter viewpoint from near the HEAD END so both shoulder attachments are plainly visible. Avoid side views that hide the far shoulder and make its arm appear attached to the middle of the torso. Exercise: decline dumbbell fly. Athlete lies supine lengthwise on a DECLINE bench, head end LOW foot end HIGH, ankles supported by pads. Exactly two arms spread laterally out from the TWO SHOULDERS into a broad symmetrical T, elbows softly bent. One dumbbell in each of the two hands. The arms form a continuous shoulder girdle immediately below neck; shoulders at HEAD END. Both legs run together down the bench toward FOOT END, completely separate from arms. No arm or hand or dumbbell near pelvis or thigh. Clear unambiguous correct anatomy with only two arms and two dumbbells.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-8e87692b-0f4c-4969-a679-bd4d025aaedf.png",
+          "sha256": "1b69b71eaeca4d642c95ba2cf489de3a0b3aae0a0c31c655ef6b751d446384e3",
+          "rejectedAttempt": {
+            "slug": "decline-dumbbell-fly",
+            "prompt": "Edit target is the attached exercise illustration. Fix only the incorrect arm anatomy, retaining the exercise, equipment, camera, composition, muscular male in plain shorts, and clean white contour drawing. Every arm must attach continuously to its own shoulder, have one upper arm, one elbow, one forearm and one hand, with coherent near/far occlusion. Exactly two arms. Smooth blank oval head with NO EARS, no ear bumps, no face or hair. Pure white single clean strokes on genuine transparent background, including transparent body interiors. No fills, shading, grey, hatching or ghost lines. Square canvas. Decline dumbbell fly: feet left elevated, head right lower, athlete supine. The far/left arm currently emerges from the thigh/hip. Remove that erroneous arm path and redraw it starting at the FAR SHOULDER beside the upper chest, spreading out to the far side with a softly bent elbow and hand holding its dumbbell. Both arms emerge at the shoulders near the head end, never pelvis or thigh. The near arm also attaches at its shoulder. Exactly two dumbbells, one per hand.",
+            "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2dba69d8-1a05-4372-8992-0d03cca08f2c.png",
+            "hint": "Generated images are saved to C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9 as C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2dba69d8-1a05-4372-8992-0d03cca08f2c.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+            "reason": "Arm anatomy still ambiguous or incorrect"
+          }
+        },
+        {
+          "review": {
+            "id": "decline-dumbbell-fly-1.png",
+            "sha256": "1b69b71eaeca4d642c95ba2cf489de3a0b3aae0a0c31c655ef6b751d446384e3",
+            "status": "redo",
+            "note": "ankle clip into ankle holds",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T22:57:52.042Z"
+          },
+          "correctionPrompt": "Edit the attached decline dumbbell fly illustration. Change ONLY the ankles, feet and padded ankle restraint at the elevated foot end (upper right). The current horizontal cylinder incorrectly cuts through both ankles. Draw anatomically continuous lower legs, ankles and feet resting against TWO distinct cylindrical foam ankle pads on a decline bench, with natural physical contact and clear foreground occlusion. The pads lie in front of the lower shins/ankles and hide only the portions behind them: terminate leg contours where occluded, resume foot contours above/behind pads. No leg outlines passing through foam surfaces, no holes, no merging ankle flesh into cylinders, no disconnected feet. Pads attach to a narrow central metal bracket. Make both ankle-pad contacts unambiguous and anatomically possible. Preserve the entire approved upper body exactly: two arms attached at shoulders, dumbbells, chest, blank smooth NO-EARS oval head, pose and camera. Keep bench decline and full composition. Pure WHITE single contour strokes, transparent background AND all interiors genuinely transparent; no fill, grey, hatching, glow or shadows. Keep same square canvas and style.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-bcf33fe8-0023-4b3c-8a07-48dabb62efce.png",
+          "sha256": "18fdbb815fecc371b9b0f32e02bb21f17ddb2fbce2386e0a455023b4231fece7"
+        },
+        {
+          "review": {
+            "id": "decline-dumbbell-fly-1.png",
+            "sha256": "18fdbb815fecc371b9b0f32e02bb21f17ddb2fbce2386e0a455023b4231fece7",
+            "status": "redo",
+            "note": "ankles still in the bars at teh end",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T23:08:49.335015+00:00"
+          },
+          "reviewSource": "User chat feedback",
+          "correctionPrompt": "Edit this decline dumbbell fly. The ankle restraint is STILL physically impossible: legs currently enter holes in the front faces of foam cylinders and detached feet emerge from the top. Replace the entire lower-leg/foot/pad geometry, not just the cylinder separation. Draw BOTH LOWER LEGS, ANKLES AND FEET AS CONTINUOUS UNBROKEN FOREGROUND SILHOUETTES, clearly in FRONT OF the padded rollers. The rollers are BEHIND the lower shins, partially obscured by the legs. Stop every roller contour where it meets a foreground leg, and resume it on the other side; NEVER draw a roller contour across a leg or an ankle. No holes or cutouts in pads around shins. Ankles and feet must be completely outside the foam rollers, with visible narrow ankles connecting calves to heels and toes; no foot floating on top of a roller. Put the rollers slightly farther toward the knees, behind the lower calves, leaving both complete ankles and feet clear. Bend knees slightly if needed to make the contact credible. Keep the decline bench head-low feet-high, and preserve the approved upper-body pose, EXACTLY TWO arms, shoulder connections, two dumbbells, smooth blank NO-EARS head, camera and clean white-line style. Pure WHITE single contour strokes on genuinely TRANSPARENT background and transparent interiors. No fills, shades, shadows, text or hatching. Square canvas, complete figure. Aim for visibly different, clear continuous legs rather than retaining the incorrect original intersections.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-70a4c7a1-7249-45dd-a05c-be96f2b1a0a9.png",
+          "sha256": "688b288c8dfa45b245347afa74ea8f04dfc2d880111d14641316795e01446cd4"
+        },
+        {
+          "review": {
+            "id": "decline-dumbbell-fly-1.png",
+            "sha256": "688b288c8dfa45b245347afa74ea8f04dfc2d880111d14641316795e01446cd4",
+            "status": "redo",
+            "note": "feet and ankles should be under it",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T23:13:48.095124+00:00"
+          },
+          "reviewSource": "User chat feedback",
+          "correctionPrompt": "Make a localized correction to the FOOT END in the upper-right corner of the attached DECLINE DUMBBELL FLY. Preserve the head in LOWER LEFT, chest and outstretched dumbbell arms in LOWER HALF, hips central, thighs toward UPPER RIGHT. DO NOT turn this into a sit-up or incline bench. DO NOT reverse the athlete. Keep exactly the current upper body with arms spread sideways holding two dumbbells. At the UPPER RIGHT foot end, lower BOTH FEET from their current upright position to hang DOWN below the padded restraint. Bend the knees slightly and angle the shins so both ANKLES hook UNDER the padded bar at the HIGH FOOT END. The padded bar must lie OVER the ankles/fronts of lower shins, with two separate feet visible below it, toes down. Place that ankle restraint ONLY at the UPPER RIGHT high foot end, never near the head. Do not put padded bar behind knees. Ankles UNDER bar; feet below bar; no feet above it or emerging through pad faces. Draw the pad in foreground and use clean natural occlusion, interrupting leg contours only where pad covers them. Keep the rest of drawing fixed. Pure white single contour line art on transparent canvas AND transparent interiors, no fill/shading/grey. Featureless NO-EARS oval head. Full figure square composition. Exercise must remain decline dumbbell fly with head LOW at lower left and feet HIGH at upper right.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-791bb175-5b45-4450-b2ab-53d906fbc815.png",
+          "sha256": "0db34390d03bd7705abc92efd15db324a85693f13cf4f528a5b3a933b73a0595"
+        },
+        {
+          "review": {
+            "id": "decline-dumbbell-fly-1.png",
+            "sha256": "0db34390d03bd7705abc92efd15db324a85693f13cf4f528a5b3a933b73a0595",
+            "status": "redo",
+            "note": "thats so broken hes feet are backwards and his ankles are inside the bars",
+            "reviewer": "You",
+            "updatedAt": "2026-10-12T23:16:22.270552+00:00"
+          },
+          "reviewSource": "User chat feedback",
+          "correctionPrompt": "Create a completely NEW anatomically correct exercise illustration: DECLINE DUMBBELL FLY on a shallow 15-degree decline bench. Reference image is STYLE ONLY; do not copy its pose. View from a clear SIDE three-quarter angle, head at RIGHT and LOWER, feet at LEFT and HIGHER. Bench slopes downward toward the head at right. Muscular adult male supine with head, back and pelvis supported, plain shorts. Exactly two arms attach at shoulders, spread laterally with softly bent elbows and one dumbbell in each hand in a fly pose. Legs point LEFT away from pelvis. BOTH KNEES slightly bent; calves slope down and left. The bare feet point LEFT/downward away from the head, never backward toward the hips. Show each heel, ankle and instep anatomically continuous; no twisted feet. FOOT RESTRAINT: a transverse cylindrical foam roller lies OVER the fronts of the lower shins immediately above the ankles at the far LEFT foot end. BOTH ANKLES AND FEET HOOK UNDER THIS PAD, soles below it, toes point left/down. The pad covers only a short segment of lower shin and touches it externally. Leg outlines stop BEHIND the roller where occluded, and reappear BELOW it as narrow ankles and clearly separate correctly oriented feet. There are NO HOLES IN THE PAD, no flesh entering pad end faces, no roller drawn through ankles. Show a clear visible gap between each foot/heel and the pad's metal support bracket. Keep two legs and two distinct feet readable in perspective. Simple physically credible gym bench leg-lock equipment. Smooth featureless oval NO EARS or ear bumps, no face/hair. Pure white single clean contour strokes, consistent line weight, actual TRANSPARENT background AND transparent empty interiors. No fills, shading, hatching, glow, texture, labels or panels. Full body and bench within square canvas, 8% clear margins. Prioritize correct ankle restraint geometry and foot orientation, use the simpler side camera to show it clearly.",
+          "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-b92d7f6d-084b-4d04-8835-fd7547634731.png",
+          "sha256": "6fcaf3b3d0b005ceb4c0f383807b12dbb924a6e249644fbd86f62497af367657"
+        }
+      ],
+      "requestedCorrection": "thats so broken hes feet are backwards and his ankles are inside the bars"
+    },
+    {
+      "id": "chest-dip-1.png",
+      "slug": "chest-dip",
+      "pose": "Redraw the selected source pose for Chest Dip, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Chest Dip. Redraw the selected source pose for Chest Dip, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Stand in between the parallel bars. Grip the handles of the parallel bars and push yourself up to the starting position with straightened arms. With your elbows close to your body keep your hips straight, lower your body forward by bending your elbows so your chest is leading as you go down. Raise yourself back up to the starting position and repeat. Repeat. Ensure not to lock your elbows once you have raised yourself up. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0054",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-9cb62ca8-bc47-47e2-a0e1-1b2508873f4c.png",
+      "sha256": "080d7d780cfa4ec594fc72b81874f6c3967b954fa2db5c18f25e18dc82122825",
+      "updatedAt": "2026-10-12T22:32:57.459318+00:00"
+    },
+    {
+      "id": "dumbbell-bench-press-1.png",
+      "slug": "dumbbell-bench-press",
+      "pose": "Redraw the selected source pose for Dumbbell Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Bench Press. Redraw the selected source pose for Dumbbell Bench Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0055",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-e8d9eaae-a23b-4399-a07f-3432cc0abb1e.png",
+      "sha256": "39c4482bdf1f43f802dbf1defcbfeb9607044af453eb6ec3393e0ff96ecd4613",
+      "updatedAt": "2026-10-12T22:32:58.256326+00:00"
+    },
+    {
+      "id": "dumbbell-fly-1.png",
+      "slug": "dumbbell-fly",
+      "pose": "Redraw the selected source pose for Dumbbell Fly, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Dumbbell Fly. Redraw the selected source pose for Dumbbell Fly, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness:  The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0056",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-268837f8-0ee3-451c-9cfc-cfc17c29eb3b.png",
+      "sha256": "925a06943f861bae75d9b6c2c537358ef4b9a8df0eba01e299272351bab36ac9",
+      "updatedAt": "2026-10-12T22:36:11.410623+00:00"
+    },
+    {
+      "id": "flat-bench-cable-fly-1.png",
+      "slug": "flat-bench-cable-fly",
+      "pose": "Redraw the selected source pose for Flat Bench Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Flat Bench Cable Fly. Redraw the selected source pose for Flat Bench Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: <h3> Steps</h3>. Lie on flat bench between two cable towers and your feet firmly on the ground. Grasp a pulley in each hand with your palms facing up. With a slight bend in your elbows, squeeze your chest and pull the cables together meeting in the middle of your chest. Hold for a moment and then slowly lower your hands back to starting position at bench height. <h3>Tip</h3>. Ensure your back and hips stay in contact with the bench at all times during this exercise. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0057",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-09e4f58f-3652-4214-b4a6-52bc1ffde47d.png",
+      "sha256": "5c1da30ea850c5d8ada4f79e1c91ef3e02c56ae60e2f8f86fc6ae8d8a404c676",
+      "updatedAt": "2026-10-12T22:36:12.191581+00:00"
+    },
+    {
+      "id": "barbell-front-raise-and-pullover-1.png",
+      "slug": "barbell-front-raise-and-pullover",
+      "pose": "Redraw the selected source pose for Barbell Front Raise and Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Barbell Front Raise and Pullover. Redraw the selected source pose for Barbell Front Raise and Pullover, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Lie on a flat bench and grasp a barbell using a medium grip (about 15\" apart). Place the barbell on your upper thighs and lock your arms straight with a slight bend in your elbows. Draw your abs in and keeping your back flat on the bench, raise your arms up in an arc over and behind your head (as if you were performing a reverse pullover). Slowly return the barbell to the starting position on your thighs. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0058",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-94ae525b-71b5-49aa-89b7-cf516ccf3a48.png",
+      "sha256": "05f9107016f3c8c6e80d749f0d9da74615593f4ff5d87cca946bfe7fcbf11b88",
+      "updatedAt": "2026-10-12T22:36:12.893184+00:00"
+    },
+    {
+      "id": "incline-hammer-grip-dumbbell-press-1.png",
+      "slug": "incline-hammer-grip-dumbbell-press",
+      "pose": "Redraw the selected source pose for Incline Hammer-Grip Dumbbell Press, source frame 2, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Incline Hammer-Grip Dumbbell Press. Redraw the selected source pose for Incline Hammer-Grip Dumbbell Press, source frame 2, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Grasp a dumbbell in each hand and lay on an incline bench set at a 45 degree angle. Keep your feet flat on the floor and your back against the bench at all times. Using a hammer grip (with your palms facing each other), lift the weights to shoulder height on either side of your chest. Extend your arms fully and press the dumbbells up. Slowly return the dumbbells to the starting position at the sides of your chest. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0059",
+      "sourceFrame": 1,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-ebe31d51-81eb-4b88-8722-bbcbc1b11a7b.png",
+      "sha256": "ac5b3d99fd8d3ae661f2e65fb9579010b0022df3cee0488dd3aca43500519035",
+      "updatedAt": "2026-10-12T22:36:13.586631+00:00"
+    },
+    {
+      "id": "incline-cable-fly-1.png",
+      "slug": "incline-cable-fly",
+      "pose": "Redraw the selected source pose for Incline Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only.",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Incline Cable Fly. Redraw the selected source pose for Incline Cable Fly, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Place an incline bench set at a 45 degree angle between two cable towers. Grasp a pulley in each hand with your palms facing up. With a slight bend in your elbows, squeeze your chest and pull the cables in an arc so they meet together in the middle of your chest. Hold for a moment and then slowly lower your hands back to starting position at along the same arc. The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally.",
+      "sourceArt": "ek_0060",
+      "sourceFrame": 0,
+      "status": "generated",
+      "source": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-052b8cd9-4f08-4a11-8772-67bef99ab44a.png",
+      "sha256": "09b3e05ca923b74c6ef0a3a84c63db8947aa85470dd0d800cd676e4bcff808ba",
+      "updatedAt": "2026-10-12T22:36:14.270922+00:00"
+    }
+  ],
+  "completedAt": "2026-10-12T22:36:36.955432+00:00",
+  "qa": {
+    "visuallyInspected": 50,
+    "headStyle": "Smooth ear-free blank oval",
+    "method": "Grey-background contact sheet and PNG/hash/transparency checks",
+    "approval": "User approval required for every replacement",
+    "armCorrections": {
+      "inspectedAt": "2026-10-12T22:56:17.570483+00:00",
+      "ids": [
+        "dumbbell-bent-arm-pullover-1.png",
+        "decline-bench-press-1.png",
+        "decline-dumbbell-fly-1.png"
+      ],
+      "method": "Grey-background alpha composites; checked two continuous shoulder-to-hand chains, two legs, equipment and ear-free heads"
+    },
+    "ankleCorrection": {
+      "inspectedAt": "2026-10-12T23:16:22.270552+00:00",
+      "id": "decline-dumbbell-fly-1.png",
+      "method": "Grey alpha composite; inspected side view, foot direction and ankles hooked beneath external padded restraint"
+    }
+  },
+  "approvedAt": "2026-10-12T23:21:39.216952+00:00"
+}

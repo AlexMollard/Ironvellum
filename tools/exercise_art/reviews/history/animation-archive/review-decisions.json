@@ -1,0 +1,328 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 2,
+  "exportedAt": "2026-10-12T03:26:04.416Z",
+  "batchComplete": false,
+  "frames": [
+    {
+      "id": "frog-stand-1.png",
+      "sha256": "65270e23e3d6635e242fb0b22a6cdd1449a2a57cdc06bb8c50083b3bf315e44a",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "frog-stand-2.png",
+      "sha256": "4210d37a49107a19f086188f9f75643f4aa90ff59143065d6fd68e2b4baa8305",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "frog-stand-3.png",
+      "sha256": "21b195e63c3400da7febccf27444b8460c13e6e73a6439da6293274feaf481aa",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "elbow-lever-1.png",
+      "sha256": "3022d8f839398dddf4d05d63c19ede1893507ab8917ad783525c6e40f5eeebf0",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "elbow-lever-2.png",
+      "sha256": "903c65390bcd09b566a610dea85c818a74a8d3c0bdfb0c16537501f7639856a4",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "elbow-lever-3.png",
+      "sha256": "4ed6ce2a6cf728663d50a416847ae9f955d772a97e754ea4b5df962efd998ad6",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "planche-lean-1.png",
+      "sha256": "51a0e500065cc3ec1ca9be951832ad25a3dc754b41c320291a8f642df4c7b46b",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. I dont think this one needs a animation and can just be the first frame only, deelete the other 2 and keep in mind some other exercises can also be like this",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "planche-lean-2.png",
+      "sha256": "5dfc5bfcbd3ca93860d1a3798262bacacfb74adc130bcbf7de145c0d944e3581",
+      "status": "removed",
+      "note": "Single still requested by user; redundant animation frame removed.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:31:06.202167+00:00"
+    },
+    {
+      "id": "planche-lean-3.png",
+      "sha256": "37e5ba4fdfaae87b71ec53bad12f10d27be4826efa94767ae2794905f6429156",
+      "status": "removed",
+      "note": "Single still requested by user; redundant animation frame removed.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:31:06.202169+00:00"
+    },
+    {
+      "id": "advanced-tuck-planche-1.png",
+      "sha256": "adb3be49c3b5b2c563cccbfdb827333be4660469fc35a931f9665192c79b0ad8",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "advanced-tuck-planche-2.png",
+      "sha256": "55fcd2951d9c611073a30dee54e533f30cb37f8277c04d87ac8ae6a0f1769ae7",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "advanced-tuck-planche-3.png",
+      "sha256": "de8a98a2ec87cc7602792fb9e7695a69f45580bb6d78e609c935dcdc130d30ea",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "tuck-planche-1.png",
+      "sha256": "e8c8a77e0fb72c3735dec1763fdd9f0db3d606a02f5c00f73675068dce940225",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "tuck-planche-2.png",
+      "sha256": "63993442bf0a8ae20a8a75f42b8c5d7a986a9a249e5fef6227954f71f81cc6c4",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. ",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "tuck-planche-3.png",
+      "sha256": "229f9706f8849ca1d6d571c98253fd111f0e9c2cbf38cc85a7b87eaeb81dbe3a",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Assistant reviewed pose and style continuity against the approved frames.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "one-leg-planche-1.png",
+      "sha256": "8f79aa6eb92826b52a27f86b2e2ff9ad9943907e4326708d8160c0e067e15d11",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "one-leg-planche-2.png",
+      "sha256": "062cf49afba0953b0427154326b263101b712c33b81d3d87027358d2cd63ccb7",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "one-leg-planche-3.png",
+      "sha256": "9c4849dbd4cbdc0bd9e831693e7c32b371ba0e8d77319de4d61f664e1c53b84d",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "straddle-planche-1.png",
+      "sha256": "5ec00bbf58ce627b39d2dc74e0e13b4d20c8fd84580ffdd16dd2df8173b1a6ff",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Pretty good might want to lean forward a little more",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "reviewer": "You"
+    },
+    {
+      "id": "straddle-planche-2.png",
+      "sha256": "d3ad5821da27bd719edce05447f74607c9238a9a814d546b8575d265c8ec2a34",
+      "status": "approved",
+      "note": "Approved by user in chat after reviewing the corrected batch. Replacement reviewed for consistent white outline style and sequence-level feedback. Original user feedback retained in review-input-batch-001.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00"
+    },
+    {
+      "id": "straddle-planche-3.png",
+      "sha256": "ca6d76f1ba3a2d42e1c5b921e5d6cca05eeaeee862663287b27c20436f5d7f0b",
+      "status": "approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T01:46:37.566652+00:00",
+      "note": "Approved by user in chat after reviewing the corrected batch. Completed hold frame reviewed against the straddle sequence."
+    },
+    {
+      "id": "full-planche-1.png",
+      "sha256": "a6c83aa642f27bc0c95260af99c771076ad5e6cfc8ee043bfa38c4c4294a776e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "planche-push-up-1.png",
+      "sha256": "c4467298d2ccb636918cc5f3dc95ba34b2569aeca544f401a4d17a787d7a8907",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "planche-push-up-2.png",
+      "sha256": "469d6c013f21c4aff2b4329456c853df68d7fa98146e91f9fcb3ed0375822df4",
+      "status": "approved",
+      "note": "Removed opaque interior fill. Transparency inspected on grey background; replacement awaits user review. Original feedback retained in review-input-batch-002.json.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "planche-push-up-3.png",
+      "sha256": "503e55e28124fee7009f3ddb47fdc4a48448e455fa6aef606b4427724905d409",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "front-row-hold-1.png",
+      "sha256": "54c5dc03a30912b76c6fffcc04e740bae55dca34d47fd061db261f33c9b7af46",
+      "status": "redo",
+      "note": "Head is infront of right pole",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:05:32.097Z"
+    },
+    {
+      "id": "front-row-hold-2.png",
+      "sha256": "62ad4a3fd5a7361dce23acf2d15a73d191d0753b821b57a41895a6c24b388de3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "sha256": "2d8cc6ef1c36c2a331e066651181b8e819c637b4d9fa87b41e7c39537afef200",
+      "status": "redo",
+      "note": "All of it is completely broken startt this frame from scratch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:14.575Z"
+    },
+    {
+      "id": "skin-the-cat-1.png",
+      "sha256": "86d3aa3bf3753ed5bfbf803863db13b3603cd37c8608f7dbc91c4167eb3e56b9",
+      "status": "redo",
+      "note": "Make him face the same way as frame 2",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:34.079Z"
+    },
+    {
+      "id": "skin-the-cat-2.png",
+      "sha256": "8689a37530171594f03b43a569dd5f20256caaa9c3318cddd2acf47b6bd35912",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:06:01.606Z"
+    },
+    {
+      "id": "skin-the-cat-3.png",
+      "sha256": "8e627013310ccea1bc861e527859d31166cab04aed048779a0d0f5a915f9462d",
+      "status": "redo",
+      "note": "Head is on backwards",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:23:52.470Z"
+    },
+    {
+      "id": "tuck-back-lever-1.png",
+      "sha256": "31eef67cbdf0e64b163fcdc88ec61143fc47e062535ecb308ca199a6aed51369",
+      "status": "redo",
+      "note": "Facing wrong direction to frame 2",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:24:58.572Z"
+    },
+    {
+      "id": "tuck-back-lever-2.png",
+      "sha256": "88a10ea6a3eb2ebf7b6613eb9a8871ec5b580e6e58880e79a04349d2067bce4e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:06:38.367Z"
+    },
+    {
+      "id": "advanced-tuck-back-lever-1.png",
+      "sha256": "76e9e19294958f0ccc851d3306d79f297d26db03a50dd729dfb0953d9a25e709",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:08:04.071Z"
+    },
+    {
+      "id": "advanced-tuck-back-lever-2.png",
+      "sha256": "5528fef9c9c934f8492fbaea3a50c5609a403d2326d472798b236e13cbe7aed5",
+      "status": "redo",
+      "note": "Lower legs now bend downward. Head, neck and chest redrawn together after user rejected reversed head; orientation still needs review.",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-12T03:22:03.206063+00:00"
+    },
+    {
+      "id": "advanced-tuck-back-lever-3.png",
+      "sha256": "61f074d9505670d9d3e17b34f34a421e628e81bd27ed21a0e31b8860b1d3fcc8",
+      "status": "redo",
+      "note": "heads and chest are backwards",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T02:32:28.032Z"
+    },
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "sha256": "0945a2e3e6af4f0c73d163dc73ce490cffb52e808321e5cf992a18d953cee5fe",
+      "status": "approved",
+      "note": "Recreated from approved frame 3, facing left for correct start direction; awaiting review.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:25:31.562Z"
+    },
+    {
+      "id": "advanced-tuck-front-lever-2.png",
+      "sha256": "f161d1aa68d18ee011d52710186297146333e88482a7ff7f5ad52163e8d4e7f4",
+      "status": "approved",
+      "note": "Recreated from approved frame 3 using same camera and a preceding torso angle; awaiting review.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:25:30.002Z"
+    },
+    {
+      "id": "advanced-tuck-front-lever-3.png",
+      "sha256": "361d3c569b10260416f57e5181501b86761ec2c7ef9e5c788eb963fa0fa069ca",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:07:49.114Z"
+    },
+    {
+      "id": "crow-pose-1.png",
+      "sha256": "78f92b0f71dcb3fe7c01083c047ea32df9d12db21cbb1fca732ca5df005fbb40",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-12T03:07:30.511Z"
+    }
+  ]
+}

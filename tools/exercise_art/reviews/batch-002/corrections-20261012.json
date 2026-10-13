@@ -1,0 +1,19 @@
+{
+  "updatedAt": "2026-10-12T02:58:11.006242+00:00",
+  "replacements": [
+    {
+      "id": "crow-pose-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-df62f470-3fc2-4e1d-a994-32d90f18892f.png",
+      "prompt": "Minimal clean WHITE LINE ART on actual transparent background. Single exercise demonstration icon, square canvas. Only smooth white contour strokes, uniform weight, all enclosed interiors transparent empty space. No filled regions, texture, shading, glow or hatching. Athletic adult man wearing opaque plain sports shorts, barefoot, blank smooth oval head with absolutely NO facial features, ears, hair or internal head marks. Sparse muscle contours. Full figure visible, fixed side camera. No text or shadows. Crow balance yoga pose, facing right, palms firmly on floor, arms nearly straight, knees resting high on upper arms near armpits. Both feet lifted together behind hips. Back rounded, hips high. Empty oval head tilted forward. Palms near 65% width 80% height. No floor line.",
+      "sha256": "78f92b0f71dcb3fe7c01083c047ea32df9d12db21cbb1fca732ca5df005fbb40"
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-4706497b-4f62-435a-9bba-9cc80137f8dd.png",
+      "prompt": "Keep this exact square composition, bar, rack, hand grips, feet contact points and line-art style. Correct the upper body to completed inverted row: chest raised all the way against underside of horizontal bar, elbows fully bent. Head safely to the LEFT of right upright with visible clearance, neutral neck. Smooth featureless oval head, remove nose notch. Pure white lines only with transparent background AND transparent interiors. No glow or filled regions.",
+      "sha256": "5c7fbbf08a1844b73a080c8bfefb7215d04c9232ad733f51e4930969d67a2198"
+    }
+  ],
+  "rejectedCandidate": "exec-abb9c5f1-70fd-47ae-b843-922f2783581f.png",
+  "reason": "User: head backwards and knees look weird"
+}

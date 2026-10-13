@@ -1,0 +1,58 @@
+{
+  "updatedAt": "2026-10-12T03:22:03.206063+00:00",
+  "replacements": [
+    {
+      "id": "advanced-tuck-front-lever-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-2ba9afd7-6580-4cba-a012-cdb9e23b24ff.png",
+      "prompt": "Create the preceding animation frame of this exact exercise diagram. Same adult athlete, exact side camera, proportions, canvas, horizontal bar and two fixed hand grips. Lower hips slightly so torso slopes upward to the right by 30 degrees instead of horizontal. Keep head at right, legs at left, chest facing upward, both knees bent and together; arms straight. No camera rotation. White outline strokes only, empty transparent interiors and background, smooth featureless oval head. Maintain athlete style and shorts exactly.",
+      "sha256": "f161d1aa68d18ee011d52710186297146333e88482a7ff7f5ad52163e8d4e7f4",
+      "status": "pending",
+      "note": "Recreated from approved frame 3 using same camera and a preceding torso angle; awaiting review."
+    },
+    {
+      "id": "front-row-hold-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-28b68456-2197-43ab-b557-eff51dc5ac04.png",
+      "prompt": "Clean up this line drawing. Head must be a perfectly EMPTY smooth oval, remove the ear and every internal head line. Torso has too many curved marks: remove ALL internal chest and abdominal strokes, leaving only the natural outer torso silhouette from shoulder through ribcage to shorts. Keep every other line and composition unchanged. White contour strokes with no filled regions, no glow or shading; transparent background and empty transparent interiors.",
+      "sha256": "2d8cc6ef1c36c2a331e066651181b8e819c637b4d9fa87b41e7c39537afef200",
+      "status": "redo",
+      "note": "Removed malformed chest loop and clothing drift. Chest-to-bar contact remains unresolved; keep redo flag."
+    },
+    {
+      "id": "advanced-tuck-back-lever-2.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-6935fbc7-9178-4a4c-aaa9-0277883356c1.png",
+      "prompt": "Anatomy correction for this athletic exercise diagram. The athlete is FACE DOWN, back up. Fix the upper torso and head together: shoulder blades and upper back visible along TOP of torso, pectoral contours on UNDERSIDE. Head naturally extends spine to left, back of skull at upper left, chin on lower right toward sternum, blank face plane directed DOWN toward ground. No reversed neck or upward-facing chest. Keep bar, hands, arms, hips and bent legs exactly fixed. Minimal white contour strokes, smooth featureless oval head no ears or facial marks. Fully transparent background and interiors, no shading or fill.",
+      "sha256": "5528fef9c9c934f8492fbaea3a50c5609a403d2326d472798b236e13cbe7aed5",
+      "status": "redo",
+      "note": "Lower legs now bend downward. Head, neck and chest redrawn together after user rejected reversed head; orientation still needs review."
+    },
+    {
+      "id": "skin-the-cat-3.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-3ee59e0c-cbe8-44e0-b7f9-3048540fcb99.png",
+      "prompt": "Correct head orientation in this gymnastics diagram. This is a German hang: the arms extend BEHIND the athlete's back toward bar. The torso is chest-down, upper back faces bar. Head at right must naturally continue spine with back of skull upper/right and chin lower/left toward sternum. Featureless front plane faces downward toward floor. Redraw head, neck and shoulder contours together to avoid reversed head. Keep fixed bar, hand grips, torso angle and legs. White contour-only illustration, fully transparent background and interiors, no glow, fill, shading, ears or face.",
+      "sha256": "8e627013310ccea1bc861e527859d31166cab04aed048779a0d0f5a915f9462d",
+      "status": "redo",
+      "note": "Head, neck and shoulder redrawn together after user rejected reversed head; orientation still needs review."
+    },
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "path": "C:/Users/alex.mollard/.codex/generated_images/01a12d94-1f79-7c11-8e30-9be4ae1228c9/exec-a48e0af4-3ea5-4e95-a49a-c142d288920e.png",
+      "prompt": "Start frame from approved frame 3, facing left, fixed bar and grips, active hang with bent knees.",
+      "sha256": "0945a2e3e6af4f0c73d163dc73ce490cffb52e808321e5cf992a18d953cee5fe",
+      "status": "pending",
+      "note": "Recreated from approved frame 3, facing left for correct start direction; awaiting review."
+    },
+    {
+      "id": "skin-the-cat-1.png",
+      "path": "C:\\Users\\alex.mollard\\.codex\\generated_images\\01a12d94-1f79-7c11-8e30-9be4ae1228c9\\exec-74f89e37-8e90-4634-ada6-48670ea0693c.png",
+      "prompt": "Correct the body orientation of this gymnastics illustration. Keep bar and both hand grip locations fixed. Athlete must face the other direction in strict SIDE VIEW: knees lifted to chest on the RIGHT of torso, head on LEFT, with natural neck and straight arms. Keep tucked knees, plain shorts and featureless oval head. Do not mirror or move bar or grip points. White contour lines only with transparent background and interiors, no shading or glow. Same square canvas, camera scale and proportions.",
+      "sha256": "86d3aa3bf3753ed5bfbf803863db13b3603cd37c8608f7dbc91c4167eb3e56b9",
+      "status": "pending",
+      "note": "Reversed body direction while preserving grip points; awaiting review."
+    }
+  ],
+  "rejected": [
+    "exec-cddb393c-59ce-40ea-b664-67c2ecd96f16.png: malformed chest",
+    "exec-7b065870-b5ff-4a3c-bd9e-dc9cd003cd03.png: reversed head",
+    "exec-e52b3077-36fa-4070-9a03-8de2e66e0dea.png: reversed head"
+  ]
+}

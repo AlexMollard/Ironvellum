@@ -3,7 +3,7 @@
   "batchSize": 50,
   "currentBatch": 11,
   "status": "all-approved",
-  "reference": "docs/art/style-options/approved.png",
+  "reference": "tools/exercise_art/owner/banded-donkey-kick-1.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
   "expectedTotal": 553,
@@ -2778,7 +2778,7 @@
       "status": "approved"
     }
   ],
-  "reviewSource": "tools/exercise_art/review-input-batch-002.json",
+  "reviewSource": "tools/exercise_art/reviews/batch-002/review-input-batch-002.json",
   "decisions": "tools/exercise_art/review-decisions.json",
   "batches": [
     {

@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "description": "Normalized palm contact centers measured in each source canvas. One shared scale and target per movement; preview translation only, no artwork changes.",
+  "sequences": {
+    "advanced-tuck-planche": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.68,
+          0.845
+        ],
+        [
+          0.675,
+          0.79
+        ],
+        [
+          0.735,
+          0.745
+        ]
+      ],
+      "hashes": [
+        "adb3be49c3b5b2c563cccbfdb827333be4660469fc35a931f9665192c79b0ad8",
+        "55fcd2951d9c611073a30dee54e533f30cb37f8277c04d87ac8ae6a0f1769ae7",
+        "de8a98a2ec87cc7602792fb9e7695a69f45580bb6d78e609c935dcdc130d30ea"
+      ]
+    },
+    "elbow-lever": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.57,
+          0.795
+        ],
+        [
+          0.695,
+          0.71
+        ],
+        [
+          0.695,
+          0.71
+        ]
+      ],
+      "hashes": [
+        "3022d8f839398dddf4d05d63c19ede1893507ab8917ad783525c6e40f5eeebf0",
+        "903c65390bcd09b566a610dea85c818a74a8d3c0bdfb0c16537501f7639856a4",
+        "4ed6ce2a6cf728663d50a416847ae9f955d772a97e754ea4b5df962efd998ad6"
+      ]
+    },
+    "frog-stand": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.72,
+          0.895
+        ],
+        [
+          0.585,
+          0.855
+        ],
+        [
+          0.675,
+          0.875
+        ]
+      ],
+      "hashes": [
+        "65270e23e3d6635e242fb0b22a6cdd1449a2a57cdc06bb8c50083b3bf315e44a",
+        "4210d37a49107a19f086188f9f75643f4aa90ff59143065d6fd68e2b4baa8305",
+        "21b195e63c3400da7febccf27444b8460c13e6e73a6439da6293274feaf481aa"
+      ]
+    },
+    "one-leg-planche": {
+      "label": "Near palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.745,
+          0.765
+        ],
+        [
+          0.71,
+          0.775
+        ],
+        [
+          0.68,
+          0.75
+        ]
+      ],
+      "hashes": [
+        "8f79aa6eb92826b52a27f86b2e2ff9ad9943907e4326708d8160c0e067e15d11",
+        "062cf49afba0953b0427154326b263101b712c33b81d3d87027358d2cd63ccb7",
+        "9c4849dbd4cbdc0bd9e831693e7c32b371ba0e8d77319de4d61f664e1c53b84d"
+      ]
+    },
+    "straddle-planche": {
+      "label": "Near palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.75,
+          0.765
+        ],
+        [
+          0.63,
+          0.775
+        ],
+        [
+          0.6,
+          0.78
+        ]
+      ],
+      "hashes": [
+        "5ec00bbf58ce627b39d2dc74e0e13b4d20c8fd84580ffdd16dd2df8173b1a6ff",
+        "d3ad5821da27bd719edce05447f74607c9238a9a814d546b8575d265c8ec2a34",
+        "ca6d76f1ba3a2d42e1c5b921e5d6cca05eeaeee862663287b27c20436f5d7f0b"
+      ]
+    },
+    "tuck-planche": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.88,
+      "points": [
+        [
+          0.69,
+          0.885
+        ],
+        [
+          0.71,
+          0.865
+        ],
+        [
+          0.655,
+          0.87
+        ]
+      ],
+      "hashes": [
+        "e8c8a77e0fb72c3735dec1763fdd9f0db3d606a02f5c00f73675068dce940225",
+        "63993442bf0a8ae20a8a75f42b8c5d7a986a9a249e5fef6227954f71f81cc6c4",
+        "229f9706f8849ca1d6d571c98253fd111f0e9c2cbf38cc85a7b87eaeb81dbe3a"
+      ]
+    },
+    "planche-push-up": {
+      "label": "Palm contact",
+      "target": [
+        0.68,
+        0.8
+      ],
+      "scale": 0.8,
+      "points": [
+        [
+          0.735,
+          0.775
+        ],
+        [
+          0.74,
+          0.715
+        ],
+        [
+          0.74,
+          0.74
+        ]
+      ],
+      "hashes": [
+        "c4467298d2ccb636918cc5f3dc95ba34b2569aeca544f401a4d17a787d7a8907",
+        "469d6c013f21c4aff2b4329456c853df68d7fa98146e91f9fcb3ed0375822df4",
+        "503e55e28124fee7009f3ddb47fdc4a48448e455fa6aef606b4427724905d409"
+      ]
+    },
+    "front-row-hold": {
+      "label": "Bar grip center",
+      "target": [
+        0.5,
+        0.2
+      ],
+      "scale": 0.75,
+      "points": [
+        [
+          0.71,
+          0.28
+        ],
+        [
+          0.71,
+          0.28
+        ],
+        [
+          0.72,
+          0.282
+        ]
+      ],
+      "hashes": [
+        "54c5dc03a30912b76c6fffcc04e740bae55dca34d47fd061db261f33c9b7af46",
+        "62ad4a3fd5a7361dce23acf2d15a73d191d0753b821b57a41895a6c24b388de3",
+        "2d8cc6ef1c36c2a331e066651181b8e819c637b4d9fa87b41e7c39537afef200"
+      ]
+    },
+    "skin-the-cat": {
+      "label": "Bar grip center",
+      "target": [
+        0.5,
+        0.2
+      ],
+      "scale": 0.75,
+      "points": [
+        [
+          0.55,
+          0.195
+        ],
+        [
+          0.59,
+          0.21
+        ],
+        [
+          0.55,
+          0.12
+        ]
+      ],
+      "hashes": [
+        "86d3aa3bf3753ed5bfbf803863db13b3603cd37c8608f7dbc91c4167eb3e56b9",
+        "8689a37530171594f03b43a569dd5f20256caaa9c3318cddd2acf47b6bd35912",
+        "8e627013310ccea1bc861e527859d31166cab04aed048779a0d0f5a915f9462d"
+      ]
+    },
+    "tuck-back-lever": {
+      "label": "Bar grip center",
+      "target": [
+        0.5,
+        0.2
+      ],
+      "scale": 0.75,
+      "points": [
+        [
+          0.52,
+          0.125
+        ],
+        [
+          0.49,
+          0.163
+        ],
+        [
+          0.5,
+          0.15
+        ]
+      ],
+      "hashes": [
+        "31eef67cbdf0e64b163fcdc88ec61143fc47e062535ecb308ca199a6aed51369",
+        "88a10ea6a3eb2ebf7b6613eb9a8871ec5b580e6e58880e79a04349d2067bce4e",
+        null
+      ]
+    },
+    "advanced-tuck-back-lever": {
+      "label": "Bar grip center",
+      "target": [
+        0.5,
+        0.2
+      ],
+      "scale": 0.75,
+      "points": [
+        [
+          0.515,
+          0.105
+        ],
+        [
+          0.46,
+          0.12
+        ],
+        [
+          0.395,
+          0.135
+        ]
+      ],
+      "hashes": [
+        "76e9e19294958f0ccc851d3306d79f297d26db03a50dd729dfb0953d9a25e709",
+        "5528fef9c9c934f8492fbaea3a50c5609a403d2326d472798b236e13cbe7aed5",
+        "61f074d9505670d9d3e17b34f34a421e628e81bd27ed21a0e31b8860b1d3fcc8"
+      ]
+    },
+    "advanced-tuck-front-lever": {
+      "label": "Bar grip center",
+      "target": [
+        0.5,
+        0.2
+      ],
+      "scale": 0.75,
+      "points": [
+        [
+          0.5,
+          0.175
+        ],
+        [
+          0.5,
+          0.175
+        ],
+        [
+          0.5,
+          0.176
+        ]
+      ],
+      "hashes": [
+        "0945a2e3e6af4f0c73d163dc73ce490cffb52e808321e5cf992a18d953cee5fe",
+        "f161d1aa68d18ee011d52710186297146333e88482a7ff7f5ad52163e8d4e7f4",
+        "361d3c569b10260416f57e5181501b86761ec2c7ef9e5c788eb963fa0fa069ca"
+      ]
+    }
+  }
+}

@@ -5,7 +5,7 @@
 
 The gaps are every catalogue movement and Codex technique with no exact drawing: techniques on a proxy drawing or the
 pictogram, and movements on the placeholder. Pose text comes from poses.json (reviewable data); the style guide below was
-written from the Workout Guide SVGs themselves (see the numbers it cites, measured over 80 of its exercises).
+based on the approved generated illustrations in owner/.
 build.py reads missing.json to map owner-made files in owner/ to the movement they fill, so it is regenerated, never edited.
 """
 import json
@@ -22,31 +22,25 @@ KT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "ironvellum" / "app"
 DOC = ROOT / "docs" / "art" / "missing-exercise-art.md"
 
 REFERENCES = [
-    ("bodyweight-squat/frame-1.svg", "front view, standing and squatting figure: the reference for anatomy, head, shorts, hands and line weight"),
-    ("bulgarian-split-squat/frame-1.svg", "three-quarter view with a bench: the reference for how furniture and a loaded dumbbell are drawn"),
-    ("archer-push-up/frame-1.svg", "side view on the floor: the reference for prone figures, long horizontal framing and bare feet"),
-    ("dead-hang/frame-1.svg", "front view hanging from a bar: the reference for a fixed bar, straight arms and a hanging body"),
-    ("l-sit-hold/frame-1.svg", "front view on parallel bars: the reference for bars as tubes and a held, supported body"),
-    ("handstand-push-up/frame-1.svg", "inverted figure: the reference for upside-down anatomy and balance on the hands"),
+    ("goblet-squat-1.png", "front view, standing and squatting figure: the reference for anatomy, head, shorts, hands and line weight"),
+    ("front-foot-elevated-split-squat-1.png", "three-quarter view with a bench: the reference for how furniture and a loaded dumbbell are drawn"),
+    ("push-up-1.png", "side view on the floor: the reference for prone figures, long horizontal framing and bare feet"),
+    ("dead-hang-1.png", "front view hanging from a bar: the reference for a fixed bar, straight arms and a hanging body"),
+    ("l-sit-1.png", "front view on parallel bars: the reference for bars as tubes and a held, supported body"),
+    ("handstand-push-up-1.png", "inverted figure: the reference for upside-down anatomy and balance on the hands"),
 ]
 
 STYLE = {
-    "source": "The Workout Guide set (bryllim/workout-guide, packages/workout-guide/assets/<slug>/frame-N.svg), the dominant set in the app. "
-              "Everkinetic's own poses are drawn in the same manner and are the origin of its first frames.",
-    "canvas": "Square 512 x 512, viewBox 0 0 512 512. Transparent background. The figure and its equipment are centred and fill about 70% "
-              "of the width and 78% of the height on average (margins of 11-16% on each side; wide floor exercises such as push-ups "
-              "run nearly edge to edge, tall ones such as pull-ups nearly top to bottom). Nothing is cropped by the canvas, and nothing "
-              "else is on it: no floor line, no shadow, no scenery, no text, no arrows, no motion lines, no labels.",
-    "geometry": "Each frame is a single <path fill=\"#fff\" fill-rule=\"evenodd\"> of roughly 300 curve commands: no stroke attribute, no groups, "
-                "no transform, no gradients. The linework is a FILLED shape: every line is a thin white ribbon (a traced outline), so what "
-                "looks like a line drawing is the filled area of the path, and the interior of the body is the empty background.",
+    "source": "Approved generated Ironvellum illustrations in tools/exercise_art/owner/, inspired by Everkinetic and Workout Guide.",
+    "canvas": "Square transparent PNG, at least 512 pixels wide (1024 recommended). Centre the complete figure and equipment with generous margins. No cropping, scenery, floor line, shadow, labels or arrows.",
+    "geometry": "Pure white contour lines on transparency, or black on pure white. All enclosed interiors must be empty. No filled regions, grey shading, glow, textures, hatching or doubled outlines. The builder traces the source PNG into vector paths.",
     "lineWeight": "One even weight of about 4 units on the 512 canvas (0.8% of its width), the same for the body outline, the muscle lines and "
                   "the equipment. Contours are closed, slightly hand-inked (a gentle wobble, tapered line ends), never mechanical vector "
                   "strokes. Muscle-separation marks and fabric folds are short tapered strokes of the same weight, never filled shading or hatching.",
     "figure": "One athletic, muscular adult male, heroic but anatomical proportions (about 7.5 heads tall). The head is a smooth FACELESS egg-shaped "
               "oval: no eyes, nose, mouth, hair or ears, only a neck line where it joins the trapezius. Defined deltoids, pecs, a six-pack with "
               "serratus lines, forearm and calf muscle separations, drawn as short contour lines, not shaded. Hands show the fingers as separate "
-              "contour shapes; feet are bare (toe lines visible) or plain low shoes with a single contour and no logo. He wears plain "
+              "contour shapes; feet are bare with toe lines visible. He wears plain "
               "mid-thigh shorts with a few fold lines and nothing else (no shirt, no belt, no wristbands).",
     "equipment": "Drawn in the same single line weight, outline only, no fill and no shading. Barbells are a straight bar with plate discs as nested "
                  "ellipses at each end and a short collar; dumbbells have two rounded or hexagonal heads on a short handle; benches are a flat or "
@@ -139,7 +133,7 @@ def main():
         count = frame_counts.get(slug, 1)
         indices = [2] if count == 1 else list(range(count))
         entries.append(dict(e, slug=slug, filled=filled, view=p["view"], equipment=p["equipment"], hold=p["hold"],
-                            hanging=p["hanging"], frameCount=count, files=["%s-%d.svg" % (slug, i + 1) for i in range(count)],
+                            hanging=p["hanging"], frameCount=count, files=["%s-%d.png" % (slug, i + 1) for i in range(count)],
                             poses=[p["frames"][i] for i in indices], note=p["note"], prompt=prompt_for(e, p, indices[0], still=count == 1),
                             prompts=[prompt_for(e, p, i, still=count == 1) for i in indices]))
     doc = {
@@ -147,10 +141,10 @@ def main():
                  "named by `files` (or the same names with .png), then run build.py --owner-only. Generated by missing.py; do not edit.",
         "style": STYLE,
         "basePrompt": BASE_PROMPT,
-        "references": [{"file": "packages/workout-guide/assets/" + r, "why": w} for r, w in REFERENCES],
+        "references": [{"file": "tools/exercise_art/owner/" + r, "why": w} for r, w in REFERENCES],
         "fileConvention": {
             "folder": "tools/exercise_art/owner/",
-            "names": "<slug>-1.svg (or .png) for the representative still; frame-counts.json defines required frames",
+            "names": "<slug>-1.png for the approved representative still; frame-counts.json defines required frames",
             "svg": "any SVG; it is rendered at 1024 px wide and its ALPHA is the ink, so line colour does not matter",
             "png": "RGBA with a transparent background and at least 512 px wide (1024 recommended); an opaque PNG is read as dark-on-light "
                    "or light-on-dark from its corners",
@@ -172,29 +166,23 @@ def main():
 def render_md(doc):
     s = doc["style"]
     out = ["# Missing exercise art", "",
-           "Every catalogue movement and Codex technique the free drawings (Workout Guide and Everkinetic, CC BY-SA 4.0) do not draw, "
-           "with everything needed to generate each one in the SAME style, so the app keeps one look. Generated by "
+           "The original gap-art brief, now completed with approved generated stills. Keep new illustrations in the same approved house style. Generated by "
            "`tools/exercise_art/missing.py` from `poses.json`; the machine-readable twin is `tools/exercise_art/missing.json`.", "",
-           "Counts: %d drawings to make: %d Codex techniques (priority 1), %d gym movements (priority 2), %d sports and classes (priority 3)." % (
+           "Original brief: %d drawings: %d Codex techniques (priority 1), %d gym movements (priority 2), %d sports and classes (priority 3)." % (
                doc["counts"]["total"], doc["counts"]["priority1_codexTechniques"], doc["counts"]["priority2_movements"],
                doc["counts"]["priority3_activities"]), "",
            "## How to hand art back", "",
            "1. Generate one representative still per exercise: a full hold or clear defining repetition position.",
-           "2. Save it as `tools/exercise_art/owner/<slug>-1.svg` (PNG also accepted: RGBA, transparent background, 512 px or wider, 1024 recommended). "
-           "An SVG is read by its alpha, so its colour does not matter.",
-           "3. After approval, add the slug to `tools/exercise_art/owner/APPROVED`, then run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`. It traces each frame to one vector path "
-           "exactly as it does Everkinetic's, registers the frames to one ground line, centre and scale, maps them to the movement, and "
-           "regenerates the Kotlin index; a technique that was on a proxy drawing or the pictogram switches to the new drawing.",
+           "2. Save pending images in `tools/exercise_art/drafts/batch-NNN/<slug>-1.png` for local review (RGBA, transparent background, 512 px or wider, 1024 recommended).",
+           "3. Only after user approval, move the still into `tools/exercise_art/owner/`, record its approval hash and list its slug in `owner/APPROVED`. Run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`, then `build.py --check`. Move audit JSON to `reviews/batch-NNN/` and delete all draft images. The builder traces the source PNG and regenerates the vector and Kotlin index.",
            "4. Rebuild the app. Owner-made art is the project's own and is recorded as such in `docs/ART_ATTRIBUTION.md`.", "",
            "## Style guide", "",
-           "Derived from the Workout Guide SVGs themselves (measured over 80 of its exercises: ink covers about 6% of the canvas; the figure spans 70% x 78% "
-           "of it on average; the median path has about 310 curve commands).", ""]
+           "Use the approved generated Ironvellum PNGs below as the style references. Original upstream drawings and animations have been replaced.", ""]
     for k, label in (("canvas", "Canvas and framing"), ("geometry", "What the file is"), ("lineWeight", "Line weight"), ("figure", "The figure"),
                      ("equipment", "Equipment"), ("views", "Views"), ("frames", "Frames")):
         out += ["**%s.** %s" % (label, s[k]), ""]
     out += ["### Style references to attach", "",
-            "Attach these files from the Workout Guide repository (`bryllim/workout-guide`, CC BY-SA 4.0) to every generation as style references, "
-            "frame 1 of each being the cleanest, single-contour drawing in the set:", ""]
+            "Attach these approved PNGs from `tools/exercise_art/owner/` as style references:", ""]
     for r in doc["references"]:
         out.append("- `%s`: %s" % (r["file"], r["why"]))
     out += ["", "### Base prompt", "", "Paste this first in every prompt (each entry's full prompt below already includes it):", "", "```", doc["basePrompt"], "```", ""]
