@@ -16,7 +16,7 @@
     {
       "name": "Scapular Pull",
       "status": "exact",
-      "drawing": "wg_scapular-pull-up",
+      "drawing": "own_scapular-pull",
       "frames": 1,
       "shows": "Scapular Pull"
     },
@@ -30,7 +30,7 @@
     {
       "name": "Negative Pull-up",
       "status": "exact",
-      "drawing": "wg_negative-pull-up",
+      "drawing": "own_negative-pull-up",
       "frames": 1,
       "shows": "Negative Pull-up"
     },
@@ -44,7 +44,7 @@
     {
       "name": "L-sit Pull-up",
       "status": "exact",
-      "drawing": "wg_l-sit-pull-up",
+      "drawing": "own_l-sit-pull-up",
       "frames": 1,
       "shows": "L-sit Pull-up"
     },
@@ -86,7 +86,7 @@
     {
       "name": "Incline Push-up",
       "status": "exact",
-      "drawing": "wg_incline-push-up",
+      "drawing": "own_incline-push-up",
       "frames": 1,
       "shows": "Incline Push-up"
     },
@@ -149,7 +149,7 @@
     {
       "name": "Weighted Dip",
       "status": "exact",
-      "drawing": "wg_weighted-dip",
+      "drawing": "own_weighted-dip",
       "frames": 1,
       "shows": "Weighted Dip"
     },
@@ -177,7 +177,7 @@
     {
       "name": "Elevated Pike Push-up",
       "status": "exact",
-      "drawing": "wg_feet-elevated-pike-push-up",
+      "drawing": "own_feet-elevated-pike-push-up",
       "frames": 1,
       "shows": "Feet-Elevated Pike Push-up"
     },
@@ -219,7 +219,7 @@
     {
       "name": "Handstand Push-up",
       "status": "exact",
-      "drawing": "wg_handstand-push-up",
+      "drawing": "own_handstand-push-up",
       "frames": 1,
       "shows": "Handstand Push-up"
     },
@@ -506,7 +506,7 @@
     {
       "name": "Split Squat",
       "status": "exact",
-      "drawing": "wg_split-squat",
+      "drawing": "own_split-squat",
       "frames": 1,
       "shows": "Split Squat"
     },
@@ -534,14 +534,14 @@
     {
       "name": "Shrimp Squat",
       "status": "exact",
-      "drawing": "wg_shrimp-squat",
+      "drawing": "own_shrimp-squat",
       "frames": 1,
       "shows": "Shrimp Squat"
     },
     {
       "name": "Pistol Squat",
       "status": "exact",
-      "drawing": "wg_pistol-squat",
+      "drawing": "own_pistol-squat",
       "frames": 1,
       "shows": "Pistol Squat"
     },
@@ -569,7 +569,7 @@
     {
       "name": "Nordic Curl",
       "status": "exact",
-      "drawing": "wg_nordic-hamstring-curl",
+      "drawing": "own_nordic-curl",
       "frames": 1,
       "shows": "Nordic Curl"
     },
@@ -646,35 +646,35 @@
     {
       "name": "Overhead Press",
       "status": "exact",
-      "drawing": "wg_overhead-press",
+      "drawing": "own_overhead-press",
       "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Volume Overhead Press",
       "status": "exact",
-      "drawing": "wg_overhead-press",
+      "drawing": "own_overhead-press",
       "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Bodyweight Overhead Press",
       "status": "exact",
-      "drawing": "wg_overhead-press",
+      "drawing": "own_overhead-press",
       "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Heavy Overhead Press",
       "status": "exact",
-      "drawing": "wg_overhead-press",
+      "drawing": "own_overhead-press",
       "frames": 1,
       "shows": "Overhead Press"
     },
     {
       "name": "Half-Again Overhead Press",
       "status": "exact",
-      "drawing": "wg_overhead-press",
+      "drawing": "own_overhead-press",
       "frames": 1,
       "shows": "Overhead Press"
     },
@@ -716,7 +716,7 @@
     {
       "name": "Hollow Hold",
       "status": "exact",
-      "drawing": "wg_hollow-body-hold",
+      "drawing": "own_hollow-hold",
       "frames": 1,
       "shows": "Hollow Hold"
     },
@@ -730,7 +730,7 @@
     {
       "name": "L-sit",
       "status": "exact",
-      "drawing": "wg_l-sit-hold",
+      "drawing": "own_l-sit",
       "frames": 1,
       "shows": "L-sit"
     },
@@ -758,14 +758,14 @@
     {
       "name": "Hanging Knee Raise",
       "status": "exact",
-      "drawing": "wg_hanging-knee-raise",
+      "drawing": "own_hanging-knee-raise",
       "frames": 1,
       "shows": "Hanging Knee Raise"
     },
     {
       "name": "Hanging Leg Raise",
       "status": "exact",
-      "drawing": "wg_hanging-leg-raise",
+      "drawing": "own_hanging-leg-raise",
       "frames": 1,
       "shows": "Hanging Leg Raise"
     },

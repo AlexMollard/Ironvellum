@@ -1280,6 +1280,27 @@
    994.0
   ]
  },
+ "own_barbell-shrug": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.21
+   ]
+  ],
+  "window": [
+   58.5,
+   19.5,
+   906.9,
+   992.9
+  ]
+ },
  "own_barbell-side-squat": {
   "source": 1,
   "kept": [
@@ -3485,6 +3506,27 @@
    961.0
   ]
  },
+ "own_dumbbell-lateral-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.23
+   ]
+  ],
+  "window": [
+   67.5,
+   111.5,
+   927.0,
+   837.0
+  ]
+ },
  "own_dumbbell-lunge": {
   "source": 1,
   "kept": [
@@ -3569,6 +3611,69 @@
    877.6
   ]
  },
+ "own_dumbbell-romanian-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.31
+   ]
+  ],
+  "window": [
+   278.0,
+   39.0,
+   514.9,
+   958.9
+  ]
+ },
+ "own_dumbbell-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.24
+   ]
+  ],
+  "window": [
+   115.4,
+   103.4,
+   854.1,
+   862.1
+  ]
+ },
+ "own_dumbbell-shoulder-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.22
+   ]
+  ],
+  "window": [
+   235.7,
+   32.7,
+   592.6,
+   980.6
+  ]
+ },
  "own_dumbbell-shrug": {
   "source": 1,
   "kept": [
@@ -3588,6 +3693,27 @@
    19.6,
    449.7,
    986.7
+  ]
+ },
+ "own_dumbbell-side-bend": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.2
+   ]
+  ],
+  "window": [
+   312.4,
+   53.4,
+   467.2,
+   934.2
   ]
  },
  "own_dumbbell-squat": {
@@ -3674,6 +3800,48 @@
    964.1
   ]
  },
+ "own_dumbbell-sumo-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.7,
+    0.24
+   ]
+  ],
+  "window": [
+   88.0,
+   81.0,
+   848.0,
+   892.0
+  ]
+ },
+ "own_dumbbell-sumo-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.37
+   ]
+  ],
+  "window": [
+   120.8,
+   108.8,
+   783.3,
+   835.3
+  ]
+ },
  "own_dumbbell-upright-row": {
   "source": 1,
   "kept": [
@@ -3714,6 +3882,27 @@
    288.5,
    995.0,
    460.0
+  ]
+ },
+ "own_elliptical": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.18
+   ]
+  ],
+  "window": [
+   218.3,
+   12.3,
+   618.5,
+   1011.5
   ]
  },
  "own_exercise-ball-pull-in": {
@@ -3758,6 +3947,27 @@
    481.7
   ]
  },
+ "own_explosive-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.24
+   ]
+  ],
+  "window": [
+   32.7,
+   209.7,
+   979.5,
+   593.5
+  ]
+ },
  "own_ez-bar-curl": {
   "source": 1,
   "kept": [
@@ -3777,6 +3987,69 @@
    19.5,
    719.0,
    996.0
+  ]
+ },
+ "own_face-pull": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.29
+   ]
+  ],
+  "window": [
+   74.5,
+   65.5,
+   895.1,
+   930.1
+  ]
+ },
+ "own_feet-elevated-pike-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.35
+   ]
+  ],
+  "window": [
+   22.8,
+   192.8,
+   977.5,
+   724.5
+  ]
+ },
+ "own_fire-hydrant": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.25
+   ]
+  ],
+  "window": [
+   31.7,
+   251.7,
+   984.7,
+   617.7
   ]
  },
  "own_flat-bench-cable-fly": {
@@ -3842,6 +4115,27 @@
    934.2
   ]
  },
+ "own_flutter-kick": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.27
+   ]
+  ],
+  "window": [
+   11.4,
+   318.4,
+   1003.2,
+   481.2
+  ]
+ },
  "own_football-soccer": {
   "source": 1,
   "kept": [
@@ -3861,6 +4155,27 @@
    67.0,
    958.9,
    906.9
+  ]
+ },
+ "own_forward-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.16
+   ]
+  ],
+  "window": [
+   149.2,
+   43.2,
+   768.6,
+   948.6
   ]
  },
  "own_forward-lunge-to-curl": {
@@ -3905,6 +4220,27 @@
    982.6
   ]
  },
+ "own_frog-pump": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.35
+   ]
+  ],
+  "window": [
+   63.3,
+   397.3,
+   939.4,
+   476.4
+  ]
+ },
  "own_frog-stand": {
   "source": 1,
   "kept": [
@@ -3924,6 +4260,27 @@
    178.9,
    966.1,
    737.1
+  ]
+ },
+ "own_front-foot-elevated-split-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.24
+   ]
+  ],
+  "window": [
+   101.0,
+   47.0,
+   838.0,
+   960.0
   ]
  },
  "own_front-lever": {
@@ -4115,6 +4472,69 @@
    465.2
   ]
  },
+ "own_glute-bridge-march": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.22
+   ]
+  ],
+  "window": [
+   28.9,
+   227.9,
+   967.2,
+   630.2
+  ]
+ },
+ "own_glute-focused-back-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.33
+   ]
+  ],
+  "window": [
+   124.5,
+   140.5,
+   845.9,
+   855.9
+  ]
+ },
+ "own_goblet-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.2,
+    0.2
+   ]
+  ],
+  "window": [
+   206.6,
+   65.6,
+   610.7,
+   917.7
+  ]
+ },
  "own_golf": {
   "source": 1,
   "kept": [
@@ -4283,6 +4703,48 @@
    485.4
   ]
  },
+ "own_hamstring-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.8,
+    0.07
+   ]
+  ],
+  "window": [
+   120.2,
+   103.2,
+   789.6,
+   877.6
+  ]
+ },
+ "own_handstand-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.47
+   ]
+  ],
+  "window": [
+   250.5,
+   11.5,
+   523.0,
+   997.0
+  ]
+ },
  "own_handstand-to-bridge": {
   "source": 1,
   "kept": [
@@ -4325,6 +4787,48 @@
    977.5
   ]
  },
+ "own_hanging-knee-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.7,
+    0.24
+   ]
+  ],
+  "window": [
+   133.9,
+   68.9,
+   756.2,
+   901.2
+  ]
+ },
+ "own_hanging-leg-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.14
+   ]
+  ],
+  "window": [
+   77.4,
+   46.4,
+   869.1,
+   931.1
+  ]
+ },
  "own_head-supported-rear-delt-raise": {
   "source": 1,
   "kept": [
@@ -4344,6 +4848,27 @@
    177.2,
    949.7,
    751.7
+  ]
+ },
+ "own_heel-elevated-goblet-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.2,
+    0.3
+   ]
+  ],
+  "window": [
+   284.6,
+   57.6,
+   510.8,
+   918.8
   ]
  },
  "own_high-cable-curl": {
@@ -4367,6 +4892,153 @@
    981.6
   ]
  },
+ "own_high-knees": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.35
+   ]
+  ],
+  "window": [
+   275.4,
+   14.5,
+   452.1,
+   999.1
+  ]
+ },
+ "own_hiking": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.71
+   ]
+  ],
+  "window": [
+   134.3,
+   46.4,
+   756.3,
+   937.3
+  ]
+ },
+ "own_hip-adduction": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.29
+   ]
+  ],
+  "window": [
+   235.7,
+   23.7,
+   596.6,
+   983.6
+  ]
+ },
+ "own_hip-airplane": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.21
+   ]
+  ],
+  "window": [
+   48.5,
+   68.5,
+   926.0,
+   896.0
+  ]
+ },
+ "own_hip-thrust": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.21
+   ]
+  ],
+  "window": [
+   19.5,
+   150.5,
+   992.9,
+   809.9
+  ]
+ },
+ "own_hollow-hold": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.37
+   ]
+  ],
+  "window": [
+   7.3,
+   242.3,
+   1007.3,
+   584.3
+  ]
+ },
+ "own_hollow-rock": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.33
+   ]
+  ],
+  "window": [
+   15.4,
+   243.4,
+   1001.2,
+   593.2
+  ]
+ },
  "own_human-flag": {
   "source": 1,
   "kept": [
@@ -4386,6 +5058,27 @@
    5.3,
    978.5,
    1012.5
+  ]
+ },
+ "own_inchworm": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.44
+   ]
+  ],
+  "window": [
+   42.8,
+   310.8,
+   972.3,
+   539.3
   ]
  },
  "own_incline-barbell-triceps-extension": {
@@ -4661,6 +5354,27 @@
    954.8
   ]
  },
+ "own_incline-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.27
+   ]
+  ],
+  "window": [
+   26.6,
+   140.6,
+   989.8,
+   805.8
+  ]
+ },
  "own_inverted-muscle-up": {
   "source": 1,
   "kept": [
@@ -4787,6 +5501,48 @@
    907.2
   ]
  },
+ "own_jump-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.31
+   ]
+  ],
+  "window": [
+   387.6,
+   9.6,
+   268.9,
+   991.9
+  ]
+ },
+ "own_jumping-jack": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.29
+   ]
+  ],
+  "window": [
+   210.4,
+   9.4,
+   606.2,
+   1002.2
+  ]
+ },
  "own_karate": {
   "source": 1,
   "kept": [
@@ -4806,6 +5562,48 @@
    29.0,
    585.0,
    963.0
+  ]
+ },
+ "own_kettlebell-romanian-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.11
+   ]
+  ],
+  "window": [
+   266.3,
+   54.3,
+   536.3,
+   938.3
+  ]
+ },
+ "own_kettlebell-swing": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.18
+   ]
+  ],
+  "window": [
+   303.1,
+   52.1,
+   562.8,
+   954.8
   ]
  },
  "own_kickboxing": {
@@ -4871,6 +5669,27 @@
    977.5
   ]
  },
+ "own_knee-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.44
+   ]
+  ],
+  "window": [
+   20.8,
+   290.8,
+   978.5,
+   543.5
+  ]
+ },
  "own_knee-to-wall-dorsiflexion": {
   "source": 1,
   "kept": [
@@ -4934,6 +5753,132 @@
    989.8
   ]
  },
+ "own_kneeling-hip-flexor-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.18
+   ]
+  ],
+  "window": [
+   51.3,
+   61.3,
+   941.4,
+   921.4
+  ]
+ },
+ "own_l-sit": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.8,
+    0.2
+   ]
+  ],
+  "window": [
+   148.2,
+   84.2,
+   813.5,
+   876.5
+  ]
+ },
+ "own_l-sit-pull-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.8,
+    0.1
+   ]
+  ],
+  "window": [
+   89.4,
+   84.4,
+   835.2,
+   865.2
+  ]
+ },
+ "own_landmine-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.31
+   ]
+  ],
+  "window": [
+   82.4,
+   58.4,
+   936.3,
+   890.3
+  ]
+ },
+ "own_landmine-romanian-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.27
+   ]
+  ],
+  "window": [
+   129.1,
+   44.1,
+   856.8,
+   952.8
+  ]
+ },
+ "own_landmine-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.23
+   ]
+  ],
+  "window": [
+   154.9,
+   117.9,
+   805.2,
+   832.2
+  ]
+ },
  "own_lat-pulldown": {
   "source": 1,
   "kept": [
@@ -4953,6 +5898,27 @@
    -14.8,
    629.6,
    1017.6
+  ]
+ },
+ "own_lateral-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.18
+   ]
+  ],
+  "window": [
+   55.7,
+   65.7,
+   915.7,
+   900.7
   ]
  },
  "own_lateral-lunge-to-curl": {
@@ -4995,6 +5961,27 @@
    46.4,
    919.2,
    935.2
+  ]
+ },
+ "own_lateral-shuffle": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.19
+   ]
+  ],
+  "window": [
+   100.8,
+   23.8,
+   814.3,
+   972.3
   ]
  },
  "own_leg-extension": {
@@ -5058,6 +6045,27 @@
    112.6,
    988.8,
    842.8
+  ]
+ },
+ "own_leg-swing-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.25
+   ]
+  ],
+  "window": [
+   189.0,
+   31.0,
+   696.1,
+   964.1
   ]
  },
  "own_legs-on-ball-crunch": {
@@ -5186,6 +6194,27 @@
    759.4
   ]
  },
+ "own_lying-hamstring-walkout": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.57
+   ]
+  ],
+  "window": [
+   11.4,
+   406.4,
+   1001.2,
+   330.2
+  ]
+ },
  "own_lying-incline-barbell-curl": {
   "source": 1,
   "kept": [
@@ -5226,6 +6255,27 @@
    185.7,
    979.5,
    758.5
+  ]
+ },
+ "own_lying-leg-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.26
+   ]
+  ],
+  "window": [
+   15.3,
+   144.3,
+   1006.3,
+   765.3
   ]
  },
  "own_lying-one-arm-rear-lateral-raise": {
@@ -5333,6 +6383,48 @@
    978.5
   ]
  },
+ "own_machine-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.17
+   ]
+  ],
+  "window": [
+   96.0,
+   44.0,
+   839.0,
+   962.0
+  ]
+ },
+ "own_machine-shoulder-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.26
+   ]
+  ],
+  "window": [
+   189.4,
+   63.4,
+   718.2,
+   935.2
+  ]
+ },
  "own_machine-triceps-extension": {
   "source": 1,
   "kept": [
@@ -5396,6 +6488,27 @@
    844.2
   ]
  },
+ "own_meadows-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.2
+   ]
+  ],
+  "window": [
+   55.3,
+   95.3,
+   941.4,
+   860.4
+  ]
+ },
  "own_mobility-flow": {
   "source": 1,
   "kept": [
@@ -5415,6 +6528,27 @@
    173.6,
    990.9,
    727.9
+  ]
+ },
+ "own_mountain-climber": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.27
+   ]
+  ],
+  "window": [
+   63.1,
+   317.1,
+   952.8,
+   568.8
   ]
  },
  "own_muscle-up": {
@@ -5501,6 +6635,27 @@
    771.0
   ]
  },
+ "own_negative-pull-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.19
+   ]
+  ],
+  "window": [
+   131.6,
+   52.6,
+   754.8,
+   919.8
+  ]
+ },
  "own_neutral-grip-pull-up": {
   "source": 1,
   "kept": [
@@ -5520,6 +6675,27 @@
    38.0,
    465.0,
    961.0
+  ]
+ },
+ "own_nordic-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.32
+   ]
+  ],
+  "window": [
+   56.3,
+   51.3,
+   912.4,
+   941.4
   ]
  },
  "own_nordic-negative": {
@@ -5730,6 +6906,48 @@
    19.7,
    426.6,
    983.6
+  ]
+ },
+ "own_one-arm-dumbbell-skull-crusher": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.36
+   ]
+  ],
+  "window": [
+   44.9,
+   283.9,
+   971.3,
+   648.3
+  ]
+ },
+ "own_one-arm-dumbbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.27
+   ]
+  ],
+  "window": [
+   364.6,
+   21.6,
+   324.8,
+   987.8
   ]
  },
  "own_one-arm-dumbbell-upright-row": {
@@ -6026,6 +7244,27 @@
    961.0
   ]
  },
+ "own_overhead-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.29
+   ]
+  ],
+  "window": [
+   166.7,
+   19.7,
+   690.6,
+   980.6
+  ]
+ },
  "own_overhead-squat": {
   "source": 1,
   "kept": [
@@ -6089,6 +7328,48 @@
    932.1
   ]
  },
+ "own_pec-deck": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.29
+   ]
+  ],
+  "window": [
+   151.8,
+   26.8,
+   734.5,
+   977.5
+  ]
+ },
+ "own_pendlay-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.21
+   ]
+  ],
+  "window": [
+   15.5,
+   85.5,
+   994.0,
+   898.0
+  ]
+ },
  "own_pike-press": {
   "source": 1,
   "kept": [
@@ -6110,6 +7391,27 @@
    747.0
   ]
  },
+ "own_pike-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.21
+   ]
+  ],
+  "window": [
+   49.0,
+   189.0,
+   964.1,
+   738.1
+  ]
+ },
  "own_pilates": {
   "source": 1,
   "kept": [
@@ -6129,6 +7431,27 @@
    308.5,
    994.0,
    474.9
+  ]
+ },
+ "own_pistol-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.26
+   ]
+  ],
+  "window": [
+   100.0,
+   149.0,
+   823.0,
+   806.0
   ]
  },
  "own_planche-lean": {
@@ -6171,6 +7494,90 @@
    447.8,
    976.4,
    313.4
+  ]
+ },
+ "own_plank": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.19
+   ]
+  ],
+  "window": [
+   23.5,
+   332.5,
+   992.9,
+   410.9
+  ]
+ },
+ "own_plank-jack": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.3
+   ]
+  ],
+  "window": [
+   18.4,
+   299.4,
+   1003.2,
+   573.2
+  ]
+ },
+ "own_plank-shoulder-tap": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.31
+   ]
+  ],
+  "window": [
+   45.9,
+   244.9,
+   971.3,
+   653.3
+  ]
+ },
+ "own_plate-front-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.4
+   ]
+  ],
+  "window": [
+   294.7,
+   21.7,
+   511.6,
+   980.6
   ]
  },
  "own_preacher-curl": {
@@ -6236,6 +7643,48 @@
    960.0
   ]
  },
+ "own_prone-t-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.34
+   ]
+  ],
+  "window": [
+   1.1,
+   245.1,
+   1021.8,
+   565.8
+  ]
+ },
+ "own_prone-y-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.19
+   ]
+  ],
+  "window": [
+   20.6,
+   139.6,
+   989.8,
+   796.8
+  ]
+ },
  "own_pull-up": {
   "source": 1,
   "kept": [
@@ -6255,6 +7704,27 @@
    23.8,
    748.4,
    975.4
+  ]
+ },
+ "own_push-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.33
+   ]
+  ],
+  "window": [
+   109.0,
+   33.0,
+   805.0,
+   960.0
   ]
  },
  "own_push-up": {
@@ -6278,6 +7748,48 @@
    339.3
   ]
  },
+ "own_push-up-shoulder-tap": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.25
+   ]
+  ],
+  "window": [
+   40.9,
+   173.9,
+   967.2,
+   747.2
+  ]
+ },
+ "own_rack-pull": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.13
+   ]
+  ],
+  "window": [
+   25.8,
+   30.8,
+   972.3,
+   962.3
+  ]
+ },
  "own_reverse-crunch": {
   "source": 1,
   "kept": [
@@ -6297,6 +7809,48 @@
    99.1,
    784.8,
    885.8
+  ]
+ },
+ "own_reverse-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.18
+   ]
+  ],
+  "window": [
+   117.6,
+   19.6,
+   787.7,
+   985.7
+  ]
+ },
+ "own_reverse-fly": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   21.7,
+   84.7,
+   981.6,
+   862.6
   ]
  },
  "own_reverse-grip-triceps-bench-press": {
@@ -6341,6 +7895,27 @@
    953.8
   ]
  },
+ "own_reverse-hyperextension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.37
+   ]
+  ],
+  "window": [
+   11.5,
+   209.5,
+   994.0,
+   639.0
+  ]
+ },
  "own_reverse-lunge": {
   "source": 1,
   "kept": [
@@ -6362,6 +7937,27 @@
    945.5
   ]
  },
+ "own_reverse-pec-deck": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.22
+   ]
+  ],
+  "window": [
+   64.6,
+   2.6,
+   897.7,
+   985.7
+  ]
+ },
  "own_reverse-plate-curl": {
   "source": 1,
   "kept": [
@@ -6381,6 +7977,27 @@
    12.5,
    376.1,
    999.1
+  ]
+ },
+ "own_reverse-snow-angel": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.33
+   ]
+  ],
+  "window": [
+   10.4,
+   323.4,
+   1002.2,
+   401.2
   ]
  },
  "own_ring-dip": {
@@ -6593,6 +8210,90 @@
    919.8
   ]
  },
+ "own_running": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.25
+   ]
+  ],
+  "window": [
+   168.2,
+   29.2,
+   703.7,
+   950.7
+  ]
+ },
+ "own_russian-twist": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.2
+   ]
+  ],
+  "window": [
+   28.7,
+   191.7,
+   982.6,
+   709.6
+  ]
+ },
+ "own_scapular-pull": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.15
+   ]
+  ],
+  "window": [
+   124.2,
+   42.2,
+   776.6,
+   948.6
+  ]
+ },
+ "own_scapular-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.28
+   ]
+  ],
+  "window": [
+   20.5,
+   263.5,
+   995.0,
+   627.0
+  ]
+ },
  "own_seated-cable-rear-lateral-raise": {
   "source": 1,
   "kept": [
@@ -6675,6 +8376,48 @@
    23.7,
    670.5,
    979.5
+  ]
+ },
+ "own_seated-forward-fold": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.11
+   ]
+  ],
+  "window": [
+   49.9,
+   276.9,
+   966.1,
+   641.1
+  ]
+ },
+ "own_seated-knee-tuck": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.43
+   ]
+  ],
+  "window": [
+   145.7,
+   67.7,
+   809.7,
+   915.7
   ]
  },
  "own_seated-leg-curl": {
@@ -6761,6 +8504,69 @@
    981.6
   ]
  },
+ "own_shrimp-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.36
+   ]
+  ],
+  "window": [
+   122.2,
+   141.2,
+   881.7,
+   785.7
+  ]
+ },
+ "own_side-lying-hip-abduction": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.14
+   ]
+  ],
+  "window": [
+   22.7,
+   274.7,
+   983.6,
+   576.6
+  ]
+ },
+ "own_side-lying-leg-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.3
+   ]
+  ],
+  "window": [
+   1.1,
+   316.1,
+   1021.8,
+   499.8
+  ]
+ },
  "own_side-plank": {
   "source": 1,
   "kept": [
@@ -6782,6 +8588,111 @@
    472.8
   ]
  },
+ "own_side-plank-hip-dip": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.15
+   ]
+  ],
+  "window": [
+   16.4,
+   302.4,
+   1001.2,
+   545.2
+  ]
+ },
+ "own_single-arm-cable-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.21
+   ]
+  ],
+  "window": [
+   98.9,
+   30.9,
+   885.1,
+   965.1
+  ]
+ },
+ "own_single-leg-box-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.7,
+    0.19
+   ]
+  ],
+  "window": [
+   109.1,
+   77.1,
+   850.8,
+   885.8
+  ]
+ },
+ "own_single-leg-glute-bridge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.34
+   ]
+  ],
+  "window": [
+   23.5,
+   166.5,
+   992.9,
+   716.9
+  ]
+ },
+ "own_single-leg-romanian-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.24
+   ]
+  ],
+  "window": [
+   21.7,
+   199.7,
+   980.6,
+   752.6
+  ]
+ },
  "own_skateboarding": {
   "source": 1,
   "kept": [
@@ -6801,6 +8712,48 @@
    136.0,
    961.0,
    752.0
+  ]
+ },
+ "own_skater-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.18
+   ]
+  ],
+  "window": [
+   124.2,
+   42.2,
+   864.7,
+   949.7
+  ]
+ },
+ "own_ski-erg": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.28
+   ]
+  ],
+  "window": [
+   188.8,
+   26.8,
+   676.5,
+   977.5
   ]
  },
  "own_skiing": {
@@ -6845,6 +8798,27 @@
    720.1
   ]
  },
+ "own_skipping": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.13
+   ]
+  ],
+  "window": [
+   213.2,
+   44.2,
+   598.5,
+   944.5
+  ]
+ },
  "own_skull-crusher": {
   "source": 1,
   "kept": [
@@ -6885,6 +8859,27 @@
    50.2,
    949.7,
    944.7
+  ]
+ },
+ "own_smith-machine-bulgarian-split-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.56
+   ]
+  ],
+  "window": [
+   53.0,
+   27.0,
+   931.0,
+   963.0
   ]
  },
  "own_smith-machine-close-grip-bench-press": {
@@ -6971,6 +8966,27 @@
    958.9
   ]
  },
+ "own_smith-machine-hip-thrust": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.22
+   ]
+  ],
+  "window": [
+   26.9,
+   66.9,
+   968.2,
+   911.2
+  ]
+ },
  "own_smith-machine-incline-bench-press": {
   "source": 1,
   "kept": [
@@ -7055,6 +9071,48 @@
    1001.2
   ]
  },
+ "own_smith-machine-reverse-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.45
+   ]
+  ],
+  "window": [
+   43.6,
+   15.6,
+   940.9,
+   991.9
+  ]
+ },
+ "own_smith-machine-romanian-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.37
+   ]
+  ],
+  "window": [
+   122.1,
+   40.1,
+   779.8,
+   953.8
+  ]
+ },
  "own_smith-machine-row": {
   "source": 1,
   "kept": [
@@ -7095,6 +9153,27 @@
    1.5,
    901.1,
    998.1
+  ]
+ },
+ "own_smith-machine-split-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.21
+   ]
+  ],
+  "window": [
+   66.9,
+   24.9,
+   907.2,
+   969.2
   ]
  },
  "own_smith-machine-squat": {
@@ -7202,6 +9281,27 @@
    957.9
   ]
  },
+ "own_split-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.18
+   ]
+  ],
+  "window": [
+   168.9,
+   44.9,
+   722.1,
+   966.1
+  ]
+ },
  "own_sport-climbing": {
   "source": 1,
   "kept": [
@@ -7221,6 +9321,27 @@
    -15.4,
    457.7,
    1054.7
+  ]
+ },
+ "own_sprawl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.18
+   ]
+  ],
+  "window": [
+   36.6,
+   297.6,
+   989.8,
+   620.8
   ]
  },
  "own_squash": {
@@ -7286,6 +9407,27 @@
    882.8
   ]
  },
+ "own_stability-ball-hamstring-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.55
+   ]
+  ],
+  "window": [
+   2.1,
+   270.1,
+   1024.8,
+   524.9
+  ]
+ },
  "own_stability-ball-pullover": {
   "source": 1,
   "kept": [
@@ -7349,6 +9491,27 @@
    985.7
   ]
  },
+ "own_standing-dumbbell-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.36
+   ]
+  ],
+  "window": [
+   288.3,
+   9.3,
+   447.3,
+   1006.3
+  ]
+ },
  "own_standing-leg-curl": {
   "source": 1,
   "kept": [
@@ -7389,6 +9552,27 @@
    24.7,
    584.6,
    980.6
+  ]
+ },
+ "own_standing-quad-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.36
+   ]
+  ],
+  "window": [
+   292.8,
+   27.8,
+   443.4,
+   975.4
   ]
  },
  "own_standing-towel-triceps-extension": {
@@ -7452,6 +9636,27 @@
    52.4,
    427.1,
    931.1
+  ]
+ },
+ "own_step-down": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.24
+   ]
+  ],
+  "window": [
+   254.2,
+   43.2,
+   493.5,
+   945.5
   ]
  },
  "own_step-up-to-curl": {
@@ -7664,6 +9869,48 @@
    967.2
   ]
  },
+ "own_sumo-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.37
+   ]
+  ],
+  "window": [
+   14.5,
+   127.5,
+   998.1,
+   840.1
+  ]
+ },
+ "own_superman": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.54
+   ]
+  ],
+  "window": [
+   6.2,
+   405.2,
+   1014.5,
+   282.6
+  ]
+ },
  "own_supinated-one-arm-dumbbell-triceps-extension": {
   "source": 1,
   "kept": [
@@ -7725,6 +9972,27 @@
    168.1,
    1024.8,
    769.9
+  ]
+ },
+ "own_swimming": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.22
+   ]
+  ],
+  "window": [
+   11.4,
+   335.4,
+   1002.2,
+   430.2
   ]
  },
  "own_t-bar-row": {
@@ -7832,6 +10100,27 @@
    986.7
   ]
  },
+ "own_toe-touch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.39
+   ]
+  ],
+  "window": [
+   220.6,
+   47.6,
+   655.7,
+   917.7
+  ]
+ },
  "own_toes-to-bar": {
   "source": 1,
   "kept": [
@@ -7874,6 +10163,90 @@
    1026.9
   ]
  },
+ "own_torso-twist-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.41
+   ]
+  ],
+  "window": [
+   327.2,
+   32.2,
+   362.7,
+   950.7
+  ]
+ },
+ "own_towel-hamstring-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   25.6,
+   371.6,
+   985.7,
+   409.7
+  ]
+ },
+ "own_towel-pull-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.17
+   ]
+  ],
+  "window": [
+   26.3,
+   8.3,
+   972.3,
+   1006.3
+  ]
+ },
+ "own_towel-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.45
+   ]
+  ],
+  "window": [
+   105.4,
+   52.4,
+   869.2,
+   933.2
+  ]
+ },
  "own_trail-running": {
   "source": 1,
   "kept": [
@@ -7893,6 +10266,48 @@
    39.0,
    927.0,
    962.0
+  ]
+ },
+ "own_trap-bar-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.16
+   ]
+  ],
+  "window": [
+   27.9,
+   110.9,
+   969.2,
+   844.2
+  ]
+ },
+ "own_treadmill-incline-walk": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.35
+   ]
+  ],
+  "window": [
+   89.7,
+   63.7,
+   895.7,
+   915.7
   ]
  },
  "own_triceps-kickback": {
@@ -8063,6 +10478,27 @@
    809.9
   ]
  },
+ "own_typewriter-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.2,
+    0.28
+   ]
+  ],
+  "window": [
+   4.2,
+   279.2,
+   1016.6,
+   541.6
+  ]
+ },
  "own_v-bar-triceps-pushdown": {
   "source": 1,
   "kept": [
@@ -8103,6 +10539,27 @@
    150.6,
    848.7,
    769.7
+  ]
+ },
+ "own_v-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.25
+   ]
+  ],
+  "window": [
+   62.4,
+   110.4,
+   931.1,
+   839.1
   ]
  },
  "own_versaclimber": {
@@ -8147,6 +10604,27 @@
    952.8
   ]
  },
+ "own_walking": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.38
+   ]
+  ],
+  "window": [
+   296.6,
+   49.6,
+   496.9,
+   921.9
+  ]
+ },
  "own_walking-lunge": {
   "source": 1,
   "kept": [
@@ -8166,6 +10644,27 @@
    79.1,
    644.8,
    886.8
+  ]
+ },
+ "own_wall-calf-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.6,
+    0.18
+   ]
+  ],
+  "window": [
+   140.7,
+   65.7,
+   773.5,
+   910.5
   ]
  },
  "own_wall-handstand": {
@@ -8210,6 +10709,69 @@
    969.2
   ]
  },
+ "own_wall-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.1,
+    0.38
+   ]
+  ],
+  "window": [
+   200.2,
+   44.2,
+   687.6,
+   948.6
+  ]
+ },
+ "own_wall-sit": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.22
+   ]
+  ],
+  "window": [
+   274.0,
+   35.0,
+   549.0,
+   960.0
+  ]
+ },
+ "own_wall-walk": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.28
+   ]
+  ],
+  "window": [
+   153.7,
+   25.7,
+   813.6,
+   980.6
+  ]
+ },
  "own_water-polo": {
   "source": 1,
   "kept": [
@@ -8252,6 +10814,69 @@
    775.7
   ]
  },
+ "own_weighted-chin-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.19
+   ]
+  ],
+  "window": [
+   133.6,
+   19.6,
+   757.8,
+   988.8
+  ]
+ },
+ "own_weighted-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.13
+   ]
+  ],
+  "window": [
+   10.3,
+   228.3,
+   1010.4,
+   739.4
+  ]
+ },
+ "own_weighted-dip": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.23
+   ]
+  ],
+  "window": [
+   228.7,
+   28.7,
+   616.6,
+   983.6
+  ]
+ },
  "own_weighted-plank": {
   "source": 1,
   "kept": [
@@ -8271,6 +10896,48 @@
    382.7,
    981.6,
    348.6
+  ]
+ },
+ "own_weighted-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.31
+   ]
+  ],
+  "window": [
+   19.6,
+   367.6,
+   988.8,
+   455.8
+  ]
+ },
+ "own_weighted-russian-twist": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.15
+   ]
+  ],
+  "window": [
+   35.9,
+   142.9,
+   968.2,
+   813.2
   ]
  },
  "own_weighted-sissy-squat": {
@@ -8420,6 +11087,48 @@
    820.1
   ]
  },
+ "own_wide-grip-lat-pulldown": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   172.4,
+   11.4,
+   683.3,
+   1005.3
+  ]
+ },
+ "own_wide-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.3
+   ]
+  ],
+  "window": [
+   11.3,
+   293.3,
+   1008.4,
+   570.4
+  ]
+ },
  "own_wide-stance-barbell-squat": {
   "source": 1,
   "kept": [
@@ -8462,6 +11171,27 @@
    955.8
   ]
  },
+ "own_world-s-greatest-stretch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.39
+   ]
+  ],
+  "window": [
+   88.6,
+   21.6,
+   839.8,
+   988.8
+  ]
+ },
  "own_wrestling": {
   "source": 1,
   "kept": [
@@ -8481,6 +11211,48 @@
    90.5,
    992.9,
    866.9
+  ]
+ },
+ "own_wrist-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.28
+   ]
+  ],
+  "window": [
+   178.7,
+   61.6,
+   729.7,
+   916.7
+  ]
+ },
+ "own_wrist-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.25
+   ]
+  ],
+  "window": [
+   141.2,
+   40.2,
+   729.5,
+   944.5
   ]
  },
  "own_wrist-prep": {
@@ -8567,601 +11339,6 @@
    994.0
   ]
  },
- "wg_dumbbell-lateral-lunge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.98"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.36
-   ],
-   [
-    4.8,
-    1.06
-   ],
-   [
-    1.7,
-    1.98
-   ]
-  ],
-  "window": [
-   31.9,
-   -33.1,
-   448.1,
-   485.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_dumbbell-romanian-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.43
-   ],
-   [
-    5.8,
-    0.43
-   ],
-   [
-    3.3,
-    0.93
-   ]
-  ],
-  "window": [
-   123.8,
-   -10.2,
-   262.4,
-   495.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_dumbbell-side-bend": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.81"
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.64
-   ],
-   [
-    3.6,
-    0.47
-   ],
-   [
-    1.8,
-    1.81
-   ]
-  ],
-  "window": [
-   139.1,
-   11.1,
-   226.8,
-   473.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_dumbbell-sumo-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    5.9,
-    0.32
-   ],
-   [
-    1.7,
-    1.29
-   ],
-   [
-    3.6,
-    1.13
-   ]
-  ],
-  "window": [
-   57.5,
-   -58.5,
-   399.0,
-   515.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_dumbbell-sumo-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.20",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.45
-   ],
-   [
-    2.0,
-    2.2
-   ],
-   [
-    4.8,
-    0.41
-   ]
-  ],
-  "window": [
-   60.9,
-   -28.1,
-   390.2,
-   489.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_elliptical": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.42",
-   "doubled outline 3.19"
-  ],
-  "stroke": [
-   [
-    3.4,
-    1.11
-   ],
-   [
-    5.1,
-    1.42
-   ],
-   [
-    2.4,
-    3.19
-   ]
-  ],
-  "window": [
-   102.4,
-   8.9,
-   291.2,
-   489.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_explosive-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.69
-   ],
-   [
-    3.9,
-    0.67
-   ],
-   [
-    4.4,
-    0.96
-   ]
-  ],
-  "window": [
-   22.7,
-   56.2,
-   469.7,
-   308.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_face-pull": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.06",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.36
-   ],
-   [
-    1.7,
-    2.06
-   ],
-   [
-    3.4,
-    1.3
-   ]
-  ],
-  "window": [
-   51.0,
-   10.0,
-   416.9,
-   477.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_feet-elevated-pike-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.56",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    1.19
-   ],
-   [
-    3.3,
-    1.56
-   ],
-   [
-    5.0,
-    1.14
-   ]
-  ],
-  "window": [
-   6.7,
-   18.7,
-   498.5,
-   403.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_fire-hydrant": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.41
-   ],
-   [
-    5.1,
-    0.6
-   ],
-   [
-    4.2,
-    0.93
-   ]
-  ],
-  "window": [
-   15.4,
-   87.9,
-   488.2,
-   321.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_flutter-kick": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.46
-   ],
-   [
-    3.7,
-    0.9
-   ],
-   [
-    3.3,
-    0.9
-   ]
-  ],
-  "window": [
-   3.2,
-   114.7,
-   504.7,
-   246.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_forward-lunge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.2
-   ],
-   [
-    4.8,
-    0.28
-   ],
-   [
-    3.3,
-    1.02
-   ]
-  ],
-  "window": [
-   82.8,
-   -16.2,
-   338.5,
-   497.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_frog-pump": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.17",
-   "doubled outline 1.83"
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.68
-   ],
-   [
-    2.4,
-    2.17
-   ],
-   [
-    2.4,
-    1.83
-   ]
-  ],
-  "window": [
-   17.1,
-   147.1,
-   476.9,
-   236.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_front-foot-elevated-split-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.05"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.7
-   ],
-   [
-    5.1,
-    1.37
-   ],
-   [
-    3.3,
-    2.05
-   ]
-  ],
-  "window": [
-   69.7,
-   -7.3,
-   380.6,
-   502.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_glute-bridge-march": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.38
-   ],
-   [
-    4.9,
-    0.85
-   ],
-   [
-    5.2,
-    0.68
-   ]
-  ],
-  "window": [
-   18.6,
-   83.1,
-   475.9,
-   319.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_glute-focused-back-extension": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.95",
-   "doubled outline 2.87"
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.78
-   ],
-   [
-    2.7,
-    1.95
-   ],
-   [
-    2.0,
-    2.87
-   ]
-  ],
-  "window": [
-   46.1,
-   16.1,
-   429.8,
-   472.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_goblet-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.23
-   ],
-   [
-    4.1,
-    0.57
-   ],
-   [
-    4.6,
-    0.34
-   ]
-  ],
-  "window": [
-   116.7,
-   -22.4,
-   280.7,
-   504.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_half-kneeling-pallof-press": {
   "source": 3,
   "kept": [
@@ -9191,251 +11368,6 @@
    3.2,
    427.5,
    463.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hamstring-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.96",
-   ""
-  ],
-  "stroke": [
-   [
-    5.1,
-    0.33
-   ],
-   [
-    3.4,
-    1.96
-   ],
-   [
-    4.9,
-    0.69
-   ]
-  ],
-  "window": [
-   47.7,
-   -20.3,
-   380.7,
-   503.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_handstand-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.51",
-   "doubled outline 1.52"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.48
-   ],
-   [
-    3.3,
-    1.51
-   ],
-   [
-    3.2,
-    1.52
-   ]
-  ],
-  "window": [
-   110.1,
-   -6.4,
-   285.9,
-   510.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hanging-knee-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.52"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.81
-   ],
-   [
-    5.0,
-    0.82
-   ],
-   [
-    1.7,
-    2.52
-   ]
-  ],
-  "window": [
-   51.3,
-   11.8,
-   403.4,
-   493.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hanging-leg-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    5.1,
-    0.3
-   ],
-   [
-    3.4,
-    1.38
-   ],
-   [
-    5.0,
-    0.38
-   ]
-  ],
-  "window": [
-   65.8,
-   12.8,
-   374.3,
-   492.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_heel-elevated-goblet-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.85",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.81
-   ],
-   [
-    2.5,
-    1.85
-   ],
-   [
-    4.6,
-    1.13
-   ]
-  ],
-  "window": [
-   146.6,
-   -31.4,
-   228.8,
-   508.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_high-knees": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.67",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.79
-   ],
-   [
-    1.6,
-    2.67
-   ],
-   [
-    3.3,
-    1.28
-   ]
-  ],
-  "window": [
-   134.2,
-   -7.3,
-   222.6,
-   501.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hiking": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.76",
-   "doubled outline 1.51"
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.29
-   ],
-   [
-    3.3,
-    1.76
-   ],
-   [
-    3.3,
-    1.51
-   ]
-  ],
-  "window": [
-   105.7,
-   4.7,
-   297.6,
-   500.6
   ],
   "stillSelection": {
    "sourceFrame": 0,
@@ -9512,846 +11444,6 @@
    "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
   }
  },
- "wg_hip-adduction-machine": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 3.22"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.33
-   ],
-   [
-    3.4,
-    0.81
-   ],
-   [
-    1.7,
-    3.22
-   ]
-  ],
-  "window": [
-   84.9,
-   9.9,
-   316.2,
-   488.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hip-airplane": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.72",
-   "doubled outline 1.77"
-  ],
-  "stroke": [
-   [
-    3.6,
-    1.1
-   ],
-   [
-    3.5,
-    1.72
-   ],
-   [
-    3.6,
-    1.77
-   ]
-  ],
-  "window": [
-   40.7,
-   11.2,
-   405.6,
-   466.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hip-thrust": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.87",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.76
-   ],
-   [
-    2.5,
-    1.87
-   ],
-   [
-    3.9,
-    0.59
-   ]
-  ],
-  "window": [
-   7.6,
-   73.1,
-   474.8,
-   347.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hollow-body-hold": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.35
-   ],
-   [
-    3.8,
-    1.02
-   ],
-   [
-    3.7,
-    1.19
-   ]
-  ],
-  "window": [
-   3.7,
-   106.7,
-   504.7,
-   251.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_hollow-rock": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.7
-   ],
-   [
-    3.3,
-    0.81
-   ],
-   [
-    3.3,
-    0.98
-   ]
-  ],
-  "window": [
-   4.7,
-   63.7,
-   501.6,
-   315.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_inchworm": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.60",
-   "doubled outline 2.81"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.66
-   ],
-   [
-    3.4,
-    1.6
-   ],
-   [
-    1.6,
-    2.81
-   ]
-  ],
-  "window": [
-   6.2,
-   21.7,
-   503.7,
-   363.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_incline-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.7
-   ],
-   [
-    3.6,
-    1.14
-   ],
-   [
-    5.0,
-    1.28
-   ]
-  ],
-  "window": [
-   20.2,
-   70.2,
-   468.6,
-   360.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_jump-rope": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.41",
-   "doubled outline 3.05"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.44
-   ],
-   [
-    2.5,
-    1.41
-   ],
-   [
-    1.7,
-    3.05
-   ]
-  ],
-  "window": [
-   105.8,
-   1.8,
-   286.5,
-   496.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_jump-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.38
-   ],
-   [
-    3.5,
-    0.96
-   ],
-   [
-    4.8,
-    1.12
-   ]
-  ],
-  "window": [
-   146.1,
-   -22.9,
-   223.9,
-   475.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_jumping-jack": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.44"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.52
-   ],
-   [
-    3.6,
-    0.9
-   ],
-   [
-    3.4,
-    1.44
-   ]
-  ],
-  "window": [
-   56.4,
-   5.9,
-   399.2,
-   488.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_kettlebell-romanian-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.41
-   ],
-   [
-    5.3,
-    0.37
-   ],
-   [
-    3.4,
-    1.26
-   ]
-  ],
-  "window": [
-   128.9,
-   4.9,
-   258.1,
-   485.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_kettlebell-swing": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.66
-   ],
-   [
-    3.8,
-    0.84
-   ],
-   [
-    4.0,
-    0.58
-   ]
-  ],
-  "window": [
-   145.9,
-   9.9,
-   254.2,
-   489.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_knee-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.9,
-    0.64
-   ],
-   [
-    3.7,
-    1.11
-   ],
-   [
-    4.6,
-    1.08
-   ]
-  ],
-  "window": [
-   1.1,
-   60.6,
-   507.8,
-   341.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_kneeling-hip-flexor-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.22
-   ],
-   [
-    5.2,
-    0.39
-   ],
-   [
-    5.1,
-    0.46
-   ]
-  ],
-  "window": [
-   25.4,
-   10.4,
-   456.3,
-   449.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_l-sit-hold": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.48",
-   "doubled outline 1.94"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.43
-   ],
-   [
-    3.4,
-    2.48
-   ],
-   [
-    5.0,
-    1.94
-   ]
-  ],
-  "window": [
-   64.8,
-   11.8,
-   367.4,
-   495.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_l-sit-pull-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.99",
-   "doubled outline 2.63"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.62
-   ],
-   [
-    1.7,
-    3.99
-   ],
-   [
-    3.3,
-    2.63
-   ]
-  ],
-  "window": [
-   63.7,
-   8.7,
-   348.6,
-   499.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_landmine-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.05",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.47
-   ],
-   [
-    1.9,
-    2.05
-   ],
-   [
-    3.8,
-    1.35
-   ]
-  ],
-  "window": [
-   57.2,
-   50.7,
-   435.7,
-   397.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_landmine-romanian-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.86"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.86
-   ],
-   [
-    4.0,
-    1.23
-   ],
-   [
-    1.8,
-    2.86
-   ]
-  ],
-  "window": [
-   88.2,
-   8.2,
-   377.5,
-   464.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_landmine-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.22"
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.47
-   ],
-   [
-    4.3,
-    0.91
-   ],
-   [
-    1.8,
-    2.22
-   ]
-  ],
-  "window": [
-   73.2,
-   -14.8,
-   407.7,
-   469.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_lateral-lunge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.32
-   ],
-   [
-    4.2,
-    0.72
-   ],
-   [
-    3.6,
-    0.26
-   ]
-  ],
-  "window": [
-   24.8,
-   15.3,
-   459.4,
-   438.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_lateral-shuffle": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.72
-   ],
-   [
-    4.1,
-    0.71
-   ],
-   [
-    5.5,
-    0.74
-   ]
-  ],
-  "window": [
-   35.9,
-   20.4,
-   418.2,
-   453.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_leg-swings-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.47",
-   "doubled outline 1.61"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.32
-   ],
-   [
-    1.7,
-    2.47
-   ],
-   [
-    3.3,
-    1.61
-   ]
-  ],
-  "window": [
-   42.1,
-   -7.3,
-   427.7,
-   504.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_lying-hamstring-walkout": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.96
-   ],
-   [
-    4.8,
-    1.12
-   ],
-   [
-    3.3,
-    1.29
-   ]
-  ],
-  "window": [
-   1.2,
-   -21.3,
-   500.6,
-   444.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_lying-leg-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.66
-   ],
-   [
-    3.9,
-    0.76
-   ],
-   [
-    5.1,
-    0.83
-   ]
-  ],
-  "window": [
-   -19.5,
-   19.0,
-   483.1,
-   427.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_machine-glute-kickback": {
   "source": 3,
   "kept": [
@@ -10416,286 +11508,6 @@
    24.3,
    410.4,
    461.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_machine-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.56",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.39
-   ],
-   [
-    3.5,
-    1.56
-   ],
-   [
-    5.2,
-    1.1
-   ]
-  ],
-  "window": [
-   43.5,
-   9.0,
-   402.9,
-   478.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_machine-shoulder-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 1.52",
-   "doubled outline 3.52",
-   "doubled outline 2.52"
-  ],
-  "stroke": [
-   [
-    3.6,
-    1.52
-   ],
-   [
-    1.8,
-    3.52
-   ],
-   [
-    2.7,
-    2.52
-   ]
-  ],
-  "window": [
-   73.2,
-   25.2,
-   377.5,
-   463.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_meadows-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.09"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.69
-   ],
-   [
-    3.6,
-    1.37
-   ],
-   [
-    1.9,
-    2.09
-   ]
-  ],
-  "window": [
-   71.8,
-   6.2,
-   443.5,
-   463.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_mountain-climber": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.80",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.41
-   ],
-   [
-    1.8,
-    1.8
-   ],
-   [
-    3.5,
-    0.52
-   ]
-  ],
-  "window": [
-   20.2,
-   64.2,
-   468.6,
-   331.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_negative-pull-up": {
-  "source": 3,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.48
-   ],
-   [
-    3.4,
-    0.55
-   ],
-   [
-    2.3,
-    0.58
-   ]
-  ],
-  "window": [
-   95.7,
-   11.7,
-   314.6,
-   500.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_nordic-hamstring-curl": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.74",
-   "doubled outline 2.24"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.65
-   ],
-   [
-    1.9,
-    2.74
-   ],
-   [
-    3.5,
-    2.24
-   ]
-  ],
-  "window": [
-   45.1,
-   -6.9,
-   404.7,
-   471.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_one-arm-dumbbell-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "heavy strokes 6.2",
-   "heavy strokes 6.2"
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.46
-   ],
-   [
-    6.2,
-    0.53
-   ],
-   [
-    6.2,
-    0.55
-   ]
-  ],
-  "window": [
-   70.7,
-   52.2,
-   385.7,
-   400.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_overhead-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.72"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.9
-   ],
-   [
-    3.5,
-    0.9
-   ],
-   [
-    1.9,
-    1.72
-   ]
-  ],
-  "window": [
-   72.8,
-   4.8,
-   368.3,
-   492.3
   ],
   "stillSelection": {
    "sourceFrame": 0,
@@ -10772,636 +11584,6 @@
    "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
   }
  },
- "wg_pec-deck": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 1.69",
-   "doubled outline 2.72",
-   "doubled outline 2.55"
-  ],
-  "stroke": [
-   [
-    2.4,
-    1.69
-   ],
-   [
-    2.3,
-    2.72
-   ],
-   [
-    2.4,
-    2.55
-   ]
-  ],
-  "window": [
-   100.7,
-   -7.3,
-   302.7,
-   504.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_pendlay-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.52"
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.41
-   ],
-   [
-    4.9,
-    0.54
-   ],
-   [
-    3.8,
-    1.52
-   ]
-  ],
-  "window": [
-   7.5,
-   34.0,
-   480.0,
-   443.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_pike-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.55"
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.51
-   ],
-   [
-    4.0,
-    0.57
-   ],
-   [
-    1.9,
-    1.55
-   ]
-  ],
-  "window": [
-   39.2,
-   66.7,
-   435.7,
-   354.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_pistol-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.8,
-    0.44
-   ],
-   [
-    4.6,
-    0.4
-   ],
-   [
-    3.6,
-    0.72
-   ]
-  ],
-  "window": [
-   59.5,
-   -68.5,
-   380.1,
-   517.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_plank": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.78
-   ],
-   [
-    3.8,
-    1.17
-   ],
-   [
-    3.8,
-    1.18
-   ]
-  ],
-  "window": [
-   15.0,
-   147.0,
-   482.0,
-   208.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_plank-jack": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.41"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.7
-   ],
-   [
-    2.6,
-    1.04
-   ],
-   [
-    2.8,
-    2.41
-   ]
-  ],
-  "window": [
-   22.5,
-   131.5,
-   447.0,
-   253.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_plank-shoulder-tap": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.33
-   ],
-   [
-    4.1,
-    0.46
-   ],
-   [
-    3.9,
-    0.92
-   ]
-  ],
-  "window": [
-   28.4,
-   -59.6,
-   454.2,
-   436.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_plate-front-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.98
-   ],
-   [
-    3.6,
-    0.76
-   ],
-   [
-    1.8,
-    0.7
-   ]
-  ],
-  "window": [
-   149.3,
-   27.3,
-   234.4,
-   460.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_prone-t-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.5
-   ],
-   [
-    3.6,
-    1.03
-   ],
-   [
-    4.1,
-    0.79
-   ]
-  ],
-  "window": [
-   8.8,
-   -30.2,
-   494.4,
-   448.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_prone-y-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.62"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.44
-   ],
-   [
-    4.6,
-    0.41
-   ],
-   [
-    2.1,
-    1.62
-   ]
-  ],
-  "window": [
-   3.2,
-   49.6,
-   504.7,
-   397.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_push-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.08",
-   "doubled outline 3.52"
-  ],
-  "stroke": [
-   [
-    3.4,
-    1.04
-   ],
-   [
-    1.8,
-    3.08
-   ],
-   [
-    2.1,
-    3.52
-   ]
-  ],
-  "window": [
-   67.9,
-   9.9,
-   378.2,
-   489.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_push-up-shoulder-tap": {
-  "source": 3,
-  "kept": [
-   2
-  ],
-  "why": [
-   "",
-   "doubled outline 2.33",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.49
-   ],
-   [
-    2.5,
-    2.33
-   ],
-   [
-    5.0,
-    1.03
-   ]
-  ],
-  "window": [
-   20.2,
-   -63.8,
-   462.6,
-   467.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 2,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_rack-pull": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.67",
-   "doubled outline 2.81"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.61
-   ],
-   [
-    3.6,
-    1.67
-   ],
-   [
-    1.8,
-    2.81
-   ]
-  ],
-  "window": [
-   13.2,
-   6.7,
-   469.5,
-   498.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_rear-delt-fly": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.94
-   ],
-   [
-    4.1,
-    1.0
-   ],
-   [
-    4.0,
-    1.12
-   ]
-  ],
-  "window": [
-   14.9,
-   53.9,
-   487.2,
-   412.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_reverse-curl": {
-  "source": 3,
-  "kept": [
-   2
-  ],
-  "why": [
-   "",
-   "doubled outline 1.86",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    1.08
-   ],
-   [
-    2.4,
-    1.86
-   ],
-   [
-    3.5,
-    1.02
-   ]
-  ],
-  "window": [
-   77.5,
-   3.0,
-   351.0,
-   480.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 2,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_reverse-hyperextension": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 1.51",
-   "doubled outline 4.02",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    1.51
-   ],
-   [
-    1.9,
-    4.02
-   ],
-   [
-    1.9,
-    1.16
-   ]
-  ],
-  "window": [
-   24.6,
-   38.6,
-   439.8,
-   428.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_reverse-pec-deck": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.04",
-   "doubled outline 3.47"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.87
-   ],
-   [
-    3.4,
-    3.04
-   ],
-   [
-    2.4,
-    3.47
-   ]
-  ],
-  "window": [
-   57.9,
-   3.9,
-   398.2,
-   487.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_reverse-snow-angel": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.62"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.31
-   ],
-   [
-    2.3,
-    0.75
-   ],
-   [
-    2.1,
-    1.62
-   ]
-  ],
-  "window": [
-   3.6,
-   39.6,
-   505.7,
-   434.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_rowing": {
   "source": 3,
   "kept": [
@@ -11431,566 +11613,6 @@
    39.6,
    508.8,
    430.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_running": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 3.21"
-  ],
-  "stroke": [
-   [
-    3.7,
-    1.06
-   ],
-   [
-    3.7,
-    0.93
-   ],
-   [
-    1.6,
-    3.21
-   ]
-  ],
-  "window": [
-   43.2,
-   1.7,
-   422.6,
-   499.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_russian-twist": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.33
-   ],
-   [
-    5.7,
-    0.58
-   ],
-   [
-    3.8,
-    0.53
-   ]
-  ],
-  "window": [
-   11.9,
-   -29.1,
-   489.2,
-   438.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_scapular-pull-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.38
-   ],
-   [
-    3.3,
-    1.01
-   ],
-   [
-    3.3,
-    1.01
-   ]
-  ],
-  "window": [
-   73.2,
-   1.7,
-   367.6,
-   500.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_scapular-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.43"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.74
-   ],
-   [
-    3.4,
-    1.21
-   ],
-   [
-    2.4,
-    2.43
-   ]
-  ],
-  "window": [
-   11.9,
-   -18.1,
-   489.2,
-   409.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_seated-dumbbell-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.00",
-   "doubled outline 3.06"
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.83
-   ],
-   [
-    2.0,
-    3.0
-   ],
-   [
-    2.0,
-    3.06
-   ]
-  ],
-  "window": [
-   73.3,
-   17.3,
-   323.5,
-   462.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_seated-forward-fold-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.35
-   ],
-   [
-    6.0,
-    0.39
-   ],
-   [
-    4.8,
-    0.72
-   ]
-  ],
-  "window": [
-   18.4,
-   -104.6,
-   473.1,
-   519.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_seated-knee-tuck": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.81",
-   "doubled outline 2.67"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.32
-   ],
-   [
-    1.6,
-    2.81
-   ],
-   [
-    3.7,
-    2.67
-   ]
-  ],
-  "window": [
-   101.2,
-   4.7,
-   303.7,
-   503.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_shrimp-squat": {
-  "source": 3,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.36
-   ],
-   [
-    1.8,
-    0.66
-   ],
-   [
-    1.7,
-    1.21
-   ]
-  ],
-  "window": [
-   36.3,
-   -38.2,
-   427.3,
-   492.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_shrug": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.04"
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.55
-   ],
-   [
-    3.3,
-    0.67
-   ],
-   [
-    2.4,
-    2.04
-   ]
-  ],
-  "window": [
-   33.3,
-   -2.2,
-   452.4,
-   495.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_side-lying-hip-abduction": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.3
-   ],
-   [
-    2.3,
-    0.36
-   ],
-   [
-    3.3,
-    0.46
-   ]
-  ],
-  "window": [
-   7.8,
-   117.8,
-   497.5,
-   252.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_side-lying-leg-raise": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.6
-   ],
-   [
-    3.3,
-    1.16
-   ],
-   [
-    1.7,
-    0.54
-   ]
-  ],
-  "window": [
-   10.8,
-   115.8,
-   496.5,
-   248.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_side-plank-hip-dip": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.62
-   ],
-   [
-    3.4,
-    0.79
-   ],
-   [
-    3.4,
-    0.78
-   ]
-  ],
-  "window": [
-   15.4,
-   122.9,
-   488.2,
-   267.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_single-arm-cable-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.08",
-   "doubled outline 4.94"
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.95
-   ],
-   [
-    1.8,
-    2.08
-   ],
-   [
-    1.8,
-    4.94
-   ]
-  ],
-  "window": [
-   51.9,
-   12.4,
-   431.2,
-   454.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_single-arm-dumbbell-tricep-extension": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.32"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.71
-   ],
-   [
-    5.4,
-    0.65
-   ],
-   [
-    1.7,
-    2.32
-   ]
-  ],
-  "window": [
-   173.7,
-   2.7,
-   150.5,
-   498.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_single-dumbbell-skullcrusher": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.63",
-   "doubled outline 1.40"
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.31
-   ],
-   [
-    3.9,
-    2.63
-   ],
-   [
-    3.6,
-    1.4
-   ]
-  ],
-  "window": [
-   10.4,
-   28.4,
-   456.3,
-   413.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_single-leg-box-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.84",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.63
-   ],
-   [
-    3.4,
-    1.84
-   ],
-   [
-    1.7,
-    0.7
-   ]
-  ],
-  "window": [
-   26.0,
-   -29.0,
-   462.9,
-   478.9
   ],
   "stillSelection": {
    "sourceFrame": 0,
@@ -12032,76 +11654,6 @@
    "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
   }
  },
- "wg_single-leg-glute-bridge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.25"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.48
-   ],
-   [
-    3.7,
-    0.59
-   ],
-   [
-    3.3,
-    2.25
-   ]
-  ],
-  "window": [
-   5.2,
-   71.7,
-   498.5,
-   329.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_single-leg-romanian-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.84",
-   "doubled outline 2.96"
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.43
-   ],
-   [
-    1.8,
-    2.84
-   ],
-   [
-    1.8,
-    2.96
-   ]
-  ],
-  "window": [
-   28.2,
-   -9.8,
-   434.5,
-   463.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_sissy-squat": {
   "source": 3,
   "kept": [
@@ -12137,356 +11689,6 @@
    "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
   }
  },
- "wg_skater-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.25
-   ],
-   [
-    5.6,
-    0.37
-   ],
-   [
-    3.9,
-    0.34
-   ]
-  ],
-  "window": [
-   42.3,
-   25.3,
-   407.3,
-   457.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_skierg": {
-  "source": 3,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 1.44"
-  ],
-  "stroke": [
-   [
-    3.4,
-    1.14
-   ],
-   [
-    1.7,
-    1.39
-   ],
-   [
-    1.7,
-    1.44
-   ]
-  ],
-  "window": [
-   99.4,
-   4.9,
-   325.3,
-   490.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_smith-machine-bulgarian-split-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.80",
-   "doubled outline 3.38"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.78
-   ],
-   [
-    1.7,
-    3.8
-   ],
-   [
-    1.7,
-    3.38
-   ]
-  ],
-  "window": [
-   40.3,
-   -7.2,
-   428.3,
-   491.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_smith-machine-hip-thrust": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.30",
-   "doubled outline 2.48"
-  ],
-  "stroke": [
-   [
-    3.5,
-    1.25
-   ],
-   [
-    3.4,
-    2.3
-   ],
-   [
-    1.7,
-    2.48
-   ]
-  ],
-  "window": [
-   9.5,
-   1.0,
-   480.1,
-   483.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_smith-machine-reverse-lunge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 5.66",
-   "doubled outline 1.64"
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.08
-   ],
-   [
-    1.6,
-    5.66
-   ],
-   [
-    3.3,
-    1.64
-   ]
-  ],
-  "window": [
-   21.1,
-   -5.4,
-   461.8,
-   506.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_smith-machine-romanian-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.75",
-   "doubled outline 2.73"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.82
-   ],
-   [
-    3.2,
-    2.75
-   ],
-   [
-    2.3,
-    2.73
-   ]
-  ],
-  "window": [
-   48.5,
-   -5.5,
-   409.0,
-   514.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_smith-machine-split-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.95",
-   "doubled outline 2.85"
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.69
-   ],
-   [
-    1.7,
-    1.95
-   ],
-   [
-    1.7,
-    2.85
-   ]
-  ],
-  "window": [
-   56.4,
-   -6.1,
-   405.2,
-   488.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_split-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.46
-   ],
-   [
-    2.5,
-    1.22
-   ],
-   [
-    3.7,
-    0.67
-   ]
-  ],
-  "window": [
-   92.7,
-   -43.3,
-   323.6,
-   500.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_sprawl": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.48
-   ],
-   [
-    4.0,
-    0.98
-   ],
-   [
-    4.8,
-    0.95
-   ]
-  ],
-  "window": [
-   25.2,
-   -22.8,
-   467.6,
-   416.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_stability-ball-hamstring-curl": {
-  "source": 3,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.21"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.66
-   ],
-   [
-    3.3,
-    1.12
-   ],
-   [
-    3.3,
-    2.21
-   ]
-  ],
-  "window": [
-   9.7,
-   105.7,
-   499.6,
-   303.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_stair-climber": {
   "source": 3,
   "kept": [
@@ -12516,601 +11718,6 @@
    4.7,
    288.5,
    498.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_standing-dumbbell-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.32",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.98
-   ],
-   [
-    2.7,
-    2.32
-   ],
-   [
-    4.4,
-    0.99
-   ]
-  ],
-  "window": [
-   125.4,
-   11.9,
-   255.3,
-   490.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_standing-quad-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.68
-   ],
-   [
-    2.4,
-    0.75
-   ],
-   [
-    3.4,
-    0.82
-   ]
-  ],
-  "window": [
-   150.4,
-   -2.1,
-   217.2,
-   486.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_step-down": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.57
-   ],
-   [
-    3.3,
-    0.52
-   ],
-   [
-    3.3,
-    1.12
-   ]
-  ],
-  "window": [
-   149.6,
-   -19.4,
-   224.7,
-   505.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_sumo-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.63",
-   "doubled outline 2.58"
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.03
-   ],
-   [
-    1.6,
-    3.63
-   ],
-   [
-    2.3,
-    2.58
-   ]
-  ],
-  "window": [
-   -1.0,
-   -32.5,
-   512.9,
-   462.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_superman": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 4.38",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.98
-   ],
-   [
-    1.6,
-    4.38
-   ],
-   [
-    2.3,
-    1.21
-   ]
-  ],
-  "window": [
-   8.7,
-   157.7,
-   499.6,
-   163.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_swimming": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.34",
-   "doubled outline 3.27"
-  ],
-  "stroke": [
-   [
-    3.8,
-    1.23
-   ],
-   [
-    3.4,
-    2.34
-   ],
-   [
-    1.7,
-    3.27
-   ]
-  ],
-  "window": [
-   21.9,
-   -37.1,
-   489.2,
-   433.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_toe-touch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.48",
-   "doubled outline 1.75"
-  ],
-  "stroke": [
-   [
-    5.6,
-    0.61
-   ],
-   [
-    4.6,
-    1.48
-   ],
-   [
-    2.4,
-    1.75
-   ]
-  ],
-  "window": [
-   91.4,
-   -21.1,
-   335.3,
-   490.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_torso-twist-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 4.29",
-   ""
-  ],
-  "stroke": [
-   [
-    4.5,
-    0.44
-   ],
-   [
-    1.9,
-    4.29
-   ],
-   [
-    5.5,
-    0.85
-   ]
-  ],
-  "window": [
-   16.5,
-   11.0,
-   477.9,
-   426.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_towel-hamstring-curl": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.72
-   ],
-   [
-    1.7,
-    1.26
-   ],
-   [
-    2.4,
-    0.63
-   ]
-  ],
-  "window": [
-   6.4,
-   39.9,
-   490.3,
-   435.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_towel-pull-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.25",
-   "doubled outline 1.93"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.53
-   ],
-   [
-    1.7,
-    3.25
-   ],
-   [
-    2.3,
-    1.93
-   ]
-  ],
-  "window": [
-   101.7,
-   17.7,
-   308.6,
-   501.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_towel-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.6
-   ],
-   [
-    3.5,
-    0.69
-   ],
-   [
-    5.2,
-    0.93
-   ]
-  ],
-  "window": [
-   100.0,
-   13.0,
-   311.9,
-   478.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_trap-bar-deadlift": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.61",
-   "doubled outline 3.32"
-  ],
-  "stroke": [
-   [
-    3.9,
-    1.03
-   ],
-   [
-    1.7,
-    3.61
-   ],
-   [
-    2.3,
-    3.32
-   ]
-  ],
-  "window": [
-   12.8,
-   -30.2,
-   486.5,
-   496.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_treadmill-incline-walk": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.53
-   ],
-   [
-    5.2,
-    0.42
-   ],
-   [
-    5.3,
-    0.46
-   ]
-  ],
-  "window": [
-   40.1,
-   8.1,
-   432.9,
-   476.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_typewriter-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.78
-   ],
-   [
-    3.3,
-    1.24
-   ],
-   [
-    3.3,
-    1.2
-   ]
-  ],
-  "window": [
-   9.2,
-   104.7,
-   498.5,
-   273.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_v-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "heavy strokes 6.2",
-   "doubled outline 1.57",
-   "doubled outline 1.83"
-  ],
-  "stroke": [
-   [
-    6.2,
-    0.71
-   ],
-   [
-    4.8,
-    1.57
-   ],
-   [
-    3.4,
-    1.83
-   ]
-  ],
-  "window": [
-   18.9,
-   70.9,
-   488.2,
-   366.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_walking": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.82",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.73
-   ],
-   [
-    2.4,
-    2.82
-   ],
-   [
-    3.4,
-    1.02
-   ]
-  ],
-  "window": [
-   49.4,
-   4.9,
-   414.2,
-   488.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wall-calf-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.38
-   ],
-   [
-    5.4,
-    0.44
-   ],
-   [
-    5.5,
-    0.47
-   ]
-  ],
-  "window": [
-   54.3,
-   5.3,
-   406.4,
-   460.4
   ],
   "stillSelection": {
    "sourceFrame": 0,
@@ -13152,216 +11759,6 @@
    "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
   }
  },
- "wg_wall-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.25
-   ],
-   [
-    3.8,
-    0.45
-   ],
-   [
-    3.8,
-    0.42
-   ]
-  ],
-  "window": [
-   82.0,
-   2.0,
-   336.1,
-   484.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wall-sit": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.08
-   ],
-   [
-    5.1,
-    0.07
-   ],
-   [
-    3.4,
-    0.87
-   ]
-  ],
-  "window": [
-   130.9,
-   -5.1,
-   266.2,
-   487.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wall-walk": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "heavy strokes 6.5",
-   "heavy strokes 6.6"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.53
-   ],
-   [
-    6.5,
-    1.09
-   ],
-   [
-    6.6,
-    1.15
-   ]
-  ],
-  "window": [
-   40.6,
-   -14.4,
-   411.9,
-   510.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_weighted-chin-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.89",
-   "doubled outline 2.69"
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.89
-   ],
-   [
-    1.8,
-    2.89
-   ],
-   [
-    1.7,
-    2.69
-   ]
-  ],
-  "window": [
-   84.0,
-   11.0,
-   344.0,
-   480.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_weighted-crunch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.61"
-  ],
-  "stroke": [
-   [
-    5.3,
-    0.46
-   ],
-   [
-    4.1,
-    0.76
-   ],
-   [
-    1.8,
-    2.61
-   ]
-  ],
-  "window": [
-   24.8,
-   77.3,
-   462.5,
-   359.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_weighted-dip": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.52
-   ],
-   [
-    3.3,
-    0.6
-   ],
-   [
-    4.5,
-    1.4
-   ]
-  ],
-  "window": [
-   96.8,
-   6.8,
-   326.4,
-   494.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
  "wg_weighted-pull-up": {
   "source": 3,
   "kept": [
@@ -13391,251 +11788,6 @@
    4.8,
    367.5,
    497.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_weighted-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.55",
-   "doubled outline 1.48"
-  ],
-  "stroke": [
-   [
-    4.8,
-    0.68
-   ],
-   [
-    3.3,
-    2.55
-   ],
-   [
-    3.3,
-    1.48
-   ]
-  ],
-  "window": [
-   6.7,
-   91.7,
-   498.5,
-   289.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_weighted-russian-twist": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.2,
-    0.39
-   ],
-   [
-    4.1,
-    0.74
-   ],
-   [
-    5.2,
-    0.49
-   ]
-  ],
-  "window": [
-   35.4,
-   -14.6,
-   451.2,
-   452.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wide-grip-lat-pulldown": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 1.76",
-   "doubled outline 4.27",
-   "doubled outline 3.40"
-  ],
-  "stroke": [
-   [
-    2.4,
-    1.76
-   ],
-   [
-    1.7,
-    4.27
-   ],
-   [
-    1.7,
-    3.4
-   ]
-  ],
-  "window": [
-   90.5,
-   7.0,
-   303.1,
-   483.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wide-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.73
-   ],
-   [
-    4.9,
-    0.65
-   ],
-   [
-    5.4,
-    0.57
-   ]
-  ],
-  "window": [
-   4.0,
-   122.0,
-   478.9,
-   268.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_worlds-greatest-stretch": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.88
-   ],
-   [
-    3.5,
-    0.86
-   ],
-   [
-    3.5,
-    0.99
-   ]
-  ],
-  "window": [
-   29.1,
-   15.1,
-   469.9,
-   476.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wrist-curl": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 2.76"
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.08
-   ],
-   [
-    3.3,
-    1.11
-   ],
-   [
-    1.6,
-    2.76
-   ]
-  ],
-  "window": [
-   97.1,
-   0.6,
-   318.8,
-   506.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_wrist-extension": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.77
-   ],
-   [
-    3.5,
-    0.73
-   ],
-   [
-    2.4,
-    0.91
-   ]
-  ],
-  "window": [
-   123.6,
-   9.1,
-   275.9,
-   475.9
   ],
   "stillSelection": {
    "sourceFrame": 0,
