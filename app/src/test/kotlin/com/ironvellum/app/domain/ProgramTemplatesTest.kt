@@ -9,9 +9,9 @@ import org.junit.Test
 
 /**
  * The hand-authored templates against the REAL seed catalogue: entries must
- * exist, MUSCLE weekly volume must sit inside the authored level's range for
- * every tracked muscle, every volume level must stay finishable and name
- * what it leaves short, STRENGTH templates must practise the big lifts often
+ * exist, MUSCLE weekly volume must cover every tracked muscle at its
+ * authored level without a Heavy week, every volume level must stay finishable
+ * and name what it leaves short, STRENGTH templates must practise the big lifts often
  * enough, and adaptation must respect the equipment.
  */
 class ProgramTemplatesTest {
@@ -49,13 +49,13 @@ class ProgramTemplatesTest {
                 )
             }
             if (template.focus != TrainingFocus.MUSCLE) continue
-            val floor = ProgramRules.weeklySetTarget(volume, TrainingFocus.MUSCLE).start
+            val floor = ProgramRules.COVERED_MIN
             val volumeMap = volumeOf(plan)
             val note = plan.note
             plan.presets.forEach { built ->
-                assertFalse("${template.id} at $volume: routine advice in ${built.name}", "Short on" in built.note)
+                assertFalse("${template.id} at $volume: routine advice in ${built.name}", "below 4 hard sets" in built.note)
             }
-            ProgramRules.TRACKED.filter { (volumeMap[it] ?: 0.0) < floor }.forEach { muscle ->
+            ProgramRules.TRACKED.filter { (volumeMap[it] ?: 0.0) < floor - 1e-9 }.forEach { muscle ->
                 assertTrue(
                     "${template.id} at $volume: ${muscle.label} at ${volumeMap[muscle]} not in note: $note",
                     muscle.label.lowercase() in note,
@@ -98,7 +98,7 @@ class ProgramTemplatesTest {
     }
 
     @Test
-    fun `muscle templates put every tracked muscle inside its tier range`() {
+    fun `muscle templates cover every tracked muscle at their authored level without a heavy week`() {
         // The authored dose, at the roomiest movement cap a lifter can pick;
         // tighter caps are covered by the shortfall-note test above.
         for (template in ProgramTemplates.ALL.filter { it.focus == TrainingFocus.MUSCLE }) {
@@ -106,15 +106,21 @@ class ProgramTemplatesTest {
                 template, template.authoredVolume, Equipment.FULL_GYM, catalogue, emptyStrength,
                 maxExercises = ProgramRules.MAX_EXERCISES_RANGE.last,
             )
-            val range = ProgramRules.weeklySetTarget(template.authoredVolume, TrainingFocus.MUSCLE)
             val volume = volumeOf(plan)
             for (muscle in ProgramRules.TRACKED) {
                 val sets = volume[muscle] ?: 0.0
                 assertTrue(
-                    "${template.id}: $muscle at $sets fractional sets/week, outside ${range}",
-                    sets >= range.start && sets <= range.endInclusive,
+                    "${template.id}: $muscle at $sets fractional sets/week, outside ${ProgramRules.COVERAGE_BAND}",
+                    sets >= ProgramRules.COVERED_MIN && sets <= ProgramRules.HEAVY_WEEK,
                 )
             }
+            // The authored days are the author's: a session may sit past the soft
+            // per-session flag (Upper/Lower Size loads the glutes 11 in one
+            // Lower day), but no muscle is heavy for the week.
+            assertTrue(
+                "${template.id}: heavy week ${ProgramRules.coverage(plan.presets).values.filter { it.weekly > ProgramRules.HEAVY_WEEK }}",
+                ProgramRules.coverage(plan.presets).values.none { it.weekly > ProgramRules.HEAVY_WEEK },
+            )
         }
     }
 

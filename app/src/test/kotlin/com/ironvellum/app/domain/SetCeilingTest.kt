@@ -9,8 +9,9 @@ import org.junit.Test
 /**
  * Owner report: the generator asked for six sets of single-leg calf raises
  * to reach the calves' weekly target. No path - week, session, improve or
- * template - may put more on one entry than [ProgramRules.maxSetsPerEntry],
- * or list one exercise twice in a session; a target the ceilings cannot
+ * template - may put more than the per-entry sanity ceiling on one entry,
+ * and the generator never grows one past its own set range ([PlannedEntry.setsMax]),
+ * or lists one exercise twice in a session; a target the ranges cannot
  * reach is named short in the note instead.
  */
 class SetCeilingTest {
@@ -52,8 +53,8 @@ class SetCeilingTest {
     private fun assertWithinCeilings(context: String, preset: PlannedPreset) {
         preset.entries.forEach { entry ->
             assertTrue(
-                "$context ${preset.name}: ${entry.exerciseName} x${entry.sets}",
-                entry.sets <= ProgramRules.maxSetsPerEntry(entry.exerciseName),
+                "$context ${preset.name}: ${entry.exerciseName} x${entry.sets} of ${entry.setsMin}-${entry.setsMax}",
+                entry.sets <= entry.setsMax && entry.sets <= ProgramRules.ENTRY_SANITY_MAX_SETS,
             )
         }
         val names = preset.entries.map { it.exerciseName.trim().lowercase() }
@@ -61,7 +62,7 @@ class SetCeilingTest {
     }
 
     @Test
-    fun `no generated entry passes its set ceiling and no exercise repeats in a session`() {
+    fun `no generated entry passes its set range and no exercise repeats in a session`() {
         for (kit in kits) for (focus in TrainingFocus.entries) for (volume in VolumeLevel.entries)
             for (days in 2..6) for (compoundOnly in listOf(false, true)) {
                 val request = ProgramRequest(focus, volume, kit, days, compoundOnly = compoundOnly)
@@ -132,8 +133,7 @@ class SetCeilingTest {
         assertTrue("fixture broken: no calf raise in ${plan.presets}", calfRaises.isNotEmpty())
         calfRaises.forEach { assertTrue("calf raise x${it.sets}", it.sets <= 4) }
         val calves = ProgramRules.weeklyVolume(plan.presets)[Muscle.CALVES] ?: 0.0
-        val floor = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE).start
-        assertTrue("fixture broken: calves reached $calves", calves < floor)
+        assertTrue("fixture broken: calves reached $calves", calves < ProgramRules.COVERED_MIN)
         assertTrue("note silent on calves: ${plan.note}", "calves" in plan.note)
     }
 

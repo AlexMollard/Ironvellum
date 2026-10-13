@@ -362,7 +362,8 @@ private fun RelicCentrepiece(
     // Spare room under the page goes to the block, and half of it to the relic, up to a cap.
     val relicSize = RELIC_SIZE + (grow / 2).coerceAtMost(RELIC_GROW_MAX)
     Column(
-        Modifier.fillMaxWidth().height(RELIC_HERO_HEIGHT + grow).testTag("veil-hero"),
+        // A floor, not a cap: the relic, figure and name lines can outgrow it, and must never be clipped.
+        Modifier.fillMaxWidth().heightIn(min = RELIC_HERO_HEIGHT + grow).testTag("veil-hero"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -388,7 +389,7 @@ private fun RelicCentrepiece(
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = 6.dp).testTag("veil-relic-name"),
         )
     }
 }

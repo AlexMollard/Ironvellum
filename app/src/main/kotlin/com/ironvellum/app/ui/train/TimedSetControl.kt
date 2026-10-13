@@ -1,22 +1,36 @@
 package com.ironvellum.app.ui.train
 
 import android.os.SystemClock
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,115 +42,231 @@ import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
- * The clock under the active set of a hold or a duration (a countdown toward its figure) or
- * of a distance run (a stopwatch that fills its time). It sits on the row like the steppers
- * do: Start, then Pause and Finish; a countdown that runs out logs the set at its target,
- * Finish logs the time actually held. The last 3 seconds and the end cue as the alert mode
- * ([RestAlert]) allows. The clock itself is [SetClock]: plain state on the monotonic clock,
- * held by the view model, so everything shown here is computed from it.
+ * The clock under the active set of a hold or a duration or of a distance run (a stopwatch
+ * that fills its time). A hold: Start opens a 5-second get-ready, then the clock counts up
+ * toward the target shown as a reference. Reaching it cues once and turns the face gold with
+ * "Target reached" in words; it keeps counting and logs nothing. Stop opens the adjust step:
+ * the stopped time with -1 s / +1 s (hold to repeat) and Log or Discard. A stop during the
+ * get-ready records nothing. The clock itself is [SetClock]: plain state on the monotonic
+ * clock, held by the view model, so everything shown here is computed from it and a rotation
+ * changes nothing. The cues follow the alert mode ([RestAlert]).
  */
 @Composable
 internal fun TimedSetControl(
     metric: ExerciseMetric,
-    /** The set's own figure in seconds: what a countdown runs toward. */
+    /** The set's own figure in seconds: the target a hold counts toward. */
     targetSec: Int,
     clock: SetClock?,
     alert: RestAlert,
     onClock: (SetClock?) -> Unit,
-    /** Logs the set with these seconds (countdowns). */
+    /** Logs the set with these seconds (the adjust step). */
     onLog: (seconds: Int) -> Unit,
     /** Fills the set's time with these seconds, without logging it (the stopwatch). */
     onFill: (seconds: Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** The monotonic clock; a test swaps it. */
+    nowMs: () -> Long = SystemClock::elapsedRealtime,
+    /** Plays a cue; the default is the rest alert's. A test swaps it. */
+    onCue: ((SetClock.Cue) -> Unit)? = null,
 ) {
     val countdown = SetClock.countsDown(metric)
-    // A countdown toward nothing has nothing to count: a hold at 0 s waits for a figure.
+    // A hold toward nothing has nothing to count: a hold at 0 s waits for a figure.
     if (countdown && targetSec <= 0) return
     val context = LocalContext.current
     val running = clock?.running == true
-    val now = clockNow(running)
-    // The figure changed under a clock: it was counting toward something that is gone.
-    LaunchedEffect(targetSec, clock?.targetSec) {
-        if (clock != null && countdown && clock.targetSec != targetSec) onClock(null)
-    }
+    val now = clockNow(running, nowMs)
     val current by rememberUpdatedState(clock)
-    val display = clock?.displaySeconds(now) ?: if (countdown) targetSec else 0
-    // One cue per change of the displayed second, and the end logs the set at its target.
-    LaunchedEffect(display, running) {
+    val play by rememberUpdatedState(onCue ?: { cue -> TrialCues.play(context, alert, cue) })
+    // The figure changed under a clock: the target moves to it, and the count carries on.
+    LaunchedEffect(targetSec, clock?.targetSec) {
+        val live = current
+        if (live != null && countdown && live.targetSec != targetSec) onClock(live.copy(targetSec = targetSec, targetCued = false))
+    }
+    val phase = clock?.phase(now) ?: SetClock.Phase.IDLE
+    val readySeconds = clock?.getReadySeconds(now) ?: 0
+    val reached = clock?.targetReached(now) == true
+    // A tick on the last seconds of the get-ready, one per displayed second.
+    LaunchedEffect(readySeconds) {
+        val cue = SetClock.readyCue(readySeconds)
+        if (cue != SetClock.Cue.NONE) play(cue)
+    }
+    // The go and the target each cue once: the clock remembers it, so a rotation cannot repeat it.
+    LaunchedEffect(clock, phase, reached) {
         val live = current ?: return@LaunchedEffect
-        if (!countdown || !live.running) return@LaunchedEffect
-        val cue = SetClock.cueAt(display)
-        if (cue != SetClock.Cue.NONE) TrialCues.play(context, alert, cue)
-        if (live.isDone(SystemClock.elapsedRealtime())) {
-            onClock(null)
-            onLog(live.targetSec ?: targetSec)
+        val (cue, next) = live.cueDue(nowMs())
+        if (cue != SetClock.Cue.NONE) {
+            play(cue)
+            onClock(next)
         }
     }
-    Row(
-        modifier.fillMaxWidth().heightIn(min = 48.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            SetClock.face(display),
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
-            color = if (running) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            maxLines = 1,
-            modifier = Modifier.semantics {
-                contentDescription = if (countdown) "${SetClock.face(display)} left" else "${SetClock.face(display)} elapsed"
-            },
-        )
-        Text(
-            if (countdown) "LEFT" else "ELAPSED",
-            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.weight(1f),
-        )
-        when {
-            // Idle.
-            clock == null || (!running && !clock.paused) ->
-                RowAction(if (countdown) "Start" else "Start stopwatch", IronvellumColors.Ink) {
-                    onClock((if (countdown) SetClock.countdown(targetSec) else SetClock.stopwatch()).start(SystemClock.elapsedRealtime()))
+    val seconds = clock?.displaySeconds(now) ?: 0
+    val target = SetClock.face(targetSec)
+    Column(modifier.fillMaxWidth()) {
+        if (phase == SetClock.Phase.ADJUST && clock != null) {
+            AdjustStep(
+                seconds = clock.stoppedSec ?: SetClock.MIN_SECONDS,
+                onStep = { delta -> current?.let { onClock(it.adjust(delta)) } },
+                onLog = {
+                    val logged = current?.stoppedSec ?: return@AdjustStep
+                    onClock(null)
+                    onLog(logged)
+                },
+                onDiscard = { onClock(null) },
+            )
+            return@Column
+        }
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            val getReady = phase == SetClock.Phase.GET_READY
+            Text(
+                if (getReady) readySeconds.toString() else SetClock.face(seconds),
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = when {
+                    reached -> IronvellumColors.SovereignGold
+                    running -> IronvellumColors.Ink
+                    else -> IronvellumColors.InkMuted
+                },
+                maxLines = 1,
+                modifier = Modifier.semantics {
+                    contentDescription = when {
+                        getReady -> "Get ready, $readySeconds"
+                        !countdown -> "${SetClock.face(seconds)} elapsed"
+                        reached -> "${SetClock.face(seconds)} elapsed, target $target reached"
+                        else -> "${SetClock.face(seconds)} elapsed, target $target"
+                    }
+                    // The get-ready is announced as it counts down; the count itself never is.
+                    if (getReady) liveRegion = LiveRegionMode.Polite
+                },
+            )
+            Text(
+                when {
+                    getReady -> "GET READY"
+                    reached -> "TARGET REACHED"
+                    countdown -> "TARGET $target"
+                    else -> "ELAPSED"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = if (reached) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                modifier = Modifier
+                    .weight(1f)
+                    // Said once when it appears: the state is in words, not only in colour.
+                    .semantics { if (reached) liveRegion = LiveRegionMode.Polite },
+            )
+            when {
+                phase == SetClock.Phase.IDLE || clock == null ->
+                    RowAction(if (countdown) "Start" else "Start stopwatch", IronvellumColors.Ink) {
+                        onClock((if (countdown) SetClock.countdown(targetSec) else SetClock.stopwatch()).start(nowMs()))
+                    }
+                // A hold: Stop in the get-ready drops it; while counting it opens the adjust step.
+                countdown -> RowAction("Stop", IronvellumColors.Ink) { onClock(clock.stop(nowMs())) }
+                // A stopwatch: Stop fills the time and clears it; the lifter still ticks the set.
+                else -> RowAction("Stop", IronvellumColors.Ink) {
+                    val filled = clock.stopwatchSeconds(nowMs())
+                    onClock(null)
+                    onFill(filled)
                 }
-            countdown && running -> {
-                RowAction("Pause", IronvellumColors.InkMuted) { onClock(clock.pause(SystemClock.elapsedRealtime())) }
-                RowAction("Finish", IronvellumColors.Ink) { finishEarly(clock, onClock, onLog) }
-            }
-            countdown -> {
-                RowAction("Resume", IronvellumColors.Ink) { onClock(clock.start(SystemClock.elapsedRealtime())) }
-                RowAction("Finish", IronvellumColors.InkMuted) { finishEarly(clock, onClock, onLog) }
-            }
-            // A stopwatch: Stop fills the time and clears it; the lifter still ticks the set.
-            else -> RowAction("Stop", IronvellumColors.Ink) {
-                val seconds = clock.loggedSeconds(SystemClock.elapsedRealtime())
-                onClock(null)
-                onFill(seconds)
             }
         }
     }
 }
 
-private fun finishEarly(clock: SetClock, onClock: (SetClock?) -> Unit, onLog: (Int) -> Unit) {
-    val seconds = clock.loggedSeconds(SystemClock.elapsedRealtime())
-    onClock(null)
-    // Finishing before the first second is a stop, not a 0-second hold to log.
-    if (seconds > 0) onLog(seconds)
+/** The stopped time with -1 s and +1 s (hold to repeat), and Log or Discard. */
+@Composable
+private fun AdjustStep(seconds: Int, onStep: (Int) -> Unit, onLog: () -> Unit, onDiscard: () -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                SetClock.face(seconds),
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                modifier = Modifier.semantics { contentDescription = "Stopped at ${SetClock.face(seconds)}" },
+            )
+            Text(
+                "STOPPED",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.weight(1f),
+            )
+            RepeatAction("−1s", "Take a second off", IronvellumColors.Ink) { onStep(-1) }
+            RepeatAction("+1s", "Add a second", IronvellumColors.Ink) { onStep(+1) }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            RowAction("Log ${SetClock.face(seconds)}", IronvellumColors.Emerald, onLog)
+            RowAction("Discard", IronvellumColors.InkMuted, onDiscard)
+        }
+    }
 }
+
+/**
+ * A text action that steps once on press and keeps stepping while held. A screen reader's
+ * double tap steps once through the click action.
+ */
+@Composable
+private fun RepeatAction(label: String, description: String, color: Color, onStep: () -> Unit) {
+    val step by rememberUpdatedState(onStep)
+    val scope = rememberCoroutineScope()
+    Box(
+        Modifier
+            .heightIn(min = 48.dp)
+            .widthIn(min = 56.dp)
+            .semantics {
+                role = Role.Button
+                contentDescription = description
+                onClick(label = description) { step(); true }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    step()
+                    val repeat = scope.launch {
+                        delay(HOLD_BEFORE_REPEAT_MS)
+                        while (true) {
+                            step()
+                            delay(REPEAT_EVERY_MS)
+                        }
+                    }
+                    try {
+                        tryAwaitRelease()
+                    } finally {
+                        repeat.cancel()
+                    }
+                })
+            }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+private const val HOLD_BEFORE_REPEAT_MS = 450L
+private const val REPEAT_EVERY_MS = 90L
 
 /** The clock of a running [SetClock]: ticks while it runs, and only then. */
 @Composable
-private fun clockNow(running: Boolean): Long {
-    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+private fun clockNow(running: Boolean, nowMs: () -> Long): Long {
+    var now by remember { mutableLongStateOf(nowMs()) }
     LaunchedEffect(running) {
-        now = SystemClock.elapsedRealtime()
+        now = nowMs()
         while (running) {
             delay(100)
-            now = SystemClock.elapsedRealtime()
+            now = nowMs()
         }
     }
     return now

@@ -73,8 +73,7 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.program.CoverageGoal
-import com.ironvellum.app.ui.program.coverageGaps
+import com.ironvellum.app.ui.program.coverageTally
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -365,8 +364,7 @@ fun PresetsScreen(
             val trials = ui.history.filter { it.first.completedAtMs != null }
                 .sortedByDescending { it.first.completedAtMs }
                 .take(recentRows)
-            val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
-            val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
+            val gaps = remember(ui.plannedPresets) { coverageTally(ProgramRules.coverage(ui.plannedPresets)).gaps }
             // The ways out: what the cycle covers, the catalogue, the record. Rows
             // rather than buttons, so nothing here competes with Begin.
             InkRowPanel(Modifier.fillMaxWidth()) {

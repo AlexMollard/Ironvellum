@@ -798,9 +798,23 @@ fun SessionScreen(
     }
 
     // [seconds] is a timed set's figure when its clock logged it; otherwise the set's own.
+    // Ticking the row (no [seconds]) logs a hold at the figure in its row with no timer needed; a
+    // hold being counted stops into the adjust step first, and an open adjust step logs its figure.
     fun logActive(seconds: Int? = null) {
         val set = activeSet ?: return
-        commit(set.copy(durationSec = seconds ?: set.durationSec, done = true))
+        var logSeconds = seconds
+        if (seconds == null) {
+            val clock = viewModel.clocks.value[set.id]
+            if (clock != null) {
+                val tick = clock.onRowLog(SystemClock.elapsedRealtime())
+                if (!tick.log) {
+                    viewModel.setClock(set.id, tick.clock)
+                    return
+                }
+                logSeconds = tick.seconds
+            }
+        }
+        commit(set.copy(durationSec = logSeconds ?: set.durationSec, done = true))
         viewModel.setClock(set.id, null)
         if (EffortSetting.enabled) effortFor = set.id
         undoSerial++
@@ -2777,7 +2791,8 @@ private fun TrialFooter(
 @Composable
 private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onShorten: () -> Unit, onSkip: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        // The gap above the sweep keeps the soft ceiling's line off the bar.
+        Row(Modifier.fillMaxWidth().weight(1f).padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -2785,7 +2800,7 @@ private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
                         fontSize = 28.sp,
-                        lineHeight = 30.sp,
+                        lineHeight = 28.sp,
                         color = IronvellumColors.Ink,
                         maxLines = 1,
                     )

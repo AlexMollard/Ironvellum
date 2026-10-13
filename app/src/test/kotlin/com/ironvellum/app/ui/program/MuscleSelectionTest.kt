@@ -1,12 +1,11 @@
 package com.ironvellum.app.ui.program
 
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.VolumeLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,22 +33,36 @@ class MuscleSelectionTest {
         assertEquals("Quads · not worked in Pull A", riteMuscleLine(Muscle.QUADS, 0.0, "Pull A"))
     }
 
-    @Test fun coverageWordingShowsTheTargetRange() {
-        val goal = CoverageGoal(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
-        assertEquals("Hamstrings · 6 sets this week · target 12–18", coverageMuscleLine(Muscle.HAMSTRINGS, 6.0, goal))
-        assertEquals("Lats · 7.5 sets this week · target 12–18", coverageMuscleLine(Muscle.LATS, 7.5, goal))
-        // Past the range it still reads as a count against a target, never "20 / 12".
-        assertEquals("Lats · 20 sets this week · target 12–18", coverageMuscleLine(Muscle.LATS, 20.0, goal))
-        // A helper reads against its own range.
-        assertEquals("Forearms · 2 sets this week · target 3+", coverageMuscleLine(Muscle.FOREARMS, 2.0, goal))
+    @Test fun coverageWordingSaysHardSetsAndTheState() {
+        fun load(muscle: Muscle, weekly: Double, session: Double = weekly) = MuscleLoad(muscle, weekly, session)
+        assertEquals(
+            "Hamstrings · 3 hard sets this week · Below minimum",
+            coverageMuscleLine(Muscle.HAMSTRINGS, load(Muscle.HAMSTRINGS, 3.0)),
+        )
+        assertEquals(
+            "Lats · 7.5 hard sets this week · Covered",
+            coverageMuscleLine(Muscle.LATS, load(Muscle.LATS, 7.5)),
+        )
+        assertEquals(
+            "Forearms · 0 hard sets this week · Not trained",
+            coverageMuscleLine(Muscle.FOREARMS, null),
+        )
+        assertEquals(
+            "Front delts · 24 hard sets this week · Heavy",
+            coverageMuscleLine(Muscle.FRONT_DELTS, load(Muscle.FRONT_DELTS, 24.0)),
+        )
+        // A dismissed heavy flag reads as the covered muscle it still is.
+        assertEquals(
+            "Front delts · 24 hard sets this week · Covered",
+            coverageMuscleLine(Muscle.FRONT_DELTS, load(Muscle.FRONT_DELTS, 24.0), dismissedHeavy = true),
+        )
     }
 
-    @Test fun theNeckHasNoTargetSoItShowsJustItsSets() {
-        val goal = CoverageGoal(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
-        assertTrue(Muscle.NECK !in JUDGED)
-        assertEquals("Neck · 3 sets this week", coverageMuscleLine(Muscle.NECK, 3.0, goal))
-        assertEquals("Neck · 1 set this week", coverageMuscleLine(Muscle.NECK, 1.0, goal))
-        assertEquals("Neck · 0 sets this week", coverageMuscleLine(Muscle.NECK, 0.0, goal))
+    @Test fun theNeckHasNoVerdictSoItShowsJustItsSets() {
+        assertTrue(Muscle.NECK !in JUDGED_MUSCLES)
+        assertEquals("Neck · 3 hard sets this week", coverageMuscleLine(Muscle.NECK, MuscleLoad(Muscle.NECK, 3.0, 3.0)))
+        assertEquals("Neck · 1 hard set this week", coverageMuscleLine(Muscle.NECK, MuscleLoad(Muscle.NECK, 1.0, 1.0)))
+        assertEquals("Neck · 0 hard sets this week", coverageMuscleLine(Muscle.NECK, null))
     }
 
     // ------------------------------------------------------------------ filter

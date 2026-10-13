@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,9 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -34,160 +36,63 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 
-/**
- * Verdict for one muscle against the tier/focus weekly-set range. LIGHT is a
- * helper trained but below its floor: shown, never a gap - the floor is a
- * convention, and a lifter chasing a goal should not be told to pad the week
- * to meet it. A helper at zero is NONE like any muscle: a whole group left
- * untrained is a gap, not a convention.
- */
-enum class CoverageLevel { NONE, UNDER, LIGHT, IN_RANGE, OVER }
-
-/**
- * Pure colour decision. Zero volume is NONE (never trained), not UNDER - the
- * tile grid and the body fill must agree that a muscle with no sets at all is
- * a different statement from one a few sets short.
- */
-fun coverageLevel(volume: Double, target: ClosedFloatingPointRange<Double>): CoverageLevel = when {
-    volume <= 0.0 -> CoverageLevel.NONE
-    volume < target.start -> CoverageLevel.UNDER
-    volume > target.endInclusive -> CoverageLevel.OVER
-    else -> CoverageLevel.IN_RANGE
-}
-
-// Rune for nothing, emerald at rising strength toward the range and full in it, Ink above it.
-// Emerald, not grey: grey heat on a grey figure could not be read. Never gold: a reading, not a reward.
-private fun levelColor(level: CoverageLevel): Color = when (level) {
-    CoverageLevel.NONE -> IronvellumColors.Rune
-    CoverageLevel.UNDER -> IronvellumColors.Emerald
-    CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-    CoverageLevel.IN_RANGE -> IronvellumColors.Emerald
-    CoverageLevel.OVER -> IronvellumColors.Ink
-}
-
-/**
- * Opacity of the emerald for a muscle under its range. Shortfall is never
- * shown as a warning colour: the fill simply strengthens toward the full
- * opacity as the week approaches the target, so 11.5 of 12 sets reads almost
- * done and 2 of 12 reads faint but still present. The floor keeps it apart
- * from the Rune of an untrained muscle; it reaches the in-range opacity at
- * the target.
- */
-fun underAlpha(volume: Double, target: ClosedFloatingPointRange<Double>): Float {
-    val fraction = if (target.start > 0.0) (volume / target.start).toFloat().coerceIn(0f, 1f) else 1f
-    return UNDER_FLOOR_ALPHA + (FULL_ALPHA - UNDER_FLOOR_ALPHA) * fraction
-}
-
 private const val FULL_ALPHA = 0.9f
-private const val UNDER_FLOOR_ALPHA = 0.3f
+private const val FAINT_ALPHA = 0.3f
+
+/** How a region is marked beyond its fill, so a state never rests on colour alone. */
+internal enum class RegionDecor { NONE, HATCH, CROSS_HATCH, DASHED }
+
+/** One muscle's drawn look: its [fill], the [decor] laid over it and the [ink] the decor is drawn in. */
+internal data class RegionLook(val fill: Color, val decor: RegionDecor, val ink: Color)
 
 /**
- * The fill for one tracked muscle. Under target the emerald strengthens with
- * progress toward the range (see [underAlpha]), which is what makes the
- * figure a heat map rather than a few flat colours.
+ * The figure's look for a coverage state. Covered is a solid fill; below the minimum is a faint fill with
+ * diagonal hatching; heavy is a faint amber fill, cross-hatched and outlined; not trained is bare paper with
+ * a dashed outline. The four differ by pattern, never only by hue.
  */
-private fun regionFill(level: CoverageLevel, volume: Double, target: ClosedFloatingPointRange<Double>): Color {
-    val alpha = when (level) {
-        CoverageLevel.NONE -> 1f
-        CoverageLevel.UNDER -> underAlpha(volume, target)
-        CoverageLevel.LIGHT -> 0.35f
-        else -> FULL_ALPHA
-    }
-    return levelColor(level).copy(alpha = alpha)
+internal fun regionLook(state: CoverageState): RegionLook = when (state) {
+    CoverageState.NOT_TRAINED -> RegionLook(IronvellumColors.Rune, RegionDecor.DASHED, IronvellumColors.InkMuted)
+    CoverageState.BELOW_MINIMUM ->
+        RegionLook(IronvellumColors.Emerald.copy(alpha = 0.18f), RegionDecor.HATCH, IronvellumColors.Emerald)
+    CoverageState.COVERED -> RegionLook(IronvellumColors.Emerald.copy(alpha = FULL_ALPHA), RegionDecor.NONE, IronvellumColors.Emerald)
+    CoverageState.HEAVY ->
+        RegionLook(IronvellumColors.Caution.copy(alpha = 0.22f), RegionDecor.CROSS_HATCH, IronvellumColors.Caution)
 }
 
-/**
- * The verdict word's colour in the tile lists, matching the figure: under
- * target is a softened green (the word says UNDER, colour never scolds),
- * untrained and light stay neutral, in range green, over plain Ink.
- */
-internal fun verdictTextColour(level: CoverageLevel): Color = when (level) {
-    CoverageLevel.NONE, CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-    CoverageLevel.UNDER -> lerp(IronvellumColors.InkMuted, IronvellumColors.SystemGreen, 0.6f)
-    CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
-    CoverageLevel.OVER -> IronvellumColors.Ink
-}
-
-/** Every muscle the map judges: the ranged majors, then the floored helpers. */
-val JUDGED: List<Muscle> = ProgramRules.TRACKED + ProgramRules.HELPERS
+/** A muscle the page does not judge (the neck): bare paper, no pattern. */
+private val UNJUDGED_LOOK = RegionLook(IronvellumColors.Rune, RegionDecor.NONE, IronvellumColors.InkMuted)
 
 /**
- * What a week is judged against: the goal's volume level and focus, and the
- * muscles the lifter prioritised (whose ceiling rises - see
- * [ProgramRules.judgedRange]).
- */
-data class CoverageGoal(
-    val volume: VolumeLevel,
-    val focus: TrainingFocus,
-    val priorities: Set<Muscle> = emptySet(),
-) {
-    /** The unraised weekly range, for captions. */
-    val target: ClosedFloatingPointRange<Double> get() = ProgramRules.weeklySetTarget(volume, focus)
-}
-
-/** The range [muscle] is judged against under [goal]: see [ProgramRules.judgedRange]. */
-fun rangeFor(muscle: Muscle, goal: CoverageGoal): ClosedFloatingPointRange<Double> =
-    ProgramRules.judgedRange(muscle, goal.volume, goal.focus, goal.priorities)
-
-/**
- * [muscle]'s verdict at [volume]. Zero sets is NONE for every muscle; a
- * helper trained but below its floor is LIGHT.
- */
-fun levelOf(muscle: Muscle, volume: Double, goal: CoverageGoal): CoverageLevel {
-    val range = rangeFor(muscle, goal)
-    return if (muscle in ProgramRules.HELPERS && volume > 0.0 && volume < range.start) {
-        CoverageLevel.LIGHT
-    } else {
-        coverageLevel(volume, range)
-    }
-}
-
-/**
- * Every judged muscle the week leaves untrained, plus every major muscle
- * under its range. A trained helper below its floor (LIGHT) is not a gap.
- */
-fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> =
-    JUDGED.filter {
-        levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
-    }
-
-/**
- * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
- * each tracked muscle filled by its weekly coverage against [goal], plus
- * labels and a legend. One Canvas with an explicit height is deliberate: the
- * previous version gave each figure a RowScope weight inside a Column, which
- * Compose ignored, so the first figure took the whole card and the second
- * was clipped away.
+ * Front and back figures side by side in ONE Canvas of fixed [figureHeight], each judged muscle drawn in its
+ * coverage state ([regionLook]) with a legend beneath. One Canvas with an explicit height is deliberate: a
+ * per-figure RowScope weight inside a Column was ignored by Compose and the second figure was clipped away.
  */
 @Composable
-fun BodyHeatMap(
-    volume: Map<Muscle, Double>,
-    goal: CoverageGoal,
+internal fun CoverageFigure(
+    loads: Map<Muscle, MuscleLoad>,
+    dismissed: Set<Muscle>,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 320.dp,
     selection: MutableState<Muscle?> = rememberMuscleSelection(),
-    lineFor: (Muscle) -> String = { muscleLine(it) },
     interactive: Boolean = true,
 ) {
-    val description = coverageSummary(volume, goal)
+    val tally = remember(loads, dismissed) { coverageTally(loads, dismissed) }
+    val description = coverageSummary(tally)
     val figure = BodyFigures.of(LocalBodySex.current)
-    val fill = { muscle: Muscle ->
-        val sets = volume[muscle] ?: 0.0
-        regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
-    }
+    val look = { muscle: Muscle -> tally.states[muscle]?.let(::regionLook) ?: UNJUDGED_LOOK }
     FigureBlock(
-        figure, figureHeight, fill, selection, lineFor,
+        figure, figureHeight, { look(it).fill }, selection,
+        { coverageMuscleLine(it, loads[it], it in dismissed) },
         modifier.semantics { contentDescription = description },
         interactive = interactive,
-    ) { Legend() }
+        decor = look,
+    ) { CoverageLegend(showHeavy = tally.heavy.isNotEmpty()) }
 }
 
 /** How much of a muscle one exercise works, in the words the figure's legend uses. */
@@ -237,7 +142,7 @@ fun ExerciseMuscleMap(
  */
 fun riteAlpha(sets: Double, top: Double): Float {
     if (sets <= 0.0 || top <= 0.0) return 0f
-    return UNDER_FLOOR_ALPHA + (FULL_ALPHA - UNDER_FLOOR_ALPHA) * (sets / top).toFloat().coerceIn(0f, 1f)
+    return FAINT_ALPHA + (FULL_ALPHA - FAINT_ALPHA) * (sets / top).toFloat().coerceIn(0f, 1f)
 }
 
 /**
@@ -282,12 +187,13 @@ private fun FigureBlock(
     modifier: Modifier,
     interactive: Boolean = true,
     quietKey: Boolean = false,
-    key: @Composable RowScope.() -> Unit,
+    decor: ((Muscle) -> RegionLook)? = null,
+    key: @Composable () -> Unit,
 ) {
     val quiet = if (quietKey) Modifier.clearAndSetSemantics {} else Modifier
     Column(modifier) {
         Box {
-            TappableFigure(figure, height, fill, selection.value, { selection.value = it }, lineFor, interactive = interactive)
+            TappableFigure(figure, height, fill, selection.value, { selection.value = it }, lineFor, interactive = interactive, decor = decor)
             // Left-aligned in each half so the word clears the head at the half's centre.
             Row(Modifier.fillMaxWidth().then(quiet)) {
                 FigureLabel("FRONT", Modifier.weight(1f))
@@ -295,12 +201,12 @@ private fun FigureBlock(
             }
         }
         if (interactive && selection.value != null) SelectedMuscleLine(selection.value, lineFor)
-        Row(
+        FlowRow(
             Modifier.fillMaxWidth().padding(top = 6.dp).then(quiet),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            content = key,
-        )
+            horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) { key() }
     }
 }
 
@@ -311,6 +217,7 @@ internal fun DrawScope.drawFigure(
     seed: Int,
     selected: Muscle? = null,
     outlineWidth: Dp = 1.4.dp,
+    decor: ((Muscle) -> RegionLook)? = null,
 ) {
     val figure = g.figure
 
@@ -331,10 +238,12 @@ internal fun DrawScope.drawFigure(
     }
 
     figure.regions(view).forEach { region ->
-        val fill = fill(region.muscle)
+        val look = decor?.invoke(region.muscle)
+        val fill = look?.fill ?: fill(region.muscle)
         for (side in listOf(1f, -1f)) {
             val path = polygon(region.points, side)
             drawPath(path, fill)
+            if (look != null) drawDecor(path, look)
             // A paper-coloured seam between neighbouring muscles keeps the
             // regions legible when two of them share a verdict colour.
             drawPath(path, IronvellumColors.Abyss, style = Stroke(width = 1.2.dp.toPx()))
@@ -365,22 +274,51 @@ internal fun DrawScope.drawFigure(
     inkOutline(outline, IronvellumColors.InkMuted, outlineWidth.toPx())
 }
 
+/**
+ * The pattern a state carries inside its region: hatching clipped to the muscle, a dashed outline, or a solid
+ * heavy outline. Built from paths only, so the ruled-drawing scan stays honest.
+ */
+private fun DrawScope.drawDecor(region: Path, look: RegionLook) {
+    val width = 1.dp.toPx()
+    if (look.decor == RegionDecor.DASHED) {
+        drawPath(
+            region, look.ink,
+            style = Stroke(width = 1.2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))),
+        )
+        return
+    }
+    if (look.decor == RegionDecor.NONE) return
+    val box = region.getBounds()
+    val gap = 4.dp.toPx()
+    fun lines(rising: Boolean) = Path().apply {
+        var x = box.left - box.height
+        while (x < box.right) {
+            if (rising) { moveTo(x, box.bottom); lineTo(x + box.height, box.top) } else { moveTo(x, box.top); lineTo(x + box.height, box.bottom) }
+            x += gap
+        }
+    }
+    clipPath(region) {
+        drawPath(lines(rising = true), look.ink.copy(alpha = 0.85f), style = Stroke(width))
+        if (look.decor == RegionDecor.CROSS_HATCH) drawPath(lines(rising = false), look.ink.copy(alpha = 0.85f), style = Stroke(width))
+    }
+    // Heavy also carries a solid outline: the pattern alone is easy to miss on a small muscle.
+    if (look.decor == RegionDecor.CROSS_HATCH) drawPath(region, look.ink, style = Stroke(width = 1.6.dp.toPx(), join = StrokeJoin.Round))
+}
+
 /** [samples] (a closed curve) stroked as one round-joined path. */
 private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: Float) {
     val closed = samples + samples.first()
     drawPath(Path().apply { moveTo(closed[0].x, closed[0].y); closed.drop(1).forEach { lineTo(it.x, it.y) } }, color, style = Stroke(widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
-/** Screen-reader summary over every judged muscle, each against its own range. */
-private fun coverageSummary(volume: Map<Muscle, Double>, goal: CoverageGoal): String {
-    val byLevel = JUDGED.groupBy { levelOf(it, volume[it] ?: 0.0, goal) }
+/** Screen-reader summary over every judged muscle: each state by name, covered ones as a count. */
+private fun coverageSummary(tally: CoverageTally): String {
     fun names(muscles: List<Muscle>) = muscles.joinToString { it.label.lowercase() }
     val parts = buildList {
-        byLevel[CoverageLevel.NONE]?.let { add("${names(it)} untrained") }
-        byLevel[CoverageLevel.UNDER]?.let { add("${names(it)} under target") }
-        byLevel[CoverageLevel.LIGHT]?.let { add("${names(it)} light") }
-        byLevel[CoverageLevel.IN_RANGE]?.let { add("${names(it)} in range") }
-        byLevel[CoverageLevel.OVER]?.let { add("${names(it)} over target") }
+        if (tally.heavy.isNotEmpty()) add("${names(tally.heavy)} heavy")
+        if (tally.notTrained.isNotEmpty()) add("${names(tally.notTrained)} not trained")
+        if (tally.below.isNotEmpty()) add("${names(tally.below)} below minimum")
+        add("${tally.covered.size} covered")
     }
     return "Muscle coverage: " + parts.joinToString("; ")
 }
@@ -396,24 +334,6 @@ private fun FigureLabel(text: String, modifier: Modifier) {
         color = IronvellumColors.InkMuted,
         letterSpacing = IronvellumTracking.InlineLabel,
     )
-}
-
-@Composable
-private fun Legend() {
-    listOf(
-        CoverageLevel.NONE to "NONE",
-        CoverageLevel.UNDER to "UNDER",
-        CoverageLevel.LIGHT to "LIGHT",
-        CoverageLevel.IN_RANGE to "IN RANGE",
-        CoverageLevel.OVER to "OVER",
-    ).forEach { (level, label) ->
-        val swatch = if (level == CoverageLevel.UNDER) {
-            levelColor(level).copy(alpha = underAlpha(0.6, 0.0..1.0))
-        } else {
-            levelColor(level).copy(alpha = 0.9f)
-        }
-        LegendKey(swatch, label)
-    }
 }
 
 @Composable
