@@ -9,7 +9,7 @@
     {
       "name": "Dead Hang",
       "status": "exact",
-      "drawing": "wg_dead-hang",
+      "drawing": "own_dead-hang",
       "frames": 1,
       "shows": "Dead Hang"
     },
@@ -100,7 +100,7 @@
     {
       "name": "Diamond Push-up",
       "status": "exact",
-      "drawing": "wg_diamond-push-up",
+      "drawing": "own_diamond-push-up",
       "frames": 1,
       "shows": "Diamond Push-up"
     },
@@ -499,7 +499,7 @@
     {
       "name": "Bodyweight Squat",
       "status": "exact",
-      "drawing": "wg_bodyweight-squat",
+      "drawing": "own_bodyweight-squat",
       "frames": 1,
       "shows": "Bodyweight Squat"
     },
@@ -513,7 +513,7 @@
     {
       "name": "Bulgarian Split Squat",
       "status": "exact",
-      "drawing": "wg_bulgarian-split-squat",
+      "drawing": "own_bulgarian-split-squat",
       "frames": 1,
       "shows": "Bulgarian Split Squat"
     },
@@ -779,7 +779,7 @@
     {
       "name": "Dragon Flag",
       "status": "exact",
-      "drawing": "wg_dragon-flag",
+      "drawing": "own_dragon-flag",
       "frames": 1,
       "shows": "Dragon Flag"
     },

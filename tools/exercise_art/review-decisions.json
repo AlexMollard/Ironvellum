@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
-  "batch": 9,
-  "exportedAt": "2026-10-13T05:10:35.141985+00:00",
+  "batch": 10,
+  "exportedAt": "2026-10-13T05:54:04.800374+00:00",
   "batchComplete": true,
   "frames": [
     {
@@ -2867,6 +2867,406 @@
       "note": "",
       "reviewer": "You",
       "updatedAt": "2026-10-13T04:27:55.235Z"
+    },
+    {
+      "id": "banded-seated-hip-abduction-1.png",
+      "sha256": "0548d07bcb025f04d64f617e75993df22184c72e3a443b38f41d7d57d3bb1a7d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:29:59.791Z"
+    },
+    {
+      "id": "banded-squat-1.png",
+      "sha256": "2890bc8bc010d5717764a9e47dca87aef08dfb24b6715167e7287bb7f3c6145e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:01.995Z"
+    },
+    {
+      "id": "banded-standing-hip-abduction-1.png",
+      "sha256": "c3a46237941cd87c972e357d2b095f0c6cc27f95c3919223de4a856ac7a745ad",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:03.706Z"
+    },
+    {
+      "id": "banded-woodchop-1.png",
+      "sha256": "471e74fc35455e499d0d4100e4b628f3ecf64689512fd185bfda4697c009a06b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:05.446Z"
+    },
+    {
+      "id": "barbell-glute-bridge-1.png",
+      "sha256": "d5c4aa88af28118a5a7d12682969f4e62002799754a4f08d1704dc26d76cbe3c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:07.366Z"
+    },
+    {
+      "id": "battle-ropes-1.png",
+      "sha256": "6c387b5f2cc85c31115bd7238335cfc63ba2496aadf42eeae490a8d48d219be2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:09.495Z"
+    },
+    {
+      "id": "bear-crawl-1.png",
+      "sha256": "c95fa7ec4936b371cadb4811b6e9fe98c85c3921b46938f6d353619c59893d0a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:12.954Z"
+    },
+    {
+      "id": "bear-plank-1.png",
+      "sha256": "1f7a6d8a0b0bb0d9fd47df87f029db565d84ca409936bb9bf34801dbb359e12d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:14.310Z"
+    },
+    {
+      "id": "belt-squat-1.png",
+      "sha256": "5b4b6163e70f7c2108d0be83fbe0cc2d2d5e73319883e56a863678f22db51ccb",
+      "status": "approved",
+      "note": "Latest Hammer Strength belt-squat replacement approved by user in chat",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:54:04.800374+00:00"
+    },
+    {
+      "id": "bent-over-rear-delt-raise-1.png",
+      "sha256": "fa49124f8cb0ad11ead3f3312ead0d5ced4694d46b400a44707925720c05f928",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:29.394Z"
+    },
+    {
+      "id": "bird-dog-1.png",
+      "sha256": "09b7ffb5f48157ee72878ad3a33b44924f5f9d189f559368c69b9863fad3aec2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:32.319Z"
+    },
+    {
+      "id": "bodyweight-squat-1.png",
+      "sha256": "8e84cb08bc3c8a01023be9599f354b78090e4423d6c2a4a78ab70bfce0472e21",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:35.573Z"
+    },
+    {
+      "id": "bulgarian-split-squat-1.png",
+      "sha256": "ed66306c77375b891567bf80d5d12b58a858a5bad463e51c3827fe0736c05e7a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:38.379Z"
+    },
+    {
+      "id": "burpee-1.png",
+      "sha256": "e6f11e1fd8c13dd54b1927e3fe9bbda236eb74fcd283d1f207878b5cd296e250",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:43.777Z"
+    },
+    {
+      "id": "butterfly-stretch-1.png",
+      "sha256": "210ab5a35f7e2a5a7e25057aa08cdd22ce31ee50ff0fe9145b926327f83eebcc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:45.661Z"
+    },
+    {
+      "id": "cable-lateral-raise-1.png",
+      "sha256": "8556920764615d9a85f9c45cc8cda240b9422268a9746610dc9128ff555f10dc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:48.810Z"
+    },
+    {
+      "id": "cable-pallof-hold-1.png",
+      "sha256": "14c304feeaa78376d53ba58c9d9f6f7db4a5fe1a4910521098e5c3527f879dfb",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:50.708Z"
+    },
+    {
+      "id": "cable-pull-through-1.png",
+      "sha256": "28244c83aaa40654e18b7f4c06c8a9e5fcaea8aefd7e2aab11ea06ab22b4f29e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:55.157Z"
+    },
+    {
+      "id": "cable-rear-delt-fly-1.png",
+      "sha256": "cb7fcb0484d1afc38cb7cfb8d8c21953bd90f4c425f5c7d010a9429b48d73d29",
+      "status": "approved",
+      "note": "Replacement for: Weird lines going through chest",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:31.755Z"
+    },
+    {
+      "id": "cable-standing-hip-abduction-1.png",
+      "sha256": "a197a3aae3d56f83883164fe9f1c65aae209b4d6c350370d2fe36d432a13c8e8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:13.330Z"
+    },
+    {
+      "id": "cable-standing-hip-adduction-1.png",
+      "sha256": "174c2125dad042ebf15c42188898cdddb469f67c06842c653b9e23462aee7517",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:16.689Z"
+    },
+    {
+      "id": "woodchop-1.png",
+      "sha256": "6f9b1889c93ffb729e454c654978a33fa0e75c233ab85655bf4c1aebb260e102",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:36.668Z"
+    },
+    {
+      "id": "calf-raise-1.png",
+      "sha256": "dc2faaa8fc1d01b71dd0f3259c7abe516b71d5f9d187d895e6385ae579e266ec",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:38.776Z"
+    },
+    {
+      "id": "captain-s-chair-knee-raise-1.png",
+      "sha256": "8e6396bcc0ad2b126943f585ffd79bc09963e4a5e8eb9e2cdd4127f44e2fa86b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:42.743Z"
+    },
+    {
+      "id": "cat-cow-stretch-1.png",
+      "sha256": "4b4ed3181d0edbc5aeb8b8edac8d7e591e139b2cb7deb146e6c26fb447170ad6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:46.335Z"
+    },
+    {
+      "id": "chest-supported-row-1.png",
+      "sha256": "3799de4bd93c63ec3a0b5e031c7cd7e18cef520742493b7349458b7053eb690a",
+      "status": "approved",
+      "note": "Replacement for: this machine is wrong",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:36.338Z"
+    },
+    {
+      "id": "child-s-pose-1.png",
+      "sha256": "caa01817e7ec1a351ff8a71b605279fb4bee5e3eda006010b1c27c2ea3a9fa06",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:57.565Z"
+    },
+    {
+      "id": "chin-up-1.png",
+      "sha256": "63893cf58ef14cb00db95582e51d2bbc297ef46fe2bc74ca66a75c189f0cc515",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:01.075Z"
+    },
+    {
+      "id": "clamshell-1.png",
+      "sha256": "496d84ff27a417686d5ef8c57efb34bfc08101e1290cd6cda1ecaaac397a6aa9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:02.949Z"
+    },
+    {
+      "id": "commando-pull-up-1.png",
+      "sha256": "45072d9aa5c8be877473911796891029ff3b9488a09662a67fd95b77c826ab9d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:21.150Z"
+    },
+    {
+      "id": "copenhagen-plank-1.png",
+      "sha256": "cd56817d92c918f3a1dd6dbaf12ff6ae3d46c7ef071028a0e2177867b771279b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:25.621Z"
+    },
+    {
+      "id": "cossack-squat-1.png",
+      "sha256": "04e45dd8fb0d3ea2b3997e8857c1aa742dc5777e7262dfb7a0611d42d702e8ef",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:26.852Z"
+    },
+    {
+      "id": "crab-walk-1.png",
+      "sha256": "934ef69399c594bd11cb46705b1a01c71081c46208d177ca881887cdd14c31a4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:28.486Z"
+    },
+    {
+      "id": "cross-body-shoulder-stretch-1.png",
+      "sha256": "bac96b8558d15882eb0e4aa4e376ba477d3e90c4aa6171a81c123cf9257edfa9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:30.226Z"
+    },
+    {
+      "id": "curtsy-lunge-1.png",
+      "sha256": "9de3f14b912288795b1a243481d3621ed25f35cdf4a73c308d4d8d3cc454c004",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:31.920Z"
+    },
+    {
+      "id": "cycling-1.png",
+      "sha256": "dcb0317c201540afa7b8f9b4ea5a9b00f1f106fb8fc04000f43f33a524866f5c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:34.133Z"
+    },
+    {
+      "id": "dead-bug-1.png",
+      "sha256": "7dfaf516b92855e4aa77bdfd20f952f2b2d080e0a3ab681c5a94708ebe3a66f0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:35.709Z"
+    },
+    {
+      "id": "dead-hang-1.png",
+      "sha256": "3ce156dab6284099cd9200a3bf9b08e185410c1c707a4d1a4de9a9adbc98b79c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:37.637Z"
+    },
+    {
+      "id": "decline-push-up-1.png",
+      "sha256": "ef24de295e7fdbc4b10ca313b3035da3c48e8aac0d659216dc345ad7b34ae8bf",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:39.226Z"
+    },
+    {
+      "id": "decline-sit-up-1.png",
+      "sha256": "0fa29b66eb641d25004a414e67ae304408e4a8f8da452b8044132fbe9e7aa064",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:40.328Z"
+    },
+    {
+      "id": "deficit-reverse-lunge-1.png",
+      "sha256": "9df24eb7cc73b15fe537e94114b25f8c09c89672d06cdeacdd3cfb6be4c09953",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:41.606Z"
+    },
+    {
+      "id": "diamond-push-up-1.png",
+      "sha256": "93703c999185f597c7cf07067fc2841153e89e81cb60fec6799f73ecad210836",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:42.758Z"
+    },
+    {
+      "id": "donkey-kick-1.png",
+      "sha256": "821ed4fc9944dbfb9189ae0eb69681f8e3a9dc33136431b7920f55b028a14255",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:43.966Z"
+    },
+    {
+      "id": "doorway-chest-stretch-1.png",
+      "sha256": "41d0315edf4385f722456ca5c517016997da234bff0c83fb58cffe88335d8f6e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:45.976Z"
+    },
+    {
+      "id": "door-sheet-row-1.png",
+      "sha256": "0494e00c4f53c5984e4fa81b7dbb7af499f24c8eb5ea8096e8425ac4bb250a62",
+      "status": "approved",
+      "note": "Replacement for: He should be leaning away from the door with toes almost touching the door ",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:39.210Z"
+    },
+    {
+      "id": "dragon-flag-1.png",
+      "sha256": "cf731df76305cd97a0048aba72e46e554579b70ddf21d3256d06d97f877dc655",
+      "status": "approved",
+      "note": "Replacement for: User corrected accidental approval in chat: Dragon Flag was wrong; regenerate correct pose.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:40.673Z"
+    },
+    {
+      "id": "dumbbell-bent-over-row-1.png",
+      "sha256": "5bfba7543304e93a8a0098b6f0f998f031c022a2a7505550bb324d15d2918f44",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:37.738Z"
+    },
+    {
+      "id": "dumbbell-curtsy-lunge-1.png",
+      "sha256": "7a6d09e3d28fdf9c071e3a08770374aea7dbb384c2589a9849e246c9bb2fbdab",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:39.362Z"
+    },
+    {
+      "id": "dumbbell-glute-bridge-1.png",
+      "sha256": "5c32f989846ae4829b318f958c476fd592e9628e7bf252a65eed153ca02018b3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:40.982Z"
+    },
+    {
+      "id": "dumbbell-hip-thrust-1.png",
+      "sha256": "6e229ddccf7eeab4a47dce4398bdfa7cdec724d6fbd834171c38085e2a4d6eb8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:42.219Z"
     }
   ]
 }
