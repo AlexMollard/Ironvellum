@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 11,
-  "exportedAt": "2026-10-13T22:25:34.415763+00:00",
+  "exportedAt": "2026-10-13T22:41:08.571521+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -3406,11 +3406,11 @@
     },
     {
       "id": "half-kneeling-pallof-press-1.png",
-      "sha256": "0a9e56c806233e35e8224ecbe35adb7fea46d0b48799bc3ef7f7d4003ac05e61",
-      "status": "redo",
-      "note": "The machine is incorrect",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:16:53.648Z"
+      "sha256": "8cb9f95d8bc9f06d5d31f1b379b631ce924371d4cb7508349cbc9756828f711d",
+      "status": "pending",
+      "note": "Replacement for: The machine is incorrect",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "hamstring-stretch-1.png",
@@ -3470,19 +3470,19 @@
     },
     {
       "id": "hindu-push-up-1.png",
-      "sha256": "80df5c79470be7953c9076dbaabe45111b760ec343fda2d4657ecba3abbfc283",
-      "status": "redo",
-      "note": "A leg is missing",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:17:18.927Z"
+      "sha256": "86a55cb4cb3d4a2b1bfa0950e04202668f1701a93f015a220d14fbb63d6fb74e",
+      "status": "pending",
+      "note": "Replacement for: A leg is missing",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "hip-abduction-1.png",
-      "sha256": "5415227b554fd54bce23ffba624bd2fabfb462b74c53764ede2007a4c155b2ba",
-      "status": "redo",
-      "note": "This angle is disturbing",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:17:33.331Z"
+      "sha256": "273ab8df86914fe8579fd3ef110bc1aa60c84c8b7065622f3242e3b477af89ee",
+      "status": "pending",
+      "note": "Replacement for: This angle is disturbing",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "hip-adduction-1.png",
@@ -3678,19 +3678,19 @@
     },
     {
       "id": "machine-glute-kickback-1.png",
-      "sha256": "f793506784a3400db0d1235a55b775c930df5c9e3a82993a1afec6b839af10b0",
-      "status": "redo",
-      "note": "This machine is incorrect",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:18:26.728Z"
+      "sha256": "30c78314d22ab0e2c16833fcb7688817be9fcca425f9ed411d4bd942e1d7d5f6",
+      "status": "pending",
+      "note": "Replacement for: This machine is incorrect",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "machine-lateral-raise-1.png",
-      "sha256": "f568dfed1546122ca71def3cc03855d66f4855cf18a718d008f78a912f6b31d4",
-      "status": "redo",
-      "note": "The machine is incorrect",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:18:36.774Z"
+      "sha256": "46805b4f6ae492ca19617b8257e4db23819c16ba0cbfa9917225aac5d403a490",
+      "status": "pending",
+      "note": "Replacement for: The machine is incorrect",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "machine-row-1.png",
@@ -3758,19 +3758,19 @@
     },
     {
       "id": "overhead-cable-extension-1.png",
-      "sha256": "92141a0105677ac74183da821de933045266139be1ab1483df616356c2a7fc65",
-      "status": "redo",
-      "note": "The cable isnt connected to the machine",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:19:03.808Z"
+      "sha256": "9ce78a5896d360d91a8c73820166eaa6dc5f39c1f4fcf3b0ce599b90623be4db",
+      "status": "pending",
+      "note": "Replacement for: The cable isnt connected to the machine",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "pallof-press-1.png",
-      "sha256": "2f0d9b43414821968fa40bf83b53281da39cbac3125caa4484a27adcd27dc329",
-      "status": "redo",
-      "note": "The cable isnt connected to the machine",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:19:10.260Z"
+      "sha256": "3138445cc83f22b043015ca59443f1381034996a85e722e33d10d59d534cea06",
+      "status": "pending",
+      "note": "Replacement for: The cable isnt connected to the machine",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "pec-deck-1.png",
@@ -3918,11 +3918,11 @@
     },
     {
       "id": "rowing-1.png",
-      "sha256": "d04f92db309c863175cdc8e802f3bab54b64216063848d4c69b8fd976e6a91d8",
-      "status": "redo",
-      "note": "The cable isnt connected to the machine",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:19:44.181Z"
+      "sha256": "0cceb0e07095a212592d98550f8afc3b9090e9635f61a490f5a46888e7c4c284",
+      "status": "pending",
+      "note": "Replacement for: The cable isnt connected to the machine",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "running-1.png",
@@ -4054,11 +4054,11 @@
     },
     {
       "id": "single-leg-calf-raise-1.png",
-      "sha256": "73794f6b208df934b3e87ae7885d84645b010acf498effb85a457777f86240d8",
-      "status": "redo",
-      "note": "Second bar/handle is missing",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:20:17.172Z"
+      "sha256": "f27e728d95c701536484b875852cb2d3839115c7e7715f6346d9ead484be2392",
+      "status": "pending",
+      "note": "Replacement for: Second bar/handle is missing",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "single-leg-glute-bridge-1.png",
@@ -4078,11 +4078,11 @@
     },
     {
       "id": "sissy-squat-1.png",
-      "sha256": "7f621798b569ce664b3083e12dcb8875a4f3bc3ac8c77d768b3d9a8d38660720",
-      "status": "redo",
-      "note": "No idea what the thing on the ground is for",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:20:38.711Z"
+      "sha256": "928cc1722f30c8d4f280356587712ab1ee2c722c0514066582304396a72fddd0",
+      "status": "pending",
+      "note": "Replacement for: No idea what the thing on the ground is for",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "skater-squat-1.png",
@@ -4166,11 +4166,11 @@
     },
     {
       "id": "stair-climbing-1.png",
-      "sha256": "66bc16aa6ef623d71d38b8c2431025afe89276024d3e953e58bba97ca4ab5952",
-      "status": "redo",
-      "note": "The angle is all wrong ",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:21:01.326Z"
+      "sha256": "2b9a30623eef1f16ab832e8433363e1a026422604d0e78ae7ae4a7a4ec57d598",
+      "status": "pending",
+      "note": "Replacement for: The angle is all wrong ",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "standing-dumbbell-press-1.png",
@@ -4310,11 +4310,11 @@
     },
     {
       "id": "wall-hspu-1.png",
-      "sha256": "67cce7dfeca7c708fada310b7b8752ddfa67ba34ff5fc77d26f55b316854c78c",
-      "status": "redo",
-      "note": "Legs and feet are backwards",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:21:51.189Z"
+      "sha256": "ac386a6e74a81c452edf2986dfeac30a166af9625e3579b8ba48c663e71aca42",
+      "status": "pending",
+      "note": "Replacement for: Legs and feet are backwards",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "wall-push-up-1.png",
@@ -4366,11 +4366,11 @@
     },
     {
       "id": "weighted-pull-up-1.png",
-      "sha256": "da7e2ec24ebaa5211eb2bd6a4549552d7cffce3fdb14dd0e3dd54ce56e4458cf",
-      "status": "redo",
-      "note": "Head should be behind bar not in front",
-      "reviewer": "You",
-      "updatedAt": "2026-10-13T22:22:13.225Z"
+      "sha256": "2129f205af56c9e77e16946fe8a0be4ce7840681e962c560f260d1e7dfeb3ccd",
+      "status": "pending",
+      "note": "Replacement for: Head should be behind bar not in front",
+      "reviewer": "Assistant",
+      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
     },
     {
       "id": "weighted-push-up-1.png",

@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 11,
-  "status": "correcting",
+  "status": "awaiting-user-review",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -2140,7 +2140,7 @@
     {
       "id": "half-kneeling-pallof-press-1.png",
       "pose": "Redraw the selected source pose for Half-Kneeling Pallof Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "hamstring-stretch-1.png",
@@ -2180,12 +2180,12 @@
     {
       "id": "hindu-push-up-1.png",
       "pose": "Redraw the selected source pose for Hindu Push-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "hip-abduction-1.png",
       "pose": "Redraw the selected source pose for Hip Abduction, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "hip-adduction-1.png",
@@ -2310,12 +2310,12 @@
     {
       "id": "machine-glute-kickback-1.png",
       "pose": "Redraw the selected source pose for Machine Glute Kickback, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "machine-lateral-raise-1.png",
       "pose": "Redraw the selected source pose for Machine Lateral Raise, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "machine-row-1.png",
@@ -2360,12 +2360,12 @@
     {
       "id": "overhead-cable-extension-1.png",
       "pose": "Redraw the selected source pose for Overhead Cable Extension, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "pallof-press-1.png",
       "pose": "Redraw the selected source pose for Pallof Press, source frame 3, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "pec-deck-1.png",
@@ -2460,7 +2460,7 @@
     {
       "id": "rowing-1.png",
       "pose": "Redraw the selected source pose for Rowing, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "running-1.png",
@@ -2545,7 +2545,7 @@
     {
       "id": "single-leg-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Single-Leg Calf Raise, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "single-leg-glute-bridge-1.png",
@@ -2560,7 +2560,7 @@
     {
       "id": "sissy-squat-1.png",
       "pose": "Redraw the selected source pose for Sissy Squat, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "skater-squat-1.png",
@@ -2615,7 +2615,7 @@
     {
       "id": "stair-climbing-1.png",
       "pose": "Redraw the selected source pose for Stair Climbing, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "standing-dumbbell-press-1.png",
@@ -2705,7 +2705,7 @@
     {
       "id": "wall-hspu-1.png",
       "pose": "Redraw the selected source pose for Wall HSPU, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "wall-push-up-1.png",
@@ -2740,7 +2740,7 @@
     {
       "id": "weighted-pull-up-1.png",
       "pose": "Redraw the selected source pose for Weighted Pull-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "redo"
+      "status": "pending"
     },
     {
       "id": "weighted-push-up-1.png",
@@ -3446,13 +3446,13 @@
         "wrist-curl-1.png",
         "wrist-extension-1.png"
       ],
-      "status": "correcting",
+      "status": "awaiting-user-review",
       "available": 145,
       "blocked": [],
       "batchSize": 145,
       "approved": 132,
-      "pending": 0,
-      "redo": 13,
+      "pending": 13,
+      "redo": 0,
       "consolidatedFrom": [
         11,
         12,
@@ -3473,8 +3473,23 @@
   },
   "correctionStatus": {
     "batch": 11,
-    "remainingRedo": 13,
-    "correctedAwaitingReview": []
+    "correctedAwaitingReview": [
+      "half-kneeling-pallof-press-1.png",
+      "hindu-push-up-1.png",
+      "hip-abduction-1.png",
+      "machine-glute-kickback-1.png",
+      "machine-lateral-raise-1.png",
+      "overhead-cable-extension-1.png",
+      "pallof-press-1.png",
+      "rowing-1.png",
+      "single-leg-calf-raise-1.png",
+      "sissy-squat-1.png",
+      "stair-climbing-1.png",
+      "wall-hspu-1.png",
+      "weighted-pull-up-1.png"
+    ],
+    "remainingRedo": 0,
+    "note": "132 user approvals imported; 13 corrected replacements require user approval"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
