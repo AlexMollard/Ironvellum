@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "batchSize": 50,
-  "currentBatch": 8,
-  "status": "batch-approved",
+  "currentBatch": 9,
+  "status": "awaiting-user-review",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
   "expectedTotal": 553,
-  "generated": 311,
+  "generated": 358,
   "stylePrompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Smooth uninterrupted egg-shaped head, absolutely NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair.",
   "poseSource": "tools/exercise_art/missing.json",
   "siteProjectId": "appgprj_6acc332221ec8191a0c541c0fe2687a2",
@@ -1565,32 +1565,32 @@
     {
       "id": "stork-stance-curl-1.png",
       "pose": "Redraw the selected source pose for Stork Stance Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "ankle-circles-1.png",
       "pose": "Redraw the selected source pose for Ankle Circles, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "barbell-seated-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Barbell Seated Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "leg-press-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Leg Press Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Banded Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "donkey-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Donkey Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "seated-single-leg-calf-raise-1.png",
@@ -1600,207 +1600,207 @@
     {
       "id": "knee-circles-1.png",
       "pose": "Redraw the selected source pose for Knee Circles, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "rocking-barbell-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Rocking Barbell Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "seated-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Seated Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "smith-machine-reverse-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Smith Machine Reverse Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "barbell-standing-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Barbell Standing Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "standing-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Standing Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "bicycle-crunch-1.png",
       "pose": "Redraw the selected source pose for Bicycle Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "ab-wheel-rollout-1.png",
       "pose": "Redraw the selected source pose for Ab Wheel Rollout, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "kneeling-barbell-rollout-1.png",
       "pose": "Redraw the selected source pose for Kneeling Barbell Rollout, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "reverse-crunch-1.png",
       "pose": "Redraw the selected source pose for Reverse Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "cable-crunch-1.png",
       "pose": "Redraw the selected source pose for Cable Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "cross-body-crunch-1.png",
       "pose": "Redraw the selected source pose for Cross-Body Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "legs-on-ball-crunch-1.png",
       "pose": "Redraw the selected source pose for Legs-on-Ball Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "crunch-1.png",
       "pose": "Redraw the selected source pose for Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "decline-crunch-1.png",
       "pose": "Redraw the selected source pose for Decline Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "decline-oblique-crunch-1.png",
       "pose": "Redraw the selected source pose for Decline Oblique Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "stability-ball-crunch-1.png",
       "pose": "Redraw the selected source pose for Stability Ball Crunch, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "exercise-ball-pull-in-1.png",
       "pose": "Redraw the selected source pose for Exercise Ball Pull-In, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "active-bar-hang-1.png",
       "pose": "Redraw the selected source pose for Active Bar Hang, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "archer-push-up-1.png",
       "pose": "Redraw the selected source pose for Archer Push-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "arm-circles-1.png",
       "pose": "Redraw the selected source pose for Arm Circles, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "arnold-press-1.png",
       "pose": "Redraw the selected source pose for Arnold Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "assault-bike-1.png",
       "pose": "Redraw the selected source pose for Assault Bike, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "assisted-chin-up-1.png",
       "pose": "Redraw the selected source pose for Assisted Chin-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "supported-pistol-squat-1.png",
       "pose": "Redraw the selected source pose for Supported Pistol Squat, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "assisted-pull-up-1.png",
       "pose": "Redraw the selected source pose for Assisted Pull-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "band-pull-apart-1.png",
       "pose": "Redraw the selected source pose for Band Pull-Apart, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-clamshell-1.png",
       "pose": "Redraw the selected source pose for Banded Clamshell, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-dead-bug-1.png",
       "pose": "Redraw the selected source pose for Banded Dead Bug, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-donkey-kick-1.png",
       "pose": "Redraw the selected source pose for Banded Donkey Kick, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-face-pull-1.png",
       "pose": "Redraw the selected source pose for Banded Face Pull, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-fire-hydrant-1.png",
       "pose": "Redraw the selected source pose for Banded Fire Hydrant, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-frog-pump-1.png",
       "pose": "Redraw the selected source pose for Banded Frog Pump, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-glute-bridge-1.png",
       "pose": "Redraw the selected source pose for Banded Glute Bridge, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-hip-thrust-1.png",
       "pose": "Redraw the selected source pose for Banded Hip Thrust, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-kickback-1.png",
       "pose": "Redraw the selected source pose for Banded Kickback, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-lat-pulldown-1.png",
       "pose": "Redraw the selected source pose for Banded Lat Pulldown, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-lateral-walk-1.png",
       "pose": "Redraw the selected source pose for Banded Lateral Walk, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-monster-walk-1.png",
       "pose": "Redraw the selected source pose for Banded Monster Walk, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-pallof-press-1.png",
       "pose": "Redraw the selected source pose for Banded Pallof Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-row-1.png",
       "pose": "Redraw the selected source pose for Banded Row, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-seated-hip-abduction-1.png",
@@ -3227,9 +3227,11 @@
         "banded-pallof-press-1.png",
         "banded-row-1.png"
       ],
-      "status": "generating",
-      "available": 3,
-      "blocked": []
+      "status": "awaiting-user-review",
+      "available": 50,
+      "blocked": [],
+      "pending": 50,
+      "approved": 0
     },
     {
       "batch": 10,
@@ -3471,10 +3473,15 @@
     "ownerImportStatus": "308 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
-    "batch": 8,
+    "batch": 9,
+    "correctedAwaitingReview": [
+      "leg-press-calf-raise-1.png",
+      "decline-crunch-1.png",
+      "banded-frog-pump-1.png"
+    ],
     "remainingRedo": 0,
-    "correctedAwaitingReview": [],
-    "note": "All 50 batch 8 stills approved by user"
+    "missing": [],
+    "note": "All new images, including ear corrections, await user approval."
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
