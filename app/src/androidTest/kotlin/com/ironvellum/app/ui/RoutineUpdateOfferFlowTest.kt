@@ -1,12 +1,16 @@
 package com.ironvellum.app.ui
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -52,12 +56,11 @@ class RoutineUpdateOfferFlowTest {
     fun sealingAChangedTrialShowsTheRiteOfferAfterDone() {
         selectATrainingDay()
         driver.awaitAnyText(predicate = ::isQuestCard)
-        // The Today pager keeps its neighbours composed, so yesterday's card can
-        // come first; today's is the one that answers a tap.
-        val plan = driver.allText().filter(::isQuestCard).let { cards ->
-            cards.firstOrNull { it.startsWith("Today's trial", ignoreCase = true) } ?: cards.first()
-        }
-        compose.onAllNodesWithText(plan).onFirst().performSemanticsAction(SemanticsActions.OnClick)
+        repeat(60) { if (onScreenQuestCards().isEmpty()) driver.settle(1) }
+        // The Today pager keeps its neighbours composed, off screen: only the card in view answers a tap.
+        val plan = onScreenQuestCards().first()
+        // A card for another day hides its text from the merged tree, so tap where the text is.
+        compose.onAllNodesWithText(plan, useUnmergedTree = true).onFirst().performClick()
         driver.settle()
         val cta = driver.awaitAnyText { it.startsWith("Begin ", true) || it.startsWith("Continue ", true) }
         driver.click(cta)
@@ -107,15 +110,27 @@ class RoutineUpdateOfferFlowTest {
 
     private fun isQuestCard(label: String) = label.contains(" sets · about ", ignoreCase = true)
 
+    /** Quest cards whose node sits inside the screen: the pager's neighbours are composed to either side of it. */
+    private fun onScreenQuestCards(): List<String> =
+        compose.onAllNodes(
+            SemanticsMatcher("quest card in view") { node ->
+                node.boundsInRoot.left >= 0f &&
+                    node.config.getOrNull(SemanticsProperties.Text)?.any { isQuestCard(it.text) } == true
+            },
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes().mapNotNull { node ->
+            node.config.getOrNull(SemanticsProperties.Text)?.firstOrNull { isQuestCard(it.text) }?.text
+        }
+
     private fun selectATrainingDay() {
         driver.awaitAnyText { it.equals("Respite", ignoreCase = true) || isQuestCard(it) }
-        if (driver.allText().any(::isQuestCard)) return
+        if (onScreenQuestCards().isNotEmpty()) return
         for (day in DayOfWeek.values()) {
             val name = day.getDisplayName(TextStyle.FULL, Locale.getDefault())
             compose.onAllNodes(hasContentDescription(name) and hasClickAction()).onFirst()
                 .performSemanticsAction(SemanticsActions.OnClick)
             driver.settle()
-            if (driver.allText().any(::isQuestCard)) return
+            if (onScreenQuestCards().isNotEmpty()) return
         }
         error("no weekday offered a program; on screen: ${driver.allText()}")
     }

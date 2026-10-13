@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -239,6 +240,16 @@ private fun ReadyPages(
 ) {
     val input = report.input
     val week = input.week
+
+    // System back is the header's BACK on every page: each page names where BACK goes, and both take it.
+    // The hub leaves the route and the gap sheet closes itself, so neither needs a handler here.
+    val stepBack: OptStep? = when (step) {
+        OptStep.Hub, is OptStep.Gap -> null
+        is OptStep.Where -> OptStep.Gap(step.muscle)
+        is OptStep.Detail -> step.parent
+        is OptStep.Heavy, is OptStep.Overlap, OptStep.Spread -> OptStep.Hub
+    }
+    BackHandler(enabled = stepBack != null) { stepBack?.let(onStep) }
 
     /** Writes [kept] as one change of the week: the rites that differ, with what they were before. */
     fun apply(title: String, changes: List<OptChange>) {
@@ -929,6 +940,8 @@ private fun OverlapPage(
 /** What was written: the changes, how many were skipped, and Undo for the rites it touched. */
 @Composable
 private fun AppliedPage(applied: Applied, saving: Boolean, error: String?, onUndo: () -> Unit, onDone: () -> Unit) {
+    // The header's BACK is Done; system back is too.
+    BackHandler(onBack = onDone)
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))

@@ -266,7 +266,8 @@ internal fun AchievementOverlay(
     val at = index.coerceIn(0, pages.lastIndex)
     val advance = { if (at < pages.lastIndex) index = at + 1 else onDone() }
     Dialog(
-        onDismissRequest = onDone,
+        // Back is Continue, never a skip past the pages still to show.
+        onDismissRequest = advance,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Box(

@@ -209,7 +209,8 @@ fun SkillDetailSheet(
 
     InfoSheet(
         title = skill.name,
-        onDismiss = onDismiss,
+        // Back steps out of the unclaim question first, as "Keep it" does.
+        onDismiss = { if (mastered && confirmUnclaim) confirmUnclaim = false else onDismiss() },
         titleColor = if (mastered) IronvellumColors.SovereignGold else IronvellumColors.Ink,
         chips = buildList {
             add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))

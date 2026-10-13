@@ -779,7 +779,7 @@ private fun CircleNameDialog(
     val valid = cleaned.length in 1..24
 
     IronvellumDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -844,7 +844,7 @@ private fun JoinCircleDialog(
     val valid = code.length == 8
 
     IronvellumDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!busy) onDismiss() },
         title = { Text("Join a circle") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -898,7 +898,7 @@ private fun GoalEditorDialog(
     var value by rememberSaveable { mutableStateOf(perMember) }
 
     IronvellumDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!busy) onDismiss() },
         title = { Text("Weekly goal per member") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -243,4 +243,31 @@ class XpPageTest {
         val go = compose.onNodeWithText("CONTINUE").fetchSemanticsNode().size
         assert(go.height / density >= 48f) { "Continue is ${go.height / density}dp tall" }
     }
+
+    /** The real key, delivered to the celebration's own window: what a gesture or the back button does. */
+    private fun systemBack() {
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+    }
+
+    @Test
+    fun systemBackOnTheFillingPageDoesWhatSkipDoes() {
+        show()
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(1, countDescription("Skip to summary"))
+        systemBack()
+        compose.mainClock.advanceTimeBy(3_000)
+        compose.onNodeWithText("Share trial").assertExists()
+        assertEquals(listOf(SessionViewModel.Finish.XP, SessionViewModel.Finish.SUMMARY), visited)
+    }
+
+    @Test
+    fun systemBackOnTheFinishedPageDoesWhatContinueDoes() {
+        show()
+        compose.mainClock.advanceTimeBy(timeline.endMs + 200)
+        assertEquals(0, countDescription("Skip to summary"))
+        systemBack()
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.onNodeWithText("Deed earned").assertExists()
+        assertEquals(listOf(SessionViewModel.Finish.XP, SessionViewModel.Finish.DEEDS), visited)
+    }
 }
