@@ -25,6 +25,8 @@ batch_ids={f['id'] for f in generation['frames'][(a.batch-1)*a.limit:a.batch*a.l
 for batch in generation.get('batches',[]):
     if batch['batch']==a.batch:
         batch_ids=set(batch['ids'])
+        if 'batchSize' in batch:
+            a.limit=batch['batchSize']
 overrides_path=art/'pose-overrides.json'
 overrides=json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else {}
 reviews_path=art/'review-decisions.json'

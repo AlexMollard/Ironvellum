@@ -15,7 +15,10 @@ batch = int(sys.argv[1])
 folder = HERE / 'drafts' / f'batch-{batch:03d}'
 manifest = json.loads((folder / 'prompts.json').read_text())
 jobs = manifest['jobs']
-assert 0 < len(jobs) <= 50
+generation = json.loads((HERE / 'generation-review.json').read_text())
+configured_batch = next(b for b in generation['batches'] if b['batch'] == batch)
+assert jobs and len(jobs) == len(configured_batch['ids'])
+assert {j['id'] for j in jobs} == set(configured_batch['ids'])
 for job in jobs:
     path = folder / job['id']
     assert job['status'] == 'generated', job['id']
@@ -30,7 +33,7 @@ for job in jobs:
         assert 0.005 < sum(hist[128:]) / sum(hist) < 0.3, job['id']
 manifest.update(status='awaiting-user-review', completedAt=datetime.now(timezone.utc).isoformat(),
                 qa={'visuallyInspected': len(jobs), 'headStyle': 'Smooth ear-free blank oval',
-                    'method': 'Grey-background contact sheet and PNG/hash/transparency checks',
+                    'method': 'Contrasting-background contact sheets and PNG/hash/transparency checks',
                     'approval': 'User approval required for every replacement'})
 write(folder / 'prompts.json', manifest)
 generation = json.loads((HERE / 'generation-review.json').read_text())
