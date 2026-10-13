@@ -23,7 +23,7 @@
     {
       "name": "Australian Pull-up",
       "status": "exact",
-      "drawing": "ek_0086",
+      "drawing": "own_inverted-row",
       "frames": 1,
       "shows": "Inverted Row"
     },
@@ -37,7 +37,7 @@
     {
       "name": "Pull-up",
       "status": "exact",
-      "drawing": "ek_0087",
+      "drawing": "own_pull-up",
       "frames": 1,
       "shows": "Pull-up"
     },
@@ -93,7 +93,7 @@
     {
       "name": "Push-up",
       "status": "exact",
-      "drawing": "ek_0077",
+      "drawing": "own_push-up",
       "frames": 1,
       "shows": "Push-up"
     },
@@ -128,7 +128,7 @@
     {
       "name": "Bench Dip",
       "status": "exact",
-      "drawing": "ek_0162",
+      "drawing": "own_bench-dip",
       "frames": 1,
       "shows": "Bench Dip"
     },
@@ -142,7 +142,7 @@
     {
       "name": "Parallel Bar Dip",
       "status": "exact",
-      "drawing": "ek_0172",
+      "drawing": "own_dip",
       "frames": 1,
       "shows": "Dip"
     },
@@ -576,35 +576,35 @@
     {
       "name": "Back Squat",
       "status": "exact",
-      "drawing": "ek_0122",
+      "drawing": "own_back-squat",
       "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Pause Squat",
       "status": "exact",
-      "drawing": "ek_0122",
+      "drawing": "own_back-squat",
       "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Heavy Squat",
       "status": "exact",
-      "drawing": "ek_0122",
+      "drawing": "own_back-squat",
       "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Double-Bodyweight Squat",
       "status": "exact",
-      "drawing": "ek_0122",
+      "drawing": "own_back-squat",
       "frames": 1,
       "shows": "Back Squat"
     },
     {
       "name": "Triple-Bodyweight Squat",
       "status": "exact",
-      "drawing": "ek_0122",
+      "drawing": "own_back-squat",
       "frames": 1,
       "shows": "Back Squat"
     },
@@ -681,35 +681,35 @@
     {
       "name": "Deadlift",
       "status": "exact",
-      "drawing": "ek_0099",
+      "drawing": "own_deadlift",
       "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Volume Deadlift",
       "status": "exact",
-      "drawing": "ek_0099",
+      "drawing": "own_deadlift",
       "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Double-Bodyweight Deadlift",
       "status": "exact",
-      "drawing": "ek_0099",
+      "drawing": "own_deadlift",
       "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Heavy Deadlift",
       "status": "exact",
-      "drawing": "ek_0099",
+      "drawing": "own_deadlift",
       "frames": 1,
       "shows": "Deadlift"
     },
     {
       "name": "Triple-Bodyweight Deadlift",
       "status": "exact",
-      "drawing": "ek_0099",
+      "drawing": "own_deadlift",
       "frames": 1,
       "shows": "Deadlift"
     },

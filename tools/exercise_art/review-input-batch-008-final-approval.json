@@ -1,0 +1,42 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 8,
+  "exportedAt": "2026-10-13T03:42:16.999612+00:00",
+  "batchComplete": true,
+  "approvalSource": "User chat",
+  "message": "they all look good continue to next batch",
+  "frames": [
+    {
+      "id": "incline-dumbbell-triceps-extension-1.png",
+      "sha256": "8c041a17bbcceaddc242d07f752671facda20614db0edd56c14e0e43150e5fc2",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "lying-cable-curl-1.png",
+      "sha256": "a7ea35b88d985ac33b726a24712b08ba78dde5bfa3d35281ef64ba7d7d5665e9",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "preacher-curl-1.png",
+      "sha256": "61a13099bcbe64ac763aad1dc8758cbdb345446f4104fd74c4738198440cf4fc",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "machine-bicep-curl-1.png",
+      "sha256": "5d8bd5ed405dafb25cdc890a22c7228ead5a962339c05a88e2e99739d02d4a04",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    }
+  ]
+}
