@@ -92,6 +92,10 @@ internal fun coverageHeadline(tally: CoverageTally): String {
     return if (parts.isEmpty()) "Every muscle covered" else parts.joinToString(" · ")
 }
 
+/** The quiet line for rites with no day: "1 rite has no day, so it isn't counted". */
+internal fun uncountedRitesLine(count: Int): String =
+    if (count == 1) "1 rite has no day, so it isn't counted" else "$count rites have no day, so they aren't counted"
+
 /** A muscle's weekly hard sets as the page says them: "0 hard sets", "1 hard set", "3.5 hard sets". */
 internal fun hardSetsLabel(sets: Double): String {
     val figure = trimSets(sets)

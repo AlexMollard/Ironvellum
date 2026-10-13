@@ -154,15 +154,8 @@ class ProgramBuilderViewModel(
     /** Minutes one rite may take: 45, 60, 75 or 90. Every generator call reads it. */
     val sessionMinutes = MutableStateFlow(ProgramRules.DEFAULT_SESSION_MINUTES)
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
+    /** The day the proposed rite is drawn on (and counted on) until the save sheet asks for the real one. */
     val sessionDay = MutableStateFlow<Int?>(1)
-
-    /** True once she has picked a day; the first-free-day default must not override her. */
-    private var sessionDayTouched = false
-
-    fun setSessionDay(day: Int?) {
-        sessionDayTouched = true
-        sessionDay.value = day
-    }
     val selectedTemplateId = MutableStateFlow<String?>(null)
     val selectedPresetId = MutableStateFlow<Long?>(presetId)
 
@@ -267,7 +260,7 @@ class ProgramBuilderViewModel(
         if (mode == "session") {
             viewModelScope.launch {
                 runCatching { repo.observePresets().first() }.onSuccess { existing ->
-                    if (!sessionDayTouched) sessionDay.value = firstFreeWeekday(existing.mapNotNull { it.scheduledDay }.toSet())
+                    sessionDay.value = firstFreeWeekday(existing.mapNotNull { it.scheduledDay }.toSet())
                 }
             }
         }
@@ -564,8 +557,9 @@ class ProgramBuilderViewModel(
         }
     }
 
-    fun addSession(onDone: () -> Unit) {
-        val preset = _plan.value?.presets?.firstOrNull() ?: return
+    /** Saves the proposed rite on [day] (null: no day, which Weekly coverage does not count). */
+    fun addSession(day: Int?, onDone: () -> Unit) {
+        val preset = _plan.value?.presets?.firstOrNull()?.copy(scheduledDay = day) ?: return
         save("Could not save the rite", onDone, after = { rememberAnswers() }) {
             repo.savePlannedPreset(null, preset)
         }
@@ -623,11 +617,6 @@ internal fun WorkoutPreset.toPlanned(): PlannedPreset = PlannedPreset(
 
 /** The first ISO weekday (1 = Monday) not in [taken], or null (unscheduled) when all seven are. */
 internal fun firstFreeWeekday(taken: Set<Int>): Int? = (1..7).firstOrNull { it !in taken }
-
-private val DAY_PICKS = listOf(
-    1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
-    5 to "Fri", 6 to "Sat", 7 to "Sun", null to "—",
-)
 
 @Composable
 fun ProgramBuilderScreen(
@@ -687,6 +676,8 @@ fun ProgramBuilderScreen(
     var confirmReplace by remember { mutableStateOf(false) }
     var armouryOpen by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(false) }
+    var daySheetOpen by rememberSaveable { mutableStateOf(false) }
+    var pickedDay by rememberSaveable { mutableStateOf<Int?>(null) }
     var coverageOpen by rememberSaveable { mutableStateOf(false) }
     // Hoisted so the form keeps its place while the coverage page is up.
     val formScroll = rememberScrollState()
@@ -831,23 +822,6 @@ fun ProgramBuilderScreen(
                     }
                     Spacer(Modifier.height(6.dp))
                     Caption("\"What my week is missing\" reads the rest of your cycle and fills the gap.")
-                }
-                Question("Place it on") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        DAY_PICKS.chunked(4).forEach { chunk ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                chunk.forEach { (day, label) ->
-                                    PickCell(
-                                        label = label,
-                                        selected = sessionDay == day,
-                                        modifier = Modifier.weight(1f),
-                                        description = label.takeIf { day != null } ?: "No day in the cycle",
-                                        onClick = { viewModel.setSessionDay(day) },
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1014,7 +988,15 @@ fun ProgramBuilderScreen(
                 )
             }
             "session" -> if (plan != null) {
-                DockedActionBar(primary = "Add this rite", onPrimary = { viewModel.addSession(onDone) }, primaryEnabled = !saving)
+                DockedActionBar(
+                    primary = "Add this rite",
+                    onPrimary = {
+                        // The first free day is ticked, unless the cycle has none.
+                        pickedDay = defaultRiteDay(sessionDay, presets.mapNotNull { it.scheduledDay }.toSet())
+                        daySheetOpen = true
+                    },
+                    primaryEnabled = !saving,
+                )
             }
             else -> {
                 if (improvement?.changes?.isEmpty() == true) {
@@ -1032,6 +1014,21 @@ fun ProgramBuilderScreen(
                 }
             }
         }
+    }
+
+    if (daySheetOpen) {
+        RiteDaySheet(
+            riteName = plan?.presets?.firstOrNull()?.name.orEmpty(),
+            saved = presets,
+            picked = pickedDay,
+            onPick = { pickedDay = it },
+            saving = saving,
+            onConfirm = {
+                daySheetOpen = false
+                viewModel.addSession(pickedDay, onDone)
+            },
+            onDismiss = { daySheetOpen = false },
+        )
     }
 
     if (armouryOpen) {

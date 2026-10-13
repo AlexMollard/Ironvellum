@@ -392,6 +392,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         // "session" mode builds one workout aimed at the
                         // muscles this map just showed as neglected.
                         onGenerateSession = { navController.navigate(Routes.programBuilder("session")) },
+                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
+                        // Train is the page that lists the rites; it is usually just underneath.
+                        onOpenRites = {
+                            if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS)
+                        },
                     )
                 }
                 composable(
