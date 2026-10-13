@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 11,
-  "exportedAt": "2026-10-13T22:41:08.571521+00:00",
+  "exportedAt": "2026-10-13T22:54:27.598952+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -3407,10 +3407,10 @@
     {
       "id": "half-kneeling-pallof-press-1.png",
       "sha256": "8cb9f95d8bc9f06d5d31f1b379b631ce924371d4cb7508349cbc9756828f711d",
-      "status": "pending",
-      "note": "Replacement for: The machine is incorrect",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "hamstring-stretch-1.png",
@@ -3471,18 +3471,18 @@
     {
       "id": "hindu-push-up-1.png",
       "sha256": "86a55cb4cb3d4a2b1bfa0950e04202668f1701a93f015a220d14fbb63d6fb74e",
-      "status": "pending",
-      "note": "Replacement for: A leg is missing",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "hip-abduction-1.png",
-      "sha256": "273ab8df86914fe8579fd3ef110bc1aa60c84c8b7065622f3242e3b477af89ee",
+      "sha256": "90b82311ac840a367b69232f1b5812e299a38ba21a3c41310259e4c407217b64",
       "status": "pending",
-      "note": "Replacement for: This angle is disturbing",
+      "note": "New side-profile angle; awaiting user approval",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "updatedAt": "2026-10-13T22:54:27.598952+00:00"
     },
     {
       "id": "hip-adduction-1.png",
@@ -3679,18 +3679,18 @@
     {
       "id": "machine-glute-kickback-1.png",
       "sha256": "30c78314d22ab0e2c16833fcb7688817be9fcca425f9ed411d4bd942e1d7d5f6",
-      "status": "pending",
-      "note": "Replacement for: This machine is incorrect",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "machine-lateral-raise-1.png",
       "sha256": "46805b4f6ae492ca19617b8257e4db23819c16ba0cbfa9917225aac5d403a490",
-      "status": "pending",
-      "note": "Replacement for: The machine is incorrect",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "machine-row-1.png",
@@ -3759,18 +3759,18 @@
     {
       "id": "overhead-cable-extension-1.png",
       "sha256": "9ce78a5896d360d91a8c73820166eaa6dc5f39c1f4fcf3b0ce599b90623be4db",
-      "status": "pending",
-      "note": "Replacement for: The cable isnt connected to the machine",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "pallof-press-1.png",
       "sha256": "3138445cc83f22b043015ca59443f1381034996a85e722e33d10d59d534cea06",
-      "status": "pending",
-      "note": "Replacement for: The cable isnt connected to the machine",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "pec-deck-1.png",
@@ -3919,10 +3919,10 @@
     {
       "id": "rowing-1.png",
       "sha256": "0cceb0e07095a212592d98550f8afc3b9090e9635f61a490f5a46888e7c4c284",
-      "status": "pending",
-      "note": "Replacement for: The cable isnt connected to the machine",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "running-1.png",
@@ -4055,10 +4055,10 @@
     {
       "id": "single-leg-calf-raise-1.png",
       "sha256": "f27e728d95c701536484b875852cb2d3839115c7e7715f6346d9ead484be2392",
-      "status": "pending",
-      "note": "Replacement for: Second bar/handle is missing",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "single-leg-glute-bridge-1.png",
@@ -4079,10 +4079,10 @@
     {
       "id": "sissy-squat-1.png",
       "sha256": "928cc1722f30c8d4f280356587712ab1ee2c722c0514066582304396a72fddd0",
-      "status": "pending",
-      "note": "Replacement for: No idea what the thing on the ground is for",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "skater-squat-1.png",
@@ -4167,10 +4167,10 @@
     {
       "id": "stair-climbing-1.png",
       "sha256": "2b9a30623eef1f16ab832e8433363e1a026422604d0e78ae7ae4a7a4ec57d598",
-      "status": "pending",
-      "note": "Replacement for: The angle is all wrong ",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "standing-dumbbell-press-1.png",
@@ -4311,10 +4311,10 @@
     {
       "id": "wall-hspu-1.png",
       "sha256": "ac386a6e74a81c452edf2986dfeac30a166af9625e3579b8ba48c663e71aca42",
-      "status": "pending",
-      "note": "Replacement for: Legs and feet are backwards",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "wall-push-up-1.png",
@@ -4367,10 +4367,10 @@
     {
       "id": "weighted-pull-up-1.png",
       "sha256": "2129f205af56c9e77e16946fe8a0be4ce7840681e962c560f260d1e7dfeb3ccd",
-      "status": "pending",
-      "note": "Replacement for: Head should be behind bar not in front",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T22:41:08.571521+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: all the rest are approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T22:47:43.449375+00:00"
     },
     {
       "id": "weighted-push-up-1.png",

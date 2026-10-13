@@ -58,7 +58,7 @@
     {
       "name": "Weighted Pull-up",
       "status": "exact",
-      "drawing": "wg_weighted-pull-up",
+      "drawing": "own_weighted-pull-up",
       "frames": 1,
       "shows": "Weighted Pull-up"
     },
@@ -191,7 +191,7 @@
     {
       "name": "Wall HSPU",
       "status": "exact",
-      "drawing": "wg_wall-handstand-push-up",
+      "drawing": "own_wall-hspu",
       "frames": 1,
       "shows": "Wall HSPU"
     },
@@ -527,7 +527,7 @@
     {
       "name": "Sissy Squat",
       "status": "exact",
-      "drawing": "wg_sissy-squat",
+      "drawing": "own_sissy-squat",
       "frames": 1,
       "shows": "Sissy Squat"
     },
