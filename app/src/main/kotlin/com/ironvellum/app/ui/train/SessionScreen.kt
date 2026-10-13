@@ -328,11 +328,12 @@ class SessionViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
-     * How far the finish has got: the level-up page, the deeds page and the
-     * summary (each only when the seal earned it, see [CelebrationFlow]), then
-     * the question about the routine, then leave.
+     * How far the finish has got: the XP page (with the level-up inside it), the
+     * level-up page of a seal that has no XP page, the deeds page and the summary
+     * (each only when the seal earned it, see [CelebrationFlow]), then the question
+     * about the routine, then leave. XP must stay first: it is where every seal starts.
      */
-    enum class Finish { LEVEL, DEEDS, SUMMARY, ROUTINE }
+    enum class Finish { XP, LEVEL, DEEDS, SUMMARY, ROUTINE }
 
     /**
      * The completion result and the finish stage. Held here, not in the
@@ -341,7 +342,7 @@ class SessionViewModel(
      */
     private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
     val completion: StateFlow<Repository.CompletionResult?> = _completion
-    private val _finish = MutableStateFlow(Finish.LEVEL)
+    private val _finish = MutableStateFlow(Finish.XP)
 
     /** What the sealed trial set, frozen at the seal so a rotation keeps it. */
     private val _peaks = MutableStateFlow<List<SessionPeaks.Peak>>(emptyList())
@@ -557,7 +558,7 @@ class SessionViewModel(
                     ui.first { it.session?.completedAtMs == null }
                     _routineUpdate.value = null
                     _peaks.value = emptyList()
-                    _finish.value = Finish.LEVEL
+                    _finish.value = Finish.XP
                     _completion.value = null
                     _claiming.value = false
                     // The seal stopped the trial notification; the live trial wants it back.
@@ -1473,9 +1474,10 @@ fun SessionScreen(
     // in the view model, so a rotation resumes where the lifter was; the
     // session is already completed and paid, whatever the answer.
     completion?.let { result ->
+        val hasXp = CelebrationFlow.hasXpPage(result)
         val hasLevel = CelebrationFlow.hasLevelUp(result)
         val hasDeeds = CelebrationFlow.deedsOf(result).isNotEmpty()
-        when (val stage = CelebrationFlow.resolve(finish, hasLevel, hasDeeds)) {
+        when (val stage = CelebrationFlow.resolve(finish, hasXp, hasLevel, hasDeeds)) {
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
                 if (offer != null) {
@@ -1504,7 +1506,7 @@ fun SessionScreen(
                 sex = sex,
                 wornTitleId = wornTitleId,
                 reopenUntilMs = session.completedAtMs?.let { it + SealedReopen.WINDOW_MS },
-                onContinue = { viewModel.advanceFinish(CelebrationFlow.after(stage, hasLevel, hasDeeds)) },
+                onContinue = { viewModel.advanceFinish(CelebrationFlow.after(stage, hasXp, hasLevel, hasDeeds)) },
                 onSkipToSummary = { viewModel.advanceFinish(SessionViewModel.Finish.SUMMARY) },
                 onWear = viewModel::wearTitle,
                 onShare = {
@@ -1908,9 +1910,16 @@ private fun TrialHeader(
                     "Trial in progress",
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
+                    // One line, cut with an ellipsis: a wide XP chip never pushes it onto a second line.
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (xp > 0) XpChip(xp)
+            if (xp > 0) {
+                // The gap the title keeps from the chip; the chip itself never shrinks.
+                Spacer(Modifier.width(12.dp))
+                XpChip(xp)
+            }
             NavChip(
                 "BACK",
                 Icons.AutoMirrored.Filled.ArrowBack,
