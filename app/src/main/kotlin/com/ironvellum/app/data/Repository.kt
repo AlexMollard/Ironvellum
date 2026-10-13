@@ -113,6 +113,7 @@ import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WeighIn
 import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.XpRescore
 import com.ironvellum.app.domain.EXERCISE_NOTE_MAX
 import com.ironvellum.app.domain.ExerciseNote
 import com.ironvellum.app.domain.Xp
@@ -2614,6 +2615,54 @@ class Repository(
             nowMs = nowMs,
         )
         return AmendPlan(session, rows, settlement, scoring.strength(rows, bodyweight, profileSex()))
+    }
+
+    // ------------------------------------------------------------ XP rescore (debug builds only)
+
+    /**
+     * What [applyXpRescore] would do, without writing anything: every non-imported sealed trial priced with the
+     * current rules ([XpRescore.reprice]) and the profile's new total and level ([XpRescore.plan]).
+     * Debug builds only: a release build refuses, and its UI never offers it.
+     */
+    suspend fun previewXpRescore(): XpRescore.Plan {
+        check(com.ironvellum.app.BuildConfig.DEBUG) { "The XP rescore exists in debug builds only" }
+        return planXpRescore()
+    }
+
+    /**
+     * Re-prices every non-imported sealed trial and moves the profile's total by the sum of the deltas, in ONE
+     * transaction. Each trial's `xpAwarded` becomes its new price and a recorded `sealedXp` shifts by the same delta;
+     * `editedAtMs` is untouched (a rescore is not an amendment) and the push fingerprint, which includes `xpAwarded`,
+     * re-uploads the changed trials by itself. The total never goes below the floor of the current level, a rise
+     * banks inscriptions only through [bankLevelRolls] (each level pays once, ever), and a second run changes nothing.
+     */
+    suspend fun applyXpRescore(): XpRescore.Plan = db.withTransaction {
+        check(com.ironvellum.app.BuildConfig.DEBUG) { "The XP rescore exists in debug builds only" }
+        val plan = planXpRescore()
+        plan.changed.forEach { change ->
+            val row = sessionDao.byId(change.sessionId) ?: return@forEach
+            sessionDao.updateSession(row.copy(xpAwarded = change.newXp, sealedXp = change.newSealedXp))
+        }
+        if (plan.applied != 0L) profileDao.addXp(plan.applied)
+        if (plan.levelAfter > plan.levelBefore) bankLevelRolls(plan.levelBefore, plan.levelAfter)
+        plan
+    }
+
+    private suspend fun planXpRescore(): XpRescore.Plan {
+        val scoring = SessionScoring(exerciseDao.observeAll().first())
+        val history = observeHistory().first()
+        val stats = observeStats().first()
+        val presets = presetDao.observePresets().first()
+        val bodyweightAt = SetRecords.bodyweightLookup(stats)
+        val planned = presets.associate { pw ->
+            pw.preset.id to pw.entries.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
+        }
+        val days = presets.associate { it.preset.id to it.preset.scheduledDay }
+        val changes = withContext(kotlinx.coroutines.Dispatchers.Default) {
+            XpRescore.reprice(history, scoring.exercises, bodyweightAt, planned::get, days::get)
+        }
+        val total = profileDao.get()?.totalXp ?: 0L
+        return XpRescore.plan(changes, total, (gachaDao.get() ?: GachaStateEntity()).rollLevelMark)
     }
 
     suspend fun rename(name: String) {
