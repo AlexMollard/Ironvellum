@@ -168,7 +168,10 @@ class SessionScoringTest {
     }
 
     private companion object {
-        /** Recorded from the pre-extraction inline code for [fixture] at 80 kg. */
-        const val GOLDEN_XP_AT_80 = 406
+        /**
+         * The fixture at 80 kg with no history, so every lift is a first time and counts as hard.
+         * Was 406 under the load-weighted rule; the effort rule (2026-10) re-priced it.
+         */
+        const val GOLDEN_XP_AT_80 = 382
     }
 }

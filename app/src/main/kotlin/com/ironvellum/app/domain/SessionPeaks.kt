@@ -1,16 +1,15 @@
 package com.ironvellum.app.domain
 
 /**
- * The records one trial set, rolled up per movement for the victory screen.
+ * The peaks one trial set, rolled up per movement for the victory screen and the XP bonus.
  *
- * A set is a peak by exactly the rule of the live NEW PEAK badge: it beats
- * its position's record and every earlier done set of the movement today
- * ([SetRecords.delta]). Deciding it twice in two ways would let the victory
- * screen disagree with the badges the lifter just watched light up.
+ * A set is a peak by [RepMax], the one rule every peak reader shares: the live badges, the
+ * victory panel, the XP bonus, the share card and Today. Deciding it twice in two ways would let
+ * one screen disagree with another.
  */
 object SessionPeaks {
 
-    /** One movement's peaks: how many, and the set that gained most over its record. */
+    /** One movement's peaks: how many, and the one that pays most. */
     data class Peak(
         val exerciseName: String,
         val count: Int,
@@ -19,57 +18,50 @@ object SessionPeaks {
         val figure: Int,
         val weightKg: Double?,
         val isHold: Boolean,
-        /** The record the headline set passed. */
-        val was: SetRecords.Record,
-        val deltaScore: Double,
+        val kind: RepMax.Kind,
+        /** The earlier best the headline set passed. */
+        val was: RepMax.Mark,
+        /** What the lift's peak pays, [Xp.PEAK_BONUS] at most; 0 for a jump too small to matter (it is still a peak). */
+        val xp: Int,
         /** Every set position that peaked, for the share grid's purple squares. */
         val setIndexes: Set<Int> = emptySet(),
     )
 
     /**
-     * @param records best-ever per set position, from sessions OTHER than this one.
-     * @param bodyweightKg today's weigh-in; without one nothing scores, so nothing peaks.
+     * @param book what the lifter had done before this trial, from [RepMax.book].
+     * @param bodyweightKg today's weigh-in, for a body-weight lift's total load; null counts the added load alone.
      */
     fun of(
         sets: List<SessionSet>,
-        records: Map<Pair<String, Int>, SetRecords.Record>,
+        book: RepBook,
         bodyweightKg: Double?,
-        metricOf: (SessionSet) -> ExerciseMetric?,
-    ): List<Peak> {
-        val bw = bodyweightKg?.takeIf { it > 0.0 } ?: return emptyList()
-        return sets
+        exerciseOf: (SessionSet) -> Exercise?,
+    ): List<Peak> =
+        sets
             .groupBy { it.exerciseId }
             .values
             .sortedBy { block -> block.minOf { it.exercisePosition } }
             .mapNotNull { block ->
-                val metric = metricOf(block.first()) ?: ExerciseMetric.REPS
+                val exercise = exerciseOf(block.first())
+                val metric = exercise?.metric ?: ExerciseMetric.REPS
                 if (!metric.isStrength) return@mapNotNull null
                 val hold = metric == ExerciseMetric.HOLD
-                fun figure(set: SessionSet) = if (hold) (set.durationSec ?: 0) else set.reps
-                val done = block.filter { it.done }.sortedBy { it.setIndex }
-                val peaks = done.mapNotNull { set ->
-                    val bestEarlier = done
-                        .filter { it.setIndex < set.setIndex }
-                        .maxOfOrNull { SetRecords.score(it.exerciseName, figure(it), it.weightKg, bw, hold) }
-                    val delta = SetRecords.delta(
-                        records, set.exerciseName, SetRecords.position(set, block), figure(set), set.weightKg, bw,
-                        isHold = hold,
-                        bestEarlierThisWorkout = bestEarlier,
-                    )
-                    if (delta.isRecord) set to delta else null
-                }
-                val (best, delta) = peaks.maxByOrNull { (_, d) -> d.deltaScore } ?: return@mapNotNull null
+                val addsToBody = exercise?.isWeighted == false
+                val isolation = MovementDifficulty.isIsolation(block.first().exerciseName)
+                fun pay(hit: RepMax.Hit) = RepMax.xp(hit, hold, addsToBody, isolation, bodyweightKg)
+                val hits = RepMax.hits(block, book[RepMax.key(block.first().exerciseName)].orEmpty(), hold)
+                val best = RepMax.headline(hits, hold, ::pay) ?: return@mapNotNull null
                 Peak(
-                    exerciseName = best.exerciseName,
-                    count = peaks.size,
-                    setIndex = best.setIndex,
-                    figure = figure(best),
-                    weightKg = best.weightKg,
+                    exerciseName = best.set.exerciseName,
+                    count = hits.size,
+                    setIndex = best.set.setIndex,
+                    figure = RepMax.figureOf(best.set, hold),
+                    weightKg = best.set.weightKg,
                     isHold = hold,
-                    was = delta.record!!,
-                    deltaScore = delta.deltaScore,
-                    setIndexes = peaks.map { (set, _) -> set.setIndex }.toSet(),
+                    kind = best.kind,
+                    was = best.was,
+                    xp = pay(best),
+                    setIndexes = hits.map { it.set.setIndex }.toSet(),
                 )
             }
-    }
 }

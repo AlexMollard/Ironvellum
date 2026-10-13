@@ -1,7 +1,7 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
-import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.xpCounted
 import com.ironvellum.app.ui.train.SessionViewModel.Finish
@@ -56,14 +56,20 @@ class CelebrationFlowTest {
         }
     }
 
-    private fun record(reps: Int, kg: Double?) = SetRecords.Record("Pull-up", 0, 100.0, reps, kg, achievedAtMs = 0, sessionId = 1)
+    private fun peak(name: String, figure: Int, kg: Double?, hold: Boolean, kind: RepMax.Kind, was: RepMax.Mark, xp: Int = 15) =
+        SessionPeaks.Peak(name, 1, 2, figure, kg, hold, kind, was, xp)
 
     @Test
     fun `the peak's gain is told in the unit that moved`() {
-        assertEquals("+2.5 kg", peakGain(SessionPeaks.Peak("Pull-up", 1, 2, 6, 10.0, false, record(6, 7.5), 1.0)))
-        assertEquals("+5 kg", peakGain(SessionPeaks.Peak("Pull-up", 1, 2, 6, 10.0, false, record(6, 5.0), 1.0)))
-        assertEquals("+2 reps", peakGain(SessionPeaks.Peak("Pull-up", 1, 2, 8, 10.0, false, record(6, 10.0), 1.0)))
-        assertEquals("+15s", peakGain(SessionPeaks.Peak("Plank", 1, 0, 45, null, true, record(30, null), 1.0)))
-        assertEquals("+0.9", peakGain(SessionPeaks.Peak("Pull-up", 1, 2, 6, 10.0, false, record(6, 10.0), 0.9)))
+        assertEquals("+2.5 kg", peakGain(peak("Pull-up", 6, 10.0, false, RepMax.Kind.HEAVIER, RepMax.Mark(6, 7.5))))
+        assertEquals("+5 kg", peakGain(peak("Pull-up", 6, 10.0, false, RepMax.Kind.HEAVIER, RepMax.Mark(6, 5.0))))
+        assertEquals("+2 reps", peakGain(peak("Pull-up", 8, 10.0, false, RepMax.Kind.MORE_REPS, RepMax.Mark(6, 10.0))))
+        assertEquals("+15s", peakGain(peak("Plank", 45, null, true, RepMax.Kind.MORE_REPS, RepMax.Mark(30, 0.0))))
+    }
+
+    @Test
+    fun `a peak that pays nothing says so`() {
+        assertEquals("+3 XP", peakPay(peak("Bench Press", 5, 100.5, false, RepMax.Kind.HEAVIER, RepMax.Mark(5, 100.0), xp = 3)))
+        assertEquals("no XP", peakPay(peak("Bench Press", 5, 100.0, false, RepMax.Kind.HEAVIER, RepMax.Mark(5, 99.9), xp = 0)))
     }
 }

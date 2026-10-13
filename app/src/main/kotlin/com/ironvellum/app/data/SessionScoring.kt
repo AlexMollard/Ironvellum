@@ -3,7 +3,11 @@ package com.ironvellum.app.data
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.domain.ActivityScore
+import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SessionXp
+import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.StrengthIndex
@@ -42,44 +46,78 @@ internal class SessionScoring(catalogue: List<ExerciseEntity>) {
     private fun holdSecondsOf(set: SetLogEntity): Int? =
         if (metricOf(set.exerciseId) == ExerciseMetric.HOLD) set.durationSec else null
 
+    /** The catalogue as the domain pricer reads it. */
+    val exercises: Map<Long, Exercise> = catalogue.associate { row ->
+        row.id to Exercise(
+            id = row.id,
+            name = row.name,
+            muscleGroup = groups.getValue(row.id),
+            isWeighted = row.isWeighted,
+            metric = metricOf(row.id),
+            category = row.category,
+        )
+    }
+
+    /** A trial's stored sets in the domain's own terms. */
+    fun domainSets(sets: List<SetLogEntity>): List<SessionSet> = sets.map { s ->
+        SessionSet(
+            id = s.id,
+            exerciseId = s.exerciseId,
+            exerciseName = names[s.exerciseId] ?: "",
+            exercisePosition = s.exercisePosition,
+            setIndex = s.setIndex,
+            reps = s.reps,
+            weightKg = s.weightKg,
+            modifiers = s.modifiers,
+            done = s.done,
+            durationSec = s.durationSec,
+            distanceM = s.distanceM,
+            grade = s.grade,
+            kind = s.setKind(),
+            supersetGroup = s.supersetGroup,
+            rpe = s.rpe,
+        )
+    }
+
+    /** The pricer over the lifter's completed trials, [excludeSessionId] left out of its history. */
+    fun book(
+        completed: List<Pair<WorkoutSession, List<SessionSet>>>,
+        bodyweightAt: (Long) -> Double,
+        excludeSessionId: Long? = null,
+        beforeMs: Long? = null,
+    ): SessionXp = SessionXp(exercises, completed, bodyweightAt, excludeSessionId, beforeMs = beforeMs)
+
+    /** No history at all: every lift is a first time. */
+    fun emptyBook(): SessionXp = book(emptyList(), { 0.0 })
+
     /**
-     * XP for the TICKED sets among [sets]. Strength work (reps and static
-     * holds) earns difficulty-weighted XP; activities earn from ActivityScore.
+     * The segments the TICKED sets among [sets] earn. Strength work (reps and
+     * static holds) earns effort-judged XP; activities earn from ActivityScore,
+     * one segment per movement. [trial] carries the trial-level bonuses.
      */
-    fun xp(sets: List<SetLogEntity>, bodyweightKg: Double?): Int {
+    fun breakdown(
+        sets: List<SetLogEntity>,
+        bodyweightKg: Double?,
+        book: SessionXp = emptyBook(),
+        trial: Xp.TrialFacts = Xp.TrialFacts(earnsBonuses = false),
+    ): Xp.Breakdown {
         // A warm-up is stored unticked; the kind check keeps one from ever paying even if a stale write ticked it.
         val doneSets = sets.filter { it.done && !it.isWarmup }
-        val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
-        val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
-        val liftingXp = Xp.award(
-            liftingSets.map { set ->
-                Xp.SetEffort(
-                    exerciseName = names[set.exerciseId] ?: "",
-                    reps = set.reps,
-                    holdSeconds = holdSecondsOf(set),
-                    weightKg = set.weightKg,
-                    modifiers = set.modifiers,
-                    metric = metricOf(set.exerciseId),
-                )
-            },
-            bodyweightKg,
+        return book.breakdown(
+            sets = domainSets(doneSets),
+            bodyweightKg = bodyweightKg,
+            trial = trial,
             doneSetCount = doneSets.size,
         )
-        val activityXp = activitySets.sumOf { set ->
-            val metric = metricOf(set.exerciseId)
-            val per = ActivityScore.xp(
-                exerciseName = names[set.exerciseId] ?: "",
-                category = categories[set.exerciseId] ?: "",
-                metric = metric,
-                durationSec = set.durationSec,
-                distanceM = set.distanceM,
-                addedKg = set.weightKg,
-                bodyweightKg = bodyweightKg ?: 0.0,
-            )
-            if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
-        }
-        return liftingXp + activityXp
     }
+
+    /** What [breakdown] pays, in whole. */
+    fun xp(
+        sets: List<SetLogEntity>,
+        bodyweightKg: Double?,
+        book: SessionXp = emptyBook(),
+        trial: Xp.TrialFacts = Xp.TrialFacts(earnsBonuses = false),
+    ): Int = breakdown(sets, bodyweightKg, book, trial).total
 
     /**
      * Body-scaled strength score of the ticked strength sets; 0 when there is

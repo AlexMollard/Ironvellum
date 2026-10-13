@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
@@ -52,13 +53,10 @@ class VictoryOverlayTest {
 
     private val totals = WorkoutShare.Totals(sets = 18, reps = 142, heldSeconds = 90, movedKg = 6_140)
 
-    private fun record(name: String, reps: Int, kg: Double?) =
-        SetRecords.Record(name, 0, 100.0, reps, kg, achievedAtMs = 0, sessionId = 1)
-
     private val peaks = listOf(
-        SessionPeaks.Peak("Bench Press", 2, 0, 6, 82.5, false, record("Bench Press", 6, 80.0), 4.2),
-        SessionPeaks.Peak("Weighted Dip", 1, 1, 9, 20.0, false, record("Weighted Dip", 8, 20.0), 1.8),
-        SessionPeaks.Peak("Plank", 1, 0, 45, null, true, record("Plank", 30, null), 0.9),
+        SessionPeaks.Peak("Bench Press", 2, 0, 6, 82.5, false, RepMax.Kind.HEAVIER, RepMax.Mark(6, 80.0), 15),
+        SessionPeaks.Peak("Weighted Dip", 1, 1, 9, 20.0, false, RepMax.Kind.MORE_REPS, RepMax.Mark(8, 20.0), 8),
+        SessionPeaks.Peak("Plank", 1, 0, 45, null, true, RepMax.Kind.MORE_REPS, RepMax.Mark(30, 0.0), 15),
     )
 
     private var continued = 0
@@ -148,8 +146,8 @@ class VictoryOverlayTest {
         compose.saveDialogScreenshot("victory-summary")
         compose.onNodeWithText("New peaks · 3").assertExists()
         // The best peak is the hero; a peak row reads as one sentence to TalkBack.
-        compose.onNodeWithContentDescription("New peak, Bench Press, set 1, 6×82.5kg, was 6×80kg, up +2.5 kg, 2 peaks").assertExists()
-        compose.onNodeWithContentDescription("New peak, Plank, set 1, 45s, was 30s", substring = true).assertExists()
+        compose.onNodeWithContentDescription("New heavier peak, Bench Press, set 1, 6×82.5kg, was 6×80kg, up +2.5 kg, +15 XP, 2 peaks").assertExists()
+        compose.onNodeWithContentDescription("New more reps peak, Plank, set 1, 45s, was 30s", substring = true).assertExists()
         compose.onNodeWithText("+186").assertExists()
         compose.onNodeWithText("18 sets · 142 reps · 90 s held · 6,140 kg moved").assertExists()
     }
