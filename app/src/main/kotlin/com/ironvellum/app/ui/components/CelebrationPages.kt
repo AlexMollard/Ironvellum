@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -354,6 +355,8 @@ internal fun LevelUpPage(
     /** A quiet line under the XP to the next level, or null. */
     note: String? = null,
 ) {
+    // Back does what the visible link does: Skip to summary when it is offered.
+    BackHandler(enabled = canSkip, onBack = onSkip)
     val motion = animatorsOn(LocalContext.current)
     val t = rememberClock(LEVEL_END, motion)
     Haptics(

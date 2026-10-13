@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -107,6 +108,8 @@ internal fun XpRevealPage(
         label = "xp-glow",
     )
     val done = state.phase == XpTimeline.Phase.DONE
+    // Back does what the visible control does: Skip until the page is done, then Continue.
+    BackHandler { if (done) onContinue() else onSkip() }
 
     Column(
         Modifier
