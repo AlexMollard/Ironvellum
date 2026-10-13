@@ -170,7 +170,7 @@ object ExerciseArtIndex {
         "deadlift" to ref("own_deadlift", 1),
         "decline bench press" to ref("own_decline-bench-press", 1),
         "decline chest press" to ref("own_decline-chest-press", 1),
-        "decline close-grip bench to skull crusher" to ref("ek_0168", 1),
+        "decline close-grip bench to skull crusher" to ref("own_decline-close-grip-bench-to-skull-crusher", 1),
         "decline crunch" to ref("ek_0292", 1),
         "decline dumbbell fly" to ref("own_decline-dumbbell-fly", 1),
         "decline dumbbell press" to ref("own_decline-dumbbell-press", 1),
