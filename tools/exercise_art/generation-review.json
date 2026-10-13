@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 10,
-  "status": "awaiting-user-review",
+  "status": "batch-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -1845,7 +1845,7 @@
     {
       "id": "belt-squat-1.png",
       "pose": "Redraw the selected source pose for Belt Squat, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "bent-over-rear-delt-raise-1.png",
@@ -1895,7 +1895,7 @@
     {
       "id": "cable-rear-delt-fly-1.png",
       "pose": "Redraw the selected source pose for Cable Rear Delt Fly, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "cable-standing-hip-abduction-1.png",
@@ -1930,7 +1930,7 @@
     {
       "id": "chest-supported-row-1.png",
       "pose": "Redraw the selected source pose for Chest-Supported Row, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "child-s-pose-1.png",
@@ -2025,12 +2025,12 @@
     {
       "id": "door-sheet-row-1.png",
       "pose": "Redraw the selected source pose for Door Sheet Row, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "dragon-flag-1.png",
       "pose": "Redraw the selected source pose for Dragon Flag, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "dumbbell-bent-over-row-1.png",
@@ -3289,12 +3289,13 @@
         "dumbbell-glute-bridge-1.png",
         "dumbbell-hip-thrust-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 50,
       "blocked": [],
-      "pending": 5,
-      "approved": 45,
-      "redo": 0
+      "pending": 0,
+      "approved": 50,
+      "redo": 0,
+      "approvedAt": "2026-10-13T05:54:04.800374+00:00"
     },
     {
       "batch": 11,
@@ -3475,19 +3476,13 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "403 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "408 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 10,
-    "correctedAwaitingReview": [
-      "belt-squat-1.png",
-      "cable-rear-delt-fly-1.png",
-      "chest-supported-row-1.png",
-      "door-sheet-row-1.png",
-      "dragon-flag-1.png"
-    ],
     "remainingRedo": 0,
-    "note": "45 user approvals imported; five replacements require user approval including Dragon Flag"
+    "correctedAwaitingReview": [],
+    "note": "All 50 batch 10 stills approved by user"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,

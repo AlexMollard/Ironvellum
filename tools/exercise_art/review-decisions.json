@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 10,
-  "exportedAt": "2026-10-13T05:45:15.347682+00:00",
-  "batchComplete": false,
+  "exportedAt": "2026-10-13T05:54:04.800374+00:00",
+  "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -2934,11 +2934,11 @@
     },
     {
       "id": "belt-squat-1.png",
-      "sha256": "6f19d39c4454b95b0978ae81502e2b0321faa503a58c76192ce2b982a9eb9911",
-      "status": "pending",
-      "note": "Replacement for: No idea what machine that is",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T05:45:15.347682+00:00"
+      "sha256": "5b4b6163e70f7c2108d0be83fbe0cc2d2d5e73319883e56a863678f22db51ccb",
+      "status": "approved",
+      "note": "Latest Hammer Strength belt-squat replacement approved by user in chat",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:54:04.800374+00:00"
     },
     {
       "id": "bent-over-rear-delt-raise-1.png",
@@ -3015,10 +3015,10 @@
     {
       "id": "cable-rear-delt-fly-1.png",
       "sha256": "cb7fcb0484d1afc38cb7cfb8d8c21953bd90f4c425f5c7d010a9429b48d73d29",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: Weird lines going through chest",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T05:45:15.347682+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:31.755Z"
     },
     {
       "id": "cable-standing-hip-abduction-1.png",
@@ -3071,10 +3071,10 @@
     {
       "id": "chest-supported-row-1.png",
       "sha256": "3799de4bd93c63ec3a0b5e031c7cd7e18cef520742493b7349458b7053eb690a",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: this machine is wrong",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T05:45:15.347682+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:36.338Z"
     },
     {
       "id": "child-s-pose-1.png",
@@ -3223,18 +3223,18 @@
     {
       "id": "door-sheet-row-1.png",
       "sha256": "0494e00c4f53c5984e4fa81b7dbb7af499f24c8eb5ea8096e8425ac4bb250a62",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: He should be leaning away from the door with toes almost touching the door ",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T05:45:15.347682+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:39.210Z"
     },
     {
       "id": "dragon-flag-1.png",
       "sha256": "cf731df76305cd97a0048aba72e46e554579b70ddf21d3256d06d97f877dc655",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: User corrected accidental approval in chat: Dragon Flag was wrong; regenerate correct pose.",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T05:45:15.347682+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:40.673Z"
     },
     {
       "id": "dumbbell-bent-over-row-1.png",

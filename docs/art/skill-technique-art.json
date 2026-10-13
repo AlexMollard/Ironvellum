@@ -779,7 +779,7 @@
     {
       "name": "Dragon Flag",
       "status": "exact",
-      "drawing": "wg_dragon-flag",
+      "drawing": "own_dragon-flag",
       "frames": 1,
       "shows": "Dragon Flag"
     },

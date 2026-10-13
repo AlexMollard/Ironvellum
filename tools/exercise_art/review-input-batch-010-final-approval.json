@@ -1,0 +1,18 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 10,
+  "exportedAt": "2026-10-13T05:54:04.800374+00:00",
+  "batchComplete": true,
+  "approvalSource": "User chat",
+  "message": "approved",
+  "frames": [
+    {
+      "id": "belt-squat-1.png",
+      "sha256": "5b4b6163e70f7c2108d0be83fbe0cc2d2d5e73319883e56a863678f22db51ccb",
+      "status": "approved",
+      "note": "Latest Hammer Strength belt-squat replacement approved by user in chat",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:54:04.800374+00:00"
+    }
+  ]
+}
