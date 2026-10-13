@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.text.BasicTextField
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
@@ -565,7 +566,7 @@ private fun BusyPanel(label: String) {
     }
 }
 @Composable
-private fun AuthPanels(
+internal fun AuthPanels(
     error: String?,
     notice: String?,
     busy: Boolean,
@@ -578,6 +579,8 @@ private fun AuthPanels(
     onResetPassword: (email: String, code: String, newPassword: String) -> Unit,
 ) {
     var mode by remember { mutableStateOf(AuthMode.SIGN_IN) }
+    // The link under the form steps back to sign-in; system back does the same before it leaves.
+    BackHandler(enabled = mode != AuthMode.SIGN_IN) { mode = AuthMode.SIGN_IN }
 
     // A login wall with no reason to sign in reads as a requirement. Say it
     // is optional and what it adds before asking for anything.

@@ -610,13 +610,15 @@ fun OnboardingScreen(
     // only on step one untouched does it leave the app - which is what back
     // means on a first screen. Without this, one press during a weigh-in
     // dismissed the keyboard AND killed the app.
-    BackHandler(enabled = fieldFocused || step > 0) {
+    // The BACK chip runs the same lambda, so the two cannot drift apart.
+    val stepBack: () -> Unit = {
         if (fieldFocused) {
             focusManager.clearFocus()
         } else {
             step -= 1
         }
     }
+    BackHandler(enabled = fieldFocused || step > 0, onBack = stepBack)
 
     // Flat Abyss, the app's own surface: the bar and Skip on top, the page
     // taking every remaining pixel and scrolling when it does not fit (the
@@ -630,7 +632,7 @@ fun OnboardingScreen(
             .statusBarsPadding(),
     ) {
         // The cycle step keeps only Back up here; skipping lives at the foot of the page, behind a question.
-        StepBar(step = step, onBack = { step -= 1 }, onSkip = if (step < 2) viewModel::skip else null)
+        StepBar(step = step, onBack = stepBack, onSkip = if (step < 2) viewModel::skip else null)
 
         // A step is a plain Column inside this one scroller: never a lazy list
         // or a second scroller nested in it - that pairing crashes at runtime

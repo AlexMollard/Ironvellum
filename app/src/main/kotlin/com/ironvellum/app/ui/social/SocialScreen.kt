@@ -71,7 +71,7 @@ fun SocialScreen(
     val scope = rememberCoroutineScope()
     // Back walks a sub-tab home before it leaves the screen. Declared first,
     // so any deeper page's own handler below still wins.
-    BackHandler(enabled = pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
+    BackHandler(enabled = signedIn && pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
     // Signing in HERE lands on ALLIES, where a fresh Google account's
     // claim-your-name panel lives; a restored session keeps its tab.
     var sawSignedOut by remember { mutableStateOf(!signedIn) }
