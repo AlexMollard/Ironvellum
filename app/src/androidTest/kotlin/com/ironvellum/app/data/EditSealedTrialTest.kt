@@ -75,7 +75,8 @@ class EditSealedTrialTest {
         val before = db.sessionDao().byId(id)!!
         val xp = totalXp()
         val plank = exercise("Plank")
-        val draft = draftOf(id).swapExercise(0, exercise("Bench Press"), plank)
+        // Effort pays a hard set the same whatever the movement, so the swap also un-ticks one set: that is what moves the XP.
+        val draft = draftOf(id).swapExercise(0, exercise("Bench Press"), plank).updateSet(0, 2) { it.copy(done = false) }
 
         val result = repo.editSealedTrial(id, draft)
 
@@ -141,14 +142,16 @@ class EditSealedTrialTest {
         val xp = totalXp()
         val late = before.completedAtMs!! + SealedEdit.WINDOW_MS + 60_000
 
-        val result = repo.editSealedTrial(id, draftOf(id).updateSet(0, 0) { it.copy(reps = 20) }, nowMs = late)
+        // One more ticked set: effort pays a longer set no more, so only an extra hard set is a raise.
+        val raised = draftOf(id).addSet(0).updateSet(0, 2) { it.copy(done = true) }
+        val result = repo.editSealedTrial(id, raised, nowMs = late)
 
         assertTrue(result.settlement.raiseRefused)
         assertEquals(0, result.settlement.applied)
         assertEquals(before.xpAwarded, db.sessionDao().byId(id)!!.xpAwarded)
         assertEquals(xp, totalXp())
         assertTrue("no deed is evaluated after the window", result.newTitles.isEmpty())
-        assertEquals(20, db.sessionDao().setsFor(id).minBy { it.setIndex }.reps)
+        assertEquals(3, db.sessionDao().setsFor(id).size)
         assertEquals(late, db.sessionDao().byId(id)!!.editedAtMs)
     }
 

@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
-  "batch": 5,
-  "exportedAt": "2026-10-12T23:21:39.216952+00:00",
+  "batch": 10,
+  "exportedAt": "2026-10-13T05:54:04.800374+00:00",
   "batchComplete": true,
   "frames": [
     {
@@ -1267,6 +1267,2006 @@
       "note": "",
       "reviewer": "You",
       "updatedAt": "2026-10-12T22:47:52.935Z"
+    },
+    {
+      "id": "incline-dumbbell-press-1.png",
+      "sha256": "80b1b3b384cb8f439b2f6087d9793c88f3a6b11336ed0df8cfbe404803001ba3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:41.682Z"
+    },
+    {
+      "id": "incline-dumbbell-fly-1.png",
+      "sha256": "85260ee2aac2a67d7d756445fbf72ab3ce1c445fc7acd03195b9380115b9630d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:43.139Z"
+    },
+    {
+      "id": "incline-dumbbell-fly-with-twist-1.png",
+      "sha256": "a5022278baac20afc785347a66eb2deb4ded06781bbf229d0dd25fa9ca23fdba",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:44.307Z"
+    },
+    {
+      "id": "wide-grip-decline-barbell-pullover-1.png",
+      "sha256": "0456da3fb28678a998d0fc35b6f82013f8a8f1b3165656954364b72043d2e5ee",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:46.949Z"
+    },
+    {
+      "id": "machine-chest-press-1.png",
+      "sha256": "d9770e91e0553be5c83786580bd32171e7e643b4c22cae323676cbf897fb6fd5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:48.530Z"
+    },
+    {
+      "id": "barbell-neck-press-1.png",
+      "sha256": "e7893e514e0a2c3111a0f09ef8cc7ff7451230a3460b53f9cba01f2b623fdf5a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:53.854Z"
+    },
+    {
+      "id": "one-arm-dumbbell-bench-press-1.png",
+      "sha256": "97c75f04126465e815619aefb1949dfc588a47ec7ea2a6b4cba148083c226475",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:57.222Z"
+    },
+    {
+      "id": "bosu-ball-push-up-1.png",
+      "sha256": "bb5976b455263618f45ed545bf101480705c4538465727db0c3ccec4d4e721e8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:04:59.014Z"
+    },
+    {
+      "id": "one-arm-barbell-floor-press-1.png",
+      "sha256": "5b97f7b1a979eedb88742971c1d54b6518b8659d9e7814025c7b0a6e302f0489",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:01.324Z"
+    },
+    {
+      "id": "one-arm-flat-bench-fly-1.png",
+      "sha256": "e3e9f315904e3c7c1d5f333c264404babe855923edcb5925dd8259cbbdff1e9a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:05.165Z"
+    },
+    {
+      "id": "one-arm-biased-push-up-1.png",
+      "sha256": "7b67f8f3fcef605766b3cb49998b73f16f4f613d1ef8c097959d57a6df92c6b6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:06.516Z"
+    },
+    {
+      "id": "exercise-ball-push-up-1.png",
+      "sha256": "7f626c7e6a60b35b4a39b1aeb7f0f64852891ff02f40aedcaa5f48b13501dc80",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:07.721Z"
+    },
+    {
+      "id": "push-up-1.png",
+      "sha256": "805003a6fa44d41aa88ef3763e5b2a941cb76273f90cd5ebb1e4f143cd017824",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:09.184Z"
+    },
+    {
+      "id": "smith-machine-bench-press-1.png",
+      "sha256": "16563a9878cdc11d29beae7a83ecb6aed8b31bedb855b59b3f67943cd97598ae",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:12.363Z"
+    },
+    {
+      "id": "dumbbell-pullover-1.png",
+      "sha256": "a38c011b07096dd636530ade28346d3031844e2f49684be7a694e96a3b38196c",
+      "status": "approved",
+      "note": "Replacement for: It has a fill",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:14:42.780Z"
+    },
+    {
+      "id": "smith-machine-incline-bench-press-1.png",
+      "sha256": "8d1fac1d3eabd6f2e8a251536f33ec33a50731af0ac26fe2ed72380fa7e00725",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:23.791Z"
+    },
+    {
+      "id": "wide-grip-bench-press-1.png",
+      "sha256": "20dc6e592bde75d656ea5b4a5f82323620381bb2226dbbade70807027b53cd61",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:25.541Z"
+    },
+    {
+      "id": "wide-grip-decline-bench-press-1.png",
+      "sha256": "7e151d239438c31ed9a5eb26741653b26be169cd9ccbb0de34ef37ae6dfd35e2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:30.620Z"
+    },
+    {
+      "id": "decline-chest-press-1.png",
+      "sha256": "2ae352ff89d4f69132ded11f62b1998c14d54e8a1af3394e7ed9163482dc7385",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:34.354Z"
+    },
+    {
+      "id": "inverted-row-1.png",
+      "sha256": "4bfab29db7c73c8a947ce0e689dafb0a11b5d24547c2767f859933aa5fc48d86",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:37.340Z"
+    },
+    {
+      "id": "pull-up-1.png",
+      "sha256": "cb9b1bb4bc22cff6f2959b80b71fd8613c9fbbb1b018b66504452fbce4dfa87d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:39.177Z"
+    },
+    {
+      "id": "neutral-grip-pull-up-1.png",
+      "sha256": "3b2406884250fd1fc4d5af3907d2f6ad87e240d155454d156d3f4d879610736a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:42.461Z"
+    },
+    {
+      "id": "wide-grip-chin-up-1.png",
+      "sha256": "7e23d4781fd1a8be42cb93e986b46b68f0f50ef5f9bed0f2831d90536d403530",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:45.131Z"
+    },
+    {
+      "id": "straight-arm-pulldown-1.png",
+      "sha256": "59ac9baffaab314f7aa80fd965751e4959003cd500e852675ed792db1ced8b4f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:46.484Z"
+    },
+    {
+      "id": "lat-pulldown-1.png",
+      "sha256": "60e300384996bf72c46c7972f6f00f0e6beee25dd31d82847c5515a919c84dbc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:48.086Z"
+    },
+    {
+      "id": "banded-upright-row-1.png",
+      "sha256": "f5ef72ae9a14e7bdd9760d231408ffd66b286613f2b82b3fcf3f953db1a5f983",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:49.233Z"
+    },
+    {
+      "id": "close-grip-lat-pulldown-1.png",
+      "sha256": "56b6a62773c60b82eda8196996f7916e9a9e872049c7b9fe3e5c21e1757adc04",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:50.824Z"
+    },
+    {
+      "id": "stability-ball-pullover-1.png",
+      "sha256": "0f83ce703a687281b6d0bcb5ab805aba1786d42b950f24f31df26bcb77c910f4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:52.894Z"
+    },
+    {
+      "id": "deadlift-1.png",
+      "sha256": "f09b0f57f036d2947b55f360edc5cec8fc6e3e53a06d1e366d850a749917098b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:54.071Z"
+    },
+    {
+      "id": "smith-machine-deadlift-1.png",
+      "sha256": "ed6fa3c9ead70963360e77e801877a0d12233e71f1e9ef747ca561d093a6e3db",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:55.064Z"
+    },
+    {
+      "id": "good-morning-1.png",
+      "sha256": "d2a3daf1cc3ada0551bbaa50a8dd3e4bd3b4d0f9a15381673b5696284921175f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:56.473Z"
+    },
+    {
+      "id": "smith-machine-good-morning-1.png",
+      "sha256": "00148f6c11bd72a025cc98da335396213ff8a792a1c6629961728d6ea95ab518",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:05:57.717Z"
+    },
+    {
+      "id": "back-extension-1.png",
+      "sha256": "bd4051ff31f362419b015fa305407c5c63888ff9a0bec82bd5e0137933d41c7c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:01.151Z"
+    },
+    {
+      "id": "stability-ball-back-extension-1.png",
+      "sha256": "98e3322fe06599fb0bc9f1a4c2b9b7058c7b7c07a9a053fd1471c44ae00e6596",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:02.336Z"
+    },
+    {
+      "id": "dumbbell-deadlift-1.png",
+      "sha256": "f2c569cec5d0ee08ca9a9495ec296375a3a2a792cc31def63cf64a91d29693b8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:03.298Z"
+    },
+    {
+      "id": "glute-bridge-1.png",
+      "sha256": "109cd5b2d3eee2ff420905f6c296b6c2ae4afc46cddcfa57a67f596f994fcae5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:04.423Z"
+    },
+    {
+      "id": "body-leg-lift-1.png",
+      "sha256": "153098138fb56a731ccc4673321288c299bdc7d0f351e39b8793fdcac1ee6101",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:06.108Z"
+    },
+    {
+      "id": "cable-kickback-1.png",
+      "sha256": "ee17ede75604d3d5649852e72d3b1051c7bb4a5a7ff266a8344d1115162acdbd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:07.422Z"
+    },
+    {
+      "id": "side-plank-1.png",
+      "sha256": "2cf5274d538c36888272970bd9d4cb070e184f4ee05d9ec4fc8b3798a23e5f98",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:08.487Z"
+    },
+    {
+      "id": "barbell-lunge-1.png",
+      "sha256": "4530d5cff920d27dceb7f4dba03ca8e0af2d6e38311cf732fde4c9afb80cbfd2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:09.963Z"
+    },
+    {
+      "id": "dumbbell-lunge-1.png",
+      "sha256": "5c22fc7308c3169a5c7cc6985bd9b87a187567cd518ce81e157ddf00ccb39444",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:11.223Z"
+    },
+    {
+      "id": "lying-leg-curl-1.png",
+      "sha256": "2deb590131110f646959e23318e94c0a08c91acdefffa03bc75d5caad9dce409",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:16.565Z"
+    },
+    {
+      "id": "romanian-deadlift-1.png",
+      "sha256": "39fc98fd61e670b1d86ca0ec175f60773f93c2c54eef7fe34b0439ab70911bc5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:21.264Z"
+    },
+    {
+      "id": "seated-leg-curl-1.png",
+      "sha256": "03ce98e1a81e12b9023a65b2ea7c5f76ae704fafd8ff8e3036a056821250cdcb",
+      "status": "approved",
+      "note": "Replacement for: Feet/ankle go through the foot bars",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:14:46.151Z"
+    },
+    {
+      "id": "standing-leg-curl-1.png",
+      "sha256": "0eec466d96f9826a918e043e373df8e701cc5534c0cc5ab6acb5db3ae79124af",
+      "status": "approved",
+      "note": "Approved by user in chat: Looks good now, I approve. Do the next batch of 50.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:35:53.421123+00:00"
+    },
+    {
+      "id": "walking-lunge-1.png",
+      "sha256": "b38ef24ff63affb072262755729dea2bce1935e4178f437c651805ab18c8b00f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:47.482Z"
+    },
+    {
+      "id": "back-squat-1.png",
+      "sha256": "0327ef0c2b257b7f785250dfbc0f85a523aff2f05560b88afcede53a66171a5d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:48.962Z"
+    },
+    {
+      "id": "hack-squat-1.png",
+      "sha256": "489ce7f341a666e60692b4cdc01e5d37c4d2c313699554b9511749b548a838dc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:50.094Z"
+    },
+    {
+      "id": "smith-machine-squat-1.png",
+      "sha256": "45d88c935a575846f8083a9ec278514870943f3b5b2ab64700bd4f15bc872b85",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:51.303Z"
+    },
+    {
+      "id": "barbell-hack-squat-1.png",
+      "sha256": "9475850190cc2b032e7631d2de722f3e52a44e6fd824cbb0daba9825c8a79561",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:06:55.024Z"
+    },
+    {
+      "id": "smith-machine-hack-squat-1.png",
+      "sha256": "60929710c8c5f68979bed8089092474d67b0f3668c19b2f487dbf6eafbf7f5d0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:23.851Z"
+    },
+    {
+      "id": "leg-press-1.png",
+      "sha256": "6ca757566d463af7c42763e78a532846f8d56e16923ca3d89943eb5cc235b564",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:26.459Z"
+    },
+    {
+      "id": "barbell-reverse-lunge-1.png",
+      "sha256": "4f26e33e517f256f79411a926fcb8fb1d77ed152f7d077f0b698def901bcd3b5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:27.952Z"
+    },
+    {
+      "id": "reverse-lunge-1.png",
+      "sha256": "66c7bbc60fa7e8fec65c52fd2163d0cd3dbc9691e751da6e6b32eabb12031a42",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:29.489Z"
+    },
+    {
+      "id": "dumbbell-squat-1.png",
+      "sha256": "8a773042df1afe8cd181efb3c24f27a7cda46754496539111f1b3bf1552439cd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:30.638Z"
+    },
+    {
+      "id": "barbell-side-squat-1.png",
+      "sha256": "917ff53130a615a8c0296c15eadff3d742bef95fe0e0e794b98ac871ab233716",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:31.674Z"
+    },
+    {
+      "id": "barbell-single-leg-squat-1.png",
+      "sha256": "7e79fd50570b27416807194b4b14da31a23dbb326067dbff4f5acc0096169c8c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:36.149Z"
+    },
+    {
+      "id": "barbell-squat-to-bench-1.png",
+      "sha256": "36caf20fd67066365b358a95c3c255ab506cbe36523c991c5ea907e5acf42c0d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:37.724Z"
+    },
+    {
+      "id": "barbell-step-up-1.png",
+      "sha256": "dfd700dc7228e2d8be4430d80a538aa52e0c8e9f9ffea72feafec1d1126d496d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:39.239Z"
+    },
+    {
+      "id": "dumbbell-squat-to-bench-1.png",
+      "sha256": "aaeedbddf8d9bd5dca89ba7a2380774245dacaf0463fcdf42da9889373f32b77",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:42.847Z"
+    },
+    {
+      "id": "dumbbell-step-up-1.png",
+      "sha256": "85cea5a656809c782ec6041205662ae1751e7326801e8b07acf27bffa0d108a4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:44.564Z"
+    },
+    {
+      "id": "front-squat-1.png",
+      "sha256": "d5a7129f7e0f0338196fda2109e4da800d8b0218fbea7342a28d6c52c75d6169",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:47.079Z"
+    },
+    {
+      "id": "front-squat-to-bench-1.png",
+      "sha256": "98e88ec99c66574b18da9635549bd01097d360e000b97b60f2f710a93e3d3fb6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:48.779Z"
+    },
+    {
+      "id": "dumbbell-iron-cross-1.png",
+      "sha256": "77812b7a0d3dbb3f2c98aa2c27ff357ea91912b75b20a4812b686d75107bd848",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:51.089Z"
+    },
+    {
+      "id": "jefferson-squat-1.png",
+      "sha256": "dd999fafd693cad43603d06bc77049327e5ead101a088194573dea723aab7498",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:57.749Z"
+    },
+    {
+      "id": "leg-extension-1.png",
+      "sha256": "c610fbc1ae73ecd9ac5c5baddbb8f7352ffb1b64ac0634958c730e2919ea27ee",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:22:59.729Z"
+    },
+    {
+      "id": "narrow-stance-leg-press-1.png",
+      "sha256": "69afbbebfbdeeade0de408a8e8f0c20494307b440f9e63ccf521b640ed0a251d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:03.029Z"
+    },
+    {
+      "id": "lying-squat-1.png",
+      "sha256": "38526590148da103dd4ee3e0177d7aad32e982253b7c450d3a870bd82c198466",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:05.745Z"
+    },
+    {
+      "id": "narrow-stance-hack-squat-1.png",
+      "sha256": "3cbd8d8e8448a2d557f3ca266fd46a97d714ec2f8b1474f9c2c5b9ebbe5f970b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:08.234Z"
+    },
+    {
+      "id": "narrow-stance-barbell-squat-1.png",
+      "sha256": "cdcc97ea6ece6cfc38523ff3082e3a815484fad5dc6e9424a6d320376c2ea1d9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:10.918Z"
+    },
+    {
+      "id": "one-arm-barbell-snatch-1.png",
+      "sha256": "91a25b499e660b33a7a9072f86c4c69a7dcc37b3019874b8669b7a5c40475205",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:13.048Z"
+    },
+    {
+      "id": "one-arm-side-deadlift-1.png",
+      "sha256": "2d312f87609c5113c90abfe8ee9b92e973852d1c9b9feb1be07f357f11c4c92b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:15.516Z"
+    },
+    {
+      "id": "overhead-squat-1.png",
+      "sha256": "138a94e827b21450572f3da21d28aaeadbde0375d7c738ff7cf34f736b7da719",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:17.211Z"
+    },
+    {
+      "id": "speed-squat-1.png",
+      "sha256": "175d51a866b40e17ee48e6137f9b1c287a195f20e42fae09ab617840254754d9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:18.556Z"
+    },
+    {
+      "id": "weighted-sissy-squat-1.png",
+      "sha256": "17fe62d94a7d098d66a701a33220b5339b28b586c32aa14d1cbe87f54e359276",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:20.641Z"
+    },
+    {
+      "id": "wide-stance-barbell-squat-1.png",
+      "sha256": "a38a2f9bcdae7faf2caf63ed88db7087f86e05baaa8915dc5dbd4d6b51e995d5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:22.786Z"
+    },
+    {
+      "id": "zercher-squat-1.png",
+      "sha256": "9d74abe9e953fd3b5dee3e1c182db7b86fae6f50210a81d73182cbb8accbe64f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:24.331Z"
+    },
+    {
+      "id": "bench-dip-1.png",
+      "sha256": "bef171175aaecbd7c4233461443f63f4a2b39626c6fc2dd70d75825b729fae19",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:26.020Z"
+    },
+    {
+      "id": "incline-cable-pushdown-1.png",
+      "sha256": "8ba7ec3b6e6c7345dc7e609f5164c22e9bdd4a0528fbaa0b6ee98e5b177a8fad",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:28.479Z"
+    },
+    {
+      "id": "incline-cable-triceps-extension-1.png",
+      "sha256": "20bd77e543f0be18c50ee4b4cb9923591468c48f013f00777867aa26bd9940ec",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:31.966Z"
+    },
+    {
+      "id": "lying-cable-triceps-extension-1.png",
+      "sha256": "82b2727ea10fc2d51473d00b4b1c17dae0b3804477b8da05b532b9b16253bfe2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:33.961Z"
+    },
+    {
+      "id": "one-arm-cable-triceps-extension-1.png",
+      "sha256": "63658d34ea52fbac056baafd838da890e32cea6a4af4c1e29ced87d0d1f3da14",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:39.579Z"
+    },
+    {
+      "id": "decline-close-grip-bench-to-skull-crusher-1.png",
+      "sha256": "f477664677117afbb1f20aaf8bb33f1b66a438320391f71aa1988549304c67b6",
+      "status": "approved",
+      "note": "Approved by user in chat: Looks good now, I approve. Do the next batch of 50.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:43:56.861992+00:00"
+    },
+    {
+      "id": "decline-dumbbell-triceps-extension-1.png",
+      "sha256": "ee79205dc761932acc72deb23141a7f37f1514a2d0a1c49e0df6ad9710799142",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:23:56.214Z"
+    },
+    {
+      "id": "decline-ez-bar-triceps-extension-1.png",
+      "sha256": "a5f6f510743af55a1cd6e10c720f7b7487502338f92d354a282f7a24155dcd2d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:00.300Z"
+    },
+    {
+      "id": "assisted-dip-1.png",
+      "sha256": "e6c4c1ed1151ff90f4792ba2833a2295b70fb0b289246a7f8d91928e42ffaf2c",
+      "status": "approved",
+      "note": "Replacement for: bars dont make any sense depth wise",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:35:01.192Z"
+    },
+    {
+      "id": "dip-1.png",
+      "sha256": "ab628476464d4df8fa633777abb791dfee5df29000608b9d26d8151233cbe00a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:22.788Z"
+    },
+    {
+      "id": "incline-barbell-triceps-extension-1.png",
+      "sha256": "219ad662cedd467d6d1606276db5aea8b0baa9845b77478e59c6f2456936d99d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:24.754Z"
+    },
+    {
+      "id": "jm-press-1.png",
+      "sha256": "cf821b80440eedac72abc56b77376a6f2f38ccbc1c0435221b7fee1cfeb3fd37",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:26.185Z"
+    },
+    {
+      "id": "kneeling-cable-triceps-extension-1.png",
+      "sha256": "f0c340c13aac145053b7cca7777bcdfebcb2c08e62577155a2c3a9bcdade9341",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:33.619Z"
+    },
+    {
+      "id": "low-cable-triceps-extension-1.png",
+      "sha256": "db9fb9da77bdc89b2987050863a7b608346bcabd21ce8719fde5a9be63d8cd14",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:35.651Z"
+    },
+    {
+      "id": "lying-barbell-triceps-extension-behind-the-head-1.png",
+      "sha256": "92105fd5c102949df6968d9546b640e76a144a284319fed949f7c1a6318612bd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:37.205Z"
+    },
+    {
+      "id": "two-dumbbell-skullcrusher-1.png",
+      "sha256": "fdbf3a662ba201a75ec40b1fe2549b24ced815a35e0c06e606bfe323165cc7d5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:39.446Z"
+    },
+    {
+      "id": "lying-dumbbell-triceps-extension-across-face-1.png",
+      "sha256": "f5f0b0f6a1975a1a2d97aa0e7f54e8c46529ead68d62302f19d9bd00ef867cf3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:43.510Z"
+    },
+    {
+      "id": "skull-crusher-1.png",
+      "sha256": "3514afbfe7f83503c71eec74f627f44c78e7286d96ca9d0290444828686cc10d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:45.954Z"
+    },
+    {
+      "id": "pronated-one-arm-dumbbell-triceps-extension-1.png",
+      "sha256": "2469aeaf25242a076e10841341b3c04fa672772e6e3d5a1b6da9438ac597d969",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:48.790Z"
+    },
+    {
+      "id": "supinated-one-arm-dumbbell-triceps-extension-1.png",
+      "sha256": "39f0818c38dd833e4077aac415667352c607fc0eef7bd19141a86afa6bc88942",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:50.401Z"
+    },
+    {
+      "id": "reverse-grip-triceps-pushdown-1.png",
+      "sha256": "8962d1c6223e8c035ed2d200d69c58b9adcff189e0118c26bafd155290e4225b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:52.196Z"
+    },
+    {
+      "id": "reverse-grip-triceps-bench-press-1.png",
+      "sha256": "bd20d0353984bf7dbb3e2931222d3a6e789d27eeda2ffe9adeec05c46ec8e632",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:53.508Z"
+    },
+    {
+      "id": "seated-overhead-barbell-triceps-extension-1.png",
+      "sha256": "fd77adc0c69fed2fecdc478cc9ad32eeabc94942027be4ca70bcdc0005b4199e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T02:24:54.926Z"
+    },
+    {
+      "id": "dumbbell-overhead-triceps-extension-1.png",
+      "sha256": "a68331905a6728d06c5689f3b0b507c503d6a422caa6503f87e0a5bff33c6b4f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:21.923Z"
+    },
+    {
+      "id": "smith-machine-close-grip-bench-press-1.png",
+      "sha256": "1732a55b3a5340b7842c230c061b5501161e2b785b57a0d6da9bd2f41d8d1936",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:23.206Z"
+    },
+    {
+      "id": "standing-overhead-barbell-triceps-extension-1.png",
+      "sha256": "d399b5aaba693abd48c656cccf251988420a5033b959bb6606a093e14f3f7c3c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:24.608Z"
+    },
+    {
+      "id": "standing-towel-triceps-extension-1.png",
+      "sha256": "153ad3a4deb1490262743fa230e3f9f5e6db6187c0a53fae7e50ff368f3b55f1",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:25.530Z"
+    },
+    {
+      "id": "tate-press-1.png",
+      "sha256": "ef2e535f94a517e86adaf11890a3d45b92f31af346ea358acf9cb9ff0f0d4b81",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:26.887Z"
+    },
+    {
+      "id": "triceps-kickback-1.png",
+      "sha256": "e2b187a8eb3b8b3990847854379c18329f7f0cf28e9508d3588f176b16ad12e2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:27.817Z"
+    },
+    {
+      "id": "triceps-pushdown-1.png",
+      "sha256": "63d2d78e86d39349fb681a5bfeb47f0d9fabc730a15758cf2f3d788b8501663a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:28.920Z"
+    },
+    {
+      "id": "rope-triceps-pushdown-1.png",
+      "sha256": "232e6b5c5dca051cb4b3c265290af16357fa3507502a599c69f677d00f1ade83",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:29.942Z"
+    },
+    {
+      "id": "v-bar-triceps-pushdown-1.png",
+      "sha256": "401970141876d33cd1a5818985135624f5fe3e04693413b908cc2036c1bf8c72",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:31.297Z"
+    },
+    {
+      "id": "weighted-ball-side-bend-1.png",
+      "sha256": "35659a7276d0846d471546f8b0121a02fa7ab8528330c5a85763e656be11e948",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:32.783Z"
+    },
+    {
+      "id": "incline-dumbbell-triceps-extension-1.png",
+      "sha256": "8c041a17bbcceaddc242d07f752671facda20614db0edd56c14e0e43150e5fc2",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "machine-triceps-extension-1.png",
+      "sha256": "244913eee941c6e8ccb3acd3824d5b2e6223a61b4f80aa3c06d67f806b884684",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:58.964Z"
+    },
+    {
+      "id": "barbell-curl-1.png",
+      "sha256": "96f2ffc36fcab12babf310902782e5bfddfe3f09206d2ceae05e4bc74bf1286d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:00.299Z"
+    },
+    {
+      "id": "cable-curl-1.png",
+      "sha256": "d012ea8bbab9c928aa249598707d190d16f70ea80622aed7d9d5aca9ce6658d6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:01.589Z"
+    },
+    {
+      "id": "alternating-hammer-curl-1.png",
+      "sha256": "f5a54a7cddff0669d5615b125ba5755b11b1eb94ec1eacb870bd85c1043a6f07",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:02.904Z"
+    },
+    {
+      "id": "incline-dumbbell-curl-1.png",
+      "sha256": "b82f3f420a922df447039fa6b87547928b88e9900ce476f28f64a6caf0b9d965",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:07.658Z"
+    },
+    {
+      "id": "lying-incline-barbell-curl-1.png",
+      "sha256": "a041e66a734d644a6b7d73e5d0c0a5808efdcb61499889129c638a22d4e0c0da",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:09.764Z"
+    },
+    {
+      "id": "rope-hammer-curl-1.png",
+      "sha256": "5ca0c6a182c672a1f7c5ed16a45cc15f72bb71668c83026b4f3395415e8efc2e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:11.406Z"
+    },
+    {
+      "id": "cable-preacher-curl-1.png",
+      "sha256": "2aa53f7ab922b3ac875292d992cb4d33fc8138f3f2038fb07d65925ca0e4d43e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:13.821Z"
+    },
+    {
+      "id": "close-grip-ez-bar-curl-1.png",
+      "sha256": "ceba634546ed02e80502732fb57d7d2cbf1fb302153c2a3d9396866fcffc07a9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:16.193Z"
+    },
+    {
+      "id": "close-grip-barbell-curl-1.png",
+      "sha256": "00e0f205b8714e12f5dd933fed8549ef9e162c986b764f0d85f0a38f13751850",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:17.086Z"
+    },
+    {
+      "id": "concentration-curl-1.png",
+      "sha256": "66391cbe023e97ba543d3cbca07309415c740f1fb5f547af4aab34e245615daf",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:18.578Z"
+    },
+    {
+      "id": "hammer-curl-across-body-1.png",
+      "sha256": "2f1d0e2d110567af5c7a15a36ffaf16d834ea4a0f5cf92e9cce1feebec38f1b2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:20.438Z"
+    },
+    {
+      "id": "drag-curl-1.png",
+      "sha256": "a97638ecdc540fb0c704e86b18a8dd320f1541c75df55ba02748fd12ad5f2fff",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:21.758Z"
+    },
+    {
+      "id": "alternating-dumbbell-curl-1.png",
+      "sha256": "316d886dc07426d7883c142457f158b0abe7c8814656fe80e14e763a4db7cab6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:24.435Z"
+    },
+    {
+      "id": "bicep-curl-1.png",
+      "sha256": "b36c8dcaec56e53e56b40add2f9c23436d748b37ffe4a974338f53706f2f8b83",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:25.650Z"
+    },
+    {
+      "id": "prone-incline-dumbbell-curl-1.png",
+      "sha256": "4c0617b4b3c9a234f2db41987a71d084776aca534a50db4fbbd06e0e9d21b64a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:26.873Z"
+    },
+    {
+      "id": "ez-bar-curl-1.png",
+      "sha256": "fae2f5d5b2f48cac552660ecdf7d32ce239c6305815af07a7fe6710e761c3a31",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:27.797Z"
+    },
+    {
+      "id": "hammer-curl-1.png",
+      "sha256": "d7a97ca75702f55f5fd6de7bb3fd7ab073ce329d8335c075be4a9aeae901d79f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:28.824Z"
+    },
+    {
+      "id": "flexor-incline-dumbbell-curl-1.png",
+      "sha256": "a3922a1d91cd1b63c273fbd9cfbf9dec71b451c0a27217a1e058883e51740eb4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:30.060Z"
+    },
+    {
+      "id": "high-cable-curl-1.png",
+      "sha256": "e7d993d6664ed121c8644f41b8c96b05b5e0b972e54b86f7ad71f7b7ecfa1670",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:31.005Z"
+    },
+    {
+      "id": "lying-cable-curl-1.png",
+      "sha256": "a7ea35b88d985ac33b726a24712b08ba78dde5bfa3d35281ef64ba7d7d5665e9",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "preacher-curl-1.png",
+      "sha256": "61a13099bcbe64ac763aad1dc8758cbdb345446f4104fd74c4738198440cf4fc",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "one-arm-dumbbell-preacher-curl-1.png",
+      "sha256": "83977d09cf2bbe023577a1d9fe4e5e567abe5100c2093ab4823868c4001cdead",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:21.541Z"
+    },
+    {
+      "id": "overhead-cable-curl-1.png",
+      "sha256": "9f017482dcff505bfdadfa11599c2e471c15177eb4cbe9e7e88f5128436c848a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:24.398Z"
+    },
+    {
+      "id": "barbell-preacher-curl-1.png",
+      "sha256": "2884a76edbf1edb89e4e25edfb42baacc020749d68d8c063d7aa1e7c4d34a77c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:25.891Z"
+    },
+    {
+      "id": "hammer-preacher-curl-1.png",
+      "sha256": "54b5098674294defa72ead606e7ff47217cda777a84d5ac5256c62982cd20813",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:27.390Z"
+    },
+    {
+      "id": "reverse-plate-curl-1.png",
+      "sha256": "b5b7a06676de0881da4f39f523f3b4077c9d90d9153e8b18d56b67c54301bf72",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:29.431Z"
+    },
+    {
+      "id": "seated-dumbbell-curl-1.png",
+      "sha256": "9ed9ea528ee105cba344b5ac9b59817df458900e65443a87571ae0dea7cc452a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:31.254Z"
+    },
+    {
+      "id": "spider-curl-1.png",
+      "sha256": "c3d4dbbc40299fc9409bed72a90bb92f958b5a90c1a070652fbbce7bd2ff2bb9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:32.902Z"
+    },
+    {
+      "id": "one-arm-cable-curl-1.png",
+      "sha256": "27bce56daf89441912c60493363c3661a674afa361eeedbd1ddcbffbee8dae16",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:34.952Z"
+    },
+    {
+      "id": "incline-bench-one-arm-dumbbell-curl-1.png",
+      "sha256": "4bd5779411a86f25fd57e2aeefba710441be741da867a1814293394bc3072f70",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:36.398Z"
+    },
+    {
+      "id": "wide-grip-barbell-curl-1.png",
+      "sha256": "a74c8fafc2d148820948d6f0dff27357506d932b352297dc352d2fed100528b7",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:37.522Z"
+    },
+    {
+      "id": "zottman-curl-1.png",
+      "sha256": "8df05c8d53bbdde9031a4a9ef208a056b2c2a06e851530487e9d0afdadd20409",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:39.240Z"
+    },
+    {
+      "id": "machine-bicep-curl-1.png",
+      "sha256": "5d8bd5ed405dafb25cdc890a22c7228ead5a962339c05a88e2e99739d02d4a04",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "one-arm-barbell-curl-1.png",
+      "sha256": "34ce13917affd4a97917a87f95c7691e4772a592489ed2e4b0b12108816c18e4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:51.682Z"
+    },
+    {
+      "id": "dumbbell-squat-to-curl-1.png",
+      "sha256": "35518fd6df91124f8755dd51929ba43f15cdb95ab0c5450962a6a39ca30457cd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:55.606Z"
+    },
+    {
+      "id": "barbell-deadlift-to-curl-1.png",
+      "sha256": "be4579e691da342d17ac21f6378e08f349e37c9ef6a18cc449702e42b64356e3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:56.760Z"
+    },
+    {
+      "id": "banded-alternating-curl-1.png",
+      "sha256": "5b664a03abfa3ea3cf07ebbca81c5a08a56e8e0b263ee5db876ed3234716e268",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:59.745Z"
+    },
+    {
+      "id": "lateral-lunge-to-curl-1.png",
+      "sha256": "278962a0215609afbca834da4365374b6b84a5184e20e697763c66cf2f725c9e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:34:02.138Z"
+    },
+    {
+      "id": "forward-lunge-to-curl-1.png",
+      "sha256": "385e3290bb7bd674fa83c58efa5a0a09ddbdacf6ac0a3d67a57387670cfd5ce2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:06.726Z"
+    },
+    {
+      "id": "step-up-to-curl-1.png",
+      "sha256": "dc5c1616efe97edb779aa2543ed9ff6ec5d6db9cce0b10c82e682c24e7aa71c8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:28.235Z"
+    },
+    {
+      "id": "stork-stance-curl-1.png",
+      "sha256": "bce7d755daa7f87a04b911dcd89d120a681fe639126540f83fc35a9ba3fd048a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:30.696Z"
+    },
+    {
+      "id": "ankle-circles-1.png",
+      "sha256": "4b21d74dece07302538966505a2ca5c1ab441741993f511d42ead9e27fce9bbf",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:32.332Z"
+    },
+    {
+      "id": "barbell-seated-calf-raise-1.png",
+      "sha256": "bf25ae942ba8a728feba51fbc6cb23792411aac537ab16f41479f774ebc2cec0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:36.102Z"
+    },
+    {
+      "id": "leg-press-calf-raise-1.png",
+      "sha256": "52b743a0560a496526bc1efb1c03a79e6e7a09d7a7f8d3d59d01624edff81c82",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:38.813Z"
+    },
+    {
+      "id": "banded-calf-raise-1.png",
+      "sha256": "a60703268748c5f76c15306bc127d31b5c9940271b035a4b59d128e73506a0ec",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:24:40.193Z"
+    },
+    {
+      "id": "donkey-calf-raise-1.png",
+      "sha256": "ac0842e554acabb5219f8a4b79887355a202c863064a53d176b23ccf2864526c",
+      "status": "approved",
+      "note": "Replacement for: Why is there a guy sitting on his back?",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:00.655Z"
+    },
+    {
+      "id": "seated-single-leg-calf-raise-1.png",
+      "sha256": "39d87c87b95cf21c5f9ec0b7a0dc80874b6a8d22b9a5b2467e569ea94929bbc5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:21.627Z"
+    },
+    {
+      "id": "knee-circles-1.png",
+      "sha256": "c857ad00ff07004817b1e3fe5de8622c32e3f3dc5259b0bde382ee0d1709b0a5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:23.526Z"
+    },
+    {
+      "id": "rocking-barbell-calf-raise-1.png",
+      "sha256": "0df71a1be27a96763cb472f2c77609fe2529da245f57feb489f6c49b4235bba0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:25.146Z"
+    },
+    {
+      "id": "seated-calf-raise-1.png",
+      "sha256": "bc4fd4d5754e4a4d606273dae0b059780ae2352fd1398c54bf60ddc375368a8d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:27.305Z"
+    },
+    {
+      "id": "smith-machine-reverse-calf-raise-1.png",
+      "sha256": "b927ea2ec6d604762c4396a663d2514987483d32e3f98f38568dda108b7b8d81",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:31.040Z"
+    },
+    {
+      "id": "barbell-standing-calf-raise-1.png",
+      "sha256": "4a9e2edcd3825bc0ff761cd189e155a615e604b3d91ffad37f26758520605207",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:33.973Z"
+    },
+    {
+      "id": "standing-calf-raise-1.png",
+      "sha256": "5f9f36096ed39ca191ebec060f2ea897c2c5c1d658079cd6d92aad4551442bac",
+      "status": "approved",
+      "note": "Replacement for: This shouldnt have a machine",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:03.625Z"
+    },
+    {
+      "id": "bicycle-crunch-1.png",
+      "sha256": "9d6f1fff362bb83b8476cb9ec27293b70d90d062ac797cff24fdaa66dc60bd8d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:25:58.295Z"
+    },
+    {
+      "id": "ab-wheel-rollout-1.png",
+      "sha256": "f0288d79791d8d21ea9838c80941024df34064db5ffd6208404c8a000fb713aa",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:00.215Z"
+    },
+    {
+      "id": "kneeling-barbell-rollout-1.png",
+      "sha256": "bbc9edb01a235421d02cb1191bd2960c5dd57108eceeadc13bad4fd193f22c71",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:01.573Z"
+    },
+    {
+      "id": "reverse-crunch-1.png",
+      "sha256": "aa4b0da09159c1d2b4b4891968ef80b813b260b395d5b550dbc9c2b59697feb9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:02.863Z"
+    },
+    {
+      "id": "cable-crunch-1.png",
+      "sha256": "91153c49849f378c54c4ba691a45823f743ef324c8ae6d35318dd650fe2ed2f8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:04.437Z"
+    },
+    {
+      "id": "cross-body-crunch-1.png",
+      "sha256": "a71b70949380425549800bc22602de4d5c4f763e44046527fb59849a06488dc0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:05.656Z"
+    },
+    {
+      "id": "legs-on-ball-crunch-1.png",
+      "sha256": "70d2dd4563f9f8d2822003fece45e4a2a5e9eae7c33c9678342cb88cab51e3ec",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:06.834Z"
+    },
+    {
+      "id": "crunch-1.png",
+      "sha256": "d1da7b3c96446f41c0b857231f7998c3814094b2c0834e07d69cb88c00265771",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:08.202Z"
+    },
+    {
+      "id": "decline-crunch-1.png",
+      "sha256": "d7c1def2bea24ce1d5825ae54380eb8c3c158785d9faa425f38d26f61c89bfd7",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:09.387Z"
+    },
+    {
+      "id": "decline-oblique-crunch-1.png",
+      "sha256": "7351ed3e47dbef6663ea863556a0e92c3aec4d923c91bf3db7cd96091927510d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:11.293Z"
+    },
+    {
+      "id": "stability-ball-crunch-1.png",
+      "sha256": "8651ccf60fd6c5bf916aa3fa366dac400fb77dcab191dbc85367310dc6b99627",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:12.335Z"
+    },
+    {
+      "id": "exercise-ball-pull-in-1.png",
+      "sha256": "a4d5963c91c162cb4d350eaca39a46fb5dea772457f9d0cd4ac1f94a3689b36a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:13.204Z"
+    },
+    {
+      "id": "active-bar-hang-1.png",
+      "sha256": "8763cbd3568919f4e78ba1136a8d780cb9b8770c38be08beb5214477f11799f1",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:16.603Z"
+    },
+    {
+      "id": "archer-push-up-1.png",
+      "sha256": "3aec5b8668fab759eb5f041ec11a1885f349b0d3d1f899e5189696b7ea79f7c2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:18.958Z"
+    },
+    {
+      "id": "arm-circles-1.png",
+      "sha256": "29e160ea83401b4395705713823b72f8e021de0e7070c47815cc9bad318b1866",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:20.322Z"
+    },
+    {
+      "id": "arnold-press-1.png",
+      "sha256": "81d27084ee54f8619ca1f2cbd8430f4c7bc3c9789e91b693f5ca6cfdb2a27bd4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:21.824Z"
+    },
+    {
+      "id": "assault-bike-1.png",
+      "sha256": "f72ab5b470782cd4fc0431b63e41278dc26edb8171e6615c3440f030f47aacdd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:23.111Z"
+    },
+    {
+      "id": "assisted-chin-up-1.png",
+      "sha256": "99186c7928ccda75b9e35cb97ef6794b1b70a184b885a2f32b71903e94feac0f",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
+    },
+    {
+      "id": "supported-pistol-squat-1.png",
+      "sha256": "a8fcf23c53c95ed6439cf67bbf00ae57202131869dfe711bce57e7f51428605b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:39.042Z"
+    },
+    {
+      "id": "assisted-pull-up-1.png",
+      "sha256": "da95e8e7b66882c0293c00d8867c2c9ae60ad95a4f2507803dca08aaedad8592",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
+    },
+    {
+      "id": "band-pull-apart-1.png",
+      "sha256": "cd3688a55a17609f011419d87dda12437eea72e8afc06007700d1bd477f10006",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:55.408Z"
+    },
+    {
+      "id": "banded-clamshell-1.png",
+      "sha256": "b834ee03c05d4693fb6b0b7bc66b45d99429673d8d91e285593af4aef3849f63",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:57.240Z"
+    },
+    {
+      "id": "banded-dead-bug-1.png",
+      "sha256": "81aa633d8a2389e41eeea35a023d466bf888f892931693965d469f458ad61322",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:26:58.844Z"
+    },
+    {
+      "id": "banded-donkey-kick-1.png",
+      "sha256": "f2cc94c483e03dfd54b26a23d369d9bca0964a5d7bab020d9d3af8d7fa58c509",
+      "status": "approved",
+      "note": "Replacement for: band isnt connected to teh other leg",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:37.555Z"
+    },
+    {
+      "id": "banded-face-pull-1.png",
+      "sha256": "23e5acd565175ebdb610ae156cdd099927d92f0540b9ff7a48fe643202e0a762",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:16.446Z"
+    },
+    {
+      "id": "banded-fire-hydrant-1.png",
+      "sha256": "7b4f2b8665bebf3f601c4fd522187e827f56879f0003c02471746b211f1e2a46",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:18.186Z"
+    },
+    {
+      "id": "banded-frog-pump-1.png",
+      "sha256": "6aa6dfe88663d5e1cffe9c0f743f49823bf9292d9be8b2a701a1a802edc147c4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:18.976Z"
+    },
+    {
+      "id": "banded-glute-bridge-1.png",
+      "sha256": "64a2029e539f66f82fa1fc1cc635b283f5677778e0925af977d909aec70bb529",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:27.762Z"
+    },
+    {
+      "id": "banded-hip-thrust-1.png",
+      "sha256": "7bcfacbb9a72f4b3ebd097d174452df9d836ef8ee0d56dab99a763732b6b3fe5",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:29.136Z"
+    },
+    {
+      "id": "banded-kickback-1.png",
+      "sha256": "1cb6c8b592a2d8a4cce914f1301387106e584464f15df9e4e39d1d539b1f89fe",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:30.111Z"
+    },
+    {
+      "id": "banded-lat-pulldown-1.png",
+      "sha256": "d672524294ab5a55520e676c6bf899319d38bf41da803b96132df940fc1c4897",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:53.045Z"
+    },
+    {
+      "id": "banded-lateral-walk-1.png",
+      "sha256": "52c81675b25befb608d2a085c05aee0b20c6fff488e4f905b5a1320e66137b34",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:41.828Z"
+    },
+    {
+      "id": "banded-monster-walk-1.png",
+      "sha256": "ed18862629215144756488dd30586348de72254c1db4f900f632218823ec1e75",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:44.232Z"
+    },
+    {
+      "id": "banded-pallof-press-1.png",
+      "sha256": "628da2e4bf684f7e24b6e5b6b190986e1bf8820ad7e153a226124efcd7daab61",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:46.988Z"
+    },
+    {
+      "id": "banded-row-1.png",
+      "sha256": "8ea22dddeacd21ca7f7864bdb6870ee17be5d6c264b24386a008839594908b56",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:27:55.235Z"
+    },
+    {
+      "id": "banded-seated-hip-abduction-1.png",
+      "sha256": "0548d07bcb025f04d64f617e75993df22184c72e3a443b38f41d7d57d3bb1a7d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:29:59.791Z"
+    },
+    {
+      "id": "banded-squat-1.png",
+      "sha256": "2890bc8bc010d5717764a9e47dca87aef08dfb24b6715167e7287bb7f3c6145e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:01.995Z"
+    },
+    {
+      "id": "banded-standing-hip-abduction-1.png",
+      "sha256": "c3a46237941cd87c972e357d2b095f0c6cc27f95c3919223de4a856ac7a745ad",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:03.706Z"
+    },
+    {
+      "id": "banded-woodchop-1.png",
+      "sha256": "471e74fc35455e499d0d4100e4b628f3ecf64689512fd185bfda4697c009a06b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:05.446Z"
+    },
+    {
+      "id": "barbell-glute-bridge-1.png",
+      "sha256": "d5c4aa88af28118a5a7d12682969f4e62002799754a4f08d1704dc26d76cbe3c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:07.366Z"
+    },
+    {
+      "id": "battle-ropes-1.png",
+      "sha256": "6c387b5f2cc85c31115bd7238335cfc63ba2496aadf42eeae490a8d48d219be2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:09.495Z"
+    },
+    {
+      "id": "bear-crawl-1.png",
+      "sha256": "c95fa7ec4936b371cadb4811b6e9fe98c85c3921b46938f6d353619c59893d0a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:12.954Z"
+    },
+    {
+      "id": "bear-plank-1.png",
+      "sha256": "1f7a6d8a0b0bb0d9fd47df87f029db565d84ca409936bb9bf34801dbb359e12d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:14.310Z"
+    },
+    {
+      "id": "belt-squat-1.png",
+      "sha256": "5b4b6163e70f7c2108d0be83fbe0cc2d2d5e73319883e56a863678f22db51ccb",
+      "status": "approved",
+      "note": "Latest Hammer Strength belt-squat replacement approved by user in chat",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:54:04.800374+00:00"
+    },
+    {
+      "id": "bent-over-rear-delt-raise-1.png",
+      "sha256": "fa49124f8cb0ad11ead3f3312ead0d5ced4694d46b400a44707925720c05f928",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:29.394Z"
+    },
+    {
+      "id": "bird-dog-1.png",
+      "sha256": "09b7ffb5f48157ee72878ad3a33b44924f5f9d189f559368c69b9863fad3aec2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:32.319Z"
+    },
+    {
+      "id": "bodyweight-squat-1.png",
+      "sha256": "8e84cb08bc3c8a01023be9599f354b78090e4423d6c2a4a78ab70bfce0472e21",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:35.573Z"
+    },
+    {
+      "id": "bulgarian-split-squat-1.png",
+      "sha256": "ed66306c77375b891567bf80d5d12b58a858a5bad463e51c3827fe0736c05e7a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:38.379Z"
+    },
+    {
+      "id": "burpee-1.png",
+      "sha256": "e6f11e1fd8c13dd54b1927e3fe9bbda236eb74fcd283d1f207878b5cd296e250",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:43.777Z"
+    },
+    {
+      "id": "butterfly-stretch-1.png",
+      "sha256": "210ab5a35f7e2a5a7e25057aa08cdd22ce31ee50ff0fe9145b926327f83eebcc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:45.661Z"
+    },
+    {
+      "id": "cable-lateral-raise-1.png",
+      "sha256": "8556920764615d9a85f9c45cc8cda240b9422268a9746610dc9128ff555f10dc",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:48.810Z"
+    },
+    {
+      "id": "cable-pallof-hold-1.png",
+      "sha256": "14c304feeaa78376d53ba58c9d9f6f7db4a5fe1a4910521098e5c3527f879dfb",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:50.708Z"
+    },
+    {
+      "id": "cable-pull-through-1.png",
+      "sha256": "28244c83aaa40654e18b7f4c06c8a9e5fcaea8aefd7e2aab11ea06ab22b4f29e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:30:55.157Z"
+    },
+    {
+      "id": "cable-rear-delt-fly-1.png",
+      "sha256": "cb7fcb0484d1afc38cb7cfb8d8c21953bd90f4c425f5c7d010a9429b48d73d29",
+      "status": "approved",
+      "note": "Replacement for: Weird lines going through chest",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:31.755Z"
+    },
+    {
+      "id": "cable-standing-hip-abduction-1.png",
+      "sha256": "a197a3aae3d56f83883164fe9f1c65aae209b4d6c350370d2fe36d432a13c8e8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:13.330Z"
+    },
+    {
+      "id": "cable-standing-hip-adduction-1.png",
+      "sha256": "174c2125dad042ebf15c42188898cdddb469f67c06842c653b9e23462aee7517",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:16.689Z"
+    },
+    {
+      "id": "woodchop-1.png",
+      "sha256": "6f9b1889c93ffb729e454c654978a33fa0e75c233ab85655bf4c1aebb260e102",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:36.668Z"
+    },
+    {
+      "id": "calf-raise-1.png",
+      "sha256": "dc2faaa8fc1d01b71dd0f3259c7abe516b71d5f9d187d895e6385ae579e266ec",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:38.776Z"
+    },
+    {
+      "id": "captain-s-chair-knee-raise-1.png",
+      "sha256": "8e6396bcc0ad2b126943f585ffd79bc09963e4a5e8eb9e2cdd4127f44e2fa86b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:42.743Z"
+    },
+    {
+      "id": "cat-cow-stretch-1.png",
+      "sha256": "4b4ed3181d0edbc5aeb8b8edac8d7e591e139b2cb7deb146e6c26fb447170ad6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:46.335Z"
+    },
+    {
+      "id": "chest-supported-row-1.png",
+      "sha256": "3799de4bd93c63ec3a0b5e031c7cd7e18cef520742493b7349458b7053eb690a",
+      "status": "approved",
+      "note": "Replacement for: this machine is wrong",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:36.338Z"
+    },
+    {
+      "id": "child-s-pose-1.png",
+      "sha256": "caa01817e7ec1a351ff8a71b605279fb4bee5e3eda006010b1c27c2ea3a9fa06",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:31:57.565Z"
+    },
+    {
+      "id": "chin-up-1.png",
+      "sha256": "63893cf58ef14cb00db95582e51d2bbc297ef46fe2bc74ca66a75c189f0cc515",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:01.075Z"
+    },
+    {
+      "id": "clamshell-1.png",
+      "sha256": "496d84ff27a417686d5ef8c57efb34bfc08101e1290cd6cda1ecaaac397a6aa9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:02.949Z"
+    },
+    {
+      "id": "commando-pull-up-1.png",
+      "sha256": "45072d9aa5c8be877473911796891029ff3b9488a09662a67fd95b77c826ab9d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:21.150Z"
+    },
+    {
+      "id": "copenhagen-plank-1.png",
+      "sha256": "cd56817d92c918f3a1dd6dbaf12ff6ae3d46c7ef071028a0e2177867b771279b",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:25.621Z"
+    },
+    {
+      "id": "cossack-squat-1.png",
+      "sha256": "04e45dd8fb0d3ea2b3997e8857c1aa742dc5777e7262dfb7a0611d42d702e8ef",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:26.852Z"
+    },
+    {
+      "id": "crab-walk-1.png",
+      "sha256": "934ef69399c594bd11cb46705b1a01c71081c46208d177ca881887cdd14c31a4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:28.486Z"
+    },
+    {
+      "id": "cross-body-shoulder-stretch-1.png",
+      "sha256": "bac96b8558d15882eb0e4aa4e376ba477d3e90c4aa6171a81c123cf9257edfa9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:30.226Z"
+    },
+    {
+      "id": "curtsy-lunge-1.png",
+      "sha256": "9de3f14b912288795b1a243481d3621ed25f35cdf4a73c308d4d8d3cc454c004",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:31.920Z"
+    },
+    {
+      "id": "cycling-1.png",
+      "sha256": "dcb0317c201540afa7b8f9b4ea5a9b00f1f106fb8fc04000f43f33a524866f5c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:34.133Z"
+    },
+    {
+      "id": "dead-bug-1.png",
+      "sha256": "7dfaf516b92855e4aa77bdfd20f952f2b2d080e0a3ab681c5a94708ebe3a66f0",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:35.709Z"
+    },
+    {
+      "id": "dead-hang-1.png",
+      "sha256": "3ce156dab6284099cd9200a3bf9b08e185410c1c707a4d1a4de9a9adbc98b79c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:37.637Z"
+    },
+    {
+      "id": "decline-push-up-1.png",
+      "sha256": "ef24de295e7fdbc4b10ca313b3035da3c48e8aac0d659216dc345ad7b34ae8bf",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:39.226Z"
+    },
+    {
+      "id": "decline-sit-up-1.png",
+      "sha256": "0fa29b66eb641d25004a414e67ae304408e4a8f8da452b8044132fbe9e7aa064",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:40.328Z"
+    },
+    {
+      "id": "deficit-reverse-lunge-1.png",
+      "sha256": "9df24eb7cc73b15fe537e94114b25f8c09c89672d06cdeacdd3cfb6be4c09953",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:41.606Z"
+    },
+    {
+      "id": "diamond-push-up-1.png",
+      "sha256": "93703c999185f597c7cf07067fc2841153e89e81cb60fec6799f73ecad210836",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:42.758Z"
+    },
+    {
+      "id": "donkey-kick-1.png",
+      "sha256": "821ed4fc9944dbfb9189ae0eb69681f8e3a9dc33136431b7920f55b028a14255",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:43.966Z"
+    },
+    {
+      "id": "doorway-chest-stretch-1.png",
+      "sha256": "41d0315edf4385f722456ca5c517016997da234bff0c83fb58cffe88335d8f6e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:32:45.976Z"
+    },
+    {
+      "id": "door-sheet-row-1.png",
+      "sha256": "0494e00c4f53c5984e4fa81b7dbb7af499f24c8eb5ea8096e8425ac4bb250a62",
+      "status": "approved",
+      "note": "Replacement for: He should be leaning away from the door with toes almost touching the door ",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:39.210Z"
+    },
+    {
+      "id": "dragon-flag-1.png",
+      "sha256": "cf731df76305cd97a0048aba72e46e554579b70ddf21d3256d06d97f877dc655",
+      "status": "approved",
+      "note": "Replacement for: User corrected accidental approval in chat: Dragon Flag was wrong; regenerate correct pose.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:49:40.673Z"
+    },
+    {
+      "id": "dumbbell-bent-over-row-1.png",
+      "sha256": "5bfba7543304e93a8a0098b6f0f998f031c022a2a7505550bb324d15d2918f44",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:37.738Z"
+    },
+    {
+      "id": "dumbbell-curtsy-lunge-1.png",
+      "sha256": "7a6d09e3d28fdf9c071e3a08770374aea7dbb384c2589a9849e246c9bb2fbdab",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:39.362Z"
+    },
+    {
+      "id": "dumbbell-glute-bridge-1.png",
+      "sha256": "5c32f989846ae4829b318f958c476fd592e9628e7bf252a65eed153ca02018b3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:40.982Z"
+    },
+    {
+      "id": "dumbbell-hip-thrust-1.png",
+      "sha256": "6e229ddccf7eeab4a47dce4398bdfa7cdec724d6fbd834171c38085e2a4d6eb8",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:34:42.219Z"
     }
   ]
 }

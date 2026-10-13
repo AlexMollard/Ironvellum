@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.settings
 import android.content.Context
 import android.util.Log
 import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.AppearanceStore
 import com.ironvellum.app.ui.theme.AccentPalette
@@ -41,6 +42,7 @@ import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.WorkoutCsvWriter
+import com.ironvellum.app.domain.XpRescore
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -746,6 +748,42 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
     /** Crash records on disk and the newest one's time; read off the main thread. */
     suspend fun crashSummary(): Pair<Int, String> = withContext(Dispatchers.IO) {
         CrashJournal.crashCount() to CrashJournal.latestTimestamp()?.substringAfter("—")?.trim().orEmpty()
+    }
+
+    /** The developer XP rescore: what is on screen. Debug builds only; a release build never reaches it. */
+    data class RescoreUi(
+        val busy: Boolean = false,
+        val plan: XpRescore.Plan? = null,
+        /** True once the plan on screen has been written. */
+        val applied: Boolean = false,
+        val error: String? = null,
+    )
+
+    private val _rescore = MutableStateFlow<RescoreUi?>(null)
+    val rescore: StateFlow<RescoreUi?> = _rescore.asStateFlow()
+
+    /** Prices every trial with the current rules and shows the result; nothing is written. */
+    fun previewRescore() {
+        if (!BuildConfig.DEBUG) return
+        _rescore.value = RescoreUi(busy = true)
+        viewModelScope.launchGuarded("preview xp rescore") {
+            _rescore.value = runCatching { repo.previewXpRescore() }
+                .fold({ RescoreUi(plan = it) }, { RescoreUi(error = it.message ?: "The preview failed") })
+        }
+    }
+
+    /** Writes the plan on screen, after the confirm. The plan is recomputed in the write, so it is never stale. */
+    fun applyRescore() {
+        if (!BuildConfig.DEBUG) return
+        _rescore.value = _rescore.value?.copy(busy = true, error = null)
+        viewModelScope.launchGuarded("apply xp rescore") {
+            _rescore.value = runCatching { repo.applyXpRescore() }
+                .fold({ RescoreUi(plan = it, applied = true) }, { RescoreUi(error = it.message ?: "The rescore failed") })
+        }
+    }
+
+    fun dismissRescore() {
+        _rescore.value = null
     }
 
     /** Deleting and re-counting are both disk work, so both stay off the frame. */

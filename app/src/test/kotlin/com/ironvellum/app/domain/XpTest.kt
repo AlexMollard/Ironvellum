@@ -1,383 +1,335 @@
 package com.ironvellum.app.domain
 
-import com.ironvellum.app.data.Seed
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Test
-import kotlin.math.pow
 
 class XpTest {
+    private val bodyweight = 79.3
 
-    private val bodyweight = 80.0
+    private fun set(
+        name: String,
+        reps: Int,
+        weightKg: Double? = null,
+        rpe: Int? = null,
+        id: Long = name.hashCode().toLong(),
+        kind: SetKind = SetKind.WORKING,
+        external: Boolean = false,
+    ) = Xp.SetEffort(name, reps = reps, weightKg = weightKg, rpe = rpe, exerciseId = id, kind = kind, externalLoad = external)
 
-    private fun sets(n: Int, name: String, reps: Int, weightKg: Double? = null, modifiers: String = "") =
-        List(n) { Xp.SetEffort(name, reps = reps, weightKg = weightKg, modifiers = modifiers) }
+    private fun sets(n: Int, name: String, reps: Int, weightKg: Double? = null, rpe: Int? = null) =
+        List(n) { set(name, reps, weightKg, rpe) }
 
-    /** A hold set, stated the way the app now stores one: seconds, zero reps. */
-    private fun hold(n: Int, name: String, seconds: Int, weightKg: Double? = null) =
-        List(n) {
-            Xp.SetEffort(name, reps = 0, holdSeconds = seconds, weightKg = weightKg, metric = ExerciseMetric.HOLD)
-        }
+    private fun hold(n: Int, name: String, seconds: Int) =
+        List(n) { Xp.SetEffort(name, holdSeconds = seconds, metric = ExerciseMetric.HOLD, exerciseId = name.hashCode().toLong()) }
 
-    // ---------------------------------------------------------------- difficulty
+    private fun history(vararg done: Xp.SetEffort) = Xp.History.EMPTY.after(done.toList(), bodyweight)
 
-    /**
-     * The reported bug: five handstand push-ups paid less than twenty
-     * push-ups, because every rep was worth one XP whatever it cost. Per rep,
-     * the tier IV press must now clearly beat the tier II one.
-     */
-    @Test
-    fun `a harder movement pays more per rep than an easier one`() {
-        val hspu = Xp.setXp(Xp.SetEffort("Handstand Push-up", reps = 5), bodyweight)
-        val pushUp = Xp.setXp(Xp.SetEffort("Push-up", reps = 5), bodyweight)
-        // Two tiers apart, so four times the rate once the flat per-set bonus
-        // both sets earn is taken out.
-        val hardRate = (hspu - Xp.BASE_PER_SET).toDouble()
-        val easyRate = (pushUp - Xp.BASE_PER_SET).toDouble()
-        assertEquals("hspu=$hspu pushUp=$pushUp", 4.0, hardRate / easyRate, 0.05)
-    }
+    private fun xp(sets: List<Xp.SetEffort>, history: Xp.History = Xp.History.EMPTY) =
+        Xp.breakdown(sets, bodyweight, history, trial = Xp.TrialFacts(earnsBonuses = false))
 
-    /**
-     * The owner's actual comparison: 3x5 handstand push-ups against 3x20
-     * weighted deficit decline push-ups. Volume may not simply win — the two
-     * must land within a quarter of each other.
-     */
-    @Test
-    fun `five hard reps stand against twenty loaded easy ones`() {
-        val hard = Xp.award(sets(3, "Handstand Push-up", 5), bodyweight)
-        val easy = Xp.award(
-            sets(3, "Push-up", 20, weightKg = 20.0, modifiers = "weighted, decline, deficit"),
-            bodyweight,
-        )
-        assertTrue("hard=$hard easy=$easy", hard > easy * 0.75 && hard < easy * 1.25)
-    }
-
-    /** A user-invented name cannot mint XP: it is scored as ordinary work. */
-    @Test
-    fun `an unknown movement is scored at the default tier`() {
-        assertEquals(
-            Xp.setXp(Xp.SetEffort("Push-up", reps = 8), bodyweight),
-            Xp.setXp(Xp.SetEffort("Interdimensional Thrust", reps = 8), bodyweight),
-        )
-    }
-
-    // ---------------------------------------------------------------- holds
-
-    /**
-     * The second reported bug: a hold's seconds go into the reps field, so a
-     * 60-second hollow hold was paid as sixty reps — the best rate in the app.
-     */
-    @Test
-    fun `a minute of holding no longer beats a hard set`() {
-        val hold = Xp.award(hold(3, "Hollow Hold", 60), bodyweight)
-        val hard = Xp.award(sets(3, "Handstand Push-up", 5), bodyweight)
-        assertTrue("3x60s hold=$hold must not out-earn 3x5 HSPU=$hard", hold < hard)
-    }
-
-    /** Same tier, same figure typed in: sixty seconds is not sixty reps. */
-    @Test
-    fun `sixty seconds of a hold pays well under sixty reps`() {
-        val hold = Xp.setXp(hold(1, "Hollow Hold", 60).first(), bodyweight)
-        val reps = Xp.setXp(Xp.SetEffort("Hanging Knee Raise", reps = 60), bodyweight)
-        assertTrue("hold $hold vs reps $reps", hold < reps * 0.6)
-    }
-
-    /** The "hold seconds" modifier makes any movement timed, not just catalogued holds. */
-    @Test
-    fun `the hold modifier converts seconds for any movement`() {
-        val timed = Xp.setXp(Xp.SetEffort("Push-up", reps = 60, modifiers = "hold seconds"), bodyweight)
-        val counted = Xp.setXp(Xp.SetEffort("Push-up", reps = 60), bodyweight)
-        assertTrue("timed $timed vs counted $counted", timed < counted)
-    }
-
-    /** A three-minute hold still beats a one-minute one. */
-    @Test
-    fun `longer holds still pay more`() {
-        assertTrue(
-            Xp.setXp(hold(1, "L-sit", 180).first(), bodyweight) >
-                Xp.setXp(hold(1, "L-sit", 60).first(), bodyweight),
-        )
-    }
-
-    // ---------------------------------------------------------------- volume
-
-    /** Reps past the band are endurance: doubling a long set must not double its XP. */
-    @Test
-    fun `volume beyond the full-value band has diminishing returns`() {
-        val twenty = Xp.setXp(Xp.SetEffort("Push-up", reps = 20), bodyweight)
-        val forty = Xp.setXp(Xp.SetEffort("Push-up", reps = 40), bodyweight)
-        assertTrue("20=$twenty 40=$forty", forty > twenty && forty < twenty * 2)
-    }
-
-    /** Splitting volume across sets beats grinding it into one — as it should. */
-    @Test
-    fun `the first reps of a set are the valuable ones`() {
-        val oneLongSet = Xp.award(sets(1, "Push-up", 30), bodyweight)
-        val threeShortSets = Xp.award(sets(3, "Push-up", 10), bodyweight)
-        assertTrue("$oneLongSet vs $threeShortSets", threeShortSets > oneLongSet)
-    }
-
-    // ---------------------------------------------------------------- load
+    // ------------------------------------------------------------ agreed examples
 
     @Test
-    fun `added load raises a set and is capped`() {
-        val bare = Xp.setXp(Xp.SetEffort("Pull-up", reps = 5), bodyweight)
-        val loaded = Xp.setXp(Xp.SetEffort("Pull-up", reps = 5, weightKg = 20.0), bodyweight)
-        val absurd = Xp.setXp(Xp.SetEffort("Pull-up", reps = 5, weightKg = 500.0), bodyweight)
-        assertTrue("loaded $loaded > bare $bare", loaded > bare)
-        assertTrue("absurd $absurd must be capped", absurd <= (bare * Xp.MAX_LOAD_MULTIPLIER).toInt() + Xp.BASE_PER_SET)
-    }
-
-    /** No bodyweight on record must not crash or zero the load bonus. */
-    @Test
-    fun `load still counts with no bodyweight recorded`() {
-        assertTrue(
-            Xp.setXp(Xp.SetEffort("Pull-up", reps = 5, weightKg = 20.0), null) >
-                Xp.setXp(Xp.SetEffort("Pull-up", reps = 5), null),
-        )
-    }
-
-    /**
-     * The owner's Pull session, as logged at 78.9 kg: 5,5,5,3 pull-ups at
-     * +15.2 kg paid 88 XP against 93 for 3x8 bodyweight chin-ups - the same
-     * tier, so load was the only difference and it bought less than volume.
-     */
-    @Test
-    fun `heavy weighted pull-ups out-earn more bodyweight chin-up volume`() {
-        val bw = 78.9
-        val weighted = listOf(5, 5, 5, 3).sumOf { Xp.setXp(Xp.SetEffort("Pull-up", reps = it, weightKg = 15.2, modifiers = "weighted"), bw) }
-        val chinUps = sets(3, "Chin-up", 8).sumOf { Xp.setXp(it, bw) }
-        assertTrue("weighted=$weighted chinUps=$chinUps", weighted > chinUps * 1.15)
-    }
-
-    // ------------------------------------------------------- machine implements
-
-    /**
-     * The first catalogue movement whose implement transmits less than a
-     * free-weight kilogram (sled, Smith, stack, dual pulley). Discovered from
-     * the catalogue rather than named, so the test tracks whatever the gym
-     * rows actually ship.
-     */
-    private fun machineMovement(): String =
-        Seed.exercises
-            .map { it.name }
-            .firstOrNull { MovementDifficulty.loadFactor(it) < MovementDifficulty.FREE_WEIGHT_LOAD }
-            ?: run {
-                Assume.assumeTrue(
-                    "no machine movement seeded yet: the load-factor tests need one",
-                    false,
-                )
-                error("unreachable")
-            }
-
-    /**
-     * The defect [MovementDifficulty.loadFactor] exists to prevent: before the
-     * transmission ratio, an 80 kg lifter's 10-rep leg press at 200 kg paid
-     * MORE XP and MORE strength than a 10-rep front squat, making a
-     * plate-hungry machine the best-value movement in the app. The sled is not
-     * harder than the squat; its NUMBER is bigger. The invariant the ratio
-     * actually guarantees: the same marked number pays strictly less on a
-     * machine than on a barbell, in both currencies. With the factor gone
-     * (table empty or unwired) both multipliers return 3.0 and these
-     * assertions flip to equality, so the test bites.
-     *
-     * The barbell reference is the front squat: a catalogue-only lift whose
-     * tier still sits beside the machines. The back squat is now tier I of the
-     * gym progression tree, and its scoring tier is deliberately below the
-     * machines' - comparing against it would pit a tier change against a load
-     * factor and prove nothing.
-     */
-    @Test
-    fun `the same marked kilos pay less on a machine than on a barbell`() {
-        val machine = machineMovement()
-        val barbell = "front squat"
-        // Below the barbell's cap threshold (cubed ratio 3.0, about +44% of
-        // bodyweight): past it BOTH implements peg the ceiling and tie, which
-        // would prove nothing about the transmission ratio.
-        val marked = 30.0
-        Assume.assumeTrue(
-            "machine $machine must share the barbell's tier for the set comparison to be fair",
-            MovementDifficulty.intensity(barbell) == MovementDifficulty.intensity(machine),
-        )
-        val squat = Xp.setXp(Xp.SetEffort(barbell, reps = 10, weightKg = marked), bodyweight)
-        val machineXp = Xp.setXp(Xp.SetEffort(machine, reps = 10, weightKg = marked), bodyweight)
-        assertTrue("squat $squat must out-earn ${machine.lowercase()} $machineXp", squat > machineXp)
-
-        // Same comparison through the strength score, tier-free via multipliers.
-        val squatStrength =
-            StrengthIndex.repScore(barbell, reps = 10, addedKg = marked, bodyweightKg = bodyweight)
-        val machineStrength =
-            StrengthIndex.repScore(machine, reps = 10, addedKg = marked, bodyweightKg = bodyweight)
-        assertTrue(
-            "squat $squatStrength must out-score machine $machineStrength",
-            squatStrength > machineStrength,
-        )
-        assertTrue(
-            "machine multiplier must sit below the barbell's",
-            Xp.loadMultiplier(machine, marked, bodyweight) <
-                Xp.loadMultiplier(barbell, marked, bodyweight),
-        )
-    }
-
-    /**
-     * A barbell's kilos hang vertically off the body: the factor is 1.0 and
-     * the marked value must pass through untouched. If it did not, this change
-     * would have silently restated every existing user's score.
-     */
-    @Test
-    fun `a free-weight movement's load passes through at its marked value`() {
-        assertEquals(
-            ((bodyweight + 10.0) / bodyweight).pow(Xp.LOAD_EXPONENT),
-            Xp.loadMultiplier("back squat", 10.0, bodyweight),
-            1e-12,
-        )
-        // The strength score stays linear in the transmitted mass; only XP
-        // cubes it, so no stored strength score is restated.
-        val bare = StrengthIndex.repScore("back squat", 10, null, bodyweight)
-        val loaded = StrengthIndex.repScore("back squat", 10, 100.0, bodyweight)
-        assertEquals((bodyweight + 100.0) / bodyweight, loaded / bare, 1e-9)
-    }
-
-    /**
-     * Both currencies must apply the SAME factor to the same implement - the
-     * whole reason [MovementDifficulty.loadFactor] lives in the shared body.
-     * Each ratio below is computed through its own currency's public path; if
-     * a future edit converts the kilos in only one of them, the ratios diverge
-     * and this fails. The marked kilos stay small enough that neither ratio
-     * reaches the XP cap, where a cap on one side only would also mask the
-     * divergence.
-     */
-    @Test
-    fun `xp and the strength score transmit the same implement identically`() {
-        val machine = machineMovement()
-        val marked = 40.0
-        val xpRatio = Xp.loadMultiplier(machine, marked, bodyweight)
-        val bare = StrengthIndex.repScore(machine, 10, null, bodyweight)
-        val loaded = StrengthIndex.repScore(machine, 10, marked, bodyweight)
-        assertEquals(
-            "machine=$machine marked=$marked: xp ratio $xpRatio vs strength ratio ${loaded / bare}",
-            xpRatio,
-            (loaded / bare).pow(Xp.LOAD_EXPONENT),
-            1e-9,
-        )
-    }
-
-    /**
-     * The cap binds AFTER the transmission ratio, and the ratio therefore
-     * moves where the cap is reached: a barbell's marked kilos hit
-     * [Xp.MAX_LOAD_MULTIPLIER] where the cubed ratio reaches it, a sled's
-     * marked number has to climb further before its transmitted load gets
-     * there. A huge marked number still cannot run away on either implement.
-     */
-    @Test
-    fun `the load cap binds after the transmission ratio`() {
-        val machine = machineMovement()
-        val factor = MovementDifficulty.loadFactor(machine)
-        // An absurd marked number caps on both implements.
-        assertEquals(
-            Xp.MAX_LOAD_MULTIPLIER,
-            Xp.loadMultiplier("back squat", 10_000.0, bodyweight),
-            0.0,
-        )
-        assertEquals(
-            Xp.MAX_LOAD_MULTIPLIER,
-            Xp.loadMultiplier(machine, 10_000.0, bodyweight),
-            0.0,
-        )
-        // Added kilos at which the cubed ratio reaches the cap on a barbell.
-        val capKg = bodyweight * (Xp.MAX_LOAD_MULTIPLIER.pow(1 / Xp.LOAD_EXPONENT) - 1)
-        assertEquals(Xp.MAX_LOAD_MULTIPLIER, Xp.loadMultiplier("back squat", capKg, bodyweight), 1e-9)
-        // The machine's transmitted load at the same marked number is below
-        // the cap, and it caps exactly where its transmitted load does.
-        assertTrue(
-            "machine factor $factor must delay the cap",
-            Xp.loadMultiplier(machine, capKg, bodyweight) < Xp.MAX_LOAD_MULTIPLIER,
-        )
-        assertEquals(
-            Xp.MAX_LOAD_MULTIPLIER,
-            Xp.loadMultiplier(machine, capKg / factor, bodyweight),
-            1e-9,
-        )
-    }
-
-    // ---------------------------------------------------------------- modifiers
-
-    @Test
-    fun `assistance lowers and one-arm work raises the same movement`() {
-        val plain = Xp.setXp(Xp.SetEffort("Push-up", reps = 8), bodyweight)
-        assertTrue(Xp.setXp(Xp.SetEffort("Push-up", reps = 8, modifiers = "assisted"), bodyweight) < plain)
-        assertTrue(Xp.setXp(Xp.SetEffort("Push-up", reps = 8, modifiers = "one-arm"), bodyweight) > plain)
-    }
-
-    /**
-     * "weighted" must not multiply on top of the kilos it describes, or the
-     * same plate is paid for twice.
-     */
-    @Test
-    fun `the weighted modifier does not double-count its own load`() {
-        assertEquals(
-            Xp.setXp(Xp.SetEffort("Dip", reps = 6, weightKg = 20.0), bodyweight),
-            Xp.setXp(Xp.SetEffort("Dip", reps = 6, weightKg = 20.0, modifiers = "weighted"), bodyweight),
-        )
-    }
-
-    // ---------------------------------------------------------------- awards
-
-    @Test
-    fun `an empty set pays nothing, not a base rate`() {
-        assertEquals(0, Xp.setXp(Xp.SetEffort("Push-up", reps = 0), bodyweight))
-        assertEquals(0, Xp.setXp(Xp.SetEffort("Push-up", reps = -5), bodyweight))
+    fun threeSetsOfTwentyEasyPushUpsPayLessThanThreeHardSetsOfFive() {
+        val easyLifter = history(set("Push-up", 25))
+        val hardLifter = history(set("Push-up", 5, weightKg = 25.0))
+        val easy = xp(sets(3, "Push-up", 20), easyLifter)
+        val hard = xp(sets(3, "Push-up", 5, weightKg = 25.0), hardLifter)
+        assertTrue("${easy.total} vs ${hard.total}", easy.total < hard.total)
     }
 
     @Test
-    fun `finishing with nothing done pays no completion bonus`() {
+    fun aFirstEverLiftCountsItsSetsAsHard() {
+        val first = Xp.judge(set("Archer Push-up", 6), bodyweight)
+        assertTrue(first.hard)
+        assertEquals(null, first.rir)
+        // And pays as hard: the same reps in an easy-for-you lift pay less.
+        val known = history(set("Archer Push-up", 40))
+        assertTrue(Xp.setXp(set("Archer Push-up", 6), bodyweight) > Xp.setXp(set("Archer Push-up", 6), bodyweight, known))
+    }
+
+    @Test
+    fun tenEasyLightSetsCannotBeatFourHardSets() {
+        val known = history(set("Push-up", 30))
+        val easy = xp(sets(10, "Push-up", 10), known)
+        val hard = xp(sets(4, "Push-up", 5, weightKg = 25.0), history(set("Push-up", 5, weightKg = 25.0)))
+        assertTrue("${easy.total} vs ${hard.total}", easy.total < hard.total)
+        assertTrue(easy.setDriven <= Xp.EASY_XP_CAP)
+    }
+
+    @Test
+    fun easySetsAcrossManyMovementsShareOneCap() {
+        val names = List(10) { "Movement $it" }
+        val known = history(*names.map { set(it, 30) }.toTypedArray())
+        val farmed = xp(names.map { set(it, 10) }, known)
+        assertTrue(farmed.setDriven <= Xp.EASY_XP_CAP)
+    }
+
+    // ------------------------------------------------------------ the judgement
+
+    @Test
+    fun aLoggedRatingOverridesTheEstimate() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0))
+        // Far below the best, so the estimate says easy...
+        assertFalse(Xp.judge(set("Pull-up", 3), bodyweight, best).hard)
+        // ...but the lifter says RIR 1 (RPE 9): hard.
+        assertTrue(Xp.judge(set("Pull-up", 3, rpe = 9), bodyweight, best).hard)
+        // And a set at the best the estimate calls hard is easy when rated RIR 5+.
+        assertFalse(Xp.judge(set("Pull-up", 5, weightKg = 15.0, rpe = 5), bodyweight, best).hard)
+    }
+
+    @Test
+    fun failureAndRestPauseSetsAreAlwaysHard() {
+        val best = history(set("Pull-up", 20))
+        assertTrue(Xp.judge(set("Pull-up", 3, kind = SetKind.FAILURE), bodyweight, best).hard)
+        assertTrue(Xp.judge(set("Pull-up", 3, kind = SetKind.REST_PAUSE), bodyweight, best).hard)
+    }
+
+    @Test
+    fun theHardLineIsTheSameOneCoverageUses() {
+        // Estimated reps in reserve become an RPE and go through HardSets.isHard: 3 left is hard, 4 left is not.
+        val best = history(set("Chin-up", 10))
+        fun rirOf(reps: Int) = Xp.judge(set("Chin-up", reps), bodyweight, best)
+        assertTrue(rirOf(7).hard)
+        assertFalse(rirOf(6).hard)
+    }
+
+    @Test
+    fun aFirstTimeLiftDoneForEnduranceIsNotHard() {
+        // HardSets.isHard rejects an unrated set past 15 reps, so a first-time 40-rep set cannot farm.
+        assertFalse(Xp.judge(set("Push-up", 40), bodyweight).hard)
+    }
+
+    @Test
+    fun aHoldIsJudgedAgainstTheBestHold() {
+        val best = Xp.History.EMPTY.after(hold(1, "Tuck Front Lever", 40), bodyweight)
+        val near = Xp.judge(hold(1, "Tuck Front Lever", 36).first(), bodyweight, best)
+        val short = Xp.judge(hold(1, "Tuck Front Lever", 10).first(), bodyweight, best)
+        assertTrue(near.hard)
+        assertFalse(short.hard)
+        assertTrue(near.xp > short.xp)
+        assertTrue(Xp.judge(hold(1, "Tuck Front Lever", 10).first(), bodyweight).hard)
+    }
+
+    @Test
+    fun repsPastFiveAddOnlyALittle() {
+        val five = Xp.setXp(set("Pull-up", 5, weightKg = 10.0), bodyweight)
+        val ten = Xp.setXp(set("Pull-up", 10, weightKg = 10.0), bodyweight)
+        assertTrue(ten > five)
+        assertTrue(ten < five * 1.4)
+    }
+
+    @Test
+    fun aHeavierLoadAddsALittleAndIsBounded() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0))
+        val light = Xp.setXp(set("Pull-up", 4, weightKg = 5.0, rpe = 9), bodyweight, best)
+        val heavy = Xp.setXp(set("Pull-up", 4, weightKg = 17.7, rpe = 9), bodyweight, best)
+        val absurd = Xp.setXp(set("Pull-up", 4, weightKg = 500.0, rpe = 9), bodyweight, best)
+        assertTrue(heavy > light)
+        assertTrue(absurd <= heavy + 2)
+    }
+
+    @Test
+    fun anEmptySetPaysNothing() {
+        assertEquals(0, Xp.setXp(set("Push-up", 0), bodyweight))
+        assertEquals(0, Xp.setXp(set("Push-up", -5), bodyweight))
         assertEquals(0, Xp.award(emptyList(), bodyweight))
         assertEquals(0, Xp.award(emptyList(), bodyweight, doneSetCount = 0))
     }
 
     @Test
-    fun `an activity-only workout still earns the completion bonus`() {
-        // No lifting sets, but a done run: the bonus is for finishing real work.
+    fun aWarmupNeverPays() {
+        val bd = xp(listOf(set("Push-up", 10, kind = SetKind.WARMUP)))
+        assertEquals(0, bd.setDriven)
+    }
+
+    @Test
+    fun awardAddsTheCompletionBonusOnlyForAWorkoutWithSomethingDone() {
         assertEquals(Xp.COMPLETION_BONUS, Xp.award(emptyList(), bodyweight, doneSetCount = 1))
+        val one = set("Push-up", 10)
+        assertEquals(Xp.setXp(one, bodyweight) + Xp.COMPLETION_BONUS, Xp.award(listOf(one), bodyweight))
     }
 
     @Test
-    fun `a done lifting set pays its XP plus the completion bonus`() {
-        val set = Xp.SetEffort("Push-up", reps = 10)
-        assertEquals(Xp.setXp(set, bodyweight) + Xp.COMPLETION_BONUS, Xp.award(listOf(set), bodyweight))
+    fun movementIntensityStillScalesWhatASetPays() {
+        assertTrue(Xp.setXp(set("Handstand Push-up", 5), bodyweight) > Xp.setXp(set("Push-up", 5), bodyweight))
     }
 
-    // ---------------------------------------------------------------- levels
+    @Test
+    fun anAssistedSetIsLighterNotHeavier() {
+        val best = history(set("Pull-up", 8))
+        val bare = Xp.SetEffort("Pull-up", reps = 8, exerciseId = 1)
+        val assisted = Xp.SetEffort("Pull-up", reps = 8, weightKg = 30.0, modifiers = "assisted", exerciseId = 1)
+        assertTrue(Xp.setXp(assisted, bodyweight, best) < Xp.setXp(bare, bodyweight, best))
+    }
+
+    // ------------------------------------------------------------ the breakdown
 
     @Test
-    fun `level one at zero and just under threshold`() {
+    fun theSegmentsSumToTheAwardExactly() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0), set("Dip", 8))
+        val lifted = sets(4, "Pull-up", 4, weightKg = 17.7) + sets(3, "Dip", 10) + hold(2, "Hollow Hold", 30)
+        val bd = Xp.breakdown(
+            lifted, bodyweight, best, peakLifts = mapOf("dip" to Xp.PeakAward(Xp.PEAK_BONUS, "more reps")), doneSetCount = lifted.size,
+            trial = Xp.TrialFacts(quest = true, welcomeBack = true),
+        )
+        assertEquals(bd.lines.sumOf { it.xp }, bd.total)
+        assertEquals(bd.total, bd.lines.sumOf { it.xp })
+        assertTrue(bd.lines.none { it.xp == 0 })
+        // One segment per movement, in trial order, then the bonuses.
+        assertEquals(listOf("Pull-up", "Dip", "Hollow Hold"), bd.of(Xp.Kind.EXERCISE).map { it.label })
+        assertEquals(Xp.COMPLETION_BONUS, bd.of(Xp.Kind.COMPLETION).single().xp)
+        assertEquals(Xp.QUEST_BONUS, bd.of(Xp.Kind.QUEST).single().xp)
+        assertTrue(bd.describe().endsWith("total ${bd.total}"))
+    }
+
+    @Test
+    fun eachMovementSegmentIsTheSumOfItsSets() {
+        val one = set("Push-up", 8)
+        val three = sets(3, "Push-up", 8)
+        assertEquals(3 * Xp.setXp(one, bodyweight), xp(three).of(Xp.Kind.EXERCISE).single().xp)
+    }
+
+    // ------------------------------------------------------------ peaks and records
+
+    @Test
+    fun aRecordAndAPeakOnOneLiftPayTheLargerOnceNotBoth() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0))
+        val sets = sets(1, "Pull-up", 6, weightKg = 17.0)
+        val full = mapOf("pull-up" to Xp.PeakAward(Xp.PEAK_BONUS, "heavier"))
+        val both = Xp.breakdown(sets, bodyweight, best, peakLifts = full, doneSetCount = 1)
+        assertEquals(Xp.RECORD_BONUS, both.of(Xp.Kind.RECORD).single().xp)
+        assertTrue(both.of(Xp.Kind.PEAK).isEmpty())
+        val peakOnly = Xp.breakdown(sets(1, "Pull-up", 3, weightKg = 5.0), bodyweight, best, peakLifts = full, doneSetCount = 1)
+        assertEquals(Xp.PEAK_BONUS, peakOnly.of(Xp.Kind.PEAK).single().xp)
+        assertEquals("Pull-up \u00B7 heavier", peakOnly.of(Xp.Kind.PEAK).single().detail)
+        assertTrue(peakOnly.of(Xp.Kind.RECORD).isEmpty())
+    }
+
+    @Test
+    fun aPeakThatPaysNothingTakesNoBonusSlotAndNoSegment() {
+        val names = List(4) { "Lift $it" }
+        val none = names.associate { it.lowercase() to Xp.PeakAward(if (it == "Lift 0") 0 else 3, "heavier") }
+        val bd = Xp.breakdown(names.map { set(it, 5, weightKg = 20.0) }, bodyweight, peakLifts = none, doneSetCount = 4)
+        // The 0 XP peak is skipped and does not use up one of the three slots.
+        assertEquals(9, bd.of(Xp.Kind.PEAK).single().xp)
+        assertEquals("Lift 1 \u00B7 heavier, Lift 2 \u00B7 heavier, Lift 3 \u00B7 heavier", bd.of(Xp.Kind.PEAK).single().detail)
+    }
+
+    @Test
+    fun aRecordNeedsAHistoryAndABigEnoughMargin() {
+        val first = Xp.breakdown(sets(1, "Pull-up", 6, weightKg = 17.0), bodyweight, doneSetCount = 1)
+        assertTrue(first.of(Xp.Kind.RECORD).isEmpty())
+        val best = history(set("Pull-up", 5, weightKg = 15.0))
+        val same = Xp.breakdown(sets(1, "Pull-up", 5, weightKg = 15.2), bodyweight, best, doneSetCount = 1)
+        assertTrue(same.of(Xp.Kind.RECORD).isEmpty())
+    }
+
+    @Test
+    fun peaksAndRecordsPayForAtMostThreeLifts() {
+        val names = List(5) { "Lift $it" }
+        val best = history(*names.map { set(it, 5, weightKg = 20.0, id = 1) }.toTypedArray())
+        val sets = names.map { set(it, 8, weightKg = 30.0) }
+        val bd = Xp.breakdown(sets, bodyweight, best, doneSetCount = sets.size)
+        assertEquals(Xp.MAX_BONUS_LIFTS * Xp.RECORD_BONUS, bd.of(Xp.Kind.RECORD).single().xp)
+    }
+
+    @Test
+    fun noBonusIsPaidOnAnImport() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0))
+        val bd = Xp.breakdown(
+            sets(1, "Pull-up", 8, weightKg = 20.0, rpe = 9), bodyweight, best, peakLifts = mapOf("pull-up" to Xp.PeakAward(Xp.PEAK_BONUS, "heavier")),
+            doneSetCount = 1, trial = Xp.TrialFacts(earnsBonuses = false, weekCovered = true, welcomeBack = true),
+        )
+        assertEquals(listOf(Xp.Kind.EXERCISE, Xp.Kind.COMPLETION), bd.lines.map { it.kind })
+    }
+
+    // ------------------------------------------------------------ trial bonuses
+
+    @Test
+    fun honestEffortIsPaidOnceAndOnlyWhenEveryLiftsTopSetIsRated() {
+        val rated = sets(3, "Pull-up", 5, rpe = 8)
+        val bd = Xp.breakdown(rated + sets(2, "Dip", 8, rpe = 9), bodyweight, doneSetCount = 5)
+        assertEquals(Xp.HONEST_EFFORT_BONUS, bd.of(Xp.Kind.HONEST_EFFORT).single().xp)
+        // A lift whose top set is unrated spoils it.
+        val unrated = Xp.breakdown(rated + sets(2, "Dip", 8), bodyweight, doneSetCount = 5)
+        assertTrue(unrated.of(Xp.Kind.HONEST_EFFORT).isEmpty())
+        // The top set is the one that matters: an unrated lighter set beside a rated heaviest one is fine.
+        val mixed = listOf(set("Pull-up", 5, weightKg = 20.0, rpe = 9), set("Pull-up", 5, weightKg = 10.0))
+        assertEquals(Xp.HONEST_EFFORT_BONUS, Xp.breakdown(mixed, bodyweight, doneSetCount = 2).of(Xp.Kind.HONEST_EFFORT).single().xp)
+    }
+
+    @Test
+    fun holdsAreExemptFromHonestEffortAndAHoldOnlyTrialEarnsNone() {
+        val withHold = Xp.breakdown(sets(2, "Pull-up", 5, rpe = 8) + hold(2, "Plank", 30), bodyweight, doneSetCount = 4)
+        assertEquals(1, withHold.of(Xp.Kind.HONEST_EFFORT).size)
+        val holdsOnly = Xp.breakdown(hold(2, "Plank", 30), bodyweight, doneSetCount = 2)
+        assertTrue(holdsOnly.of(Xp.Kind.HONEST_EFFORT).isEmpty())
+    }
+
+    @Test
+    fun riteAsPlannedNeedsEveryPlannedSetDoneAndHard() {
+        val pull = set("Pull-up", 5, weightKg = 15.0, id = 1)
+        val dip = set("Dip", 8, id = 2)
+        val done = List(3) { pull } + List(3) { dip }
+        fun bonus(plan: Map<Long, Int>?, sets: List<Xp.SetEffort> = done) = Xp.breakdown(
+            sets, bodyweight, doneSetCount = sets.size, trial = Xp.TrialFacts(plan = plan),
+        ).of(Xp.Kind.RITE_AS_PLANNED).sumOf { it.xp }
+        assertEquals(Xp.RITE_AS_PLANNED_BONUS, bonus(mapOf(1L to 3, 2L to 3)))
+        // A planned set short of done.
+        assertEquals(0, bonus(mapOf(1L to 4, 2L to 3)))
+        // An open trial (no rite) never earns it.
+        assertEquals(0, bonus(null))
+        assertEquals(0, bonus(emptyMap()))
+        // Done, but one of them not hard: rated easy.
+        val easy = List(2) { pull } + set("Pull-up", 5, weightKg = 15.0, id = 1, rpe = 5) + List(3) { dip }
+        assertEquals(0, bonus(mapOf(1L to 3, 2L to 3), easy))
+    }
+
+    @Test
+    fun welcomeBackAndFirstOfTheWeekNeverStack() {
+        val both = Xp.breakdown(sets(1, "Push-up", 8), bodyweight, trial = Xp.TrialFacts(welcomeBack = true, firstOfWeek = true))
+        assertEquals(Xp.WELCOME_BACK_BONUS, both.of(Xp.Kind.WELCOME_BACK).single().xp)
+        assertTrue(both.of(Xp.Kind.FIRST_OF_WEEK).isEmpty())
+        val first = Xp.breakdown(sets(1, "Push-up", 8), bodyweight, trial = Xp.TrialFacts(firstOfWeek = true))
+        assertEquals(Xp.FIRST_OF_WEEK_BONUS, first.of(Xp.Kind.FIRST_OF_WEEK).single().xp)
+    }
+
+    // ------------------------------------------------------------ the live tally
+
+    @Test
+    fun theLiveRunningTotalIsWhatTheSealAwardsForTheSetsDoneSoFar() {
+        val best = history(set("Pull-up", 5, weightKg = 15.0), set("Dip", 8))
+        val all = sets(4, "Pull-up", 4, weightKg = 17.7, rpe = 9) + sets(3, "Dip", 10, rpe = 8)
+        val peaks = mapOf("pull-up" to Xp.PeakAward(Xp.PEAK_BONUS, "heavier"))
+        for (done in 0..all.size) {
+            val soFar = all.take(done)
+            val live = Xp.tally(soFar, bodyweight, best, peaks)
+            val sealed = Xp.breakdown(
+                soFar, bodyweight, best, peaks, doneSetCount = soFar.size,
+                trial = Xp.TrialFacts(quest = true, weekCovered = true, firstOfWeek = true),
+            )
+            assertEquals("after $done sets", live, sealed.setDriven)
+        }
+        // Whole trial: the award is the tally plus the trial-level bonuses, nothing else.
+        val live = Xp.tally(all, bodyweight, best, peaks)
+        val sealed = Xp.breakdown(all, bodyweight, best, peaks, doneSetCount = all.size)
+        val trialLevel = sealed.lines.filter { !it.kind.setDriven }.sumOf { it.xp }
+        assertEquals(live + trialLevel, sealed.total)
+        assertEquals(Xp.COMPLETION_BONUS + Xp.HONEST_EFFORT_BONUS, trialLevel)
+    }
+
+    // ------------------------------------------------------------ levels
+
+    @Test
+    fun levelsAreUnchanged() {
         assertEquals(1, Xp.levelFor(0))
-        assertEquals(1, Xp.levelFor(99))
-    }
-
-    @Test
-    fun `level two exactly at threshold`() {
         assertEquals(2, Xp.levelFor(100))
-    }
-
-    @Test
-    fun `level three after accumulating level one and two costs`() {
-        // 100 (L1->L2) + 200 (L2->L3) = 300
         assertEquals(3, Xp.levelFor(300))
-        assertEquals(2, Xp.levelFor(299))
-    }
-
-    @Test
-    fun `progress reports remainder into current level`() {
-        val progress = Xp.progress(350)
-        assertEquals(3, progress.level)
-        assertEquals(50L, progress.intoLevel)
-        assertEquals(300L, progress.needed)
-    }
-
-    @Test
-    fun `negative xp treated as zero`() {
-        assertEquals(1, Xp.levelFor(-50))
+        assertEquals(0, Xp.rollsDue(3, 3, 0))
+        assertEquals(1, Xp.rollsDue(3, 4, 3))
+        assertEquals(0, Xp.rollsDue(3, 4, 5))
     }
 }

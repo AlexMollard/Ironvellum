@@ -87,6 +87,7 @@ import com.ironvellum.app.domain.carriesFrom
 import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.SetRecords
@@ -112,6 +113,7 @@ import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WeighIn
 import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.XpRescore
 import com.ironvellum.app.domain.EXERCISE_NOTE_MAX
 import com.ironvellum.app.domain.ExerciseNote
 import com.ironvellum.app.domain.Xp
@@ -639,6 +641,14 @@ class Repository(
                 )
             },
         )
+    }
+
+    /**
+     * Several rites rewritten as one all-or-nothing write, so a change that spans rites (a movement moved
+     * between two of them, a swap of days) cannot land half, and Undo puts every one of them back together.
+     */
+    suspend fun savePlannedPresets(updates: List<Pair<Long, PlannedPreset>>) = db.withTransaction {
+        updates.forEach { (id, preset) -> savePlannedPreset(id, preset) }
     }
 
     /** What an import did: workouts written and exercise names the catalogue lacks. */
@@ -1377,7 +1387,41 @@ class Repository(
         val rankUp: String? = null,
         /** Inscriptions this seal's level-up banked ([Xp.rollsDue]); 0 when it did not level up or the levels had paid. */
         val inscriptionsBanked: Int = 0,
+        /** The award in segments, one per movement and named bonus; [xpAwarded] is their sum. */
+        val breakdown: Xp.Breakdown = Xp.Breakdown.EMPTY,
     )
+
+    /**
+     * The lifter's completed trials priced into one [SessionXp], with
+     * [excludeSessionId] left out so a trial is never its own benchmark.
+     */
+    private suspend fun xpBook(scoring: SessionScoring, excludeSessionId: Long?, beforeMs: Long): SessionXp =
+        scoring.book(
+            completed = observeHistory().first(),
+            bodyweightAt = SetRecords.bodyweightLookup(observeStats().first()),
+            excludeSessionId = excludeSessionId,
+            beforeMs = beforeMs,
+        )
+
+    /**
+     * The trial-level facts of [session] (quest, week covered, rite as
+     * planned, welcome back, first of the week), decided from the other
+     * completed trials alone so a reseal can never pay one twice.
+     */
+    private suspend fun trialFacts(
+        session: SessionEntity,
+        scoring: SessionScoring,
+        book: SessionXp,
+        sets: List<SetLogEntity>,
+        quest: Boolean,
+    ): Xp.TrialFacts {
+        val planned = session.presetId?.let { pid ->
+            presetDao.presetWithEntries(pid)?.entries
+                ?.groupBy { it.exerciseId }
+                ?.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
+        }
+        return book.factsFor(session.toDomain(), scoring.domainSets(sets), planned, quest)
+    }
 
     suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
         val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
@@ -1388,7 +1432,6 @@ class Repository(
         // and feeds the strength score; activities earn XP from ActivityScore
         // and contribute NOTHING to strength. SessionScoring owns the split.
         val scoring = SessionScoring(exerciseDao.observeAll().first())
-        val xp = scoring.xp(doneSets, latestBodyweight)
         val sessionStrength = scoring.strength(doneSets, latestBodyweight, profileSex())
 
         // Quest bonus: completing the preset scheduled for today — ONCE, and
@@ -1401,7 +1444,9 @@ class Repository(
             presetDao.presetWithEntries(pid)?.preset?.scheduledDay == today &&
                 sessionDao.countCompletedSince(pid, todayStart) == 0
         } == true
-        val totalXpGain = xp + if (questBonus) Xp.QUEST_BONUS else 0
+        val book = xpBook(scoring, excludeSessionId = sessionId, beforeMs = session.startedAtMs)
+        val breakdown = scoring.breakdown(doneSets, latestBodyweight, book, trialFacts(session, scoring, book, doneSets, questBonus))
+        val totalXpGain = breakdown.total
 
         val before = profileDao.get() ?: error("Profile missing")
         val levelBefore = Xp.levelFor(before.totalXp)
@@ -1458,6 +1503,7 @@ class Repository(
             durationMinutes = durationMinutes,
             rankUp = rankUp,
             inscriptionsBanked = inscriptionsBanked,
+            breakdown = breakdown,
         )
     }
 
@@ -2558,16 +2604,65 @@ class Repository(
         val stats = observeStats().first()
         val bodyweight = if (stats.isEmpty()) null else SetRecords.bodyweightLookup(stats)(session.startedAtMs)
         val scoring = SessionScoring(catalogue)
+        val book = xpBook(scoring, excludeSessionId = sessionId, beforeMs = session.startedAtMs)
         val settlement = SealedEdit.settle(
             xpAwarded = session.xpAwarded,
             sealedXp = sealedBase(session),
-            oldSetsXp = scoring.xp(sessionDao.setsFor(sessionId), bodyweight),
-            newSetsXp = scoring.xp(rows, bodyweight),
+            oldSetsXp = scoring.xp(sessionDao.setsFor(sessionId), bodyweight, book),
+            newSetsXp = scoring.xp(rows, bodyweight, book),
             totalXp = profileDao.get()?.totalXp ?: 0L,
             completedAtMs = completedAt,
             nowMs = nowMs,
         )
         return AmendPlan(session, rows, settlement, scoring.strength(rows, bodyweight, profileSex()))
+    }
+
+    // ------------------------------------------------------------ XP rescore (debug builds only)
+
+    /**
+     * What [applyXpRescore] would do, without writing anything: every non-imported sealed trial priced with the
+     * current rules ([XpRescore.reprice]) and the profile's new total and level ([XpRescore.plan]).
+     * Debug builds only: a release build refuses, and its UI never offers it.
+     */
+    suspend fun previewXpRescore(): XpRescore.Plan {
+        check(com.ironvellum.app.BuildConfig.DEBUG) { "The XP rescore exists in debug builds only" }
+        return planXpRescore()
+    }
+
+    /**
+     * Re-prices every non-imported sealed trial and moves the profile's total by the sum of the deltas, in ONE
+     * transaction. Each trial's `xpAwarded` becomes its new price and a recorded `sealedXp` shifts by the same delta;
+     * `editedAtMs` is untouched (a rescore is not an amendment) and the push fingerprint, which includes `xpAwarded`,
+     * re-uploads the changed trials by itself. The total never goes below the floor of the current level, a rise
+     * banks inscriptions only through [bankLevelRolls] (each level pays once, ever), and a second run changes nothing.
+     */
+    suspend fun applyXpRescore(): XpRescore.Plan = db.withTransaction {
+        check(com.ironvellum.app.BuildConfig.DEBUG) { "The XP rescore exists in debug builds only" }
+        val plan = planXpRescore()
+        plan.changed.forEach { change ->
+            val row = sessionDao.byId(change.sessionId) ?: return@forEach
+            sessionDao.updateSession(row.copy(xpAwarded = change.newXp, sealedXp = change.newSealedXp))
+        }
+        if (plan.applied != 0L) profileDao.addXp(plan.applied)
+        if (plan.levelAfter > plan.levelBefore) bankLevelRolls(plan.levelBefore, plan.levelAfter)
+        plan
+    }
+
+    private suspend fun planXpRescore(): XpRescore.Plan {
+        val scoring = SessionScoring(exerciseDao.observeAll().first())
+        val history = observeHistory().first()
+        val stats = observeStats().first()
+        val presets = presetDao.observePresets().first()
+        val bodyweightAt = SetRecords.bodyweightLookup(stats)
+        val planned = presets.associate { pw ->
+            pw.preset.id to pw.entries.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
+        }
+        val days = presets.associate { it.preset.id to it.preset.scheduledDay }
+        val changes = withContext(kotlinx.coroutines.Dispatchers.Default) {
+            XpRescore.reprice(history, scoring.exercises, bodyweightAt, planned::get, days::get)
+        }
+        val total = profileDao.get()?.totalXp ?: 0L
+        return XpRescore.plan(changes, total, (gachaDao.get() ?: GachaStateEntity()).rollLevelMark)
     }
 
     suspend fun rename(name: String) {
@@ -3154,6 +3249,10 @@ class Repository(
     ): MergeResult = db.withTransaction {
         val scoring = SessionScoring(exerciseDao.observeAll().first())
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
+        // Each imported workout is judged against everything before it: the log as it stood,
+        // then the workouts of this file already merged. No bonus is paid on an import.
+        val bodyweightAt = SetRecords.bodyweightLookup(observeStats().first())
+        val priced = observeHistory().first().toMutableList()
 
         var insertedSets = 0
         var skipped = 0
@@ -3214,7 +3313,14 @@ class Repository(
             sessionsInserted++
 
             // Per-session XP, priced exactly as completeSession prices it.
-            val sessionXp = scoring.xp(setEntities, latestBodyweight)
+            val sessionXp = scoring.xp(setEntities, latestBodyweight, scoring.book(priced, bodyweightAt, beforeMs = workout.startedAtMs))
+            priced += WorkoutSession(
+                id = sessionId,
+                label = workout.label,
+                startedAtMs = workout.startedAtMs,
+                completedAtMs = workout.completedAtMs ?: workout.startedAtMs,
+                imported = true,
+            ) to scoring.domainSets(setEntities)
             if (sessionXp > 0) {
                 sessionDao.updateSession(sessionDao.byId(sessionId)!!.copy(xpAwarded = sessionXp))
             }

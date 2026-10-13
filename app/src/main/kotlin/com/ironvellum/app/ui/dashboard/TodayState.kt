@@ -5,7 +5,7 @@ import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
-import com.ironvellum.app.domain.LiftRecord
+import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutPreset
@@ -162,17 +162,25 @@ internal fun veilStrength(lastCollectedAtMs: Long, nowMs: Long, houses: HouseEff
 }
 
 /** The set a peak was lifted with, as the Ledger's rows read it: "100 kg × 5", "+11 kg × 8" for load added to the body. */
-internal fun peakSetText(peak: LiftRecord): String {
-    val set = peak.bestSet ?: return "est. ${Units.fixed(peak.bestE1rmKg, 0)}"
-    val figure = setFigureText(set, ExerciseMetric.REPS, weighted = !peak.bestSetAddsToBody)
-    return if (peak.bestSetAddsToBody && (set.weightKg ?: 0.0) > 0.0) "+$figure" else figure
+internal fun peakSetText(peak: RepMax.Recent): String {
+    val set = peak.hit.set
+    val figure = setFigureText(set, if (peak.isHold) ExerciseMetric.HOLD else ExerciseMetric.REPS, weighted = !peak.addsToBody)
+    return if (peak.addsToBody && (set.weightKg ?: 0.0) > 0.0) "+$figure" else figure
 }
 
-/** "3 kg", "2.5 kg": how far the peak rose above the lift's earlier best (an estimated one-rep max), never below 0.1. */
-internal fun peakGainText(peak: LiftRecord): String {
-    val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
-    val gain = (peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)).coerceAtLeast(0.1)
-    return Units.withUnit(Math.round(gain * 10) / 10.0)
+/** "2.5 kg" for a heavier peak (never below 0.1), "2 reps" or "5s" for a more-reps one: how far it passed the earlier best. */
+internal fun peakGainText(peak: RepMax.Recent): String {
+    val hit = peak.hit
+    return when (hit.kind) {
+        RepMax.Kind.HEAVIER -> {
+            val gain = (RepMax.loadOf(hit.set) - hit.was.weightKg).coerceAtLeast(0.1)
+            Units.withUnit(Math.round(gain * 10) / 10.0)
+        }
+        RepMax.Kind.MORE_REPS -> {
+            val gain = RepMax.figureOf(hit.set, peak.isHold) - hit.was.figure
+            if (peak.isHold) "${gain}s" else "$gain ${if (gain == 1) "rep" else "reps"}"
+        }
+    }
 }
 
 /**

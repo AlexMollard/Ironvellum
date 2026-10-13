@@ -104,6 +104,20 @@ internal fun <T> scheduledRoutine(all: List<T>, dayOf: (T) -> Int?): List<T> =
     all.filter { dayOf(it) != null }.ifEmpty { all }
 
 /**
+ * The rites Weekly coverage leaves out: those without a day, once at least one rite has one (until then the
+ * whole board counts, see [scheduledRoutine]). Empty when every rite is counted.
+ */
+internal fun <T> uncountedRoutine(all: List<T>, dayOf: (T) -> Int?): List<T> =
+    if (all.any { dayOf(it) != null }) all.filter { dayOf(it) == null } else emptyList()
+
+/**
+ * The day a new rite is ticked for when the lifter is asked: [preferred] while no rite holds it, otherwise the
+ * first free weekday, and null ("No day") only when all seven are taken.
+ */
+internal fun defaultRiteDay(preferred: Int?, taken: Set<Int>): Int? =
+    preferred?.takeIf { it !in taken } ?: firstFreeWeekday(taken)
+
+/**
  * The progression engine must follow the goal: a hypertrophy plan left on the strength mode progressed by
  * the rep band, never by double progression. GENERAL and SKILL leave the profile mode alone.
  */

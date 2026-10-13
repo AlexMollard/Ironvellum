@@ -5,7 +5,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -112,14 +112,18 @@ class ProgramBuilderStateTest {
         driver.awaitText("Add this rite")
         val before = runBlocking { app.repository.presetCount() }
 
+        // Saving a rite asks for its day first; the sheet's own button is the one that writes.
+        driver.click("Add this rite")
+        driver.awaitText("Which day is")
+
         // Two taps with no frame between them: the first has not recomposed the button away yet.
-        val add = compose.onAllNodesWithText("Add this rite").onFirst()
+        val add = compose.onAllNodesWithText("Add this rite").onLast()
         add.performSemanticsAction(SemanticsActions.OnClick)
         add.performSemanticsAction(SemanticsActions.OnClick)
 
         await("the save to land") { runBlocking { app.repository.presetCount() } > before }
         // A third tap after the write landed, while the screen is still up, must not save again either.
-        add.performSemanticsAction(SemanticsActions.OnClick)
+        compose.onAllNodesWithText("Add this rite").onLast().performSemanticsAction(SemanticsActions.OnClick)
         driver.settle(4)
         assertEquals("one tap pair, one rite", before + 1, runBlocking { app.repository.presetCount() })
         assertTrue("a landed save keeps the button locked", vm.saving.value)

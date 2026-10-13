@@ -6,7 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -23,10 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.ProbeResult
 import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -121,6 +128,11 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
             },
             onDismiss = { confirmClearCrashes = false },
         )
+    }
+
+    if (BuildConfig.DEBUG) {
+        val rescore by viewModel.rescore.collectAsStateWithLifecycle()
+        rescore?.let { RescoreDialog(it, viewModel) }
     }
 
     SettingsPage(SettingsSection.ADVANCED.title, onBack) {
@@ -249,5 +261,99 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                 subline = sync.coverage ?: "Days filled per metric; appears after Connect & Sync.",
             )
         }
+        // Debug builds only: BuildConfig.DEBUG is a constant, so a release build has no trace of this group.
+        if (BuildConfig.DEBUG) {
+            Spacer(Modifier.height(24.dp))
+            Text(
+                "DEVELOPER",
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            )
+            InkRowPanel(Modifier.fillMaxWidth()) {
+                ListRow(
+                    "Rescore XP with the new rules",
+                    subline = "Previews every trial's old and new XP first; nothing is written until you confirm.",
+                    onClick = viewModel::previewRescore,
+                )
+            }
+        }
     }
+}
+
+/** The rescore's preview (per trial, old to new, the total and the level) and, on confirm, its result. Debug builds only. */
+@Composable
+private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsViewModel) {
+    val plan = ui.plan
+    val changed = plan?.changed.orEmpty()
+    IronvellumDialog(
+        onDismissRequest = { if (!ui.busy) viewModel.dismissRescore() },
+        title = {
+            Text(
+                when {
+                    ui.applied -> "XP rescored"
+                    plan != null -> "Rescore XP with the new rules?"
+                    ui.error != null -> "Rescore failed"
+                    else -> "Pricing every trial…"
+                },
+            )
+        },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
+                if (ui.error != null) Text(ui.error)
+                if (plan == null && ui.error == null) InkSpinner(Modifier.padding(16.dp))
+                if (plan != null) {
+                    val signed = { n: Long -> (if (n > 0) "+" else "") + n }
+                    Text(
+                        "${changed.size} of ${plan.changes.size} trials change.\n" +
+                            "Trial XP ${signed(plan.delta)}; total XP ${plan.totalBefore} \u2192 ${plan.totalAfter}" +
+                            " (${signed(plan.applied)}).\n" +
+                            "Level ${plan.levelBefore} \u2192 ${plan.levelAfter}" +
+                            (if (plan.clamped) " (held: the level never drops)" else "") +
+                            (if (plan.inscriptionsDue > 0) ", ${plan.inscriptionsDue} inscription(s) due" else "") + ".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                    )
+                    if (changed.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
+                            items(changed, key = { it.sessionId }) { c ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Text(
+                                        formatDate(c.startedAtMs, "d MMM yy") + " \u00B7 " + c.label + if (c.amended) " (amended)" else "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = IronvellumColors.InkMuted,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        "${c.oldXp} \u2192 ${c.newXp}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = IronvellumColors.Ink,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            when {
+                ui.applied || (plan == null && !ui.busy) -> IronvellumButton(label = "Close", onClick = viewModel::dismissRescore)
+                plan != null && !ui.busy -> IronvellumButton(
+                    label = "Apply",
+                    onClick = viewModel::applyRescore,
+                    enabled = changed.isNotEmpty() || plan.applied != 0L,
+                    danger = true,
+                )
+                else -> InkSpinner(Modifier)
+            }
+        },
+        dismissButton = if (ui.applied || ui.busy) null else {
+            { IronvellumButton(label = "Cancel", onClick = viewModel::dismissRescore, quiet = true) }
+        },
+    )
 }
