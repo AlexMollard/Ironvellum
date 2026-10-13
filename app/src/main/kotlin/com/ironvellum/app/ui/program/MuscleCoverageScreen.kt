@@ -201,6 +201,7 @@ fun MuscleCoverageScreen(
     onGenerateSession: () -> Unit,
     onOpenRite: (Long) -> Unit = {},
     onOpenRites: () -> Unit = {},
+    onOptimise: () -> Unit = {},
     viewModel: MuscleCoverageViewModel =
         viewModel(factory = viewModelFactory {
             initializer { MuscleCoverageViewModel(ironvellumRepository()) }
@@ -254,10 +255,12 @@ fun MuscleCoverageScreen(
                 },
             )
         }
-        if (!empty && tally.gaps > 0) {
+        val actions = dockActions(tally, planned = view == CoverageView.CYCLE, hasRites = ui.hasAnyPreset)
+        if (!empty && actions.any) {
             CoverageDock(
                 headline = coverageHeadline(tally),
-                onForge = onGenerateSession,
+                onForge = onGenerateSession.takeIf { actions.forge },
+                onOptimise = onOptimise.takeIf { actions.optimise },
             )
         }
     }
@@ -309,20 +312,23 @@ internal fun CoveragePreviewScreen(
     }
 }
 
-/** What the page is short of, and the way to forge a rite that fills it. */
+/**
+ * What the page is short of, and the ways to act on it: forge a rite that fills a gap, or optimise the rites
+ * already there. With both, Forge is the one filled button (the page's primary action) and Optimise sits beside
+ * it as a quiet one; each shows only when it has something to do.
+ */
 @Composable
-private fun CoverageDock(headline: String, onForge: () -> Unit) {
-    Row(
+private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (() -> Unit)?) {
+    Column(
         Modifier
             .fillMaxWidth()
             .background(IronvellumColors.VaultHigh)
             .drawBehind { drawRect(IronvellumColors.Rune, size = Size(size.width, 1.dp.toPx())) }
             .navigationBarsPadding()
             .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f)) {
+        Column {
             Text(
                 headline,
                 style = MaterialTheme.typography.titleMedium,
@@ -334,7 +340,19 @@ private fun CoverageDock(headline: String, onForge: () -> Unit) {
                 color = IronvellumColors.InkMuted,
             )
         }
-        IronvellumButton(label = "Forge a rite", onClick = onForge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            if (onOptimise != null) {
+                IronvellumButton(
+                    label = "Optimise rites",
+                    onClick = onOptimise,
+                    quiet = onForge != null,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            if (onForge != null) {
+                IronvellumButton(label = "Forge a rite", onClick = onForge, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
 

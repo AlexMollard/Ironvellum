@@ -2,10 +2,15 @@ package com.ironvellum.app.ui.program
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -21,7 +26,9 @@ import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.FlowDriver
+import com.ironvellum.app.ui.ShotRecorder
 import com.ironvellum.app.ui.TestProfile
+import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -68,6 +75,21 @@ class CoverageSaveDayTest {
 
     private fun saved(): List<WorkoutPreset> = runBlocking { app.repository.observePresets().first() }
 
+    /** The app's own look for what is under test: the dark window and the Abyss page, below the status bar. */
+    private fun host(content: @androidx.compose.runtime.Composable () -> Unit) {
+        compose.activityRule.scenario.onActivity { activity ->
+            ShotRecorder.darkWindow(activity)
+            activity.setContent {
+                IronvellumTheme {
+                    Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss).statusBarsPadding()) { content() }
+                }
+            }
+        }
+        driver.settle()
+    }
+
+    private fun shot(name: String) = ShotRecorder.take(compose, name)
+
     private fun fixture(name: String, day: Int?): Long =
         runBlocking { app.repository.savePlannedPreset(null, PlannedPreset(name, "", day, listOf(press))) }
 
@@ -97,29 +119,27 @@ class CoverageSaveDayTest {
         val gapsBefore = gaps()
         assertTrue("one bench-press rite leaves gaps", gapsBefore > 0)
 
-        compose.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                IronvellumTheme {
-                    var page by remember { mutableStateOf("coverage") }
-                    if (page == "coverage") {
-                        MuscleCoverageScreen(onBack = {}, onGenerateSession = { page = "builder" })
-                    } else {
-                        ProgramBuilderScreen("session", null, onDone = { page = "coverage" })
-                    }
-                }
+        host {
+            var page by remember { mutableStateOf("coverage") }
+            if (page == "coverage") {
+                MuscleCoverageScreen(onBack = {}, onGenerateSession = { page = "builder" })
+            } else {
+                ProgramBuilderScreen("session", null, onDone = { page = "coverage" })
             }
         }
-        driver.settle()
         driver.awaitText("Forge a rite")
+        shot("day-01-coverage-dock")
         driver.click("Forge a rite")
         driver.awaitText("PROPOSED RITE")
         // The proposal waits for the catalogue; the dock appears with it.
         driver.awaitText("Add this rite")
+        shot("day-02-builder-add-this-rite")
         driver.click("Add this rite")
 
         driver.awaitText("Which day is")
         // Monday holds the fixture, so Tuesday is the first free day and it is ticked.
         driver.awaitText("Tuesday is free.")
+        shot("day-03-day-sheet-first-free-day")
         clickLast("Add this rite")
 
         await("the rite to be saved") { saved().size == 2 }
@@ -132,15 +152,13 @@ class CoverageSaveDayTest {
     @Test
     fun noDayIsOfferedAndLeavesTheRiteOutOfTheCount() {
         fixture("Fixture Push", day = 1)
-        compose.activityRule.scenario.onActivity { activity ->
-            activity.setContent { IronvellumTheme { ProgramBuilderScreen("session", null, onDone = {}) } }
-        }
-        driver.settle()
+        host { ProgramBuilderScreen("session", null, onDone = {}) }
         driver.awaitText("Add this rite")
         driver.click("Add this rite")
         driver.awaitText("Which day is")
         driver.click("No day")
         driver.awaitText("A rite with no day is not counted in Weekly coverage.")
+        shot("day-04-day-sheet-no-day")
         clickLast("Add this rite")
         await("the rite to be saved") { saved().size == 2 }
         assertEquals(null, saved().first { it.name != "Fixture Push" }.scheduledDay)
@@ -152,18 +170,14 @@ class CoverageSaveDayTest {
         val loose = fixture("Fixture Loose", day = null)
         var openedRite: Long? = null
         var openedList = 0
-        compose.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                IronvellumTheme {
-                    MuscleCoverageScreen(
-                        onBack = {}, onGenerateSession = {},
-                        onOpenRite = { openedRite = it }, onOpenRites = { openedList++ },
-                    )
-                }
-            }
+        host {
+            MuscleCoverageScreen(
+                onBack = {}, onGenerateSession = {},
+                onOpenRite = { openedRite = it }, onOpenRites = { openedList++ },
+            )
         }
-        driver.settle()
         driver.awaitText("1 rite has no day, so it isn't counted")
+        shot("day-05-coverage-uncounted-line")
         driver.click("1 rite has no day, so it isn't counted")
         assertEquals(loose, openedRite)
         assertEquals(0, openedList)

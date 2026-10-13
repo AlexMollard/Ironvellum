@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -95,7 +96,7 @@ internal fun RiteDaySheet(
                 }
             }
         },
-        confirmButton = { IronvellumButton(label = "Add this rite", onClick = onConfirm, enabled = !saving) },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true) },
+        confirmButton = { IronvellumButton(label = "Add this rite", onClick = onConfirm, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) },
+        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
     )
 }

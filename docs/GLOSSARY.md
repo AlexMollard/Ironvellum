@@ -72,7 +72,7 @@ Settings keeps the name **Settings**.
 | **Seal** | Finishing a trial | button "Seal the Trial", header "SEALED", "Tick a set to seal the trial", "Seal anyway?" | finish, claim victory, victory, conquered, quest complete |
 | **Chronicle** | The history of sealed trials | "FULL CHRONICLE", "Trial of 12 Sep", "erased from the Chronicle", imported ones: "Imported trial" | log, workout log, record, history, lifetime record, activity log |
 | **Yours** | An exercise the lifter made | tag "YOURS", picker section "Yours", row "New exercise" | custom, user-created, homemade |
-| **Peak** | A personal best on an exercise | "NEW PEAK", "first peak", "PEAKS PER SET" | PR, new record, personal record |
+| **Peak** | A set that beat everything done before it on an exercise: heavier for the same or more reps (3 or more), or more reps at the same or a greater load | "NEW PEAK", "first peak", "PEAKS PER SET" | PR, new record, personal record |
 | **Oath** | Consecutive days kept | "Oath · 12 days kept", "Your oath holds", "Keep a 7-day oath" | streak |
 | **Respite** | A day the cycle leaves free | "RESPITE", "Your oath holds through respite" | rest day, rest up (rest *between sets* stays plain) |
 | **The Summons** | The daily reminder notification and its setting | "THE SUMMONS · Heavy Pull", settings header THE SUMMONS | daily reminder, quest open, nudge |
@@ -82,6 +82,7 @@ Settings keeps the name **Settings**.
 | **Units** | kg or lb, a Training mode setting. Storage is kg everywhere; it changes only what is shown and typed | "UNITS · kg lb", "225 lb × 5", "Load (lb)" | imperial, metric |
 | **The Forge** | The builder that makes rites and cycles | "Forge a Cycle", "Forge a Rite", "What my week is missing" | program builder, generate a routine |
 | **Temper** | The Forge improving an existing rite | "Temper this rite", "Before / After" | improve |
+| **Optimise** | The coverage page's suggestions that change rites you already have: a movement for a gap, an eased heavy muscle, two movements doing one job swapped, days spread for recovery. Each change is kept or skipped, the kept ones apply together, and Undo puts every touched rite back | "Optimise rites", "Apply 2 changes", "Undo, put Upper A back", "Best match" | auto-fix, tweak, rebalance |
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
 | **Set type** | How one set was done: Working, Warm-up, Drop, Failure or Rest-pause. A tag on the set row, changed by tapping it. Only a warm-up is left out of XP, volume and peaks | "Set types", "Mark as warm-up", "Count as a working set", tags W · D · F · R | set kind (in copy), set mode, set flavour |
 | **Superset** | Adjacent exercises done as one group, a pair or a triple: a set of each in turn, rest only after the last of the round. Linked from an exercise's menu in the trial or from a rite's exercise card | "Superset with Barbell row", "Superset 1 · Barbell row next", "Unlink", "NEXT · NO REST YET" | combo set, giant set, circuit |

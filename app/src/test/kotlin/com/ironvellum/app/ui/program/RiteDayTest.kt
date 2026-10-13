@@ -47,4 +47,30 @@ class RiteDayTest {
         assertEquals("A rite with no day is not counted in Weekly coverage.", daySheetNote(null, emptyList()))
         assertEquals("Wednesday is free.", daySheetNote(3, emptyList()))
     }
+
+    // ---- the coverage dock's two actions
+
+    private fun tally(vararg states: Pair<com.ironvellum.app.domain.Muscle, CoverageState>) =
+        CoverageTally(JUDGED_MUSCLES.associateWith { CoverageState.COVERED } + states)
+
+    @Test
+    fun `a gap offers forging and optimising on the planned week, and forging alone on the last 7 days`() {
+        val gap = tally(com.ironvellum.app.domain.Muscle.CALVES to CoverageState.BELOW_MINIMUM)
+        assertEquals(DockActions(forge = true, optimise = true), dockActions(gap, planned = true, hasRites = true))
+        assertEquals(DockActions(forge = true, optimise = false), dockActions(gap, planned = false, hasRites = true))
+    }
+
+    @Test
+    fun `a heavy muscle alone offers optimising and not forging`() {
+        val heavy = tally(com.ironvellum.app.domain.Muscle.FRONT_DELTS to CoverageState.HEAVY)
+        assertEquals(DockActions(forge = false, optimise = true), dockActions(heavy, planned = true, hasRites = true))
+        assertEquals(DockActions(forge = false, optimise = false), dockActions(heavy, planned = false, hasRites = true))
+    }
+
+    @Test
+    fun `nothing to fix, or no saved rite, offers no optimising`() {
+        assertTrue(!dockActions(tally(), planned = true, hasRites = true).any)
+        val gap = tally(com.ironvellum.app.domain.Muscle.CALVES to CoverageState.NOT_TRAINED)
+        assertEquals(false, dockActions(gap, planned = true, hasRites = false).optimise)
+    }
 }
