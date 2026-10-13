@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 6,
-  "exportedAt": "2026-10-13T00:17:45.366395+00:00",
+  "exportedAt": "2026-10-13T00:32:42.344952+00:00",
   "batchComplete": false,
   "frames": [
     {
@@ -1622,11 +1622,11 @@
     },
     {
       "id": "standing-leg-curl-1.png",
-      "sha256": "e64cf19f8815a2468e80dea86634465f96b12006eda48d7a800f828685635a93",
+      "sha256": "0eec466d96f9826a918e043e373df8e701cc5534c0cc5ab6acb5db3ae79124af",
       "status": "pending",
-      "note": "Replacement for: The bar is between his legs ",
+      "note": "Replacement for: Replacement for: The bar is between his legs ",
       "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T00:17:45.366395+00:00"
+      "updatedAt": "2026-10-13T00:32:42.344952+00:00"
     },
     {
       "id": "walking-lunge-1.png",
