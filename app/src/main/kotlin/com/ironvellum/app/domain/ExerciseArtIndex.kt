@@ -511,7 +511,7 @@ object ExerciseArtIndex {
         "stand-to-stand bridge" to ref("own_stand-to-stand-bridge", 1),
         "standing calf raise" to ref("ek_0282", 1),
         "standing dumbbell press" to ref("wg_standing-dumbbell-press", 1),
-        "standing leg curl" to ref("ek_0120", 1),
+        "standing leg curl" to ref("own_standing-leg-curl", 1),
         "standing overhead barbell triceps extension" to ref("ek_0201", 1),
         "standing quad stretch" to ref("wg_standing-quad-stretch", 1),
         "standing towel triceps extension" to ref("ek_0202", 1),

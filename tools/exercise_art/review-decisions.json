@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 6,
-  "exportedAt": "2026-10-13T00:32:42.344952+00:00",
-  "batchComplete": false,
+  "exportedAt": "2026-10-13T00:35:53.421123+00:00",
+  "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -1623,10 +1623,10 @@
     {
       "id": "standing-leg-curl-1.png",
       "sha256": "0eec466d96f9826a918e043e373df8e701cc5534c0cc5ab6acb5db3ae79124af",
-      "status": "pending",
-      "note": "Replacement for: Replacement for: The bar is between his legs ",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T00:32:42.344952+00:00"
+      "status": "approved",
+      "note": "Approved by user in chat: Looks good now, I approve. Do the next batch of 50.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T00:35:53.421123+00:00"
     },
     {
       "id": "walking-lunge-1.png",
