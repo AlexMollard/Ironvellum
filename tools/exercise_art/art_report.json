@@ -1,814 +1,4 @@
 {
- "ek_0265": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.25
-   ],
-   [
-    4.1,
-    0.2
-   ]
-  ],
-  "window": [
-   8.2,
-   34.2,
-   413.7,
-   744.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0266": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.28
-   ],
-   [
-    3.3,
-    0.21
-   ]
-  ],
-  "window": [
-   33.2,
-   160.2,
-   466.7,
-   743.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0268": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.2,
-    0.13
-   ],
-   [
-    3.9,
-    0.18
-   ]
-  ],
-  "window": [
-   20.3,
-   -9.7,
-   664.4,
-   479.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0270": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "heavy strokes 6.3",
-   "heavy strokes 6.3"
-  ],
-  "stroke": [
-   [
-    6.3,
-    0.15
-   ],
-   [
-    6.3,
-    0.15
-   ]
-  ],
-  "window": [
-   104.0,
-   -6.0,
-   307.0,
-   413.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0272": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.2,
-    0.16
-   ],
-   [
-    4.2,
-    0.13
-   ]
-  ],
-  "window": [
-   35.9,
-   58.9,
-   424.1,
-   623.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0273": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.0,
-    0.11
-   ],
-   [
-    3.0,
-    0.09
-   ]
-  ],
-  "window": [
-   5.9,
-   -11.6,
-   862.1,
-   596.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0274": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.51
-   ],
-   [
-    3.5,
-    0.68
-   ]
-  ],
-  "window": [
-   52.8,
-   103.8,
-   237.4,
-   700.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0275": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.2,
-    0.26
-   ],
-   [
-    2.9,
-    0.32
-   ]
-  ],
-  "window": [
-   5.3,
-   32.3,
-   554.4,
-   804.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0276": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.2,
-    0.17
-   ],
-   [
-    4.2,
-    0.19
-   ]
-  ],
-  "window": [
-   64.0,
-   80.0,
-   468.0,
-   617.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0277": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.21
-   ],
-   [
-    3.7,
-    0.2
-   ]
-  ],
-  "window": [
-   92.3,
-   89.3,
-   294.4,
-   666.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0278": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.2,
-    0.31
-   ],
-   [
-    3.2,
-    0.34
-   ]
-  ],
-  "window": [
-   -11.3,
-   106.7,
-   670.6,
-   775.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0279": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.33
-   ],
-   [
-    4.4,
-    0.33
-   ]
-  ],
-  "window": [
-   -9.1,
-   60.4,
-   414.2,
-   591.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0280": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    2.9,
-    0.08
-   ],
-   [
-    2.9,
-    0.09
-   ]
-  ],
-  "window": [
-   -13.0,
-   -15.0,
-   584.1,
-   896.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0281": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.1,
-    0.24
-   ],
-   [
-    3.1,
-    0.35
-   ]
-  ],
-  "window": [
-   -11.6,
-   114.4,
-   671.2,
-   797.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0282": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    2.8,
-    0.18
-   ],
-   [
-    2.8,
-    0.3
-   ]
-  ],
-  "window": [
-   55.3,
-   38.3,
-   515.5,
-   874.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0284": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.31
-   ],
-   [
-    3.9,
-    0.14
-   ]
-  ],
-  "window": [
-   12.3,
-   5.3,
-   801.3,
-   350.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0285": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.18
-   ],
-   [
-    3.4,
-    0.34
-   ]
-  ],
-  "window": [
-   323.5,
-   13.5,
-   720.0,
-   568.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0286": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.15
-   ],
-   [
-    2.9,
-    0.18
-   ]
-  ],
-  "window": [
-   123.8,
-   53.8,
-   909.5,
-   657.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0287": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.5,
-    0.15
-   ],
-   [
-    5.2,
-    0.25
-   ]
-  ],
-  "window": [
-   49.4,
-   63.4,
-   662.3,
-   572.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0288": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.22
-   ],
-   [
-    4.1,
-    0.22
-   ]
-  ],
-  "window": [
-   37.1,
-   -10.4,
-   336.9,
-   716.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0289": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.5,
-    0.55
-   ],
-   [
-    4.9,
-    0.11
-   ]
-  ],
-  "window": [
-   79.1,
-   80.1,
-   678.8,
-   335.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0290": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.2,
-    0.26
-   ],
-   [
-    4.5,
-    0.27
-   ]
-  ],
-  "window": [
-   12.7,
-   8.7,
-   705.5,
-   319.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0291": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.24
-   ],
-   [
-    4.0,
-    0.33
-   ]
-  ],
-  "window": [
-   12.9,
-   8.9,
-   694.2,
-   319.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0292": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.9,
-    0.2
-   ],
-   [
-    5.8,
-    0.15
-   ]
-  ],
-  "window": [
-   93.1,
-   43.1,
-   609.8,
-   518.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0293": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.9,
-    0.12
-   ],
-   [
-    5.6,
-    0.19
-   ]
-  ],
-  "window": [
-   93.1,
-   100.1,
-   610.8,
-   536.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0295": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   "heavy strokes 6.1"
-  ],
-  "stroke": [
-   [
-    4.3,
-    0.16
-   ],
-   [
-    6.1,
-    0.14
-   ]
-  ],
-  "window": [
-   75.9,
-   52.9,
-   695.2,
-   545.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0296": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.45
-   ],
-   [
-    4.4,
-    0.27
-   ]
-  ],
-  "window": [
-   52.0,
-   45.0,
-   685.0,
-   356.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
  "own_90-degree-push-up": {
   "source": 1,
   "kept": [
@@ -830,6 +20,27 @@
    832.2
   ]
  },
+ "own_ab-wheel-rollout": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.36
+   ]
+  ],
+  "window": [
+   9.3,
+   287.3,
+   1006.3,
+   521.3
+  ]
+ },
  "own_abdominal-draw-in": {
   "source": 1,
   "kept": [
@@ -849,6 +60,27 @@
    194.2,
    1014.5,
    673.5
+  ]
+ },
+ "own_active-bar-hang": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.23
+   ]
+  ],
+  "window": [
+   117.4,
+   10.4,
+   789.3,
+   1005.3
   ]
  },
  "own_advanced-tuck-back-lever": {
@@ -956,6 +188,27 @@
    972.3
   ]
  },
+ "own_ankle-circles": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.34
+   ]
+  ],
+  "window": [
+   275.7,
+   25.7,
+   692.5,
+   979.5
+  ]
+ },
  "own_archer-pull-up": {
   "source": 1,
   "kept": [
@@ -977,6 +230,111 @@
    961.0
   ]
  },
+ "own_archer-push-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.36
+   ]
+  ],
+  "window": [
+   19.6,
+   341.6,
+   985.7,
+   411.7
+  ]
+ },
+ "own_arm-circles": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.23
+   ]
+  ],
+  "window": [
+   28.9,
+   45.9,
+   966.1,
+   944.1
+  ]
+ },
+ "own_arnold-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.3
+   ]
+  ],
+  "window": [
+   288.6,
+   20.6,
+   446.8,
+   988.8
+  ]
+ },
+ "own_assault-bike": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.37
+   ]
+  ],
+  "window": [
+   244.5,
+   23.5,
+   616.0,
+   997.0
+  ]
+ },
+ "own_assisted-chin-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.6
+   ]
+  ],
+  "window": [
+   244.5,
+   22.5,
+   554.0,
+   995.0
+  ]
+ },
  "own_assisted-dip": {
   "source": 1,
   "kept": [
@@ -996,6 +354,27 @@
    19.6,
    673.9,
    991.9
+  ]
+ },
+ "own_assisted-pull-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.1,
+    0.91
+   ]
+  ],
+  "window": [
+   220.1,
+   -1.9,
+   597.8,
+   1022.8
   ]
  },
  "own_back-extension": {
@@ -1103,6 +482,27 @@
    946.6
   ]
  },
+ "own_band-pull-apart": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.33
+   ]
+  ],
+  "window": [
+   37.7,
+   23.7,
+   948.6,
+   980.6
+  ]
+ },
  "own_banded-alternating-curl": {
   "source": 1,
   "kept": [
@@ -1124,6 +524,48 @@
    991.9
   ]
  },
+ "own_banded-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   "doubled outline 1.78"
+  ],
+  "stroke": [
+   [
+    2.4,
+    1.78
+   ]
+  ],
+  "window": [
+   360.2,
+   -0.8,
+   339.5,
+   1013.5
+  ]
+ },
+ "own_banded-clamshell": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.25
+   ]
+  ],
+  "window": [
+   19.5,
+   276.4,
+   999.1,
+   529.1
+  ]
+ },
  "own_banded-crossover": {
   "source": 1,
   "kept": [
@@ -1143,6 +585,153 @@
    23.7,
    798.6,
    983.6
+  ]
+ },
+ "own_banded-dead-bug": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.27
+   ]
+  ],
+  "window": [
+   17.4,
+   266.4,
+   1003.2,
+   539.2
+  ]
+ },
+ "own_banded-donkey-kick": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.43
+   ]
+  ],
+  "window": [
+   41.2,
+   150.2,
+   950.7,
+   749.7
+  ]
+ },
+ "own_banded-face-pull": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.47
+   ]
+  ],
+  "window": [
+   118.9,
+   37.9,
+   817.1,
+   966.1
+  ]
+ },
+ "own_banded-fire-hydrant": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.2
+   ]
+  ],
+  "window": [
+   16.4,
+   209.4,
+   1000.1,
+   658.1
+  ]
+ },
+ "own_banded-frog-pump": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.57
+   ]
+  ],
+  "window": [
+   30.0,
+   210.0,
+   961.0,
+   657.0
+  ]
+ },
+ "own_banded-glute-bridge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.42
+   ]
+  ],
+  "window": [
+   41.8,
+   285.8,
+   972.3,
+   443.3
+  ]
+ },
+ "own_banded-hip-thrust": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   27.5,
+   130.5,
+   996.0,
+   799.0
   ]
  },
  "own_banded-incline-bench-press": {
@@ -1187,6 +776,111 @@
    1015.6
   ]
  },
+ "own_banded-kickback": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.21
+   ]
+  ],
+  "window": [
+   19.5,
+   70.5,
+   998.1,
+   892.1
+  ]
+ },
+ "own_banded-lat-pulldown": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.65
+   ]
+  ],
+  "window": [
+   306.4,
+   8.4,
+   503.2,
+   1002.2
+  ]
+ },
+ "own_banded-lateral-walk": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.14
+   ]
+  ],
+  "window": [
+   210.8,
+   25.8,
+   614.4,
+   976.4
+  ]
+ },
+ "own_banded-monster-walk": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.4,
+    0.18
+   ]
+  ],
+  "window": [
+   273.0,
+   40.0,
+   569.0,
+   960.0
+  ]
+ },
+ "own_banded-pallof-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.17
+   ]
+  ],
+  "window": [
+   221.1,
+   41.1,
+   701.8,
+   955.8
+  ]
+ },
  "own_banded-reverse-fly": {
   "source": 1,
   "kept": [
@@ -1206,6 +900,27 @@
    24.7,
    924.6,
    982.6
+  ]
+ },
+ "own_banded-row": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.22
+   ]
+  ],
+  "window": [
+   15.8,
+   122.8,
+   974.4,
+   834.4
   ]
  },
  "own_banded-upright-row": {
@@ -1439,6 +1154,27 @@
    949.7
   ]
  },
+ "own_barbell-seated-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.31
+   ]
+  ],
+  "window": [
+   128.5,
+   21.5,
+   812.0,
+   994.0
+  ]
+ },
  "own_barbell-side-squat": {
   "source": 1,
   "kept": [
@@ -1500,6 +1236,27 @@
    127.1,
    1024.8,
    822.9
+  ]
+ },
+ "own_barbell-standing-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.29
+   ]
+  ],
+  "window": [
+   76.7,
+   29.7,
+   869.5,
+   979.5
   ]
  },
  "own_barbell-step-up": {
@@ -1670,6 +1427,27 @@
    988.8
   ]
  },
+ "own_bicycle-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.33
+   ]
+  ],
+  "window": [
+   3.1,
+   320.1,
+   1020.7,
+   442.7
+  ]
+ },
  "own_body-leg-lift": {
   "source": 1,
   "kept": [
@@ -1794,6 +1572,27 @@
    202.4,
    866.2,
    670.2
+  ]
+ },
+ "own_cable-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.29
+   ]
+  ],
+  "window": [
+   83.5,
+   11.5,
+   857.1,
+   999.1
   ]
  },
  "own_cable-curl": {
@@ -2111,6 +1910,27 @@
    1000.1
   ]
  },
+ "own_cross-body-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.19
+   ]
+  ],
+  "window": [
+   7.2,
+   313.2,
+   1016.6,
+   579.6
+  ]
+ },
  "own_crow-pose": {
   "source": 1,
   "kept": [
@@ -2151,6 +1971,27 @@
    73.9,
    863.2,
    901.2
+  ]
+ },
+ "own_crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.34
+   ]
+  ],
+  "window": [
+   19.7,
+   258.7,
+   981.6,
+   537.6
   ]
  },
  "own_dancing": {
@@ -2258,6 +2099,27 @@
    796.2
   ]
  },
+ "own_decline-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.11
+   ]
+  ],
+  "window": [
+   53.2,
+   287.2,
+   949.7,
+   670.7
+  ]
+ },
  "own_decline-dumbbell-fly": {
   "source": 1,
   "kept": [
@@ -2342,6 +2204,27 @@
    736.9
   ]
  },
+ "own_decline-oblique-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.2,
+    0.52
+   ]
+  ],
+  "window": [
+   52.4,
+   94.4,
+   932.1,
+   864.1
+  ]
+ },
  "own_deep-squat-hold": {
   "source": 1,
   "kept": [
@@ -2382,6 +2265,27 @@
    25.6,
    777.8,
    988.8
+  ]
+ },
+ "own_donkey-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.0,
+    0.29
+   ]
+  ],
+  "window": [
+   209.0,
+   102.0,
+   730.1,
+   826.1
   ]
  },
  "own_drag-curl": {
@@ -2783,6 +2687,27 @@
    460.0
   ]
  },
+ "own_exercise-ball-pull-in": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.4
+   ]
+  ],
+  "window": [
+   15.3,
+   265.3,
+   1006.3,
+   580.3
+  ]
+ },
  "own_exercise-ball-push-up": {
   "source": 1,
   "kept": [
@@ -2907,6 +2832,27 @@
    67.0,
    958.9,
    906.9
+  ]
+ },
+ "own_forward-lunge-to-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.5,
+    0.19
+   ]
+  ],
+  "window": [
+   199.5,
+   54.5,
+   632.1,
+   929.1
   ]
  },
  "own_freestanding-handstand": {
@@ -3875,6 +3821,27 @@
    900.1
   ]
  },
+ "own_knee-circles": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.31
+   ]
+  ],
+  "window": [
+   341.8,
+   26.8,
+   382.5,
+   977.5
+  ]
+ },
  "own_knee-to-wall-dorsiflexion": {
   "source": 1,
   "kept": [
@@ -3894,6 +3861,27 @@
    56.0,
    642.0,
    893.0
+  ]
+ },
+ "own_kneeling-barbell-rollout": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.26
+   ]
+  ],
+  "window": [
+   25.6,
+   233.6,
+   987.8,
+   665.8
   ]
  },
  "own_kneeling-cable-triceps-extension": {
@@ -4020,6 +4008,48 @@
    186.0,
    1032.1,
    777.1
+  ]
+ },
+ "own_leg-press-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.61
+   ]
+  ],
+  "window": [
+   28.6,
+   112.6,
+   988.8,
+   842.8
+  ]
+ },
+ "own_legs-on-ball-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.3,
+    0.2
+   ]
+  ],
+  "window": [
+   21.4,
+   294.4,
+   1003.2,
+   533.2
   ]
  },
  "own_low-cable-triceps-extension": {
@@ -5219,6 +5249,27 @@
    339.3
   ]
  },
+ "own_reverse-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.2
+   ]
+  ],
+  "window": [
+   178.1,
+   99.1,
+   784.8,
+   885.8
+  ]
+ },
  "own_reverse-grip-triceps-bench-press": {
   "source": 1,
   "kept": [
@@ -5387,6 +5438,27 @@
    1014.5
   ]
  },
+ "own_rocking-barbell-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.28
+   ]
+  ],
+  "window": [
+   67.0,
+   37.0,
+   886.9,
+   958.9
+  ]
+ },
  "own_romanian-deadlift": {
   "source": 1,
   "kept": [
@@ -5534,6 +5606,27 @@
    769.2
   ]
  },
+ "own_seated-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.32
+   ]
+  ],
+  "window": [
+   160.6,
+   19.6,
+   684.7,
+   985.7
+  ]
+ },
  "own_seated-dumbbell-curl": {
   "source": 1,
   "kept": [
@@ -5616,6 +5709,27 @@
    49.1,
    805.8,
    954.8
+  ]
+ },
+ "own_seated-single-leg-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.7,
+    0.32
+   ]
+  ],
+  "window": [
+   170.7,
+   19.7,
+   802.6,
+   981.6
   ]
  },
  "own_side-plank": {
@@ -5891,6 +6005,27 @@
    1032.1
   ]
  },
+ "own_smith-machine-reverse-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    1.13
+   ]
+  ],
+  "window": [
+   138.4,
+   15.4,
+   774.2,
+   1001.2
+  ]
+ },
  "own_smith-machine-row": {
   "source": 1,
   "kept": [
@@ -6101,6 +6236,27 @@
    769.3
   ]
  },
+ "own_stability-ball-crunch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.2
+   ]
+  ],
+  "window": [
+   91.1,
+   86.1,
+   886.8,
+   882.8
+  ]
+ },
  "own_stability-ball-pullover": {
   "source": 1,
   "kept": [
@@ -6141,6 +6297,27 @@
    173.1,
    955.8,
    762.8
+  ]
+ },
+ "own_standing-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.27
+   ]
+  ],
+  "window": [
+   305.6,
+   5.6,
+   385.7,
+   985.7
   ]
  },
  "own_standing-leg-curl": {
@@ -6246,6 +6423,48 @@
    52.4,
    427.1,
    931.1
+  ]
+ },
+ "own_step-up-to-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.0,
+    0.31
+   ]
+  ],
+  "window": [
+   298.4,
+   11.4,
+   450.2,
+   1004.2
+  ]
+ },
+ "own_stork-stance-curl": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.28
+   ]
+  ],
+  "window": [
+   74.6,
+   19.6,
+   870.8,
+   989.8
   ]
  },
  "own_straddle-back-lever": {
@@ -6435,6 +6654,27 @@
    187.4,
    1003.2,
    711.2
+  ]
+ },
+ "own_supported-pistol-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    3.8,
+    0.17
+   ]
+  ],
+  "window": [
+   131.3,
+   106.3,
+   830.5,
+   874.5
   ]
  },
  "own_surfing": {
@@ -7276,811 +7516,6 @@
    457.9,
    994.0
   ]
- },
- "wg_active-hang": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.84",
-   "doubled outline 2.81"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.39
-   ],
-   [
-    1.7,
-    1.84
-   ],
-   [
-    1.6,
-    2.81
-   ]
-  ],
-  "window": [
-   99.2,
-   7.7,
-   313.6,
-   501.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_archer-push-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.47",
-   "doubled outline 3.58"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.8
-   ],
-   [
-    1.7,
-    1.47
-   ],
-   [
-    1.6,
-    3.58
-   ]
-  ],
-  "window": [
-   6.2,
-   181.7,
-   499.6,
-   155.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_arm-circles": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.75",
-   "doubled outline 1.57"
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.3
-   ],
-   [
-    2.5,
-    1.75
-   ],
-   [
-    2.4,
-    1.57
-   ]
-  ],
-  "window": [
-   48.9,
-   4.9,
-   412.1,
-   485.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_arnold-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.57",
-   "doubled outline 1.93"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.72
-   ],
-   [
-    2.7,
-    1.57
-   ],
-   [
-    1.8,
-    1.93
-   ]
-  ],
-  "window": [
-   116.3,
-   5.8,
-   268.5,
-   496.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_assault-bike": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.38",
-   "doubled outline 3.13"
-  ],
-  "stroke": [
-   [
-    3.3,
-    1.08
-   ],
-   [
-    2.3,
-    2.38
-   ],
-   [
-    1.7,
-    3.13
-   ]
-  ],
-  "window": [
-   84.1,
-   -5.4,
-   313.7,
-   505.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_assisted-chin-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 2.00",
-   "doubled outline 6.21",
-   "doubled outline 3.33"
-  ],
-  "stroke": [
-   [
-    3.3,
-    2.0
-   ],
-   [
-    1.7,
-    6.21
-   ],
-   [
-    1.8,
-    3.33
-   ]
-  ],
-  "window": [
-   124.8,
-   5.8,
-   261.5,
-   496.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_assisted-pistol-squat": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.6,
-    0.44
-   ],
-   [
-    3.7,
-    1.03
-   ],
-   [
-    3.3,
-    1.21
-   ]
-  ],
-  "window": [
-   77.3,
-   -58.2,
-   369.4,
-   495.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_assisted-pull-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.04",
-   "doubled outline 2.64"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.98
-   ],
-   [
-    3.3,
-    3.04
-   ],
-   [
-    3.3,
-    2.64
-   ]
-  ],
-  "window": [
-   111.2,
-   4.7,
-   266.6,
-   501.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_band-pull-apart": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.23",
-   "doubled outline 1.70"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.87
-   ],
-   [
-    1.7,
-    2.23
-   ],
-   [
-    2.4,
-    1.7
-   ]
-  ],
-  "window": [
-   40.9,
-   4.9,
-   428.3,
-   490.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-clamshell": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.43
-   ],
-   [
-    3.4,
-    0.5
-   ],
-   [
-    2.4,
-    0.63
-   ]
-  ],
-  "window": [
-   10.8,
-   124.8,
-   495.4,
-   253.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-dead-bug": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.91",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.86
-   ],
-   [
-    2.7,
-    1.91
-   ],
-   [
-    2.4,
-    1.01
-   ]
-  ],
-  "window": [
-   9.3,
-   100.8,
-   494.4,
-   267.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-donkey-kick": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.61
-   ],
-   [
-    3.7,
-    0.66
-   ],
-   [
-    4.5,
-    0.76
-   ]
-  ],
-  "window": [
-   11.0,
-   63.0,
-   480.0,
-   349.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-face-pull": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.50",
-   "doubled outline 1.42"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.5
-   ],
-   [
-    3.3,
-    1.5
-   ],
-   [
-    1.7,
-    1.42
-   ]
-  ],
-  "window": [
-   75.7,
-   1.7,
-   362.5,
-   498.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-fire-hydrant": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.56",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.46
-   ],
-   [
-    3.5,
-    1.56
-   ],
-   [
-    5.3,
-    0.43
-   ]
-  ],
-  "window": [
-   13.9,
-   102.0,
-   484.1,
-   303.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-frog-pump": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.75
-   ],
-   [
-    3.0,
-    0.77
-   ],
-   [
-    1.9,
-    1.13
-   ]
-  ],
-  "window": [
-   34.0,
-   42.5,
-   443.9,
-   425.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-glute-bridge": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.44
-   ],
-   [
-    2.5,
-    0.68
-   ],
-   [
-    1.7,
-    0.63
-   ]
-  ],
-  "window": [
-   18.9,
-   121.9,
-   488.2,
-   271.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-hip-thrust": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   "doubled outline 3.16"
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.6
-   ],
-   [
-    3.3,
-    0.88
-   ],
-   [
-    1.7,
-    3.16
-   ]
-  ],
-  "window": [
-   8.8,
-   55.8,
-   492.3,
-   400.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-kickback": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.52
-   ],
-   [
-    2.1,
-    1.08
-   ],
-   [
-    4.6,
-    0.49
-   ]
-  ],
-  "window": [
-   29.4,
-   67.4,
-   455.3,
-   366.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-lat-pulldown": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 4.29",
-   "doubled outline 2.63"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.57
-   ],
-   [
-    1.6,
-    4.29
-   ],
-   [
-    1.6,
-    2.63
-   ]
-  ],
-  "window": [
-   141.6,
-   3.6,
-   244.8,
-   509.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-lateral-walk": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.36
-   ],
-   [
-    3.4,
-    0.37
-   ],
-   [
-    3.4,
-    0.65
-   ]
-  ],
-  "window": [
-   102.0,
-   12.0,
-   265.0,
-   481.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-monster-walk": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.85",
-   "doubled outline 2.25"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.85
-   ],
-   [
-    3.3,
-    1.85
-   ],
-   [
-    1.7,
-    2.25
-   ]
-  ],
-  "window": [
-   137.8,
-   7.8,
-   235.4,
-   495.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-pallof-press": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 2.48",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.63
-   ],
-   [
-    1.7,
-    2.48
-   ],
-   [
-    1.7,
-    1.39
-   ]
-  ],
-  "window": [
-   114.8,
-   7.8,
-   325.4,
-   493.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-row": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 1.69",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.26
-   ],
-   [
-    1.7,
-    1.69
-   ],
-   [
-    1.7,
-    1.0
-   ]
-  ],
-  "window": [
-   65.9,
-   9.9,
-   418.2,
-   488.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
  },
  "wg_banded-seated-hip-abduction": {
   "source": 3,

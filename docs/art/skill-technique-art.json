@@ -107,7 +107,7 @@
     {
       "name": "Archer Push-up",
       "status": "exact",
-      "drawing": "wg_archer-push-up",
+      "drawing": "own_archer-push-up",
       "frames": 1,
       "shows": "Archer Push-up"
     },
@@ -520,7 +520,7 @@
     {
       "name": "Supported Pistol Squat",
       "status": "exact",
-      "drawing": "wg_assisted-pistol-squat",
+      "drawing": "own_supported-pistol-squat",
       "frames": 1,
       "shows": "Supported Pistol Squat"
     },

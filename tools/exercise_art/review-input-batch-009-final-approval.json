@@ -1,0 +1,26 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 9,
+  "exportedAt": "2026-10-13T05:10:35.141985+00:00",
+  "batchComplete": true,
+  "approvalSource": "User chat",
+  "message": "Approved",
+  "frames": [
+    {
+      "id": "assisted-chin-up-1.png",
+      "sha256": "99186c7928ccda75b9e35cb97ef6794b1b70a184b885a2f32b71903e94feac0f",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
+    },
+    {
+      "id": "assisted-pull-up-1.png",
+      "sha256": "da95e8e7b66882c0293c00d8867c2c9ae60ad95a4f2507803dca08aaedad8592",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
+    }
+  ]
+}
