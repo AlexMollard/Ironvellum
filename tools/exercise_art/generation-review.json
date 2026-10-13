@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "batchSize": 50,
-  "currentBatch": 7,
+  "currentBatch": 8,
   "status": "awaiting-user-review",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
   "expectedTotal": 553,
-  "generated": 258,
+  "generated": 308,
   "stylePrompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Smooth uninterrupted egg-shaped head, absolutely NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair.",
   "poseSource": "tools/exercise_art/missing.json",
   "siteProjectId": "appgprj_6acc332221ec8191a0c541c0fe2687a2",
@@ -1215,7 +1215,7 @@
     {
       "id": "decline-close-grip-bench-to-skull-crusher-1.png",
       "pose": "Redraw the selected source pose for Decline Close-Grip Bench to Skull Crusher, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "decline-dumbbell-triceps-extension-1.png",
@@ -1305,252 +1305,252 @@
     {
       "id": "dumbbell-overhead-triceps-extension-1.png",
       "pose": "Redraw the selected source pose for Dumbbell Overhead Triceps Extension, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "smith-machine-close-grip-bench-press-1.png",
       "pose": "Redraw the selected source pose for Smith Machine Close-Grip Bench Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "standing-overhead-barbell-triceps-extension-1.png",
       "pose": "Redraw the selected source pose for Standing Overhead Barbell Triceps Extension, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "standing-towel-triceps-extension-1.png",
       "pose": "Redraw the selected source pose for Standing Towel Triceps Extension, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "tate-press-1.png",
       "pose": "Redraw the selected source pose for Tate Press, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "triceps-kickback-1.png",
       "pose": "Redraw the selected source pose for Triceps Kickback, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "triceps-pushdown-1.png",
       "pose": "Redraw the selected source pose for Triceps Pushdown, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "rope-triceps-pushdown-1.png",
       "pose": "Redraw the selected source pose for Rope Triceps Pushdown, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "v-bar-triceps-pushdown-1.png",
       "pose": "Redraw the selected source pose for V-Bar Triceps Pushdown, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "weighted-ball-side-bend-1.png",
       "pose": "Redraw the selected source pose for Weighted Ball Side Bend, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "incline-dumbbell-triceps-extension-1.png",
       "pose": "Redraw the selected source pose for Incline Dumbbell Triceps Extension, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "machine-triceps-extension-1.png",
       "pose": "Redraw the selected source pose for Machine Triceps Extension, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "barbell-curl-1.png",
       "pose": "Redraw the selected source pose for Barbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "cable-curl-1.png",
       "pose": "Redraw the selected source pose for Cable Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "alternating-hammer-curl-1.png",
       "pose": "Redraw the selected source pose for Alternating Hammer Curl, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "incline-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Incline Dumbbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "lying-incline-barbell-curl-1.png",
       "pose": "Redraw the selected source pose for Lying Incline Barbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "rope-hammer-curl-1.png",
       "pose": "Redraw the selected source pose for Rope Hammer Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "cable-preacher-curl-1.png",
       "pose": "Redraw the selected source pose for Cable Preacher Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "close-grip-ez-bar-curl-1.png",
       "pose": "Redraw the selected source pose for Close-Grip EZ-Bar Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "close-grip-barbell-curl-1.png",
       "pose": "Redraw the selected source pose for Close-Grip Barbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "concentration-curl-1.png",
       "pose": "Redraw the selected source pose for Concentration Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "hammer-curl-across-body-1.png",
       "pose": "Redraw the selected source pose for Hammer Curl Across Body, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "drag-curl-1.png",
       "pose": "Redraw the selected source pose for Drag Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "alternating-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Alternating Dumbbell Curl, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "bicep-curl-1.png",
       "pose": "Redraw the selected source pose for Bicep Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "prone-incline-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Prone Incline Dumbbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "ez-bar-curl-1.png",
       "pose": "Redraw the selected source pose for EZ-Bar Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "hammer-curl-1.png",
       "pose": "Redraw the selected source pose for Hammer Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "flexor-incline-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Flexor Incline Dumbbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "high-cable-curl-1.png",
       "pose": "Redraw the selected source pose for High Cable Curl, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "lying-cable-curl-1.png",
       "pose": "Redraw the selected source pose for Lying Cable Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "preacher-curl-1.png",
       "pose": "Redraw the selected source pose for Preacher Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "one-arm-dumbbell-preacher-curl-1.png",
       "pose": "Redraw the selected source pose for One-Arm Dumbbell Preacher Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "overhead-cable-curl-1.png",
       "pose": "Redraw the selected source pose for Overhead Cable Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "barbell-preacher-curl-1.png",
       "pose": "Redraw the selected source pose for Barbell Preacher Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "hammer-preacher-curl-1.png",
       "pose": "Redraw the selected source pose for Hammer Preacher Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "reverse-plate-curl-1.png",
       "pose": "Redraw the selected source pose for Reverse Plate Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "seated-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Seated Dumbbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "spider-curl-1.png",
       "pose": "Redraw the selected source pose for Spider Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "one-arm-cable-curl-1.png",
       "pose": "Redraw the selected source pose for One-Arm Cable Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "incline-bench-one-arm-dumbbell-curl-1.png",
       "pose": "Redraw the selected source pose for Incline Bench One-Arm Dumbbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "wide-grip-barbell-curl-1.png",
       "pose": "Redraw the selected source pose for Wide-Grip Barbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "zottman-curl-1.png",
       "pose": "Redraw the selected source pose for Zottman Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "machine-bicep-curl-1.png",
       "pose": "Redraw the selected source pose for Machine Bicep Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "one-arm-barbell-curl-1.png",
       "pose": "Redraw the selected source pose for One-Arm Barbell Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "dumbbell-squat-to-curl-1.png",
       "pose": "Redraw the selected source pose for Dumbbell Squat to Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "barbell-deadlift-to-curl-1.png",
       "pose": "Redraw the selected source pose for Barbell Deadlift to Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "banded-alternating-curl-1.png",
       "pose": "Redraw the selected source pose for Banded Alternating Curl, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "lateral-lunge-to-curl-1.png",
       "pose": "Redraw the selected source pose for Lateral Lunge to Curl, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "planned"
+      "status": "pending"
     },
     {
       "id": "forward-lunge-to-curl-1.png",
@@ -3103,12 +3103,13 @@
         "reverse-grip-triceps-bench-press-1.png",
         "seated-overhead-barbell-triceps-extension-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 50,
       "blocked": [],
-      "approved": 49,
-      "pending": 1,
-      "redo": 0
+      "approved": 50,
+      "pending": 0,
+      "redo": 0,
+      "approvedAt": "2026-10-13T02:43:56.861992+00:00"
     },
     {
       "batch": 8,
@@ -3164,9 +3165,11 @@
         "banded-alternating-curl-1.png",
         "lateral-lunge-to-curl-1.png"
       ],
-      "status": "planned",
-      "available": 0,
-      "blocked": []
+      "status": "awaiting-user-review",
+      "available": 50,
+      "blocked": [],
+      "pending": 50,
+      "approved": 0
     },
     {
       "batch": 9,
@@ -3463,15 +3466,16 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "257 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "258 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
-    "batch": 7,
+    "batch": 8,
     "correctedAwaitingReview": [
-      "decline-close-grip-bench-to-skull-crusher-1.png"
+      "rope-triceps-pushdown-1.png"
     ],
     "remainingRedo": 0,
-    "note": "49 user approvals imported; decline camera correction requires user approval"
+    "missing": [],
+    "note": "All new images, including ear corrections, await user approval."
   },
   "artMode": "single-still",
   "framesPerExercise": 1,
