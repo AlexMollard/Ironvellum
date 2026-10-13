@@ -33,8 +33,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.data.Units
@@ -42,7 +42,6 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkBorder
 
 /**
@@ -98,7 +97,8 @@ internal object XpReveal {
                 }
             }
         }
-        if (slices.isNotEmpty() || bars.isEmpty()) bars += LevelBar(level, needed, startXp, slices)
+        // A trial that ends exactly on a level boundary still opens the next level's (empty) bar.
+        if (slices.isNotEmpty() || bars.isEmpty() || bars.last().level < level) bars += LevelBar(level, needed, startXp, slices)
         return bars
     }
 
@@ -153,6 +153,26 @@ internal object XpReveal {
         }
     }
 
+    /** The effort part of a breakdown: movements and activities. */
+    fun effortOf(breakdown: Xp.Breakdown): Int = breakdown.lines.filter { isLift(it) }.sumOf { it.xp }
+
+    /**
+     * What the full-screen page says in one breath, whatever the animation has reached:
+     * the total, its split, and the level it left the lifter at.
+     */
+    fun pageSpoken(breakdown: Xp.Breakdown, levelBefore: Int, levelAfter: Int): String {
+        val effort = effortOf(breakdown)
+        val level = if (levelAfter > levelBefore) "Level up, $levelBefore to $levelAfter." else "Level $levelAfter."
+        return "Earned ${breakdown.total} XP, $effort effort and ${breakdown.total - effort} bonus. $level"
+    }
+
+    /** The level moment's quiet line: what the level banked, from the inscriptions actually paid; null when none were. */
+    fun veilLine(banked: Int): String? = when {
+        banked <= 0 -> null
+        banked == 1 -> "An inscription waits in the Veil"
+        else -> "$banked inscriptions wait in the Veil"
+    }
+
     /** What the whole panel says in one breath, for the heading. */
     fun headline(breakdown: Xp.Breakdown, level: Int): String =
         "Earned ${breakdown.total} XP across ${breakdown.lines.size} ${plural(breakdown.lines.size, "segment", "segments")}, level $level"
@@ -175,7 +195,7 @@ internal object XpReveal {
 
 /** The shade of every segment: lifts in emerald, bonuses in gold. */
 @Composable
-private fun rememberShades(lines: List<Xp.Line>): List<Color> = remember(lines) {
+internal fun rememberShades(lines: List<Xp.Line>): List<Color> = remember(lines) {
     val lifts = lines.count { XpReveal.isLift(it) }
     val bonuses = lines.size - lifts
     var l = 0
@@ -196,14 +216,16 @@ internal fun XpRevealPanel(
     t: Long,
     startMs: Long,
     modifier: Modifier = Modifier,
+    /** The finished panel at once, with no clock: the summary after the full-screen page already played it. */
+    final: Boolean = false,
 ) {
     val lines = breakdown.lines
     val shades = rememberShades(lines)
     val bars = remember(breakdown, totalXp) { XpReveal.bars(breakdown, totalXp) }
     val elapsed = (t - startMs).coerceAtLeast(0L)
     val end = lines.size * XpReveal.SEG_MS
-    val settled = elapsed >= end
-    val current = XpReveal.current(lines, elapsed)
+    val settled = final || elapsed >= end
+    val current = if (settled) -1 else XpReveal.current(lines, elapsed)
     val filled = if (settled) breakdown.total.toFloat() else XpReveal.filled(lines, elapsed)
     val crossing = bars.size > 1
     val shape = MaterialTheme.shapes.medium
@@ -245,36 +267,6 @@ internal fun XpRevealPanel(
                 modifier = Modifier.padding(bottom = 6.dp),
             )
         }
-        if (crossing) {
-            // Reserved from the start so nothing below moves when it lands.
-            val crossed = bars.first().let { first ->
-                filled >= (first.needed - first.startXp)
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val alpha = if (crossed) 1f else 0f
-                Text(
-                    "LEVEL UP",
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    color = IronvellumColors.SovereignGold.copy(alpha = alpha),
-                )
-                Text(
-                    "$levelBefore → $levelAfter",
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 40.sp,
-                    style = TextStyle(brush = Metal.Fabled.bounds(alpha), fontFeatureSettings = "tnum"),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
         bars.forEachIndexed { i, bar ->
             if (crossing) {
                 Text(
@@ -286,7 +278,13 @@ internal fun XpRevealPanel(
                     modifier = Modifier.padding(start = 8.dp, top = if (i == 0) 0.dp else 6.dp, bottom = 2.dp),
                 )
             }
-            XpBar(bar, lines, shades, elapsed, settled, Modifier.padding(horizontal = 8.dp, vertical = if (crossing) 4.dp else 10.dp))
+            XpBar(
+                bar,
+                shades,
+                progressOf = { slice -> if (settled) 1f else XpReveal.progress(elapsed, slice.segment) },
+                current = current,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = if (crossing) 4.dp else 10.dp),
+            )
         }
         val last = bars.last()
         val into = last.startXp + last.slices.sumOf { slice ->
@@ -329,9 +327,9 @@ internal fun XpRevealPanel(
     }
 }
 
-private enum class RowState { PENDING, CURRENT, DONE }
+internal enum class RowState { PENDING, CURRENT, DONE }
 
-private fun rowState(elapsed: Long, index: Int, settled: Boolean, current: Int): RowState = when {
+internal fun rowState(elapsed: Long, index: Int, settled: Boolean, current: Int): RowState = when {
     settled -> RowState.DONE
     index == current -> RowState.CURRENT
     index < current -> RowState.DONE
@@ -339,7 +337,7 @@ private fun rowState(elapsed: Long, index: Int, settled: Boolean, current: Int):
 }
 
 @Composable
-private fun SectionLabel(text: String, color: Color) {
+internal fun SectionLabel(text: String, color: Color) {
     Text(
         text,
         fontFamily = ChakraPetch,
@@ -354,7 +352,7 @@ private fun SectionLabel(text: String, color: Color) {
 }
 
 @Composable
-private fun XpRow(line: Xp.Line, shade: Color, state: RowState, subline: String) {
+internal fun XpRow(line: Xp.Line, shade: Color, state: RowState, subline: String) {
     val shown = state != RowState.PENDING
     Row(
         Modifier
@@ -397,24 +395,26 @@ private fun XpRow(line: Xp.Line, shade: Color, state: RowState, subline: String)
     }
 }
 
-/** One level's bar: flat slices in their shades, 2dp dark gaps between, the top-left corner cut. */
+/**
+ * One level's bar: flat slices in their shades, 2dp dark gaps between, the top-left corner cut.
+ * [progressOf] says how far each slice has filled, 0 to 1, and [current] is the segment filling now (-1 for none).
+ */
 @Composable
-private fun XpBar(
+internal fun XpBar(
     bar: XpReveal.LevelBar,
-    lines: List<Xp.Line>,
     shades: List<Color>,
-    elapsed: Long,
-    settled: Boolean,
+    progressOf: (XpReveal.Slice) -> Float,
+    current: Int,
     modifier: Modifier,
+    height: Dp = 14.dp,
 ) {
     val track = IronvellumColors.Rune
     val before = IronvellumColors.Bracket
     val gap = Color(0xFF121211)
-    val current = XpReveal.current(lines, elapsed)
     Box(
         modifier
             .fillMaxWidth()
-            .height(14.dp)
+            .height(height)
             .drawBehind {
                 val cut = Path().apply {
                     moveTo(6.dp.toPx(), 0f)
@@ -431,10 +431,10 @@ private fun XpBar(
                     var x = bar.startXp * perXp
                     val seam = 2.dp.toPx()
                     for (slice in bar.slices) {
-                        val p = if (settled) 1f else XpReveal.progress(elapsed, slice.segment)
+                        val p = progressOf(slice)
                         val w = slice.xp * perXp * p
                         if (w <= 0f) continue
-                        val alpha = if (!settled && slice.segment == current) 0.55f else 1f
+                        val alpha = if (slice.segment == current) 0.55f else 1f
                         drawRect(shades[slice.segment].copy(alpha = alpha), Offset(x, 0f), Size(w, size.height))
                         drawRect(gap, Offset(x + w - seam.coerceAtMost(w), 0f), Size(seam.coerceAtMost(w), size.height))
                         x += w

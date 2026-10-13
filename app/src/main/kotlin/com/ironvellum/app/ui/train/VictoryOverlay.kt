@@ -60,7 +60,7 @@ import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.DeedsPage
 import com.ironvellum.app.ui.components.Dim
 import com.ironvellum.app.ui.components.Haptics
-import com.ironvellum.app.ui.components.XpReveal
+import com.ironvellum.app.ui.components.XpRevealPage
 import com.ironvellum.app.ui.components.XpRevealPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LevelUp
@@ -82,35 +82,42 @@ import com.ironvellum.app.ui.theme.inkStroke
 import kotlinx.coroutines.delay
 
 /**
- * What a seal earned, and the order it is told in: a level-up page if the trial
- * levelled, one deeds page if it earned any, then the summary, always. Only the
- * steps that exist are visited and counted ("1 of 2"), so a quiet trial goes
+ * What a seal earned, and the order it is told in: the XP page when the trial
+ * earned any (its level crossing is the level-up, so a trial that has the XP page
+ * never gets a separate level-up page), else a level-up page if it levelled, one
+ * deeds page if it earned any, then the summary, always. Only the steps that exist
+ * are visited, and the numbered ones counted ("1 of 2"), so a quiet trial goes
  * straight to the summary.
  */
 internal object CelebrationFlow {
 
     fun hasLevelUp(result: Repository.CompletionResult): Boolean = result.levelAfter > result.levelBefore
 
+    /** The full-screen XP page: only when the seal paid something to tell, segment by segment. */
+    fun hasXpPage(result: Repository.CompletionResult): Boolean = result.breakdown.lines.isNotEmpty()
+
     /** Deeds with a name to show: a nameless one cannot be celebrated or worn. */
     fun deedsOf(result: Repository.CompletionResult): List<TitleDef> = result.newTitles.filter { it.name.isNotBlank() }
 
     /** The first stage at or after [from] that has something to show. */
-    fun resolve(from: SessionViewModel.Finish, hasLevel: Boolean, hasDeeds: Boolean): SessionViewModel.Finish {
+    fun resolve(from: SessionViewModel.Finish, hasXp: Boolean, hasLevel: Boolean, hasDeeds: Boolean): SessionViewModel.Finish {
         var stage = from
-        if (stage == SessionViewModel.Finish.LEVEL && !hasLevel) stage = SessionViewModel.Finish.DEEDS
+        if (stage == SessionViewModel.Finish.XP && !hasXp) stage = SessionViewModel.Finish.LEVEL
+        // The XP page already played the level-up; the page of its own is for a seal without one.
+        if (stage == SessionViewModel.Finish.LEVEL && !(hasLevel && !hasXp)) stage = SessionViewModel.Finish.DEEDS
         if (stage == SessionViewModel.Finish.DEEDS && !hasDeeds) stage = SessionViewModel.Finish.SUMMARY
         return stage
     }
 
     /** The stage after [from]; the summary is the last of the celebration, then the routine question. */
-    fun after(from: SessionViewModel.Finish, hasLevel: Boolean, hasDeeds: Boolean): SessionViewModel.Finish {
+    fun after(from: SessionViewModel.Finish, hasXp: Boolean, hasLevel: Boolean, hasDeeds: Boolean): SessionViewModel.Finish {
         val next = SessionViewModel.Finish.entries.getOrNull(from.ordinal + 1) ?: return from
-        return resolve(next, hasLevel, hasDeeds)
+        return resolve(next, hasXp, hasLevel, hasDeeds)
     }
 
-    /** The numbered steps before the summary. */
-    fun steps(hasLevel: Boolean, hasDeeds: Boolean): List<SessionViewModel.Finish> = buildList {
-        if (hasLevel) add(SessionViewModel.Finish.LEVEL)
+    /** The numbered steps before the summary; the XP page is not one of them. */
+    fun steps(hasXp: Boolean, hasLevel: Boolean, hasDeeds: Boolean): List<SessionViewModel.Finish> = buildList {
+        if (hasLevel && !hasXp) add(SessionViewModel.Finish.LEVEL)
         if (hasDeeds) add(SessionViewModel.Finish.DEEDS)
     }
 
@@ -156,10 +163,13 @@ internal fun TrialCelebration(
     onWear: (titleId: String) -> Unit,
     onShare: () -> Unit,
     onReopen: () -> Unit,
+    /** False when the lifter has animations off: the XP page then opens finished. */
+    motion: Boolean = animatorsOn(LocalContext.current),
 ) {
+    val hasXp = CelebrationFlow.hasXpPage(result)
     val hasLevel = CelebrationFlow.hasLevelUp(result)
     val deeds = CelebrationFlow.deedsOf(result)
-    val steps = CelebrationFlow.steps(hasLevel, deeds.isNotEmpty())
+    val steps = CelebrationFlow.steps(hasXp, hasLevel, deeds.isNotEmpty())
     Dialog(
         onDismissRequest = onContinue,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -170,6 +180,18 @@ internal fun TrialCelebration(
                 .background(IronvellumColors.Abyss),
         ) {
             when (stage) {
+                SessionViewModel.Finish.XP -> XpRevealPage(
+                    breakdown = result.breakdown,
+                    totalXp = result.totalXp,
+                    levelBefore = result.levelBefore,
+                    levelAfter = result.levelAfter,
+                    tierAfter = result.classAfter.takeIf { it != result.classBefore },
+                    inscriptionsBanked = result.inscriptionsBanked,
+                    caption = "$title · sealed",
+                    onContinue = onContinue,
+                    onSkip = onSkipToSummary,
+                    motion = motion,
+                )
                 SessionViewModel.Finish.LEVEL -> LevelUpPage(
                     levelUp = result.toLevelUp(),
                     step = steps.indexOf(stage),
@@ -232,10 +254,9 @@ private fun SummaryPage(
     onReopen: () -> Unit,
 ) {
     val motion = animatorsOn(LocalContext.current)
-    // The reveal fills one segment per movement and bonus, then the rest of the page lands.
+    // The XP page has already played the reveal; the panel here is its finished state, then the rest lands.
     val segments = result.breakdown.lines.size
-    val revealEnd = if (segments > 0) XP_REVEAL_AT + XpReveal.durationMs(segments) else 0L
-    val rowsAt = maxOf(XP_REVEAL_AT, revealEnd)
+    val rowsAt = XP_REVEAL_AT
     val t = rememberClock(maxOf(SUMMARY_END, rowsAt + 900L), motion)
     Haptics(
         motion,
@@ -255,7 +276,9 @@ private fun SummaryPage(
     val rows = remember(result, deeds) {
         buildList {
             val tier = result.classAfter.takeIf { it != result.classBefore }?.let { " · $it" }.orEmpty()
-            add(Triple("Level", if (result.levelAfter > result.levelBefore) "${result.levelBefore} → ${result.levelAfter}$tier" else "${result.levelAfter}", false))
+            // With the XP page the level-up was told once, there; here it is only where the lifter stands.
+            val crossed = result.levelAfter > result.levelBefore && segments == 0
+            add(Triple("Level", if (crossed) "${result.levelBefore} → ${result.levelAfter}$tier" else "${result.levelAfter}$tier", false))
             // With a breakdown the reveal panel says what earned the XP, quest bonus included.
             if (result.breakdown.lines.isEmpty()) {
                 add(Triple("XP", "+${count(result.xpAwarded)}", true))
@@ -342,6 +365,7 @@ private fun SummaryPage(
                     t = t,
                     startMs = XP_REVEAL_AT,
                     modifier = Modifier.reveal(t >= XP_REVEAL_AT, motion),
+                    final = true,
                 )
             }
             Spacer(Modifier.height(22.dp))

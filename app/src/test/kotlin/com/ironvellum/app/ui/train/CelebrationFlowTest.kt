@@ -13,24 +13,40 @@ class CelebrationFlowTest {
 
     @Test
     fun `a quiet trial goes straight to the summary`() {
-        assertEquals(Finish.SUMMARY, CelebrationFlow.resolve(Finish.LEVEL, hasLevel = false, hasDeeds = false))
-        assertTrue(CelebrationFlow.steps(hasLevel = false, hasDeeds = false).isEmpty())
+        assertEquals(Finish.SUMMARY, CelebrationFlow.resolve(Finish.LEVEL, hasXp = false, hasLevel = false, hasDeeds = false))
+        assertTrue(CelebrationFlow.steps(hasXp = false, hasLevel = false, hasDeeds = false).isEmpty())
     }
 
     @Test
     fun `only the steps that exist are visited and counted`() {
-        assertEquals(Finish.LEVEL, CelebrationFlow.resolve(Finish.LEVEL, hasLevel = true, hasDeeds = true))
-        assertEquals(Finish.DEEDS, CelebrationFlow.after(Finish.LEVEL, hasLevel = true, hasDeeds = true))
-        assertEquals(Finish.SUMMARY, CelebrationFlow.after(Finish.LEVEL, hasLevel = true, hasDeeds = false))
-        assertEquals(Finish.DEEDS, CelebrationFlow.resolve(Finish.LEVEL, hasLevel = false, hasDeeds = true))
-        assertEquals(listOf(Finish.LEVEL, Finish.DEEDS), CelebrationFlow.steps(hasLevel = true, hasDeeds = true))
-        assertEquals(listOf(Finish.DEEDS), CelebrationFlow.steps(hasLevel = false, hasDeeds = true))
+        assertEquals(Finish.LEVEL, CelebrationFlow.resolve(Finish.LEVEL, hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.DEEDS, CelebrationFlow.after(Finish.LEVEL, hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.SUMMARY, CelebrationFlow.after(Finish.LEVEL, hasXp = false, hasLevel = true, hasDeeds = false))
+        assertEquals(Finish.DEEDS, CelebrationFlow.resolve(Finish.LEVEL, hasXp = false, hasLevel = false, hasDeeds = true))
+        assertEquals(listOf(Finish.LEVEL, Finish.DEEDS), CelebrationFlow.steps(hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(listOf(Finish.DEEDS), CelebrationFlow.steps(hasXp = false, hasLevel = false, hasDeeds = true))
+    }
+
+    @Test
+    fun `the xp page leads, and its level crossing replaces the level page`() {
+        assertEquals(Finish.XP, CelebrationFlow.resolve(Finish.XP, hasXp = true, hasLevel = true, hasDeeds = true))
+        // Levelled with an XP page: straight on to the deeds, never a second level-up.
+        assertEquals(Finish.DEEDS, CelebrationFlow.after(Finish.XP, hasXp = true, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.SUMMARY, CelebrationFlow.after(Finish.XP, hasXp = true, hasLevel = true, hasDeeds = false))
+        assertEquals(listOf(Finish.DEEDS), CelebrationFlow.steps(hasXp = true, hasLevel = true, hasDeeds = true))
+        assertTrue(CelebrationFlow.steps(hasXp = true, hasLevel = true, hasDeeds = false).isEmpty())
+    }
+
+    @Test
+    fun `without xp to tell the old pages stand`() {
+        assertEquals(Finish.LEVEL, CelebrationFlow.resolve(Finish.XP, hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.SUMMARY, CelebrationFlow.resolve(Finish.XP, hasXp = false, hasLevel = false, hasDeeds = false))
     }
 
     @Test
     fun `the summary leads to the routine question`() {
-        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.SUMMARY, hasLevel = true, hasDeeds = true))
-        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.ROUTINE, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.SUMMARY, hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.ROUTINE, hasXp = false, hasLevel = true, hasDeeds = true))
     }
 
     @Test
