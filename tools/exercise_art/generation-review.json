@@ -2,7 +2,7 @@
   "schema": 1,
   "batchSize": 50,
   "currentBatch": 9,
-  "status": "awaiting-user-review",
+  "status": "batch-approved",
   "reference": "docs/art/style-options/approved.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
@@ -1590,7 +1590,7 @@
     {
       "id": "donkey-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Donkey Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "seated-single-leg-calf-raise-1.png",
@@ -1625,7 +1625,7 @@
     {
       "id": "standing-calf-raise-1.png",
       "pose": "Redraw the selected source pose for Standing Calf Raise, source frame 2, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "bicycle-crunch-1.png",
@@ -1715,7 +1715,7 @@
     {
       "id": "assisted-chin-up-1.png",
       "pose": "Redraw the selected source pose for Assisted Chin-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "supported-pistol-squat-1.png",
@@ -1725,7 +1725,7 @@
     {
       "id": "assisted-pull-up-1.png",
       "pose": "Redraw the selected source pose for Assisted Pull-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "band-pull-apart-1.png",
@@ -1745,7 +1745,7 @@
     {
       "id": "banded-donkey-kick-1.png",
       "pose": "Redraw the selected source pose for Banded Donkey Kick, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "pending"
+      "status": "approved"
     },
     {
       "id": "banded-face-pull-1.png",
@@ -3227,12 +3227,13 @@
         "banded-pallof-press-1.png",
         "banded-row-1.png"
       ],
-      "status": "awaiting-user-review",
+      "status": "approved",
       "available": 50,
       "blocked": [],
-      "pending": 5,
-      "approved": 45,
-      "redo": 0
+      "pending": 0,
+      "approved": 50,
+      "redo": 0,
+      "approvedAt": "2026-10-13T05:10:35.141985+00:00"
     },
     {
       "batch": 10,
@@ -3471,19 +3472,13 @@
     "anchor": "Keep the load-bearing contact point fixed at the same canvas coordinates in every source frame; palms for floor support, grip for hanging exercises",
     "ink": "Single clean contours only; white on transparency or black on white; no glow, shading, fills or doubled lines",
     "reviewAlignment": "Single still per exercise; source canvas shown without animation alignment",
-    "ownerImportStatus": "353 approved single stills imported into vector pipeline"
+    "ownerImportStatus": "358 approved single stills imported into vector pipeline"
   },
   "correctionStatus": {
     "batch": 9,
-    "correctedAwaitingReview": [
-      "donkey-calf-raise-1.png",
-      "standing-calf-raise-1.png",
-      "assisted-chin-up-1.png",
-      "assisted-pull-up-1.png",
-      "banded-donkey-kick-1.png"
-    ],
     "remainingRedo": 0,
-    "note": "45 user approvals imported; five replacements require user approval"
+    "correctedAwaitingReview": [],
+    "note": "All 50 batch 9 stills approved by user"
   },
   "artMode": "single-still",
   "framesPerExercise": 1,

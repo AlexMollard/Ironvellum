@@ -1,8 +1,8 @@
 {
   "schema": "ironvellum-art-review-v1",
   "batch": 9,
-  "exportedAt": "2026-10-13T04:34:27.681180+00:00",
-  "batchComplete": false,
+  "exportedAt": "2026-10-13T05:10:35.141985+00:00",
+  "batchComplete": true,
   "frames": [
     {
       "id": "frog-stand-1.png",
@@ -2527,10 +2527,10 @@
     {
       "id": "donkey-calf-raise-1.png",
       "sha256": "ac0842e554acabb5219f8a4b79887355a202c863064a53d176b23ccf2864526c",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: Why is there a guy sitting on his back?",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T04:34:27.681180+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:00.655Z"
     },
     {
       "id": "seated-single-leg-calf-raise-1.png",
@@ -2583,10 +2583,10 @@
     {
       "id": "standing-calf-raise-1.png",
       "sha256": "5f9f36096ed39ca191ebec060f2ea897c2c5c1d658079cd6d92aad4551442bac",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: This shouldnt have a machine",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T04:34:27.681180+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:03.625Z"
     },
     {
       "id": "bicycle-crunch-1.png",
@@ -2726,11 +2726,11 @@
     },
     {
       "id": "assisted-chin-up-1.png",
-      "sha256": "87733d6f5301dd207435959cd0f09bef1d3a9c005c6cc38550177d1e868b1455",
-      "status": "pending",
-      "note": "Replacement for: bar is behind the neck this is wrong",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T04:34:27.681180+00:00"
+      "sha256": "99186c7928ccda75b9e35cb97ef6794b1b70a184b885a2f32b71903e94feac0f",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
     },
     {
       "id": "supported-pistol-squat-1.png",
@@ -2742,11 +2742,11 @@
     },
     {
       "id": "assisted-pull-up-1.png",
-      "sha256": "0bd1a6650d1964870b4e6d7bf5e4cc1b18ca681f26732ed637df8829b9a7a848",
-      "status": "pending",
-      "note": "Replacement for: the bar is disconnected from the machine",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T04:34:27.681180+00:00"
+      "sha256": "da95e8e7b66882c0293c00d8867c2c9ae60ad95a4f2507803dca08aaedad8592",
+      "status": "approved",
+      "note": "Approved by user in chat: Approved",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T05:10:35.141985+00:00"
     },
     {
       "id": "band-pull-apart-1.png",
@@ -2775,10 +2775,10 @@
     {
       "id": "banded-donkey-kick-1.png",
       "sha256": "f2cc94c483e03dfd54b26a23d369d9bca0964a5d7bab020d9d3af8d7fa58c509",
-      "status": "pending",
+      "status": "approved",
       "note": "Replacement for: band isnt connected to teh other leg",
-      "reviewer": "Assistant",
-      "updatedAt": "2026-10-13T04:34:27.681180+00:00"
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:50:37.555Z"
     },
     {
       "id": "banded-face-pull-1.png",

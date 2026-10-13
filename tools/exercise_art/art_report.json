@@ -1,64 +1,4 @@
 {
- "ek_0275": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.2,
-    0.26
-   ],
-   [
-    2.9,
-    0.32
-   ]
-  ],
-  "window": [
-   5.3,
-   32.3,
-   554.4,
-   804.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0282": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    2.8,
-    0.18
-   ],
-   [
-    2.8,
-    0.3
-   ]
-  ],
-  "window": [
-   55.3,
-   38.3,
-   515.5,
-   874.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
  "own_90-degree-push-up": {
   "source": 1,
   "kept": [
@@ -374,6 +314,27 @@
    997.0
   ]
  },
+ "own_assisted-chin-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.6
+   ]
+  ],
+  "window": [
+   244.5,
+   22.5,
+   554.0,
+   995.0
+  ]
+ },
  "own_assisted-dip": {
   "source": 1,
   "kept": [
@@ -393,6 +354,27 @@
    19.6,
    673.9,
    991.9
+  ]
+ },
+ "own_assisted-pull-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.1,
+    0.91
+   ]
+  ],
+  "window": [
+   220.1,
+   -1.9,
+   597.8,
+   1022.8
   ]
  },
  "own_back-extension": {
@@ -624,6 +606,27 @@
    266.4,
    1003.2,
    539.2
+  ]
+ },
+ "own_banded-donkey-kick": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.43
+   ]
+  ],
+  "window": [
+   41.2,
+   150.2,
+   950.7,
+   749.7
   ]
  },
  "own_banded-face-pull": {
@@ -2262,6 +2265,27 @@
    25.6,
    777.8,
    988.8
+  ]
+ },
+ "own_donkey-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.0,
+    0.29
+   ]
+  ],
+  "window": [
+   209.0,
+   102.0,
+   730.1,
+   826.1
   ]
  },
  "own_drag-curl": {
@@ -6275,6 +6299,27 @@
    762.8
   ]
  },
+ "own_standing-calf-raise": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.27
+   ]
+  ],
+  "window": [
+   305.6,
+   5.6,
+   385.7,
+   985.7
+  ]
+ },
  "own_standing-leg-curl": {
   "source": 1,
   "kept": [
@@ -7471,111 +7516,6 @@
    457.9,
    994.0
   ]
- },
- "wg_assisted-chin-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "doubled outline 2.00",
-   "doubled outline 6.21",
-   "doubled outline 3.33"
-  ],
-  "stroke": [
-   [
-    3.3,
-    2.0
-   ],
-   [
-    1.7,
-    6.21
-   ],
-   [
-    1.8,
-    3.33
-   ]
-  ],
-  "window": [
-   124.8,
-   5.8,
-   261.5,
-   496.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_assisted-pull-up": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "doubled outline 3.04",
-   "doubled outline 2.64"
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.98
-   ],
-   [
-    3.3,
-    3.04
-   ],
-   [
-    3.3,
-    2.64
-   ]
-  ],
-  "window": [
-   111.2,
-   4.7,
-   266.6,
-   501.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
- },
- "wg_banded-donkey-kick": {
-  "source": 3,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.61
-   ],
-   [
-    3.7,
-    0.66
-   ],
-   [
-    4.5,
-    0.76
-   ]
-  ],
-  "window": [
-   11.0,
-   63.0,
-   480.0,
-   349.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Cleaner outline and recognizable movement pose, compared visually against all available frames."
-  }
  },
  "wg_banded-seated-hip-abduction": {
   "source": 3,

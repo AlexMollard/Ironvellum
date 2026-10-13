@@ -1,0 +1,25 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 9,
+  "exportedAt": "2026-10-13T04:58:47.350934+00:00",
+  "batchComplete": false,
+  "source": "User chat",
+  "frames": [
+    {
+      "id": "assisted-chin-up-1.png",
+      "sha256": "1fa3e3d01630e277b4e54f8e477ace1ed035e1a86599f1fbfda0109f004b86c0",
+      "status": "redo",
+      "note": "Grips are wrong for both new art and the machine is too detailed",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:58:47.350934+00:00"
+    },
+    {
+      "id": "assisted-pull-up-1.png",
+      "sha256": "01799fcd5f100c863fd5589099f9c23be9150b6cb744593a2ff48461fcd8dc20",
+      "status": "redo",
+      "note": "Grips are wrong for both new art and the machine is too detailed",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T04:58:47.350934+00:00"
+    }
+  ]
+}
