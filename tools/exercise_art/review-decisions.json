@@ -1,7 +1,7 @@
 {
   "schema": "ironvellum-art-review-v1",
-  "batch": 7,
-  "exportedAt": "2026-10-13T02:43:56.861992+00:00",
+  "batch": 8,
+  "exportedAt": "2026-10-13T03:42:16.999612+00:00",
   "batchComplete": true,
   "frames": [
     {
@@ -2067,6 +2067,406 @@
       "note": "",
       "reviewer": "You",
       "updatedAt": "2026-10-13T02:24:54.926Z"
+    },
+    {
+      "id": "dumbbell-overhead-triceps-extension-1.png",
+      "sha256": "a68331905a6728d06c5689f3b0b507c503d6a422caa6503f87e0a5bff33c6b4f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:21.923Z"
+    },
+    {
+      "id": "smith-machine-close-grip-bench-press-1.png",
+      "sha256": "1732a55b3a5340b7842c230c061b5501161e2b785b57a0d6da9bd2f41d8d1936",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:23.206Z"
+    },
+    {
+      "id": "standing-overhead-barbell-triceps-extension-1.png",
+      "sha256": "d399b5aaba693abd48c656cccf251988420a5033b959bb6606a093e14f3f7c3c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:24.608Z"
+    },
+    {
+      "id": "standing-towel-triceps-extension-1.png",
+      "sha256": "153ad3a4deb1490262743fa230e3f9f5e6db6187c0a53fae7e50ff368f3b55f1",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:25.530Z"
+    },
+    {
+      "id": "tate-press-1.png",
+      "sha256": "ef2e535f94a517e86adaf11890a3d45b92f31af346ea358acf9cb9ff0f0d4b81",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:26.887Z"
+    },
+    {
+      "id": "triceps-kickback-1.png",
+      "sha256": "e2b187a8eb3b8b3990847854379c18329f7f0cf28e9508d3588f176b16ad12e2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:27.817Z"
+    },
+    {
+      "id": "triceps-pushdown-1.png",
+      "sha256": "63d2d78e86d39349fb681a5bfeb47f0d9fabc730a15758cf2f3d788b8501663a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:28.920Z"
+    },
+    {
+      "id": "rope-triceps-pushdown-1.png",
+      "sha256": "232e6b5c5dca051cb4b3c265290af16357fa3507502a599c69f677d00f1ade83",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:29.942Z"
+    },
+    {
+      "id": "v-bar-triceps-pushdown-1.png",
+      "sha256": "401970141876d33cd1a5818985135624f5fe3e04693413b908cc2036c1bf8c72",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:31.297Z"
+    },
+    {
+      "id": "weighted-ball-side-bend-1.png",
+      "sha256": "35659a7276d0846d471546f8b0121a02fa7ab8528330c5a85763e656be11e948",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:32.783Z"
+    },
+    {
+      "id": "incline-dumbbell-triceps-extension-1.png",
+      "sha256": "8c041a17bbcceaddc242d07f752671facda20614db0edd56c14e0e43150e5fc2",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "machine-triceps-extension-1.png",
+      "sha256": "244913eee941c6e8ccb3acd3824d5b2e6223a61b4f80aa3c06d67f806b884684",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:31:58.964Z"
+    },
+    {
+      "id": "barbell-curl-1.png",
+      "sha256": "96f2ffc36fcab12babf310902782e5bfddfe3f09206d2ceae05e4bc74bf1286d",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:00.299Z"
+    },
+    {
+      "id": "cable-curl-1.png",
+      "sha256": "d012ea8bbab9c928aa249598707d190d16f70ea80622aed7d9d5aca9ce6658d6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:01.589Z"
+    },
+    {
+      "id": "alternating-hammer-curl-1.png",
+      "sha256": "f5a54a7cddff0669d5615b125ba5755b11b1eb94ec1eacb870bd85c1043a6f07",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:02.904Z"
+    },
+    {
+      "id": "incline-dumbbell-curl-1.png",
+      "sha256": "b82f3f420a922df447039fa6b87547928b88e9900ce476f28f64a6caf0b9d965",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:07.658Z"
+    },
+    {
+      "id": "lying-incline-barbell-curl-1.png",
+      "sha256": "a041e66a734d644a6b7d73e5d0c0a5808efdcb61499889129c638a22d4e0c0da",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:09.764Z"
+    },
+    {
+      "id": "rope-hammer-curl-1.png",
+      "sha256": "5ca0c6a182c672a1f7c5ed16a45cc15f72bb71668c83026b4f3395415e8efc2e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:11.406Z"
+    },
+    {
+      "id": "cable-preacher-curl-1.png",
+      "sha256": "2aa53f7ab922b3ac875292d992cb4d33fc8138f3f2038fb07d65925ca0e4d43e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:13.821Z"
+    },
+    {
+      "id": "close-grip-ez-bar-curl-1.png",
+      "sha256": "ceba634546ed02e80502732fb57d7d2cbf1fb302153c2a3d9396866fcffc07a9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:16.193Z"
+    },
+    {
+      "id": "close-grip-barbell-curl-1.png",
+      "sha256": "00e0f205b8714e12f5dd933fed8549ef9e162c986b764f0d85f0a38f13751850",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:17.086Z"
+    },
+    {
+      "id": "concentration-curl-1.png",
+      "sha256": "66391cbe023e97ba543d3cbca07309415c740f1fb5f547af4aab34e245615daf",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:18.578Z"
+    },
+    {
+      "id": "hammer-curl-across-body-1.png",
+      "sha256": "2f1d0e2d110567af5c7a15a36ffaf16d834ea4a0f5cf92e9cce1feebec38f1b2",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:20.438Z"
+    },
+    {
+      "id": "drag-curl-1.png",
+      "sha256": "a97638ecdc540fb0c704e86b18a8dd320f1541c75df55ba02748fd12ad5f2fff",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:21.758Z"
+    },
+    {
+      "id": "alternating-dumbbell-curl-1.png",
+      "sha256": "316d886dc07426d7883c142457f158b0abe7c8814656fe80e14e763a4db7cab6",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:24.435Z"
+    },
+    {
+      "id": "bicep-curl-1.png",
+      "sha256": "b36c8dcaec56e53e56b40add2f9c23436d748b37ffe4a974338f53706f2f8b83",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:25.650Z"
+    },
+    {
+      "id": "prone-incline-dumbbell-curl-1.png",
+      "sha256": "4c0617b4b3c9a234f2db41987a71d084776aca534a50db4fbbd06e0e9d21b64a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:26.873Z"
+    },
+    {
+      "id": "ez-bar-curl-1.png",
+      "sha256": "fae2f5d5b2f48cac552660ecdf7d32ce239c6305815af07a7fe6710e761c3a31",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:27.797Z"
+    },
+    {
+      "id": "hammer-curl-1.png",
+      "sha256": "d7a97ca75702f55f5fd6de7bb3fd7ab073ce329d8335c075be4a9aeae901d79f",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:28.824Z"
+    },
+    {
+      "id": "flexor-incline-dumbbell-curl-1.png",
+      "sha256": "a3922a1d91cd1b63c273fbd9cfbf9dec71b451c0a27217a1e058883e51740eb4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:30.060Z"
+    },
+    {
+      "id": "high-cable-curl-1.png",
+      "sha256": "e7d993d6664ed121c8644f41b8c96b05b5e0b972e54b86f7ad71f7b7ecfa1670",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:32:31.005Z"
+    },
+    {
+      "id": "lying-cable-curl-1.png",
+      "sha256": "a7ea35b88d985ac33b726a24712b08ba78dde5bfa3d35281ef64ba7d7d5665e9",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "preacher-curl-1.png",
+      "sha256": "61a13099bcbe64ac763aad1dc8758cbdb345446f4104fd74c4738198440cf4fc",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "one-arm-dumbbell-preacher-curl-1.png",
+      "sha256": "83977d09cf2bbe023577a1d9fe4e5e567abe5100c2093ab4823868c4001cdead",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:21.541Z"
+    },
+    {
+      "id": "overhead-cable-curl-1.png",
+      "sha256": "9f017482dcff505bfdadfa11599c2e471c15177eb4cbe9e7e88f5128436c848a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:24.398Z"
+    },
+    {
+      "id": "barbell-preacher-curl-1.png",
+      "sha256": "2884a76edbf1edb89e4e25edfb42baacc020749d68d8c063d7aa1e7c4d34a77c",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:25.891Z"
+    },
+    {
+      "id": "hammer-preacher-curl-1.png",
+      "sha256": "54b5098674294defa72ead606e7ff47217cda777a84d5ac5256c62982cd20813",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:27.390Z"
+    },
+    {
+      "id": "reverse-plate-curl-1.png",
+      "sha256": "b5b7a06676de0881da4f39f523f3b4077c9d90d9153e8b18d56b67c54301bf72",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:29.431Z"
+    },
+    {
+      "id": "seated-dumbbell-curl-1.png",
+      "sha256": "9ed9ea528ee105cba344b5ac9b59817df458900e65443a87571ae0dea7cc452a",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:31.254Z"
+    },
+    {
+      "id": "spider-curl-1.png",
+      "sha256": "c3d4dbbc40299fc9409bed72a90bb92f958b5a90c1a070652fbbce7bd2ff2bb9",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:32.902Z"
+    },
+    {
+      "id": "one-arm-cable-curl-1.png",
+      "sha256": "27bce56daf89441912c60493363c3661a674afa361eeedbd1ddcbffbee8dae16",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:34.952Z"
+    },
+    {
+      "id": "incline-bench-one-arm-dumbbell-curl-1.png",
+      "sha256": "4bd5779411a86f25fd57e2aeefba710441be741da867a1814293394bc3072f70",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:36.398Z"
+    },
+    {
+      "id": "wide-grip-barbell-curl-1.png",
+      "sha256": "a74c8fafc2d148820948d6f0dff27357506d932b352297dc352d2fed100528b7",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:37.522Z"
+    },
+    {
+      "id": "zottman-curl-1.png",
+      "sha256": "8df05c8d53bbdde9031a4a9ef208a056b2c2a06e851530487e9d0afdadd20409",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:39.240Z"
+    },
+    {
+      "id": "machine-bicep-curl-1.png",
+      "sha256": "5d8bd5ed405dafb25cdc890a22c7228ead5a962339c05a88e2e99739d02d4a04",
+      "status": "approved",
+      "note": "Approved by user in chat: they all look good continue to next batch",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:42:16.999612+00:00"
+    },
+    {
+      "id": "one-arm-barbell-curl-1.png",
+      "sha256": "34ce13917affd4a97917a87f95c7691e4772a592489ed2e4b0b12108816c18e4",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:51.682Z"
+    },
+    {
+      "id": "dumbbell-squat-to-curl-1.png",
+      "sha256": "35518fd6df91124f8755dd51929ba43f15cdb95ab0c5450962a6a39ca30457cd",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:55.606Z"
+    },
+    {
+      "id": "barbell-deadlift-to-curl-1.png",
+      "sha256": "be4579e691da342d17ac21f6378e08f349e37c9ef6a18cc449702e42b64356e3",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:56.760Z"
+    },
+    {
+      "id": "banded-alternating-curl-1.png",
+      "sha256": "5b664a03abfa3ea3cf07ebbca81c5a08a56e8e0b263ee5db876ed3234716e268",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:33:59.745Z"
+    },
+    {
+      "id": "lateral-lunge-to-curl-1.png",
+      "sha256": "278962a0215609afbca834da4365374b6b84a5184e20e697763c66cf2f725c9e",
+      "status": "approved",
+      "note": "",
+      "reviewer": "You",
+      "updatedAt": "2026-10-13T03:34:02.138Z"
     }
   ]
 }
