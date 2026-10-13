@@ -642,6 +642,14 @@ class Repository(
         )
     }
 
+    /**
+     * Several rites rewritten as one all-or-nothing write, so a change that spans rites (a movement moved
+     * between two of them, a swap of days) cannot land half, and Undo puts every one of them back together.
+     */
+    suspend fun savePlannedPresets(updates: List<Pair<Long, PlannedPreset>>) = db.withTransaction {
+        updates.forEach { (id, preset) -> savePlannedPreset(id, preset) }
+    }
+
     /** What an import did: workouts written and exercise names the catalogue lacks. */
     data class ImportedRoutine(val added: Int, val skippedExercises: List<String>)
 

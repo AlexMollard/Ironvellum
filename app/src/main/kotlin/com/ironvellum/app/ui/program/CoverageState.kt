@@ -92,6 +92,23 @@ internal fun coverageHeadline(tally: CoverageTally): String {
     return if (parts.isEmpty()) "Every muscle covered" else parts.joinToString(" · ")
 }
 
+/** Which of the coverage dock's two actions have something to do. */
+internal data class DockActions(val forge: Boolean, val optimise: Boolean) {
+    val any: Boolean get() = forge || optimise
+}
+
+/**
+ * A gap is something to forge a rite for. A gap or a heavy muscle in the PLANNED week is something to optimise
+ * the saved rites for; the last 7 days are what happened, so they offer Forge only, and with no saved rite there
+ * is nothing to change.
+ */
+internal fun dockActions(tally: CoverageTally, planned: Boolean, hasRites: Boolean): DockActions =
+    DockActions(forge = tally.gaps > 0, optimise = planned && hasRites && !tally.allClear)
+
+/** The quiet line for rites with no day: "1 rite has no day, so it isn't counted". */
+internal fun uncountedRitesLine(count: Int): String =
+    if (count == 1) "1 rite has no day, so it isn't counted" else "$count rites have no day, so they aren't counted"
+
 /** A muscle's weekly hard sets as the page says them: "0 hard sets", "1 hard set", "3.5 hard sets". */
 internal fun hardSetsLabel(sets: Double): String {
     val figure = trimSets(sets)

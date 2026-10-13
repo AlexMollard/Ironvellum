@@ -99,6 +99,7 @@ import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
 import com.ironvellum.app.ui.program.MuscleCoverageScreen
+import com.ironvellum.app.ui.program.OptimiseScreen
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.domain.CollectionTab
 import com.ironvellum.app.ui.idle.CollectionScreen
@@ -126,6 +127,7 @@ object Routes {
     const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
     const val MUSCLE_COVERAGE = "muscle_coverage"
+    const val OPTIMISE_RITES = "optimise_rites"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val LIFTER = "hunter/{userId}?name={name}"
     const val COMMENTS = "comments/{sessionId}?owner={ownerId}&headline={headline}"
@@ -392,6 +394,18 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         // "session" mode builds one workout aimed at the
                         // muscles this map just showed as neglected.
                         onGenerateSession = { navController.navigate(Routes.programBuilder("session")) },
+                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
+                        // Train is the page that lists the rites; it is usually just underneath.
+                        onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
+                        onOpenRites = {
+                            if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS)
+                        },
+                    )
+                }
+                composable(Routes.OPTIMISE_RITES) {
+                    OptimiseScreen(
+                        onBack = { navController.popBackStack() },
+                        onForgeCycle = { navController.navigate(Routes.programBuilder("week")) },
                     )
                 }
                 composable(

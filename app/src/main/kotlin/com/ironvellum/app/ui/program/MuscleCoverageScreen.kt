@@ -36,6 +36,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.runtime.setValue
@@ -110,6 +111,8 @@ data class CoverageUi(
     val unattributedPlannedSets: Int = 0,
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
+    /** Saved rites with no day, which the planned view leaves out ([uncountedRoutine]): id and name. */
+    val uncountedRites: List<Pair<Long, String>> = emptyList(),
 )
 
 /** Sets whose exercise has no MuscleMap profile, so the heat map cannot count them. */
@@ -187,6 +190,7 @@ class MuscleCoverageViewModel(
             unattributedPlannedSets = unattributedSets(plannedPresets),
             hasAnyPreset = presets.isNotEmpty(),
             hasLoggedWeek = loggedSets.isNotEmpty(),
+            uncountedRites = uncountedRoutine(presets) { it.scheduledDay }.map { it.id to it.name },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoverageUi())
 }
@@ -195,6 +199,9 @@ class MuscleCoverageViewModel(
 fun MuscleCoverageScreen(
     onBack: () -> Unit,
     onGenerateSession: () -> Unit,
+    onOpenRite: (Long) -> Unit = {},
+    onOpenRites: () -> Unit = {},
+    onOptimise: () -> Unit = {},
     viewModel: MuscleCoverageViewModel =
         viewModel(factory = viewModelFactory {
             initializer { MuscleCoverageViewModel(ironvellumRepository()) }
@@ -242,12 +249,18 @@ fun MuscleCoverageScreen(
                 onOpenExercise = { openExercise = it },
                 dismissed = dismissed.value,
                 onDismiss = { dismissed.value = dismissed.value + it },
+                onOpenUncounted = {
+                    // One rite goes straight to it; several go to the list that holds them all.
+                    ui.uncountedRites.singleOrNull()?.let { (id, _) -> onOpenRite(id) } ?: onOpenRites()
+                },
             )
         }
-        if (!empty && tally.gaps > 0) {
+        val actions = dockActions(tally, planned = view == CoverageView.CYCLE, hasRites = ui.hasAnyPreset)
+        if (!empty && actions.any) {
             CoverageDock(
                 headline = coverageHeadline(tally),
-                onForge = onGenerateSession,
+                onForge = onGenerateSession.takeIf { actions.forge },
+                onOptimise = onOptimise.takeIf { actions.optimise },
             )
         }
     }
@@ -299,20 +312,23 @@ internal fun CoveragePreviewScreen(
     }
 }
 
-/** What the page is short of, and the way to forge a rite that fills it. */
+/**
+ * What the page is short of, and the ways to act on it: forge a rite that fills a gap, or optimise the rites
+ * already there. With both, Forge is the one filled button (the page's primary action) and Optimise sits beside
+ * it as a quiet one; each shows only when it has something to do.
+ */
 @Composable
-private fun CoverageDock(headline: String, onForge: () -> Unit) {
-    Row(
+private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (() -> Unit)?) {
+    Column(
         Modifier
             .fillMaxWidth()
             .background(IronvellumColors.VaultHigh)
             .drawBehind { drawRect(IronvellumColors.Rune, size = Size(size.width, 1.dp.toPx())) }
             .navigationBarsPadding()
             .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f)) {
+        Column {
             Text(
                 headline,
                 style = MaterialTheme.typography.titleMedium,
@@ -324,7 +340,19 @@ private fun CoverageDock(headline: String, onForge: () -> Unit) {
                 color = IronvellumColors.InkMuted,
             )
         }
-        IronvellumButton(label = "Forge a rite", onClick = onForge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            if (onOptimise != null) {
+                IronvellumButton(
+                    label = "Optimise rites",
+                    onClick = onOptimise,
+                    quiet = onForge != null,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            if (onForge != null) {
+                IronvellumButton(label = "Forge a rite", onClick = onForge, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
 
@@ -338,6 +366,7 @@ internal fun CoveragePage(
     onOpenExercise: (String?) -> Unit,
     dismissed: Set<Muscle>,
     onDismiss: (Muscle) -> Unit,
+    onOpenUncounted: () -> Unit = {},
 ) {
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
     val loads = remember(presets, view) { loadsOf(presets, pooled = view == CoverageView.LOGGED) }
@@ -392,6 +421,9 @@ internal fun CoveragePage(
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
+        }
+        if (view == CoverageView.CYCLE && ui.uncountedRites.isNotEmpty()) {
+            UncountedRitesLine(ui.uncountedRites.size, onOpenUncounted)
         }
         Spacer(Modifier.height(12.dp))
 
@@ -512,6 +544,40 @@ internal fun CoveragePage(
             }
         }
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+/**
+ * A quiet line for rites the page cannot count because they have no day. It is a link: one rite opens that
+ * rite, several open the list. The words carry the meaning; nothing about it is a warning colour.
+ */
+@Composable
+private fun UncountedRitesLine(count: Int, onOpen: () -> Unit) {
+    val line = uncountedRitesLine(count)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = if (count == 1) "Open that rite to give it a day" else "Open your rites to give them days",
+                onClick = onOpen,
+            )
+            .semantics(mergeDescendants = true) { contentDescription = line },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            line,
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            "›",
+            style = MaterialTheme.typography.titleMedium,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.clearAndSetSemantics {},
+        )
     }
 }
 

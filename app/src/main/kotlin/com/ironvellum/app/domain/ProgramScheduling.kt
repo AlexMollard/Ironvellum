@@ -69,6 +69,24 @@ object Recovery {
         return penalty
     }
 
+    /** A muscle hit hard on two days [hours] apart, under [MIN_GAP_HOURS]. */
+    data class TightPair(val muscle: Muscle, val dayA: Int, val dayB: Int, val hours: Int)
+
+    /**
+     * Every pair of hard days of one muscle closer than 48 hours, the closest first (then by muscle order);
+     * empty when the week is spaced. [spacingPenalty] is the sum of these shortfalls.
+     */
+    fun tightPairs(presets: List<PlannedPreset>): List<TightPair> {
+        val found = mutableListOf<TightPair>()
+        for ((muscle, days) in hardDays(presets)) {
+            for (i in days.indices) for (j in i + 1 until days.size) {
+                val hours = gapHours(days[i], days[j])
+                if (hours < MIN_GAP_HOURS) found += TightPair(muscle, days[i], days[j], hours)
+            }
+        }
+        return found.sortedWith(compareBy({ it.hours }, { it.muscle.ordinal }, { it.dayA }))
+    }
+
     /**
      * The three best sessions of [week] to put [entry] in, best first. Each
      * is scored by the week's spacing penalty (x3) plus the minutes it runs

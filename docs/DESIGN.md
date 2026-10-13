@@ -321,6 +321,27 @@ unaffected. Its name may never match a catalogue, library, skill-tree or board
 name (case-insensitive), which is also what keeps it off every ally board. It is never prescribed by
 the Forge. Cardio and Mobility ones are activities and use the activity pricing.
 
+**Optimise rites (Weekly coverage).** The coverage dock offers "Optimise rites" beside "Forge a rite"
+(Forge is the filled one when both show; each shows only when it has something to do, and Optimise only on
+the Planned view). It opens one screen of small pages, each left with Back: the hub (Gaps, Heavy, Overlap), a gap's three ranked
+movements in the bottom sheet and then "Put it on" (the rite, the hard sets, the effect on the week), a heavy
+muscle's changes, one change opened, two movements doing one job, the days, and what was applied. A ranked
+movement is a radio row: its number, the name, a small caps "BEST MATCH" on the first, one line of why and what it
+would be prescribed; the chosen row has the thin Emerald bar and a filled ring (`RankedOptionRow`). A change is a
+card (kind in caps, title, why, a chevron) with "N more options" and a 48dp Keep | Skip radio group under it
+(`ChangeCard`, `KeepSkip`); MOVE changes start on Skip. "What it fixes" and "Effect on your week" list each muscle
+that moves with its state mark and "Covered, 6 → Below minimum, 3 hard sets" (`ImpactList`); the effect is a polite
+live region. Nothing is written until Apply; Apply writes every touched rite in one transaction and the next page
+says what was applied with "Undo, put Upper A back". Every state is a word as well as a mark, and the Heavy mark
+stays the ring with a double up-chevron.
+
+**Day sheet (saving a rite).** Saving a single rite from the Forge asks which weekday it goes on, in the app's
+bottom sheet: a four-column grid of Mon to Sun and "No day" (`PickCell`), the first free day ticked, and one line
+under it that says what the choice means ("Wednesday is free.", who already holds a taken day, or that a rite
+with no day is not counted in Weekly coverage). Weekly coverage says when rites have no day
+("1 rite has no day, so it isn't counted") as a quiet link to that rite, or to the rites list when there are
+several.
+
 **Pushed screen header.** Title on the left and the BACK chip on the right
 (`NavChip`), the same on every pushed screen. No left arrows.
 
