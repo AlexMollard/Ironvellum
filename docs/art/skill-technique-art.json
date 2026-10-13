@@ -128,7 +128,7 @@
     {
       "name": "Bench Dip",
       "status": "exact",
-      "drawing": "ek_0162",
+      "drawing": "own_bench-dip",
       "frames": 1,
       "shows": "Bench Dip"
     },
@@ -142,7 +142,7 @@
     {
       "name": "Parallel Bar Dip",
       "status": "exact",
-      "drawing": "ek_0172",
+      "drawing": "own_dip",
       "frames": 1,
       "shows": "Dip"
     },

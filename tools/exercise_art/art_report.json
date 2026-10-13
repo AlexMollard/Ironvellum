@@ -1,964 +1,4 @@
 {
- "ek_0126": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.0,
-    0.15
-   ],
-   [
-    3.0,
-    0.12
-   ]
-  ],
-  "window": [
-   21.0,
-   32.0,
-   612.1,
-   826.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0127": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.1,
-    0.14
-   ],
-   [
-    3.0,
-    0.1
-   ]
-  ],
-  "window": [
-   2.0,
-   -12.5,
-   861.1,
-   596.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0128": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.2,
-    0.31
-   ],
-   [
-    3.6,
-    0.34
-   ]
-  ],
-  "window": [
-   -26.7,
-   7.8,
-   688.5,
-   771.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0129": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.25
-   ],
-   [
-    4.3,
-    0.23
-   ]
-  ],
-  "window": [
-   8.2,
-   34.2,
-   413.7,
-   744.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0130": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.7,
-    0.25
-   ],
-   [
-    3.2,
-    0.2
-   ]
-  ],
-  "window": [
-   151.3,
-   125.8,
-   278.3,
-   766.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0131": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.3,
-    0.41
-   ],
-   [
-    3.3,
-    0.28
-   ]
-  ],
-  "window": [
-   -11.1,
-   90.9,
-   760.1,
-   600.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0132": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.27
-   ],
-   [
-    3.6,
-    0.25
-   ]
-  ],
-  "window": [
-   19.0,
-   193.0,
-   594.0,
-   687.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0133": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.22
-   ],
-   [
-    3.3,
-    0.2
-   ]
-  ],
-  "window": [
-   0.1,
-   146.1,
-   631.7,
-   745.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0134": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.0,
-    0.17
-   ],
-   [
-    3.0,
-    0.16
-   ]
-  ],
-  "window": [
-   -12.0,
-   78.0,
-   562.1,
-   826.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0136": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.7,
-    0.23
-   ],
-   [
-    3.2,
-    0.2
-   ]
-  ],
-  "window": [
-   55.8,
-   125.8,
-   409.3,
-   766.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0137": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.1,
-    0.25
-   ],
-   [
-    3.1,
-    0.2
-   ]
-  ],
-  "window": [
-   35.3,
-   99.3,
-   506.4,
-   804.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0138": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.29
-   ],
-   [
-    3.2,
-    0.15
-   ]
-  ],
-  "window": [
-   13.8,
-   120.8,
-   613.5,
-   771.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0139": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.23
-   ],
-   [
-    3.2,
-    0.21
-   ]
-  ],
-  "window": [
-   12.8,
-   120.8,
-   614.5,
-   771.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0140": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    5.3,
-    0.46
-   ],
-   [
-    3.8,
-    0.44
-   ]
-  ],
-  "window": [
-   62.4,
-   112.4,
-   589.1,
-   656.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0141": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    5.1,
-    0.27
-   ],
-   [
-    3.2,
-    0.38
-   ]
-  ],
-  "window": [
-   66.9,
-   28.9,
-   307.2,
-   763.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0142": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.1,
-    0.23
-   ],
-   [
-    4.1,
-    0.18
-   ]
-  ],
-  "window": [
-   65.2,
-   101.2,
-   382.7,
-   607.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0143": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.1,
-    0.14
-   ],
-   [
-    3.0,
-    0.1
-   ]
-  ],
-  "window": [
-   2.5,
-   -12.5,
-   861.1,
-   596.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0144": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.31
-   ],
-   [
-    3.6,
-    0.15
-   ]
-  ],
-  "window": [
-   41.9,
-   48.9,
-   695.2,
-   473.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0145": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.12
-   ],
-   [
-    4.0,
-    0.13
-   ]
-  ],
-  "window": [
-   20.6,
-   83.1,
-   750.9,
-   527.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0146": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.25
-   ],
-   [
-    3.3,
-    0.22
-   ]
-  ],
-  "window": [
-   -17.3,
-   148.2,
-   654.6,
-   742.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0148": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.5,
-    0.19
-   ],
-   [
-    3.2,
-    0.14
-   ]
-  ],
-  "window": [
-   -4.2,
-   -40.7,
-   446.5,
-   805.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0150": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.6,
-    0.37
-   ],
-   [
-    3.2,
-    0.28
-   ]
-  ],
-  "window": [
-   -11.2,
-   125.8,
-   542.3,
-   766.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0151": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.94
-   ],
-   [
-    3.4,
-    0.98
-   ]
-  ],
-  "window": [
-   -10.7,
-   84.3,
-   732.3,
-   685.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0154": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.8,
-    0.22
-   ],
-   [
-    3.3,
-    0.1
-   ]
-  ],
-  "window": [
-   4.1,
-   139.1,
-   645.7,
-   745.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0158": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.14
-   ],
-   [
-    3.5,
-    0.15
-   ]
-  ],
-  "window": [
-   39.8,
-   31.8,
-   367.5,
-   703.5
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0160": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.47
-   ],
-   [
-    3.4,
-    0.43
-   ]
-  ],
-  "window": [
-   -6.5,
-   110.5,
-   724.1,
-   659.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0161": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.7
-   ],
-   [
-    3.5,
-    0.6
-   ]
-  ],
-  "window": [
-   9.8,
-   99.8,
-   699.4,
-   670.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0162": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.22
-   ],
-   [
-    3.4,
-    0.2
-   ]
-  ],
-  "window": [
-   29.3,
-   50.3,
-   732.3,
-   551.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0163": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.6,
-    0.18
-   ],
-   [
-    3.6,
-    0.19
-   ]
-  ],
-  "window": [
-   11.7,
-   -9.3,
-   507.6,
-   638.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0164": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.13
-   ],
-   [
-    3.9,
-    0.18
-   ]
-  ],
-  "window": [
-   6.7,
-   -9.3,
-   513.6,
-   638.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0165": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.3,
-    0.23
-   ],
-   [
-    4.2,
-    0.23
-   ]
-  ],
-  "window": [
-   39.0,
-   100.0,
-   615.9,
-   549.9
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0166": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.0,
-    0.18
-   ],
-   [
-    3.0,
-    0.22
-   ]
-  ],
-  "window": [
-   139.6,
-   -10.9,
-   281.8,
-   815.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
  "ek_0168": {
   "source": 2,
   "kept": [
@@ -983,66 +23,6 @@
    16.6,
    712.8,
    592.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0169": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.19
-   ],
-   [
-    4.1,
-    0.32
-   ]
-  ],
-  "window": [
-   18.1,
-   38.1,
-   591.7,
-   608.7
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0170": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.26
-   ],
-   [
-    4.1,
-    0.24
-   ]
-  ],
-  "window": [
-   41.2,
-   43.2,
-   739.5,
-   642.5
   ],
   "stillSelection": {
    "sourceFrame": 0,
@@ -1077,426 +57,6 @@
   "stillSelection": {
    "sourceFrame": 1,
    "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0172": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.3,
-    0.25
-   ],
-   [
-    3.9,
-    0.18
-   ]
-  ],
-  "window": [
-   20.4,
-   146.4,
-   368.3,
-   661.3
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0174": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.64
-   ],
-   [
-    3.8,
-    0.56
-   ]
-  ],
-  "window": [
-   24.4,
-   48.4,
-   564.1,
-   656.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0175": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.24
-   ],
-   [
-    3.8,
-    0.23
-   ]
-  ],
-  "window": [
-   26.5,
-   -9.0,
-   687.0,
-   661.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0177": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.0,
-    0.13
-   ],
-   [
-    4.5,
-    0.16
-   ]
-  ],
-  "window": [
-   23.0,
-   -10.5,
-   653.0,
-   486.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0178": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.27
-   ],
-   [
-    3.9,
-    0.33
-   ]
-  ],
-  "window": [
-   16.8,
-   61.8,
-   631.4,
-   407.4
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0179": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.5,
-    0.31
-   ],
-   [
-    3.3,
-    0.38
-   ]
-  ],
-  "window": [
-   -7.0,
-   16.0,
-   758.1,
-   492.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0181": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.4,
-    0.13
-   ],
-   [
-    4.7,
-    0.13
-   ]
-  ],
-  "window": [
-   43.4,
-   94.4,
-   591.2,
-   556.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0182": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.35
-   ],
-   [
-    3.8,
-    0.45
-   ]
-  ],
-  "window": [
-   2.2,
-   50.2,
-   532.6,
-   605.6
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0183": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.25
-   ],
-   [
-    3.8,
-    0.35
-   ]
-  ],
-  "window": [
-   41.0,
-   -11.0,
-   756.0,
-   663.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0186": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    4.9,
-    0.23
-   ],
-   [
-    4.0,
-    0.33
-   ]
-  ],
-  "window": [
-   6.5,
-   68.5,
-   532.1,
-   587.1
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0187": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.9,
-    0.17
-   ],
-   [
-    4.2,
-    0.26
-   ]
-  ],
-  "window": [
-   18.4,
-   54.4,
-   591.2,
-   592.2
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0189": {
-  "source": 2,
-  "kept": [
-   1
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.0,
-    0.19
-   ],
-   [
-    3.0,
-    0.25
-   ]
-  ],
-  "window": [
-   134.1,
-   -11.9,
-   286.8,
-   816.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 1,
-   "reason": "Distinct active pose with readable body and equipment."
-  }
- },
- "ek_0190": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.7,
-    0.15
-   ],
-   [
-    3.0,
-    0.18
-   ]
-  ],
-  "window": [
-   43.1,
-   23.1,
-   697.8,
-   817.8
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
-  }
- },
- "ek_0193": {
-  "source": 2,
-  "kept": [
-   0
-  ],
-  "why": [
-   "",
-   ""
-  ],
-  "stroke": [
-   [
-    3.4,
-    0.29
-   ],
-   [
-    2.9,
-    0.29
-   ]
-  ],
-  "window": [
-   34.0,
-   -7.5,
-   591.0,
-   858.0
-  ],
-  "stillSelection": {
-   "sourceFrame": 0,
-   "reason": "Lowered, hinged or open position identifies the movement more clearly than its other pose."
   }
  },
  "ek_0194": {
@@ -4250,6 +2810,27 @@
    929.6
   ]
  },
+ "own_barbell-reverse-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.25
+   ]
+  ],
+  "window": [
+   25.8,
+   131.8,
+   976.4,
+   815.4
+  ]
+ },
  "own_barbell-row": {
   "source": 1,
   "kept": [
@@ -4269,6 +2850,90 @@
    40.2,
    897.7,
    949.7
+  ]
+ },
+ "own_barbell-side-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   31.7,
+   145.7,
+   984.7,
+   796.7
+  ]
+ },
+ "own_barbell-single-leg-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.25
+   ]
+  ],
+  "window": [
+   42.8,
+   121.8,
+   977.5,
+   849.5
+  ]
+ },
+ "own_barbell-squat-to-bench": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.24
+   ]
+  ],
+  "window": [
+   0.1,
+   127.1,
+   1024.8,
+   822.9
+  ]
+ },
+ "own_barbell-step-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.55
+   ]
+  ],
+  "window": [
+   41.9,
+   37.9,
+   939.3,
+   971.3
   ]
  },
  "own_barbell-upright-row": {
@@ -4311,6 +2976,27 @@
    22.0,
    662.1,
    964.1
+  ]
+ },
+ "own_bench-dip": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.26
+   ]
+  ],
+  "window": [
+   29.7,
+   106.7,
+   979.5,
+   820.5
   ]
  },
  "own_bench-press": {
@@ -4880,6 +3566,48 @@
    876.4
   ]
  },
+ "own_decline-dumbbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.46
+   ]
+  ],
+  "window": [
+   18.6,
+   295.6,
+   988.8,
+   627.8
+  ]
+ },
+ "own_decline-ez-bar-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.32
+   ]
+  ],
+  "window": [
+   30.6,
+   237.6,
+   991.9,
+   736.9
+  ]
+ },
  "own_deep-squat-hold": {
   "source": 1,
   "kept": [
@@ -4899,6 +3627,27 @@
    85.3,
    741.4,
    870.4
+  ]
+ },
+ "own_dip": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.4
+   ]
+  ],
+  "window": [
+   129.6,
+   25.6,
+   777.8,
+   988.8
   ]
  },
  "own_dragon-squat": {
@@ -5027,6 +3776,27 @@
    878.3
   ]
  },
+ "own_dumbbell-iron-cross": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.42
+   ]
+  ],
+  "window": [
+   32.0,
+   32.0,
+   960.0,
+   961.0
+  ]
+ },
  "own_dumbbell-lunge": {
   "source": 1,
   "kept": [
@@ -5109,6 +3879,69 @@
    19.6,
    449.7,
    986.7
+  ]
+ },
+ "own_dumbbell-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.9,
+    0.29
+   ]
+  ],
+  "window": [
+   202.0,
+   87.0,
+   634.0,
+   893.0
+  ]
+ },
+ "own_dumbbell-squat-to-bench": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.8,
+    0.3
+   ]
+  ],
+  "window": [
+   139.1,
+   84.1,
+   732.8,
+   885.8
+  ]
+ },
+ "own_dumbbell-step-up": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.3
+   ]
+  ],
+  "window": [
+   206.0,
+   30.0,
+   682.1,
+   964.1
   ]
  },
  "own_dumbbell-upright-row": {
@@ -5363,6 +4196,48 @@
    729.2
   ]
  },
+ "own_front-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.29
+   ]
+  ],
+  "window": [
+   -4.0,
+   172.0,
+   1031.0,
+   754.0
+  ]
+ },
+ "own_front-squat-to-bench": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.35
+   ]
+  ],
+  "window": [
+   -7.1,
+   184.9,
+   1038.2,
+   768.2
+  ]
+ },
  "own_full-planche": {
   "source": 1,
   "kept": [
@@ -5615,6 +4490,27 @@
    1012.5
   ]
  },
+ "own_incline-barbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.27
+   ]
+  ],
+  "window": [
+   72.7,
+   112.7,
+   912.6,
+   866.6
+  ]
+ },
  "own_incline-bench-press": {
   "source": 1,
   "kept": [
@@ -5655,6 +4551,48 @@
    18.3,
    1006.3,
    969.3
+  ]
+ },
+ "own_incline-cable-pushdown": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.37
+   ]
+  ],
+  "window": [
+   39.4,
+   4.4,
+   946.2,
+   1002.2
+  ]
+ },
+ "own_incline-cable-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.4
+   ]
+  ],
+  "window": [
+   24.7,
+   23.7,
+   975.5,
+   979.5
   ]
  },
  "own_incline-dumbbell-fly": {
@@ -5825,6 +4763,48 @@
    1016.6
   ]
  },
+ "own_jefferson-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.7
+   ]
+  ],
+  "window": [
+   48.1,
+   38.1,
+   934.8,
+   955.8
+  ]
+ },
+ "own_jm-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.4
+   ]
+  ],
+  "window": [
+   41.8,
+   204.8,
+   975.4,
+   748.4
+  ]
+ },
  "own_judo": {
   "source": 1,
   "kept": [
@@ -5930,6 +4910,27 @@
    893.0
   ]
  },
+ "own_kneeling-cable-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.27
+   ]
+  ],
+  "window": [
+   53.6,
+   17.6,
+   935.8,
+   989.8
+  ]
+ },
  "own_lat-pulldown": {
   "source": 1,
   "kept": [
@@ -5970,6 +4971,132 @@
    46.4,
    919.2,
    935.2
+  ]
+ },
+ "own_leg-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.39
+   ]
+  ],
+  "window": [
+   130.3,
+   52.3,
+   785.3,
+   938.3
+  ]
+ },
+ "own_leg-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.8,
+    0.34
+   ]
+  ],
+  "window": [
+   -2.0,
+   186.0,
+   1032.1,
+   777.1
+  ]
+ },
+ "own_low-cable-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    0.37
+   ]
+  ],
+  "window": [
+   26.5,
+   142.5,
+   998.1,
+   728.1
+  ]
+ },
+ "own_lying-barbell-triceps-extension-behind-the-head": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.32
+   ]
+  ],
+  "window": [
+   24.3,
+   303.3,
+   1010.4,
+   584.4
+  ]
+ },
+ "own_lying-cable-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.6,
+    0.32
+   ]
+  ],
+  "window": [
+   5.2,
+   167.2,
+   1014.5,
+   642.5
+  ]
+ },
+ "own_lying-dumbbell-triceps-extension-across-face": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.29
+   ]
+  ],
+  "window": [
+   15.3,
+   161.3,
+   1009.4,
+   759.4
   ]
  },
  "own_lying-leg-curl": {
@@ -6033,6 +5160,27 @@
    260.1,
    1019.7,
    633.7
+  ]
+ },
+ "own_lying-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.23
+   ]
+  ],
+  "window": [
+   7.3,
+   188.3,
+   1011.5,
+   726.5
   ]
  },
  "own_machine-chest-press": {
@@ -6140,6 +5288,69 @@
    952.8
   ]
  },
+ "own_narrow-stance-barbell-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.27
+   ]
+  ],
+  "window": [
+   21.7,
+   181.7,
+   980.6,
+   797.6
+  ]
+ },
+ "own_narrow-stance-hack-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.22
+   ]
+  ],
+  "window": [
+   67.3,
+   63.3,
+   895.4,
+   939.4
+  ]
+ },
+ "own_narrow-stance-leg-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.18
+   ]
+  ],
+  "window": [
+   -1.0,
+   152.0,
+   1030.0,
+   771.0
+  ]
+ },
  "own_neutral-grip-pull-up": {
   "source": 1,
   "kept": [
@@ -6203,6 +5414,27 @@
    697.5
   ]
  },
+ "own_one-arm-barbell-snatch": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.45
+   ]
+  ],
+  "window": [
+   212.6,
+   18.6,
+   684.8,
+   987.8
+  ]
+ },
  "own_one-arm-biased-push-up": {
   "source": 1,
   "kept": [
@@ -6222,6 +5454,27 @@
    276.5,
    994.0,
    556.0
+  ]
+ },
+ "own_one-arm-cable-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.29
+   ]
+  ],
+  "window": [
+   218.6,
+   7.6,
+   694.9,
+   990.9
   ]
  },
  "own_one-arm-dumbbell-bench-press": {
@@ -6455,6 +5708,27 @@
    590.1
   ]
  },
+ "own_one-arm-side-deadlift": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.28
+   ]
+  ],
+  "window": [
+   32.8,
+   68.8,
+   973.4,
+   910.4
+  ]
+ },
  "own_one-leg-back-lever": {
   "source": 1,
   "kept": [
@@ -6516,6 +5790,27 @@
    242.2,
    1013.5,
    556.5
+  ]
+ },
+ "own_overhead-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.44
+   ]
+  ],
+  "window": [
+   -3.0,
+   112.0,
+   1030.0,
+   852.0
   ]
  },
  "own_pancake": {
@@ -6644,6 +5939,27 @@
    313.4
   ]
  },
+ "own_pronated-one-arm-dumbbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.44
+   ]
+  ],
+  "window": [
+   32.7,
+   188.7,
+   980.6,
+   705.6
+  ]
+ },
  "own_pull-up": {
   "source": 1,
   "kept": [
@@ -6684,6 +6000,69 @@
    438.9,
    970.3,
    339.3
+  ]
+ },
+ "own_reverse-grip-triceps-bench-press": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.31
+   ]
+  ],
+  "window": [
+   17.5,
+   118.5,
+   994.0,
+   849.0
+  ]
+ },
+ "own_reverse-grip-triceps-pushdown": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.7,
+    1.06
+   ]
+  ],
+  "window": [
+   332.1,
+   33.1,
+   458.8,
+   953.8
+  ]
+ },
+ "own_reverse-lunge": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.24
+   ]
+  ],
+  "window": [
+   198.2,
+   47.2,
+   632.5,
+   945.5
   ]
  },
  "own_ring-dip": {
@@ -6917,6 +6296,27 @@
    922.9
   ]
  },
+ "own_seated-overhead-barbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.38
+   ]
+  ],
+  "window": [
+   109.1,
+   49.1,
+   805.8,
+   954.8
+  ]
+ },
  "own_side-plank": {
   "source": 1,
   "kept": [
@@ -7001,6 +6401,27 @@
    720.1
   ]
  },
+ "own_skull-crusher": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    1.9,
+    0.39
+   ]
+  ],
+  "window": [
+   42.7,
+   133.7,
+   984.7,
+   834.7
+  ]
+ },
  "own_smith-machine-bench-press": {
   "source": 1,
   "kept": [
@@ -7062,6 +6483,27 @@
    0.5,
    977.1,
    999.1
+  ]
+ },
+ "own_smith-machine-hack-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.6,
+    0.34
+   ]
+  ],
+  "window": [
+   45.0,
+   33.0,
+   932.9,
+   958.9
   ]
  },
  "own_smith-machine-incline-bench-press": {
@@ -7230,6 +6672,27 @@
    96.5,
    995.0,
    883.0
+  ]
+ },
+ "own_speed-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.39
+   ]
+  ],
+  "window": [
+   6.3,
+   187.3,
+   1012.5,
+   773.5
   ]
  },
  "own_sport-climbing": {
@@ -7568,6 +7031,27 @@
    967.2
   ]
  },
+ "own_supinated-one-arm-dumbbell-triceps-extension": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.3,
+    0.54
+   ]
+  ],
+  "window": [
+   16.4,
+   187.4,
+   1003.2,
+   711.2
+  ]
+ },
  "own_surfing": {
   "source": 1,
   "kept": [
@@ -7841,6 +7325,27 @@
    747.2
   ]
  },
+ "own_two-dumbbell-skullcrusher": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.28
+   ]
+  ],
+  "window": [
+   5.0,
+   132.0,
+   1027.9,
+   809.9
+  ]
+ },
  "own_v-sit": {
   "source": 1,
   "kept": [
@@ -8009,6 +7514,27 @@
    348.6
   ]
  },
+ "own_weighted-sissy-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.5,
+    0.32
+   ]
+  ],
+  "window": [
+   138.6,
+   24.6,
+   840.7,
+   986.7
+  ]
+ },
  "own_weighted-skipping": {
   "source": 1,
   "kept": [
@@ -8114,6 +7640,27 @@
    820.1
   ]
  },
+ "own_wide-stance-barbell-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.31
+   ]
+  ],
+  "window": [
+   -2.0,
+   162.0,
+   1027.9,
+   778.9
+  ]
+ },
  "own_wrestling": {
   "source": 1,
   "kept": [
@@ -8175,6 +7722,27 @@
    21.1,
    887.8,
    955.8
+  ]
+ },
+ "own_zercher-squat": {
+  "source": 1,
+  "kept": [
+   0
+  ],
+  "why": [
+   ""
+  ],
+  "stroke": [
+   [
+    2.4,
+    0.62
+   ]
+  ],
+  "window": [
+   -2.0,
+   112.0,
+   1029.0,
+   815.0
   ]
  },
  "wg_active-hang": {
