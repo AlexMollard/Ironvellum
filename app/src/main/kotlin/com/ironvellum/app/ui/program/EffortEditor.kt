@@ -25,7 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Seed
 import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.PlannedEntry
@@ -43,9 +46,19 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** One load step: 2.5 kg, or 5 lb for a lifter who counts in pounds. */
 internal fun loadStepKg(unit: LoadUnit): Double = if (unit == LoadUnit.KG) 2.5 else 5.0 * 0.45359237
 
-/** The kit a plan entry's load is stepped in: the lifter's vest and belt on a loaded bodyweight lift, else null. */
-internal fun wornFor(entry: PlannedEntry, equipment: Equipment?): LoadKit? =
-    WornLoad.forLift(equipment?.kit, entry.exerciseName, weighted = null)
+/**
+ * The kit a plan entry's load is stepped in: the lifter's vest and belt on a loaded bodyweight lift, else null.
+ * The movement's catalogue flag comes from [catalogue] (custom movements too), else the seeded catalogue, so
+ * a plain Pull-up is recognised here exactly as the live trial recognises it.
+ */
+internal fun wornFor(entry: PlannedEntry, equipment: Equipment?, catalogue: List<Exercise> = emptyList()): LoadKit? {
+    val known = catalogue.firstOrNull { it.name.equals(entry.exerciseName, ignoreCase = true) }
+    return WornLoad.forLift(
+        equipment?.kit, entry.exerciseName,
+        known?.isWeighted ?: Seed.isWeighted(entry.exerciseName),
+        known?.metric ?: ExerciseMetric.REPS,
+    )
+}
 
 /** A label, then − value +; the pads are 48dp and say whose count they change. */
 @Composable

@@ -203,7 +203,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
                 onLoad = { entryIndex, delta ->
                     vm.editEntry(dayIndex, entryIndex) { entry ->
                         val cap = equipment?.let { ProgramGenerator.dumbbellCapKg(entry.exerciseName, it) }
-                        entry.withLoadDelta(delta, loadStepKg(Units.current), cap, wornFor(entry, equipment), Units.current)
+                        entry.withLoadDelta(delta, loadStepKg(Units.current), cap, wornFor(entry, equipment, catalogue), Units.current)
                     }
                 },
                 onSwap = { entryIndex ->

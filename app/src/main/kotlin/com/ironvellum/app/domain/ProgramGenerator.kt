@@ -609,7 +609,7 @@ object ProgramGenerator {
     ): LoadFill? {
         if (!exercise.isWeighted) return null
         val group = exercise.muscleGroup.name
-        val worn = WornLoad.forLift(equipment.kit, exercise.name, exercise.isWeighted)
+        val worn = WornLoad.forLift(equipment.kit, exercise.name, exercise.isWeighted, exercise.metric)
         var base = ProgramRules.workingLoadKg(exercise.name, group, strength, reps, rir, worn)
         if (base == null) {
             base = ProgramRules.estimatedLoadKg(

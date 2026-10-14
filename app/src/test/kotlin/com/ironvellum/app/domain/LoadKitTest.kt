@@ -318,6 +318,30 @@ class LoadKitTest {
         assertEquals(20.5, entry.withLoadDelta(1, 2.5).targetWeightKg!!, 1e-9)
     }
 
+    @Test
+    fun `a plain pull-up with a load steps by the vest block in the rite editor and the generator`() {
+        val entry = PlannedEntry("Pull-up", 3, 8, 4.0)
+        val equipment = Equipment(fullGym = false, gear = setOf(Gear.PULL_UP_BAR), kit = vest)
+        // The seeded catalogue flag, and a catalogue passed in, give the same answer.
+        for (catalogue in listOf(emptyList(), listOf(Exercise(1, "Pull-up", MuscleGroup.PULL, isWeighted = false)))) {
+            val worn = wornFor(entry, equipment, catalogue)
+            assertNotNull(worn)
+            assertEquals(5.0, entry.withLoadDelta(1, 2.5, worn = worn).targetWeightKg!!, 1e-9)
+            assertEquals(3.0, entry.withLoadDelta(-1, 2.5, worn = worn).targetWeightKg!!, 1e-9)
+        }
+        // A custom movement is known only to the catalogue passed in.
+        val custom = Exercise(2, "My Chin Hang", MuscleGroup.PULL, isWeighted = false)
+        assertNotNull(wornFor(entry.copy(exerciseName = "My Chin Hang"), equipment, listOf(custom)))
+        assertNull(wornFor(PlannedEntry("Bench Press", 3, 5, 60.0), equipment))
+        // The generator resolves the same lift the same way and floors its e1RM load to the block.
+        val worn = WornLoad.forLift(vest, "Pull-up", weighted = false, metric = ExerciseMetric.REPS)
+        assertNotNull(worn)
+        // e1rm 10.67 / 1.2333 = 8.65 kg: the block gives 8, the 2.5 grid 7.5.
+        val light = ProgramRules.strengthProfile(listOf(LoggedLift("Pull-up", 8.0, 10)))
+        assertEquals(8.0, ProgramRules.workingLoadKg("Pull-up", "PULL", light, 5, 2, worn)!!.first, 1e-9)
+        assertEquals(7.5, ProgramRules.workingLoadKg("Pull-up", "PULL", light, 5, 2)!!.first, 1e-9)
+    }
+
     // ---- the gear summary
 
     @Test
