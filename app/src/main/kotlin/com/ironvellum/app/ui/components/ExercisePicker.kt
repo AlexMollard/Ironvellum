@@ -17,6 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ironvellum.app.ui.theme.InkEdgeShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Add
@@ -27,7 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -137,6 +144,13 @@ private class PickerControls(defaultMyGear: Boolean) {
     var filters by mutableStateOf(PickerFilters(myGear = defaultMyGear))
     var filtersOpen by mutableStateOf(false)
 
+    /**
+     * The favourites the rows were laid out with, held from a star tap until the search or filters change. Favourites
+     * sort into their own card at the top, so laying out by the live set moved the starred row out from under the
+     * finger and the next one slid up in its place. The star itself always reads the live set.
+     */
+    var layoutFavourites by mutableStateOf<Set<Long>?>(null)
+
     /** The exercise form, open for a new movement (edit null, name prefilled) or for one of the lifter's own. */
     var form by mutableStateOf<FormRequest?>(null)
 }
@@ -172,10 +186,23 @@ private fun CustomExerciseHost(
 }
 
 @Composable
-private fun pickerView(exercises: List<Exercise>, controls: PickerControls, data: PickerData): PickerView =
-    remember(exercises, controls.query, controls.filters, data) {
-        buildPickerView(exercises, controls.query, controls.filters, data.equipment, data.recentIds, data.favouriteIds)
+private fun pickerView(exercises: List<Exercise>, controls: PickerControls, data: PickerData): PickerView {
+    val favourites = controls.layoutFavourites ?: data.favouriteIds
+    return remember(exercises, controls.query, controls.filters, data, favourites) {
+        buildPickerView(exercises, controls.query, controls.filters, data.equipment, data.recentIds, favourites)
     }
+}
+
+/** A new search or filter re-sorts the list, so the held favourites are let go. */
+@Composable
+private fun ReleaseLayoutFavourites(exercises: List<Exercise>, controls: PickerControls) {
+    LaunchedEffect(exercises, controls.query, controls.filters) { controls.layoutFavourites = null }
+}
+
+private fun PickerControls.setFavourite(vm: ExercisePickerViewModel, data: PickerData, id: Long, favourite: Boolean) {
+    if (layoutFavourites == null) layoutFavourites = data.favouriteIds
+    vm.setFavourite(id, favourite)
+}
 
 /**
  * The universal exercise picker as a full-screen sheet: search pinned above
@@ -196,11 +223,12 @@ fun ExercisePickerSheet(
     val vm = rememberPickerViewModel()
     val data by vm.data.collectAsStateWithLifecycle()
     val controls = remember { PickerControls(defaultMyGear) }
+    ReleaseLayoutFavourites(exercises, controls)
     val view = pickerView(exercises, controls, data)
     // Only computed when the list is already empty: a second catalogue pass,
     // run with MY GEAR off, is what proves the gear filter did the emptying.
     val gearHidAll = view.count == 0 &&
-        remember(exercises, controls.query, controls.filters, data) {
+        remember(exercises, controls.query, controls.filters, data, controls.layoutFavourites) {
             controls.filters.myGear && data.equipment != null &&
                 buildPickerView(
                     exercises,
@@ -208,7 +236,7 @@ fun ExercisePickerSheet(
                     controls.filters.copy(myGear = false),
                     data.equipment,
                     data.recentIds,
-                    data.favouriteIds,
+                    controls.layoutFavourites ?: data.favouriteIds,
                 ).count > 0
         }
     InkPickerSheet(
@@ -225,7 +253,8 @@ fun ExercisePickerSheet(
             Spacer(Modifier.height(12.dp))
         }
         exerciseRows(
-            view, data, controls.query, gearHidAll, browse = false, onPick, vm::setFavourite,
+            view, data, controls.query, gearHidAll, browse = false, onPick,
+            { id, favourite -> controls.setFavourite(vm, data, id, favourite) },
             onNew = { controls.form = FormRequest(null, it) },
             onEdit = { controls.form = FormRequest(it, "") },
         )
@@ -248,10 +277,11 @@ fun ExercisePickerPanel(
     val vm = rememberPickerViewModel()
     val data by vm.data.collectAsStateWithLifecycle()
     val controls = remember { PickerControls(defaultMyGear) }
+    ReleaseLayoutFavourites(exercises, controls)
     val view = pickerView(exercises, controls, data)
     // Same proof as the sheet: a second pass with MY GEAR off, only when empty.
     val gearHidAll = view.count == 0 &&
-        remember(exercises, controls.query, controls.filters, data) {
+        remember(exercises, controls.query, controls.filters, data, controls.layoutFavourites) {
             controls.filters.myGear && data.equipment != null &&
                 buildPickerView(
                     exercises,
@@ -259,7 +289,7 @@ fun ExercisePickerPanel(
                     controls.filters.copy(myGear = false),
                     data.equipment,
                     data.recentIds,
-                    data.favouriteIds,
+                    controls.layoutFavourites ?: data.favouriteIds,
                 ).count > 0
         }
     Column(modifier.fillMaxWidth()) {
@@ -276,7 +306,8 @@ fun ExercisePickerPanel(
         Spacer(Modifier.height(12.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             exerciseRows(
-                view, data, controls.query, gearHidAll, browse = true, onPick, vm::setFavourite,
+                view, data, controls.query, gearHidAll, browse = true, onPick,
+                { id, favourite -> controls.setFavourite(vm, data, id, favourite) },
                 onNew = { controls.form = FormRequest(null, it) },
                 onEdit = { controls.form = FormRequest(it, "") },
             )
@@ -381,26 +412,23 @@ private fun LazyListScope.exerciseRows(
     onEdit: (Exercise) -> Unit,
 ) {
     val now = System.currentTimeMillis()
-    // One Vault card per section, its rows divided by InkDivider.
-    // shortcut: a section is one lazy item, so a very long section composes whole; chunk the rows if the catalogue outgrows it.
+    // One Vault card per section, its rows divided by InkDivider. Each row is its own lazy item drawing its slice of
+    // the card: a whole section as one item was thousands of pixels tall, and tapping far down a shape that tall
+    // missed its clip, so info and the star went dead once the list was scrolled into a long section.
     fun LazyListScope.section(id: String, header: String, prefix: String, list: List<Exercise>) {
         item(key = "header_$id") { SectionHeader(header, topPadding = 20.dp) }
-        item(key = "rows_$id") {
-            InkPanel(contentPadding = PaddingValues(0.dp)) {
-                list.forEachIndexed { index, exercise ->
-                    key("${prefix}_${exercise.id}") {
-                        if (index > 0) InkDivider()
-                        PickerRow(
-                            exercise = exercise,
-                            lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
-                            favourite = exercise.id in data.favouriteIds,
-                            browse = browse,
-                            onPick = onPick,
-                            onFavourite = { onFavourite(exercise.id, it) },
-                            onEdit = { onEdit(exercise) },
-                        )
-                    }
-                }
+        itemsIndexed(list, key = { _, exercise -> "${prefix}_${exercise.id}" }) { index, exercise ->
+            Column(Modifier.fillMaxWidth().panelSlice(first = index == 0, last = index == list.lastIndex)) {
+                if (index > 0) InkDivider()
+                PickerRow(
+                    exercise = exercise,
+                    lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
+                    favourite = exercise.id in data.favouriteIds,
+                    browse = browse,
+                    onPick = onPick,
+                    onFavourite = { onFavourite(exercise.id, it) },
+                    onEdit = { onEdit(exercise) },
+                )
             }
         }
     }
@@ -661,6 +689,48 @@ private fun PickerRow(
                 null
             },
         )
+    }
+}
+
+/**
+ * One row's share of an [InkPanel] laid out as separate lazy rows: the Vault fill, the Rune sides, and the cut top or
+ * bottom edge on the first or last row. The rows' own [InkDivider]s draw the lines between them, as inside the panel.
+ */
+private fun Modifier.panelSlice(first: Boolean, last: Boolean): Modifier {
+    val cut = 8.dp
+    val shape = InkEdgeShape(
+        topStart = CornerSize(if (first) cut else 0.dp),
+        topEnd = CornerSize(if (first) cut else 0.dp),
+        bottomEnd = CornerSize(if (last) cut else 0.dp),
+        bottomStart = CornerSize(if (last) cut else 0.dp),
+    )
+    return clip(shape).background(IronvellumColors.Vault).drawBehind {
+        val stroke = 1.dp.toPx()
+        val inset = stroke / 2
+        val c = cut.toPx()
+        val w = size.width
+        val h = size.height
+        val top = if (first) c else 0f
+        val bottom = if (last) h - c else h
+        val edge = Path().apply {
+            moveTo(inset, top)
+            lineTo(inset, bottom)
+            moveTo(w - inset, top)
+            lineTo(w - inset, bottom)
+            if (first) {
+                moveTo(inset, c)
+                lineTo(c, inset)
+                lineTo(w - c, inset)
+                lineTo(w - inset, c)
+            }
+            if (last) {
+                moveTo(inset, h - c)
+                lineTo(c, h - inset)
+                lineTo(w - c, h - inset)
+                lineTo(w - inset, h - c)
+            }
+        }
+        drawPath(edge, IronvellumColors.Rune, style = Stroke(stroke))
     }
 }
 
