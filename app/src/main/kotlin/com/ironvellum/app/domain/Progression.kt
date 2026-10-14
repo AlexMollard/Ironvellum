@@ -150,8 +150,13 @@ object Progression {
         unit: LoadUnit = LoadUnit.KG,
         /** The vest and belt this lift is loaded with ([WornLoad.forLift]), or null: the step above, as ever. */
         worn: LoadKit? = null,
+        /**
+         * The reps (seconds, for a hold) the lifter set for this lift: when present it is the band, and the lift
+         * climbs it as double progression whatever the training mode. [targetReps] is then its floor.
+         */
+        range: IntRange? = null,
     ): Recommendation {
-        val band = repBand(mode, targetReps)
+        val band = range ?: repBand(mode, targetReps)
         val weight = lastWeightKg
         val step = weightStepKg.coerceAtLeast(0.5)
         // A hold's figure is seconds: never quote it as reps.
@@ -207,16 +212,23 @@ object Progression {
             Lever.SKILL -> return Recommendation(
                 weight, targetReps, "Trial cleared — own this step, then move to the next one", changed = true,
             )
-            Lever.HOLD -> return Recommendation(
-                weight, lastReps + HOLD_STEP_SECONDS, "Trial cleared — hold $HOLD_STEP_SECONDS s longer next trial", changed = true,
-            )
+            Lever.HOLD -> {
+                val grown = (lastReps + HOLD_STEP_SECONDS).coerceAtMost(range?.last ?: Int.MAX_VALUE)
+                return if (grown > lastReps) {
+                    Recommendation(weight, grown, "Trial cleared — hold ${grown - lastReps} s longer next trial", changed = true)
+                } else {
+                    Recommendation(weight, lastReps, "Trial cleared — top of your range, hold $lastReps s again")
+                }
+            }
             Lever.LOAD, Lever.REPS_THEN_LOAD -> Unit
         }
         // Bodyweight work progresses in reps. Adding a step to a null load
         // turned a cleared 5×6 push-up into "2.5 kg × 3": a vest or belt the
         // lifter may not own, prescribed on a lift they never loaded.
         if (weight == null || weight <= 0.0) {
-            if (lever == Lever.REPS_THEN_LOAD && lastReps >= BODYWEIGHT_REP_CEILING) {
+            // The lifter's own range is the ceiling when there is one, else the bodyweight rep ceiling.
+            val ceiling = range?.last ?: if (lever == Lever.REPS_THEN_LOAD) BODYWEIGHT_REP_CEILING else null
+            if (ceiling != null && lastReps >= ceiling) {
                 return Recommendation(
                     weight, lastReps,
                     "Reps are high enough — add ${Loads.withUnit(worn?.firstStepKg(unit) ?: firstStepKg(unit), unit)} or take a harder variation",
@@ -224,13 +236,13 @@ object Progression {
                 )
             }
             val climbed = lastReps + REP_STEP
-            val nextReps = if (lever == Lever.REPS_THEN_LOAD) climbed.coerceAtMost(BODYWEIGHT_REP_CEILING) else climbed
+            val nextReps = if (ceiling != null) climbed.coerceAtMost(ceiling) else climbed
             return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", changed = true)
         }
         // Null when the vest is full and no belt carries the load on: it holds and reps do the climbing.
         val loaded = if (worn != null) worn.nextKg(weight, unit) else nextLoad(weight, step, unit)
         val addedLabel = loaded?.let { Loads.withUnit(it - weight, unit) }.orEmpty()
-        return when (mode) {
+        return when (if (range != null) TrainingMode.HYPERTROPHY else mode) {
             TrainingMode.STRENGTH -> if (loaded == null) {
                 heldAtVestMax(weight, lastReps, worn, unit)
             } else {
@@ -321,12 +333,15 @@ object Progression {
         unit: LoadUnit = LoadUnit.KG,
         /** The lifter's vest and belt; applied only to the movements that take them. */
         kit: LoadKit? = null,
+        /** The lifter's own rep (or seconds) range for the lift; replaces the mode's band, its floor the target. */
+        range: IntRange? = null,
     ): Recommendation {
+        val target = range?.first ?: targetReps
         val latest = sessions.firstOrNull().orEmpty()
         val last = latest.lastOrNull()
         // "Cleared" stays what it always was: every prescribed set at target.
         val cleared = { sets: List<Attempt> ->
-            sets.isNotEmpty() && sets.all { it.reps >= targetReps }
+            sets.isNotEmpty() && sets.all { it.reps >= target }
         }
         val stalls = sessions
             .drop(1)
@@ -339,7 +354,7 @@ object Progression {
         val clearedRun = sessions.takeWhile { cleared(it) }.count()
         return next(
             mode = mode,
-            targetReps = targetReps,
+            targetReps = target,
             setsDone = latest.size,
             minSets = minSets,
             allSetsAtTarget = cleared(latest),
@@ -351,6 +366,7 @@ object Progression {
             clearedRun = clearedRun,
             unit = unit,
             worn = WornLoad.forLift(kit, exerciseName, lever),
+            range = range,
         )
     }
 
@@ -365,5 +381,6 @@ object Progression {
         lever: Lever = Lever.LOAD,
         unit: LoadUnit = LoadUnit.KG,
         kit: LoadKit? = null,
-    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever, unit, kit)
+        range: IntRange? = null,
+    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever, unit, kit, range)
 }

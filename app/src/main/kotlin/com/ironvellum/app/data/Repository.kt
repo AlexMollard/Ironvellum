@@ -66,6 +66,7 @@ import com.ironvellum.app.domain.IdleState
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.domain.BodyLimits
+import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
@@ -903,6 +904,8 @@ class Repository(
             lever = lever,
             unit = Units.current,
             kit = loadKit(),
+            // The lifter's own range, when the rite has one, replaces the training mode's band.
+            range = SetScheme.decode(entry.setScheme).repsRange(SetKind.WORKING),
         )
     }
 
@@ -1027,6 +1030,7 @@ class Repository(
             unit = Units.current,
             bodyweightKg = statDao.observeAll().first().firstOrNull()?.weightKg,
             bodyweightLift = !exercise.isWeighted,
+            bodyShare = MovementDifficulty.bodyShare(exercise.name),
         )
     }
 
@@ -1193,7 +1197,8 @@ class Repository(
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
         val entries = presetDao.presetWithEntries(presetId)?.entries.orEmpty()
         return exerciseIds.mapNotNull { id ->
-            entries.firstOrNull { it.exerciseId == id }?.let { SetScheme.decode(it.setScheme) }?.takeIf { !it.isStraight }?.let { id to it }
+            entries.firstOrNull { it.exerciseId == id }?.let { SetScheme.decode(it.setScheme) }
+                ?.takeIf { !it.isStraight || it.workingReps != null }?.let { id to it }
         }.toMap()
     }
 

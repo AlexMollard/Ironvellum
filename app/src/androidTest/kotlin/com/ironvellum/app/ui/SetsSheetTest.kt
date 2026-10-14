@@ -3,6 +3,7 @@ package com.ironvellum.app.ui
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -84,6 +85,17 @@ class SetsSheetTest {
         compose.onNodeWithText("Fixed").performScrollTo().performClick()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
         assertEquals(10.0, done!!.scheme.backoffFixedKg!!, 1e-9)
+    }
+
+    @Test
+    fun straightSetsTakeARepRangeAndDoneSavesItFromTheEntrysReps() {
+        show(entry.copy(sets = "3", reps = "8", scheme = SetScheme()))
+        compose.onNodeWithText("More: rest, reps, warm-up ramp").performScrollTo().performClick()
+        // No range yet: one tap makes it one rep wide, four more take the top to 13.
+        repeat(5) { compose.onNodeWithContentDescription("Higher reps range top").performScrollTo().performClick() }
+        compose.onNodeWithText("Done").performClick()
+        assertEquals(8..13, done!!.scheme.workingReps)
+        assertEquals("8", done!!.reps)
     }
 
     @Test

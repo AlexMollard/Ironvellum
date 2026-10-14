@@ -93,7 +93,9 @@ object RoutineUpdate {
         val kinds = ordered.map { it.kind }
         if (kinds.isEmpty()) return planned
         val ramp = planned.warmupRamp
-        if (kinds.all { it == SetKind.WORKING }) return if (planned.isStraight) planned else SetScheme(warmupRamp = ramp)
+        if (kinds.all { it == SetKind.WORKING }) {
+            return if (planned.isStraight) planned else SetScheme(warmupRamp = ramp, workingReps = planned.workingReps)
+        }
         if (kinds.size > 1 && kinds.first() == SetKind.TOP && kinds.drop(1).all { it == SetKind.BACKOFF }) {
             val base = if (planned.type == SchemeType.TOP_BACKOFF) {
                 planned
@@ -109,6 +111,7 @@ object RoutineUpdate {
         dropShape(kinds)?.let { (dropSets, dropCount) ->
             val base = if (planned.type == SchemeType.DROPS) planned else SetScheme(
                 type = SchemeType.DROPS, warmupRamp = ramp, dropPercent = observedDropPercent(ordered) ?: SetScheme.DEFAULT_DROP_PERCENT,
+                workingReps = planned.workingReps,
             )
             return base.copy(dropSets = dropSets, dropCount = dropCount)
         }
@@ -190,8 +193,12 @@ object RoutineUpdate {
                 // taken out on purpose is the only way the count drops. A drop
                 // is an extra set on top of the count, not one of its sets.
                 targetSets = block.count { it.kind != SetKind.DROP },
-                // A top scheme keeps its reps as a range of its own, led by the entry's figure.
-                targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) scheme.topReps.first else medianDown(figures),
+                // A top scheme keeps its reps as a range of its own, led by the entry's figure; so does a rep range.
+                targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) {
+                    scheme.topReps.first
+                } else {
+                    scheme.repsRange(SetKind.WORKING)?.first ?: medianDown(figures)
+                },
                 targetWeightKg = mostUsedLoad(base.map { it.weightKg }),
                 modifiers = if (sameModifiers(modifiers, entry.modifiers)) entry.modifiers else modifiers,
                 scheme = scheme,

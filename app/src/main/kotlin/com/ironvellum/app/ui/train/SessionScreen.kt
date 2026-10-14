@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
@@ -1117,7 +1118,7 @@ fun SessionScreen(
                                 onSuperset = { viewModel.linkWithNext(block.id) },
                                 effortSetId = underRowEffort?.id,
                                 onRpe = { set, rpe -> viewModel.setRpe(set.id, rpe) },
-                                hints = if (metric == ExerciseMetric.REPS) {
+                                hints = if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) {
                                     val scheme = schemes[block.id]
                                         ?: if (block.sets.any { it.kind == SetKind.TOP }) SetScheme(type = SchemeType.TOP_BACKOFF) else SetScheme.DEFAULT
                                     val lift = LiftLoading(
@@ -1126,10 +1127,11 @@ fun SessionScreen(
                                         unit = Units.current,
                                         bodyweightKg = bodyweight,
                                         bodyweightLift = !weighted,
+                                        bodyShare = MovementDifficulty.bodyShare(first.exerciseName),
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
-                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, ::kgLabel)
+                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, ::kgLabel, hold = metric == ExerciseMetric.HOLD)
                                 } else {
                                     emptyMap()
                                 },

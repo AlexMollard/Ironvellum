@@ -85,8 +85,10 @@ import com.ironvellum.app.domain.modifiersFollowingLoad
 import com.ironvellum.app.domain.modifierTokens
 import com.ironvellum.app.domain.toggleModifier
 import com.ironvellum.app.ui.components.ModifierChipGrid
+import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.SchemeText
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.ui.components.DecimalStepper
@@ -124,7 +126,11 @@ data class EditorEntry(
     val supersetGroup: Int? = null,
     /** How the lift's sets are laid out; Straight is the plain sets x reps the row always meant. */
     val scheme: SetScheme = SetScheme.DEFAULT,
-)
+) {
+    /** The entry with its reps (seconds, for a hold) typed as [text]; a rep range it carries starts from them. */
+    fun withReps(text: String): EditorEntry =
+        copy(reps = text, scheme = DecimalInput.parseWhole(text)?.let(scheme::withFloor) ?: scheme)
+}
 
 data class EditorUi(
     val presetId: Long? = null,
@@ -402,7 +408,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
+        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, onValue = onKgText)
         return
     }
     fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
@@ -415,12 +421,16 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
         label, shown, "lb", "Lighter load", "Heavier load", gridLb, error,
-        max = Loads.toUnit(MAX_LOAD_KG, unit),
+        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true,
     ) { lb ->
         typed = lb
         if (lb.isBlank()) onKgText("") else kgOf(lb)?.let { onKgText(formatSteppedFigure(it)) }
     }
 }
+
+/** The entry's reps (seconds) as the row reads them: its range when the lift has one, else the one target, "–" until typed. */
+private fun repsFigure(entry: EditorEntry): String =
+    entry.scheme.repsRange(SetKind.WORKING)?.let(SchemeText::reps) ?: entry.reps.ifBlank { "–" }
 
 /** The folded row's second line: the targets the metric uses, "–" where one is not typed yet. */
 internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
@@ -430,10 +440,10 @@ internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
             val load = if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
             // A scheme says its own shape; the entry's sets x reps only stand for Straight.
             SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1)?.let { it + load }
-                ?: ("${v(entry.sets)} × ${v(entry.reps)}" + load)
+                ?: ("${v(entry.sets)} × ${repsFigure(entry)}" + load)
         }
         ExerciseMetric.HOLD ->
-            "${v(entry.sets)} × ${v(entry.reps)} s" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
+            "${v(entry.sets)} × ${repsFigure(entry)} s" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
         ExerciseMetric.DURATION -> "${v(entry.sets)} × ${v(entry.reps)} min"
         ExerciseMetric.DISTANCE_TIME -> "${v(entry.sets)} × ${v(entry.weight)} km"
         ExerciseMetric.ATTEMPTS_GRADE -> "${v(entry.sets)} × ${v(entry.reps)} attempts"
@@ -655,6 +665,7 @@ fun PresetEditorScreen(
                     unit = Units.current,
                     bodyweightKg = ui.bodyweightKg,
                     bodyweightLift = exercise?.isWeighted == false,
+                    bodyShare = MovementDifficulty.bodyShare(entry.exerciseName),
                 ),
                 worn = worn,
                 inSuperset = entry.supersetGroup != null,
@@ -917,10 +928,17 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS -> if (!planned) {
-                WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
             }
-            ExerciseMetric.HOLD ->
-                WholeStepper("Seconds", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            ExerciseMetric.HOLD -> {
+                WholeStepper("Seconds, from", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
+                val floor = DecimalInput.parseWhole(entry.reps)
+                if (floor != null) {
+                    RepsUpStepper("Seconds, up to", "seconds", entry.scheme.workingReps?.last, floor) { up ->
+                        onEntry(entry.copy(scheme = entry.scheme.copy(workingReps = up?.let { floor..it })))
+                    }
+                }
+            }
             ExerciseMetric.DURATION ->
                 WholeStepper("Minutes", entry.reps, "minutes", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
             ExerciseMetric.ATTEMPTS_GRADE ->

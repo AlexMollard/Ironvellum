@@ -85,17 +85,25 @@ internal fun SetsSheet(
     onDone: (EditorEntry) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val suggestion = remember(entry.exerciseName, inSuperset) { SchemeSuggestion.forLift(entry.exerciseName, inSuperset) }
+    val suggestion = remember(entry.exerciseName, inSuperset, lift.bodyweightLift) {
+        SchemeSuggestion.forLift(entry.exerciseName, inSuperset, lift.bodyweightLift)
+    }
     var scheme by remember { mutableStateOf(entry.scheme) }
     var sets by remember { mutableStateOf(entry.sets) }
     var reps by remember { mutableStateOf(entry.reps) }
     var weight by remember { mutableStateOf(entry.weight) }
+    // The top of the working reps' range, from the lift's own scheme; the floor is the reps above.
+    var repsUp by remember { mutableStateOf(entry.scheme.workingReps?.last) }
     var fixedMode by remember { mutableStateOf(entry.scheme.backoffFixedKg != null) }
     var fixedText by remember { mutableStateOf(entry.scheme.backoffFixedKg?.let(::formatSteppedFigure) ?: "") }
     var more by remember { mutableStateOf(false) }
 
     val setCount = DecimalInput.parseWhole(sets)?.coerceIn(1, 30) ?: 3
-    val effective = scheme.copy(backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { it > 0.0 } else null)
+    val repsFrom = DecimalInput.parseWhole(reps)?.coerceAtLeast(1) ?: 1
+    val effective = scheme.copy(
+        backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { it > 0.0 } else null,
+        workingReps = repsUp?.takeIf { it > repsFrom }?.let { repsFrom..it },
+    )
     val noFixedYet = scheme.type == SchemeType.TOP_BACKOFF && fixedMode && effective.backoffFixedKg == null
 
     IronvellumDialog(
@@ -162,7 +170,8 @@ internal fun SetsSheet(
                 TextAction(if (more) "Less" else "More: rest, reps, warm-up ramp", { more = !more })
                 if (more) {
                     if (scheme.type != SchemeType.TOP_BACKOFF) {
-                        WholeStepper("Reps", reps, "reps", false, 3, 500) { reps = it }
+                        WholeStepper("Reps, from", reps, "reps", false, 3, 500) { reps = it }
+                        RepsUpStepper("Reps, up to", "reps", repsUp, repsFrom) { repsUp = it }
                     }
                     if (scheme.type == SchemeType.TOP_BACKOFF) {
                         IntStepper(
@@ -177,7 +186,7 @@ internal fun SetsSheet(
                         onCheckedChange = { scheme = scheme.copy(warmupRamp = it) },
                     )
                 }
-                YoullDo(effective, setCount, DecimalInput.parseWhole(reps)?.coerceAtLeast(1) ?: 1, DecimalInput.parse(weight), lift)
+                YoullDo(effective, setCount, repsFrom, DecimalInput.parse(weight), lift)
             }
         },
         confirmButton = {
@@ -326,6 +335,25 @@ private fun IntStepper(
     onValue = null,
     onLess = { onValue((value - step).coerceAtLeast(min)) },
     onMore = { onValue((value + step).coerceAtMost(max)) },
+)
+
+/**
+ * The top of a rep (or seconds) range that starts at [floor]: "–" while there is none, one more rep a tap from there, and
+ * back to none when it is brought down to the floor. [SetScheme.stepRepsUp] moves it.
+ */
+@Composable
+internal fun RepsUpStepper(label: String, noun: String, up: Int?, floor: Int, onUp: (Int?) -> Unit) = StepperRow(
+    label = label,
+    value = up?.takeIf { it > floor }?.toString() ?: "–",
+    unit = null,
+    less = "Lower $noun range top",
+    more = "Higher $noun range top",
+    error = false,
+    decimal = false,
+    maxDigits = 0,
+    onValue = null,
+    onLess = { onUp(SetScheme.stepRepsUp(floor, up, -1)) },
+    onMore = { onUp(SetScheme.stepRepsUp(floor, up, 1)) },
 )
 
 /** One row per set of a Custom scheme: tap a row to cycle its type; add or take off the last set. */

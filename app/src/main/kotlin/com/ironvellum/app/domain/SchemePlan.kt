@@ -12,7 +12,12 @@ data class LiftLoading(
     val bodyweightKg: Double? = null,
     /** A bodyweight movement (a pull-up, a dip): its marked load is added to the body. */
     val bodyweightLift: Boolean = false,
-)
+    /** The share of [bodyweightKg] the movement moves ([MovementDifficulty.bodyShare]): a push-up carries about two thirds of it. */
+    val bodyShare: Double = 1.0,
+) {
+    /** The body this lift actually moves: what a percent comes off, together with the added load. */
+    val movedBodyKg: Double get() = (bodyweightKg?.takeIf { it > 0.0 } ?: 0.0) * bodyShare
+}
 
 /** What a back-off was rounded to, so the trial can say so: "Rounded to your vest blocks". */
 enum class Rounding(val note: String) {
@@ -48,8 +53,9 @@ object SchemePlan {
      * The back-off that follows a top set of [topReps] at [topKg].
      *
      * A fixed load is taken as given. Otherwise the percent comes off the total load: a bodyweight lift counts the
-     * body, so 10% lighter than 79 kg + 18.7 kg is 87.9 kg all in, 8.9 kg added, then rounded DOWN onto what the
-     * lifter can load (vest blocks, or belt plates on the lift's own step) and never above the percent asked for.
+     * body it moves ([LiftLoading.movedBodyKg]: all of it on a pull-up or dip, about two thirds on a push-up), so
+     * 10% lighter than 79 kg + 18.7 kg is 87.9 kg all in, 8.9 kg added, then rounded DOWN onto what the lifter can
+     * load (vest blocks, or belt plates on the lift's own step) and never above the percent asked for.
      * Under one block that is bodyweight, null. An unweighted bodyweight top set has no load to take off, so the
      * back-off is two reps fewer instead.
      */
@@ -65,7 +71,7 @@ object SchemePlan {
         }
         val keep = 1.0 - scheme.backoffPercent / 100.0
         return if (lift.bodyweightLift) {
-            val body = lift.bodyweightKg?.takeIf { it > 0.0 } ?: 0.0
+            val body = lift.movedBodyKg
             val added = (body + top) * keep - body
             val rounded = floorToKit(added, lift)
             PlannedSet(SetKind.BACKOFF, reps, rounded, range, roundingFor(rounded, lift))
@@ -92,7 +98,7 @@ object SchemePlan {
         if (from <= 0.0) return null
         val keep = 1.0 - percent / 100.0
         if (!lift.bodyweightLift) return floorToStep(from * keep, lift)?.takeIf { it > 0.0 }
-        val body = lift.bodyweightKg?.takeIf { it > 0.0 } ?: 0.0
+        val body = lift.movedBodyKg
         return floorToKit((body + from) * keep - body, lift)
     }
 
@@ -118,7 +124,7 @@ object SchemePlan {
                 SetKind.TOP -> PlannedSet(kind, topReps, topKg, scheme.repsRange(kind))
                 SetKind.BACKOFF -> backoff(topKg, topReps, scheme, lift)
                 SetKind.DROP -> PlannedSet(kind, entryReps, drop(previousKg, scheme.dropPercent, lift))
-                else -> PlannedSet(kind, entryReps, entryKg)
+                else -> PlannedSet(kind, entryReps, entryKg, scheme.repsRange(kind))
             }
             previousKg = set.weightKg
             out += set

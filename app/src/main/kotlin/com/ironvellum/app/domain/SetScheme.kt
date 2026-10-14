@@ -43,6 +43,12 @@ data class SetScheme(
     val restAfterTopSec: Int = DEFAULT_TOP_REST_SEC,
     /** Whether the trial begins with the warm-up ramp for the lift. */
     val warmupRamp: Boolean = false,
+    /**
+     * The reps (seconds, for a hold) a Straight or Drop-set lift is worked in, "10-15": progression climbs through
+     * it instead of the training mode's band. Null is the entry's one target, as ever. The floor is the entry's own
+     * reps; [withFloor] keeps the two together.
+     */
+    val workingReps: IntRange? = null,
 ) {
     val isStraight: Boolean get() = type == SchemeType.STRAIGHT
 
@@ -77,7 +83,7 @@ data class SetScheme(
 
     /** The scheme a lift keeps when it joins a superset, which cannot hold drops: Drop sets turn straight, Custom loses its drops. */
     fun withoutDrops(): SetScheme = when (type) {
-        SchemeType.DROPS -> SetScheme(warmupRamp = warmupRamp)
+        SchemeType.DROPS -> SetScheme(warmupRamp = warmupRamp, workingReps = workingReps)
         SchemeType.CUSTOM -> copy(custom = custom.filter { it != SetKind.DROP }).let { if (it.custom.isEmpty()) SetScheme(warmupRamp = warmupRamp) else it }
         else -> this
     }
@@ -86,7 +92,14 @@ data class SetScheme(
     fun repsRange(kind: SetKind): IntRange? = when {
         type == SchemeType.TOP_BACKOFF && kind == SetKind.TOP -> topReps
         type == SchemeType.TOP_BACKOFF && kind == SetKind.BACKOFF -> backoffReps
+        kind == SetKind.WORKING && (type == SchemeType.STRAIGHT || type == SchemeType.DROPS) -> workingReps
         else -> null
+    }
+
+    /** The scheme with its [workingReps] floor moved to [floor] (the entry's reps changed); a floor at or past the top ends the range. */
+    fun withFloor(floor: Int): SetScheme {
+        val range = workingReps ?: return this
+        return copy(workingReps = if (floor >= range.last) null else floor..range.last)
     }
 
     /**
@@ -94,13 +107,16 @@ data class SetScheme(
      * settings while the lifter flips between them, and what is saved is just the one that was chosen.
      */
     fun normalised(): SetScheme = when (type) {
-        SchemeType.STRAIGHT -> SetScheme(warmupRamp = warmupRamp)
+        SchemeType.STRAIGHT -> SetScheme(warmupRamp = warmupRamp, workingReps = workingReps)
         SchemeType.TOP_BACKOFF -> SetScheme(
             type = type, topReps = topReps, topRir = topRir, backoffSets = backoffSets, backoffFixedKg = backoffFixedKg,
             backoffPercent = if (backoffFixedKg != null) DEFAULT_BACKOFF_PERCENT else backoffPercent,
             backoffReps = backoffReps, restAfterTopSec = restAfterTopSec, warmupRamp = warmupRamp,
         )
-        SchemeType.DROPS -> SetScheme(type = type, dropSets = dropSets, dropCount = dropCount, dropPercent = dropPercent, warmupRamp = warmupRamp)
+        SchemeType.DROPS -> SetScheme(
+            type = type, dropSets = dropSets, dropCount = dropCount, dropPercent = dropPercent, warmupRamp = warmupRamp,
+            workingReps = workingReps,
+        )
         SchemeType.CUSTOM -> SetScheme(type = type, custom = custom, warmupRamp = warmupRamp)
     }
 
@@ -118,10 +134,21 @@ data class SetScheme(
             SchemeType.CUSTOM -> append(";ck=").append(custom.joinToString(",") { it.wire })
             SchemeType.STRAIGHT -> Unit
         }
+        if (workingReps != null && (type == SchemeType.STRAIGHT || type == SchemeType.DROPS)) append(";rr=").append(rangeText(workingReps))
         if (warmupRamp) append(";wr=1")
     }
 
     companion object {
+        /**
+         * One tap of the "up to" stepper over a range starting at [floor]: the top moves a rep, and a top at or under the
+         * floor is no range at all (null, shown "–"). From no range, "more" makes it one rep wide.
+         */
+        fun stepRepsUp(floor: Int, up: Int?, delta: Int): Int? =
+            ((up?.takeIf { it > floor } ?: floor) + delta).coerceAtMost(WORKING_REPS_MAX).takeIf { it > floor }
+
+        /** The most reps (or seconds) a lift's range can reach: the rite editor's own reps field ceiling. */
+        const val WORKING_REPS_MAX = 500
+
         const val DEFAULT_BACKOFF_PERCENT = 10
         const val DEFAULT_DROP_PERCENT = 20
         const val DEFAULT_TOP_REST_SEC = 180
@@ -164,6 +191,8 @@ data class SetScheme(
                     ?.take(MAX_CUSTOM_SETS).orEmpty(),
                 restAfterTopSec = int("rt", base.restAfterTopSec, REST_RANGE_SEC),
                 warmupRamp = fields["wr"] == "1",
+                workingReps = fields["rr"]?.let { range("rr", 1..1, 1..WORKING_REPS_MAX) }
+                    ?.takeIf { it.first < it.last && (type == SchemeType.STRAIGHT || type == SchemeType.DROPS) },
             )
         }
 
@@ -204,13 +233,17 @@ object SchemeText {
 
     /**
      * The figure a rite row prints for a lift. Top + back-offs reads its real plan, "2–4 @22kg · 3×4–5 @15kg"
-     * ("3×4–5 −10%" for a percent back-off); every other scheme, and Straight, reads "sets×reps @load".
+     * ("3×4–5 −10%" for a percent back-off); every other scheme, and Straight, reads "sets×reps @load", the reps a
+     * range ("3×10–15 @24kg") when the lift has one.
      * [load] formats a kg figure with its unit; null leaves loads out (a percent back-off still says its percent).
      * [hold] puts an "s" on the reps of a timed hold.
      */
     fun figure(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, load: ((Double) -> String)?, hold: Boolean = false): String {
         fun at(v: Double?) = if (load != null && v != null) " @" + load(v) else ""
-        if (scheme.type != SchemeType.TOP_BACKOFF) return "$sets×$reps" + (if (hold) "s" else "") + at(kg)
+        if (scheme.type != SchemeType.TOP_BACKOFF) {
+            val repsText = scheme.repsRange(SetKind.WORKING)?.let(::rangeText) ?: reps.toString()
+            return "$sets×$repsText" + (if (hold) "s" else "") + at(kg)
+        }
         val fixed = scheme.backoffFixedKg
         val back = "${scheme.backoffSets}×${rangeText(scheme.backoffReps)}" + if (fixed != null) at(fixed) else " −${scheme.backoffPercent}%"
         return rangeText(scheme.topReps) + at(kg) + " · " + back

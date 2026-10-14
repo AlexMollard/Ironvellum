@@ -137,6 +137,26 @@ class SetSchemeTrialTest {
     }
 
     @Test
+    fun aStraightLiftWithARepRangeClimbsItThenAddsLoadFromTheCeiling() = runBlocking {
+        val ranged = SetScheme(workingReps = 10..15)
+        val rite = save(row, 3, 10, 60.0, ranged)
+        assertEquals(ranged, repo.observePresets().first().single().entries.single().scheme)
+        val first = repo.startSessionFromPreset(rite)
+        setsOf(first, row).forEach { repo.updateSet(it.id, 10, it.weightKg, done = true) }
+        repo.completeSession(first)
+        // 3 x 10 at the floor of 10-15: the same load, two more reps.
+        val second = repo.startSessionFromPreset(rite)
+        assertEquals(listOf(12, 12, 12), setsOf(second, row).map { it.reps })
+        assertEquals(listOf(60.0, 60.0, 60.0), setsOf(second, row).map { it.weightKg })
+        setsOf(second, row).forEach { repo.updateSet(it.id, 15, it.weightKg, done = true) }
+        repo.completeSession(second)
+        // 3 x 15 is the ceiling: 2.5 kg more, back to the floor.
+        val third = setsOf(repo.startSessionFromPreset(rite), row)
+        assertEquals(listOf(10, 10, 10), third.map { it.reps })
+        assertEquals(listOf(62.5, 62.5, 62.5), third.map { it.weightKg })
+    }
+
+    @Test
     fun makingSetOneATopSetTurnsTheRestIntoBackoffsForTodayOnly() = runBlocking {
         val rite = save(row, 3, 8, 60.0, SetScheme())
         val session = repo.startSessionFromPreset(rite)

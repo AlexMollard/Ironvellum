@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.train.MAX_LOAD_KG
 
@@ -47,6 +49,19 @@ internal fun stepWhole(current: String, delta: Int, max: Int): String =
 internal fun stepDecimal(current: String, delta: Int, step: Double, max: Double = MAX_LOAD_KG): String {
     val next = Math.round(((DecimalInput.parse(current) ?: 0.0) + delta * step) * 100) / 100.0
     return if (next <= 0.0) "" else formatSteppedFigure(next.coerceAtMost(max))
+}
+
+/**
+ * One tap of a load stepper that walks a grid: the next multiple of [grid] up or down from [current], so a load typed
+ * or progressed off the grid (11.5 on a 2.5 grid) lands on it (10, then 7.5) instead of jumping over its round values
+ * (11.5 to 9 and back to 11.5). On the grid it is one [grid] step, as [stepDecimal]; at or below zero it clears.
+ * [grid] is in the unit of [current], so the lb stepper passes its own grid on the displayed figure.
+ */
+internal fun stepOnGrid(current: String, delta: Int, grid: Double, max: Double = MAX_LOAD_KG): String {
+    val value = DecimalInput.parse(current) ?: 0.0
+    val next = if (delta > 0) Loads.stepUp(value, LoadUnit.KG, grid, grid) else Loads.stepDown(value, LoadUnit.KG, grid, grid)
+    if (next == null || next <= 0.0) return ""
+    return formatSteppedFigure((Math.round(next * 100) / 100.0).coerceAtMost(max))
 }
 
 /** "60" for a whole figure, "62.5" otherwise. */
@@ -145,6 +160,8 @@ internal fun DecimalStepper(
     step: Double,
     error: Boolean,
     max: Double = MAX_LOAD_KG,
+    /** A load: the pads walk the [step] grid ([stepOnGrid]) rather than add it to whatever is there. */
+    onGrid: Boolean = false,
     onValue: (String) -> Unit,
 ) = StepperRow(
     label = label,
@@ -156,8 +173,8 @@ internal fun DecimalStepper(
     decimal = true,
     maxDigits = 0,
     onValue = onValue,
-    onLess = { onValue(stepDecimal(value, -1, step, max)) },
-    onMore = { onValue(stepDecimal(value, 1, step, max)) },
+    onLess = { onValue(if (onGrid) stepOnGrid(value, -1, step, max) else stepDecimal(value, -1, step, max)) },
+    onMore = { onValue(if (onGrid) stepOnGrid(value, 1, step, max) else stepDecimal(value, 1, step, max)) },
 )
 
 /**
