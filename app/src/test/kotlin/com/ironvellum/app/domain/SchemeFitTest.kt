@@ -93,4 +93,16 @@ class SchemeFitTest {
         // 0.65 x 80 = 52 + 20 = 72; 20% lighter 57.6; added 5.6, down to 5.
         assertEquals(5.0, SchemePlan.drop(20.0, 20, lift("Push-up"))!!, 1e-9)
     }
+    // ---- picking a scheme keeps the lifter's set count
+
+    @Test
+    fun `switching to top set and back-offs keeps the set count`() {
+        for (sets in 2..6) {
+            val picked = SetScheme().copy(type = SchemeType.TOP_BACKOFF).fitTo(sets)
+            assertEquals("$sets sets stay $sets: one top and ${sets - 1} back-offs", sets, picked.workingSets(sets))
+            assertEquals(1 + picked.backoffSets, picked.kinds(sets).size)
+        }
+        // The one case that cannot keep it: a single set has no back-off to follow it, so it becomes two.
+        assertEquals(2, SetScheme().copy(type = SchemeType.TOP_BACKOFF).fitTo(1).workingSets(1))
+    }
 }

@@ -1165,6 +1165,25 @@ class Repository(
     }
 
     /**
+     * The Drops of a lift still to do take their load from the set before them (the lift's drop percent lighter,
+     * rounded to the kit): a trial begins with them planned from the rite's load, which is nothing at all on a lift
+     * with no load yet, so they would otherwise stay at 0 whatever the lifter then lifts. A load typed on a drop stays.
+     */
+    private suspend fun refillDrops(sessionId: Long, exerciseId: Long) {
+        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId && !it.isWarmup }.sortedBy { it.setIndex }
+        if (rows.none { it.setKind() == SetKind.DROP && !it.done }) return
+        val exercise = exerciseDao.byId(exerciseId) ?: return
+        val lift = liftLoadingFor(exercise, loadKit())
+        val percent = presetScheme(sessionId, exerciseId).takeIf { it.type == SchemeType.DROPS }?.dropPercent
+            ?: SetScheme.DEFAULT_DROP_PERCENT
+        val loads = SchemePlan.dropLoads(
+            rows.map { SchemePlan.DropRow(it.setKind() == SetKind.DROP, it.done, it.weightKg, carryEdits.edited(it.id, CarryFigure.LOAD)) },
+            percent, lift,
+        )
+        rows.forEachIndexed { i, row -> if (loads[i] != row.weightKg) sessionDao.updateSet(row.copy(weightKg = loads[i])) }
+    }
+
+    /**
      * "Make set 1 a top set" on a lift of a live trial: its first set becomes the top set and the rest back-offs,
      * 10% lighter than it. Today only: the rite is not touched (the end-of-trial offer may carry it there). False,
      * and nothing written, when the lift has fewer than two sets, already has a top set, is a superset's, or the
@@ -1321,6 +1340,10 @@ class Repository(
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
+        // A drop still to do follows the load on the set before it, as that load stands now.
+        if (!next.isWarmup && (current.weightKg != next.weightKg || current.done != next.done)) {
+            refillDrops(next.sessionId, next.exerciseId)
+        }
         // A top set that is logged, or has its figures moved while logged, hands its load on to the back-offs still to do.
         if (next.setKind() == SetKind.TOP && next.done && (!current.done || current.weightKg != next.weightKg || current.reps != next.reps)) {
             refillBackoffs(next)

@@ -333,6 +333,8 @@ object Xp {
         val hold: Boolean = false,
         /** What a bonus is for ("Pull-up, Dip"); empty when the label says it all. */
         val detail: String = "",
+        /** [topLoadKg] is the load itself (a barbell, a dumbbell), not weight added to the body (a belted pull-up). */
+        val externalLoad: Boolean = false,
     )
 
     /** What one lift's peak pays and what kind it was ("heavier", "more reps"), as [SessionPeaks] priced it. */
@@ -425,6 +427,7 @@ object Xp {
                     hardSets = hard, easySets = easy,
                     topLoadKg = block.mapNotNull { it.weightKg?.takeIf { w -> w > 0.0 } }.maxOrNull(),
                     hold = isHold(block.first()),
+                    externalLoad = block.first().externalLoad,
                 )
             }
             if (best != null) {

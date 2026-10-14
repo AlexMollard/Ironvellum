@@ -53,7 +53,7 @@ class TodayStateTest {
     @Test
     fun `planned rows read sets by reps`() {
         val rows = plannedRows(listOf(PresetEntry(exerciseId = 1, exerciseName = "Back squat", targetSets = 3, targetReps = 7)))
-        assertEquals(listOf(DayRow("Back squat", "3×7", 0, 3, false)), rows)
+        assertEquals(listOf(DayRow("Back squat", "3 × 7", 0, 3, false)), rows)
     }
 
     @Test
@@ -62,7 +62,7 @@ class TodayStateTest {
             type = com.ironvellum.app.domain.SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 3, backoffReps = 4..5, backoffPercent = 10,
         )
         val rows = plannedRows(listOf(PresetEntry(exerciseId = 1, exerciseName = "Pull-up", targetSets = 4, targetReps = 2, scheme = scheme)))
-        assertEquals(listOf(DayRow("Pull-up", "2–4 · 3×4–5 −10%", 0, 4, false)), rows)
+        assertEquals(listOf(DayRow("Pull-up", "2–4 · 3 × 4–5 −10%", 0, 4, false)), rows)
     }
 
     @Test
@@ -74,7 +74,7 @@ class TodayStateTest {
             set(2, 2, false, warmup = true),
         )
         val rows = trialRows(sets, catalogue, sealed = false)
-        assertEquals(listOf("2/2", "1/3", "2×8"), rows.map { it.value })
+        assertEquals(listOf("2/2", "1/3", "2 × 8"), rows.map { it.value })
         assertEquals(listOf(true, false, false), rows.map { it.checked })
         assertEquals(listOf(false, true, false), rows.map { it.partly })
     }

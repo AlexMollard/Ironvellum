@@ -95,11 +95,11 @@ class LiveTallyTest {
     }
 
     @Test
-    fun theRestBarChipsAreFiveOnEitherScale() {
-        assertEquals(listOf("0", "1", "2", "3", "4+"), restEffortChips(EffortScale.RIR).map { it.second })
-        assertEquals(listOf(10, 9, 8, 7, 6), restEffortChips(EffortScale.RIR).map { it.first })
-        assertEquals(listOf("≤6", "7", "8", "9", "10"), restEffortChips(EffortScale.RPE).map { it.second })
-        assertEquals(listOf(6, 7, 8, 9, 10), restEffortChips(EffortScale.RPE).map { it.first })
+    fun theRestBarChipsAreTheSameSixAsTheRowStripOnEitherScale() {
+        assertEquals(listOf("5+", "4", "3", "2", "1", "0"), restEffortChips(EffortScale.RIR).map { it.second })
+        assertEquals(listOf("≤5", "6", "7", "8", "9", "10"), restEffortChips(EffortScale.RPE).map { it.second })
+        assertEquals(Effort.CHIPS, restEffortChips(EffortScale.RPE).map { it.first })
+        assertEquals(Effort.CHIPS, restEffortChips(EffortScale.RIR).map { it.first })
         // A chip's stored value is the same RPE either way: RIR 2 and RPE 8 are one rating.
         assertEquals(restEffortChips(EffortScale.RIR).first { it.second == "2" }.first, 8)
     }

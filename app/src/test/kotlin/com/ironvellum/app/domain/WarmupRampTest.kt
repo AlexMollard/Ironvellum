@@ -70,8 +70,18 @@ class WarmupRampTest {
         assertEquals(20.0, bench.first().weightKg, 0.0)
         assertEquals(listOf(10, 5, 3, 2), bench.map { it.reps })
         assertTrue(WarmupRamp.planFor("Bench Press", "PUSH", ExerciseMetric.HOLD, 100.0).isEmpty())
-        assertTrue(WarmupRamp.planFor("Bench Press", "PUSH", ExerciseMetric.REPS, null).isEmpty())
+        // No load yet: the empty bar, so a ramp switched on for a fresh rite still makes a set.
+        assertEquals(listOf(20.0), WarmupRamp.planFor("Bench Press", "PUSH", ExerciseMetric.REPS, null).map { it.weightKg })
+        assertTrue(WarmupRamp.planFor("Push-up", "PUSH", ExerciseMetric.REPS, null).isEmpty())
         assertTrue(WarmupRamp.isBarbell("Bench Press"))
         assertFalse(WarmupRamp.isBarbell("Push-up"))
+    }
+    @Test
+    fun `a barbell lift with no working load yet still warms up on the bar`() {
+        // A generated rite starts a loaded lift empty; a ramp switched on for it must not come out as nothing.
+        assertEquals(listOf(20.0 to 10), ramp(0.0, 2.5, barbell = true))
+        assertTrue(WarmupRamp.planFor("Back Squat", "LEGS", ExerciseMetric.REPS, null).isNotEmpty())
+        // No bar to start on and no load to scale from: nothing to ramp.
+        assertTrue(ramp(0.0, 2.5, barbell = false).isEmpty())
     }
 }

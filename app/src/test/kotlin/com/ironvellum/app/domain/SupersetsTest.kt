@@ -311,4 +311,23 @@ class SupersetsTest {
         val solo = trial(counts = listOf(2), groups = listOf(null))
         assertFalse(Supersets.midRound(solo, solo[0]))
     }
+    // ----------------------------------------------------------- whose turn follows
+
+    @Test
+    fun `a superset begun out of order hands the round to its partner, never back to the same lift`() {
+        // Lift 1 still has sets waiting, so nextSet() is lift 1; the lifter went on to the pair 2 and 3.
+        val sets = trial(counts = listOf(3, 3, 2), groups = listOf(null, 1, 1))
+        val afterRow = sets.tick(sets.first { it.exerciseId == 2L }.id)
+        assertEquals(3L, Supersets.turnAfter(afterRow, 2L))
+        // And it goes round: after the last member it is the first one again.
+        assertEquals(2L, Supersets.turnAfter(afterRow, 3L))
+    }
+
+    @Test
+    fun `no turn when the lift is alone or its partner has nothing left`() {
+        val sets = trial(counts = listOf(2, 1, 1), groups = listOf(null, 1, 1))
+        assertNull(Supersets.turnAfter(sets, 1L))
+        val partnerDone = sets.tick(sets.first { it.exerciseId == 3L }.id)
+        assertNull(Supersets.turnAfter(partnerDone, 2L))
+    }
 }

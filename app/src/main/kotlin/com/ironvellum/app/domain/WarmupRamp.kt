@@ -40,7 +40,8 @@ object WarmupRamp {
         worn: LoadKit? = null,
         unit: LoadUnit = LoadUnit.KG,
     ): List<Step> {
-        if (workingKg <= 0.0) return emptyList()
+        // No working load yet (a generated rite starts a lift empty): a barbell still warms up on the bar.
+        if (workingKg <= 0.0) return if (barbell) listOf(Step(BAR_KG, BAR_REPS)) else emptyList()
         val step = stepKg.coerceAtLeast(MIN_STEP_KG)
         val floor = if (barbell) BAR_KG else 0.0
         if (workingKg <= floor) return emptyList()

@@ -65,12 +65,12 @@ class RepRangeTest {
 
     @Test
     fun `the rite row figure and the today card show the range`() {
-        assertEquals("3×10–15 @24kg", SchemeText.figure(range, 3, 10, 24.0, kg))
-        assertEquals("3×10–15", SchemeText.figure(range, 3, 10, null, null))
-        assertEquals("3×30–45s", SchemeText.figure(SetScheme(workingReps = 30..45), 3, 30, null, kg, hold = true))
-        assertEquals("3×8–12 @20kg", SchemeText.figure(SetScheme(type = SchemeType.DROPS, workingReps = 8..12), 3, 8, 20.0, kg))
+        assertEquals("3 × 10–15 @24kg", SchemeText.figure(range, 3, 10, 24.0, kg))
+        assertEquals("3 × 10–15", SchemeText.figure(range, 3, 10, null, null))
+        assertEquals("3 × 30–45s", SchemeText.figure(SetScheme(workingReps = 30..45), 3, 30, null, kg, hold = true))
+        assertEquals("3 × 8–12 @20kg", SchemeText.figure(SetScheme(type = SchemeType.DROPS, workingReps = 8..12), 3, 8, 20.0, kg))
         // No range: the one target, as ever.
-        assertEquals("3×10 @24kg", SchemeText.figure(SetScheme(), 3, 10, 24.0, kg))
+        assertEquals("3 × 10 @24kg", SchemeText.figure(SetScheme(), 3, 10, 24.0, kg))
     }
 
     @Test

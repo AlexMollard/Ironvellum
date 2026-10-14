@@ -28,6 +28,18 @@ class WeekDoneDaysTest {
     )
 
     @Test
+    fun `a rite done on another day is still found as sealed on the day it was done`() {
+        val monday = thursday.minusDays(3)
+        val sessions = listOf(trial(1, thursday), trial(2, monday), trial(3, thursday, sealed = false))
+        // Monday's rite ticks Monday's own day: a rite marks its scheduled day...
+        assertEquals(setOf(1, 2), weekDoneDays(sessions.take(2), presets, thursday, zone).keys)
+        // ...and Thursday's card can still say a trial was sealed that day.
+        assertEquals(sessions[0], sealedOnDay(sessions, thursday, zone))
+        assertEquals(null, sealedOnDay(sessions, thursday.plusDays(1), zone))
+        assertEquals(sessions[1], sealedOnDay(sessions, monday, zone))
+    }
+
+    @Test
     fun `only sealed trials of the day's own rite light a tick, however many trials followed`() {
         val monday = thursday.minusDays(3)
         val sessions = listOf(

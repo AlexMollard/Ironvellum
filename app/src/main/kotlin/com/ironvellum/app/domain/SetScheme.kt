@@ -242,10 +242,10 @@ object SchemeText {
         fun at(v: Double?) = if (load != null && v != null) " @" + load(v) else ""
         if (scheme.type != SchemeType.TOP_BACKOFF) {
             val repsText = scheme.repsRange(SetKind.WORKING)?.let(::rangeText) ?: reps.toString()
-            return "$sets×$repsText" + (if (hold) "s" else "") + at(kg)
+            return "$sets × $repsText" + (if (hold) "s" else "") + at(kg)
         }
         val fixed = scheme.backoffFixedKg
-        val back = "${scheme.backoffSets}×${rangeText(scheme.backoffReps)}" + if (fixed != null) at(fixed) else " −${scheme.backoffPercent}%"
+        val back = "${scheme.backoffSets} × ${rangeText(scheme.backoffReps)}" + if (fixed != null) at(fixed) else " −${scheme.backoffPercent}%"
         return rangeText(scheme.topReps) + at(kg) + " · " + back
     }
 

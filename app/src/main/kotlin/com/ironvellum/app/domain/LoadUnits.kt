@@ -53,9 +53,12 @@ object Loads {
     /** "220.5 lb". */
     fun withUnit(kg: Double, unit: LoadUnit): String = "${format(kg, unit)} ${unit.label}"
 
-    /** "225 lb", or "BW" for no load. */
-    fun label(kg: Double?, unit: LoadUnit): String =
-        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit) } ?: "BW"
+    /**
+     * "225 lb", or "BW" for no load. A [weighted] lift (a barbell, a dumbbell, a machine) has no bodyweight to fall
+     * back on: with no load it reads "0 kg", never "BW", which would say the bar was not there.
+     */
+    fun label(kg: Double?, unit: LoadUnit, weighted: Boolean = false): String =
+        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit) } ?: if (weighted) withUnit(0.0, unit) else "BW"
 
     /** The ceiling as the "Enter 0 to N" hint reads it. */
     fun ceilingText(maxKg: Double, unit: LoadUnit): String = floor(snap(maxKg, unit)).toLong().toString()

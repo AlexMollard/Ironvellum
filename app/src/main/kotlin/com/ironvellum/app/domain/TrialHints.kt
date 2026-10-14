@@ -23,7 +23,7 @@ object TrialHints {
         figure: (Double?) -> String,
         hold: Boolean = false,
     ): Map<Long, String> {
-        val top = sets.firstOrNull { it.kind == SetKind.TOP } ?: return rangeHints(sets, scheme, hold) + dropHints(sets)
+        val top = sets.firstOrNull { it.kind == SetKind.TOP } ?: return rangeHints(sets, scheme, hold)
         val out = mutableMapOf<Long, String>()
         val rep = { reps: Int, kg: Double? -> "$reps × ${figure(kg)}" }
         if (top.isPending) {
@@ -42,7 +42,7 @@ object TrialHints {
                 else -> SchemePlan.backoff(top.weightKg, top.reps, scheme, lift).rounding?.note ?: "From your top set"
             }
         }
-        return out + rangeHints(sets, scheme, hold) + dropHints(sets)
+        return out + rangeHints(sets, scheme, hold)
     }
 
     /** "Aim for 10–15 reps" under each working set still to log, when the lift has a range of its own. */
@@ -51,7 +51,4 @@ object TrialHints {
         val aim = "Aim for ${SchemeText.reps(range)}" + if (hold) " s" else " reps"
         return sets.filter { it.kind == SetKind.WORKING && it.isPending }.associate { it.id to aim }
     }
-
-    private fun dropHints(sets: List<SessionSet>): Map<Long, String> =
-        sets.filter { it.kind == SetKind.DROP && it.isPending }.associate { it.id to "Straight on, no rest" }
 }

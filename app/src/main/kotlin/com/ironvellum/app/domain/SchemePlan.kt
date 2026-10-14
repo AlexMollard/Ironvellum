@@ -102,6 +102,24 @@ object SchemePlan {
         return floorToKit((body + from) * keep - body, lift)
     }
 
+    /** One set of a lift as [dropLoads] reads it. [edited]: the lifter set its load by hand, so it is theirs. */
+    data class DropRow(val isDrop: Boolean, val done: Boolean, val weightKg: Double?, val edited: Boolean)
+
+    /**
+     * The load each set of a lift's [rows] (warm-ups left out, in order) should carry once its neighbours moved:
+     * a Drop still to do is [percent] lighter than the set right before it, so a drop follows the load actually
+     * logged or typed on that set, not the one the trial began with. Every other set, a done drop and a drop whose
+     * load the lifter set by hand keep their own, and a chain of drops steps down from one to the next.
+     */
+    fun dropLoads(rows: List<DropRow>, percent: Int, lift: LiftLoading): List<Double?> {
+        val out = ArrayList<Double?>(rows.size)
+        rows.forEachIndexed { i, row ->
+            val kg = if (row.isDrop && !row.done && !row.edited && i > 0) drop(out[i - 1], percent, lift) else row.weightKg
+            out += kg
+        }
+        return out
+    }
+
     /**
      * Every set the scheme makes for an entry of [entrySets] x [entryReps] at [entryKg], after any warm-ups: the
      * top set at [top] when there is a suggestion for it, else at the entry's own load. A back-off's figures are

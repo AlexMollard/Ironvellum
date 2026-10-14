@@ -151,6 +151,20 @@ object Supersets {
     }
 
     /**
+     * The partner whose turn follows [exerciseId] in its superset, going round the group (the last member hands
+     * back to the first): the exercise id of the next member with a set still to log, or null when [exerciseId] is
+     * in no superset or nobody else has a set left. The label "Calf raise next" and the card the trial opens after
+     * a tick both read this, so the two can never name different exercises, even when the lifter began the
+     * superset out of order and [nextSet] (the first exercise with a set waiting) is somewhere else.
+     */
+    fun turnAfter(sets: List<SessionSet>, exerciseId: Long): Long? {
+        val blocks = blocks(sets)
+        val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+        val run = runAt(blocks.map { it.group }, at) ?: return null
+        return ((at + 1..run.last) + (run.first until at)).firstOrNull { blocks[it].hasPending }?.let { blocks[it].exerciseId }
+    }
+
+    /**
      * Whether ticking [setId] finishes its round: the set is in no superset, or every other member has logged
      * its set for this round (or has no set left to wait for). Only then does a rest start. [sets] are the sets
      * as they stand before the tick.

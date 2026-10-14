@@ -123,4 +123,12 @@ class LoadUnitsTest {
         assertTrue(!GearRequirements.isBarbellLift("Goblet Squat"))
         assertTrue(!GearRequirements.isBarbellLift("Not A Real Lift"))
     }
+    @Test
+    fun `a loaded lift with nothing on it reads zero, never bodyweight`() {
+        assertEquals("BW", Loads.label(null, kg))
+        assertEquals("BW", Loads.label(0.0, kg, weighted = false))
+        assertEquals("0 kg", Loads.label(null, kg, weighted = true))
+        assertEquals("0 lb", Loads.label(0.0, lb, weighted = true))
+        assertEquals("60 kg", Loads.label(60.0, kg, weighted = true))
+    }
 }

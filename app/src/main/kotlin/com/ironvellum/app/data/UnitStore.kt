@@ -43,7 +43,7 @@ object Units {
     fun format(kg: Double): String = Loads.format(kg, current)
 
     /** "225 lb", or "BW" for no load. */
-    fun label(kg: Double?): String = Loads.label(kg, current)
+    fun label(kg: Double?, weighted: Boolean = false): String = Loads.label(kg, current, weighted)
 
     /** [kg] as a count in the lifter's unit, for text that appends its own unit. */
     fun amount(kg: Double): Double = Loads.toUnit(kg, current)

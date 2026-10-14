@@ -40,10 +40,10 @@ class TrialHintsTest {
     }
 
     @Test
-    fun dropsRunStraightOnAndLoggedSetsGetNoHint() {
+    fun dropsAreSaidOnceByTheDropStripNotAsARowHintToo() {
         val sets = listOf(set(1, SetKind.WORKING, done = true), set(2, SetKind.DROP))
         val hints = TrialHints.forLift(sets, SetScheme.DEFAULT, null, false, plain, kg)
-        assertEquals("Straight on, no rest", hints[2])
+        assertNull(hints[2])
         assertNull(hints[1])
     }
 }

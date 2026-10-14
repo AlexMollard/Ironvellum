@@ -77,7 +77,12 @@ class XpRevealTest {
 
     @Test
     fun theSublinesSayWhatEachMovementWasMadeOf() {
-        assertEquals("4 hard sets · +" + com.ironvellum.app.data.Units.withUnit(17.7), XpReveal.subline(trial.lines[0]))
+        assertEquals("4 hard sets · +" + com.ironvellum.app.data.Units.withUnit(17.7) + " added", XpReveal.subline(trial.lines[0]))
+        // A lifted load is not "added" to anything: it is the top one.
+        assertEquals(
+            "3 hard sets · top " + com.ironvellum.app.data.Units.withUnit(60.0),
+            XpReveal.subline(Xp.Line(Xp.Kind.EXERCISE, "Back Squat", 32, hardSets = 3, topLoadKg = 60.0, externalLoad = true)),
+        )
         assertEquals("3 hard holds", XpReveal.subline(trial.lines[1]))
         assertEquals("2 hard · 1 easy", XpReveal.subline(lift("Hanging Knee Raise", 26, hard = 2, easy = 1)))
         assertEquals("1 hard set", XpReveal.subline(lift("Dip", 10, hard = 1)))

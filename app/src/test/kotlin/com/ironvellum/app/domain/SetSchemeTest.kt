@@ -282,19 +282,19 @@ class SetSchemeTest {
 
     @Test
     fun `a top set lift reads its real plan, not sets by top reps`() {
-        assertEquals("2–4 @22kg · 3×4–5 @15kg", SchemeText.figure(owners, 4, 2, 22.0, kg))
-        assertEquals("4–6 @100kg · 2×6–8 −10%", SchemeText.figure(percent, 3, 4, 100.0, kg))
+        assertEquals("2–4 @22kg · 3 × 4–5 @15kg", SchemeText.figure(owners, 4, 2, 22.0, kg))
+        assertEquals("4–6 @100kg · 2 × 6–8 −10%", SchemeText.figure(percent, 3, 4, 100.0, kg))
         // No loads (the Today card): the percent still says itself, a fixed back-off is just sets by reps.
-        assertEquals("2–4 · 3×4–5", SchemeText.figure(owners, 4, 2, 22.0, null))
-        assertEquals("4–6 · 2×6–8 −10%", SchemeText.figure(percent, 3, 4, null, null))
+        assertEquals("2–4 · 3 × 4–5", SchemeText.figure(owners, 4, 2, 22.0, null))
+        assertEquals("4–6 · 2 × 6–8 −10%", SchemeText.figure(percent, 3, 4, null, null))
         // A bodyweight top set has no load to print.
-        assertEquals("2–4 · 3×4–5 @15kg", SchemeText.figure(owners, 4, 2, null, kg))
+        assertEquals("2–4 · 3 × 4–5 @15kg", SchemeText.figure(owners, 4, 2, null, kg))
     }
 
     @Test
     fun `every other scheme keeps the plain sets by reps figure`() {
-        assertEquals("3×7 @60kg", SchemeText.figure(SetScheme(), 3, 7, 60.0, kg))
-        assertEquals("3×30s", SchemeText.figure(SetScheme(), 3, 30, null, kg, hold = true))
-        assertEquals("3×7", SchemeText.figure(SetScheme(type = SchemeType.DROPS), 3, 7, null, null))
+        assertEquals("3 × 7 @60kg", SchemeText.figure(SetScheme(), 3, 7, 60.0, kg))
+        assertEquals("3 × 30s", SchemeText.figure(SetScheme(), 3, 30, null, kg, hold = true))
+        assertEquals("3 × 7", SchemeText.figure(SetScheme(type = SchemeType.DROPS), 3, 7, null, null))
     }
 }
