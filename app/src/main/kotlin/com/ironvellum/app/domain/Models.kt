@@ -251,19 +251,34 @@ data class ExerciseHistory(
     val daysSinceLast: Long?,
     val series: List<ExerciseSessionPoint>,
     val entries: List<ExerciseSetEntry>,
+    /** Every [Variation.key] the movement was logged in: the plain one first, then the latest used. */
+    val variations: List<String> = emptyList(),
+    /** The [Variation.key] this history is of; "" for the plain movement. Everything above is of this variation alone. */
+    val variation: String = "",
 ) {
     val isEmpty: Boolean get() = entries.isEmpty()
 }
 
 object ExerciseHistoryCalculator {
 
-    /** Pure summary over one exercise's logged sets; bodyweight scores body-scaled load. */
+    /**
+     * Pure summary over one exercise's logged sets; bodyweight scores body-scaled load.
+     *
+     * The summary is of ONE [Variation] of the movement, so an assisted pull-up and a pull-up never share a
+     * best, a chart or a total: [variation] when the rows hold it, else the plain movement, else the latest used.
+     */
     fun build(
         exercise: Exercise,
-        rows: List<ExerciseSetRow>,
+        allRows: List<ExerciseSetRow>,
         bodyweightKg: Double?,
         nowMs: Long = System.currentTimeMillis(),
+        variation: String? = null,
     ): ExerciseHistory {
+        val variations = allRows.groupBy { Variation.key(it.modifiers) }.entries
+            .sortedWith(compareByDescending<Map.Entry<String, List<ExerciseSetRow>>> { it.key.isEmpty() }.thenByDescending { e -> e.value.maxOf { it.atMs } })
+            .map { it.key }
+        val shown = variation?.takeIf { it in variations } ?: variations.firstOrNull() ?: ""
+        val rows = allRows.filter { Variation.key(it.modifiers) == shown }
         if (rows.isEmpty()) {
             return ExerciseHistory(
                 exercise = exercise,
@@ -284,6 +299,8 @@ object ExerciseHistoryCalculator {
                 daysSinceLast = null,
                 series = emptyList(),
                 entries = emptyList(),
+                variations = variations,
+                variation = shown,
             )
         }
 
@@ -371,6 +388,8 @@ object ExerciseHistoryCalculator {
             daysSinceLast = (nowMs - last) / 86_400_000L,
             series = series,
             entries = entries,
+            variations = variations,
+            variation = shown,
         )
     }
 }

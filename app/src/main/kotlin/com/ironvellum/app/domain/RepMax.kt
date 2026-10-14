@@ -2,7 +2,7 @@ package com.ironvellum.app.domain
 
 import kotlin.math.roundToInt
 
-/** Movement (lowercased, trimmed name) to every working set done before a trial: what [RepMax] judges against. */
+/** Movement and variation ([Variation.liftKey]) to every working set done before a trial: what [RepMax] judges against. */
 typealias RepBook = Map<String, List<RepMax.Mark>>
 
 /**
@@ -17,7 +17,8 @@ typealias RepBook = Map<String, List<RepMax.Mark>>
  *  - MORE_REPS: more reps than ever at the same or a greater load. Holds read seconds. A bodyweight-only lift has
  *    load 0, so it is judged on reps alone.
  *
- * The first time a movement is lifted is history starting, not a peak. Pure.
+ * The first time a movement is lifted is history starting, not a peak. A movement is its name AND its
+ * [Variation]: an assisted pull-up never sets a pull-up peak, a deficit calf raise has its own history. Pure.
  */
 object RepMax {
 
@@ -45,6 +46,13 @@ object RepMax {
     private const val LOAD_EPSILON = 0.0005
 
     fun key(exerciseName: String): String = exerciseName.lowercase().trim()
+
+    /** The book key of [set]'s movement in its variation. */
+    fun key(set: SessionSet): String = Variation.liftKey(set.exerciseName, set.modifiers)
+
+    /** One trial's sets as the blocks the peak rule judges: one per movement per variation, in order of first appearance. */
+    fun blocks(sets: List<SessionSet>): List<List<SessionSet>> =
+        sets.groupBy { it.exerciseId to Variation.key(it.modifiers) }.values.toList()
 
     fun loadOf(set: SessionSet): Double = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
 
@@ -78,7 +86,7 @@ object RepMax {
             val metric = metricOf(set)
             if (metric != null && !metric.isStrength) continue
             val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
-            book.getOrPut(key(set.exerciseName)) { mutableListOf() } += Mark(figureOf(set, hold), loadOf(set))
+            book.getOrPut(key(set)) { mutableListOf() } += Mark(figureOf(set, hold), loadOf(set))
         }
     }
 
@@ -136,12 +144,17 @@ object RepMax {
     /** A lift's latest peak, as Today names it: the set that went furthest and the earlier best it passed. */
     data class Recent(
         val name: String,
+        /** [Variation.key] of the movement the peak was set in; "" for the plain lift. */
+        val variation: String = "",
         val atMs: Long,
         val hit: Hit,
         val isHold: Boolean,
         /** The movement is a bodyweight one, so the set's load is ADDED to the body. */
         val addsToBody: Boolean,
-    )
+    ) {
+        /** The lift as Today names it: "Single-Leg Calf Raise · deficit". */
+        val label: String get() = Variation.label(name, variation)
+    }
 
     /** The headline of a movement's hits: the one that pays most, then the heaviest, then the longest. */
     fun headline(hits: List<Hit>, hold: Boolean, pay: (Hit) -> Int): Hit? =
@@ -165,14 +178,14 @@ object RepMax {
         for ((session, sets) in history.filter { it.first.completedAtMs != null }.sortedBy { it.first.startedAtMs }) {
             val at = session.completedAtMs ?: session.startedAtMs
             if (at >= cutoff) {
-                for (block in sets.groupBy { it.exerciseId }.values) {
+                for (block in blocks(sets)) {
                     val first = block.first()
                     val metric = metricOf(first) ?: ExerciseMetric.REPS
                     if (!metric.isStrength) continue
                     val hold = metric == ExerciseMetric.HOLD
-                    val best = headline(hits(block, book[key(first.exerciseName)].orEmpty(), hold), hold) { 0 } ?: continue
-                    latest[key(first.exerciseName)] = Recent(
-                        name = first.exerciseName.trim(), atMs = at, hit = best, isHold = hold,
+                    val best = headline(hits(block, book[key(first)].orEmpty(), hold), hold) { 0 } ?: continue
+                    latest[key(first)] = Recent(
+                        name = first.exerciseName.trim(), variation = Variation.key(first.modifiers), atMs = at, hit = best, isHold = hold,
                         addsToBody = exercises[first.exerciseId]?.isWeighted == false,
                     )
                 }

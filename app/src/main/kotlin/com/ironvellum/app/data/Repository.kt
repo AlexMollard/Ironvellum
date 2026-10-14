@@ -129,6 +129,7 @@ import com.ironvellum.app.domain.RelicHouses
 import com.ironvellum.app.domain.RelicRow
 import com.ironvellum.app.domain.Relics
 import com.ironvellum.app.domain.VaultState
+import com.ironvellum.app.domain.Variation
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -759,7 +760,8 @@ class Repository(
         ProgramRules.strengthProfile(
             observeHistory().first()
                 .flatMap { (_, sets) -> sets }
-                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 }
+                // The profile prescribes the plain movement: a deficit or assisted set is not its 1RM.
+                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 && Variation.isPlain(it.modifiers) }
                 .map { LoggedLift(it.exerciseName, it.weightKg!!, it.reps) },
         )
 
@@ -879,8 +881,11 @@ class Repository(
         val lever = Progression.leverFor(name, exercise?.isWeighted ?: false, metric)
         // A drop and a back-off are lighter by design: the engine reads the sets that carry the prescription, or the
         // last set of a trial would be taken for where the lifter had got to.
+        // Like with like: an assisted pull-up's history never prescribes the plain pull-up, nor the reverse.
+        val variation = Variation.key(entry.modifiers)
         val history = sessionDao.recentDoneSets(entry.exerciseId)
             .filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
+            .filter { Variation.key(it.modifiers) == variation }
             .groupBy { it.sessionId }
             .values
             .map { rows ->
@@ -1032,12 +1037,19 @@ class Repository(
     }
 
     /** What the lifter's last sealed top set of the lift was: the one a new top set is asked to beat. */
-    private suspend fun lastTopMark(exerciseId: Long): TopMark? =
-        sessionDao.recentDoneSets(exerciseId).firstOrNull { it.setKind() == SetKind.TOP }?.let { TopMark(it.reps, it.weightKg) }
+    private suspend fun lastTopMark(exerciseId: Long, modifiers: String): TopMark? {
+        val variation = Variation.key(modifiers)
+        return sessionDao.recentDoneSets(exerciseId)
+            .firstOrNull { it.setKind() == SetKind.TOP && Variation.key(it.modifiers) == variation }
+            ?.let { TopMark(it.reps, it.weightKg) }
+    }
 
-    /** The last top set of each of [exerciseIds], for the trial's "last top" line; a lift that never had one is left out. */
-    suspend fun lastTopMarks(exerciseIds: Collection<Long>): Map<Long, TopMark> =
-        exerciseIds.mapNotNull { id -> lastTopMark(id)?.let { id to it } }.toMap()
+    /**
+     * The last top set of each lift in [modifiersByExercise] (exercise id to the modifiers it is done with now),
+     * for the trial's "last top" line: the last one done in the same [Variation]. A lift that never had one is left out.
+     */
+    suspend fun lastTopMarks(modifiersByExercise: Map<Long, String>): Map<Long, TopMark> =
+        modifiersByExercise.mapNotNull { (id, modifiers) -> lastTopMark(id, modifiers)?.let { id to it } }.toMap()
 
     /**
      * The sets of one lift whose rite entry has a scheme, or a warm-up ramp of its own: the ramp first (unticked, as
@@ -1057,7 +1069,7 @@ class Repository(
         val kit = loadKit()
         val lift = liftLoadingFor(exercise, kit)
         val top = if (scheme.type == SchemeType.TOP_BACKOFF) {
-            SchemePlan.suggestTop(lastTopMark(entry.exerciseId), scheme.topReps, entry.targetWeightKg, nextTopLoad(lift))
+            SchemePlan.suggestTop(lastTopMark(entry.exerciseId, entry.modifiers), scheme.topReps, entry.targetWeightKg, nextTopLoad(lift))
         } else {
             null
         }
@@ -1909,15 +1921,15 @@ class Repository(
         }
     }
 
-    /** Complete record of one movement: every logged set plus derived stats. */
-    fun observeExerciseHistory(exerciseId: Long): Flow<ExerciseHistory?> = combine(
+    /** Complete record of one movement in one [Variation] (the plain one by default): its logged sets plus derived stats. */
+    fun observeExerciseHistory(exerciseId: Long, variation: String? = null): Flow<ExerciseHistory?> = combine(
         sessionDao.observeExerciseSets(exerciseId),
         exerciseDao.observeAll(),
         statDao.observeAll(),
     ) { rows, exercises, stats ->
         val exercise = exercises.firstOrNull { it.id == exerciseId }?.toDomain() ?: return@combine null
         val bodyweight = stats.firstOrNull()?.weightKg
-        ExerciseHistoryCalculator.build(exercise, rows, bodyweight)
+        ExerciseHistoryCalculator.build(exercise, rows, bodyweight, variation = variation)
     }
 
 
@@ -2517,7 +2529,9 @@ class Repository(
             val best = SetRecords.records(history, bodyweightAt) { set ->
                 metricByName[Titles.normaliseName(set.exerciseName)]
             }
+            // A technique is shown by the plain movement: an assisted or deficit set is not the standard.
             best.values
+                .filter { it.variation.isEmpty() }
                 .groupBy { Titles.normaliseName(it.exerciseName) }
                 .mapValues { (name, records) ->
                     val top = techniqueEvidence(records, skillByName[name])

@@ -1188,7 +1188,7 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClickLabel = "Open ${peak.name}", onClick = onOpen)
+            .clickable(role = Role.Button, onClickLabel = "Open ${peak.label}", onClick = onOpen)
             .heightIn(min = ListRowHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1196,7 +1196,7 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                peak.name,
+                peak.label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 maxLines = 1,

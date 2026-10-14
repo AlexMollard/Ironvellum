@@ -25,7 +25,15 @@ object SessionPeaks {
         val xp: Int,
         /** Every set position that peaked, for the share grid's purple squares. */
         val setIndexes: Set<Int> = emptySet(),
-    )
+        /** [Variation.key] of the movement the peak was set in; "" for the plain lift. */
+        val variation: String = "",
+    ) {
+        /** The key the lift's peak is filed under: its name and variation ([Variation.liftKey]). */
+        val liftKey: String get() = Variation.liftKey(exerciseName, variation)
+
+        /** The lift as a screen names it: "Single-Leg Calf Raise · deficit". */
+        val label: String get() = Variation.label(exerciseName, variation)
+    }
 
     /**
      * @param book what the lifter had done before this trial, from [RepMax.book].
@@ -37,9 +45,7 @@ object SessionPeaks {
         bodyweightKg: Double?,
         exerciseOf: (SessionSet) -> Exercise?,
     ): List<Peak> =
-        sets
-            .groupBy { it.exerciseId }
-            .values
+        RepMax.blocks(sets)
             .sortedBy { block -> block.minOf { it.exercisePosition } }
             .mapNotNull { block ->
                 val exercise = exerciseOf(block.first())
@@ -49,10 +55,11 @@ object SessionPeaks {
                 val addsToBody = exercise?.isWeighted == false
                 val isolation = MovementDifficulty.isIsolation(block.first().exerciseName)
                 fun pay(hit: RepMax.Hit) = RepMax.xp(hit, hold, addsToBody, isolation, bodyweightKg)
-                val hits = RepMax.hits(block, book[RepMax.key(block.first().exerciseName)].orEmpty(), hold)
+                val hits = RepMax.hits(block, book[RepMax.key(block.first())].orEmpty(), hold)
                 val best = RepMax.headline(hits, hold, ::pay) ?: return@mapNotNull null
                 Peak(
                     exerciseName = best.set.exerciseName,
+                    variation = Variation.key(best.set.modifiers),
                     count = hits.size,
                     setIndex = best.set.setIndex,
                     figure = RepMax.figureOf(best.set, hold),

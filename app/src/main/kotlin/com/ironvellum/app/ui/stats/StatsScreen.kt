@@ -451,11 +451,11 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
             val change = record.deltaKg?.let { "${Ledger.signed(Units.amount(it), Units.name)} / 90d" }
             val fresh = LiftRecords.isFresh(record, nowMs)
             ListRow(
-                label = record.name,
+                label = record.label,
                 value = Units.fixed(record.bestE1rmKg, 1),
                 subline = if (fresh) listOfNotNull("New peak", change).joinToString(" \u00B7 ") else change,
                 sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                onClickLabel = "Open ${record.name}",
+                onClickLabel = "Open ${record.label}",
                 onClick = { onOpenLift(record.name) },
             )
         }

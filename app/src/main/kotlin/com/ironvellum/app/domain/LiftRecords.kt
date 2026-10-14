@@ -3,6 +3,8 @@ package com.ironvellum.app.domain
 /** One lift on the records board: its best estimated 1RM and how that has moved. */
 data class LiftRecord(
     val name: String,
+    /** [Variation.key] of the movement; "" for the plain lift. A deficit and a flat calf raise are two rows. */
+    val variation: String = "",
     val bestE1rmKg: Double,
     /** When the best was set (the latest session that reached it). */
     val bestAtMs: Long,
@@ -15,7 +17,10 @@ data class LiftRecord(
     val bestSet: SessionSet? = null,
     /** The lift is a bodyweight movement (catalogue not weighted), so [bestSet]'s load is ADDED to the body. */
     val bestSetAddsToBody: Boolean = false,
-)
+) {
+    /** The lift as the board names it: "Single-Leg Calf Raise · deficit". */
+    val label: String get() = Variation.label(name, variation)
+}
 
 /**
  * The Ledger's lift-records board. Estimated one-rep maxes of the MARKED load
@@ -37,7 +42,7 @@ object LiftRecords {
         limit: Int = 8,
     ): List<LiftRecord> {
         class Peak(val at: Long, val e1rm: Double, val set: SessionSet, val addsToBody: Boolean)
-        class Acc(var display: String) {
+        class Acc(var display: String, val variation: String) {
             val perSession = mutableListOf<Peak>()
         }
         val byLift = LinkedHashMap<String, Acc>()
@@ -46,6 +51,7 @@ object LiftRecords {
             val best = HashMap<String, Double>()
             val bestSet = HashMap<String, Pair<SessionSet, Boolean>>()
             val shown = HashMap<String, String>()
+            val variations = HashMap<String, String>()
             // A lift with a top set is a record on that set alone.
             for (set in PeakSets.narrowed(sessionSets[session.id].orEmpty())) {
                 val weight = set.weightKg ?: continue
@@ -55,16 +61,17 @@ object LiftRecords {
                 if ((ex?.metric ?: ExerciseMetric.REPS) != ExerciseMetric.REPS) continue
                 val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
                 if (name.isEmpty()) continue
-                val key = name.lowercase()
+                val key = Variation.liftKey(name, set.modifiers)
                 val e1rm = ProgramRules.epley(weight, set.reps)
                 if (e1rm > (best[key] ?: 0.0)) {
                     best[key] = e1rm
                     bestSet[key] = set to (ex?.isWeighted == false)
                 }
                 shown.putIfAbsent(key, name)
+                variations.putIfAbsent(key, Variation.key(set.modifiers))
             }
             for ((key, e1rm) in best) {
-                val acc = byLift.getOrPut(key) { Acc(shown.getValue(key)) }
+                val acc = byLift.getOrPut(key) { Acc(shown.getValue(key), variations.getValue(key)) }
                 acc.perSession += Peak(at, e1rm, bestSet.getValue(key).first, bestSet.getValue(key).second)
             }
         }
@@ -75,6 +82,7 @@ object LiftRecords {
             val before = acc.perSession.filter { it.at <= cutoff }.maxOfOrNull { it.e1rm }
             LiftRecord(
                 name = acc.display,
+                variation = acc.variation,
                 bestE1rmKg = best,
                 bestAtMs = peak.at,
                 series = acc.perSession.map { it.e1rm },

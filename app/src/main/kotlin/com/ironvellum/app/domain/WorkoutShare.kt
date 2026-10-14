@@ -86,7 +86,7 @@ object WorkoutShare {
         append(" · ").append(dateFormat.format(Instant.ofEpochMilli(at).atZone(zone)))
         append('\n')
 
-        val peakByName = peaks.associateBy { it.exerciseName.trim().lowercase(Locale.ENGLISH) }
+        val peakByLift = peaks.associateBy { it.liftKey }
         val lines = sets
             .groupBy { it.exerciseId }
             .entries
@@ -96,7 +96,7 @@ object WorkoutShare {
                 val working = group.filter { !it.warmup }.sortedBy { it.setIndex }
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: "Movement" }
-                val peak = peakByName[full.trim().lowercase(Locale.ENGLISH)]
+                val peak = peakByLift[Variation.liftKey(full, group.first().modifiers)]
                 val text = movementText(full.trim(), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
                     ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null

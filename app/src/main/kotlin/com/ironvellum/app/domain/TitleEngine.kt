@@ -686,7 +686,10 @@ object Titles {
                     val held = set.durationSec ?: 0
                     if (held > bestHoldSeconds) bestHoldSeconds = held
                 } else if (set.reps > 0 && bodyweightAt != null &&
-                    !exercise.name.contains("assisted", ignoreCase = true)
+                    !exercise.name.contains("assisted", ignoreCase = true) &&
+                    // The deed is the plain lift's: an assisted set's kilos subtract load, and an incline or
+                    // deficit set is a different lift ([Variation]).
+                    Variation.isPlain(set.modifiers)
                 ) {
                     val bodyweight = bodyweightAt(session.startedAtMs)
                     if (bodyweight > 0.0) {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -67,7 +68,7 @@ data class ExplorerUi(
     val exercises: List<Exercise> = emptyList(),
     val selected: Exercise? = null,
     val history: ExerciseHistory? = null,
-    // Best-ever performance per set position (0-based setIndex) of the selected movement.
+    // Best-ever performance per set position (0-based setIndex) of the selected movement in the shown variation.
     val setRecords: Map<Int, SetRecords.Record> = emptyMap(),
 )
 
@@ -79,27 +80,37 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 
     private val selected = MutableStateFlow<Exercise?>(null)
 
+    /** The variation the lifter picked for [selected]; null is the default (the plain movement). */
+    private val variation = MutableStateFlow<String?>(null)
+
     val ui: StateFlow<ExplorerUi> = combine(
         repo.observeExercises(),
         selected,
-        selected.flatMapLatest { ex ->
-            if (ex == null) flowOf(null) else repo.observeExerciseHistory(ex.id)
+        combine(selected, variation, ::Pair).flatMapLatest { (ex, picked) ->
+            if (ex == null) flowOf(null) else repo.observeExerciseHistory(ex.id, picked)
         },
         repo.observeHistory(),
         statsFlow,
     ) { exercises, sel, history, allHistory, stats ->
-        val records = if (sel == null) {
+        val records = if (sel == null || history == null) {
             emptyMap()
         } else {
             SetRecords.records(allHistory, SetRecords.bodyweightLookup(stats)) { sel.metric }
-                .filterKeys { (name, _) -> name.equals(sel.name, ignoreCase = true) }
-                .mapKeys { (_, record) -> record.setIndex }
+                .values
+                .filter { it.exerciseName.equals(sel.name, ignoreCase = true) && it.variation == history.variation }
+                .associateBy { it.setIndex }
         }
         ExplorerUi(exercises, sel, history, records)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExplorerUi())
 
     fun pick(exercise: Exercise) {
         selected.value = exercise
+        variation.value = null
+    }
+
+    /** Shows the movement's history in [key] ([Variation.key]); "" is the plain movement. */
+    fun showVariation(key: String) {
+        variation.value = key
     }
 
     /** Back to the list, so the lifter can choose another movement. */
@@ -173,6 +184,10 @@ fun ExerciseExplorerScreen(
                     color = IronvellumColors.InkMuted,
                 )
             } else {
+                if (history.variations.size > 1) {
+                    VariationChips(history.variations, history.variation, viewModel::showVariation)
+                    Spacer(Modifier.height(6.dp))
+                }
                 PeakCard(history)
                 Spacer(Modifier.height(10.dp))
                 ScoreChart(history)
@@ -219,6 +234,25 @@ internal fun trialsPerWeek(trials: Int, firstMs: Long?, nowMs: Long): Double? {
 
 private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
 
+/**
+ * Which variation of the movement the page is about, when it was logged in more than one: "Plain", "deficit".
+ * Everything below follows the picked one alone, so an assisted set never reads as the pull-up's peak.
+ */
+@Composable
+private fun VariationChips(variations: List<String>, shown: String, onPick: (String) -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+        variations.forEach { key ->
+            val label = if (key.isEmpty()) "Plain" else key.replace(",", ", ")
+            InkChip(
+                label = if (key == shown) "\u25CF $label" else label,
+                clickLabel = "Show $label",
+                description = if (key == shown) "$label, shown" else null,
+                onClick = { onPick(key) },
+            )
+        }
+    }
+}
+
 /** One gold hero (the peak) over one card of 52dp stat rows. */
 @Composable
 private fun PeakCard(history: ExerciseHistory) {
@@ -228,7 +262,7 @@ private fun PeakCard(history: ExerciseHistory) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
             Text(
-                "PEAK",
+                if (history.variation.isEmpty()) "PEAK" else "PEAK \u00B7 ${history.variation.replace(",", ", ").uppercase()}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,

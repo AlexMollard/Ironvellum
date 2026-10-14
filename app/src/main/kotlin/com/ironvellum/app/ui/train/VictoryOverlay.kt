@@ -448,7 +448,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
             color = IronvellumColors.SovereignGold,
         )
         Text(
-            best.exerciseName,
+            best.label,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 19.sp,
@@ -501,7 +501,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    peak.exerciseName,
+                    peak.label,
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     maxLines = 1,
@@ -527,7 +527,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
 }
 
 private fun peakDescription(peak: SessionPeaks.Peak): String =
-    "New ${peak.kind.label} peak, ${peak.exerciseName}, set ${peak.setIndex + 1}, " +
+    "New ${peak.kind.label} peak, ${peak.label}, set ${peak.setIndex + 1}, " +
         "${peakFigure(peak.figure, peak.weightKg, peak.isHold)}, was ${peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold)}, " +
         "up ${peakGain(peak)}, ${peakPay(peak)}" + if (peak.count > 1) ", ${peak.count} peaks" else ""
 

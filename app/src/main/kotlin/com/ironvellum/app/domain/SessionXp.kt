@@ -62,10 +62,10 @@ class SessionXp(
         )
     }
 
-    /** Movements (lowercased names) whose done sets set a new peak by [RepMax], with what each pays. */
+    /** Movements ([Variation.liftKey]) whose done sets set a new peak by [RepMax], with what each pays. */
     fun peakLifts(sets: List<SessionSet>, bodyweightKg: Double?): Map<String, Xp.PeakAward> =
         SessionPeaks.of(sets, peakBook, bodyweightKg) { exercises[it.exerciseId] }
-            .associate { Xp.keyOf(it.exerciseName) to Xp.PeakAward(it.xp, it.kind.label) }
+            .associate { it.liftKey to Xp.PeakAward(it.xp, it.kind.label) }
 
     private fun isStrength(set: SessionSet) = exercises[set.exerciseId]?.metric?.isStrength != false
 

@@ -2,22 +2,28 @@ package com.ironvellum.app.domain
 
 
 /**
- * Per (exercise, set position) personal records. Set 3 is judged against the
+ * Per (exercise and [Variation], set position) personal records. Set 3 is judged against the
  * best-ever set 3, never set 1 — fatigue already penalises later sets, so
- * comparing across positions would make every delta look like decline.
+ * comparing across positions would make every delta look like decline. A deficit calf raise
+ * has its own records, apart from the flat one.
  */
 object SetRecords {
 
     /** Best-ever performance of one movement at one set position. */
     data class Record(
         val exerciseName: String,
+        /** [Variation.key] of the movement the record was set in; "" for the plain lift. */
+        val variation: String = "",
         val setIndex: Int,
         val score: Double,
         val reps: Int,
         val weightKg: Double?,
         val achievedAtMs: Long,
         val sessionId: Long,
-    )
+    ) {
+        /** The lift as a screen names it: "Single-Leg Calf Raise · deficit". */
+        val label: String get() = Variation.label(exerciseName, variation)
+    }
 
     /** How a given attempt compares with the record for that same set position. */
     data class Delta(
@@ -39,9 +45,9 @@ object SetRecords {
             .coerceAtLeast(0)
 
     /**
-     * Keyed by normalised exercise name (lowercased, trimmed) to set index,
-     * so casing differences between installs or imports cannot split a
-     * record. Completed sets only: an unticked prescription is not a performance.
+     * Keyed by [Variation.liftKey] (the lowercased, trimmed name, then the variation) to
+     * set index, so casing differences between installs or imports cannot split a
+     * record, and an assisted or deficit set never competes with the plain lift. Completed sets only: an unticked prescription is not a performance.
      *
      * @param beforeMs when set, only sessions completed (started, if never
      *   completed) strictly before it count: a trial judged as history stood
@@ -81,11 +87,12 @@ object SetRecords {
                     val figure = if (hold) (set.durationSec ?: set.reps) else set.reps
                     val setScore = score(set.exerciseName, figure, set.weightKg, bodyweight, hold)
                     val position = position(set, sets)
-                    val key = set.exerciseName.lowercase().trim() to position
+                    val key = Variation.liftKey(set.exerciseName, set.modifiers) to position
                     val existing = best[key]
                     if (existing == null || setScore > existing.score) {
                         best[key] = Record(
                             exerciseName = set.exerciseName,
+                            variation = Variation.key(set.modifiers),
                             setIndex = position,
                             score = setScore,
                             reps = figure,
@@ -141,9 +148,11 @@ object SetRecords {
         /** True when [reps] is really seconds held. */
         isHold: Boolean = false,
         bestEarlierThisWorkout: Double? = null,
+        /** The attempt's modifiers: it is judged against the records of its own [Variation]. */
+        modifiers: String = "",
     ): Delta {
         val attempt = score(exerciseName, reps, weightKg, bodyweightKg, isHold)
-        val record = records[exerciseName.lowercase().trim() to setIndex]
+        val record = records[Variation.liftKey(exerciseName, modifiers) to setIndex]
             ?: return Delta(record = null, score = attempt, deltaScore = 0.0, deltaFraction = 0.0, isRecord = false)
         val deltaScore = attempt - record.score
         // Record score can be 0.0 (e.g. bodyweight unknown at record time);

@@ -120,7 +120,7 @@ object Rank {
                 }
             }
             for (set in sets) {
-                if (!set.done || LiftBoards.isAssisted(set)) continue
+                if (!set.done || LiftBoards.offBoard(set)) continue
                 val (skill, pattern) = COUNTED_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: continue
                 val figure = when (skill.metric) {
                     Skills.Metric.REPS -> set.reps

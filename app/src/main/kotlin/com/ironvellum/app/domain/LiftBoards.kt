@@ -182,7 +182,7 @@ object LiftBoards {
 
     /** [set] scored on its TIERED board; null when it does not qualify for one. */
     internal fun tieredScore(set: SessionSet, bodyweight: Double, sex: Sex): TieredScore? {
-        if (!set.done || isAssisted(set) || bodyweight <= 0.0) return null
+        if (!set.done || offBoard(set) || bodyweight <= 0.0) return null
         // Epley's rep term stops being honest past 12 (ProgramRules.MAX_E1RM_REPS).
         if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) return null
         val lift = LIFT_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: return null
@@ -193,9 +193,13 @@ object LiftBoards {
         return TieredScore(lift, stepFor(lift, sex, ratio), set.exerciseName, set.reps, load, bodyweight, ratio)
     }
 
-    internal fun isAssisted(set: SessionSet): Boolean =
-        set.exerciseName.contains("assisted", ignoreCase = true) ||
-            set.modifiers.split(",").any { it.trim().equals("assisted", ignoreCase = true) }
+    /**
+     * True when [set] is not the board's own movement: an assisted lift (by name or modifier) and every other
+     * [Variation] (incline, deficit, archer...) is easier, harder or a different range of motion, so it never
+     * clears a tier or a rung of the plain lift. Tempo, paused and weighted do not make a different lift.
+     */
+    internal fun offBoard(set: SessionSet): Boolean =
+        set.exerciseName.contains("assisted", ignoreCase = true) || !Variation.isPlain(set.modifiers)
 
     /** One rung of a LADDER board: a catalogue exercise and the figure that clears it. */
     data class Rung(val exercise: String, val metric: Skills.Metric, val target: Int)
@@ -327,12 +331,12 @@ object LiftBoards {
             val isRecent = recent(workoutAt)
             // The strength tiers are records: a lift with a top set is judged on that set alone.
             for (set in PeakSets.narrowed(sets)) {
-                if (isAssisted(set)) continue
+                if (offBoard(set)) continue
                 tieredScore(set, bodyweight, sex)?.let { record(it.lift, it.step, workoutAt, isRecent) }
             }
             for (set in sets) {
                 if (!set.done) continue
-                if (isAssisted(set)) continue
+                if (offBoard(set)) continue
                 val name = Titles.normaliseName(set.exerciseName)
 
                 for (lift in LADDERS.keys) {

@@ -160,12 +160,19 @@ object Xp {
         val bestHoldSec: Map<String, Int> = emptyMap(),
         /** The heaviest system load a rep lift was done at, in kilos. */
         val bestLoadKg: Map<String, Double> = emptyMap(),
+        /**
+         * The best e1RM per movement AND [Variation] ([Variation.liftKey]): what the strength-record bonus
+         * judges. [bestE1rmKg] stays on the bare name, the benchmark a set's effort is priced against, so
+         * the pricing of a set does not move with the variation split.
+         */
+        val bestE1rmByLift: Map<String, Double> = emptyMap(),
     ) {
         /** This history with [sets] done at [bodyweightKg] added to it. */
         fun after(sets: List<SetEffort>, bodyweightKg: Double?): History {
             val e1rm = bestE1rmKg.toMutableMap()
             val holds = bestHoldSec.toMutableMap()
             val loads = bestLoadKg.toMutableMap()
+            val byLift = bestE1rmByLift.toMutableMap()
             for (set in sets) {
                 if (!set.kind.countsAsWork) continue
                 val key = keyOf(set.exerciseName)
@@ -175,11 +182,13 @@ object Xp {
                 } else {
                     val e1 = e1rmOf(set, bodyweightKg) ?: continue
                     if (e1 > (e1rm[key] ?: 0.0)) e1rm[key] = e1
+                    val liftKey = Variation.liftKey(set.exerciseName, set.modifiers)
+                    if (e1 > (byLift[liftKey] ?: 0.0)) byLift[liftKey] = e1
                     val load = systemLoadKg(set, bodyweightKg) ?: continue
                     if (load > (loads[key] ?: 0.0)) loads[key] = load
                 }
             }
-            return History(e1rm, holds, loads)
+            return History(e1rm, holds, loads, byLift)
         }
 
         companion object {
@@ -369,7 +378,7 @@ object Xp {
      * one per movement in trial order, [extra] lines (activities), then the
      * peak and record bonuses, then the trial-level bonuses.
      *
-     * @param peakLifts movements (lowercased names) whose set was a new peak, with what it pays, from [SessionPeaks].
+     * @param peakLifts movements ([Variation.liftKey]) whose set was a new peak, with what it pays, from [SessionPeaks].
      * @param doneSetCount every done set of the trial, activities included; 0 pays no completion bonus.
      * @param trial the trial-level facts; pass [TrialFacts.NONE] for a live tally (which asks for no completion bonus either).
      */
@@ -384,7 +393,7 @@ object Xp {
     ): Breakdown {
         val working = sets.filter { it.kind.countsAsWork }
         val blocks = LinkedHashMap<Pair<Long, String>, MutableList<SetEffort>>()
-        for (set in working) blocks.getOrPut(set.exerciseId to keyOf(set.exerciseName)) { mutableListOf() } += set
+        for (set in working) blocks.getOrPut(set.exerciseId to Variation.liftKey(set.exerciseName, set.modifiers)) { mutableListOf() } += set
 
         var easyLeft = EASY_XP_CAP
         val hardCount = HashMap<Long, Int>()
@@ -412,7 +421,7 @@ object Xp {
             }
             if (blockXp > 0) {
                 lines += Line(
-                    Kind.EXERCISE, block.first().exerciseName, blockXp,
+                    Kind.EXERCISE, blockLabel(block), blockXp,
                     hardSets = hard, easySets = easy,
                     topLoadKg = block.mapNotNull { it.weightKg?.takeIf { w -> w > 0.0 } }.maxOrNull(),
                     hold = isHold(block.first()),
@@ -420,7 +429,7 @@ object Xp {
             }
             if (best != null) {
                 topSetRated += best.rpe != null
-                val prior = history.bestE1rmKg[id.second]
+                val prior = history.bestE1rmByLift[id.second]
                 if (prior != null && bestE1 > prior * RECORD_MARGIN) recordLifts += id.second
             }
         }
@@ -433,10 +442,10 @@ object Xp {
                 if (paid >= MAX_BONUS_LIFTS) break
                 val key = id.second
                 val bonus = when {
-                    key in recordLifts -> Line(Kind.RECORD, block.first().exerciseName, RECORD_BONUS)
+                    key in recordLifts -> Line(Kind.RECORD, blockLabel(block), RECORD_BONUS)
                     // A peak that pays nothing is shown on the victory screen but takes no bonus slot.
                     else -> peakLifts[key]?.takeIf { it.xp > 0 }
-                        ?.let { Line(Kind.PEAK, block.first().exerciseName, it.xp, detail = it.kind) }
+                        ?.let { Line(Kind.PEAK, blockLabel(block), it.xp, detail = it.kind) }
                 } ?: continue
                 lines += bonus
                 paid++
@@ -466,6 +475,9 @@ object Xp {
         if (doneSetCount > 0) trialLines += Line(Kind.COMPLETION, Kind.COMPLETION.label, COMPLETION_BONUS)
         return Breakdown(merged + trialLines)
     }
+
+    /** A block's movement as a line names it: the name, then its [Variation] when it has one. */
+    private fun blockLabel(block: List<SetEffort>): String = Variation.label(block.first().exerciseName, block.first().modifiers)
 
     /** Folds the per-lift PEAK and RECORD lines into one segment each, in place of the first. */
     private fun mergeBonusLines(lines: List<Line>): List<Line> {

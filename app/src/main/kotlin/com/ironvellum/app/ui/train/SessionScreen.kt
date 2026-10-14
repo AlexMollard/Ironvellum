@@ -221,6 +221,7 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.WEIGHTED_MODIFIER
+import com.ironvellum.app.domain.Variation
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
@@ -299,9 +300,9 @@ class SessionViewModel(
 
     /** Each lift's last sealed top set: what a new top set is asked to beat. */
     val lastTops: StateFlow<Map<Long, TopMark>> = repo.observeSessionSets(sessionId)
-        .map { sets -> sets.map { it.exerciseId }.distinct().sorted() }
+        .map { sets -> sets.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.first().modifiers } }
         .distinctUntilChanged()
-        .map { ids -> repo.lastTopMarks(ids) }
+        .map { modifiers -> repo.lastTopMarks(modifiers) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** "Make set 1 a top set": today only. [onRefused] when the lift cannot take one (see [Repository.makeTopSet]). */
@@ -1030,9 +1031,10 @@ fun SessionScreen(
                                 exercise?.let(::applicableModifiers).orEmpty(),
                                 first.modifiers,
                             )
-                            val peak = remember(records, first.exerciseName) {
-                                val name = first.exerciseName.lowercase().trim()
-                                records.filterKeys { it.first == name }.values.maxByOrNull { it.score }
+                            val peak = remember(records, first.exerciseName, first.modifiers) {
+                                // The peak of this lift in this variation: an assisted pull-up's peak is not the pull-up's.
+                                val lift = Variation.liftKey(first.exerciseName, first.modifiers)
+                                records.filterKeys { it.first == lift }.values.maxByOrNull { it.score }
                             }
                             OpenExerciseCard(
                                 block = block,
@@ -1931,8 +1933,9 @@ private fun newPeakSetIds(
     book: RepBook,
 ): Set<Long> {
     if (!metric.isStrength || sets.isEmpty()) return emptySet()
-    val history = book[RepMax.key(sets.first().exerciseName)].orEmpty()
-    return RepMax.hits(sets, history, metric == ExerciseMetric.HOLD).map { it.set.id }.toSet()
+    return RepMax.blocks(sets).flatMap { block ->
+        RepMax.hits(block, book[RepMax.key(block.first())].orEmpty(), metric == ExerciseMetric.HOLD)
+    }.map { it.set.id }.toSet()
 }
 
 /** A folded exercise's second line, by how far along it is. */
