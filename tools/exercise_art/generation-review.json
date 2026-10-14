@@ -6,8 +6,8 @@
   "reference": "tools/exercise_art/owner/banded-donkey-kick-1.png",
   "originalReference": "exec-c454caf5-7943-425d-81ae-8ecfd5357e5b.png",
   "tool": "built-in image_gen",
-  "expectedTotal": 553,
-  "generated": 553,
+  "expectedTotal": 556,
+  "generated": 556,
   "stylePrompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Smooth uninterrupted egg-shaped head, absolutely NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair.",
   "poseSource": "tools/exercise_art/missing.json",
   "siteProjectId": "appgprj_6acc332221ec8191a0c541c0fe2687a2",
@@ -2779,6 +2779,24 @@
       "id": "wrist-extension-1.png",
       "pose": "Redraw the selected source pose for Wrist Extension, source frame 1, with correct anatomy and equipment. One clear representative still only.",
       "status": "approved"
+    },
+    {
+      "id": "tuck-front-lever-row-1.png",
+      "sha256": "e7df8f9fd5eefad3e8194c54b3ca8d98c6f91889e77f5436518f090345362fdb",
+      "status": "approved",
+      "pose": "Suspended horizontal torso, knees tucked and elbows bent in the upper rowing position; both legs visible."
+    },
+    {
+      "id": "front-lever-row-1.png",
+      "sha256": "e03570f389d1dbf5084d0601f02c69cd05cb99a23396e26641076a06adc61af0",
+      "status": "approved",
+      "pose": "Suspended straight horizontal body and both straight legs, elbows bent in the upper rowing position."
+    },
+    {
+      "id": "cobra-squat-1.png",
+      "sha256": "f13840dd4f014d766958f2345603d501f510ce93d257ec91ad292f740f56db9f",
+      "status": "approved",
+      "pose": "Deep crossed-leg single-leg squat with torso folded forward over the supporting thigh, free leg crossing behind and extending sideways across the body, both arms held behind the back."
     }
   ],
   "reviewSource": "tools/exercise_art/reviews/batch-002/review-input-batch-002.json",

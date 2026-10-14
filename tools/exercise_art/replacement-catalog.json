@@ -8477,6 +8477,51 @@
       ],
       "sourceFrame": 0,
       "prompt": "Minimal clean WHITE LINE ART on actual transparent background. A single exercise demonstration icon in a square canvas. Draw only smooth white contour strokes with a thick uniform weight; all areas enclosed by outlines must be transparent empty space. No white-filled regions, textures, distress, stippling, speckles, shading or muscle hatching. Athletic adult man, blank oval head with NO facial features or hair, bare chest, plain shorts, bare feet. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. Exercise: Wrist Extension. Redraw the selected source pose for Wrist Extension, source frame 1, with correct anatomy and equipment. One clear representative still only. Movement instructions for anatomical correctness: Sit with your forearm resting on your thigh or a bench, palm down, holding a light dumbbell with your wrist hanging past the edge. Let the dumbbell lower by bending your wrist toward the floor. Keep your forearm flat and still on the support. Lift the dumbbell by bending your wrist up as far as you can. Pause briefly at the top. Lower slowly and repeat, then switch arms. Forearm stays pinned Slow and light Full range of motion The source pose reference is ONLY for pose and equipment; replace its style entirely with the approved white-outline style. Do not copy incorrect anatomy, filled regions, sketchy or double outlines. HEAD SHAPE IS MANDATORY: smooth uninterrupted egg-shaped oval, ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Do not copy ears from any source reference. Neck joins the base of the oval naturally."
+    },
+    {
+      "name": "Tuck Front Lever Row",
+      "slug": "tuck-front-lever-row",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "tuck-front-lever-row-1.png"
+      ],
+      "poses": [
+        "Suspended horizontal torso, knees tucked and elbows bent in the upper rowing position; both legs visible."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by user in chat on 2026-10-14. Published in Open Exercise Art; exercise catalogue entry maintained separately."
+    },
+    {
+      "name": "Front Lever Row",
+      "slug": "front-lever-row",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "front-lever-row-1.png"
+      ],
+      "poses": [
+        "Suspended straight horizontal body and both straight legs, elbows bent in the upper rowing position."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by user in chat on 2026-10-14. Published in Open Exercise Art; exercise catalogue entry maintained separately."
+    },
+    {
+      "name": "Cobra Squat",
+      "slug": "cobra-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "cobra-squat-1.png"
+      ],
+      "poses": [
+        "Deep crossed-leg single-leg squat with torso folded forward over the supporting thigh, free leg crossing behind and extending sideways across the body, both arms held behind the back."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork, third revision approved by user in chat on 2026-10-14. Exercise catalogue maintained separately."
     }
   ]
 }
