@@ -5,7 +5,7 @@ a running emulator first, then a USB device. Everything else in the repo's
 verification loop (install, launch, screenshot, tap by label) goes through here
 so no session has to rebuild the adb incantations by hand.
 
-    python tools/device.py up                 # boot the emulator if nothing is attached
+    python tools/device.py up                 # cold boot the emulator if none is running (a phone does not count)
     python tools/device.py install             # build output -> target
     python tools/device.py launch
     python tools/device.py shot today          # .tmp/shots/today.png
@@ -32,6 +32,7 @@ ADB = SDK / "platform-tools" / "adb.exe"
 EMULATOR = SDK / "emulator" / "emulator.exe"
 AVD = "IronvellumEmu"
 PORT = "5554"
+# angle_indirect: measured 61s vs 70-185s (and degrading with use) for `host` on the same tests; see AGENTS.md.
 GPU = os.environ.get("IRONVELLUM_GPU", "angle_indirect")
 APK = pathlib.Path("app/build/outputs/apk/foss/debug/app-foss-debug.apk")  # :app:assembleFossDebug
 PKG = "com.ironvellum.app"

@@ -28,11 +28,45 @@ python3 tools/gate.py --backend    # plus the Supabase schema assertions
 python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
-It takes about 2 minutes on this machine with the emulator on the host GPU
-(`tools/device.py up` boots it with `-gpu host`); on the software renderer it took 17.
-It goes red when any test fails, and also when fewer tests ran than the
-sources declare: a test process that crashes on start reports zero tests and
-zero failures, which used to read as green.
+It finishes in 4 to 4.5 minutes on this machine (4m11s to 4m31s measured after a source edit, with the
+emulator already used for a full run; 3m45s when nothing needed compiling). The budget is 5 minutes and the
+summary prints the wall clock and flags a miss. It goes red when any test fails, and also when fewer tests
+ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
+which used to read as green.
+
+How it gets there, so nobody undoes it by accident:
+
+- Two Gradle invocations. The first assembles what the instrumented run needs while the emulator boots; the
+  second runs unit tests, lint, the instrumented suite and the other flavour's assembles together. Gradle
+  only runs independent tasks of one project in parallel under `--configuration-cache`, so the gate passes
+  it. Gradle output goes to `.tmp/gate-*.log`; the console gets one line per phase.
+- The emulator is cold booted (about 30s) whenever it is not running, has been up over 30 minutes, or
+  answers a shell call slowly. It degrades with use: after a few runs on the `host` GPU mode a suite went
+  from 70s to 185s, with `graphics.composer3` and `allocator` burning CPU and adb dropping.
+- If adb drops mid-run (three failed probes in a row) or the instrumented task fails, the gate restarts
+  the emulator and reruns the whole instrumented suite once; a second failure is red. The whole suite is
+  rerun because some tests lean on state an earlier class sets up (run alone on a fresh install,
+  `AccessibilityChecksTest.theNavBarSaysWhichDestinationYouAreOn` and
+  `everyTappableControlIsAnnounceableAndHittable` find no "Train" tab).
+- `tools/device.py up` boots the emulator even with the phone plugged in (only emulators count).
+
+Emulator settings (the AVD config is outside the repo: `D:\caches\android-avd\IronvellumEmu.avd\config.ini`):
+
+| Key | Value |
+|---|---|
+| `hw.cpu.ncore` | 8 (the guest reports 6 CPUs) |
+| `hw.ramSize` / `vm.heapSize` | 8192 / 576 |
+| `hw.gpu.mode` | `angle_indirect`; `tools/device.py` also passes `-gpu angle_indirect` (override with `IRONVELLUM_GPU`) |
+| `fastboot.forceColdBoot` / `forceFastBoot` | `yes` / `no`; `firstboot.saveToLocalSnapshot` and `bootFromLocalSnapshot` are `no`; boot also passes `-no-snapshot` |
+| `hw.camera.back` / `hw.audioInput` / `hw.audioOutput` | `none` / `no` / `no` |
+
+GPU mode measured on a five-class subset (62 tests), repeated on one emulator: `host` 70, 84, 89, 185s
+(degrades); `swiftshader_indirect` 80, 78, 79, 78s; `angle_indirect` 61, 61, 60s. Window, transition and
+animator animation scales are set to 0 and the screen kept awake after every boot (`device.tune`).
+
+Where the remaining time goes: the instrumented suite is about 215s alone, of which about 50s is
+`ShotRecorder.take` (31 calls, each sleeping 2s and saving a PNG for a human to look at). Skipping the
+captures took the suite from 209s to 167s. They still run; that is the next lever if the budget gets tight.
 
 ## One emulator, shared between sessions
 

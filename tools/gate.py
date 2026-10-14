@@ -33,7 +33,6 @@ import contextlib
 import glob
 import os
 import re
-import shutil
 import subprocess
 import sys
 import threading
@@ -193,33 +192,6 @@ def declared_tests(pattern: str) -> int:
         with open(path, encoding="utf-8", errors="replace") as handle:
             total += len(re.findall(r"@Test\b", handle.read()))
     return total
-
-
-def cases(pattern: str) -> dict[tuple[str, str], bool]:
-    """Every test case in the result files, keyed by (class, name), True when it passed."""
-    found = {}
-    for path in glob.glob(os.path.join(ROOT, pattern), recursive=True):
-        try:
-            root = ET.parse(path).getroot()
-        except ET.ParseError:
-            continue
-        for case in root.iter("testcase"):
-            failed = case.find("failure") is not None or case.find("error") is not None
-            found[(case.get("classname", ""), case.get("name", ""))] = not failed
-    return found
-
-
-def declared_classes(pattern: str) -> set[str]:
-    """Fully qualified names of the source classes that declare an @Test."""
-    names = set()
-    for path in glob.glob(os.path.join(ROOT, pattern), recursive=True):
-        with open(path, encoding="utf-8", errors="replace") as handle:
-            text = handle.read()
-        package = re.search(r"^package\s+([\w.]+)", text, re.M)
-        cls = re.search(r"^\s*(?:[\w]+\s+)*class\s+(\w+)", text, re.M)
-        if "@Test" in text and package and cls:
-            names.add(f"{package.group(1)}.{cls.group(1)}")
-    return names
 
 
 def short_run(ran: int, declared: int) -> str | None:
@@ -411,35 +383,19 @@ def backend() -> int:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
-def retry_instrumented(serial: str, fl: str, flavour: str) -> list[str]:
-    """Rerun, once, the instrumented classes that failed or never ran; the classes retried.
+def retry_instrumented(serial: str, fl: str) -> None:
+    """Restart the emulator and rerun the whole instrumented suite, once.
 
     The emulator can die under load (system_server killed, adb dropped), which fails whichever test was
-    running and skips the rest. One rerun on a freshly cold booted emulator separates that from a real
-    failure: a class that fails twice still fails the gate, and the summary names every class that needed
-    the second go. A run that left no results at all (a hang killed by the watchdog) retries the whole suite.
+    running and skips the rest. A second full run on a cold booted emulator separates that from a real
+    failure: a suite that fails twice still fails the gate, and the summary says a retry was needed.
+    The whole suite is rerun rather than the failed classes because some tests lean on state an earlier
+    class sets up (AccessibilityChecksTest finds no "Train" tab on a fresh install), so a class run alone
+    can fail for a reason the full order does not.
     """
-    pattern = f"app/build/outputs/androidTest-results/connected/debug/flavors/{flavour}/**/*.xml"
-    results = os.path.join(ROOT, "app/build/outputs/androidTest-results/connected/debug/flavors", flavour)
-    first = cases(pattern)
-    failed = {cls for (cls, _), ok in first.items() if not ok}
-    missing = declared_classes("app/src/androidTest/**/*.kt") - {cls for cls, _ in first}
-    retry = sorted(failed | missing)
-    whole = not first
-    if not whole and (not retry or len(retry) > 40):
-        return []  # a broken build, not a broken run: most of it never ran
-    keep = os.path.join(ROOT, ".tmp", "inst-first", flavour)
-    shutil.rmtree(keep, ignore_errors=True)
-    if not whole:
-        shutil.copytree(results, keep)
-    print(f"-- retrying {'the whole instrumented suite' if whole else f'{len(retry)} instrumented classes'} once")
-    if not revive(serial, force=True):
-        return []
-    args = [f":app:connected{fl}DebugAndroidTest"]
-    if not whole:
-        args.append(f"-Pandroid.testInstrumentationRunnerArguments.class={','.join(retry)}")
-    gradle(args, serial, "retry", watch=True)
-    return ["(whole suite)"] if whole else retry
+    print("-- retrying the instrumented suite once")
+    if revive(serial, force=True):
+        gradle([f":app:connected{fl}DebugAndroidTest"], serial, "retry", watch=True)
 
 
 def main() -> int:
@@ -481,7 +437,7 @@ def main() -> int:
         stage2.insert(0, connected)
 
     failures = []
-    retried: list[str] = []
+    retried = False
     with emulator_lock(serial):
         ready: dict[str, bool] = {}
         booting = None
@@ -504,12 +460,11 @@ def main() -> int:
             failures.append(", ".join(others))
         inst_bad = bool(serial) and (dropped or any(t.startswith(":app:connected") for t in failed_tasks(log2)))
         if inst_bad:
-            retried = retry_instrumented(serial, fl, args.flavour)
-            if not retried:
-                failures.append("instrumented")
+            retried = True
+            retry_instrumented(serial, fl)
         elif code2 and not others:
             failures.append("gradle")  # a non-zero exit with no failed task named: say so rather than pass
-        if code2 and failures:
+        if code2 and (failures or inst_bad):
             print_failure(log2)
 
     if args.backend:
@@ -526,12 +481,6 @@ def main() -> int:
     inst_total, inst_failed = counts(
         f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml"
     )
-    if retried:
-        merged = {**cases(f".tmp/inst-first/{args.flavour}/**/*.xml"), **cases(
-            f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml")}
-        inst_total, inst_failed = len(merged), sum(1 for ok in merged.values() if not ok)
-        if inst_failed or short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")):
-            failures.append("instrumented")
     unit_short = short_run(unit_total, declared_tests("app/src/test/**/*.kt"))
     inst_short = short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")) if serial else None
     print("\n=== gate ===")
@@ -540,7 +489,7 @@ def main() -> int:
     if serial:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
         if retried:
-            print(f"  retried       {len(retried)} classes once after a failed run: {', '.join(c.rsplit('.', 1)[-1] for c in retried)}")
+            print("  retried       the instrumented suite ran twice: the first run failed or lost the device")
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
