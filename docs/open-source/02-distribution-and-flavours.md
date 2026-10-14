@@ -41,7 +41,7 @@ contains no `com.google.android.libraries.identity` or
    Apache-2.0 but useless without the Play bridge, so it moves too.
 3. **Source split.** Move `GoogleSignInButton` and its imports to
    `app/src/play/kotlin/com/ironvellum/app/ui/social/GoogleSignIn.kt`. Add
-   `app/src/foss/kotlin/.../GoogleSignIn.kt` with the same signature and an
+   `app/src/foss/kotlin/com/ironvellum/app/ui/social/GoogleSignIn.kt` with the same signature and an
    empty body. `AccountScreen` calls it unchanged, so there is no reflection
    and no runtime flag.
 4. **Backend defaults the F-Droid server can see.** The Supabase URL and
@@ -80,9 +80,10 @@ contains no `com.google.android.libraries.identity` or
 1. Add `fastlane/metadata/android/en-US/` with `title.txt`,
    `short_description.txt` (at most 80 characters), `full_description.txt`
    (adapted from the README "Why this exists" section),
-   `images/icon.png` (from `docs/images/icon.png`),
-   `images/phoneScreenshots/*.png` and `changelogs/<versionCode>.txt`. No such
-   directory exists today. F-Droid and Play can both consume it.
+   `images/icon.png`, `images/phoneScreenshots/*.png` and
+   `changelogs/<versionCode>.txt`. It now exists and is the single copy of the
+   icon and screenshots (the README links to it). F-Droid and Play can both
+   consume it.
    Screenshots must come **from the phone**: emulator shots render
    differently (README lines 141-144).
 2. Declare the anti-features honestly. The shared backend is FOSS (Supabase),
