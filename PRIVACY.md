@@ -15,7 +15,7 @@ Checked against the codebase on 2026-09-15.
   device. The cloud features are disabled entirely unless Supabase credentials
   are configured (`Cloud.configured`, `data/cloud/Cloud.kt`).
 - **Body measurements never leave the device.** The cloud schema deliberately
-  has no table for them (`supabase/migrations/0001_init.sql`, header comment;
+  has no table for them (`supabase/migrations/0001_baseline.sql`, header comment;
   `Repository.kt` "measurements — device-only by design").
 - **The database is excluded from Android's backups.** Android would otherwise
   copy app data to your Google account and to a new phone during device
@@ -80,7 +80,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP). It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives` (migration `0013`), readable only by you |
 
 Access to all of it is governed by row-level security on the server; every
-table is RLS-enabled (`0001_init.sql`). Your profile `visibility` setting
+table is RLS-enabled (`0001_baseline.sql`). Your profile `visibility` setting
 (`public` / `friends` / `private`) controls who else can see your shared data.
 
 **Using your own backend:** Settings → CLOUD lets you point the app at your

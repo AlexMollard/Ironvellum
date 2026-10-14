@@ -4,7 +4,7 @@ Date: 2026-10-05. Status: approved in chat, awaiting spec review.
 
 ## Problem
 
-Strength Rank ([Rank.kt](../../../app/src/main/kotlin/com/ironvellum/app/domain/Rank.kt))
+Strength Rank ([Rank.kt](../../../../app/src/main/kotlin/com/ironvellum/app/domain/Rank.kt))
 only reads the six TIERED lift boards (pull-up, dip, squat, bench, deadlift,
 overhead press) by estimated 1RM over bodyweight. A calisthenics-heavy lifter is
 ranked on whichever of those six they happen to log, and none of their skill
@@ -118,7 +118,7 @@ A pure function returns, alongside the band:
 
 ## UI
 
-- The rank chip on the dashboard ([DashboardScreen.kt:645](../../../app/src/main/kotlin/com/ironvellum/app/ui/dashboard/DashboardScreen.kt))
+- The rank chip on the dashboard ([DashboardScreen.kt:645](../../../../app/src/main/kotlin/com/ironvellum/app/ui/dashboard/DashboardScreen.kt))
   becomes tappable and opens a new `RankSheet` (own file under
   `ui/components/`) with the breakdown above. The dashboard edit is limited to
   the click handler and sheet state.

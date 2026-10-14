@@ -9,3 +9,8 @@ captures/
 .tmp/
 __pycache__/
 tools/exercise_art/.venv/
+.claude/worktrees/
+.superpowers/
+*.log
+*.jks
+*.keystore

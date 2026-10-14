@@ -8,7 +8,7 @@
 
 **Tech Stack:** Kotlin, Jetpack Compose (Material 3), Room (read only here), JUnit 4 JVM tests, Gradle (`gradlew.bat` on Windows).
 
-**Spec:** [docs/superpowers/specs/2026-10-05-strength-rank-overhaul-design.md](../specs/2026-10-05-strength-rank-overhaul-design.md)
+**Spec:** [docs/archive/superpowers/specs/2026-10-05-strength-rank-overhaul-design.md](../specs/2026-10-05-strength-rank-overhaul-design.md)
 
 ## Global Constraints
 
