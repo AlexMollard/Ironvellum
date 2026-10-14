@@ -194,6 +194,16 @@ object MuscleMap {
         put("archer pull-up", verticalPull())
         put("inverted row", row())
         put("door sheet row", row())
+        // Rows from a tuck front lever hold: the straight-arm lever shape (lats, abs, rear delts) with the
+        // bent-arm pull on top, so the row's helpers and the trunk bracing are both credited.
+        for (rowName in listOf("tuck front lever row", "front lever row")) put(rowName, ExerciseProfile(
+            muscles = mapOf(
+                Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 1.0, Muscle.TRAPS to 0.5, Muscle.BICEPS to 0.5,
+                Muscle.REAR_DELTS to 0.5, Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5,
+                Muscle.ROTATOR_CUFF to 0.5, Muscle.ABS to 0.5,
+            ),
+            pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = false,
+        ))
         put("wrist curl", ExerciseProfile(
             muscles = mapOf(Muscle.FOREARMS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,

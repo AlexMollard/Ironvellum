@@ -69,6 +69,9 @@ object GearRequirements {
         // Horizontal pulling under the bar: rings, or a bar set low in a rack.
         "inverted row" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
         "australian pull-up" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
+        // Rowed from a tuck front lever hold: the bar (or rings) carries the whole body.
+        "tuck front lever row" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
+        "front lever row" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         // Dips: bars or rings. Bench dip needs nothing, so it is unlisted.
         "dip" to listOf(setOf(Gear.DIP_BARS), setOf(Gear.RINGS)),
         "parallel bar dip" to listOf(setOf(Gear.DIP_BARS), setOf(Gear.RINGS)),

@@ -46,6 +46,8 @@ object MovementDifficulty {
         "chin-up" to 3,
         "inverted row" to 2,
         "door sheet row" to 2,
+        "tuck front lever row" to 3,
+        "front lever row" to 4,
         "active bar hang" to 1,
         "wrist curl" to 1,
         "bicep curl" to 1,

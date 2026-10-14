@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,6 +54,21 @@ class LibrarySeedUpgradeTest {
             assertNotNull("library movement missing after upgrade: ${row.name}", db.exerciseDao().byName(row.name))
         }
         assertEquals(Seed.exercises.distinctBy { it.name }.size + 1, db.exerciseDao().count())
+    }
+
+    @Test
+    fun upgradeGainsTheFrontLeverRowsExactlyOnce() = runTest {
+        val names = listOf("Tuck Front Lever Row", "Front Lever Row")
+        db.exerciseDao().insertAll(Seed.exercises.filter { it.name !in names })
+        names.forEach { assertNull(db.exerciseDao().byName(it)) }
+
+        Repository(db).ensureSeeded()
+        val ids = names.map { db.exerciseDao().byName(it)!!.id }
+        val count = db.exerciseDao().count()
+        Repository(db).ensureSeeded()
+
+        assertEquals("second launch keeps the same rows", ids, names.map { db.exerciseDao().byName(it)!!.id })
+        assertEquals("second launch adds nothing", count, db.exerciseDao().count())
     }
 
     private companion object {

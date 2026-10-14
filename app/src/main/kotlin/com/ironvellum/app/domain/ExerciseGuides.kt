@@ -1606,6 +1606,52 @@ object ExerciseGuides {
             ),
         )
         put(
+            "tuck front lever row",
+            ExerciseGuide(
+                setup = "Hang from a bar and pull into a tuck front lever, knees tight to your chest and your back flat and parallel with the floor.",
+                steps = listOf(
+                    "Pull your shoulders down and hold the tuck lever with your back flat.",
+                    "Bend your elbows and pull your chest toward the bar, keeping your hips level.",
+                    "Squeeze your shoulder blades together at the top.",
+                    "Straighten your arms to return to the tuck lever without letting your hips sag.",
+                    "Lower out of the lever with control when the set is done.",
+                ),
+                cues = listOf(
+                    "Elbows to your ribs",
+                    "Back stays flat and level",
+                    "Pull the chest to the bar, not the chin",
+                ),
+                commonMistakes = listOf(
+                    "Letting the hips drop as you pull",
+                    "Swinging your knees to cheat the first rep",
+                    "Cutting the reps short instead of ending the set when form breaks",
+                ),
+            ),
+        )
+        put(
+            "front lever row",
+            ExerciseGuide(
+                setup = "Hang from a bar and pull into a full front lever, body straight and parallel with the floor.",
+                steps = listOf(
+                    "Pull your shoulders down and hold the straight front lever.",
+                    "Bend your elbows and pull your chest toward the bar, keeping your body in one line.",
+                    "Squeeze your shoulder blades together at the top.",
+                    "Straighten your arms to return to the lever without letting your hips sag.",
+                    "Lower out of the lever with control when the set is done.",
+                ),
+                cues = listOf(
+                    "Elbows to your ribs",
+                    "Body stays one straight line",
+                    "Pull the chest to the bar, not the chin",
+                ),
+                commonMistakes = listOf(
+                    "Piking at the hips as you pull",
+                    "Bending the knees to shorten the lever",
+                    "Cutting the reps short instead of ending the set when form breaks",
+                ),
+            ),
+        )
+        put(
             "door sheet row",
             ExerciseGuide(
                 setup = "Loop a strong sheet or towel around a closed door's handles or posts, hold both ends, and lean back with your arms straight and your feet near the door.",

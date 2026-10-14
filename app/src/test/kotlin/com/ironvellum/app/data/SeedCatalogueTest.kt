@@ -1,6 +1,12 @@
 package com.ironvellum.app.data
 
+import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.MovementDifficulty
+import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.MuscleGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -52,6 +58,25 @@ class SeedCatalogueTest {
         // case would both match and the loser would never be reachable.
         assertEquals("duplicate movement names", emptyMap<String, Int>(), duplicates)
         assertEquals("names with surrounding whitespace", emptyList<String>(), names.filter { it != it.trim() })
+    }
+
+    @Test
+    fun `the front lever rows are bodyweight rep pulls wired into every table, harder up the ladder`() {
+        assertTrue(MovementDifficulty.tier("Front Lever Row") > MovementDifficulty.tier("Tuck Front Lever Row"))
+        listOf("Tuck Front Lever Row", "Front Lever Row").forEach(::assertFrontLeverRow)
+    }
+
+    private fun assertFrontLeverRow(name: String) {
+        val row = catalogue.getValue(name)
+        assertEquals(1, Seed.exercises.count { it.name == name })
+        assertEquals(MuscleGroup.PULL.name, row.muscleGroup)
+        assertEquals(ExerciseMetric.REPS.name, row.metric)
+        assertEquals(false, row.isWeighted)
+        assertTrue(MovementDifficulty.isClassified(name))
+        assertTrue(GearRequirements.hasEntry(name))
+        assertEquals(listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)), GearRequirements.needs(name))
+        assertEquals(Muscle.LATS, MuscleMap.profile(name)!!.muscles.maxByOrNull { it.value }!!.key)
+        assertTrue(ExerciseGuides.forName(name)!!.steps.size >= 3)
     }
 
     @Test

@@ -20,6 +20,8 @@ object Seed {
         ExerciseEntity(name = "Archer Pull-up", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         ExerciseEntity(name = "Inverted Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         ExerciseEntity(name = "Door Sheet Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
+        ExerciseEntity(name = "Tuck Front Lever Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
+        ExerciseEntity(name = "Front Lever Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         ExerciseEntity(name = "Active Bar Hang", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         ExerciseEntity(name = "Wrist Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Bicep Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
