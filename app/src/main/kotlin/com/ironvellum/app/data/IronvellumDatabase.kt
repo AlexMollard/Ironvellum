@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 41
+        const val VERSION = 42
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -625,6 +625,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Set schemes in rites: a rite entry gains the text that says how its lift's sets are laid out (top set and
+         * back-offs, drops, custom). Nullable with no default: null is Straight, which every existing entry is, and no
+         * row is rewritten. Independent of every other column, so it applies on top of any v41.
+         */
+        private val MIGRATION_41_42 = object : Migration(41, 42) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE preset_entries ADD COLUMN setScheme TEXT")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -656,6 +667,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_38_39,
             MIGRATION_39_40,
             MIGRATION_40_41,
+            MIGRATION_41_42,
         )
 
         const val NAME = "ironvellum.db"

@@ -161,7 +161,7 @@ enum class Term(
         "Set types",
         "Each set wears a tag you can tap to change. " +
             SetKind.entries.joinToString(" ") { "${it.label}: ${it.blurb}" } +
-            " Only a warm-up is left out of XP, volume and peaks.",
+            " Only a warm-up is left out of XP and volume. On a lift with a top set, only the top set can set a peak or a record.",
     ),
     THE_VEIL(
         "The Veil",

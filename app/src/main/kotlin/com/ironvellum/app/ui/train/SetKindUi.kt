@@ -37,6 +37,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun SetKind.tint(): Color = when (this) {
     SetKind.WORKING -> IronvellumColors.InkMuted
     SetKind.WARMUP -> IronvellumColors.InkMuted
+    // The top set wears the gold of a peak, the heaviest set of the lift; its back-offs a paler green than a drop's.
+    SetKind.TOP -> IronvellumColors.SovereignGold
+    SetKind.BACKOFF -> IronvellumColors.EmeraldBright.copy(alpha = 0.8f)
     SetKind.DROP -> IronvellumColors.SystemGreen
     SetKind.FAILURE -> IronvellumColors.DangerRed.copy(alpha = 0.8f)
     SetKind.REST_PAUSE -> IronvellumColors.Ink.copy(alpha = 0.85f)

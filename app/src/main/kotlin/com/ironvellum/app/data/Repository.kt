@@ -90,6 +90,7 @@ import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
@@ -460,6 +461,7 @@ class Repository(
                         modifiers = e.modifiers,
                         position = e.position,
                         supersetGroup = e.supersetGroup,
+                        scheme = SetScheme.decode(e.setScheme),
                     )
                 },
             )
@@ -474,6 +476,8 @@ class Repository(
         val modifiers: String = "",
         /** Shared with the adjacent entries done as one superset; saved only where they really are neighbours. */
         val supersetGroup: Int? = null,
+        /** How the lift's sets are laid out; Straight, the default, stores nothing. */
+        val scheme: SetScheme = SetScheme(),
     )
 
     suspend fun savePreset(
@@ -503,6 +507,7 @@ class Repository(
                     modifiers = e.modifiers,
                     position = position,
                     supersetGroup = groups[position],
+                    setScheme = e.scheme.normalised().encode(),
                 )
             },
         )
@@ -628,6 +633,10 @@ class Repository(
         // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
         val keptGroups = presetId?.let { presetDao.presetWithEntries(it) }?.entries
             ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
+        // Likewise a lift's set scheme: the Forge tempers loads and counts, it never undoes how a lift is run. The
+        // scheme follows the lift and is fitted to the set count the Forge chose.
+        val keptSchemes = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+            ?.filter { it.setScheme != null }?.associate { it.exerciseId to SetScheme.decode(it.setScheme) }.orEmpty()
         return savePreset(
             presetId = presetId,
             name = preset.name,
@@ -641,6 +650,7 @@ class Repository(
                     targetWeightKg = entry.targetWeightKg,
                     modifiers = entry.modifiers,
                     supersetGroup = keptGroups[idByName.getValue(entry.exerciseName)],
+                    scheme = keptSchemes[idByName.getValue(entry.exerciseName)]?.fitTo(entry.sets) ?: SetScheme(),
                 )
             },
         )
@@ -1560,6 +1570,7 @@ class Repository(
                 targetWeightKg = e.targetWeightKg,
                 modifiers = e.modifiers,
                 position = e.position,
+                scheme = SetScheme.decode(e.setScheme),
             )
         }
         val sets = sessionDao.setsFor(sessionId).map { s ->
@@ -1610,6 +1621,7 @@ class Repository(
                     targetReps = if (after.targetReps != before.targetReps) after.targetReps else row.targetReps,
                     targetWeightKg = if (after.targetWeightKg != before.targetWeightKg) after.targetWeightKg else row.targetWeightKg,
                     modifiers = if (after.modifiers != before.modifiers) after.modifiers else row.modifiers,
+                    setScheme = if (after.scheme != before.scheme) after.scheme.normalised().encode() else row.setScheme,
                 ),
             )
         }
@@ -2762,6 +2774,7 @@ class Repository(
                         modifiers = e.modifiers,
                         position = e.position,
                         supersetGroup = e.supersetGroup,
+                        scheme = SetScheme.decode(e.setScheme),
                     )
                 },
             )
@@ -2993,6 +3006,7 @@ class Repository(
                                 modifiers = entry.modifiers,
                                 position = entry.position,
                                 supersetGroup = entry.supersetGroup,
+                                setScheme = entry.scheme.normalised().encode(),
                             )
                         },
                     )

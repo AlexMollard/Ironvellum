@@ -56,6 +56,11 @@ data class PresetEntryEntity(
     val position: Int,
     /** Shared by the entries done as one superset; null when not in one. Carried onto the sets of a trial begun from the rite. */
     val supersetGroup: Int? = null,
+    /**
+     * How the lift's sets are laid out ([com.ironvellum.app.domain.SetScheme.encode]); null is Straight, the entry's
+     * own sets x reps, which every rite made before schemes existed still is.
+     */
+    val setScheme: String? = null,
 )
 
 @Entity(tableName = "sessions")

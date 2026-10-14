@@ -322,6 +322,11 @@ object LiftBoards {
             val bodyweight = bodyweightAt(session.startedAtMs)
             val workoutAt = session.completedAtMs ?: session.startedAtMs
             val isRecent = recent(workoutAt)
+            // The strength tiers are records: a lift with a top set is judged on that set alone.
+            for (set in PeakSets.narrowed(sets)) {
+                if (isAssisted(set)) continue
+                tieredScore(set, bodyweight, sex)?.let { record(it.lift, it.step, workoutAt, isRecent) }
+            }
             for (set in sets) {
                 if (!set.done) continue
                 if (isAssisted(set)) continue
@@ -331,8 +336,6 @@ object LiftBoards {
                     val step = rungCleared(lift, name, set.reps, set.durationSec)
                     if (step > 0) record(lift, step, workoutAt, isRecent)
                 }
-
-                tieredScore(set, bodyweight, sex)?.let { record(it.lift, it.step, workoutAt, isRecent) }
             }
         }
 

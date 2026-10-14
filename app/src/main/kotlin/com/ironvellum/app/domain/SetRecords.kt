@@ -64,7 +64,8 @@ object SetRecords {
             .forEach { (session, sets) ->
                 if (excludeSessionId != null && session.id == excludeSessionId) return@forEach
                 if (beforeMs != null && (session.completedAtMs ?: session.startedAtMs) >= beforeMs) return@forEach
-                sets.filter { it.done }.forEach { set ->
+                // A lift with a top set records that set alone; position still counts every set of the trial.
+                PeakSets.narrowed(sets).forEach { set ->
                     // An activity metric (Bouldering's ATTEMPTS_GRADE, a run's
                     // DISTANCE_TIME) is not strength work at any set position:
                     // its figure is an attempt count or a distance, and scoring

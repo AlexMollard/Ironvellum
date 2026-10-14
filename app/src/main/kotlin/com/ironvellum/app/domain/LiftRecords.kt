@@ -46,8 +46,8 @@ object LiftRecords {
             val best = HashMap<String, Double>()
             val bestSet = HashMap<String, Pair<SessionSet, Boolean>>()
             val shown = HashMap<String, String>()
-            for (set in sessionSets[session.id].orEmpty()) {
-                if (!set.done) continue
+            // A lift with a top set is a record on that set alone.
+            for (set in PeakSets.narrowed(sessionSets[session.id].orEmpty())) {
                 val weight = set.weightKg ?: continue
                 if (weight <= 0.0) continue
                 if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue

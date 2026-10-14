@@ -144,6 +144,7 @@ import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
+import com.ironvellum.app.domain.SchemeText
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.ui.components.animatorsOn
@@ -3602,6 +3603,8 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
         RoutineUpdate.Field.LOAD -> "Load" to "${formatKg(before.targetWeightKg)} → ${formatKg(after.targetWeightKg)}"
         RoutineUpdate.Field.MODIFIERS ->
             "Modifiers" to "${before.modifiers.ifBlank { "None" }} → ${after.modifiers.ifBlank { "None" }}"
+        RoutineUpdate.Field.SCHEME ->
+            "Sets" to "${SchemeText.clause(before.scheme, before.targetSets)} → ${SchemeText.clause(after.scheme, after.targetSets)}"
     }
 }
 
