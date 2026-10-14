@@ -878,10 +878,20 @@ fun SessionScreen(
     // The logged set whose effort is being asked, while it is still logged and counted.
     val effortSet = effortFor?.let { id -> ui.sets.firstOrNull { it.id == id } }?.takeIf { it.done && !it.warmup }
     // shortcut: the rest-bar chips cover rep sets only (a hold falls back to the under-row strip); add a hold chip set if holds need rating from the rest bar.
-    // The rest bar asks it by default, whatever Settings says, for a set counted in reps; the old
-    // under-row strip stays for where no rest bar shows (no rest timer, a hold) and only when Settings asks.
-    val restChipsOn = effortSet != null && rest != null && !allLogged && metricOf(effortSet.exerciseId) == ExerciseMetric.REPS
-    val underRowEffort = effortSet?.takeIf { !restChipsOn && EffortSetting.enabled }
+    // Flips to false once when the rest runs out, so the effort question can move off the rest bar.
+    val restRunning by produceState(rest?.let { !it.isOver(SystemClock.elapsedRealtime()) } ?: false, rest) {
+        val left = rest?.let { it.endsAtMs - SystemClock.elapsedRealtime() } ?: 0L
+        value = left > 0
+        if (left > 0) {
+            delay(left)
+            value = false
+        }
+    }
+    val effortAsk = effortSet?.let {
+        effortAsk(restRunning, allLogged, metricOf(it.exerciseId) == ExerciseMetric.REPS, EffortSetting.enabled)
+    } ?: EffortAsk.NONE
+    val restChipsOn = effortAsk == EffortAsk.REST_BAR
+    val underRowEffort = effortSet?.takeIf { effortAsk == EffortAsk.UNDER_ROW }
     // The live tally: what the ticked sets have earned, priced by the one function the seal uses.
     val doneForTally = remember(ui.sets) { ui.sets.filter { it.done && !it.warmup } }
     // shortcut: the tally re-prices every prefix of the done sets (O(n^2) in sets, fine at trial size); price incrementally if trials reach hundreds of sets.
@@ -2648,8 +2658,9 @@ private fun TrialSetRow(
                         IronvellumColors.Ink,
                     ) { onSetKind(if (set.warmup) SetKind.WORKING else SetKind.WARMUP) }
                 }
-                // A logged set can be rated, or re-rated, here; the strip shows while Settings asks for effort or the set already has one.
-                if (set.done && !set.warmup && (EffortSetting.enabled || set.rpe != null)) {
+                // A logged set can be rated, or re-rated, here: a rep set always (the rest bar asks those
+                // by default), anything else while Settings asks for effort or the set already has one.
+                if (set.done && !set.warmup && (metric == ExerciseMetric.REPS || EffortSetting.enabled || set.rpe != null)) {
                     EffortStrip(title = "How hard was set $label?", rpe = set.rpe, onPick = onRpe)
                 }
             }
@@ -3254,6 +3265,20 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
 internal fun restEffortChips(scale: EffortScale): List<Pair<Int, String>> = when (scale) {
     EffortScale.RIR -> listOf(0, 1, 2, 3, 4).map { rir -> Effort.rpeOfRir(rir) to if (rir == 4) "4+" else "$rir" }
     EffortScale.RPE -> listOf("\u22646" to 6, "7" to 7, "8" to 8, "9" to 9, "10" to 10).map { (face, rpe) -> rpe to face }
+}
+
+/** Where the live trial asks how hard the set just logged was. */
+internal enum class EffortAsk { REST_BAR, UNDER_ROW, NONE }
+
+/**
+ * The rest bar asks while the rest counts down, for a set counted in reps, whatever Settings says.
+ * Once no rest bar shows (the last set, the rest ran out, no rest timer) a rep set is still asked
+ * under its row; any other set only when Settings asks for effort.
+ */
+internal fun effortAsk(restRunning: Boolean, allLogged: Boolean, reps: Boolean, settingOn: Boolean): EffortAsk = when {
+    restRunning && !allLogged && reps -> EffortAsk.REST_BAR
+    reps || settingOn -> EffortAsk.UNDER_ROW
+    else -> EffortAsk.NONE
 }
 
 private fun restEffortSpoken(rpe: Int, scale: EffortScale): String = when (scale) {
