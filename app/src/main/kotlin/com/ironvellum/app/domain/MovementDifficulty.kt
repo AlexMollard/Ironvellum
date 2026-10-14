@@ -481,6 +481,9 @@ object MovementDifficulty {
         "one-arm" to 1.70,
     )
 
+    /** True when [token] is a modifier [modifierFactor] prices; anything else (a typo, a legacy "banded") scores nothing. */
+    fun pricesModifier(token: String): Boolean = token.trim().lowercase() in modifierFactors
+
     const val MIN_MODIFIER_FACTOR = 0.5
     const val MAX_MODIFIER_FACTOR = 2.5
 

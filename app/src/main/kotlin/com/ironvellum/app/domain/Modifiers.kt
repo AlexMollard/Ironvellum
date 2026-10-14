@@ -63,3 +63,67 @@ private val ANGLES = listOf("incline", "decline", "elevated")
 private val MODIFIER_ORDER = listOf(
     "assisted", "archer", "one-arm", "incline", "decline", "elevated", "deficit", "tempo", "paused",
 )
+
+/** A comma-separated modifier string as its tokens: trimmed, in order, a repeat (any case) dropped. */
+fun modifierTokens(modifiers: String?): List<String> =
+    modifiers.orEmpty().split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+
+/** How a chip that is set stands against the movement it is on. */
+enum class ModifierFlag {
+    /** Offered for the movement. */
+    NONE,
+
+    /** A modifier the app knows and prices, but not one this movement offers (a deficit on a bench press). */
+    NOT_APPLICABLE,
+
+    /** A word the app does not know (a typo, a legacy "banded"): it scores nothing. */
+    UNKNOWN,
+}
+
+/** One chip of the modifier picker: the token, whether it is set, and, if it is set though not offered, why it is flagged. */
+data class ModifierChip(val token: String, val selected: Boolean, val flag: ModifierFlag = ModifierFlag.NONE)
+
+/**
+ * The chips the one modifier picker shows - the live trial's dialog and the rite editor alike - for a movement
+ * that offers [offered] ([applicableModifiers]) and is done with [current].
+ *
+ * Every offered token first, set or not; then each token already set that is not offered, set and flagged so
+ * it can be removed but is never dropped behind the lifter's back. "weighted" has no chip: the load sets it
+ * ([modifiersFollowingLoad]).
+ */
+fun modifierChips(offered: List<String>, current: String): List<ModifierChip> {
+    val tokens = modifierTokens(current)
+    val offeredChips = offered.map { token -> ModifierChip(token, tokens.any { it.equals(token, ignoreCase = true) }) }
+    val strays = tokens
+        .filter { token -> !token.equals(WEIGHTED_MODIFIER, ignoreCase = true) && offered.none { it.equals(token, ignoreCase = true) } }
+        .map { token ->
+            ModifierChip(
+                token, true,
+                if (MovementDifficulty.pricesModifier(token)) ModifierFlag.NOT_APPLICABLE else ModifierFlag.UNKNOWN,
+            )
+        }
+    return offeredChips + strays
+}
+
+/** [current] with [token] set when it was not and cleared when it was; the others keep their order. */
+fun toggleModifier(current: String, token: String): String {
+    val tokens = modifierTokens(current)
+    val next = if (tokens.any { it.equals(token, ignoreCase = true) }) {
+        tokens.filterNot { it.equals(token, ignoreCase = true) }
+    } else {
+        tokens + token
+    }
+    return next.joinToString(", ")
+}
+
+/**
+ * [current] modifiers with "weighted" following the load a rite entry is set to: added when a bodyweight
+ * [exercise] (the catalogue's isWeighted false: pull-up, dip, push-up) is [loaded], removed whenever it is not.
+ * A barbell lift is never given the tag (its load is the lift), and an activity carries none. The same
+ * rule [modifiersAfterLoadChange] gives the live trial; every other token is left as it is.
+ */
+fun modifiersFollowingLoad(current: String, exercise: Exercise?, loaded: Boolean): String {
+    val counted = exercise != null && (exercise.metric == ExerciseMetric.REPS || exercise.metric == ExerciseMetric.HOLD)
+    val isLoaded = loaded && counted
+    return modifiersAfterLoadChange(current, becameLoaded = isLoaded && exercise?.isWeighted == false, anyLoaded = isLoaded)
+}

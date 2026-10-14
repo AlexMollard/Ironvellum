@@ -78,6 +78,13 @@ import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LiftLoading
+import com.ironvellum.app.domain.WEIGHTED_MODIFIER
+import com.ironvellum.app.domain.applicableModifiers
+import com.ironvellum.app.domain.modifierChips
+import com.ironvellum.app.domain.modifiersFollowingLoad
+import com.ironvellum.app.domain.modifierTokens
+import com.ironvellum.app.domain.toggleModifier
+import com.ironvellum.app.ui.components.ModifierChipGrid
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.SchemeText
 import com.ironvellum.app.domain.SetScheme
@@ -240,7 +247,9 @@ class PresetEditorViewModel(
 
     fun updateEntry(index: Int, newEntry: EditorEntry) {
         _ui.value = _ui.value.copy(
-            entries = _ui.value.entries.mapIndexed { i, entry -> if (i == index) newEntry else entry },
+            entries = _ui.value.entries.mapIndexed { i, entry ->
+                if (i == index) newEntry.followingLoad(entry, _ui.value.exercises) else entry
+            },
         )
     }
 
@@ -290,6 +299,19 @@ internal fun newEntry(exercise: Exercise): EditorEntry =
     } else {
         EditorEntry(exercise.id, exercise.name, sets = "3", reps = "", weight = "", modifiers = "")
     }
+
+/**
+ * This entry after an edit of [before]: when the load or the exercise changed, "weighted" follows the load again
+ * ([modifiersFollowingLoad]): set when a bodyweight lift gains one, removed when it is cleared, and so on after a
+ * Change exercise. Every other modifier is left as it was; an edit of anything else touches no modifier.
+ */
+internal fun EditorEntry.followingLoad(before: EditorEntry, exercises: List<Exercise>): EditorEntry {
+    if (weight == before.weight && exerciseId == before.exerciseId) return this
+    val exercise = exercises.firstOrNull { it.id == exerciseId }
+    val loaded = (DecimalInput.parse(weight) ?: 0.0) > 0.0
+    val next = modifiersFollowingLoad(modifiers, exercise, loaded)
+    return if (next == modifiers) this else copy(modifiers = next)
+}
 
 /** The entries in the order and groups [layout] says. */
 internal fun List<EditorEntry>.arranged(layout: Supersets.Layout): List<EditorEntry> =
@@ -510,6 +532,7 @@ fun PresetEditorScreen(
                         EntryItem(
                             entry = entry,
                             metric = metric,
+                            offeredModifiers = ui.exercises.firstOrNull { it.id == entry.exerciseId }?.let(::applicableModifiers).orEmpty(),
                             worn = WornLoad.forLift(
                                 ProgramAnswersStore.kit, entry.exerciseName,
                                 ui.exercises.firstOrNull { it.id == entry.exerciseId }?.isWeighted, metric,
@@ -799,6 +822,8 @@ fun PresetEditorScreen(
 private fun EntryItem(
     entry: EditorEntry,
     metric: ExerciseMetric,
+    /** What the movement offers as modifiers ([applicableModifiers]): the chips; empty for a hold or an activity. */
+    offeredModifiers: List<String>,
     /** The vest and belt this movement is loaded with ([WornLoad.forLift]); null steps the load as ever. */
     worn: LoadKit?,
     open: Boolean,
@@ -923,16 +948,27 @@ private fun EntryItem(
                 },
             )
         }
-        UnderlineField(
-            label = "Modifiers",
-            value = entry.modifiers,
-            onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
-            // The examples used to ride in the label, so a six-movement preset
-            // printed "(weighted, deficit, elevated…)" six times. They belong
-            // in the field that is still empty.
-            placeholder = "weighted, deficit, elevated…",
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        )
+        // The same chips the live trial offers: only what fits the movement, "weighted" left to the load, and a
+        // token already on the entry that does not fit shown flagged so it can be removed, never dropped.
+        val chips = modifierChips(offeredModifiers, entry.modifiers)
+        val weightedByLoad = modifierTokens(entry.modifiers).any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
+        if (chips.isNotEmpty()) {
+            Text(
+                "Modifiers",
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
+            )
+            ModifierChipGrid(chips, onToggle = { onEntry(entry.copy(modifiers = toggleModifier(entry.modifiers, it))) })
+        }
+        if (weightedByLoad) {
+            Text(
+                "weighted \u00B7 set by load",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.SystemGreen,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
         ListRow(
             label = "Superset",
             value = partners ?: "None",

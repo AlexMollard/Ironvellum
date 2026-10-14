@@ -222,6 +222,10 @@ import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.WEIGHTED_MODIFIER
 import com.ironvellum.app.domain.Variation
+import com.ironvellum.app.domain.modifierChips
+import com.ironvellum.app.domain.modifierTokens
+import com.ironvellum.app.domain.toggleModifier
+import com.ironvellum.app.ui.components.ModifierChipGrid
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
@@ -1502,9 +1506,9 @@ fun SessionScreen(
         ModifierPickerDialog(
             exerciseName = current?.exerciseName ?: "Exercise",
             applicable = exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
-            selected = modifierTokens(current?.modifiers),
+            current = current?.modifiers.orEmpty(),
             onConfirm = { picked ->
-                viewModel.setModifiers(exerciseId, picked.joinToString(", "))
+                viewModel.setModifiers(exerciseId, picked)
                 editModifiersFor = null
             },
             onDismiss = { editModifiersFor = null },
@@ -3634,10 +3638,6 @@ private const val DISTANCE_STEP_KM = 0.5
 /** Starting seconds for a hold added mid-session. */
 private const val DEFAULT_HOLD_SECONDS = 30
 
-/** A comma-separated modifier string as its tokens, in order. */
-private fun modifierTokens(modifiers: String?): Set<String> =
-    modifiers.orEmpty().split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-
 /**
  * Whether the picker has anything to show: a modifier that fits, or one
  * already set that the lifter can remove. "weighted" alone is not enough -
@@ -3650,17 +3650,14 @@ private fun canEditModifiers(applicable: List<String>, modifiers: String?): Bool
 private fun ModifierPickerDialog(
     exerciseName: String,
     applicable: List<String>,
-    selected: Set<String>,
-    onConfirm: (Set<String>) -> Unit,
+    current: String,
+    onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var picked by remember(exerciseName) { mutableStateOf(selected) }
-    // Every token already set stays visible and removable, fitting or not:
-    // a legacy "banded" or "hold seconds" is never dropped behind his back.
-    val weighted = selected.any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
-    val options = applicable + selected.filter { token ->
-        !token.equals(WEIGHTED_MODIFIER, ignoreCase = true) && applicable.none { it.equals(token, ignoreCase = true) }
-    }
+    var picked by remember(exerciseName) { mutableStateOf(current) }
+    // Every token already set stays visible and removable, fitting or not
+    // (modifierChips flags it): a legacy "banded" is never dropped behind his back.
+    val weighted = modifierTokens(picked).any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -3691,58 +3688,10 @@ private fun ModifierPickerDialog(
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                options.chunked(3).forEach { row ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        row.forEach { option ->
-                            val on = picked.any { it.equals(option, ignoreCase = true) }
-                            val shape = MaterialTheme.shapes.extraSmall
-                            Box(
-                                Modifier
-                                    .weight(1f)
-                                    .background(
-                                        if (on) {
-                                            Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
-                                        } else {
-                                            Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
-                                        },
-                                        shape,
-                                    )
-                                    .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
-                                    .clickable {
-                                        picked = if (on) {
-                                            picked.filterNot { it.equals(option, ignoreCase = true) }.toSet()
-                                        } else {
-                                            picked + option
-                                        }
-                                    }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                // Centred and never wrapped: "hold seconds" wrapped,
-                                // so it measured the full cell and sat start-aligned.
-                                // At 360dp or a large font it shrinks to fit.
-                                Text(
-                                    option,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontFamily = ChakraPetch,
-                                    color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                    autoSize = TextAutoSize.StepBased(
-                                        minFontSize = 8.sp,
-                                        maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
-                                    ),
-                                )
-                            }
-                        }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
+                ModifierChipGrid(
+                    chips = modifierChips(applicable, picked),
+                    onToggle = { picked = toggleModifier(picked, it) },
+                )
             }
         },
         confirmButton = { IronvellumButton("Save", onClick = { onConfirm(picked) }) },
