@@ -96,6 +96,9 @@ data class RestTimer(
         fun startsRest(before: List<SessionSet>, setId: Long, nowDone: Boolean): Boolean {
             val set = before.firstOrNull { it.id == setId } ?: return false
             if (set.done || !nowDone) return false
+            // A drop follows straight on, with no rest: the rest starts after the last drop of the chain.
+            val following = before.filter { it.exerciseId == set.exerciseId && !it.warmup && it.setIndex > set.setIndex }.minByOrNull { it.setIndex }
+            if (following != null && following.kind == SetKind.DROP && !following.done) return false
             return before.any { it.isPending && it.id != setId } && Supersets.completesRound(before, setId)
         }
     }

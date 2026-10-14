@@ -290,6 +290,9 @@ object Progression {
         return maxOf(snapped, oneUp)
     }
 
+    /** The next load up from [weightKg] for a lift with the progression [stepKg]: where a top set climbs to when its reps are full. */
+    fun nextLoadKg(weightKg: Double, stepKg: Double, unit: LoadUnit): Double = nextLoad(weightKg, stepKg.coerceAtLeast(0.5), unit)
+
     /** The smallest bar jump the first loaded step of a bodyweight movement is quoted as, in kg. */
     private fun firstStepKg(unit: LoadUnit): Double =
         if (unit == LoadUnit.LB) Loads.toKg(Loads.lbGrid(WEIGHT_STEP_KG), unit) else WEIGHT_STEP_KG
