@@ -246,6 +246,10 @@ class CloudSync(
                     sessionDtos,
                 ) {
                     onConflict = "user_id,local_id"
+                    // A field at its Kotlin default is left out of the JSON. In a batch where another
+                    // row carries it, PostgREST writes null for the missing key unless told to use the
+                    // column default: one titled trial beside an untitled one failed every sync (23502).
+                    defaultToNull = false
                 }
             }
             // Nothing changed means no ids to resolve; an empty isIn() filter
@@ -310,6 +314,7 @@ class CloudSync(
                     setDtos,
                 ) {
                     onConflict = "session_id,exercise_name,set_index"
+                    defaultToNull = false
                 }
             }
 
@@ -425,7 +430,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
             cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -486,7 +491,7 @@ class CloudSync(
             }
             BackupInfo(atMs = System.currentTimeMillis(), bytes = bytes.size)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -510,7 +515,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -530,7 +535,7 @@ class CloudSync(
                 throw IllegalStateException(error.message ?: "The backup could not be restored")
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -568,7 +573,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -591,7 +596,7 @@ class CloudSync(
                     .mapNotNull { it.toRow() }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -664,7 +669,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -702,7 +707,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -779,7 +784,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -800,7 +805,7 @@ class CloudSync(
                 fetchCircle(client)
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -820,7 +825,7 @@ class CloudSync(
             fetchCircle(client)
                 ?: throw IllegalStateException("The circle did not appear — pull to refresh")
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -840,7 +845,7 @@ class CloudSync(
             fetchCircle(client)
                 ?: throw IllegalStateException("The circle did not appear — pull to refresh")
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -853,7 +858,7 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -873,7 +878,7 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -915,7 +920,7 @@ class CloudSync(
         return runCatching {
             client.postgrest.rpc(RPC_CIRCLE_BONUSES).decodeList<CircleBonusDto>()
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -954,7 +959,7 @@ class CloudSync(
             if (error is PostgrestRestException && error.code == "23505") {
                 throw IllegalStateException("Already requested — waiting for \"$name\" to accept")
             }
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -980,7 +985,7 @@ class CloudSync(
         }.recoverCatching { error ->
             // Already requested or already friends: nothing to do.
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error))
+                throw IllegalStateException(Cloud.explain(error), error)
             }
         }
     }
@@ -1008,7 +1013,7 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1045,7 +1050,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1095,7 +1100,7 @@ class CloudSync(
                 fetch()
             }.let { cache.applyReactions(it) }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1133,7 +1138,7 @@ class CloudSync(
             cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1177,7 +1182,7 @@ class CloudSync(
             if (error is PostgrestRestException && error.code == "42501") {
                 throw IllegalStateException("These tributes are not visible to you")
             }
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1207,7 +1212,7 @@ class CloudSync(
                 }.decodeList<CommentDto>().map { it.toComment() }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1238,7 +1243,7 @@ class CloudSync(
             // The card's comment count lives on the cached first page.
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1262,7 +1267,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
             cache.invalidate(CloudReadCache.KEY_INBOX)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1299,7 +1304,7 @@ class CloudSync(
             // lifter's dot.
             if (account.account.value?.userId == me.userId) _inboxUnread.value = inbox.unread
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1316,7 +1321,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_INBOX)
             if (account.account.value?.userId == me.userId) _inboxUnread.value = 0
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1349,7 +1354,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1375,7 +1380,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1391,7 +1396,7 @@ class CloudSync(
             Unit
         }.recoverCatching { error ->
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error))
+                throw IllegalStateException(Cloud.explain(error), error)
             }
         }.onSuccess {
             // The trigger deleted the friendship and RLS now hides their
@@ -1417,7 +1422,7 @@ class CloudSync(
             invalidateSocialReads()
             cache.invalidate(CloudReadCache.KEY_BLOCKED)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1437,7 +1442,7 @@ class CloudSync(
                 }.decodeList<MuteDto>().map { it.mutedId }.toSet()
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1453,7 +1458,7 @@ class CloudSync(
             Unit
         }.recoverCatching { error ->
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error))
+                throw IllegalStateException(Cloud.explain(error), error)
             }
         }.onSuccess {
             // The feed view and my_inbox() now drop them server-side.
@@ -1477,7 +1482,7 @@ class CloudSync(
             invalidateSocialReads()
             cache.invalidate(CloudReadCache.KEY_MUTED)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 
@@ -1516,7 +1521,7 @@ class CloudSync(
             )
             Unit
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw IllegalStateException(Cloud.explain(error), error)
         }
     }
 

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import android.util.Log
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
@@ -314,7 +315,11 @@ class AccountViewModel(
             _ui.value = _ui.value.copy(error = null)
             cloudSync.push()
                 .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onFailure {
+                    // The lifter sees one sentence; the code and the server's own words go to logcat.
+                    Log.w("AccountSync", "Sync failed", it)
+                    _ui.value = _ui.value.copy(error = it.reason())
+                }
             setBusy(false)
         }
     }
