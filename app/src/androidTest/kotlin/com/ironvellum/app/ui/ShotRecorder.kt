@@ -18,10 +18,16 @@ import androidx.test.platform.app.InstrumentationRegistry
  * before the content is set, so a capture shows the app's real theme. Pictures go to `/data/local/tmp` because
  * the suite uninstalls the app when it ends and takes the app's own files with it; pull them with
  * `adb pull /data/local/tmp/optimise-shots`.
+ *
+ * Captures are opt-in: they cost about two seconds each and nothing asserts on them, so the gate skips them. Ask
+ * for them with `-Pandroid.testInstrumentationRunnerArguments.shots=true` (Gradle) or `-e shots true` (am instrument).
  */
 object ShotRecorder {
 
     private const val DIR = "/data/local/tmp/optimise-shots"
+
+    private val enabled: Boolean
+        get() = InstrumentationRegistry.getArguments().getString("shots") == "true"
 
     /** Dress the test activity like MainActivity does. Call from `onActivity`, before `setContent`. */
     fun darkWindow(activity: ComponentActivity) {
@@ -33,7 +39,8 @@ object ShotRecorder {
     }
 
     /**
-     * Saves the screen as [name].png. The test clock is held by the flow tests, so it is let run for a moment
+     * Saves the screen as [name].png when captures are asked for (see above); otherwise only settles the screen
+     * exactly as a capture would, so a test sees the same state either way. The test clock is held by the flow tests, so it is let run for a moment
      * first: a frame the held clock never drew would be captured stale.
      */
     fun take(compose: ComposeTestRule, name: String) {
@@ -41,6 +48,10 @@ object ShotRecorder {
         compose.mainClock.autoAdvance = true
         compose.mainClock.advanceTimeBy(1000)
         compose.waitForIdle()
+        if (!enabled) {
+            compose.mainClock.autoAdvance = false
+            return
+        }
         Thread.sleep(1200)
         // A screen that has dimmed or slept photographs as the wallpaper under a scrim, not as the app.
         shell("svc power stayon true")

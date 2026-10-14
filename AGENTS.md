@@ -64,9 +64,11 @@ GPU mode measured on a five-class subset (62 tests), repeated on one emulator: `
 (degrades); `swiftshader_indirect` 80, 78, 79, 78s; `angle_indirect` 61, 61, 60s. Window, transition and
 animator animation scales are set to 0 and the screen kept awake after every boot (`device.tune`).
 
-Where the remaining time goes: the instrumented suite is about 215s alone, of which about 50s is
-`ShotRecorder.take` (31 calls, each sleeping 2s and saving a PNG for a human to look at). Skipping the
-captures took the suite from 209s to 167s. They still run; that is the next lever if the budget gets tight.
+Where the remaining time went: `ShotRecorder.take` (31 calls, each sleeping 2s and saving a PNG for a human
+to look at, about 40s of the suite). The captures are now opt-in and the gate skips them: take them with
+`-Pandroid.testInstrumentationRunnerArguments.shots=true` (or `-e shots true` on `am instrument`), then
+`adb pull /data/local/tmp/optimise-shots`. Measured in one worktree: the gate took 4m38s with captures
+(verify 274s) and 4m19s / 4m25s without (verify 231s / 230s).
 
 ## One emulator, shared between sessions
 
