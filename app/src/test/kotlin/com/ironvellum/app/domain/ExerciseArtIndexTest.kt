@@ -61,13 +61,7 @@ class ExerciseArtIndexTest {
 
     @Test
     fun `every catalogue movement is drawn`() {
-        // Movements that ship before their drawing: each needs the owner's art approval first, so it is listed here
-        // by name and leaves this list the moment its still lands.
-        val awaitingArt = setOf(
-            "Box Pistol Squat", "Elevated Pistol Squat", "Airborne Squat",
-            "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat",
-        )
-        val undrawn = Seed.exercises.map { it.name }.filter { it !in awaitingArt && ExerciseArtIndex.forName(it) == null }
+        val undrawn = Seed.exercises.map { it.name }.filter { ExerciseArtIndex.forName(it) == null }
         assertEquals("catalogue movements with no drawing", emptyList<String>(), undrawn)
     }
 

@@ -8521,7 +8521,88 @@
       ],
       "aliases": [],
       "hanging": false,
-      "note": "Original new artwork, third revision approved by user in chat on 2026-10-14. Exercise catalogue maintained separately."
+      "note": "Original new artwork, third revision approved by user in chat on 2026-10-14. Exercise catalogue maintained separately.",
+      "technique": true
+    },
+    {
+      "name": "Box Pistol Squat",
+      "slug": "box-pistol-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "box-pistol-squat-1.png"
+      ],
+      "poses": [
+        "Single-leg squat down to a box, free leg extended forward, arms forward for balance."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/box-pistol-squat.png); skill-tree step.",
+      "technique": true
+    },
+    {
+      "name": "Elevated Pistol Squat",
+      "slug": "elevated-pistol-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "elevated-pistol-squat-1.png"
+      ],
+      "poses": [
+        "Single-leg squat standing on a raised surface so the free leg hangs below it, arms forward."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/elevated-pistol-squat.png); skill-tree step.",
+      "technique": true
+    },
+    {
+      "name": "Airborne Squat",
+      "slug": "airborne-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "airborne-squat-1.png"
+      ],
+      "poses": [
+        "Deep single-leg squat with the free leg held off the floor behind the body, arms forward."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/airborne-squat.png); skill-tree step.",
+      "technique": true
+    },
+    {
+      "name": "Advanced Shrimp Squat",
+      "slug": "advanced-shrimp-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "advanced-shrimp-squat-1.png"
+      ],
+      "poses": [
+        "Single-leg squat with the rear foot held in the hand behind the back, knee lowered toward the floor."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/advanced-shrimp-squat.png); skill-tree step.",
+      "technique": true
+    },
+    {
+      "name": "Deficit Advanced Shrimp Squat",
+      "slug": "deficit-advanced-shrimp-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "deficit-advanced-shrimp-squat-1.png"
+      ],
+      "poses": [
+        "Advanced shrimp squat standing on a raised surface so the rear knee drops below it."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/deficit-advanced-shrimp-squat.png); skill-tree step.",
+      "technique": true
     }
   ]
 }
