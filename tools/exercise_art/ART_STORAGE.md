@@ -1,6 +1,6 @@
 # Exercise art storage
 
-All 555 exercise illustrations have been approved. Each exercise has one still.
+All 556 exercise illustrations have been approved. Each exercise has one still.
 
 - `owner/`: the only master images, named `<exercise-slug>-1.png`. No animation frames or rejected alternatives belong here.
 - `owner/INDEX.md`: an alphabetical list of exercise names linking to their approved PNGs.

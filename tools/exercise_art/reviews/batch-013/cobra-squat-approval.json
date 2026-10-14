@@ -1,0 +1,22 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 13,
+  "exportedAt": "2026-10-14T05:31:01.669583+00:00",
+  "batchComplete": true,
+  "frames": [
+    {
+      "id": "cobra-squat-1.png",
+      "sha256": "f13840dd4f014d766958f2345603d501f510ce93d257ec91ad292f740f56db9f",
+      "status": "approved",
+      "note": "good enough i approve",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T05:31:01.669583+00:00"
+    }
+  ],
+  "approvedRevision": 3,
+  "source": "Open Exercise Art png/cobra-squat.png",
+  "feedback": [
+    "Torso must fold deeply forward over working thigh.",
+    "Free leg must cross across the body, not appear to point backward."
+  ]
+}

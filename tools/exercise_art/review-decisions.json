@@ -4443,6 +4443,14 @@
       "note": "Both look good, approved. Publish them now.",
       "reviewer": "You",
       "updatedAt": "2026-10-14T05:22:14.151711+00:00"
+    },
+    {
+      "id": "cobra-squat-1.png",
+      "sha256": "f13840dd4f014d766958f2345603d501f510ce93d257ec91ad292f740f56db9f",
+      "status": "approved",
+      "note": "good enough i approve",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T05:31:01.669583+00:00"
     }
   ]
 }

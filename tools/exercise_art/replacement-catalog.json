@@ -8507,6 +8507,21 @@
       "aliases": [],
       "hanging": false,
       "note": "Original new artwork approved by user in chat on 2026-10-14. Published in Open Exercise Art; exercise catalogue entry maintained separately."
+    },
+    {
+      "name": "Cobra Squat",
+      "slug": "cobra-squat",
+      "kind": "movement",
+      "frameCount": 1,
+      "files": [
+        "cobra-squat-1.png"
+      ],
+      "poses": [
+        "Deep crossed-leg single-leg squat with torso folded forward over the supporting thigh, free leg crossing behind and extending sideways across the body, both arms held behind the back."
+      ],
+      "aliases": [],
+      "hanging": false,
+      "note": "Original new artwork, third revision approved by user in chat on 2026-10-14. Exercise catalogue maintained separately."
     }
   ]
 }

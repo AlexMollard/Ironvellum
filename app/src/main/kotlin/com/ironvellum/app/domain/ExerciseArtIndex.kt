@@ -151,6 +151,7 @@ object ExerciseArtIndex {
         "close-grip bench press" to ref("own_close-grip-bench-press", 1),
         "close-grip ez-bar curl" to ref("own_close-grip-ez-bar-curl", 1),
         "close-grip lat pulldown" to ref("own_close-grip-lat-pulldown", 1),
+        "cobra squat" to ref("own_cobra-squat", 1),
         "commando pull-up" to ref("own_commando-pull-up", 1),
         "concentration curl" to ref("own_concentration-curl", 1),
         "copenhagen plank" to ref("own_copenhagen-plank", 1),
