@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Export the exercise catalogue and rebuild docs/exercise-atlas.html.
+"""Export the exercise catalogue and build the exercise atlas page on demand.
+
+    python3 tools/exercise_atlas.py     # writes .tmp/exercise-atlas-page.html and .tmp/exercise-atlas.html (both ignored)
 
 Runs the CatalogueExport unit test (which writes .tmp/exercises.json), then
 injects the JSON into tools/exercise_atlas.html at /*__ATLAS_DATA__*/null.
-Writes the committed standalone page to docs/ and a bare fragment (no document
+Writes a standalone page and a bare fragment (no document
 skeleton, which the Artifact host adds itself) to .tmp/ for publishing.
 """
 import json
@@ -16,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TMP = ROOT / ".tmp"
 JSON_PATH = TMP / "exercises.json"
 TEMPLATE = ROOT / "tools" / "exercise_atlas.html"
-OUT = ROOT / "docs" / "exercise-atlas.html"
+OUT = TMP / "exercise-atlas-page.html"
 FRAGMENT = TMP / "exercise-atlas.html"
 TOKEN = "/*__ATLAS_DATA__*/null"
 HEAD = (
