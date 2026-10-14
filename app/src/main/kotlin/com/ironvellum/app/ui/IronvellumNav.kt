@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui
 
+import androidx.compose.runtime.SideEffect
 import android.net.Uri
 
 import androidx.compose.foundation.clickable
@@ -221,6 +222,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         // Gate render, not a route: onboarding has no back stack, no bottom
         // bar and nothing to navigate back to.
         if (needsSetup == true) {
+            SideEffect { StartupGate.open() }
             OnboardingScreen(viewModel = onboardingViewModel)
         } else if (needsSetup != null) {
         // Leaving mid-workout (a stray back swipe, Android reclaiming the

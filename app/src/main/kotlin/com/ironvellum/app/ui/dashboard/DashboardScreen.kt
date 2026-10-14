@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.dashboard
 
+import androidx.compose.runtime.SideEffect
+import com.ironvellum.app.ui.StartupGate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -165,6 +167,8 @@ class DashboardUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
     /** Lifts whose peak was set lately AND beat an earlier trial: a first trial is not a peak. */
     val newPeaks: List<RepMax.Recent> = emptyList(),
+    /** False only for the placeholder shown before the first read lands. */
+    val loaded: Boolean = false,
 )
 
 /**
@@ -247,6 +251,7 @@ class DashboardViewModel(
             sealedSets = history.filter { it.first.id in sealedIds }.associate { it.first.id to it.second },
             exercises = exercises.associateBy { it.id },
             newPeaks = newPeaks(history, exercises, System.currentTimeMillis()),
+            loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -430,6 +435,8 @@ fun DashboardScreen(
     val strengthRank by viewModel.strengthRank.collectAsStateWithLifecycle()
     val rankBreakdown by viewModel.rankBreakdown.collectAsStateWithLifecycle()
     val veil by viewModel.veil.collectAsStateWithLifecycle()
+    // Today's cards, the Veil and the rank line have all been read: the launch screen can lift.
+    if (ui.loaded && veil != null && strengthRank.isNotEmpty()) SideEffect { StartupGate.open() }
 
     TodayContent(
         ui = ui,

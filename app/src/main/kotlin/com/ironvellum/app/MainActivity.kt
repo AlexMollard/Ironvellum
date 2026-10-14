@@ -1,5 +1,9 @@
 package com.ironvellum.app
 
+import android.os.SystemClock
+import android.view.View
+import android.view.ViewTreeObserver
+import com.ironvellum.app.ui.StartupGate
 import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -84,6 +88,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        holdLaunchScreen()
+    }
+
+    /**
+     * Cancels the first frames until [StartupGate] opens, so the launch screen (the icon on the
+     * app's background) stays up instead of a half-filled Today. The platform's own hook: a
+     * cancelled draw schedules the next frame, and composition and layout keep running.
+     */
+    private fun holdLaunchScreen() {
+        val launchedAt = SystemClock.uptimeMillis()
+        val content = findViewById<View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                val draw = StartupGate.ready || SystemClock.uptimeMillis() - launchedAt > StartupGate.MAX_HOLD_MS
+                if (draw) content.viewTreeObserver.removeOnPreDrawListener(this)
+                return draw
+            }
+        })
     }
 
     /** The notification tap while the activity is alive arrives here, not in onCreate. */
