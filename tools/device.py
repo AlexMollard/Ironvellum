@@ -32,6 +32,7 @@ ADB = SDK / "platform-tools" / "adb.exe"
 EMULATOR = SDK / "emulator" / "emulator.exe"
 AVD = "IronvellumEmu"
 PORT = "5554"
+GPU = os.environ.get("IRONVELLUM_GPU", "angle_indirect")
 APK = pathlib.Path("app/build/outputs/apk/foss/debug/app-foss-debug.apk")  # :app:assembleFossDebug
 PKG = "com.ironvellum.app"
 SHOTS = pathlib.Path(".tmp/shots")
@@ -56,25 +57,83 @@ def target() -> str:
     return next((d for d in devices if d.startswith("emulator-")), devices[0])
 
 
-def up(timeout: int = 300) -> str:
-    if attached():
-        return target()
+def emulators() -> list[str]:
+    """Emulator serials only: a phone on the cable must never count as "an emulator is up"."""
+    return [d for d in attached() if d.startswith("emulator-")]
+
+
+def shell_ok(serial: str, timeout: float = 10) -> float | None:
+    """Seconds one trivial shell round trip took, or None when the shell hangs or package service is gone."""
+    started = time.time()
+    try:
+        out = subprocess.run(
+            [str(ADB), "-s", serial, "shell", "getprop sys.boot_completed; pm path android"],
+            capture_output=True, text=True, timeout=timeout,
+        ).stdout.split()
+    except subprocess.TimeoutExpired:
+        return None
+    if len(out) < 2 or out[0] != "1" or not out[1].startswith("package:"):
+        return None
+    return time.time() - started
+
+
+def uptime(serial: str) -> float:
+    """Seconds since the emulator booted; infinity when it cannot be read."""
+    try:
+        return float(adb("shell", "cat", "/proc/uptime", serial=serial).split()[0])
+    except (IndexError, ValueError):
+        return float("inf")
+
+
+def tune(serial: str) -> None:
+    """Switch the UI animations off: the suite waits on idle, and animations only slow that."""
+    for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
+        adb("shell", "settings", "put", "global", key, "0", serial=serial)
+    # A cold boot leaves the screen off and un-awakened, and a touch cannot be injected into that.
+    adb("shell", "svc", "power", "stayon", "true", serial=serial)
+    adb("shell", "input", "keyevent", "KEYCODE_WAKEUP", serial=serial)
+    adb("shell", "wm", "dismiss-keyguard", serial=serial)
+
+
+def kill(serial: str) -> None:
+    """Stop one emulator and wait until its process is gone (a lingering qemu blocks the next boot)."""
+    port = serial.split("-", 1)[1]
+    adb("emu", "kill", serial=serial)
+    time.sleep(2)
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process -Filter \"Name like 'qemu-system%' or Name='emulator.exe'\""
+         f" | Where-Object {{ $_.CommandLine -match '-port {port}( |$)' }}"
+         " | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"],
+        capture_output=True, timeout=60,
+    )
+    time.sleep(2)
+
+
+def boot(timeout: int = 300) -> str:
+    """Cold boot the emulator: no snapshot is loaded or saved, so every boot starts clean."""
+    serial = f"emulator-{PORT}"
+    env = dict(os.environ)
+    env.setdefault("ANDROID_AVD_HOME", r"D:\caches\android-avd")
     subprocess.Popen(
         [str(EMULATOR), "-avd", AVD, "-no-window", "-no-audio", "-no-boot-anim",
-         "-gpu", "host", "-port", PORT],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+         "-gpu", GPU, "-port", PORT, "-no-snapshot", "-camera-back", "none"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
+        creationflags=0x00000008 | 0x00000200,  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     )
-    serial = f"emulator-{PORT}"
-    adb("wait-for-device", serial=serial)
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if adb("shell", "getprop", "sys.boot_completed", serial=serial).strip() == "1":
-            # The launcher needs a moment past boot_completed or the first
-            # `am start` lands before the window manager will show anything.
-            time.sleep(4)
+        if serial in emulators() and shell_ok(serial, 5) is not None:
+            tune(serial)
             return serial
-        time.sleep(5)
+        time.sleep(2)
     sys.exit("emulator did not finish booting")
+
+
+def up(timeout: int = 300) -> str:
+    """The running emulator, or a freshly booted one. Only emulators count: the phone is never a substitute."""
+    running = emulators()
+    return running[0] if running else boot(timeout)
 
 
 def wake(serial: str) -> None:

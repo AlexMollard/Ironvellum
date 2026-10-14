@@ -14,6 +14,16 @@ app's own database, and uninstalls the app when it finishes. Run against the
 owner's phone it destroys real training history. So this script resolves an
 emulator serial itself and pins ANDROID_SERIAL to it; a physical device is
 refused unless --serial names it explicitly.
+
+Speed: the gate runs in two Gradle invocations. The first compiles what the
+instrumented suite needs while the emulator cold boots beside it; the second
+runs unit tests, lint, the instrumented suite and the other flavour's
+assembles at the same time (the configuration cache lets Gradle run
+independent tasks of one project in parallel). The emulator is cold booted
+whenever it has been up longer than UPTIME_LIMIT or answers slowly: a
+long-lived emulator degrades, and a cold boot costs about 30s. If it drops off
+adb mid-run the gate restarts it and retries the instrumented phase once.
+Gradle output goes to .tmp/gate-*.log; the console gets one line per phase.
 """
 
 from __future__ import annotations
@@ -26,8 +36,12 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import xml.etree.ElementTree as ET
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import device  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADB = os.path.join(
@@ -61,11 +75,9 @@ def pick_serial(requested: str | None) -> str | None:
         return requested
     emulators = [s for s in attached if s.startswith("emulator-")]
     if not emulators:
-        print(f"!! no emulator attached (found: {attached or 'none'}).")
-        print("   The instrumented suite wipes app data and uninstalls the app, so")
-        print("   it will not be pointed at a physical device by default. Start an")
-        print("   emulator, or pass --serial to accept that on a real phone.")
-        return None
+        # Only an emulator is ever booted or used by default: the instrumented suite wipes app data and
+        # uninstalls the app, so a phone on the cable is never the target unless --serial names it.
+        return f"emulator-{device.PORT}"
     if len(emulators) > 1:
         print(f"!! more than one emulator attached ({emulators}); name one with --serial")
         return None
@@ -84,76 +96,53 @@ def counts(pattern: str) -> tuple[int, int]:
     return total, failed
 
 
+UPTIME_LIMIT = 30 * 60  # seconds an emulator may stay up before the gate cold boots it
+PROBE_LIMIT = 3.0       # seconds one trivial shell call may take before the emulator counts as degraded
+
+
 def responsive(serial: str) -> bool:
-    """True when the device's shell answers; `adb devices` alone is not proof."""
-    try:
-        out = subprocess.run(
-            [ADB, "-s", serial, "shell", "getprop ro.build.version.sdk; pm path android"],
-            capture_output=True, text=True, timeout=10,
-        ).stdout.split()
-    except subprocess.TimeoutExpired:
-        return False
-    # A system_server that died mid-suite leaves the shell answering while the package service is
-    # gone, and every install then fails; ask for both.
-    return len(out) >= 2 and out[0].isdigit() and out[1].startswith("package:")
+    """True when the device's shell and package service answer; `adb devices` alone is not proof."""
+    return device.shell_ok(serial, 10) is not None
 
 
-def revive(serial: str) -> bool:
-    """Bring a wedged emulator back before the suite runs.
+def stale(serial: str) -> str | None:
+    """Why this emulator should not be handed the suite as it is, or None when it is fine."""
+    if serial not in devices():
+        return "not running"
+    lag = device.shell_ok(serial, 10)
+    if lag is None:
+        return "does not answer"
+    if lag > PROBE_LIMIT:
+        return f"slow ({lag:.1f}s for one shell call)"
+    up = device.uptime(serial)
+    if up > UPTIME_LIMIT:
+        return f"up {up / 60:.0f} min"
+    return None
 
-    An emulator left idle between runs can stay listed by `adb devices` while
-    its shell hangs. Gradle then skips it as "Unknown API Level" and the gate
-    goes red with one of N tests run. Restart adb first; if the emulator is
-    still silent, kill that port's emulator and cold boot it. A physical
-    device is never touched.
+
+def revive(serial: str, force: bool = False) -> bool:
+    """Hand back a device the suite can run on, cold booting the emulator when it is stale.
+
+    A long-lived emulator degrades (graphics services burn CPU, tests slow ten-fold, adb drops), and a cold boot
+    costs about 30s, so one that has been up longer than UPTIME_LIMIT, is slow, or is silent is restarted.
+    A physical device is never touched: it either answers or the gate stops.
     """
-    if responsive(serial):
-        return True
     if not serial.startswith("emulator-"):
-        print(f"!! {serial} does not answer; not restarting a physical device")
-        return False
-    print(f"-- {serial} does not answer; restarting adb")
-    for cmd in ("kill-server", "start-server"):
-        subprocess.run([ADB, cmd], capture_output=True, timeout=30)
-    if responsive(serial):
-        print(f"-- {serial} answers again")
+        return responsive(serial)
+    reason = "restart requested" if force else stale(serial)
+    if reason is None:
+        device.tune(serial)
         return True
-
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import device
-
-    port = serial.split("-", 1)[1]
-    print(f"-- {serial} still silent; cold booting the emulator on port {port}")
-    subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "Get-CimInstance Win32_Process -Filter \"Name like 'qemu-system%' or Name='emulator.exe'\""
-         f" | Where-Object {{ $_.CommandLine -match '-port {port}( |$)' }}"
-         " | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"],
-        capture_output=True, timeout=60,
-    )
-    time.sleep(3)
-    subprocess.Popen(
-        [str(device.EMULATOR), "-avd", device.AVD, "-no-window", "-no-audio",
-         "-no-boot-anim", "-gpu", "host", "-port", port, "-no-snapshot-load"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
-    deadline = time.time() + 300
-    while time.time() < deadline:
-        try:
-            booted = subprocess.run(
-                [ADB, "-s", serial, "shell", "getprop", "sys.boot_completed"],
-                capture_output=True, text=True, timeout=10,
-            ).stdout.strip() == "1"
-        except subprocess.TimeoutExpired:
-            booted = False
-        if booted:
-            # Package manager and friends settle a little after boot_completed.
-            time.sleep(20)
-            print(f"-- {serial} cold booted")
-            return responsive(serial)
-        time.sleep(5)
-    print(f"!! {serial} did not finish booting")
-    return False
+    started = time.time()
+    print(f"-- {serial}: {reason}; cold booting")
+    device.kill(serial)
+    try:
+        device.boot()
+    except SystemExit as exc:
+        print(f"!! {exc}")
+        return False
+    print(f"-- {serial}: booted in {time.time() - started:.0f}s")
+    return True
 
 
 def main_checkout() -> str:
@@ -259,7 +248,34 @@ def lint_summary(flavour: str) -> str:
     return lines[-1] if lines else "empty report"
 
 
-def gradle(tasks: list[str], serial: str | None) -> int:
+def print_failure(log: str, limit: int = 25) -> None:
+    """The part of a Gradle log that says what went wrong, not the thousand lines around it."""
+    with open(log, encoding="utf-8", errors="replace") as handle:
+        lines = handle.read().splitlines()
+    keep = [l for l in lines if l.startswith(("e: ", "FAILURE", "* What went wrong")) or " FAILED" in l
+            or l.startswith(("Execution failed", "> ")) and "Task" not in l]
+    for line in keep[:limit]:
+        print(f"   {line}")
+
+
+GRADLE_LIMIT = 15 * 60  # seconds before a Gradle run is treated as hung and killed
+
+
+def kill_tree(proc: subprocess.Popen) -> None:
+    subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+
+
+def failed_tasks(log: str) -> list[str]:
+    with open(log, encoding="utf-8", errors="replace") as handle:
+        return re.findall(r"^> Task (\S+) FAILED", handle.read(), re.M)
+
+
+def gradle(tasks: list[str], serial: str | None, label: str, watch: bool = False) -> tuple[int, bool, str]:
+    """Run Gradle with its output in .tmp/gate-<label>.log: (exit code, device dropped or run hung, log path).
+
+    With `watch` the device is probed every 20s; three misses in a row mean adb dropped mid-run (the symptom
+    is a run that hangs forever), so Gradle is killed and the caller can restart the emulator and retry.
+    """
     env = dict(os.environ)
     if serial:
         env["ANDROID_SERIAL"] = serial
@@ -267,9 +283,40 @@ def gradle(tasks: list[str], serial: str | None) -> int:
     # find it by bare name when NoDefaultCurrentDirectoryInExePath=1, so call it
     # by absolute path and drop the variable from the child env.
     env.pop("NoDefaultCurrentDirectoryInExePath", None)
-    joined = " ".join(tasks)
     gradlew = os.path.join(ROOT, "gradlew.bat")
-    return run(f'cmd /c ""{gradlew}" {joined} --continue --console=plain"', env=env, shell=True)
+    log = os.path.join(ROOT, ".tmp", f"gate-{label}.log")
+    os.makedirs(os.path.dirname(log), exist_ok=True)
+    cmd = f'cmd /c ""{gradlew}" {" ".join(tasks)} --configuration-cache --continue --console=plain"'
+    started = time.time()
+    done = threading.Event()
+    dropped = threading.Event()
+
+    def probe() -> None:
+        misses = 0
+        while not done.wait(20):
+            misses = misses + 1 if device.shell_ok(serial, 15) is None else 0
+            if misses >= 3:
+                dropped.set()
+                kill_tree(proc)
+                return
+
+    with open(log, "w", encoding="utf-8") as handle:
+        proc = subprocess.Popen(cmd, cwd=ROOT, env=env, shell=True, stdout=handle, stderr=subprocess.STDOUT)
+        watcher = threading.Thread(target=probe, daemon=True)
+        if watch and serial:
+            watcher.start()
+        try:
+            code = proc.wait(timeout=GRADLE_LIMIT)
+        except subprocess.TimeoutExpired:
+            dropped.set()
+            kill_tree(proc)
+            code = proc.wait()
+        done.set()
+    took = time.time() - started
+    failed = failed_tasks(log)
+    verdict = "failed: " + ", ".join(failed) if code and failed else ("DROPPED, killed" if dropped.is_set() else "ok" if not code else f"exit {code}")
+    print(f"-- {label}: {took:.0f}s, {verdict}  (log .tmp/gate-{label}.log)")
+    return code, dropped.is_set(), log
 
 
 def backend() -> int:
@@ -367,29 +414,32 @@ def backend() -> int:
 def retry_instrumented(serial: str, fl: str, flavour: str) -> list[str]:
     """Rerun, once, the instrumented classes that failed or never ran; the classes retried.
 
-    The host emulator dies under load (system_server killed mid-suite while
-    another build compiles), which fails whichever test was running and skips
-    the rest. One rerun of just those classes on a revived emulator separates
-    that from a real failure: a class that fails twice still fails the gate,
-    and the summary names every class that needed the second go.
+    The emulator can die under load (system_server killed, adb dropped), which fails whichever test was
+    running and skips the rest. One rerun on a freshly cold booted emulator separates that from a real
+    failure: a class that fails twice still fails the gate, and the summary names every class that needed
+    the second go. A run that left no results at all (a hang killed by the watchdog) retries the whole suite.
     """
+    pattern = f"app/build/outputs/androidTest-results/connected/debug/flavors/{flavour}/**/*.xml"
     results = os.path.join(ROOT, "app/build/outputs/androidTest-results/connected/debug/flavors", flavour)
-    first = cases(f"app/build/outputs/androidTest-results/connected/debug/flavors/{flavour}/**/*.xml")
+    first = cases(pattern)
     failed = {cls for (cls, _), ok in first.items() if not ok}
     missing = declared_classes("app/src/androidTest/**/*.kt") - {cls for cls, _ in first}
     retry = sorted(failed | missing)
-    # A broken build, not a broken run: nothing ran, or most of it never did.
-    if not first or not retry or len(retry) > 40:
-        return []
+    whole = not first
+    if not whole and (not retry or len(retry) > 40):
+        return []  # a broken build, not a broken run: most of it never ran
     keep = os.path.join(ROOT, ".tmp", "inst-first", flavour)
     shutil.rmtree(keep, ignore_errors=True)
-    shutil.copytree(results, keep)
-    print(f"-- retrying {len(retry)} instrumented classes once")
-    if not revive(serial):
+    if not whole:
+        shutil.copytree(results, keep)
+    print(f"-- retrying {'the whole instrumented suite' if whole else f'{len(retry)} instrumented classes'} once")
+    if not revive(serial, force=True):
         return []
-    gradle([f":app:connected{fl}DebugAndroidTest",
-            f"-Pandroid.testInstrumentationRunnerArguments.class={','.join(retry)}"], serial)
-    return retry
+    args = [f":app:connected{fl}DebugAndroidTest"]
+    if not whole:
+        args.append(f"-Pandroid.testInstrumentationRunnerArguments.class={','.join(retry)}")
+    gradle(args, serial, "retry", watch=True)
+    return ["(whole suite)"] if whole else retry
 
 
 def main() -> int:
@@ -400,6 +450,7 @@ def main() -> int:
     parser.add_argument("--no-device", action="store_true", help="skip instrumented tests")
     parser.add_argument("--backend", action="store_true", help="also assert the Supabase schema")
     args = parser.parse_args()
+    gate_started = time.time()
 
     serial = None
     if not args.no_device:
@@ -415,31 +466,51 @@ def main() -> int:
     other = "play" if args.flavour == "foss" else "foss"
     fl = args.flavour.capitalize()
     other_fl = other.capitalize()
-    tasks = [
-        f":app:assemble{fl}Debug",
+    # Stage 1 is what the instrumented run needs before it can start; it overlaps the emulator boot.
+    # Stage 2 is everything else, run in parallel with the instrumented suite. Without a device the
+    # instrumented sources are still compiled, so they cannot be committed broken unnoticed.
+    stage1 = [f":app:assemble{fl}Debug", f":app:assemble{fl}DebugAndroidTest"]
+    stage2 = [
         f":app:test{fl}DebugUnitTest",
         f":app:lint{fl}Release",
         f":app:assemble{other_fl}Debug",
         f":app:assemble{other_fl}DebugAndroidTest",
     ]
+    connected = f":app:connected{fl}DebugAndroidTest"
     if serial:
-        tasks.insert(3, f":app:connected{fl}DebugAndroidTest")
-    else:
-        # Without a device, at least prove the instrumented sources still
-        # compile — assembleDebug does not build src/androidTest, so they can
-        # be committed broken and nobody notices until a cable appears.
-        tasks.append(f":app:assemble{fl}DebugAndroidTest")
+        stage2.insert(0, connected)
 
-    print(f"-- gradle: {' '.join(tasks)}")
     failures = []
+    retried: list[str] = []
     with emulator_lock(serial):
-        if serial and not revive(serial):
+        ready: dict[str, bool] = {}
+        booting = None
+        if serial:
+            booting = threading.Thread(target=lambda: ready.update(ok=revive(serial)))
+            booting.start()
+        code1, _, log1 = gradle(stage1, serial, "build")
+        if booting:
+            booting.join()
+        if code1:
+            print("\nGATE RED: the build failed (first failed tasks above; see the log)")
+            print_failure(log1)
+            return 1
+        if serial and not ready.get("ok"):
             print("\nGATE RED: the device does not answer")
             return 1
-        gradle_failed = gradle(tasks, serial)
-        retried = retry_instrumented(serial, fl, args.flavour) if serial and gradle_failed else []
-        if gradle_failed and not retried:
-            failures.append("gradle")
+        code2, dropped, log2 = gradle(stage2, serial, "verify", watch=bool(serial))
+        others = [t for t in failed_tasks(log2) if not t.startswith(":app:connected")]
+        if others:
+            failures.append(", ".join(others))
+        inst_bad = bool(serial) and (dropped or any(t.startswith(":app:connected") for t in failed_tasks(log2)))
+        if inst_bad:
+            retried = retry_instrumented(serial, fl, args.flavour)
+            if not retried:
+                failures.append("instrumented")
+        elif code2 and not others:
+            failures.append("gradle")  # a non-zero exit with no failed task named: say so rather than pass
+        if code2 and failures:
+            print_failure(log2)
 
     if args.backend:
         print("-- backend: supabase migrations + assertions")
@@ -460,7 +531,7 @@ def main() -> int:
             f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml")}
         inst_total, inst_failed = len(merged), sum(1 for ok in merged.values() if not ok)
         if inst_failed or short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")):
-            failures.append("gradle")
+            failures.append("instrumented")
     unit_short = short_run(unit_total, declared_tests("app/src/test/**/*.kt"))
     inst_short = short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")) if serial else None
     print("\n=== gate ===")
@@ -469,13 +540,15 @@ def main() -> int:
     if serial:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
         if retried:
-            print(f"  retried       {len(retried)} classes once after a failed run: {', '.join(c.rsplit('.', 1)[1] for c in retried)}")
+            print(f"  retried       {len(retried)} classes once after a failed run: {', '.join(c.rsplit('.', 1)[-1] for c in retried)}")
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
+    took = time.time() - gate_started
+    print(f"  wall clock    {took // 60:.0f}m{took % 60:02.0f}s" + ("" if took < 300 else "  !! over the 5 minute budget"))
 
     if failures or unit_failed or inst_failed or unit_short or inst_short:
-        print("\nGATE RED")
+        print("\nGATE RED" + (f": {'; '.join(failures)}" if failures else ""))
         return 1
     print("\nGATE GREEN")
     return 0
