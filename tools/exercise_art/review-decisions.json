@@ -4427,6 +4427,22 @@
       "note": "",
       "reviewer": "You",
       "updatedAt": "2026-10-13T22:22:24.076Z"
+    },
+    {
+      "id": "tuck-front-lever-row-1.png",
+      "sha256": "e7df8f9fd5eefad3e8194c54b3ca8d98c6f91889e77f5436518f090345362fdb",
+      "status": "approved",
+      "note": "Both look good, approved. Publish them now.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T05:22:14.151711+00:00"
+    },
+    {
+      "id": "front-lever-row-1.png",
+      "sha256": "e03570f389d1dbf5084d0601f02c69cd05cb99a23396e26641076a06adc61af0",
+      "status": "approved",
+      "note": "Both look good, approved. Publish them now.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T05:22:14.151711+00:00"
     }
   ]
 }
