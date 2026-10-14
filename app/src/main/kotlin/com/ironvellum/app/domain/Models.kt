@@ -53,6 +53,8 @@ data class PresetEntry(
     val position: Int = 0,
     /** Shared with the adjacent entries done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
+    /** How the lift's sets are laid out; Straight, the default, is the entry's own sets x reps. */
+    val scheme: SetScheme = SetScheme(),
 )
 
 data class WorkoutPreset(
@@ -200,6 +202,8 @@ data class ExerciseSetRow(
     val done: Boolean,
     /** Seconds held; null unless the movement is [ExerciseMetric.HOLD]. */
     val durationSec: Int? = null,
+    /** The set's [SetKind] by enum name, as stored; a top set is the one a lift's records and chart follow. */
+    val kind: String = "WORKING",
 )
 
 /** One session's contribution to an exercise's record. */
@@ -223,6 +227,7 @@ data class ExerciseSetEntry(
     val modifiers: String,
     val done: Boolean,
     val score: Double,
+    val kind: SetKind = SetKind.WORKING,
 )
 
 data class ExerciseHistory(
@@ -299,6 +304,7 @@ object ExerciseHistoryCalculator {
                 weightKg = r.weightKg,
                 modifiers = r.modifiers,
                 done = r.done,
+                kind = SetKind.fromName(r.kind),
                 // Same suppression as hold tonnage below: an activity metric's
                 // figure is an attempt count or a distance, and repScore would
                 // invent a bodyweight-rep number from it. 0.0 is the value the
@@ -313,9 +319,13 @@ object ExerciseHistoryCalculator {
 
         fun loadOf(e: ExerciseSetEntry): Double = e.weightKg ?: bodyweightKg ?: 0.0
         val done = entries.filter { it.done }
-        val heaviest = done.maxByOrNull { loadOf(it) * 1000 + it.reps }
-        val bestSet = done.maxByOrNull { it.reps * loadOf(it) }
-        val bestScored = done.maxByOrNull { it.score }
+        // Records and the chart follow a trial's top set alone when it had one: its back-offs are lighter by design.
+        val counted = done.groupBy { it.sessionId }.values.flatMap { sets ->
+            sets.filter { it.kind == SetKind.TOP }.ifEmpty { sets }
+        }
+        val heaviest = counted.maxByOrNull { loadOf(it) * 1000 + it.reps }
+        val bestSet = counted.maxByOrNull { it.reps * loadOf(it) }
+        val bestScored = counted.maxByOrNull { it.score }
         // loadOf resolves to 0.0 when there is no weigh-in; a bodyweight set then
         // carries a load we do not know, and summing it claims "0 kg" — a confident
         // lie. Volume is only reported when every completed set has a known load.
@@ -326,7 +336,7 @@ object ExerciseHistoryCalculator {
             .map { (_, sets) ->
                 ExerciseSessionPoint(
                     atMs = sets.minOf { it.atMs },
-                    bestSetScore = sets.maxOf { it.score },
+                    bestSetScore = sets.filter { it.kind == SetKind.TOP && it.done }.ifEmpty { sets }.maxOf { it.score },
                     totalReps = sets.filter { it.done }.sumOf { it.reps },
                 )
             }

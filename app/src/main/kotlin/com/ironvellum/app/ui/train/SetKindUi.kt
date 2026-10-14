@@ -37,6 +37,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun SetKind.tint(): Color = when (this) {
     SetKind.WORKING -> IronvellumColors.InkMuted
     SetKind.WARMUP -> IronvellumColors.InkMuted
+    // The top set wears the gold of a peak, the heaviest set of the lift; its back-offs a paler green than a drop's.
+    SetKind.TOP -> IronvellumColors.SovereignGold
+    SetKind.BACKOFF -> IronvellumColors.EmeraldBright.copy(alpha = 0.8f)
     SetKind.DROP -> IronvellumColors.SystemGreen
     SetKind.FAILURE -> IronvellumColors.DangerRed.copy(alpha = 0.8f)
     SetKind.REST_PAUSE -> IronvellumColors.Ink.copy(alpha = 0.85f)
@@ -60,7 +63,8 @@ internal fun SetNumberCell(
 ) {
     var open by remember { mutableStateOf(false) }
     var explain by remember { mutableStateOf(false) }
-    val tag = kind.tag.takeIf { it.isNotEmpty() && it != label }
+    // The top set says its word, gold: it is the one set of the lift the rest are planned around.
+    val tag = (if (kind == SetKind.TOP) "Top" else kind.tag).takeIf { it.isNotEmpty() && it != label }
     Box(
         modifier
             .heightIn(min = 48.dp)

@@ -4,7 +4,12 @@ import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.FavouriteExerciseEntity
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.SchemePlan
+import com.ironvellum.app.domain.SchemeType
+import com.ironvellum.app.domain.TopMark
+import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.data.db.GachaStateEntity
 import com.ironvellum.app.data.db.HealthDayDao
 import com.ironvellum.app.data.db.HealthDayEntity
@@ -90,6 +95,7 @@ import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
@@ -460,6 +466,7 @@ class Repository(
                         modifiers = e.modifiers,
                         position = e.position,
                         supersetGroup = e.supersetGroup,
+                        scheme = SetScheme.decode(e.setScheme),
                     )
                 },
             )
@@ -474,6 +481,8 @@ class Repository(
         val modifiers: String = "",
         /** Shared with the adjacent entries done as one superset; saved only where they really are neighbours. */
         val supersetGroup: Int? = null,
+        /** How the lift's sets are laid out; Straight, the default, stores nothing. */
+        val scheme: SetScheme = SetScheme(),
     )
 
     suspend fun savePreset(
@@ -503,6 +512,7 @@ class Repository(
                     modifiers = e.modifiers,
                     position = position,
                     supersetGroup = groups[position],
+                    setScheme = e.scheme.normalised().encode(),
                 )
             },
         )
@@ -628,6 +638,10 @@ class Repository(
         // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
         val keptGroups = presetId?.let { presetDao.presetWithEntries(it) }?.entries
             ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
+        // Likewise a lift's set scheme: the Forge tempers loads and counts, it never undoes how a lift is run. The
+        // scheme follows the lift and is fitted to the set count the Forge chose.
+        val keptSchemes = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+            ?.filter { it.setScheme != null }?.associate { it.exerciseId to SetScheme.decode(it.setScheme) }.orEmpty()
         return savePreset(
             presetId = presetId,
             name = preset.name,
@@ -641,6 +655,7 @@ class Repository(
                     targetWeightKg = entry.targetWeightKg,
                     modifiers = entry.modifiers,
                     supersetGroup = keptGroups[idByName.getValue(entry.exerciseName)],
+                    scheme = keptSchemes[idByName.getValue(entry.exerciseName)]?.fitTo(entry.sets) ?: SetScheme(),
                 )
             },
         )
@@ -862,7 +877,10 @@ class Repository(
         // never adds load to a longer plank.
         val name = exercise?.name ?: ""
         val lever = Progression.leverFor(name, exercise?.isWeighted ?: false, metric)
+        // A drop and a back-off are lighter by design: the engine reads the sets that carry the prescription, or the
+        // last set of a trial would be taken for where the lifter had got to.
         val history = sessionDao.recentDoneSets(entry.exerciseId)
+            .filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
             .groupBy { it.sessionId }
             .values
             .map { rows ->
@@ -894,6 +912,8 @@ class Repository(
         val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
         val mode = trainingMode()
         return pw.entries.sortedBy { it.position }.mapNotNull { entry ->
+            // A top scheme's own line says where its top set starts and why, not the straight-set engine's.
+            if (SetScheme.decode(entry.setScheme).type == SchemeType.TOP_BACKOFF) return@mapNotNull null
             val recommendation = recommendationFor(entry, exerciseDao.byId(entry.exerciseId), mode)
             recommendation?.takeIf { it.changed }?.let { entry.exerciseId to it.reason }
         }.toMap()
@@ -914,7 +934,10 @@ class Repository(
     private suspend fun carryFigures(before: SetLogEntity, after: SetLogEntity, figures: Set<CarryFigure>) {
         carryEdits.note(before.carrySet(), after.carrySet())
         if (before.done || !after.done) return
-        val rows = sessionDao.setsFor(after.sessionId).filter { it.exerciseId == after.exerciseId }
+        // A top set and a drop hand nothing on (a top's load is not its back-offs', a drop is a step down from the
+        // set before it), and only sets of the same kind follow each other: a back-off never takes the top's load.
+        if (after.setKind() == SetKind.TOP || after.setKind() == SetKind.DROP) return
+        val rows = sessionDao.setsFor(after.sessionId).filter { it.exerciseId == after.exerciseId && it.kind == after.kind }
         carriesFrom(after.carrySet(), rows.map { it.carrySet() }, figures, carryEdits).forEach { carry ->
             val row = rows.first { it.id == carry.id }
             sessionDao.updateSet(
@@ -950,6 +973,19 @@ class Repository(
             val exercise = exerciseById[entry.exerciseId]
             val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
                 .getOrDefault(ExerciseMetric.REPS)
+            // A scheme lays the lift's sets out its own way. Only counted-in-reps lifts take one (a hold, like
+            // any activity, is Straight), and a superset takes no drops: its members take turns, so a drop's
+            // "straight on" has nowhere to go.
+            val scheme = SetScheme.decode(entry.setScheme).let { decoded ->
+                when {
+                    metric != ExerciseMetric.REPS -> SetScheme()
+                    decoded.type == SchemeType.DROPS && groups[entryPos] != null -> SetScheme(warmupRamp = decoded.warmupRamp)
+                    else -> decoded
+                }
+            }
+            if (exercise != null && (!scheme.isStraight || scheme.warmupRamp)) {
+                return@flatMapIndexed schemeSets(sessionId, entryPos, entry, exercise, scheme, groups[entryPos], mode)
+            }
             val recommendation = recommendationFor(entry, exercise, mode)
             // Seconds-in-durationSec stays HOLD-only: only a hold's preset
             // target is a duration. An activity entry keeps its own target
@@ -975,6 +1011,194 @@ class Repository(
         }
         sessionDao.insertSets(sets)
         sessionId
+    }
+
+    /** The lift as the scheme planner rounds loads for it: its step, the vest and belt it is worn with, the body it adds to. */
+    private suspend fun liftLoadingFor(exercise: ExerciseEntity, kit: LoadKit): LiftLoading {
+        val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
+        return LiftLoading(
+            stepKg = Progression.weightStepKg(exercise.muscleGroup, exercise.name),
+            worn = WornLoad.forLift(kit, exercise.name, exercise.isWeighted, metric),
+            unit = Units.current,
+            bodyweightKg = statDao.observeAll().first().firstOrNull()?.weightKg,
+            bodyweightLift = !exercise.isWeighted,
+        )
+    }
+
+    /** The load a top set climbs to when its reps are full: the kit's next step, else the lift's own. */
+    private fun nextTopLoad(lift: LiftLoading): (Double?) -> Double? = { kg ->
+        val from = kg ?: 0.0
+        lift.worn?.nextKg(from, lift.unit) ?: Progression.nextLoadKg(from, lift.stepKg, lift.unit)
+    }
+
+    /** What the lifter's last sealed top set of the lift was: the one a new top set is asked to beat. */
+    private suspend fun lastTopMark(exerciseId: Long): TopMark? =
+        sessionDao.recentDoneSets(exerciseId).firstOrNull { it.setKind() == SetKind.TOP }?.let { TopMark(it.reps, it.weightKg) }
+
+    /** The last top set of each of [exerciseIds], for the trial's "last top" line; a lift that never had one is left out. */
+    suspend fun lastTopMarks(exerciseIds: Collection<Long>): Map<Long, TopMark> =
+        exerciseIds.mapNotNull { id -> lastTopMark(id)?.let { id to it } }.toMap()
+
+    /**
+     * The sets of one lift whose rite entry has a scheme, or a warm-up ramp of its own: the ramp first (unticked, as
+     * a warm-up always is), then the scheme's sets worked out from the last top set (a top scheme) or the progression
+     * engine's prescription. A top set starts where its last one left off; back-offs start on their figure from it,
+     * and are refilled from the load actually logged ([refillBackoffs]).
+     */
+    private suspend fun schemeSets(
+        sessionId: Long,
+        position: Int,
+        entry: PresetEntryEntity,
+        exercise: ExerciseEntity,
+        scheme: SetScheme,
+        group: Int?,
+        mode: TrainingMode,
+    ): List<SetLogEntity> {
+        val kit = loadKit()
+        val lift = liftLoadingFor(exercise, kit)
+        val top = if (scheme.type == SchemeType.TOP_BACKOFF) {
+            SchemePlan.suggestTop(lastTopMark(entry.exerciseId), scheme.topReps, entry.targetWeightKg, nextTopLoad(lift))
+        } else {
+            null
+        }
+        val recommendation = if (scheme.type == SchemeType.TOP_BACKOFF) null else recommendationFor(entry, exercise, mode)
+        val planned = SchemePlan.plan(
+            scheme = scheme,
+            entrySets = entry.targetSets,
+            entryReps = recommendation?.reps ?: entry.targetReps,
+            entryKg = recommendation?.weightKg ?: entry.targetWeightKg,
+            lift = lift,
+            top = top,
+        )
+        val ramp = if (scheme.warmupRamp) {
+            WarmupRamp.planFor(
+                exercise.name, exercise.muscleGroup, ExerciseMetric.REPS, planned.firstOrNull()?.weightKg,
+                kit = kit, weighted = exercise.isWeighted, unit = Units.current,
+            )
+        } else {
+            emptyList()
+        }
+        fun row(index: Int, kind: SetKind, reps: Int, kg: Double?) = SetLogEntity(
+            sessionId = sessionId,
+            exerciseId = entry.exerciseId,
+            exercisePosition = position,
+            setIndex = index,
+            reps = reps,
+            weightKg = kg,
+            modifiers = entry.modifiers,
+            done = false,
+            kind = kind.name,
+            supersetGroup = group,
+        )
+        return ramp.mapIndexed { i, step -> row(i, SetKind.WARMUP, step.reps, step.weightKg) } +
+            planned.mapIndexed { i, set -> row(ramp.size + i, set.kind, set.reps, set.weightKg) }
+    }
+
+    /**
+     * The scheme a lift's back-offs follow in a trial: the rite entry's own when it is a top scheme (its percent or
+     * fixed load), else the plain default, 10% lighter, which is what "Make set 1 a top set" promises.
+     */
+    private suspend fun backoffSchemeFor(sessionId: Long, exerciseId: Long): SetScheme =
+        presetScheme(sessionId, exerciseId).takeIf { it.type == SchemeType.TOP_BACKOFF } ?: SetScheme(type = SchemeType.TOP_BACKOFF)
+
+    /**
+     * After a top set is logged: the back-offs still to do take their load from it, by the lift's percent (or fixed
+     * load), rounded to the lifter's kit; an unweighted bodyweight lift takes two reps off instead. A figure the
+     * lifter moved by hand on a waiting back-off stays as they set it.
+     */
+    private suspend fun refillBackoffs(top: SetLogEntity) {
+        val rows = sessionDao.setsFor(top.sessionId).filter { it.exerciseId == top.exerciseId }
+        val waiting = rows.filter { it.setKind() == SetKind.BACKOFF && !it.done && it.setIndex > top.setIndex }
+        if (waiting.isEmpty()) return
+        val exercise = exerciseDao.byId(top.exerciseId) ?: return
+        val lift = liftLoadingFor(exercise, loadKit())
+        val backoff = SchemePlan.backoff(top.weightKg, top.reps, backoffSchemeFor(top.sessionId, top.exerciseId), lift)
+        waiting.forEach { row ->
+            sessionDao.updateSet(
+                row.copy(
+                    weightKg = if (carryEdits.edited(row.id, CarryFigure.LOAD)) row.weightKg else backoff.weightKg,
+                    reps = if (carryEdits.edited(row.id, CarryFigure.REPS)) row.reps else backoff.reps,
+                ),
+            )
+        }
+    }
+
+    /**
+     * "Make set 1 a top set" on a lift of a live trial: its first set becomes the top set and the rest back-offs,
+     * 10% lighter than it. Today only: the rite is not touched (the end-of-trial offer may carry it there). False,
+     * and nothing written, when the lift has fewer than two sets, already has a top set, is a superset's, or the
+     * trial is sealed.
+     */
+    suspend fun makeTopSet(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+        if (isSealed(sessionId)) return@withTransaction false
+        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId && !it.isWarmup }.sortedBy { it.setIndex }
+        if (rows.size < 2 || rows.any { it.setKind() == SetKind.TOP }) return@withTransaction false
+        val top = rows.first().copy(kind = SetKind.TOP.name)
+        sessionDao.updateSet(top)
+        rows.drop(1).forEach { sessionDao.updateSet(it.copy(kind = SetKind.BACKOFF.name)) }
+        refillBackoffs(top)
+        true
+    }
+
+    /**
+     * "Add a drop" after [setId] in a live trial: a new Drop set straight after it, a step lighter than it, and the
+     * sets behind it move on. False, and nothing written, in a superset (its members take turns, there is no
+     * straight-on), for a warm-up or in a sealed trial.
+     */
+    suspend fun addDropAfter(setId: Long): Boolean = db.withTransaction {
+        val parent = sessionDao.setById(setId) ?: return@withTransaction false
+        if (isSealed(parent.sessionId) || parent.isWarmup || parent.supersetGroup != null) return@withTransaction false
+        val exercise = exerciseDao.byId(parent.exerciseId) ?: return@withTransaction false
+        val lift = liftLoadingFor(exercise, loadKit())
+        val percent = presetScheme(parent.sessionId, parent.exerciseId).takeIf { it.type == SchemeType.DROPS }?.dropPercent
+            ?: SetScheme.DEFAULT_DROP_PERCENT
+        val rows = sessionDao.setsFor(parent.sessionId).filter { it.exerciseId == parent.exerciseId }
+        rows.filter { it.setIndex > parent.setIndex }.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + 1)) }
+        sessionDao.insertSets(
+            listOf(
+                parent.copy(
+                    id = 0,
+                    setIndex = parent.setIndex + 1,
+                    kind = SetKind.DROP.name,
+                    weightKg = SchemePlan.drop(parent.weightKg, percent, lift),
+                    done = false,
+                    rpe = null,
+                ),
+            ),
+        )
+        true
+    }
+
+    /** The lift's own rite scheme in the trial's rite, or Straight when there is none. */
+    private suspend fun presetScheme(sessionId: Long, exerciseId: Long): SetScheme {
+        val presetId = sessionDao.byId(sessionId)?.presetId ?: return SetScheme()
+        val entry = presetDao.presetWithEntries(presetId)?.entries?.firstOrNull { it.exerciseId == exerciseId }
+        return SetScheme.decode(entry?.setScheme)
+    }
+
+    /** The rite scheme of each of [exerciseIds] in the trial's rite, for the trial's labels; a lift with none is left out. */
+    suspend fun trialSchemes(sessionId: Long, exerciseIds: Collection<Long>): Map<Long, SetScheme> {
+        val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
+        val entries = presetDao.presetWithEntries(presetId)?.entries.orEmpty()
+        return exerciseIds.mapNotNull { id ->
+            entries.firstOrNull { it.exerciseId == id }?.let { SetScheme.decode(it.setScheme) }?.takeIf { !it.isStraight }?.let { id to it }
+        }.toMap()
+    }
+
+    /** The rest suggested after a top set of [exerciseId] in the trial: its rite scheme's own, 3:00 by default. */
+    suspend fun restAfterTopSeconds(sessionId: Long, exerciseId: Long): Int =
+        SchemePlan.restAfterTop(presetScheme(sessionId, exerciseId))
+
+    /** Takes out the Drop sets after [setId] that are still to do ("End drops"), closing the gap in the lift's set numbers. */
+    suspend fun endDropsAfter(setId: Long) = db.withTransaction {
+        val from = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(from.sessionId)) return@withTransaction
+        val rows = sessionDao.setsFor(from.sessionId).filter { it.exerciseId == from.exerciseId }.sortedBy { it.setIndex }
+        val gone = rows.filter { it.setIndex > from.setIndex }.takeWhile { it.setKind() == SetKind.DROP }.filter { !it.done }
+        gone.forEach { sessionDao.deleteSet(it.id) }
+        rows.filter { it.id !in gone.map { g -> g.id } }.forEachIndexed { index, row ->
+            if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index))
+        }
     }
 
     suspend fun startFreeformSession(label: String): Long = db.withTransaction {
@@ -1035,6 +1259,10 @@ class Repository(
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
+        // A top set that is logged, or has its figures moved while logged, hands its load on to the back-offs still to do.
+        if (next.setKind() == SetKind.TOP && next.done && (!current.done || current.weightKg != next.weightKg || current.reps != next.reps)) {
+            refillBackoffs(next)
+        }
     }
 
     /**
@@ -1560,6 +1788,7 @@ class Repository(
                 targetWeightKg = e.targetWeightKg,
                 modifiers = e.modifiers,
                 position = e.position,
+                scheme = SetScheme.decode(e.setScheme),
             )
         }
         val sets = sessionDao.setsFor(sessionId).map { s ->
@@ -1610,6 +1839,7 @@ class Repository(
                     targetReps = if (after.targetReps != before.targetReps) after.targetReps else row.targetReps,
                     targetWeightKg = if (after.targetWeightKg != before.targetWeightKg) after.targetWeightKg else row.targetWeightKg,
                     modifiers = if (after.modifiers != before.modifiers) after.modifiers else row.modifiers,
+                    setScheme = if (after.scheme != before.scheme) after.scheme.normalised().encode() else row.setScheme,
                 ),
             )
         }
@@ -2762,6 +2992,7 @@ class Repository(
                         modifiers = e.modifiers,
                         position = e.position,
                         supersetGroup = e.supersetGroup,
+                        scheme = SetScheme.decode(e.setScheme),
                     )
                 },
             )
@@ -2993,6 +3224,7 @@ class Repository(
                                 modifiers = entry.modifiers,
                                 position = entry.position,
                                 supersetGroup = entry.supersetGroup,
+                                setScheme = entry.scheme.normalised().encode(),
                             )
                         },
                     )

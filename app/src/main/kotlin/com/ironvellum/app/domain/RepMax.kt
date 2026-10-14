@@ -73,8 +73,8 @@ object RepMax {
 
     /** Adds one trial's done working strength sets to [book]. */
     private fun record(book: MutableMap<String, MutableList<Mark>>, sets: List<SessionSet>, metricOf: (SessionSet) -> ExerciseMetric?) {
-        for (set in sets) {
-            if (!set.done || set.warmup) continue
+        // A lift with a top set is judged on that set alone: its back-offs are lighter by design.
+        for (set in PeakSets.narrowed(sets)) {
             val metric = metricOf(set)
             if (metric != null && !metric.isStrength) continue
             val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
@@ -104,9 +104,9 @@ object RepMax {
         return null
     }
 
-    /** The done working sets of ONE movement that are peaks, judged against [history] alone. */
+    /** The done working sets of ONE movement that are peaks, judged against [history] alone ([PeakSets] says which sets are judged). */
     fun hits(block: List<SessionSet>, history: List<Mark>, hold: Boolean): List<Hit> =
-        block.filter { it.done && !it.warmup }.sortedBy { it.setIndex }.mapNotNull { set ->
+        PeakSets.eligible(block).sortedBy { it.setIndex }.mapNotNull { set ->
             judge(figureOf(set, hold), loadOf(set), hold, history)?.let { (kind, was) -> Hit(set, kind, was) }
         }
 

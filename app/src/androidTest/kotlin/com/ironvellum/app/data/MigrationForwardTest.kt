@@ -3,6 +3,8 @@ package com.ironvellum.app.data
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.domain.SchemeType
+import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Xp
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -998,6 +1000,48 @@ class MigrationForwardTest {
             db.query("SELECT COUNT(*) FROM preset_entries WHERE supersetGroup = 2").use { c ->
                 assertTrue(c.moveToFirst())
                 assertEquals(2, c.getInt(0))
+            }
+        }
+    }
+
+    /**
+     * Schema 41 -> 42, set schemes in rites: a rite entry gains a nullable scheme column. Every existing entry
+     * is Straight (null) and keeps its figures and superset group; a scheme written afterwards reads back whole,
+     * the owner's own plan (a weighted pull-up, top set +22 kg x 2-4, three fixed +15 kg x 4-5 back-offs) included.
+     * Inserts only into the rite tables, so it holds on whatever v41 adds to the catalogue.
+     */
+    @Test
+    fun upgradeTo42AddsTheRiteSetSchemeAsNull() = runTest {
+        helper.createDatabase(dbName, 41).use { old ->
+            old.execSQL("INSERT INTO presets (id, name, note, scheduledDay) VALUES (1, 'Pull day', '', 2)")
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position, supersetGroup) " +
+                    "VALUES (10, 1, 1, 3, 8, 7.5, 'Weighted', 0, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position, supersetGroup) " +
+                    "VALUES (11, 1, 2, 4, 6, NULL, '', 1, 2)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 42, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT id, targetSets, targetReps, targetWeightKg, modifiers, supersetGroup, setScheme FROM preset_entries ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(10L, c.getLong(0))
+                assertEquals(3, c.getInt(1))
+                assertEquals(7.5, c.getDouble(3), 0.0)
+                assertEquals("Weighted", c.getString(4))
+                assertTrue("an old entry is Straight", c.isNull(6))
+                assertTrue(c.moveToNext())
+                assertEquals(2, c.getInt(5))
+                assertTrue(c.isNull(6))
+            }
+            val owners = SetScheme(
+                type = SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 3, backoffFixedKg = 15.0, backoffReps = 4..5,
+            )
+            db.execSQL("UPDATE preset_entries SET setScheme = '${owners.encode()}', targetSets = 4, targetReps = 2, targetWeightKg = 22.0 WHERE id = 10")
+            db.query("SELECT setScheme FROM preset_entries WHERE id = 10").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(owners, SetScheme.decode(c.getString(0)))
             }
         }
     }

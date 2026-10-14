@@ -44,14 +44,14 @@ class SetKindTest {
             SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = i, reps = 5, done = kind.countsAsWork, kind = kind)
         }
         val json = write(listOf(session to sets))
-        assertEquals("a plain or warm-up set writes no kind", 3, Regex("\"kind\"").findAll(json).count())
+        assertEquals("a plain or warm-up set writes no kind", 5, Regex("\"kind\"").findAll(json).count())
         assertEquals("a warm-up keeps the key older readers know", 1, Regex("\"warmup\"").findAll(json).count())
         assertEquals(SetKind.entries.toList(), ExportReader.read(json).getOrThrow().sessions.single().second.map { it.kind })
 
         // A kind word this build does not know is a working set, not a failed restore.
         val unknown = json.replace("\"kind\":\"drop\"", "\"kind\":\"pyramid\"")
         assertEquals(
-            listOf(SetKind.WORKING, SetKind.WARMUP, SetKind.WORKING, SetKind.FAILURE, SetKind.REST_PAUSE),
+            listOf(SetKind.WORKING, SetKind.WARMUP, SetKind.TOP, SetKind.BACKOFF, SetKind.WORKING, SetKind.FAILURE, SetKind.REST_PAUSE),
             ExportReader.read(unknown).getOrThrow().sessions.single().second.map { it.kind },
         )
     }

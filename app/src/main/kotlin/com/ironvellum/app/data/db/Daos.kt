@@ -305,7 +305,7 @@ interface SessionDao {
     @Query(
         "SELECT s.sessionId AS sessionId, x.startedAtMs AS atMs, s.setIndex AS setIndex, " +
             "s.reps AS reps, s.weightKg AS weightKg, s.modifiers AS modifiers, s.done AS done, " +
-            "s.durationSec AS durationSec " +
+            "s.durationSec AS durationSec, s.kind AS kind " +
             "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
             "WHERE s.exerciseId = :exerciseId ORDER BY x.startedAtMs DESC, s.setIndex ASC",
     )

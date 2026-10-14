@@ -115,6 +115,8 @@ object ExportReader {
                 position = entry.int("position") ?: 0,
                 // v11, only for an entry in a superset: an older archive has none.
                 supersetGroup = entry.int("supersetGroup"),
+                // v12, only for a lift that is not Straight: an older archive has none.
+                scheme = SetScheme.decode(entry.str("setScheme")),
             )
         },
         scheduledDay = o.int("scheduledDay"),

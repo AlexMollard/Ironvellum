@@ -139,7 +139,10 @@ fun RiteDetailScreen(
                             value = "${entry.targetSets}×${entry.targetReps}" +
                                 (if (MovementDifficulty.isHoldByName(entry.exerciseName)) "s" else "") +
                                 (entry.targetWeightKg?.let { "  @${formatKg(it)}" } ?: ""),
-                            subline = entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },
+                            subline = listOfNotNull(
+                                com.ironvellum.app.domain.SchemeText.summary(entry.scheme, entry.targetSets),
+                                entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },
+                            ).joinToString(" · ").ifEmpty { null },
                         )
                     }
                 }

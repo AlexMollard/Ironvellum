@@ -112,11 +112,14 @@ object Rank {
         for ((session, sets) in history) {
             if (!inWindow(session.completedAtMs ?: session.startedAtMs)) continue
             val bodyweight = bodyweightAt(session.startedAtMs)
-            for (set in sets) {
+            // A strength tier is a record: a lift with a top set is judged on that set alone.
+            for (set in PeakSets.narrowed(sets)) {
                 LiftBoards.tieredScore(set, bodyweight, sex)?.let { score ->
                     val held = bestByLift[score.lift]
                     if (held == null || score.ratio > held.ratio) bestByLift[score.lift] = score
                 }
+            }
+            for (set in sets) {
                 if (!set.done || LiftBoards.isAssisted(set)) continue
                 val (skill, pattern) = COUNTED_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: continue
                 val figure = when (skill.metric) {
