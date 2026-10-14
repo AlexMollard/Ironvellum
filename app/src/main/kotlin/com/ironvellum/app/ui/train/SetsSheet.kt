@@ -141,7 +141,13 @@ internal fun SetsSheet(
                 when (scheme.type) {
                     SchemeType.TOP_BACKOFF -> TopBackoffSettings(
                         scheme, { scheme = it }, weight, { weight = it }, entry.exerciseName, worn,
-                        fixedMode, { fixedMode = it }, fixedText, { fixedText = it },
+                        fixedMode,
+                        { on ->
+                            // Fixed starts on the load "% lighter" gives right now, so the preview does not jump and Done stays on.
+                            if (on) fixedText = formatSteppedFigure(SchemePlan.seedFixedBackoff(DecimalInput.parse(weight), scheme, lift))
+                            fixedMode = on
+                        },
+                        fixedText, { fixedText = it },
                     )
                     SchemeType.DROPS -> {
                         IntStepper("Sets that drop", scheme.dropSets, "drop sets", 1, setCount) { scheme = scheme.copy(dropSets = it) }

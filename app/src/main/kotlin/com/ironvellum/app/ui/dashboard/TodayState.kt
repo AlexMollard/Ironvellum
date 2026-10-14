@@ -7,6 +7,7 @@ import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.PresetEntry
+import com.ironvellum.app.domain.SchemeText
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
@@ -92,7 +93,7 @@ internal data class DayRow(val name: String, val value: String, val done: Int, v
 /** The rite's own movements, nothing logged yet. */
 internal fun plannedRows(entries: List<PresetEntry>): List<DayRow> =
     entries.sortedBy { it.position }.map {
-        DayRow(it.exerciseName, "${it.targetSets}×${it.targetReps}", done = 0, total = it.targetSets, checked = false)
+        DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false)
     }
 
 /**

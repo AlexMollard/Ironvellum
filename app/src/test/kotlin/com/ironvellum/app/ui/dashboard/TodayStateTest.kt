@@ -57,6 +57,15 @@ class TodayStateTest {
     }
 
     @Test
+    fun `a planned top set lift reads its plan, not sets by top reps`() {
+        val scheme = com.ironvellum.app.domain.SetScheme(
+            type = com.ironvellum.app.domain.SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 3, backoffReps = 4..5, backoffPercent = 10,
+        )
+        val rows = plannedRows(listOf(PresetEntry(exerciseId = 1, exerciseName = "Pull-up", targetSets = 4, targetReps = 2, scheme = scheme)))
+        assertEquals(listOf(DayRow("Pull-up", "2–4 · 3×4–5 −10%", 0, 4, false)), rows)
+    }
+
+    @Test
     fun `a live trial shows done, part way and untouched rows, warm-ups left out`() {
         val sets = listOf(
             set(0, 0, true), set(0, 1, true),

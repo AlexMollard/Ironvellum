@@ -251,4 +251,50 @@ class SetSchemeTest {
         assertEquals(1f, bars[1].level, 0f)
         assertEquals(0.9f, bars[2].level, 1e-6f)
     }
+
+    // ---- switching the back-off to a fixed load
+
+    private val percent = SetScheme(type = SchemeType.TOP_BACKOFF, backoffPercent = 10)
+
+    @Test
+    fun `fixed starts on the load the percent gives now, on the kit steps`() {
+        // +22 kg on a 79 kg body, 10% lighter: 11.9 kg added, down to the vest block below.
+        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent, vest), 1e-9)
+        // No vest: the lift's own 2.5 kg grid.
+        assertEquals(10.0, SchemePlan.seedFixedBackoff(22.0, percent, belt), 1e-9)
+        // A plain lift takes the percent off the load itself.
+        assertEquals(90.0, SchemePlan.seedFixedBackoff(100.0, percent, LiftLoading(stepKg = 2.5)), 1e-9)
+        // The seed is the figure the preview already shows for the percent option.
+        assertEquals(SchemePlan.backoff(22.0, 4, percent, vest).weightKg!!, SchemePlan.seedFixedBackoff(22.0, percent, vest), 1e-9)
+    }
+
+    @Test
+    fun `the seed ignores a stale fixed load and never leaves nothing to load`() {
+        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent.copy(backoffFixedKg = 15.0), vest), 1e-9)
+        // No top load, or a back-off under one block: the smallest step, so Done is never blocked.
+        assertEquals(2.5, SchemePlan.seedFixedBackoff(null, percent, belt), 1e-9)
+        assertEquals(1.0, SchemePlan.seedFixedBackoff(5.0, percent, vest), 1e-9)
+    }
+
+    // ---- the figure a rite row prints
+
+    private val kg: (Double) -> String = { (if (it == Math.floor(it)) it.toLong().toString() else it.toString()) + "kg" }
+
+    @Test
+    fun `a top set lift reads its real plan, not sets by top reps`() {
+        assertEquals("2–4 @22kg · 3×4–5 @15kg", SchemeText.figure(owners, 4, 2, 22.0, kg))
+        assertEquals("4–6 @100kg · 2×6–8 −10%", SchemeText.figure(percent, 3, 4, 100.0, kg))
+        // No loads (the Today card): the percent still says itself, a fixed back-off is just sets by reps.
+        assertEquals("2–4 · 3×4–5", SchemeText.figure(owners, 4, 2, 22.0, null))
+        assertEquals("4–6 · 2×6–8 −10%", SchemeText.figure(percent, 3, 4, null, null))
+        // A bodyweight top set has no load to print.
+        assertEquals("2–4 · 3×4–5 @15kg", SchemeText.figure(owners, 4, 2, null, kg))
+    }
+
+    @Test
+    fun `every other scheme keeps the plain sets by reps figure`() {
+        assertEquals("3×7 @60kg", SchemeText.figure(SetScheme(), 3, 7, 60.0, kg))
+        assertEquals("3×30s", SchemeText.figure(SetScheme(), 3, 30, null, kg, hold = true))
+        assertEquals("3×7", SchemeText.figure(SetScheme(type = SchemeType.DROPS), 3, 7, null, null))
+    }
 }

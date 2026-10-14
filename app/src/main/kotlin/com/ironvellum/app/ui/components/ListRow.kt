@@ -45,6 +45,8 @@ fun ListRow(
     icon: ImageVector? = null,
     sublineColor: Color = IronvellumColors.InkMuted,
     valueColor: Color = IronvellumColors.InkMuted,
+    /** Lets a long [value] wrap to a second line instead of cutting it off. */
+    wrapValue: Boolean = false,
     onClickLabel: String? = null,
     /** Replaces [icon] with a composable of the caller's own, e.g. a tinted glyph. */
     leading: (@Composable () -> Unit)? = null,
@@ -73,10 +75,10 @@ fun ListRow(
                 value,
                 style = MaterialTheme.typography.labelMedium,
                 color = valueColor,
-                maxLines = 1,
+                maxLines = if (wrapValue) 2 else 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End,
-                modifier = Modifier.widthIn(max = 160.dp),
+                modifier = Modifier.widthIn(max = if (wrapValue) 190.dp else 160.dp),
             )
         }
         if (onClick != null) {

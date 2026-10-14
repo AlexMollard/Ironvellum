@@ -74,6 +74,18 @@ object SchemePlan {
         }
     }
 
+    /**
+     * The load a Fixed back-off starts on when the lifter switches to it: what the "% lighter" option makes of
+     * [topKg] right now (the figure the sheet's preview shows), so the switch changes nothing until it is edited.
+     * Falls back to the lift's smallest step when the percent leaves nothing to load (no top load, under one block).
+     */
+    fun seedFixedBackoff(topKg: Double?, scheme: SetScheme, lift: LiftLoading): Double {
+        val percent = scheme.copy(backoffFixedKg = null)
+        return backoff(topKg, scheme.topReps.first, percent, lift).weightKg?.takeIf { it > 0.0 }
+            ?: lift.worn?.firstStepKg(lift.unit)
+            ?: lift.stepKg.coerceAtLeast(0.5)
+    }
+
     /** A drop of [percent] lighter than [fromKg], rounded down onto the lift's loads; null at bodyweight. */
     fun drop(fromKg: Double?, percent: Int, lift: LiftLoading): Double? {
         val from = (fromKg ?: 0.0).coerceAtLeast(0.0)

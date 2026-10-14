@@ -136,9 +136,11 @@ fun RiteDetailScreen(
                         if (index > 0) InkDivider()
                         ListRow(
                             entry.exerciseName,
-                            value = "${entry.targetSets}×${entry.targetReps}" +
-                                (if (MovementDifficulty.isHoldByName(entry.exerciseName)) "s" else "") +
-                                (entry.targetWeightKg?.let { "  @${formatKg(it)}" } ?: ""),
+                            value = com.ironvellum.app.domain.SchemeText.figure(
+                                entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, ::formatKg,
+                                hold = MovementDifficulty.isHoldByName(entry.exerciseName),
+                            ),
+                            wrapValue = true,
                             subline = listOfNotNull(
                                 com.ironvellum.app.domain.SchemeText.summary(entry.scheme, entry.targetSets),
                                 entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },

@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -74,6 +75,15 @@ class SetsSheetTest {
         compose.onNodeWithText("Done").performClick()
         assertEquals(15.0, done!!.scheme.backoffFixedKg!!, 0.0)
         assertEquals("4", done!!.sets)
+    }
+
+    @Test
+    fun switchingBackoffsToFixedStartsOnTheLoadThePercentGaveAndDoneStaysOn() {
+        // +22 kg on an 80 kg body, 10% lighter: 11.8 kg added, down to the 2.5 kg step is 10.
+        show(entry.copy(sets = "3", reps = "4", scheme = SetScheme(type = SchemeType.TOP_BACKOFF, backoffPercent = 10)))
+        compose.onNodeWithText("Fixed").performScrollTo().performClick()
+        compose.onNodeWithText("Done").assertIsEnabled().performClick()
+        assertEquals(10.0, done!!.scheme.backoffFixedKg!!, 1e-9)
     }
 
     @Test

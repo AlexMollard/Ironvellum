@@ -202,6 +202,20 @@ object SchemeText {
         SchemeType.CUSTOM -> "Custom, ${scheme.custom.size} sets"
     }
 
+    /**
+     * The figure a rite row prints for a lift. Top + back-offs reads its real plan, "2–4 @22kg · 3×4–5 @15kg"
+     * ("3×4–5 −10%" for a percent back-off); every other scheme, and Straight, reads "sets×reps @load".
+     * [load] formats a kg figure with its unit; null leaves loads out (a percent back-off still says its percent).
+     * [hold] puts an "s" on the reps of a timed hold.
+     */
+    fun figure(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, load: ((Double) -> String)?, hold: Boolean = false): String {
+        fun at(v: Double?) = if (load != null && v != null) " @" + load(v) else ""
+        if (scheme.type != SchemeType.TOP_BACKOFF) return "$sets×$reps" + (if (hold) "s" else "") + at(kg)
+        val fixed = scheme.backoffFixedKg
+        val back = "${scheme.backoffSets}×${rangeText(scheme.backoffReps)}" + if (fixed != null) at(fixed) else " −${scheme.backoffPercent}%"
+        return rangeText(scheme.topReps) + at(kg) + " · " + back
+    }
+
     /** One short clause for the keep-offer's Sets line: "3 straight", "top + 2 back-offs". */
     fun clause(scheme: SetScheme, sets: Int): String = when (scheme.type) {
         SchemeType.STRAIGHT -> "$sets straight"
