@@ -228,7 +228,10 @@ object LiftBoards {
         Lift.HANDSTAND to listOf("Crow Pose", "Wall Handstand", "Freestanding Handstand", "One-Arm Handstand"),
         Lift.L_SIT to listOf("L-sit", "Straddle L-sit", "V-Sit", "Manna"),
         Lift.HUMAN_FLAG to listOf("Dead Hang", "One-Arm Hang", "Human Flag"),
-        Lift.PISTOL to listOf("Split Squat", "Sissy Squat", "Shrimp Squat", "Pistol Squat", "Dragon Squat"),
+        Lift.PISTOL to listOf(
+            "Split Squat", "Sissy Squat", "Pistol Squat", "Shrimp Squat", "Dragon Squat",
+            "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat",
+        ),
     )
 
     private val LADDERS: Map<Lift, List<Rung>> = LADDER_EXERCISES.mapValues { (lift, names) ->

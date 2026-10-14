@@ -474,24 +474,54 @@ object Skills {
             why = "The pistol's depth and line with the balance taken off, so strength is the only thing being trained.",
         ),
         SkillDef(
+            "Box Pistol Squat", 2, "Legs", prerequisites = listOf("Supported Pistol Squat"),
+            standard = "8 reps per leg, sitting back to a knee-high box and standing, free leg off the floor, no hands",
+            why = "Takes the post away and gives the hips a target, so the pistol's balance is learned with the depth capped.",
+        ),
+        SkillDef(
+            "Elevated Pistol Squat", 3, "Legs", prerequisites = listOf("Box Pistol Squat"),
+            standard = "5 reps per leg, standing on a low block, free leg hanging below it, full depth",
+            why = "A deficit pistol: the free leg clears the floor by more, so the bottom position gets deeper and harder.",
+        ),
+        SkillDef(
+            "Airborne Squat", 3, "Legs", prerequisites = listOf("Elevated Pistol Squat"),
+            standard = "5 reps per leg to full depth, free leg held in the air behind you, no touchdown",
+            why = "Holds the free leg out of the way for the whole rep, the last balance step before the pistol.",
+        ),
+        SkillDef(
             "Sissy Squat", 2, "Legs", prerequisites = listOf("Split Squat"),
             standard = "12 reps, knees forward, torso in line with thighs",
             why = "Loads the quads through the knee-forward range most people avoid.",
         ),
         SkillDef(
-            "Shrimp Squat", 3, "Legs", prerequisites = listOf("Bulgarian Split Squat"),
+            "Shrimp Squat", 3, "Legs", prerequisites = listOf("Pistol Squat"),
             standard = "8 reps per leg, rear knee kissing the floor",
             why = "Single-leg strength plus hip-flexor and quad length.",
         ),
         SkillDef(
-            "Pistol Squat", 3, "Legs", prerequisites = listOf("Supported Pistol Squat"),
+            "Pistol Squat", 3, "Legs", prerequisites = listOf("Airborne Squat"),
             standard = "8 reps per leg, hamstring to calf, heel down",
             why = "The single-leg strength standard, plus ankle mobility.",
         ),
         SkillDef(
-            "Dragon Squat", 4, "Legs", prerequisites = listOf("Pistol Squat"),
-            standard = "3 reps per leg, rear leg extended and off the floor",
+            "Dragon Squat", 4, "Legs", prerequisites = listOf("Shrimp Squat"),
+            standard = "3 reps per leg, rear leg snaked behind and around the working leg, off the floor",
             why = "Deepest single-leg strength demand there is.",
+        ),
+        SkillDef(
+            "Advanced Shrimp Squat", 4, "Legs", prerequisites = listOf("Dragon Squat"),
+            standard = "5 reps per leg, both hands holding the back foot, rear knee kissing the floor",
+            why = "Both hands on the rear foot leave nothing to counterbalance with, so the working leg does more of the balancing.",
+        ),
+        SkillDef(
+            "Deficit Advanced Shrimp Squat", 4, "Legs", prerequisites = listOf("Advanced Shrimp Squat"),
+            standard = "3 reps per leg from a low block, both hands holding the back foot, rear knee below the block",
+            why = "The two-handed shrimp with extra depth to cover, which is the strength the cobra squat asks for.",
+        ),
+        SkillDef(
+            "Cobra Squat", 5, "Legs", prerequisites = listOf("Deficit Advanced Shrimp Squat"),
+            standard = "2 reps per leg, arms pinned behind the back, rear leg snaked tight across the working knee",
+            why = "The dragon's bottom shape with the arms taken away: extreme ankle bend, balance and deep-position strength.",
         ),
         SkillDef(
             "Hamstring Bridge", 1, "Legs",

@@ -139,6 +139,7 @@ object MuscleMap {
         "straddle press to handstand", "crow → handstand", "planche push-up",
         "skin the cat", "ring muscle-up", "kip-up", "muscle-up", "strict muscle-up",
         "inverted muscle-up", "handstand-to-bridge", "stand-to-stand bridge", "dragon squat",
+        "cobra squat",
     )
 
     fun isTechnique(exerciseName: String): Boolean = key(exerciseName) in technique
@@ -740,6 +741,11 @@ object MuscleMap {
         // squat shares: it had lost the adductors every other squat credits.
         put("shrimp squat", squatProfile(MovementPattern.LUNGE))
         put("dragon squat", squatProfile(MovementPattern.LUNGE))
+        // The single-leg squat ladder around the pistol: every step is a squat to depth on one leg.
+        for (squat in listOf(
+            "box pistol squat", "elevated pistol squat", "airborne squat", "advanced shrimp squat",
+            "deficit advanced shrimp squat", "cobra squat",
+        )) put(squat, squatProfile(MovementPattern.LUNGE))
         put("hamstring bridge", ExerciseProfile(
             muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 0.5),
             pattern = MovementPattern.HINGE, compound = false, stretchBias = false,

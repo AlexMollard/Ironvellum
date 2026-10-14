@@ -201,10 +201,10 @@ class RankTest {
     }
 
     @Test
-    fun `a skills-only pattern at step 7 has no target left`() {
-        val b = breakdown(listOf(trial(1, set("Dragon Squat", 3), set("Nordic Curl", 3))))!!
+    fun `a skills-only pattern at the top skill has no target left`() {
+        val b = breakdown(listOf(trial(1, set("Cobra Squat", 3), set("Nordic Curl", 3))))!!
         val legs = b.patterns.single()
-        assertEquals(7, legs.step)
+        assertEquals(9, legs.step)
         assertNull(legs.liftTarget)
         assertNull(legs.skillTarget)
     }

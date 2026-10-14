@@ -376,4 +376,20 @@ class SkillsTest {
         assertEquals(null, Skills.loadBar("Pull-up"))
         assertTrue(Skills.loadBar("Deadlift", female = true)!!.share < Skills.loadBar("Deadlift")!!.share)
     }
-}
+
+    @Test
+    fun `the single-leg squat chain runs box pistol to cobra, each step needing the one before`() {
+        val chain = listOf(
+            "Supported Pistol Squat", "Box Pistol Squat", "Elevated Pistol Squat", "Airborne Squat", "Pistol Squat",
+            "Shrimp Squat", "Dragon Squat", "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat",
+        )
+        chain.zipWithNext().forEach { (before, step) ->
+            assertEquals("$step needs $before", listOf(before), Skills.forName(step)!!.prerequisites)
+        }
+        val catalogue = Seed.exercises.associateBy { it.name }
+        chain.forEach { assertEquals("$it", "LEGS", catalogue.getValue(it).muscleGroup) }
+        assertEquals(
+            listOf("Pistol Squat", "Shrimp Squat", "Dragon Squat", "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat"),
+            LiftBoards.rungs(Lift.PISTOL).map { it.exercise }.drop(2),
+        )
+    }}

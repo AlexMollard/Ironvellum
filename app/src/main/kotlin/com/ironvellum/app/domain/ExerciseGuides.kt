@@ -3706,6 +3706,138 @@ object ExerciseGuides {
             ),
         )
         put(
+            "box pistol squat",
+            ExerciseGuide(
+                setup = "Stand on one leg in front of a knee-high box with the other leg held out in front.",
+                steps = listOf(
+                    "Reach your arms forward and sit your hips back toward the box.",
+                    "Lower with control until you touch the box lightly, keeping the free leg off the floor.",
+                    "Drive through your whole standing foot to stand without rocking.",
+                    "Finish all the reps on one leg, then swap.",
+                ),
+                cues = listOf(
+                    "Heel stays down",
+                    "Sit back, do not drop",
+                    "Knee tracks over the toes",
+                ),
+                commonMistakes = listOf(
+                    "Plopping onto the box instead of lowering",
+                    "Letting the standing knee cave inward",
+                    "Using your hands to push off your thigh",
+                ),
+            ),
+        )
+        put(
+            "elevated pistol squat",
+            ExerciseGuide(
+                setup = "Stand on one leg on a low block with the other leg held out in front, hanging clear of the block.",
+                steps = listOf(
+                    "Reach your arms forward and bend the standing knee to sit down.",
+                    "Lower to full depth, with the free leg staying off the block and floor.",
+                    "Pause for a beat in the bottom.",
+                    "Drive through the whole foot to stand, then swap legs.",
+                ),
+                cues = listOf(
+                    "Slow descent",
+                    "Heel stays down",
+                    "Free leg stays long",
+                ),
+                commonMistakes = listOf(
+                    "Dropping the last part of the descent",
+                    "Letting the heel lift off the block",
+                    "Folding forward so the chest hits the thigh",
+                ),
+            ),
+        )
+        put(
+            "airborne squat",
+            ExerciseGuide(
+                setup = "Stand on one leg with the other leg lifted off the floor behind you.",
+                steps = listOf(
+                    "Reach your arms forward to counterbalance and bend the standing knee.",
+                    "Lower to full depth with the free leg staying in the air the whole time.",
+                    "Pause briefly without touching the free foot down.",
+                    "Drive through the whole foot to stand, then swap legs.",
+                ),
+                cues = listOf(
+                    "Free foot never touches down",
+                    "Heel stays down",
+                    "Slow and level",
+                ),
+                commonMistakes = listOf(
+                    "Resting the free foot on the floor to balance",
+                    "Rising onto the toes at the bottom",
+                    "Letting the standing knee cave inward",
+                ),
+            ),
+        )
+        put(
+            "advanced shrimp squat",
+            ExerciseGuide(
+                setup = "Stand on one leg, bend the other knee behind you and hold that foot with both hands.",
+                steps = listOf(
+                    "Keep your chest up and pull the rear foot toward your glute.",
+                    "Lower slowly until the back knee lightly touches the floor.",
+                    "Pause for a beat.",
+                    "Drive through your standing foot to stand, then swap legs.",
+                ),
+                cues = listOf(
+                    "Slow descent",
+                    "Chest up",
+                    "Stay over the whole foot",
+                ),
+                commonMistakes = listOf(
+                    "Dropping onto the back knee",
+                    "Letting the standing knee collapse inward",
+                    "Letting go of the foot to catch your balance",
+                ),
+            ),
+        )
+        put(
+            "deficit advanced shrimp squat",
+            ExerciseGuide(
+                setup = "Stand on one leg on a low block with the other knee bent behind you and that foot held in both hands.",
+                steps = listOf(
+                    "Keep your chest up and pull the rear foot toward your glute.",
+                    "Lower slowly until the back knee passes below the level of the block.",
+                    "Pause for a beat in the bottom.",
+                    "Drive through your standing foot to stand, then swap legs.",
+                ),
+                cues = listOf(
+                    "Slow descent",
+                    "Chest up",
+                    "Stay over the whole foot",
+                ),
+                commonMistakes = listOf(
+                    "Dropping onto the back knee",
+                    "Letting the standing heel lift off the block",
+                    "Letting go of the foot to catch your balance",
+                ),
+            ),
+        )
+        put(
+            "cobra squat",
+            ExerciseGuide(
+                setup = "Stand on one leg with your hands pinned behind your back and the other leg ready to wrap behind and across the standing knee.",
+                steps = listOf(
+                    "Sweep the free leg behind and across your standing knee as you start to lower.",
+                    "Sit back and down, keeping your arms pinned behind your back.",
+                    "Lower until you are deep and still, with the rear leg tucked tight against the working knee.",
+                    "Drive through the whole standing foot to stand and unwind, then swap sides.",
+                ),
+                cues = listOf(
+                    "Slow and controlled",
+                    "Heel stays down",
+                    "Stay compact over the foot",
+                ),
+                commonMistakes = listOf(
+                    "Rushing the descent",
+                    "Letting the working knee cave inward",
+                    "Using your hands for balance instead of keeping them behind you",
+                ),
+            ),
+        )
+        put(
             "hamstring bridge",
             ExerciseGuide(
                 setup = "Lie on your back with your heels on the floor and your knees bent about 90 degrees.",
