@@ -4,6 +4,7 @@ import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.FavouriteExerciseEntity
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.data.db.GachaStateEntity
 import com.ironvellum.app.data.db.HealthDayDao
 import com.ironvellum.app.data.db.HealthDayEntity
@@ -179,6 +180,8 @@ class Repository(
     private val db: IronvellumDatabase,
     private val health: HealthSync? = null,
     private val highestBand: HighestBandStore? = null,
+    /** The lifter's vest and belt (the app reads them from the gear prefs): the increments of loaded bodyweight lifts. */
+    private val loadKit: suspend () -> LoadKit = { LoadKit.NONE },
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -876,6 +879,7 @@ class Repository(
             exerciseName = name,
             lever = lever,
             unit = Units.current,
+            kit = loadKit(),
         )
     }
 
@@ -1074,31 +1078,38 @@ class Repository(
      * and the working sets keep their order. Warm-ups are stored unticked, so they never
      * earn XP; records judge a working set by its place less the warm-ups ahead of it.
      */
-    suspend fun addWarmupRamp(sessionId: Long, exerciseId: Long): List<Long> = db.withTransaction {
-        if (isSealed(sessionId)) return@withTransaction emptyList()
-        val exercise = exerciseDao.byId(exerciseId) ?: return@withTransaction emptyList()
-        val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
-        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
-        if (rows.isEmpty() || rows.any { it.isWarmup }) return@withTransaction emptyList()
-        val first = rows.first()
-        val plan = WarmupRamp.planFor(exercise.name, exercise.muscleGroup, metric, first.weightKg)
-        if (plan.isEmpty()) return@withTransaction emptyList()
-        rows.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + plan.size)) }
-        val made = plan.mapIndexed { index, step ->
-            SetLogEntity(
-                sessionId = sessionId,
-                exerciseId = exerciseId,
-                exercisePosition = first.exercisePosition,
-                setIndex = index,
-                reps = step.reps,
-                weightKg = step.weightKg,
-                modifiers = first.modifiers,
-                done = false,
-                kind = SetKind.WARMUP.name,
-                supersetGroup = first.supersetGroup,
+    suspend fun addWarmupRamp(sessionId: Long, exerciseId: Long): List<Long> {
+        // Read ahead of the transaction: the gear prefs are a disk read, not a database one.
+        val kit = loadKit()
+        return db.withTransaction {
+            if (isSealed(sessionId)) return@withTransaction emptyList()
+            val exercise = exerciseDao.byId(exerciseId) ?: return@withTransaction emptyList()
+            val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
+            val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
+            if (rows.isEmpty() || rows.any { it.isWarmup }) return@withTransaction emptyList()
+            val first = rows.first()
+            val plan = WarmupRamp.planFor(
+                exercise.name, exercise.muscleGroup, metric, first.weightKg,
+                kit = kit, weighted = exercise.isWeighted, unit = Units.current,
             )
+            if (plan.isEmpty()) return@withTransaction emptyList()
+            rows.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + plan.size)) }
+            val made = plan.mapIndexed { index, step ->
+                SetLogEntity(
+                    sessionId = sessionId,
+                    exerciseId = exerciseId,
+                    exercisePosition = first.exercisePosition,
+                    setIndex = index,
+                    reps = step.reps,
+                    weightKg = step.weightKg,
+                    modifiers = first.modifiers,
+                    done = false,
+                    kind = SetKind.WARMUP.name,
+                    supersetGroup = first.supersetGroup,
+                )
+            }
+            sessionDao.insertSets(made)
         }
-        sessionDao.insertSets(made)
     }
 
     /**

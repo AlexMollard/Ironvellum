@@ -148,6 +148,8 @@ object Progression {
         clearedRun: Int = 0,
         /** The unit the advice is worded in; lb moves loads on the lb grid, so "225 lb" follows "220.5 lb". */
         unit: LoadUnit = LoadUnit.KG,
+        /** The vest and belt this lift is loaded with ([WornLoad.forLift]), or null: the step above, as ever. */
+        worn: LoadKit? = null,
     ): Recommendation {
         val band = repBand(mode, targetReps)
         val weight = lastWeightKg
@@ -163,7 +165,8 @@ object Progression {
             // Grinding a load you have already failed three times is how people
             // stay stuck: back it off and climb again.
             if (stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight > 0.0) {
-                val backedOff = roundToStep(weight * (1 - DELOAD_FRACTION), step, unit)
+                val deloaded = weight * (1 - DELOAD_FRACTION)
+                val backedOff = worn?.roundKg(deloaded, unit) ?: roundToStep(deloaded, step, unit)
                 val rebuild = if (hold) "rebuild the $targetReps s hold" else "rebuild from ${band.first} reps"
                 return Recommendation(
                     backedOff,
@@ -216,7 +219,7 @@ object Progression {
             if (lever == Lever.REPS_THEN_LOAD && lastReps >= BODYWEIGHT_REP_CEILING) {
                 return Recommendation(
                     weight, lastReps,
-                    "Reps are high enough — add ${Loads.withUnit(firstStepKg(unit), unit)} or take a harder variation",
+                    "Reps are high enough — add ${Loads.withUnit(worn?.firstStepKg(unit) ?: firstStepKg(unit), unit)} or take a harder variation",
                     changed = true,
                 )
             }
@@ -224,10 +227,13 @@ object Progression {
             val nextReps = if (lever == Lever.REPS_THEN_LOAD) climbed.coerceAtMost(BODYWEIGHT_REP_CEILING) else climbed
             return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", changed = true)
         }
-        val loaded = nextLoad(weight, step, unit)
-        val addedLabel = Loads.withUnit(loaded - weight, unit)
+        // Null when the vest is full and no belt carries the load on: it holds and reps do the climbing.
+        val loaded = if (worn != null) worn.nextKg(weight, unit) else nextLoad(weight, step, unit)
+        val addedLabel = loaded?.let { Loads.withUnit(it - weight, unit) }.orEmpty()
         return when (mode) {
-            TrainingMode.STRENGTH -> {
+            TrainingMode.STRENGTH -> if (loaded == null) {
+                heldAtVestMax(weight, lastReps, worn, unit)
+            } else {
                 val nextReps = band.first
                 Recommendation(
                     loaded,
@@ -238,17 +244,36 @@ object Progression {
             }
             TrainingMode.HYPERTROPHY ->
                 if (lastReps >= band.last) {
-                    Recommendation(
-                        loaded,
-                        targetReps,
-                        "Rep ceiling reached — add $addedLabel, back to $targetReps reps",
-                        changed = true,
-                    )
+                    if (loaded == null) {
+                        heldAtVestMax(weight, lastReps, worn, unit)
+                    } else {
+                        Recommendation(
+                            loaded,
+                            targetReps,
+                            "Rep ceiling reached — add $addedLabel, back to $targetReps reps",
+                            changed = true,
+                        )
+                    }
                 } else {
                     val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
                     Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", changed = true)
                 }
         }
+    }
+
+    /**
+     * A cleared trial on a worn load that cannot go up: the vest is full and no belt carries it on. The load
+     * holds and reps climb as bodyweight reps do, to [BODYWEIGHT_REP_CEILING], then a harder variation.
+     */
+    private fun heldAtVestMax(weight: Double, lastReps: Int, worn: LoadKit?, unit: LoadUnit): Recommendation {
+        val top = Loads.withUnit(worn?.vestMaxKg ?: weight, unit)
+        if (lastReps >= BODYWEIGHT_REP_CEILING) {
+            return Recommendation(
+                weight, lastReps, "Vest full at $top, reps are high enough — take a harder variation", changed = true,
+            )
+        }
+        val nextReps = (lastReps + REP_STEP).coerceAtMost(BODYWEIGHT_REP_CEILING)
+        return Recommendation(weight, nextReps, "Vest full at $top — climb to $nextReps reps", changed = true)
     }
 
     /**
@@ -291,6 +316,8 @@ object Progression {
         exerciseName: String = "",
         lever: Lever = Lever.LOAD,
         unit: LoadUnit = LoadUnit.KG,
+        /** The lifter's vest and belt; applied only to the movements that take them. */
+        kit: LoadKit? = null,
     ): Recommendation {
         val latest = sessions.firstOrNull().orEmpty()
         val last = latest.lastOrNull()
@@ -320,6 +347,7 @@ object Progression {
             lever = lever,
             clearedRun = clearedRun,
             unit = unit,
+            worn = WornLoad.forLift(kit, exerciseName, lever),
         )
     }
 
@@ -333,5 +361,6 @@ object Progression {
         exerciseName: String = "",
         lever: Lever = Lever.LOAD,
         unit: LoadUnit = LoadUnit.KG,
-    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever, unit)
+        kit: LoadKit? = null,
+    ): Recommendation = fromSessions(mode, targetReps, minSets, listOf(sets), muscleGroup, exerciseName, lever, unit, kit)
 }

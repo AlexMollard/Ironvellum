@@ -26,9 +26,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.ProgramGenerator
+import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.ui.components.EntryCard
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -40,6 +42,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** One load step: 2.5 kg, or 5 lb for a lifter who counts in pounds. */
 internal fun loadStepKg(unit: LoadUnit): Double = if (unit == LoadUnit.KG) 2.5 else 5.0 * 0.45359237
+
+/** The kit a plan entry's load is stepped in: the lifter's vest and belt on a loaded bodyweight lift, else null. */
+internal fun wornFor(entry: PlannedEntry, equipment: Equipment?): LoadKit? =
+    WornLoad.forLift(equipment?.kit, entry.exerciseName, weighted = null)
 
 /** A label, then − value +; the pads are 48dp and say whose count they change. */
 @Composable
@@ -186,7 +192,8 @@ internal fun EffortEntryEditor(
                 more = "More load for $name",
                 onLess = { if (enabled) onLoad(-1) },
                 onMore = { if (enabled) onLoad(1) },
-                moreEnabled = enabled && (cap == null || load < cap - 1e-9),
+                moreEnabled = enabled && (cap == null || load < cap - 1e-9) &&
+                    wornFor(entry, equipment)?.let { it.nextKg(load, Units.current) != null } != false,
             )
         }
         dumbbellNote(entry, equipment, capLabel)?.let { note ->

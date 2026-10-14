@@ -32,7 +32,12 @@ class IronvellumApp : Application() {
 
     val database: IronvellumDatabase by lazy { IronvellumDatabase.create(this) }
     val healthSync: HealthSync by lazy { HealthSync(this) }
-    val repository: Repository by lazy { Repository(database, healthSync, PrefsHighestBandStore(this)) }
+    val repository: Repository by lazy {
+        Repository(
+            database, healthSync, PrefsHighestBandStore(this),
+            loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
+        )
+    }
 
     /**
      * Cloud objects are app-scoped so the auth session is shared: two clients
@@ -90,6 +95,8 @@ class IronvellumApp : Application() {
         // restores a session or touches the cloud, so the first client is
         // built against the backend the lifter actually chose.
         Cloud.init(this)
+        // The lifter's vest and belt, off the main thread: the load steppers read them from the store's flow.
+        appScope.launch { runCatching { com.ironvellum.app.data.ProgramAnswersStore.get(this@IronvellumApp) } }
         appScope.launch {
             repository.ensureSeeded()
             // Signed in, the cloud name is the profile name. Started once the

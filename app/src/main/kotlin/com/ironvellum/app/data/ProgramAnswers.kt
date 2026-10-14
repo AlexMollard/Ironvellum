@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
@@ -59,6 +60,9 @@ object ProgramAnswersStore {
     private const val KEY_GEAR = "gear"
     private const val KEY_DUMBBELL_MAX = "dumbbellMaxKg"
     private const val KEY_DUMBBELL_PAIR = "dumbbellPair"
+    private const val KEY_VEST_MAX = "vestMaxKg"
+    private const val KEY_VEST_BLOCK = "vestBlockKg"
+    private const val KEY_DIP_BELT = "dipBelt"
     private const val KEY_DAYS = "daysPerWeek"
     private const val KEY_PRIORITIES = "priorities"
     private const val KEY_COMPOUND_ONLY = "compoundOnly"
@@ -73,6 +77,18 @@ object ProgramAnswersStore {
      * MY GEAR filter reads it; null until gear is first saved.
      */
     val equipment: StateFlow<Equipment?> = _equipment.asStateFlow()
+
+    /**
+     * The vest and dip belt the lifter owns, as last read or saved; none until the gear is first read.
+     * The step of every loaded bodyweight lift reads it, so a screen that steps loads primes it with [get].
+     */
+    val kit: LoadKit get() = _equipment.value?.kit ?: LoadKit.NONE
+
+    /** [kit] after reading the prefs, for a caller that cannot rely on a screen having primed the store. */
+    fun kit(context: Context): LoadKit {
+        get(context)
+        return kit
+    }
 
     fun get(context: Context): ProgramAnswers? {
         val (equipment, answers) = parse(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
@@ -102,6 +118,11 @@ object ProgramAnswersStore {
         val gear = field { enumsOf<Gear>(prefs.getString(KEY_GEAR, null)) }
         val dumbbellMaxKg = field { prefs.getString(KEY_DUMBBELL_MAX, null)?.toDoubleOrNull() }
         val dumbbellPair = field { if (prefs.contains(KEY_DUMBBELL_PAIR)) prefs.getBoolean(KEY_DUMBBELL_PAIR, true) else null }
+        // Absent on gear saved before the vest and belt existed: not owned.
+        val vestMaxKg = field { prefs.getString(KEY_VEST_MAX, null)?.toDoubleOrNull() }?.takeIf { it > 0.0 }
+        val vestBlockKg = field { prefs.getString(KEY_VEST_BLOCK, null)?.toDoubleOrNull() }?.takeIf { it > 0.0 }
+            ?: LoadKit.DEFAULT_VEST_BLOCK_KG
+        val dipBelt = field { prefs.getBoolean(KEY_DIP_BELT, false) } ?: false
         val days = field { prefs.getInt(KEY_DAYS, -1) } ?: -1
         val priorities = field { enumsOf<MuscleArea>(prefs.getString(KEY_PRIORITIES, null)) }.orEmpty()
         // Absent on answers saved before the toggle existed: off.
@@ -120,6 +141,7 @@ object ProgramAnswersStore {
                 gear = gear ?: emptySet(),
                 dumbbellMaxKg = dumbbellMaxKg,
                 dumbbellPair = dumbbellPair ?: true,
+                kit = LoadKit(vestMaxKg, vestBlockKg, dipBelt),
             )
         }
         val answers = if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
@@ -146,6 +168,9 @@ object ProgramAnswersStore {
         putString(KEY_GEAR, equipment.gear.joinToString(",") { it.name })
         equipment.dumbbellMaxKg?.let { putString(KEY_DUMBBELL_MAX, it.toString()) } ?: remove(KEY_DUMBBELL_MAX)
         putBoolean(KEY_DUMBBELL_PAIR, equipment.dumbbellPair)
+        equipment.kit.vestMaxKg?.let { putString(KEY_VEST_MAX, it.toString()) } ?: remove(KEY_VEST_MAX)
+        putString(KEY_VEST_BLOCK, equipment.kit.vestBlockKg.toString())
+        putBoolean(KEY_DIP_BELT, equipment.kit.dipBelt)
     }
 
     fun save(context: Context, answers: ProgramAnswers) {

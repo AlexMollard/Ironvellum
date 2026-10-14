@@ -29,13 +29,15 @@ enum class Gear(val label: String) {
  * cables included, with no dumbbell cap. [dumbbellMaxKg] is the per-dumbbell
  * ceiling; null means no cap (full gym, or never answered). [dumbbellPair]
  * is false when the lifter owns a single dumbbell, which rules out the
- * two-dumbbell presses and flys.
+ * two-dumbbell presses and flys. [kit] is the vest and dip belt that set the
+ * increments of loaded bodyweight lifts; the default owns neither.
  */
 data class Equipment(
     val fullGym: Boolean,
     val gear: Set<Gear> = emptySet(),
     val dumbbellMaxKg: Double? = null,
     val dumbbellPair: Boolean = true,
+    val kit: LoadKit = LoadKit.NONE,
 ) {
     companion object {
         val FULL_GYM = Equipment(fullGym = true, gear = Gear.entries.toSet())

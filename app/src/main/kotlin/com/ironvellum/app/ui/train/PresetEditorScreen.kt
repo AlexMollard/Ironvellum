@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
 import androidx.activity.compose.BackHandler
@@ -85,6 +88,7 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.StepperRow
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.UndoBar
@@ -340,8 +344,26 @@ private fun loadTarget(kgText: String): String =
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, onKgText: (String) -> Unit) {
+private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, onKgText: (String) -> Unit) {
     val unit = Units.current
+    if (worn != null) {
+        // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
+        val kg = DecimalInput.parse(kgText) ?: 0.0
+        fun shown(v: Double) = Loads.fieldText(v, unit)
+        StepperRow(
+            label = "Load", value = if (unit == LoadUnit.KG || kgText.isBlank()) kgText else shown(kg), unit = unit.label,
+            less = "Lighter load", more = "Heavier load", error = error, decimal = true, maxDigits = 0,
+            onValue = { typed ->
+                when {
+                    unit == LoadUnit.KG || typed.isBlank() -> onKgText(typed)
+                    else -> Loads.parse(typed, unit, MAX_LOAD_KG).getOrNull()?.let { onKgText(formatSteppedFigure(it)) }
+                }
+            },
+            onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
+            onMore = { onKgText(formatSteppedFigure(worn.nextKg(kg, unit) ?: kg)) },
+        )
+        return
+    }
     if (unit == LoadUnit.KG) {
         DecimalStepper("Load", kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
         return
@@ -467,6 +489,10 @@ fun PresetEditorScreen(
                         EntryItem(
                             entry = entry,
                             metric = metric,
+                            worn = WornLoad.forLift(
+                                ProgramAnswersStore.kit, entry.exerciseName,
+                                ui.exercises.firstOrNull { it.id == entry.exerciseId }?.isWeighted, metric,
+                            ),
                             open = open == index,
                             supersetNumber = numbers[index],
                             partners = supersetPartners(ui.entries, index),
@@ -724,6 +750,8 @@ fun PresetEditorScreen(
 private fun EntryItem(
     entry: EditorEntry,
     metric: ExerciseMetric,
+    /** The vest and belt this movement is loaded with ([WornLoad.forLift]); null steps the load as ever. */
+    worn: LoadKit?,
     open: Boolean,
     /** The "Superset 1" this entry is in, by its place in the rite; null when it is in none. */
     supersetNumber: Int?,
@@ -794,7 +822,7 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit

@@ -227,9 +227,11 @@ object ProgramRules {
         strength: StrengthProfile,
         reps: Int,
         rir: Int,
+        /** The vest and belt a worn-load lift is done in ([WornLoad.forLift]); null floors to the usual step. */
+        worn: LoadKit? = null,
     ): Pair<Double, String>? {
         val e1rm = strength.bestE1rmKg[exerciseName.trim().lowercase()] ?: return null
-        return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir) to
+        return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir, worn) to
             "from your ${maxE1rmLabel(e1rm)} kg estimated 1-rep max"
     }
 
@@ -242,8 +244,14 @@ object ProgramRules {
         e1rm: Double,
         reps: Int,
         rir: Int,
+        worn: LoadKit? = null,
     ): Double {
         val raw = e1rm / (1.0 + (reps + rir) / 30.0)
+        // The vest's own blocks, and never past its top when no belt carries the load on.
+        if (worn != null) {
+            val top = worn.vestMaxKg?.takeIf { !worn.dipBelt }
+            return worn.floorKg(if (top != null) minOf(raw, top) else raw)
+        }
         val step = Progression.weightStepKg(muscleGroup, exerciseName)
         val floored = floor(raw / step) * step
         return floored.coerceAtLeast(step)
@@ -303,6 +311,7 @@ object ProgramRules {
         strength: StrengthProfile,
         reps: Int,
         rir: Int,
+        worn: LoadKit? = null,
     ): Pair<Double, String>? {
         val key = exerciseName.trim().lowercase()
         val ownFactor = MovementDifficulty.loadFactor(exerciseName)
@@ -318,7 +327,7 @@ object ProgramRules {
             val forceE1rm = sourceE1rm * sourceFactor
             val estimatedForce = forceE1rm * r * ESTIMATE_SAFETY_MARGIN
             val marked = estimatedForce / ownFactor
-            val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir)
+            val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir, worn)
             val sourceLabel = source.split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
             return load to "estimate from $sourceLabel"
         }

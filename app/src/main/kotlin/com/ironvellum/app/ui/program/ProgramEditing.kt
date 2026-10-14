@@ -3,6 +3,8 @@ package com.ironvellum.app.ui.program
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.StrengthProfile
@@ -32,10 +34,25 @@ internal fun PlannedEntry.withSetsDelta(delta: Int): PlannedEntry =
 
 /**
  * Load stepped by [delta] steps of [stepKg], never above [capKg] (the lifter's own heaviest dumbbell) and
- * never below one step. A bodyweight movement has no load to step and is returned as it is.
+ * never below one step. A bodyweight movement has no load to step and is returned as it is. With a [worn]
+ * kit (the vest on a loaded bodyweight lift) each step is the kit's next block or belt plate instead, and
+ * the load stays put where the kit has nowhere further to go.
  */
-internal fun PlannedEntry.withLoadDelta(delta: Int, stepKg: Double, capKg: Double? = null): PlannedEntry {
+internal fun PlannedEntry.withLoadDelta(
+    delta: Int,
+    stepKg: Double,
+    capKg: Double? = null,
+    worn: LoadKit? = null,
+    unit: LoadUnit = LoadUnit.KG,
+): PlannedEntry {
     val load = targetWeightKg ?: return this
+    if (worn != null) {
+        var next = load
+        repeat(kotlin.math.abs(delta)) {
+            next = (if (delta > 0) worn.nextKg(next, unit) else worn.previousKg(next, unit)) ?: next
+        }
+        return copy(targetWeightKg = next)
+    }
     val top = capKg ?: MAX_LOAD_KG
     val next = (Math.round((load + delta * stepKg) * 4) / 4.0).coerceIn(minOf(stepKg, top), maxOf(top, load))
     return copy(targetWeightKg = next)

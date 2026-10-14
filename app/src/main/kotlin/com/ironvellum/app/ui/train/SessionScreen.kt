@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
@@ -171,6 +172,7 @@ import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SessionXp
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.workingNumber
@@ -1020,7 +1022,10 @@ fun SessionScreen(
                                 // Before anything is logged, on a loaded movement with no warm-up yet.
                                 onWarmup = if (
                                     exercise != null && block.sets.none { it.warmup || it.done } &&
-                                    WarmupRamp.planFor(exercise.name, exercise.muscleGroup.name, metric, first.weightKg).isNotEmpty()
+                                    WarmupRamp.planFor(
+                                        exercise.name, exercise.muscleGroup.name, metric, first.weightKg,
+                                        kit = ProgramAnswersStore.kit, weighted = weighted, unit = Units.current,
+                                    ).isNotEmpty()
                                 ) {
                                     { viewModel.addWarmupRamp(block.id, ::offerRampUndo) }
                                 } else {
@@ -1608,11 +1613,23 @@ internal const val LOAD_INPUT_DECIMALS = 3
 internal fun cleanLoadInput(typed: TextFieldValue): TextFieldValue =
     typed.copy(text = DecimalInput.sanitize(typed.text, LOAD_INPUT_DECIMALS, LOAD_INPUT_MAX_CHARS))
 
-internal fun stepDownKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double? =
-    Loads.stepDown(kg, unit, gridLb, LOAD_STEP_KG)
+/**
+ * One step down the load. A [worn] kit (the vest on a bodyweight lift, see [WornLoad.forLift]) steps in its
+ * own blocks and belt plates; without one it is the movement's grid, as ever.
+ */
+internal fun stepDownKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB, worn: LoadKit? = null): Double? =
+    if (worn != null) {
+        if (kg == null) null else worn.previousKg(kg, unit)
+    } else {
+        Loads.stepDown(kg, unit, gridLb, LOAD_STEP_KG)
+    }
 
-internal fun stepUpKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double =
-    Loads.stepUp(kg, unit, gridLb, LOAD_STEP_KG)
+/**
+ * One step up the load. At a full vest with no belt the kit has no next load, and a button that does nothing
+ * reads as broken: the lifter is overriding the plan by hand, so the movement's own grid takes over there.
+ */
+internal fun stepUpKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB, worn: LoadKit? = null): Double =
+    worn?.nextKg(kg ?: 0.0, unit) ?: Loads.stepUp(kg, unit, gridLb, LOAD_STEP_KG)
 
 /** In lb the ± buttons walk 5 lb on compounds and 2.5 lb on small work, from the movement's kg progression step. */
 internal const val LOAD_STEP_LB = 5.0
@@ -1700,6 +1717,7 @@ private val REST_ROW_HEIGHT_WITH_EFFORT = 52.dp
 private val EFFORT_BLOCK_HEIGHT = 76.dp
 
 private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
+    val worn = WornLoad.forLift(ProgramAnswersStore.kit, set.exerciseName, weighted, metric)
     fun load(): Figure {
         val kg = set.weightKg?.takeIf { it > 0.0 }
         return Figure(
@@ -1708,8 +1726,8 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
             value = kg?.let { Units.format(it) } ?: if (weighted) "0" else "BW",
             unit = if (kg != null || weighted) Units.name else "",
             what = "load",
-            minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
-            plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
+            minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
+            plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
         )
     }
     fun minutes(): Figure {

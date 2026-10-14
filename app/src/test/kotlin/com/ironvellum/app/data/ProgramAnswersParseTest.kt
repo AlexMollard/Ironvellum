@@ -3,6 +3,7 @@ package com.ironvellum.app.data
 import android.content.SharedPreferences
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
@@ -123,6 +124,39 @@ class ProgramAnswersParseTest {
         )
         with(ProgramAnswersStore) { MapEditor(saved).putAnswers(answers) }
         assertEquals(90, saved["sessionMinutes"])
+    }
+
+    @Test
+    fun `gear saved before the vest and belt existed reads as owning neither`() {
+        val (equipment, _) = parse()
+        assertEquals(LoadKit.NONE, equipment!!.kit)
+        assertNull(equipment.kit.vestMaxKg)
+        assertEquals(LoadKit.DEFAULT_VEST_BLOCK_KG, equipment.kit.vestBlockKg, 0.0)
+        assertEquals(false, equipment.kit.dipBelt)
+    }
+
+    @Test
+    fun `a saved vest and belt round-trip, and a removed vest is forgotten`() {
+        val saved = mutableMapOf<String, Any?>()
+        val kit = LoadKit(vestMaxKg = 30.0, vestBlockKg = 0.5, dipBelt = true)
+        val answers = ProgramAnswers(
+            VolumeLevel.LOW, TrainingFocus.MUSCLE, Equipment(fullGym = false, gear = setOf(Gear.PULL_UP_BAR), kit = kit),
+            3, emptySet(), TrainingSplit.FULL_BODY,
+        )
+        with(ProgramAnswersStore) { MapEditor(saved).putAnswers(answers) }
+        assertEquals(kit, ProgramAnswersStore.parse(MapPrefs(saved)).first!!.kit)
+        with(ProgramAnswersStore) { MapEditor(saved).putAnswers(answers.copy(equipment = answers.equipment.copy(kit = LoadKit.NONE))) }
+        assertEquals(LoadKit.NONE, ProgramAnswersStore.parse(MapPrefs(saved)).first!!.kit)
+    }
+
+    @Test
+    fun `a corrupt vest value reads as no vest and voids nothing else`() {
+        val (equipment, answers) = parse("vestMaxKg" to "heavy", "vestBlockKg" to "-3", "dipBelt" to "yes")
+        assertNull(equipment!!.kit.vestMaxKg)
+        assertEquals(LoadKit.DEFAULT_VEST_BLOCK_KG, equipment.kit.vestBlockKg, 0.0)
+        assertEquals(false, equipment.kit.dipBelt)
+        assertEquals(24.0, equipment.dumbbellMaxKg)
+        assertNotNull(answers)
     }
 
     @Test
