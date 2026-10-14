@@ -144,7 +144,13 @@ import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
+import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.SchemeText
+import com.ironvellum.app.domain.SchemeType
+import com.ironvellum.app.domain.SetScheme
+import com.ironvellum.app.domain.TopMark
+import com.ironvellum.app.domain.TrialHints
+import android.widget.Toast
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.ui.components.animatorsOn
@@ -283,6 +289,35 @@ class SessionViewModel(
      */
     val reasons: StateFlow<Map<Long, String>> = flow { emit(repo.trialReasons(sessionId)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** The rite's scheme of each lift in this trial that has one, for the set hints; re-read as lifts come and go. */
+    val schemes: StateFlow<Map<Long, SetScheme>> = repo.observeSessionSets(sessionId)
+        .map { sets -> sets.map { it.exerciseId }.distinct().sorted() }
+        .distinctUntilChanged()
+        .map { ids -> repo.trialSchemes(sessionId, ids) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Each lift's last sealed top set: what a new top set is asked to beat. */
+    val lastTops: StateFlow<Map<Long, TopMark>> = repo.observeSessionSets(sessionId)
+        .map { sets -> sets.map { it.exerciseId }.distinct().sorted() }
+        .distinctUntilChanged()
+        .map { ids -> repo.lastTopMarks(ids) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** "Make set 1 a top set": today only. [onRefused] when the lift cannot take one (see [Repository.makeTopSet]). */
+    fun makeTopSet(exerciseId: Long, onRefused: () -> Unit) {
+        viewModelScope.launchGuarded("make top set") { if (!repo.makeTopSet(sessionId, exerciseId)) onRefused() }
+    }
+
+    /** "Add a drop to the last set": today only. [onRefused] in a superset or when there is no set to follow. */
+    fun addDropAfter(setId: Long, onRefused: () -> Unit) {
+        viewModelScope.launchGuarded("add drop") { if (!repo.addDropAfter(setId)) onRefused() }
+    }
+
+    /** "End drops" on a drop chain: the drops still to do are taken out. */
+    fun endDropsAfter(setId: Long) {
+        viewModelScope.launchGuarded("end drops") { repo.endDropsAfter(setId) }
+    }
 
     /** This trial's own note on each exercise. */
     /** What each movement's rite prescribed, for the share card's squares; empty until loaded. */
@@ -649,6 +684,8 @@ fun SessionScreen(
     val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
+    val schemes by viewModel.schemes.collectAsStateWithLifecycle()
+    val lastTops by viewModel.lastTops.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
     val clocks by viewModel.clocks.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
@@ -1074,6 +1111,34 @@ fun SessionScreen(
                                 onSuperset = { viewModel.linkWithNext(block.id) },
                                 effortSetId = underRowEffort?.id,
                                 onRpe = { set, rpe -> viewModel.setRpe(set.id, rpe) },
+                                hints = if (metric == ExerciseMetric.REPS) {
+                                    val scheme = schemes[block.id]
+                                        ?: if (block.sets.any { it.kind == SetKind.TOP }) SetScheme(type = SchemeType.TOP_BACKOFF) else SetScheme.DEFAULT
+                                    val lift = LiftLoading(
+                                        stepKg = Progression.weightStepKg(exercise?.muscleGroup?.name.orEmpty(), first.exerciseName),
+                                        worn = WornLoad.forLift(ProgramAnswersStore.kit, first.exerciseName, weighted, metric),
+                                        unit = Units.current,
+                                        bodyweightKg = bodyweight,
+                                        bodyweightLift = !weighted,
+                                    )
+                                    val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
+                                    val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
+                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, ::kgLabel)
+                                } else {
+                                    emptyMap()
+                                },
+                                onMakeTopSet = run {
+                                    val working = block.sets.filter { !it.warmup }
+                                    if (metric == ExerciseMetric.REPS && first.supersetGroup == null && working.size >= 2 && working.none { it.kind == SetKind.TOP }) {
+                                        { viewModel.makeTopSet(block.id) { Toast.makeText(screenContext, "This lift cannot take a top set.", Toast.LENGTH_SHORT).show() } }
+                                    } else {
+                                        null
+                                    }
+                                },
+                                onAddDrop = block.sets.lastOrNull { !it.warmup }?.takeIf { metric == ExerciseMetric.REPS && first.supersetGroup == null }?.let { last ->
+                                    { viewModel.addDropAfter(last.id) { Toast.makeText(screenContext, "A drop cannot be added here.", Toast.LENGTH_SHORT).show() } }
+                                },
+                                onEndDrops = viewModel::endDropsAfter,
                                 xpBySet = tally.gains,
                                 onEdit = ::commit,
                                 timed = true,
@@ -1155,7 +1220,7 @@ fun SessionScreen(
                 onSealed = ::requestSeal,
                 slideReset = slideReset,
                 effortSet = effortSet.takeIf { restChipsOn },
-                effortLabel = effortSet?.let { "Set ${it.workingNumber(ui.sets)}" }.orEmpty(),
+                effortLabel = effortSet?.let { if (it.kind == SetKind.TOP) "Top set" else "Set ${it.workingNumber(ui.sets)}" }.orEmpty(),
                 onRate = { rpe -> effortSet?.let { viewModel.setRpe(it.id, rpe) } },
             )
         }
@@ -1288,7 +1353,8 @@ fun SessionScreen(
         // a different load was a deliberate change and is left alone.
         val following = ui.sets.filter {
             it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex &&
-                (it.id == target.id || (!it.warmup && (!it.done || it.weightKg == target.weightKg)))
+                // A top set's load is not the back-offs' (nor a drop's): the sets that follow are the ones of its own kind.
+                (it.id == target.id || (!it.warmup && it.kind == target.kind && (!it.done || it.weightKg == target.weightKg)))
         }
         val focus = remember { FocusRequester() }
         LaunchedEffect(target.id) { focus.requestFocus() }
@@ -2072,9 +2138,21 @@ internal fun OpenExerciseCard(
     onClock: (setId: Long, SetClock?) -> Unit = { _, _ -> },
     /** Logs the active set with the seconds its countdown ended on. */
     onTimedLog: (seconds: Int) -> Unit = {},
+    /** The live trial only: a muted line under a set still to log saying what it is for, by set id. */
+    hints: Map<Long, String> = emptyMap(),
+    /** "Make set 1 a top set", today only; null in an amendment, in a superset, with fewer than two sets or when the lift has a top set. */
+    onMakeTopSet: (() -> Unit)? = null,
+    /** "Add a drop to the last set", today only; null in an amendment or a superset. */
+    onAddDrop: (() -> Unit)? = null,
+    /** "End drops": takes out the drops still to do after the given set; null in an amendment. */
+    onEndDrops: ((afterSetId: Long) -> Unit)? = null,
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
+    // Once working sets are being logged the warm-ups fold into one ticked row, which opens on a tap.
+    var warmupsOpen by remember(first.exerciseId) { mutableStateOf(false) }
+    val foldWarmups = !amend && !warmupsOpen && block.sets.any { it.done && !it.warmup } &&
+        block.sets.none { it.warmup && it.id == editingSetId }
     Column(
         modifier
             .fillMaxWidth()
@@ -2134,6 +2212,8 @@ internal fun OpenExerciseCard(
                 onRestOff = onRestOff,
                 supersetWith = supersetWith.takeIf { !amend },
                 onSuperset = onSuperset.takeIf { !amend },
+                onMakeTopSet = onMakeTopSet.takeIf { !amend },
+                onAddDrop = onAddDrop.takeIf { !amend },
             )
         }
         superset?.let { SupersetStrip(it, first.exerciseName, onUnlink) }
@@ -2188,6 +2268,12 @@ internal fun OpenExerciseCard(
         }
         Spacer(Modifier.height(8.dp))
         block.sets.forEach { set ->
+            if (set.warmup && foldWarmups) {
+                if (set.id == block.sets.first { it.warmup }.id) {
+                    WarmupFoldRow(block.sets.count { it.warmup }) { warmupsOpen = true }
+                }
+                return@forEach
+            }
             key(set.id) {
                 val state = when {
                     (set.done || set.warmup || amend) && set.id == editingSetId -> RowState.EDITING
@@ -2221,6 +2307,14 @@ internal fun OpenExerciseCard(
                     onRpe = { onRpe(set, it) },
                     xpGain = xpBySet[set.id]?.takeIf { it > 0 },
                 )
+                hints[set.id]?.takeIf { state == RowState.ACTIVE || state == RowState.UPCOMING }?.let { hint ->
+                    Text(
+                        hint,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.fillMaxWidth().padding(start = 56.dp, end = 16.dp, bottom = 4.dp),
+                    )
+                }
                 if (set.id == effortSetId && state == RowState.DONE) {
                     EffortStrip(
                         title = "How hard was set ${set.workingNumber(block.sets)}?",
@@ -2230,8 +2324,56 @@ internal fun OpenExerciseCard(
                 }
             }
         }
+        // A drop chain in hand: the drops follow straight on, and a tap ends them.
+        val nextPending = block.sets.firstOrNull { it.isPending }
+        if (onEndDrops != null && nextPending?.kind == SetKind.DROP) {
+            block.sets.lastOrNull { it.setIndex < nextPending.setIndex && it.done }?.let { anchor ->
+                DropStrip(first.exerciseName) { onEndDrops(anchor.id) }
+            }
+        }
         footer?.invoke()
         if (onNote != null) ExerciseNoteRow(first.exerciseName, note, onNote)
+    }
+}
+
+/** The folded warm-ups of a lift whose working sets are under way: one ticked line, opening the sets on a tap. */
+@Composable
+private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
+    val text = "Warm-up · $count ${plural(count, "set", "sets")}"
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(onClickLabel = "Show the warm-up sets", role = Role.Button, onClick = onOpen)
+            .semantics { contentDescription = "$text, done" }
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("✓", style = MaterialTheme.typography.bodyMedium, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.width(18.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f).padding(start = 12.dp))
+        Text("▾", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    }
+}
+
+/** "Drops follow straight on" with End drops: the chain after a set, which asks no rest between its sets. */
+@Composable
+private fun DropStrip(name: String, onEnd: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "Drops follow straight on, no rest",
+            style = MaterialTheme.typography.labelSmall,
+            color = SetKind.DROP.tint(),
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .heightIn(min = 44.dp)
+                .clickable(onClickLabel = "End the drops for $name", role = Role.Button, onClick = onEnd)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("End drops", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+        }
     }
 }
 
@@ -2315,6 +2457,9 @@ private fun ExerciseMenu(
     /** "Superset with <supersetWith>", when the next exercise can be linked. */
     supersetWith: String? = null,
     onSuperset: (() -> Unit)? = null,
+    /** Today-only set shapes: "Make set 1 a top set" and "Add a drop to the last set". */
+    onMakeTopSet: (() -> Unit)? = null,
+    onAddDrop: (() -> Unit)? = null,
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -2339,6 +2484,16 @@ private fun ExerciseMenu(
             }
             onWarmup?.let { item("Warm up", action = it) }
             onAddSet?.let { item("Add set", action = it) }
+            onMakeTopSet?.let { item("Make set 1 a top set", action = it) }
+            onAddDrop?.let { item("Add a drop to the last set", action = it) }
+            if (onMakeTopSet != null || onAddDrop != null) {
+                Text(
+                    "Only changes today's trial. Your rite stays as it is.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
             onEditLoad?.let { item("Edit load", action = it) }
             onModifiers?.let { item("Edit modifiers", action = it) }
             onMoveUp?.let { item("Move up", action = it) }

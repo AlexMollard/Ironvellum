@@ -63,7 +63,8 @@ internal fun SetNumberCell(
 ) {
     var open by remember { mutableStateOf(false) }
     var explain by remember { mutableStateOf(false) }
-    val tag = kind.tag.takeIf { it.isNotEmpty() && it != label }
+    // The top set says its word, gold: it is the one set of the lift the rest are planned around.
+    val tag = (if (kind == SetKind.TOP) "Top" else kind.tag).takeIf { it.isNotEmpty() && it != label }
     Box(
         modifier
             .heightIn(min = 48.dp)

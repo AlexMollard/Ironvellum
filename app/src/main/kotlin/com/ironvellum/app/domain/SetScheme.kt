@@ -75,6 +75,13 @@ data class SetScheme(
         else -> this
     }
 
+    /** The scheme a lift keeps when it joins a superset, which cannot hold drops: Drop sets turn straight, Custom loses its drops. */
+    fun withoutDrops(): SetScheme = when (type) {
+        SchemeType.DROPS -> SetScheme(warmupRamp = warmupRamp)
+        SchemeType.CUSTOM -> copy(custom = custom.filter { it != SetKind.DROP }).let { if (it.custom.isEmpty()) SetScheme(warmupRamp = warmupRamp) else it }
+        else -> this
+    }
+
     /** The reps range the lift's [kind] set is planned in, or null when it takes the entry's own reps. */
     fun repsRange(kind: SetKind): IntRange? = when {
         type == SchemeType.TOP_BACKOFF && kind == SetKind.TOP -> topReps

@@ -77,6 +77,10 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.LiftLoading
+import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.SchemeText
+import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.ui.components.DecimalStepper
 import com.ironvellum.app.ui.components.DockedActionBar
@@ -111,6 +115,8 @@ data class EditorEntry(
     val modifiers: String,
     /** Shared with the adjacent entries done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
+    /** How the lift's sets are laid out; Straight is the plain sets x reps the row always meant. */
+    val scheme: SetScheme = SetScheme.DEFAULT,
 )
 
 data class EditorUi(
@@ -120,6 +126,8 @@ data class EditorUi(
     val scheduledDay: Int? = null,
     val entries: List<EditorEntry> = emptyList(),
     val exercises: List<Exercise> = emptyList(),
+    /** The lifter's latest body weight, which the Sets sheet's preview takes a bodyweight lift's back-off off. */
+    val bodyweightKg: Double? = null,
 )
 
 class PresetEditorViewModel(
@@ -137,6 +145,7 @@ class PresetEditorViewModel(
     init {
         viewModelScope.launch {
             val exercises = repo.observeExercises().first()
+            val bodyweightKg = repo.observeStats().first().firstOrNull()?.weightKg
             val loaded = if (presetId != null) {
                 val existing = repo.observePresets().first().firstOrNull { it.id == presetId }
                 if (existing != null) {
@@ -154,15 +163,17 @@ class PresetEditorViewModel(
                                 weight = entry.targetWeightKg?.let(::formatSteppedFigure) ?: "",
                                 modifiers = entry.modifiers,
                                 supersetGroup = entry.supersetGroup,
+                                scheme = entry.scheme,
                             )
                         },
                         exercises = exercises,
+                        bodyweightKg = bodyweightKg,
                     )
                 } else {
-                    EditorUi(presetId = presetId, exercises = exercises)
+                    EditorUi(presetId = presetId, exercises = exercises, bodyweightKg = bodyweightKg)
                 }
             } else {
-                EditorUi(exercises = exercises)
+                EditorUi(exercises = exercises, bodyweightKg = bodyweightKg)
             }
             _baseline.value = loaded
             _ui.value = loaded
@@ -213,7 +224,10 @@ class PresetEditorViewModel(
     fun linkEntries(index: Int, partner: Int): Supersets.Layout? {
         val list = _ui.value.entries
         val layout = Supersets.link(list.map { it.supersetGroup }, index, partner) ?: return null
-        _ui.value = _ui.value.copy(entries = list.arranged(layout))
+        // A superset cannot hold drops, so a lift joining one drops its drop sets.
+        _ui.value = _ui.value.copy(
+            entries = list.arranged(layout).map { if (it.supersetGroup != null) it.copy(scheme = it.scheme.withoutDrops()) else it },
+        )
         return layout
     }
 
@@ -249,6 +263,7 @@ class PresetEditorViewModel(
                         targetWeightKg = DecimalInput.parse(it.weight),
                         modifiers = it.modifiers.trim(),
                         supersetGroup = it.supersetGroup,
+                        scheme = it.scheme,
                     )
                 },
             )
@@ -344,14 +359,14 @@ private fun loadTarget(kgText: String): String =
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, onKgText: (String) -> Unit) {
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", onKgText: (String) -> Unit) {
     val unit = Units.current
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
         val kg = DecimalInput.parse(kgText) ?: 0.0
         fun shown(v: Double) = Loads.fieldText(v, unit)
         StepperRow(
-            label = "Load", value = if (unit == LoadUnit.KG || kgText.isBlank()) kgText else shown(kg), unit = unit.label,
+            label = label, value = if (unit == LoadUnit.KG || kgText.isBlank()) kgText else shown(kg), unit = unit.label,
             less = "Lighter load", more = "Heavier load", error = error, decimal = true, maxDigits = 0,
             onValue = { typed ->
                 when {
@@ -365,7 +380,7 @@ private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, wo
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper("Load", kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
+        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", 2.5, error, onValue = onKgText)
         return
     }
     fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
@@ -377,7 +392,7 @@ private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, wo
     val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
-        "Load", shown, "lb", "Lighter load", "Heavier load", gridLb, error,
+        label, shown, "lb", "Lighter load", "Heavier load", gridLb, error,
         max = Loads.toUnit(MAX_LOAD_KG, unit),
     ) { lb ->
         typed = lb
@@ -389,8 +404,12 @@ private fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, wo
 internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
     fun v(s: String) = s.ifBlank { "–" }
     return when (metric) {
-        ExerciseMetric.REPS ->
-            "${v(entry.sets)} × ${v(entry.reps)}" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
+        ExerciseMetric.REPS -> {
+            val load = if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
+            // A scheme says its own shape; the entry's sets x reps only stand for Straight.
+            SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1)?.let { it + load }
+                ?: ("${v(entry.sets)} × ${v(entry.reps)}" + load)
+        }
         ExerciseMetric.HOLD ->
             "${v(entry.sets)} × ${v(entry.reps)} s" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
         ExerciseMetric.DURATION -> "${v(entry.sets)} × ${v(entry.reps)} min"
@@ -422,6 +441,8 @@ fun PresetEditorScreen(
     var dragIndex by remember { mutableIntStateOf(-1) }
     // The entry whose superset is being picked.
     var linking by remember { mutableStateOf<Int?>(null) }
+    // The entry whose "Sets for" sheet is open.
+    var setting by remember { mutableStateOf<Int?>(null) }
 
     // Back used to drop every edit without a word; with anything changed it
     // asks first.
@@ -497,6 +518,7 @@ fun PresetEditorScreen(
                             supersetNumber = numbers[index],
                             partners = supersetPartners(ui.entries, index),
                             onSuperset = { linking = index },
+                            onSets = if (metric == ExerciseMetric.REPS && entry.exerciseName.isNotBlank()) ({ setting = index }) else null,
                             onToggle = { open = if (open == index) null else index },
                             onEntry = { viewModel.updateEntry(index, it) },
                             onChange = { swapping = index },
@@ -591,6 +613,33 @@ fun PresetEditorScreen(
                     swapping = null
                 },
                 onDismiss = { swapping = null },
+            )
+        }
+    }
+
+    setting?.let { index ->
+        val entry = ui.entries.getOrNull(index)
+        if (entry == null) {
+            setting = null
+        } else {
+            val exercise = ui.exercises.firstOrNull { it.id == entry.exerciseId }
+            val worn = WornLoad.forLift(ProgramAnswersStore.kit, entry.exerciseName, exercise?.isWeighted, ExerciseMetric.REPS)
+            SetsSheet(
+                entry = entry,
+                lift = LiftLoading(
+                    stepKg = Progression.weightStepKg(exercise?.muscleGroup?.name.orEmpty(), entry.exerciseName),
+                    worn = worn,
+                    unit = Units.current,
+                    bodyweightKg = ui.bodyweightKg,
+                    bodyweightLift = exercise?.isWeighted == false,
+                ),
+                worn = worn,
+                inSuperset = entry.supersetGroup != null,
+                onDone = {
+                    viewModel.updateEntry(index, it)
+                    setting = null
+                },
+                onDismiss = { setting = null },
             )
         }
     }
@@ -758,6 +807,8 @@ private fun EntryItem(
     /** "With Bench press" for the superset it is in; null when it is in none. */
     partners: String?,
     onSuperset: () -> Unit,
+    /** Opens the "Sets for" sheet; null for a movement whose sets are not reps (a hold, a run). */
+    onSets: (() -> Unit)?,
     onToggle: () -> Unit,
     onEntry: (EditorEntry) -> Unit,
     onChange: () -> Unit,
@@ -787,11 +838,28 @@ private fun EntryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
-                )
+                val summary = supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric)
+                val tone = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed
+                if (onSets == null) {
+                    Text(summary, style = MaterialTheme.typography.bodySmall, color = tone)
+                } else {
+                    // The line and its load-shape bars are their own target: a tap here sets the sets, the rest of the row opens the card.
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 36.dp)
+                            .clickable(onClickLabel = "Sets for $name", role = Role.Button, onClick = onSets),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(summary, style = MaterialTheme.typography.bodySmall, color = tone, modifier = Modifier.weight(1f, fill = false))
+                        SchemeBars(
+                            schemeBars(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1),
+                            Modifier.semantics { contentDescription = "Set shape" },
+                            height = 16.dp,
+                        )
+                    }
+                }
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
         }
@@ -808,10 +876,24 @@ private fun EntryItem(
             TextAction("Remove exercise", onRemove)
         },
     ) {
-        WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
+        if (onSets != null) {
+            ListRow(
+                label = "Sets",
+                value = SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1) ?: "Straight",
+                onClickLabel = "Sets for $name",
+                contentPadding = PaddingValues(0.dp),
+                onClick = onSets,
+            )
+        }
+        // A scheme owns the set count and the reps; they are changed in its sheet.
+        val planned = !entry.scheme.isStraight
+        if (!planned) {
+            WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
+        }
         when (metric) {
-            ExerciseMetric.REPS ->
+            ExerciseMetric.REPS -> if (!planned) {
                 WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            }
             ExerciseMetric.HOLD ->
                 WholeStepper("Seconds", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
             ExerciseMetric.DURATION ->
