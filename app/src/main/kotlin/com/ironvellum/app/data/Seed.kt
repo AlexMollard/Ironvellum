@@ -259,6 +259,11 @@ object Seed {
     val exercises: List<ExerciseEntity>
         get() = allExercises
 
+    private val weightedByName: Map<String, Boolean> by lazy { allExercises.associate { it.name.trim().lowercase() to it.isWeighted } }
+
+    /** The catalogue's isWeighted flag for [name], or null for a movement it does not list (a custom one). */
+    fun isWeighted(name: String): Boolean? = weightedByName[name.trim().lowercase()]
+
     /**
      * Static holds carry [ExerciseMetric.HOLD] so their figure is seconds in
      * `durationSec`, never repetitions. The skill tree's claim standard is the

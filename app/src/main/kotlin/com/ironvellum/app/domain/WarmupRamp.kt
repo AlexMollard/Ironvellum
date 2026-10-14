@@ -32,7 +32,14 @@ object WarmupRamp {
      * to the bar or below (barbell) or to nothing (other loads), to the working
      * load or above, or to the same figure as the step before it.
      */
-    fun plan(workingKg: Double, stepKg: Double, barbell: Boolean): List<Step> {
+    fun plan(
+        workingKg: Double,
+        stepKg: Double,
+        barbell: Boolean,
+        /** The vest a worn-load movement is done in: its blocks replace [stepKg] as the rounding. */
+        worn: LoadKit? = null,
+        unit: LoadUnit = LoadUnit.KG,
+    ): List<Step> {
         if (workingKg <= 0.0) return emptyList()
         val step = stepKg.coerceAtLeast(MIN_STEP_KG)
         val floor = if (barbell) BAR_KG else 0.0
@@ -40,7 +47,7 @@ object WarmupRamp {
         val steps = mutableListOf<Step>()
         if (barbell) steps += Step(BAR_KG, BAR_REPS)
         for ((fraction, reps) in STEPS) {
-            val kg = round(workingKg * fraction / step) * step
+            val kg = worn?.roundKg(workingKg * fraction, unit) ?: (round(workingKg * fraction / step) * step)
             val last = steps.lastOrNull()?.weightKg ?: floor
             if (kg <= floor || kg >= workingKg || kg <= last) continue
             steps += Step(kg, reps)
@@ -53,7 +60,16 @@ object WarmupRamp {
      * rep-counted movements with a load are warmed up, at the movement's own load step.
      * The one place the live screen's offer and the repository's insert both ask.
      */
-    fun planFor(exerciseName: String, muscleGroup: String, metric: ExerciseMetric, workingKg: Double?): List<Step> =
+    fun planFor(
+        exerciseName: String,
+        muscleGroup: String,
+        metric: ExerciseMetric,
+        workingKg: Double?,
+        /** The lifter's vest and belt, and the unit they count in; the live screen's offer and the insert pass the same. */
+        kit: LoadKit? = null,
+        weighted: Boolean? = null,
+        unit: LoadUnit = LoadUnit.KG,
+    ): List<Step> =
         if (metric != ExerciseMetric.REPS) {
             emptyList()
         } else {
@@ -61,6 +77,8 @@ object WarmupRamp {
                 workingKg = workingKg ?: 0.0,
                 stepKg = Progression.weightStepKg(muscleGroup, exerciseName),
                 barbell = isBarbell(exerciseName),
+                worn = WornLoad.forLift(kit, exerciseName, weighted, metric),
+                unit = unit,
             )
         }
 

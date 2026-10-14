@@ -52,6 +52,8 @@ import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
@@ -668,6 +670,9 @@ val EquipmentSaver = listSaver<Equipment, Any>(
             it.gear.map { gear -> gear.name },
             it.dumbbellMaxKg ?: -1.0,
             it.dumbbellPair,
+            it.kit.vestMaxKg ?: -1.0,
+            it.kit.vestBlockKg,
+            it.kit.dipBelt,
         )
     },
     restore = { saved ->
@@ -677,6 +682,12 @@ val EquipmentSaver = listSaver<Equipment, Any>(
             gear = (saved[1] as List<String>).map(Gear::valueOf).toSet(),
             dumbbellMaxKg = (saved[2] as Double).takeIf { kg -> kg >= 0.0 },
             dumbbellPair = saved[3] as Boolean,
+            // Instance state saved before the kit existed has four entries: no vest, no belt.
+            kit = if (saved.size >= 7) {
+                LoadKit((saved[4] as Double).takeIf { kg -> kg >= 0.0 }, saved[5] as Double, saved[6] as Boolean)
+            } else {
+                LoadKit.NONE
+            },
         )
     },
 )
@@ -710,14 +721,14 @@ internal fun GearPicker(
                 selected = equipment?.fullGym == true,
                 modifier = Modifier.weight(1f),
                 description = "Full gym: every machine and cable",
-                onClick = { onChange(Equipment.FULL_GYM) },
+                onClick = { onChange(Equipment.FULL_GYM.copy(kit = current.kit)) },
             )
             PickCell(
                 label = "Nothing",
                 selected = nothingSelected(equipment),
                 modifier = Modifier.weight(1f),
                 description = "Nothing: floor work only",
-                onClick = { onChange(Equipment.NOTHING) },
+                onClick = { onChange(Equipment.NOTHING.copy(kit = current.kit)) },
             )
         }
         Gear.entries.chunked(2).forEach { chunk ->
@@ -734,7 +745,7 @@ internal fun GearPicker(
                             // First dumbbell tap sets the max so the stepper has a number to edit.
                             val maxKg = current.dumbbellMaxKg
                                 ?: if (gear == Gear.DUMBBELLS && !on) DEFAULT_DUMBBELL_KG else null
-                            onChange(Equipment(false, gearSet, maxKg, current.dumbbellPair))
+                            onChange(current.copy(fullGym = false, gear = gearSet, dumbbellMaxKg = maxKg))
                         },
                     )
                 }
@@ -782,9 +793,10 @@ internal fun GearPicker(
                 )
             }
         }
+        WornKitPicker(current, onChange)
         if (equipment != null) {
             Text(
-                gearCaption(equipment),
+                gearCaption(equipment) + kitCaption(equipment.kit),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -792,10 +804,76 @@ internal fun GearPicker(
     }
 }
 
+/**
+ * The vest and dip belt, beside the gear: they are not [Gear] (a full gym does not come with a vest), they
+ * only set the increments loaded bodyweight lifts move in. A vest asks for its top load and the size of
+ * its blocks; a belt takes 2.5 kg plates with no ceiling, so it needs no number.
+ */
+@Composable
+private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
+    val kit = current.kit
+    val unit = Units.current
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        val vestOn = kit.vestMaxKg != null
+        PickCell(
+            label = "Weighted vest",
+            selected = vestOn,
+            modifier = Modifier.weight(1f),
+            description = "Weighted vest, ${if (vestOn) "on" else "off"}",
+            onClick = {
+                onChange(current.copy(kit = kit.copy(vestMaxKg = if (vestOn) null else LoadKit.DEFAULT_VEST_KG)))
+            },
+        )
+        PickCell(
+            label = "Dip belt",
+            selected = kit.dipBelt,
+            modifier = Modifier.weight(1f),
+            description = "Dip belt, ${if (kit.dipBelt) "on" else "off"}",
+            onClick = { onChange(current.copy(kit = kit.copy(dipBelt = !kit.dipBelt))) },
+        )
+    }
+    val maxKg = kit.vestMaxKg ?: return
+    KitStepperRow(
+        label = "Vest top load",
+        value = "Up to ${Loads.withUnit(maxKg, unit)}",
+        onLess = { onChange(current.copy(kit = kit.copy(vestMaxKg = LoadKit.stepVestMax(maxKg, -1, unit)))) },
+        onMore = { onChange(current.copy(kit = kit.copy(vestMaxKg = LoadKit.stepVestMax(maxKg, 1, unit)))) },
+    )
+    KitStepperRow(
+        label = "Vest block",
+        value = Loads.withUnit(kit.vestBlockKg, unit),
+        onLess = { onChange(current.copy(kit = kit.copy(vestBlockKg = LoadKit.stepVestBlock(kit.vestBlockKg, -1, unit)))) },
+        onMore = { onChange(current.copy(kit = kit.copy(vestBlockKg = LoadKit.stepVestBlock(kit.vestBlockKg, 1, unit)))) },
+    )
+}
+
+/** A label, then − value +, on the dumbbell stepper's pads. */
+@Composable
+private fun KitStepperRow(label: String, value: String, onLess: () -> Unit, onMore: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
+        TapPad(label = "−", description = "Lower ${label.lowercase()}, currently $value", onClick = onLess)
+        Text(value, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.Ink)
+        TapPad(label = "+", description = "Raise ${label.lowercase()}, currently $value", onClick = onMore)
+    }
+}
+
 /** What the current answer opens up, in plain words. */
 /** The "Nothing" cell is lit only for an explicit empty answer, never for an unanswered one. */
 internal fun nothingSelected(equipment: Equipment?): Boolean =
     equipment != null && !equipment.fullGym && equipment.gear.isEmpty()
+
+/** The vest and belt, appended to the gear caption: "" when the lifter owns neither. */
+private fun kitCaption(kit: LoadKit): String {
+    val vest = kit.vestMaxKg?.let { "weighted vest up to ${Loads.withUnit(it, Units.current)}" }
+    val belt = if (kit.dipBelt) "dip belt" else null
+    val owned = listOfNotNull(vest, belt)
+    return if (owned.isEmpty()) "" else " Plus ${owned.joinToString(" and ")}."
+}
 
 private fun gearCaption(equipment: Equipment): String = when {
     equipment.fullGym -> "Barbells, machines and cables."

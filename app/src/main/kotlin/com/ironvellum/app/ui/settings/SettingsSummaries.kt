@@ -16,10 +16,12 @@ object SettingsSummaries {
     fun armoury(equipment: Equipment?): String = when {
         equipment == null -> "Not set"
         equipment.fullGym -> "Full gym"
-        equipment.gear.isEmpty() -> "Nothing"
+        equipment.gear.isEmpty() && equipment.kit.vestMaxKg == null && !equipment.kit.dipBelt -> "Nothing"
         else -> {
-            val owned = Gear.entries.filter { it in equipment.gear }
-            val shown = owned.take(2).mapIndexed { i, gear -> if (i == 0) gear.label else gear.label.lowercase() }
+            // The vest and belt follow the gear, so a lifter with only them still reads what they own.
+            val owned = Gear.entries.filter { it in equipment.gear }.map { it.label } +
+                listOfNotNull("Weighted vest".takeIf { equipment.kit.vestMaxKg != null }, "Dip belt".takeIf { equipment.kit.dipBelt })
+            val shown = owned.take(2).mapIndexed { i, label -> if (i == 0) label else label.lowercase() }
             shown.joinToString(", ") + if (owned.size > 2) " +${owned.size - 2}" else ""
         }
     }
