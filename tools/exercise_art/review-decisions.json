@@ -110,11 +110,11 @@
     },
     {
       "id": "advanced-tuck-front-lever-1.png",
-      "sha256": "361d3c569b10260416f57e5181501b86761ec2c7ef9e5c788eb963fa0fa069ca",
+      "sha256": "f57fee36083826b6420a9dc2766ef3a599dfee16884ac06778ff8429c148f3c2",
       "status": "approved",
-      "note": "",
+      "note": "Missing far leg corrected; both legs visible. User approved the replacement in chat.",
       "reviewer": "You",
-      "updatedAt": "2026-10-12T03:33:31.822266+00:00"
+      "updatedAt": "2026-10-14T00:43:31.153516+00:00"
     },
     {
       "id": "crow-pose-1.png",
@@ -2694,11 +2694,11 @@
     },
     {
       "id": "archer-push-up-1.png",
-      "sha256": "3aec5b8668fab759eb5f041ec11a1885f349b0d3d1f899e5189696b7ea79f7c2",
+      "sha256": "38aedb1f3c885b696c954eb97b48dc8c3bdaf3a2ba78ac41db375f48b449a1ca",
       "status": "approved",
-      "note": "",
+      "note": "Missing far leg corrected; both legs visible. User approved the replacement in chat.",
       "reviewer": "You",
-      "updatedAt": "2026-10-13T04:26:18.958Z"
+      "updatedAt": "2026-10-14T00:43:31.153516+00:00"
     },
     {
       "id": "arm-circles-1.png",

@@ -1,0 +1,25 @@
+{
+  "schema": "ironvellum-art-review-v1",
+  "batch": 12,
+  "exportedAt": "2026-10-14T00:43:31.153516+00:00",
+  "batchComplete": true,
+  "approvalSource": "User approved both generated leg corrections in chat",
+  "frames": [
+    {
+      "id": "advanced-tuck-front-lever-1.png",
+      "sha256": "f57fee36083826b6420a9dc2766ef3a599dfee16884ac06778ff8429c148f3c2",
+      "status": "approved",
+      "note": "Missing far leg corrected; both legs visible. User approved the replacement in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T00:43:31.153516+00:00"
+    },
+    {
+      "id": "archer-push-up-1.png",
+      "sha256": "38aedb1f3c885b696c954eb97b48dc8c3bdaf3a2ba78ac41db375f48b449a1ca",
+      "status": "approved",
+      "note": "Missing far leg corrected; both legs visible. User approved the replacement in chat.",
+      "reviewer": "You",
+      "updatedAt": "2026-10-14T00:43:31.153516+00:00"
+    }
+  ]
+}

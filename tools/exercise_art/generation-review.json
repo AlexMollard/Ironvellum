@@ -80,7 +80,8 @@
     {
       "id": "advanced-tuck-front-lever-1.png",
       "status": "approved",
-      "pose": "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down."
+      "pose": "Full hold: the torso is flat and horizontal with the arms straight and vertical. The hips are open so the thighs are in line with the back, the knees bent at 90 degrees with the shins pointing down. The knees are not tight to the chest, but the back stays flat, the shoulders pressed down.",
+      "sha256": "f57fee36083826b6420a9dc2766ef3a599dfee16884ac06778ff8429c148f3c2"
     },
     {
       "id": "crow-pose-1.png",
@@ -1695,7 +1696,8 @@
     {
       "id": "archer-push-up-1.png",
       "pose": "Redraw the selected source pose for Archer Push-up, source frame 1, with correct anatomy and equipment. One clear representative still only.",
-      "status": "approved"
+      "status": "approved",
+      "sha256": "38aedb1f3c885b696c954eb97b48dc8c3bdaf3a2ba78ac41db375f48b449a1ca"
     },
     {
       "id": "arm-circles-1.png",
