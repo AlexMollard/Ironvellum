@@ -1045,4 +1045,43 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 42 -> 43, warm-up exercises in rites: a rite entry gains a flag, and every existing entry is worked
+     * (0) with its figures, superset group and scheme intact. A flag written afterwards reads back.
+     * Inserts only into the rite tables, so it holds on whatever v42 adds to the catalogue.
+     */
+    @Test
+    fun upgradeTo43LeavesEveryExistingRiteEntryWorked() = runTest {
+        helper.createDatabase(dbName, 42).use { old ->
+            old.execSQL("INSERT INTO presets (id, name, note, scheduledDay) VALUES (1, 'Pull day', '', 2)")
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position, supersetGroup, setScheme) " +
+                    "VALUES (10, 1, 1, 3, 8, 7.5, 'Weighted', 0, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO preset_entries (id, presetId, exerciseId, targetSets, targetReps, targetWeightKg, modifiers, position, supersetGroup, setScheme) " +
+                    "VALUES (11, 1, 2, 4, 6, NULL, '', 1, 2, 'x')",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 43, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT id, targetSets, targetReps, targetWeightKg, modifiers, supersetGroup, setScheme, warmup FROM preset_entries ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(10L, c.getLong(0))
+                assertEquals(3, c.getInt(1))
+                assertEquals(7.5, c.getDouble(3), 0.0)
+                assertEquals("Weighted", c.getString(4))
+                assertEquals("an old entry is worked", 0, c.getInt(7))
+                assertTrue(c.moveToNext())
+                assertEquals(2, c.getInt(5))
+                assertEquals("x", c.getString(6))
+                assertEquals(0, c.getInt(7))
+            }
+            db.execSQL("UPDATE preset_entries SET warmup = 1 WHERE id = 10")
+            db.query("SELECT COUNT(*) FROM preset_entries WHERE warmup = 1").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(1, c.getInt(0))
+            }
+        }
+    }
 }

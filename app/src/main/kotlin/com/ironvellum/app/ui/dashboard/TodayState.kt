@@ -85,15 +85,27 @@ internal fun firstBegins(kind: DayKind, isToday: Boolean, firstRun: Boolean, has
     }
 
 /** One movement in the day card: its [value] reads "3×7" before, "4/5" under way, "3/3 · 90 kg × 7" sealed. */
-internal data class DayRow(val name: String, val value: String, val done: Int, val total: Int, val checked: Boolean) {
+internal data class DayRow(
+    val name: String,
+    val value: String,
+    val done: Int,
+    val total: Int,
+    val checked: Boolean,
+    /** A warm-up exercise: read as one, and not a movement of the rite's count. */
+    val warmup: Boolean = false,
+) {
     /** Some sets logged but not all: a mini bar rides the value. */
     val partly: Boolean get() = done in 1 until total
 }
 
-/** The rite's own movements, nothing logged yet. */
+/** The rite's own movements, nothing logged yet; its warm-ups lead, marked as such. */
 internal fun plannedRows(entries: List<PresetEntry>): List<DayRow> =
-    entries.sortedBy { it.position }.map {
-        DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false)
+    entries.sortedWith(compareBy<PresetEntry>({ !it.warmup }, { it.position })).map {
+        if (it.warmup) {
+            DayRow(it.exerciseName, "Warm-up", done = 0, total = it.targetSets, checked = false, warmup = true)
+        } else {
+            DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false)
+        }
     }
 
 /**

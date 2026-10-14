@@ -126,6 +126,8 @@ data class EditorEntry(
     val supersetGroup: Int? = null,
     /** How the lift's sets are laid out; Straight is the plain sets x reps the row always meant. */
     val scheme: SetScheme = SetScheme.DEFAULT,
+    /** A warm-up exercise: whole, done before the first working set, in no superset and with no scheme. */
+    val warmup: Boolean = false,
 ) {
     /** The entry with its reps (seconds, for a hold) typed as [text]; a rep range it carries starts from them. */
     fun withReps(text: String): EditorEntry =
@@ -177,6 +179,7 @@ class PresetEditorViewModel(
                                 modifiers = entry.modifiers,
                                 supersetGroup = entry.supersetGroup,
                                 scheme = entry.scheme,
+                                warmup = entry.warmup,
                             )
                         },
                         exercises = exercises,
@@ -229,13 +232,36 @@ class PresetEditorViewModel(
     fun moveEntry(index: Int, delta: Int): Supersets.Layout? {
         val list = _ui.value.entries
         val layout = Supersets.move(list.map { it.supersetGroup }, index, up = delta < 0) ?: return null
-        _ui.value = _ui.value.copy(entries = list.arranged(layout))
+        val moved = list.arranged(layout)
+        // Warm-ups lead the rite: a move that would carry one past a worked exercise, or the reverse, goes nowhere.
+        if (!moved.warmupsFirst()) return null
+        _ui.value = _ui.value.copy(entries = moved)
         return layout
+    }
+
+    /**
+     * Marks entry [index] as a warm-up, or as worked again, and returns where it now sits: warm-ups lead the rite.
+     * A warm-up leaves its superset and keeps no scheme, so what it was is not carried into the warm-up step.
+     */
+    fun setWarmup(index: Int, warmup: Boolean): Int {
+        val list = _ui.value.entries
+        val entry = list.getOrNull(index) ?: return index
+        if (entry.warmup == warmup) return index
+        val groups = if (warmup) Supersets.unlink(list.map { it.supersetGroup }, index) else list.map { it.supersetGroup }
+        val marked = list.mapIndexed { i, e ->
+            val e2 = e.copy(supersetGroup = groups[i])
+            if (i == index) e2.copy(warmup = warmup, scheme = if (warmup) SetScheme.DEFAULT else e2.scheme) else e2
+        }
+        val order = marked.indices.sortedBy { if (marked[it].warmup) 0 else 1 }
+        _ui.value = _ui.value.copy(entries = order.map { marked[it] })
+        return order.indexOf(index)
     }
 
     /** Links entry [partner] to [index] (it moves next to it); null when the pair cannot be made. */
     fun linkEntries(index: Int, partner: Int): Supersets.Layout? {
         val list = _ui.value.entries
+        // A warm-up is never in a superset.
+        if (list.getOrNull(index)?.warmup != false || list.getOrNull(partner)?.warmup != false) return null
         val layout = Supersets.link(list.map { it.supersetGroup }, index, partner) ?: return null
         // A superset cannot hold drops, so a lift joining one drops its drop sets.
         _ui.value = _ui.value.copy(
@@ -279,6 +305,7 @@ class PresetEditorViewModel(
                         modifiers = it.modifiers.trim(),
                         supersetGroup = it.supersetGroup,
                         scheme = it.scheme,
+                        warmup = it.warmup,
                     )
                 },
             )
@@ -319,6 +346,9 @@ internal fun EditorEntry.followingLoad(before: EditorEntry, exercises: List<Exer
     return if (next == modifiers) this else copy(modifiers = next)
 }
 
+/** Whether every warm-up comes before every worked entry, as a saved rite lists them. */
+internal fun List<EditorEntry>.warmupsFirst(): Boolean = indexOfFirst { !it.warmup }.let { firstWorked -> firstWorked < 0 || drop(firstWorked).none { it.warmup } }
+
 /** The entries in the order and groups [layout] says. */
 internal fun List<EditorEntry>.arranged(layout: Supersets.Layout): List<EditorEntry> =
     layout.order.mapIndexed { slot, old -> this[old].copy(supersetGroup = layout.groups[slot]) }
@@ -352,9 +382,9 @@ internal fun missingTargets(entry: EditorEntry, metric: ExerciseMetric): Set<Tar
 private fun EditorUi.metricOf(entry: EditorEntry): ExerciseMetric =
     exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
 
-/** A named rite with at least one exercise, every target of which is valid. */
+/** A named rite with at least one worked exercise (warm-ups alone leave a trial nothing to log), every target of which is valid. */
 internal fun EditorUi.canSave(): Boolean =
-    name.isNotBlank() && entries.isNotEmpty() && entries.all { missingTargets(it, metricOf(it)).isEmpty() }
+    name.isNotBlank() && entries.any { !it.warmup } && entries.all { missingTargets(it, metricOf(it)).isEmpty() }
 
 /** Whether [current] differs from the workout as loaded in anything the lifter edits. */
 internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
@@ -551,7 +581,9 @@ fun PresetEditorScreen(
                             supersetNumber = numbers[index],
                             partners = supersetPartners(ui.entries, index),
                             onSuperset = { linking = index },
-                            onSets = if (metric == ExerciseMetric.REPS && entry.exerciseName.isNotBlank()) ({ setting = index }) else null,
+                            onSets = if (metric == ExerciseMetric.REPS && entry.exerciseName.isNotBlank() && !entry.warmup) ({ setting = index }) else null,
+                            // The toggle sits in the open card, so the open row follows the entry to its new place.
+                            onWarmup = { on -> open = viewModel.setWarmup(index, on) },
                             onToggle = { open = if (open == index) null else index },
                             onEntry = { viewModel.updateEntry(index, it) },
                             onChange = { swapping = index },
@@ -574,7 +606,11 @@ fun PresetEditorScreen(
                 if (ui.name.isNotBlank() && ui.entries.isNotEmpty() && !ui.canSave()) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "Fill in the marked targets to save. Loads top out at ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.",
+                        if (ui.entries.all { it.warmup }) {
+                            "Add an exercise that is not a warm-up: a rite of warm-ups alone has nothing to log."
+                        } else {
+                            "Fill in the marked targets to save. Loads top out at ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}."
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -695,7 +731,8 @@ fun PresetEditorScreen(
                         choices.forEach { (partner, label) ->
                             val selected = if (partner == null) together == null else together != null && partner in together
                             // A partner is on offer while the group stays within three; one already linked just shows its tick.
-                            val enabled = selected || partner == null || Supersets.canLink(groups, index, partner)
+                            val enabled = selected || partner == null ||
+                                (!ui.entries[partner].warmup && Supersets.canLink(groups, index, partner))
                             Row(
                                 Modifier
                                     .fillMaxWidth()
@@ -843,6 +880,8 @@ private fun EntryItem(
     /** "With Bench press" for the superset it is in; null when it is in none. */
     partners: String?,
     onSuperset: () -> Unit,
+    /** Marks the entry as a warm-up exercise, or as worked again. */
+    onWarmup: (Boolean) -> Unit,
     /** Opens the "Sets for" sheet; null for a movement whose sets are not reps (a hold, a run). */
     onSets: (() -> Unit)?,
     onToggle: () -> Unit,
@@ -874,7 +913,8 @@ private fun EntryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val summary = supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric)
+                val summary = (if (entry.warmup) "Warm-up · " else "") +
+                    supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric)
                 val tone = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed
                 if (onSets == null) {
                     Text(summary, style = MaterialTheme.typography.bodySmall, color = tone)
@@ -952,8 +992,8 @@ private fun EntryItem(
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
         }
-        // Activities have no rest between sets, so only the lifting movements are asked.
-        if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) {
+        // Activities have no rest between sets, so only the lifting movements are asked; a warm-up has no rest to time.
+        if ((metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) && !entry.warmup) {
             val prefs = remember { TrialPrefs(context) }
             var restOff by remember(entry.exerciseName) { mutableStateOf(prefs.restOffFor(entry.exerciseName)) }
             SettingsSwitchRow(
@@ -987,14 +1027,22 @@ private fun EntryItem(
                 modifier = Modifier.padding(bottom = 6.dp),
             )
         }
-        ListRow(
-            label = "Superset",
-            value = partners ?: "None",
-            valueColor = if (partners != null) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-            onClickLabel = "Choose what ${name} is a superset with",
-            contentPadding = PaddingValues(0.dp),
-            onClick = onSuperset,
+        SettingsSwitchRow(
+            label = "Warm-up",
+            caption = "Done before the first working set and ticked off in the trial. It earns no XP and counts toward nothing.",
+            checked = entry.warmup,
+            onCheckedChange = onWarmup,
         )
+        if (!entry.warmup) {
+            ListRow(
+                label = "Superset",
+                value = partners ?: "None",
+                valueColor = if (partners != null) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                onClickLabel = "Choose what ${name} is a superset with",
+                contentPadding = PaddingValues(0.dp),
+                onClick = onSuperset,
+            )
+        }
     }
 }
 

@@ -77,6 +77,7 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.WarmupRamp
+import com.ironvellum.app.domain.WarmupStep
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
 import com.ironvellum.app.domain.RankUp
@@ -469,6 +470,7 @@ class Repository(
                         position = e.position,
                         supersetGroup = e.supersetGroup,
                         scheme = SetScheme.decode(e.setScheme),
+                        warmup = e.warmup,
                     )
                 },
             )
@@ -485,6 +487,8 @@ class Repository(
         val supersetGroup: Int? = null,
         /** How the lift's sets are laid out; Straight, the default, stores nothing. */
         val scheme: SetScheme = SetScheme(),
+        /** A warm-up exercise: kept at the head of the rite and out of every superset. */
+        val warmup: Boolean = false,
     )
 
     suspend fun savePreset(
@@ -501,10 +505,13 @@ class Repository(
             presetDao.clearEntries(presetId)
             presetId
         }
+        // Warm-ups lead the rite, so the trial's warm-up step and the rite list agree on the order whatever the caller sent.
+        val ordered = entries.filter { it.warmup } + entries.filterNot { it.warmup }
         // A group is kept only while its members are neighbours: a number left by a removal or a reorder is dropped here.
-        val groups = Supersets.effective(entries.map { it.supersetGroup })
+        // A warm-up is never in one.
+        val groups = Supersets.effective(ordered.map { if (it.warmup) null else it.supersetGroup })
         presetDao.insertEntries(
-            entries.mapIndexed { position, e ->
+            ordered.mapIndexed { position, e ->
                 PresetEntryEntity(
                     presetId = id,
                     exerciseId = e.exerciseId,
@@ -515,6 +522,7 @@ class Repository(
                     position = position,
                     supersetGroup = groups[position],
                     setScheme = e.scheme.normalised().encode(),
+                    warmup = e.warmup,
                 )
             },
         )
@@ -638,18 +646,32 @@ class Repository(
         require(unknown.isEmpty()) { "Unknown exercises in rite \"${preset.name}\": $unknown" }
         // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
         // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
-        val keptGroups = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+        val kept = presetId?.let { presetDao.presetWithEntries(it) }
+        val keptGroups = kept?.working
             ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
         // Likewise a lift's set scheme: the Forge tempers loads and counts, it never undoes how a lift is run. The
         // scheme follows the lift and is fitted to the set count the Forge chose.
-        val keptSchemes = presetId?.let { presetDao.presetWithEntries(it) }?.entries
+        val keptSchemes = kept?.working
             ?.filter { it.setScheme != null }?.associate { it.exerciseId to SetScheme.decode(it.setScheme) }.orEmpty()
+        // The Forge plans the worked exercises only (it never sees a warm-up, [toPlanned] leaves them out), so the
+        // rite's warm-ups are carried over as they are, whatever it did to the rest.
+        val keptWarmups = kept?.entries?.filter { it.warmup }?.sortedBy { it.position }?.map {
+            PresetDraftEntry(
+                exerciseId = it.exerciseId,
+                targetSets = it.targetSets,
+                targetReps = it.targetReps,
+                targetWeightKg = it.targetWeightKg,
+                modifiers = it.modifiers,
+                scheme = SetScheme.decode(it.setScheme),
+                warmup = true,
+            )
+        }.orEmpty()
         return savePreset(
             presetId = presetId,
             name = preset.name,
             note = Evidence.split(preset.note).first,
             scheduledDay = preset.scheduledDay,
-            entries = preset.entries.map { entry ->
+            entries = keptWarmups + preset.entries.map { entry ->
                 PresetDraftEntry(
                     exerciseId = idByName.getValue(entry.exerciseName),
                     targetSets = entry.sets,
@@ -688,7 +710,8 @@ class Repository(
                     name = preset.name,
                     note = Evidence.split(preset.note).first,
                     scheduledDay = preset.scheduledDay,
-                    entries = preset.entries.map { entry ->
+                    // Like a superset or a scheme, a warm-up exercise stays with the rite it was made in.
+                    entries = preset.working.map { entry ->
                         RoutineCode.SharedEntry(
                             exerciseName = entry.exerciseName,
                             sets = entry.targetSets,
@@ -919,7 +942,7 @@ class Repository(
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
         val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
         val mode = trainingMode()
-        return pw.entries.sortedBy { it.position }.mapNotNull { entry ->
+        return pw.working.sortedBy { it.position }.mapNotNull { entry ->
             // A top scheme's own line says where its top set starts and why, not the straight-set engine's.
             if (SetScheme.decode(entry.setScheme).type == SchemeType.TOP_BACKOFF) return@mapNotNull null
             val recommendation = recommendationFor(entry, exerciseDao.byId(entry.exerciseId), mode)
@@ -971,10 +994,12 @@ class Repository(
             ),
         )
         val mode = trainingMode()
-        val exerciseById = exerciseDao.let { dao -> pw.entries.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
+        // A warm-up exercise is not a set row: it is ticked in the trial's warm-up step, so it never reaches the log,
+        // the score, the records or the progression, and the worked entries are numbered without it.
+        val exerciseById = exerciseDao.let { dao -> pw.working.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
             .associateBy { it.id }
 
-        val ordered = pw.entries.sortedBy { it.position }
+        val ordered = pw.working.sortedBy { it.position }
         // Only entries that really are neighbours start the trial as a superset.
         val groups = Supersets.effective(ordered.map { it.supersetGroup })
         val sets = ordered.flatMapIndexed { entryPos, entry ->
@@ -1188,14 +1213,34 @@ class Repository(
     /** The lift's own rite scheme in the trial's rite, or Straight when there is none. */
     private suspend fun presetScheme(sessionId: Long, exerciseId: Long): SetScheme {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return SetScheme()
-        val entry = presetDao.presetWithEntries(presetId)?.entries?.firstOrNull { it.exerciseId == exerciseId }
+        val entry = presetDao.presetWithEntries(presetId)?.working?.firstOrNull { it.exerciseId == exerciseId }
         return SetScheme.decode(entry?.setScheme)
+    }
+
+    /**
+     * The warm-up exercises of the rite the trial began from, in rite order, for the trial's warm-up step. Read live
+     * from the rite: it is a reminder list, and a warm-up is never a set row, so nothing of it is in the log.
+     */
+    suspend fun trialWarmups(sessionId: Long): List<WarmupStep.Item> {
+        val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyList()
+        val pw = presetDao.presetWithEntries(presetId) ?: return emptyList()
+        return pw.entries.filter { it.warmup }.sortedBy { it.position }.mapNotNull { entry ->
+            val exercise = exerciseDao.byId(entry.exerciseId) ?: return@mapNotNull null
+            WarmupStep.Item(
+                exerciseId = entry.exerciseId,
+                name = exercise.name,
+                metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS),
+                sets = entry.targetSets,
+                reps = entry.targetReps,
+                weightKg = entry.targetWeightKg,
+            )
+        }
     }
 
     /** The rite scheme of each of [exerciseIds] in the trial's rite, for the trial's labels; a lift with none is left out. */
     suspend fun trialSchemes(sessionId: Long, exerciseIds: Collection<Long>): Map<Long, SetScheme> {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
-        val entries = presetDao.presetWithEntries(presetId)?.entries.orEmpty()
+        val entries = presetDao.presetWithEntries(presetId)?.working.orEmpty()
         return exerciseIds.mapNotNull { id ->
             entries.firstOrNull { it.exerciseId == id }?.let { SetScheme.decode(it.setScheme) }
                 ?.takeIf { !it.isStraight || it.workingReps != null }?.let { id to it }
@@ -1672,7 +1717,7 @@ class Repository(
         quest: Boolean,
     ): Xp.TrialFacts {
         val planned = session.presetId?.let { pid ->
-            presetDao.presetWithEntries(pid)?.entries
+            presetDao.presetWithEntries(pid)?.working
                 ?.groupBy { it.exerciseId }
                 ?.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
         }
@@ -1773,7 +1818,7 @@ class Repository(
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
         val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
         return buildMap {
-            pw.entries.sortedBy { it.position }.filter { it.targetReps > 0 }.forEach { putIfAbsent(it.exerciseId, it.targetReps) }
+            pw.working.sortedBy { it.position }.filter { it.targetReps > 0 }.forEach { putIfAbsent(it.exerciseId, it.targetReps) }
         }
     }
 
@@ -1795,7 +1840,8 @@ class Repository(
         val session = sessionDao.byId(sessionId)?.takeIf { it.completedAtMs != null } ?: return null
         val pw = session.presetId?.let { presetDao.presetWithEntries(it) } ?: return null
         val catalogue = exerciseDao.observeAll().first().associateBy { it.id }
-        val entries = pw.entries.sortedBy { it.position }.map { e ->
+        // A warm-up exercise is never offered a change: it was not worked, so the trial says nothing about it.
+        val entries = pw.working.sortedBy { it.position }.map { e ->
             PresetEntry(
                 id = e.id,
                 exerciseId = e.exerciseId,
@@ -2915,7 +2961,7 @@ class Repository(
         val presets = presetDao.observePresets().first()
         val bodyweightAt = SetRecords.bodyweightLookup(stats)
         val planned = presets.associate { pw ->
-            pw.preset.id to pw.entries.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
+            pw.preset.id to pw.working.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
         }
         val days = presets.associate { it.preset.id to it.preset.scheduledDay }
         val changes = withContext(kotlinx.coroutines.Dispatchers.Default) {
@@ -3012,6 +3058,7 @@ class Repository(
                         position = e.position,
                         supersetGroup = e.supersetGroup,
                         scheme = SetScheme.decode(e.setScheme),
+                        warmup = e.warmup,
                     )
                 },
             )
@@ -3244,6 +3291,7 @@ class Repository(
                                 position = entry.position,
                                 supersetGroup = entry.supersetGroup,
                                 setScheme = entry.scheme.normalised().encode(),
+                                warmup = entry.warmup,
                             )
                         },
                     )

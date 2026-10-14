@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 42
+        const val VERSION = 43
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -636,6 +636,16 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Warm-up exercises in rites: a rite entry gains a flag for a whole movement done as warm-up. Every existing
+         * entry is worked, which the default says, and no row is rewritten. Independent of every other column.
+         */
+        private val MIGRATION_42_43 = object : Migration(42, 43) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE preset_entries ADD COLUMN warmup INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -668,6 +678,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_39_40,
             MIGRATION_40_41,
             MIGRATION_41_42,
+            MIGRATION_42_43,
         )
 
         const val NAME = "ironvellum.db"

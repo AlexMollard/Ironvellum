@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.key
@@ -418,13 +420,34 @@ class SessionViewModel(
 
     private val warmupStore = WarmupStore(appContext)
 
-    /** How this trial answered the warm-up reminder; null when the setting is off. */
-    private val _warmup = MutableStateFlow(if (warmupStore.enabled) warmupStore.stateFor(sessionId) else null)
-    val warmup: StateFlow<WarmupStep.State?> = _warmup
+    /** Whether the general warm-up reminder is on; the rite's own warm-up exercises show either way. */
+    val warmupEnabled: Boolean = warmupStore.enabled
+
+    /** How this trial answered the warm-up step. */
+    private val _warmup = MutableStateFlow(warmupStore.stateFor(sessionId))
+    val warmup: StateFlow<WarmupStep.State> = _warmup
 
     fun answerWarmup(state: WarmupStep.State) {
         warmupStore.setState(sessionId, state)
         _warmup.value = state
+    }
+
+    /** The rite's warm-up exercises, for the step to list; empty for a rite with none or a trial of no rite. */
+    private val _warmupItems = MutableStateFlow<List<WarmupStep.Item>>(emptyList())
+    val warmupItems: StateFlow<List<WarmupStep.Item>> = _warmupItems
+
+    /** The ones ticked so far (exercise ids). */
+    private val _warmupTicked = MutableStateFlow(warmupStore.tickedFor(sessionId))
+    val warmupTicked: StateFlow<Set<Long>> = _warmupTicked
+
+    init {
+        viewModelScope.launch { _warmupItems.value = repo.trialWarmups(sessionId) }
+    }
+
+    fun tickWarmup(exerciseId: Long) {
+        val next = _warmupTicked.value.let { if (exerciseId in it) it - exerciseId else it + exerciseId }
+        warmupStore.setTicked(sessionId, next)
+        _warmupTicked.value = next
     }
 
     fun keepPlan() {
@@ -995,13 +1018,21 @@ fun SessionScreen(
                     )
                 }
                 // Before the first set is logged; a logged set takes it away for good.
-                val warmupState = warmup
-                if (warmupState != null && ui.sets.isNotEmpty() && doneCount == 0) {
+                val warmupItems by viewModel.warmupItems.collectAsStateWithLifecycle()
+                val warmupTicked by viewModel.warmupTicked.collectAsStateWithLifecycle()
+                if ((viewModel.warmupEnabled || warmupItems.isNotEmpty()) && ui.sets.isNotEmpty() && doneCount == 0) {
                     val warmupText = remember(ui.sets, exercises) {
                         val groupOf = exercises.associate { it.id to it.muscleGroup }
                         WarmupStep.text(ui.sets.map { it.exerciseId }.distinct().mapNotNull { groupOf[it] })
                     }
-                    WarmupRow(warmupText, warmupState, viewModel::answerWarmup)
+                    WarmupRow(
+                        text = warmupText.takeIf { viewModel.warmupEnabled },
+                        items = warmupItems,
+                        ticked = warmupTicked,
+                        state = warmup,
+                        onTick = viewModel::tickWarmup,
+                        onAnswer = viewModel::answerWarmup,
+                    )
                 }
                 var previousFolded = false
                 // The partner whose turn follows [at] in its superset, round the group: the one the strip names.
@@ -3799,7 +3830,16 @@ private fun ToggleLine(
  * collapsed line to open it again. It is a reminder, never a set.
  */
 @Composable
-private fun WarmupRow(text: String, state: WarmupStep.State, onAnswer: (WarmupStep.State) -> Unit) {
+private fun WarmupRow(
+    /** The general reminder; null when that setting is off and only the rite's own warm-up exercises show. */
+    text: String?,
+    /** The rite's warm-up exercises, each tickable. */
+    items: List<WarmupStep.Item>,
+    ticked: Set<Long>,
+    state: WarmupStep.State,
+    onTick: (Long) -> Unit,
+    onAnswer: (WarmupStep.State) -> Unit,
+) {
     if (state != WarmupStep.State.OPEN) {
         Text(
             if (state == WarmupStep.State.DONE) "Warmed up" else "Warm-up skipped",
@@ -3827,7 +3867,31 @@ private fun WarmupRow(text: String, state: WarmupStep.State, onAnswer: (WarmupSt
             letterSpacing = 1.sp,
             color = IronvellumColors.InkMuted,
         )
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        if (text != null) Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        items.forEach { item ->
+            val on = item.exerciseId in ticked
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .toggleable(value = on, role = Role.Checkbox, onValueChange = { onTick(item.exerciseId) }),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Checkbox(
+                    checked = on,
+                    onCheckedChange = null,
+                    colors = CheckboxDefaults.colors(checkedColor = IronvellumColors.Emerald, uncheckedColor = IronvellumColors.InkMuted),
+                )
+                Text(
+                    item.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (on) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(item.line(::formatKg), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IronvellumButton("Done", onClick = { onAnswer(WarmupStep.State.DONE) }, modifier = Modifier.weight(1f))

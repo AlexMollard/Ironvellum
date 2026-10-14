@@ -61,6 +61,11 @@ data class PresetEntryEntity(
      * own sets x reps, which every rite made before schemes existed still is.
      */
     val setScheme: String? = null,
+    /**
+     * A warm-up exercise: a whole movement done before the trial's first working set, never a working one. It is
+     * ticked in the trial's warm-up step and never becomes a set row, so it earns nothing.
+     */
+    val warmup: Boolean = false,
 )
 
 @Entity(tableName = "sessions")
@@ -198,7 +203,10 @@ data class PresetWithEntries(
     @Embedded val preset: PresetEntity,
     @Relation(parentColumn = "id", entityColumn = "presetId")
     val entries: List<PresetEntryEntity>,
-)
+) {
+    /** The entries that are worked: the ones a trial logs, scores and prescribes. */
+    val working: List<PresetEntryEntity> get() = entries.filterNot { it.warmup }
+}
 
 data class SessionWithSets(
     @Embedded val session: SessionEntity,

@@ -15,7 +15,8 @@ object ExportWriter {
     // 11: a rite entry's supersetGroup and a set's rpe, each written only when there is one.
     // 12: a rite entry's set scheme (top set and back-offs, drops, custom), written only when it is not Straight; sets
     // may now be of kind top or backoff.
-    const val FORMAT_VERSION = 12
+    // 13: a rite entry's warm-up flag, written only for a warm-up exercise.
+    const val FORMAT_VERSION = 13
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -257,6 +258,8 @@ object ExportWriter {
                 entry.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
                 // v12, only for a lift that is not Straight: every other entry stays byte-identical to v11.
                 entry.scheme.normalised().encode()?.let { append(",\"setScheme\":").appendEscaped(it) }
+                // v13, only for a warm-up exercise: every other entry stays byte-identical to v12.
+                if (entry.warmup) append(",\"warmup\":true")
                 append("}")
             }
             append("]}")

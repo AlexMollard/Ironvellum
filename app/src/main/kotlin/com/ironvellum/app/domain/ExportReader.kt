@@ -117,6 +117,8 @@ object ExportReader {
                 supersetGroup = entry.int("supersetGroup"),
                 // v12, only for a lift that is not Straight: an older archive has none.
                 scheme = SetScheme.decode(entry.str("setScheme")),
+                // v13, only for a warm-up exercise: an older archive has none.
+                warmup = entry.bool("warmup") == true,
             )
         },
         scheduledDay = o.int("scheduledDay"),

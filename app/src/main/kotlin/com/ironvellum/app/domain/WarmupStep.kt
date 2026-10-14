@@ -2,10 +2,37 @@ package com.ironvellum.app.domain
 
 /**
  * The general warm-up offered before a trial's first set: a few minutes of
- * easy cardio, then mobility for what the trial works. It is a reminder, not a
- * set, so it never reaches the log, the set count or XP.
+ * easy cardio, then mobility for what the trial works, and the rite's own
+ * warm-up exercises ([Item]) to tick off. It is a reminder, not a set, so it
+ * never reaches the log, the set count or XP.
  */
 object WarmupStep {
+
+    /**
+     * One warm-up exercise of the trial's rite, as the step lists it. Ticked per movement ([exerciseId]) rather than
+     * per set; the sets and reps (seconds, minutes, km) are what the rite asked.
+     */
+    data class Item(
+        val exerciseId: Long,
+        val name: String,
+        val metric: ExerciseMetric,
+        val sets: Int,
+        val reps: Int,
+        val weightKg: Double?,
+    ) {
+        /** "2 × 30 s", "3 × 10 · 20 kg": the targets the metric uses, as the rite editor's row reads them. */
+        fun line(kg: (Double) -> String): String {
+            val load = weightKg?.takeIf { it > 0.0 }?.let { " · ${kg(it)}" }.orEmpty()
+            return when (metric) {
+                ExerciseMetric.REPS -> "$sets × $reps$load"
+                ExerciseMetric.HOLD -> "$sets × $reps s$load"
+                ExerciseMetric.DURATION -> "$sets × $reps min"
+                ExerciseMetric.DISTANCE_TIME -> "$sets × ${weightKg?.let(kg) ?: "?"} km"
+                ExerciseMetric.ATTEMPTS_GRADE -> "$sets × $reps attempts"
+            }
+        }
+    }
+
 
     /** How the lifter answered it for one trial; [OPEN] until they do. */
     enum class State { OPEN, DONE, SKIPPED }

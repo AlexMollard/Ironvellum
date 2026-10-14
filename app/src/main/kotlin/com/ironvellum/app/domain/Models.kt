@@ -55,6 +55,8 @@ data class PresetEntry(
     val supersetGroup: Int? = null,
     /** How the lift's sets are laid out; Straight, the default, is the entry's own sets x reps. */
     val scheme: SetScheme = SetScheme(),
+    /** A warm-up exercise: ticked in the trial's warm-up step, never worked, scored or counted. */
+    val warmup: Boolean = false,
 )
 
 data class WorkoutPreset(
@@ -64,7 +66,13 @@ data class WorkoutPreset(
     val entries: List<PresetEntry> = emptyList(),
     /** ISO day-of-week (1 = Monday .. 7 = Sunday) or null for unscheduled. */
     val scheduledDay: Int? = null,
-)
+) {
+    /** The entries that are worked: what counts as the rite's exercises and sets, and all a trial logs. */
+    val working: List<PresetEntry> get() = entries.filterNot { it.warmup }
+
+    /** The warm-up exercises, in rite order. */
+    val warmups: List<PresetEntry> get() = entries.filter { it.warmup }
+}
 
 data class SessionSet(
     val id: Long = 0,

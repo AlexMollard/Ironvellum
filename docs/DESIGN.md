@@ -145,6 +145,16 @@ is offered only before anything on that exercise is logged, on a loaded rep
 movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
 bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
 
+**Warm-up exercises (rite).** A rite entry can be marked "Warm-up" in the editor: a whole
+movement (a drill such as Knee-to-Wall Dorsiflexion), not a set. Warm-ups lead the rite, are in
+no superset and take no scheme. A trial begun from the rite makes no set rows for them, so they
+earn no XP, volume, coverage, peak, progression change, streak hard set or deed, and never reach
+the end-of-trial rite offer; they are listed instead as tickable items in the trial's warm-up
+step (`WarmupStep.Item`, ticks kept per trial in `WarmupStore`). Everything that counts a rite's
+work reads `WorkoutPreset.working` (or `WorkoutPreset.toPlanned()`, which the Forge, the coverage
+maps and the plan line share), and the Forge puts a rite's warm-ups back when it rewrites it.
+The archive carries the flag (format 13); the share code carries the worked plan only.
+
 **Superset (live trial).** Adjacent exercises done as one group, a pair or a triple
 (`domain/Supersets.kt`). An exercise's menu offers "Superset with <next exercise>" while
 the next one can be linked (a group never passes three); linking writes one number on

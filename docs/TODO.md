@@ -67,15 +67,6 @@ account. It exists for a throwaway project and for the gate's round trip.
 - Text-scale regressions have no automated guard: the scale is pinned
   (`FIXED_FONT_SCALE`), and the instrumented suite does not sweep display size.
 
-## Queued features (owner-requested, not started)
-
-- **Warm-up exercises in a rite.** Let a rite entry be marked as a warm-up, so
-  drills such as Knee-to-Wall Dorsiflexion live in the rite, show up in the
-  trial's existing warm-up step (`WarmupStep`, today only a timed reminder) as
-  tickable items, and never earn XP, volume, coverage or a peak. Whole
-  exercises, not single sets: per-set warm-ups already exist (`SetKind.WARMUP`,
-  the warm-up ramp). Requested 2026-10-14.
-
 ## Not planned
 
 - **Server-authoritative XP economy.** Today the ranked columns are unwritable,

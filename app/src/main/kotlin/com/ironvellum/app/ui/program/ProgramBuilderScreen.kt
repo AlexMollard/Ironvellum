@@ -599,12 +599,16 @@ internal fun proposalCoveragePresets(
     },
 ) { it.scheduledDay }
 
-/** The planned form of a stored preset, keeping modifiers and loads. */
+/**
+ * The planned form of a stored preset, keeping modifiers and loads. A warm-up exercise is left out: the plan is what
+ * is worked, so the Forge, the coverage maps, the plan line and the exercise caps never count one, and
+ * [com.ironvellum.app.data.Repository.savePlannedPreset] puts the rite's warm-ups back when it saves.
+ */
 internal fun WorkoutPreset.toPlanned(): PlannedPreset = PlannedPreset(
     name = name,
     note = note,
     scheduledDay = scheduledDay,
-    entries = entries.map {
+    entries = working.map {
         PlannedEntry(
             exerciseName = it.exerciseName,
             sets = it.targetSets,

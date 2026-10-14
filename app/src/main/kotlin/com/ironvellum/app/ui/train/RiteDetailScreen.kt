@@ -110,7 +110,8 @@ fun RiteDetailScreen(
                 // "Wed · 6 exercises · ~54 min": the day folded into the plan line, no chip.
                 val plan = listOfNotNull(
                     preset.scheduledDay?.let { dayLabel(it).lowercase().replaceFirstChar { c -> c.uppercase() } },
-                    preset.entries.size.let { n -> if (n == 1) "1 exercise" else "$n exercises" },
+                    // A warm-up exercise is not one of the rite's exercises: it is listed apart, under its own heading.
+                    preset.working.size.let { n -> if (n == 1) "1 exercise" else "$n exercises" },
                     SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
                         .substringAfterLast(" · ").lowercase(),
                 ).joinToString(" · ")
@@ -130,24 +131,13 @@ fun RiteDetailScreen(
                     )
                 }
                 Spacer(Modifier.height(SECTION_GAP))
-                SectionHeader("MOVEMENTS")
-                InkRowPanel(Modifier.fillMaxWidth()) {
-                    preset.entries.forEachIndexed { index, entry ->
-                        if (index > 0) InkDivider()
-                        ListRow(
-                            entry.exerciseName,
-                            value = com.ironvellum.app.domain.SchemeText.figure(
-                                entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, ::formatKg,
-                                hold = MovementDifficulty.isHoldByName(entry.exerciseName),
-                            ),
-                            wrapValue = true,
-                            subline = listOfNotNull(
-                                com.ironvellum.app.domain.SchemeText.summary(entry.scheme, entry.targetSets),
-                                entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },
-                            ).joinToString(" · ").ifEmpty { null },
-                        )
-                    }
+                if (preset.warmups.isNotEmpty()) {
+                    SectionHeader("WARM-UP")
+                    EntryRows(preset.warmups)
+                    Spacer(Modifier.height(SECTION_GAP))
                 }
+                SectionHeader("MOVEMENTS")
+                EntryRows(preset.working)
                 // Where the rite lands, drawn on the page rather than behind a
                 // button; each muscle's exact set count is one tap further.
                 val sets = remember(preset) {
@@ -177,6 +167,28 @@ fun RiteDetailScreen(
 
     if (showMuscles && preset != null) {
         RiteMusclesSheet(title = preset.name, entries = preset.toPlanned().entries, onDismiss = { showMuscles = false })
+    }
+}
+
+/** One panel of a rite's entries, each with its figure and the scheme and modifiers under it. */
+@Composable
+private fun EntryRows(entries: List<com.ironvellum.app.domain.PresetEntry>) {
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        entries.forEachIndexed { index, entry ->
+            if (index > 0) InkDivider()
+            ListRow(
+                entry.exerciseName,
+                value = com.ironvellum.app.domain.SchemeText.figure(
+                    entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, ::formatKg,
+                    hold = MovementDifficulty.isHoldByName(entry.exerciseName),
+                ),
+                wrapValue = true,
+                subline = listOfNotNull(
+                    com.ironvellum.app.domain.SchemeText.summary(entry.scheme, entry.targetSets),
+                    entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },
+                ).joinToString(" · ").ifEmpty { null },
+            )
+        }
     }
 }
 

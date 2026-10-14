@@ -139,8 +139,8 @@ object Reminders {
         val oath = Streak.current(dates, today)
         val copy = Summons.copy(
             riteName = rite.name,
-            exercises = rite.entries.size,
-            sets = rite.entries.sumOf { it.targetSets },
+            exercises = rite.working.size,
+            sets = rite.working.sumOf { it.targetSets },
             oathDays = oath,
             nextDeedDays = DEED_MILESTONES.firstOrNull { it > oath },
             oathAtRisk = Streak.atRisk(dates, today),

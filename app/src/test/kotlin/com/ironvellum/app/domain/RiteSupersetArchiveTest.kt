@@ -22,8 +22,8 @@ class RiteSupersetArchiveTest {
     )
 
     @Test
-    fun theArchiveIsFormatTwelve() {
-        assertEquals(12, ExportWriter.FORMAT_VERSION)
+    fun theArchiveIsFormatThirteen() {
+        assertEquals(13, ExportWriter.FORMAT_VERSION)
     }
 
     @Test
@@ -72,7 +72,7 @@ class RiteSupersetArchiveTest {
 
     @Test
     fun aNewerArchiveIsStillRefused() {
-        assertTrue(ExportReader.read(legacy(13)).isFailure)
-        assertNull(ExportReader.read(legacy(12)).exceptionOrNull())
+        assertTrue(ExportReader.read(legacy(14)).isFailure)
+        assertNull(ExportReader.read(legacy(13)).exceptionOrNull())
     }
 }

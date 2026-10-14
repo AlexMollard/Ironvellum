@@ -8,7 +8,8 @@ import com.ironvellum.app.domain.WarmupStep
 /**
  * The warm-up reminder's two device settings: whether it shows at all, and how
  * the live trial answered it. Only one trial is live at a time, so only that
- * trial's answer is kept; a new trial finds the old one's gone. Preferences,
+ * trial's answer (and which of the rite's warm-up exercises it ticked) is kept; a new trial finds the old one's
+ * gone. Preferences,
  * not a column: it is a reminder, and nothing else reads it.
  */
 class WarmupStore(private val prefs: SharedPreferences) {
@@ -31,7 +32,22 @@ class WarmupStore(private val prefs: SharedPreferences) {
         putString(KEY_STATE, state.name)
     }
 
+    /** The warm-up exercises (by exercise id) ticked off in trial [sessionId]; empty for any other trial. */
+    fun tickedFor(sessionId: Long): Set<Long> =
+        if (prefs.getLong(KEY_TICKS_SESSION, -1L) != sessionId) {
+            emptySet()
+        } else {
+            prefs.getStringSet(KEY_TICKS, null).orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+        }
+
+    fun setTicked(sessionId: Long, ticked: Set<Long>) = prefs.edit {
+        putLong(KEY_TICKS_SESSION, sessionId)
+        putStringSet(KEY_TICKS, ticked.map { it.toString() }.toSet())
+    }
+
     private companion object {
+        const val KEY_TICKS_SESSION = "ticksSession"
+        const val KEY_TICKS = "ticks"
         const val KEY_ENABLED = "enabled"
         const val KEY_SESSION = "session"
         const val KEY_STATE = "state"
