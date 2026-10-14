@@ -1,7 +1,6 @@
 package com.ironvellum.app.ui.train
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +46,7 @@ import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.WholeStepper
 import com.ironvellum.app.ui.components.formatSteppedFigure
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
 
 /** The bar a set stands as in a load-shape graphic: Working is plain ink, every other kind wears its own tint. */
 private fun SetKind.barColor() = if (this == SetKind.WORKING) IronvellumColors.Ink.copy(alpha = 0.6f) else tint()
@@ -209,7 +209,7 @@ private fun SchemeCard(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .border(1.dp, if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable(enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -286,7 +286,7 @@ private fun ChoiceChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .heightIn(min = 44.dp)
-            .border(1.dp, if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable(role = Role.RadioButton, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = 12.dp),
@@ -361,7 +361,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     Column(
         Modifier
             .fillMaxWidth()
-            .border(1.dp, IronvellumColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(12.dp)
             .semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(4.dp),
