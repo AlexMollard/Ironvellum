@@ -80,6 +80,8 @@ def gaps():
     lib, mp, _ = build.load()
     report = json.loads(build.REPORT.read_text(encoding="utf-8"))
     drawn = {k.lower() for k in build.art_table(lib, mp, report)}
+    # Newer steps are briefed in replacement-catalog.json (build.py maps them), not in poses.json.
+    drawn |= {n.lower() for r in json.loads(build.REPLACEMENTS.read_text(encoding="utf-8"))["entries"] for n in (r["name"], *r.get("aliases", []))}
     seed = (KT / "data" / "Seed.kt").read_text(encoding="utf-8")
     skills = re.findall(r'SkillDef\(\s*"([^"]+)",\s*(\d+),\s*"([^"]+)"', (KT / "domain" / "Skills.kt").read_text(encoding="utf-8"))
     skill_names = {s[0] for s in skills}
@@ -146,7 +148,7 @@ def main():
             "names": "<slug>.png for the approved representative still; frame-counts.json defines required frames",
             "png": "RGBA with a transparent background and at least 512 px wide (1024 recommended); an opaque PNG is read as dark-on-light "
                    "or light-on-dark from its corners",
-            "framing": "the same canvas size and the same camera for every frame of an exercise; the build registers the frames to one ground line, centre and scale",
+            "framing": "One representative still per exercise, with the complete figure and equipment centred and uncropped.",
         },
         "counts": {
             "total": len(entries),
