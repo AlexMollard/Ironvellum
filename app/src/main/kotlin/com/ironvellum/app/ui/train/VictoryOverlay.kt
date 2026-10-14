@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -172,7 +175,8 @@ internal fun TrialCelebration(
     val steps = CelebrationFlow.steps(hasXp, hasLevel, deeds.isNotEmpty())
     Dialog(
         onDismissRequest = onContinue,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        // Edge to edge, so the page's glow runs up under the status bar instead of stopping at a black band.
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         Box(
             Modifier
@@ -289,12 +293,13 @@ private fun SummaryPage(
         }
     }
 
+    val scroll = rememberScrollState()
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
+      Box(Modifier.weight(1f).fillMaxWidth()) {
         Column(
             Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .verticalScroll(scroll)
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -406,6 +411,17 @@ private fun SummaryPage(
             )
             Spacer(Modifier.height(16.dp))
         }
+        // More below: a fade at the foot says so, in place of a card cut off with no bottom edge.
+        if (scroll.canScrollForward) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, IronvellumColors.Abyss))),
+            )
+        }
+      }
         if (offered) {
             // Above the dock, not in it: the dock keeps one primary and one link.
             Box(
@@ -417,8 +433,9 @@ private fun SummaryPage(
             ) {
                 Text(
                     "Sealed too soon? Keep going",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Dim,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = IronvellumColors.Ink,
+                    textDecoration = TextDecoration.Underline,
                 )
             }
         }

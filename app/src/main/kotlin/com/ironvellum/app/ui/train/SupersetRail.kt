@@ -44,7 +44,8 @@ internal fun Modifier.supersetRail(position: RailPosition, titleCenter: Dp): Mod
     val centre = titleCenter.toPx()
     val top = if (position == RailPosition.FIRST) centre else 0f
     val bottom = if (position == RailPosition.LAST) centre else size.height
-    val x = -10.dp.toPx()
+    // The middle of the 16dp gutter: the dots (8dp) clear the screen's edge by 4dp instead of touching it.
+    val x = -8.dp.toPx()
     if (bottom > top) drawRect(color, Offset(x - 1.dp.toPx(), top), Size(2.dp.toPx(), bottom - top))
     val dot = Size(8.dp.toPx(), 8.dp.toPx())
     if (position == RailPosition.FIRST) drawRect(color, Offset(x - 4.dp.toPx(), top - 4.dp.toPx()), dot)

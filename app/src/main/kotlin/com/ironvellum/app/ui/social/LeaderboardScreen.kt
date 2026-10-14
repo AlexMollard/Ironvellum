@@ -1048,6 +1048,7 @@ private fun LiftPicker(
         onQueryChange = { query = it },
         searchLabel = "Search reckonings",
         count = shown.size,
+        countNoun = "reckoning" to "reckonings",
     ) {
         LiftGroup.entries.forEach { group ->
             val inGroup = shown.filter { it.group == group }

@@ -434,11 +434,12 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
             },
             onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
             onMore = { onKgText(formatSteppedFigure(worn.nextKg(kg, unit) ?: kg)) },
+            emptyText = "none",
         )
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, onValue = onKgText)
+        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = "none", onValue = onKgText)
         return
     }
     fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
@@ -451,7 +452,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
         label, shown, "lb", "Lighter load", "Heavier load", gridLb, error,
-        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true,
+        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = "none",
     ) { lb ->
         typed = lb
         if (lb.isBlank()) onKgText("") else kgOf(lb)?.let { onKgText(formatSteppedFigure(it)) }
@@ -544,7 +545,8 @@ fun PresetEditorScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 UnderlineField("Rite name", ui.name, viewModel::setName)
-                UnderlineField("Note", ui.note, viewModel::setNote)
+                // Wraps over up to four lines: one hard-clipped line cut a note off mid-word.
+                UnderlineField("Note", ui.note, viewModel::setNote, singleLine = false, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default))
                 Spacer(Modifier.height(6.dp))
                 ListRow(
                     label = "Day",
@@ -616,8 +618,8 @@ fun PresetEditorScreen(
                     )
                 }
                 if (ui.presetId != null) {
-                    Spacer(Modifier.height(16.dp))
-                    InkDivider()
+                    // The list's own closing rule (under Add exercise) is the one rule above Delete: a second one,
+                    // a gap below the first, read as a stray line.
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -925,13 +927,14 @@ private fun EntryItem(
                             .fillMaxWidth()
                             .heightIn(min = 36.dp)
                             .clickable(onClickLabel = "Sets for $name", role = Role.Button, onClick = onSets),
-                        verticalAlignment = Alignment.CenterVertically,
+                        // Top-aligned: the 36dp target used to centre the line in a tall box, far under the name.
+                        verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(summary, style = MaterialTheme.typography.bodySmall, color = tone, modifier = Modifier.weight(1f, fill = false))
                         SchemeBars(
                             schemeBars(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1),
-                            Modifier.semantics { contentDescription = "Set shape" },
+                            Modifier.padding(top = 1.dp).semantics { contentDescription = "Set shape" },
                             height = 16.dp,
                         )
                     }
@@ -1108,13 +1111,15 @@ internal fun UnderlineField(
     placeholder: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
     counter: String? = null,
+    singleLine: Boolean = true,
 ) {
     Column(modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 8.dp))
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            singleLine = true,
+            singleLine = singleLine,
+            maxLines = if (singleLine) 1 else 4,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink),
             cursorBrush = SolidColor(IronvellumColors.SystemGreen),
             keyboardOptions = keyboardOptions,

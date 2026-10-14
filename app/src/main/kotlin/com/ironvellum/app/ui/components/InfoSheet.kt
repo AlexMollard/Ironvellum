@@ -415,7 +415,11 @@ private fun SheetHeader(title: String, subtitle: String?, subtitleColor: Color, 
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            chips.forEach { FactChip(it) }
+            // A dot between tags: bare words ran together as "Legs Reps Weighted".
+            chips.forEachIndexed { i, chip ->
+                if (i > 0) Text("·", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+                FactChip(chip)
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
@@ -322,7 +323,8 @@ internal fun StepPage(
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.Center,
+            // Above the middle: centred, a quarter of the page stood empty over the content and the rest under it.
+            contentAlignment = BiasAlignment(0f, -0.45f),
         ) {
             Column(
                 Modifier
@@ -575,7 +577,7 @@ internal fun DeedsPage(
                 onPrimary = onContinue,
                 link = if (target == null) null else if (worn) "Wearing ✓" else "Wear title",
                 linkOn = !worn,
-                linkColor = if (worn) Dim else IronvellumColors.SystemGreen,
+                linkColor = if (worn) IronvellumColors.Emerald else IronvellumColors.SystemGreen,
                 onLink = {
                     if (target != null) {
                         onWear(target.id)

@@ -1,7 +1,9 @@
 package com.ironvellum.app.ui.train
 
 import android.os.SystemClock
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -119,7 +121,11 @@ internal fun TimedSetControl(
             return@Column
         }
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                // Past the target the whole row turns gold, so reaching it reads at a glance, not only in a small label.
+                .background(if (clock?.targetReached(now) == true) IronvellumColors.SovereignGold.copy(alpha = 0.12f) else Color.Transparent),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -135,7 +141,7 @@ internal fun TimedSetControl(
                     else -> IronvellumColors.InkMuted
                 },
                 maxLines = 1,
-                modifier = Modifier.semantics {
+                modifier = Modifier.alignByBaseline().semantics {
                     contentDescription = when {
                         getReady -> "Get ready, $readySeconds"
                         !countdown -> "${SetClock.face(seconds)} elapsed"
@@ -149,15 +155,18 @@ internal fun TimedSetControl(
             Text(
                 when {
                     getReady -> "GET READY"
-                    reached -> "TARGET REACHED"
+                    reached -> "TARGET REACHED \u2713"
                     countdown -> "TARGET $target"
                     else -> "ELAPSED"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
+                fontWeight = if (reached) FontWeight.Bold else null,
                 color = if (reached) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 modifier = Modifier
                     .weight(1f)
+                    // The label sits on the digits' baseline, not at their middle.
+                    .alignByBaseline()
                     // Said once when it appears: the state is in words, not only in colour.
                     .semantics { if (reached) liveRegion = LiveRegionMode.Polite },
             )
@@ -195,19 +204,20 @@ private fun AdjustStep(seconds: Int, onStep: (Int) -> Unit, onLog: () -> Unit, o
                 fontSize = 22.sp,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
-                modifier = Modifier.semantics { contentDescription = "Stopped at ${SetClock.face(seconds)}" },
+                modifier = Modifier.alignByBaseline().semantics { contentDescription = "Stopped at ${SetClock.face(seconds)}" },
             )
             Text(
                 "STOPPED",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).alignByBaseline(),
             )
             RepeatAction("−1s", "Take a second off", IronvellumColors.Ink) { onStep(-1) }
             RepeatAction("+1s", "Add a second", IronvellumColors.Ink) { onStep(+1) }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Pulled back by the actions' own 12dp padding so "Log" starts at the timer's left edge.
+        Row(Modifier.fillMaxWidth().offset(x = (-12).dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             RowAction("Log ${SetClock.face(seconds)}", IronvellumColors.Emerald, onLog)
             RowAction("Discard", IronvellumColors.InkMuted, onDiscard)
         }

@@ -250,7 +250,8 @@ fun PresetsScreen(
                 shareRefusal = null
                 viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // A fixed height: the chip leaves (a trial is under way) and the title would otherwise drop 22px.
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "TRAIN",
                     style = MaterialTheme.typography.headlineSmall,
@@ -267,9 +268,9 @@ fun PresetsScreen(
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = GROUP_GAP))
             }
-            // The lead card is kept for the two states the cycle cannot show: no
-            // cycle at all, and an open trial under way, which belongs to no rite.
-            if (focus is TrainFocus.NoCycle || (focus is TrainFocus.Live && focus.preset == null)) {
+            // The lead card: no cycle at all, or a trial under way (a rite's too, as Today shows it), so leaving
+            // the trial with Back never loses the way back into it.
+            if (focus is TrainFocus.NoCycle || focus is TrainFocus.Live) {
                 Spacer(Modifier.height(GROUP_GAP))
                 TrainLeadCard(
                     focus = focus,

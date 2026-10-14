@@ -89,8 +89,6 @@ internal fun SetNumberCell(
                     fontWeight = FontWeight.Bold,
                     color = kind.tint(),
                 )
-            } else if (showHint && kind == SetKind.WORKING) {
-                Text("▾", fontSize = 9.sp, lineHeight = 9.sp, color = IronvellumColors.InkMuted.copy(alpha = 0.5f))
             }
         }
         DropdownMenu(

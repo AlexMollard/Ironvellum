@@ -110,7 +110,7 @@ class TimedSetControlTest {
         start()
         advance(5_000)
         advance(10_000)
-        compose.onNodeWithText("TARGET REACHED").assertExists()
+        compose.onNodeWithText("TARGET REACHED", substring = true).assertExists()
         compose.onNodeWithContentDescription("0:10 elapsed, target 0:10 reached").assertExists()
         advance(20_000)
         compose.onNodeWithContentDescription("0:30 elapsed, target 0:10 reached").assertExists()

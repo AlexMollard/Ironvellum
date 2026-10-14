@@ -38,6 +38,7 @@ import com.ironvellum.app.domain.SchemeText
 import com.ironvellum.app.domain.SchemeType
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetScheme
+import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.SettingsSwitchRow
@@ -114,7 +115,8 @@ internal fun SetsSheet(
                 SchemeType.entries.forEach { type ->
                     val blocked = inSuperset && type == SchemeType.DROPS
                     val shown = when (type) {
-                        SchemeType.TOP_BACKOFF -> effective.copy(type = type)
+                        // Top + back-offs keeps the lifter's set count: one top set, the rest back-offs.
+                        SchemeType.TOP_BACKOFF -> effective.copy(type = type).let { if (scheme.type == type) it else it.fitTo(setCount) }
                         SchemeType.DROPS -> scheme.copy(type = type)
                         else -> SetScheme(type = type, custom = scheme.custom)
                     }
@@ -130,6 +132,7 @@ internal fun SetsSheet(
                     ) {
                         scheme = when (type) {
                             SchemeType.CUSTOM -> scheme.copy(type = type, custom = scheme.custom.ifEmpty { scheme.kinds(setCount) })
+                            SchemeType.TOP_BACKOFF -> scheme.copy(type = type).fitTo(setCount)
                             else -> scheme.copy(type = type)
                         }
                     }
@@ -148,7 +151,11 @@ internal fun SetsSheet(
                 }
                 when (scheme.type) {
                     SchemeType.TOP_BACKOFF -> TopBackoffSettings(
-                        scheme, { scheme = it }, weight, { weight = it }, entry.exerciseName, worn,
+                        scheme, {
+                            scheme = it
+                            // The set count follows the back-offs, so flipping to another scheme and back keeps it.
+                            sets = it.workingSets(setCount).toString()
+                        }, weight, { weight = it }, entry.exerciseName, worn,
                         fixedMode,
                         { on ->
                             // Fixed starts on the load "% lighter" gives right now, so the preview does not jump and Done stays on.
@@ -181,7 +188,11 @@ internal fun SetsSheet(
                     }
                     SettingsSwitchRow(
                         label = "Warm-up ramp",
-                        caption = "Start the trial with lighter warm-up sets for this lift.",
+                        caption = when {
+                            (DecimalInput.parse(weight) ?: 0.0) > 0.0 -> "Start the trial with lighter warm-up sets for this lift."
+                            WarmupRamp.isBarbell(entry.exerciseName) -> "No load is set yet, so the ramp is the empty bar. Set a load for the full ramp."
+                            else -> "No load is set yet, so there is nothing to ramp up to. Set a load above."
+                        },
                         checked = scheme.warmupRamp,
                         onCheckedChange = { scheme = scheme.copy(warmupRamp = it) },
                     )
@@ -262,6 +273,11 @@ private fun TopBackoffSettings(
     onFixedText: (String) -> Unit,
 ) {
     LoadTargetStepper(weight, loadGridLb(exerciseName), false, worn, label = "Top set load", onKgText = onWeight)
+    Text(
+        "${1 + scheme.backoffSets} sets in all: 1 top set and ${scheme.backoffSets} ${if (scheme.backoffSets == 1) "back-off" else "back-offs"}.",
+        style = MaterialTheme.typography.labelSmall,
+        color = IronvellumColors.InkMuted,
+    )
     val max = SetScheme.REPS_RANGE.last
     IntStepper("Top reps, from", scheme.topReps.first, "top reps", 1, max) {
         onScheme(scheme.copy(topReps = it..maxOf(it, scheme.topReps.last)))

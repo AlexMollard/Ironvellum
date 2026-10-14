@@ -119,7 +119,7 @@ internal object XpReveal {
     /** A movement or an activity is effort; everything else is a bonus. */
     fun isLift(line: Xp.Line): Boolean = line.kind == Xp.Kind.EXERCISE || line.kind == Xp.Kind.ACTIVITY
 
-    /** "4 hard sets · +17.7kg", "3 hard holds", "2 hard · 1 easy": what a movement was made of. */
+    /** "4 hard sets · +17.7 kg added", "3 hard sets · top 60 kg", "3 hard holds", "2 hard · 1 easy": what a movement was made of. */
     fun subline(line: Xp.Line): String {
         if (line.kind == Xp.Kind.ACTIVITY) return ""
         val unit = if (line.hold) "hold" else "set"
@@ -129,7 +129,8 @@ internal object XpReveal {
             line.easySets > 0 -> "${line.easySets} easy ${plural(line.easySets, unit, unit + "s")}"
             else -> ""
         }
-        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { "+" + Units.withUnit(it) }
+        // Said in words: a bare "+60 kg" read as XP. A lifted load is the top one; a body's extra is what was added.
+        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { if (line.externalLoad) "top " + Units.withUnit(it) else "+" + Units.withUnit(it) + " added" }
         return listOfNotNull(made.ifEmpty { null }, load).joinToString(" · ")
     }
 
@@ -274,7 +275,7 @@ internal fun XpRevealPanel(
                     fontFamily = ChakraPetch,
                     fontSize = 11.sp,
                     letterSpacing = IronvellumTracking.InlineLabel,
-                    color = if (i == bars.lastIndex) IronvellumColors.SovereignGold else IronvellumColors.Bracket,
+                    color = if (i == bars.lastIndex) IronvellumColors.SovereignGold else Dim,
                     modifier = Modifier.padding(start = 8.dp, top = if (i == 0) 0.dp else 6.dp, bottom = 2.dp),
                 )
             }

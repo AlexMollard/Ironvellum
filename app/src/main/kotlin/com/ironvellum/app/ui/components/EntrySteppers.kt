@@ -162,6 +162,7 @@ internal fun DecimalStepper(
     max: Double = MAX_LOAD_KG,
     /** A load: the pads walk the [step] grid ([stepOnGrid]) rather than add it to whatever is there. */
     onGrid: Boolean = false,
+    emptyText: String = "–",
     onValue: (String) -> Unit,
 ) = StepperRow(
     label = label,
@@ -175,6 +176,7 @@ internal fun DecimalStepper(
     onValue = onValue,
     onLess = { onValue(if (onGrid) stepOnGrid(value, -1, step, max) else stepDecimal(value, -1, step, max)) },
     onMore = { onValue(if (onGrid) stepOnGrid(value, 1, step, max) else stepDecimal(value, 1, step, max)) },
+    emptyText = emptyText,
 )
 
 /**
@@ -194,6 +196,8 @@ internal fun StepperRow(
     onValue: ((String) -> Unit)?,
     onLess: () -> Unit,
     onMore: () -> Unit,
+    /** What an empty figure reads: a dash between two minus-looking pads read as a third one, so loads say "none". */
+    emptyText: String = "–",
 ) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
@@ -228,8 +232,8 @@ internal fun StepperRow(
             }
             if (value.isEmpty()) {
                 Text(
-                    "–",
-                    style = MaterialTheme.typography.titleMedium,
+                    emptyText,
+                    style = if (emptyText.length > 1) MaterialTheme.typography.bodySmall else MaterialTheme.typography.titleMedium,
                     color = if (error) IronvellumColors.DangerRed else IronvellumColors.InkMuted,
                 )
             }

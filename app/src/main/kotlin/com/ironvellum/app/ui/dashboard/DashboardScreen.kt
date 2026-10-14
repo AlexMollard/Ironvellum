@@ -191,6 +191,15 @@ internal fun weekDoneDays(
 }
 
 /**
+ * The latest of [trials] sealed on the calendar day [day], or null. A rite marks its own scheduled day, so a
+ * Monday rite done on Thursday ticks Monday; this is how Thursday's own card can still say a trial was sealed.
+ */
+internal fun sealedOnDay(trials: Collection<WorkoutSession>, day: LocalDate, zone: ZoneId): WorkoutSession? =
+    trials
+        .filter { t -> t.completedAtMs?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() == day } == true }
+        .maxByOrNull { it.completedAtMs ?: 0L }
+
+/**
  * Peaks to name on Today: set within the Ledger's fresh window, and higher than
  * an earlier trial of the same lift - the first trial of anything is its best
  * by default and is not news.
@@ -762,10 +771,17 @@ private fun TodayDayBody(
                     }
                 }
                 DayKind.RESPITE -> {
+                    // A rite done on a day it was not scheduled for ticks its own day; today's card still says it was sealed.
+                    val sealedHere = if (isTodaySelected) sealedOnDay(ui.weekDone.values, today, ZoneId.systemDefault()) else null
                     RiteHeader(
                         title = "Respite",
                         narrator = narratorLine(kind, daysKept = daysKept),
-                        meta = null,
+                        meta = sealedHere?.let { trial ->
+                            buildAnnotatedString {
+                                withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append("Sealed today") }
+                                append(" · ${trial.label} · +${trial.xpAwarded} XP")
+                            }
+                        },
                         lead = { LedgerMotif() },
                     )
                     nextRite?.let { next -> NextLink(next, chevron = true) { actions.onSelectDay(next.scheduledDay!!) } }

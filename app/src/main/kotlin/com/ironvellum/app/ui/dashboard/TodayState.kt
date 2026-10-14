@@ -136,8 +136,8 @@ internal fun trialRows(sets: List<SessionSet>, exercises: Map<Long, Exercise>, s
                     "$done/$total · ${setFigureText(best, metric, exercise?.isWeighted ?: false)}"
                 }
                 done > 0 || sealed -> "$done/$total"
-                metric == ExerciseMetric.REPS -> "$total×${first.reps}"
-                metric == ExerciseMetric.HOLD -> "$total×${first.durationSec ?: 0}s"
+                metric == ExerciseMetric.REPS -> "$total × ${first.reps}"
+                metric == ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s"
                 else -> "$total ${if (total == 1) "set" else "sets"}"
             }
             DayRow(

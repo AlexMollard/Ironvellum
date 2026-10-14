@@ -59,6 +59,8 @@ fun InkPickerSheet(
     onQueryChange: (String) -> Unit,
     searchLabel: String,
     count: Int,
+    /** What [count] counts, singular and plural: the figure alone ("583") named nothing. */
+    countNoun: Pair<String, String>? = null,
     content: LazyListScope.() -> Unit,
 ) {
     Dialog(
@@ -85,9 +87,10 @@ fun InkPickerSheet(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "$count",
+                    if (countNoun != null) "$count ${plural(count, countNoun.first, countNoun.second)}" else "$count",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(end = 8.dp),
                 )
                 NavChip("Close", null, onClick = onDismiss)
             }
@@ -139,7 +142,7 @@ fun PickerSearchField(query: String, onQueryChange: (String) -> Unit, label: Str
             )
             if (query.isEmpty()) {
                 Text(
-                    label.lowercase(),
+                    label,
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )

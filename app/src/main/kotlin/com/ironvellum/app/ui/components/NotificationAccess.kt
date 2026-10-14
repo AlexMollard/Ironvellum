@@ -1,6 +1,13 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,9 +53,33 @@ fun NotificationBlockedNotice(
     access: Notifications.Access,
     blockedText: String,
     modifier: Modifier = Modifier,
+    /** One line with a "Turn on" link at its end, for a screen that must not move when it shows. */
+    compact: Boolean = false,
 ) {
     if (access.canPost) return
     val context = LocalContext.current
+    if (compact) {
+        Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                blockedText,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.SovereignGold,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                Modifier
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Button, onClickLabel = "Open notification settings") {
+                        runCatching { context.startActivity(Notifications.settingsIntent(context, channelId, access)) }
+                    }
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("Turn on", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
+            }
+        }
+        return
+    }
     Column(modifier) {
         Text(
             blockedText,

@@ -246,6 +246,7 @@ fun ExercisePickerSheet(
         onQueryChange = { controls.query = it },
         searchLabel = "Search exercises",
         count = view.count,
+        countNoun = "exercise" to "exercises",
     ) {
         topContent?.invoke(this)
         item(key = "filters") {
@@ -341,6 +342,8 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
         // The chips are 48dp targets around 32dp of ink, so the rows butt up with no gap of their own.
         FlowRow(
             Modifier.fillMaxWidth(),
+            // A gap of its own: the Filters box touched the first active chip's tab.
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             FiltersButton(open = controls.filtersOpen, activeCount = active.size) {
