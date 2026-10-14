@@ -103,6 +103,7 @@ fun AccountSettingsScreen(
 
     var editingName by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmSignOut by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var allyAlerts by remember { mutableStateOf(InboxNotifier.enabled(context)) }
     // Re-read on every resume: a block lifted in system settings shows at once.
@@ -368,11 +369,7 @@ fun AccountSettingsScreen(
             ActionRow(
                 label = "Sign out",
                 enabled = !ui.busy,
-                onClick = {
-                    // The next lifter must not inherit this one's notification or mark.
-                    InboxNotifier.reset(context)
-                    viewModel.signOut()
-                },
+                onClick = { confirmSignOut = true },
             )
             InkDivider()
             if (confirmDelete) {
@@ -414,6 +411,27 @@ fun AccountSettingsScreen(
                     onClick = { confirmDelete = true },
                 )
             }
+        }
+        if (confirmSignOut) {
+            IronvellumDialog(
+                onDismissRequest = { confirmSignOut = false },
+                title = { Text("Sign out?") },
+                text = { Text("Your training stays on this phone. Sign back in to sync it again.") },
+                confirmButton = {
+                    IronvellumButton(
+                        label = "Sign out",
+                        onClick = {
+                            confirmSignOut = false
+                            // The next lifter must not inherit this one's notification or mark.
+                            InboxNotifier.reset(context)
+                            viewModel.signOut()
+                        },
+                    )
+                },
+                dismissButton = {
+                    IronvellumButton(label = "Cancel", onClick = { confirmSignOut = false }, quiet = true)
+                },
+            )
         }
         Spacer(Modifier.height(8.dp))
         ui.error?.let {
