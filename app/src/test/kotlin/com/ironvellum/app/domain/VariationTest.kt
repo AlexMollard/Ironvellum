@@ -325,12 +325,53 @@ class VariationTest {
     // ------------------------------------------------------------ boards
 
     @Test
-    fun `a variation never clears a tier or a rung of the plain lift`() {
+    fun `only an easier variation is off the boards`() {
         assertTrue(LiftBoards.offBoard(set(1, "Pull-up", 10, modifiers = "assisted")))
         assertTrue(LiftBoards.offBoard(set(1, "Push-up", 30, modifiers = "incline")))
-        assertTrue(LiftBoards.offBoard(set(1, "Deadlift", 5, kg = 200.0, modifiers = "deficit")))
         assertTrue(LiftBoards.offBoard(set(1, "Assisted Pull-up", 10)))
-        assertFalse(LiftBoards.offBoard(set(1, "Pull-up", 10, modifiers = "tempo, weighted")))
+        listOf("deficit", "elevated", "decline", "archer", "one-arm", "weighted, deficit, elevated", "tempo, weighted").forEach {
+            assertFalse(it, LiftBoards.offBoard(set(1, "Push-up", 30, modifiers = it)))
+        }
         assertFalse(LiftBoards.offBoard(set(1, "Pull-up", 10)))
+        assertTrue(Variation.eases("Assisted, deficit"))
+        assertFalse(Variation.eases("deficit, banded"))
+    }
+
+    @Test
+    fun `a harder push-up still clears its rung and an easier one does not`() {
+        val target = LiftBoards.rungs(Lift.PUSH_UP).single { it.exercise == "Push-up" }.target
+        fun marks(mods: String) = LiftBoards.marks(
+            listOf(session(1, 10_000) to listOf(set(1, "Push-up", target, modifiers = mods))), { 80.0 }, Sex.MALE, nowMs = 20_000,
+        ).filter { it.lift == Lift.PUSH_UP }
+        val plain = marks("")
+        assertEquals(1, plain.size)
+        assertEquals(plain, marks("weighted, deficit, elevated"))
+        assertEquals(plain, marks("archer"))
+        assertTrue(marks("incline").isEmpty())
+        assertTrue(marks("assisted").isEmpty())
+    }
+
+    @Test
+    fun `a dip with a deficit still scores its tier and an assisted one does not`() {
+        val plain = LiftBoards.tieredScore(set(1, "Dip", 8, kg = 20.0).copy(done = true), 80.0, Sex.MALE)!!
+        assertEquals(plain, LiftBoards.tieredScore(set(1, "Dip", 8, kg = 20.0, modifiers = "weighted, deficit"), 80.0, Sex.MALE))
+        assertEquals(null, LiftBoards.tieredScore(set(1, "Dip", 8, kg = 20.0, modifiers = "assisted"), 80.0, Sex.MALE))
+    }
+
+    @Test
+    fun `rank from a history of harder variations is the same as without the modifiers`() {
+        fun rank(mods: String) = Rank.breakdown(
+            listOf(
+                session(1, 10_000) to listOf(
+                    set(1, "Push-up", 40, modifiers = mods),
+                    set(2, "Dip", 8, kg = 20.0, modifiers = mods, index = 1),
+                    set(3, "Pull-up", 8, kg = 10.0, modifiers = mods, index = 2),
+                ),
+            ),
+            { 80.0 }, Sex.MALE, nowMs = 20_000,
+        )
+        val plain = rank("")
+        assertEquals(plain, rank("weighted, deficit, elevated"))
+        assertEquals(plain, rank("archer, decline"))
     }
 }

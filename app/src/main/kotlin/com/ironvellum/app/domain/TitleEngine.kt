@@ -687,9 +687,9 @@ object Titles {
                     if (held > bestHoldSeconds) bestHoldSeconds = held
                 } else if (set.reps > 0 && bodyweightAt != null &&
                     !exercise.name.contains("assisted", ignoreCase = true) &&
-                    // The deed is the plain lift's: an assisted set's kilos subtract load, and an incline or
-                    // deficit set is a different lift ([Variation]).
-                    Variation.isPlain(set.modifiers)
+                    // An assisted set's kilos subtract load and an incline set is easier ([Variation.eases]);
+                    // a harder variation still counts as the lift.
+                    !Variation.eases(set.modifiers)
                 ) {
                     val bodyweight = bodyweightAt(session.startedAtMs)
                     if (bodyweight > 0.0) {

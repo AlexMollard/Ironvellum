@@ -26,6 +26,15 @@ object Variation {
     /** True when [modifiers] leave the movement as itself: no splitting token. */
     fun isPlain(modifiers: String): Boolean = key(modifiers).isEmpty()
 
+    /**
+     * True when a splitting token of [modifiers] makes the lift EASIER: its XP factor in
+     * [MovementDifficulty.modifierFactor] is below 1 (today assisted and incline). Derived from the
+     * factors, not a second list. The tier, rung, rank, deed and strength-profile gates drop such a set;
+     * a harder or equal variation (deficit, archer...) keeps counting there as the plain lift.
+     */
+    fun eases(modifiers: String): Boolean =
+        key(modifiers).split(",").any { it.isNotEmpty() && MovementDifficulty.modifierFactor(it) < 1.0 }
+
     /** The key a movement's history is kept under: its lowercased, trimmed name, then the variation when it has one. */
     fun liftKey(exerciseName: String, modifiers: String): String {
         val name = exerciseName.lowercase().trim()

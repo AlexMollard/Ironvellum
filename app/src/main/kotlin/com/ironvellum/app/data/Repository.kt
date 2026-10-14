@@ -760,8 +760,8 @@ class Repository(
         ProgramRules.strengthProfile(
             observeHistory().first()
                 .flatMap { (_, sets) -> sets }
-                // The profile prescribes the plain movement: a deficit or assisted set is not its 1RM.
-                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 && Variation.isPlain(it.modifiers) }
+                // An easier version (assisted, incline) is not the movement's 1RM; a harder one still counts.
+                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 && !Variation.eases(it.modifiers) }
                 .map { LoggedLift(it.exerciseName, it.weightKg!!, it.reps) },
         )
 
@@ -2529,9 +2529,9 @@ class Repository(
             val best = SetRecords.records(history, bodyweightAt) { set ->
                 metricByName[Titles.normaliseName(set.exerciseName)]
             }
-            // A technique is shown by the plain movement: an assisted or deficit set is not the standard.
+            // An easier version (assisted, incline) does not show the technique; a harder one still does.
             best.values
-                .filter { it.variation.isEmpty() }
+                .filter { !Variation.eases(it.variation) }
                 .groupBy { Titles.normaliseName(it.exerciseName) }
                 .mapValues { (name, records) ->
                     val top = techniqueEvidence(records, skillByName[name])

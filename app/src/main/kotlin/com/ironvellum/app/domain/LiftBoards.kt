@@ -194,12 +194,12 @@ object LiftBoards {
     }
 
     /**
-     * True when [set] is not the board's own movement: an assisted lift (by name or modifier) and every other
-     * [Variation] (incline, deficit, archer...) is easier, harder or a different range of motion, so it never
-     * clears a tier or a rung of the plain lift. Tempo, paused and weighted do not make a different lift.
+     * True when [set] is an easier version of the board's movement (assisted by name, or a modifier that
+     * [Variation.eases]: assisted, incline), so it never clears a tier or a rung. A harder or equal variation
+     * (deficit, archer, elevated...) counts as the plain lift, as it always did.
      */
     internal fun offBoard(set: SessionSet): Boolean =
-        set.exerciseName.contains("assisted", ignoreCase = true) || !Variation.isPlain(set.modifiers)
+        set.exerciseName.contains("assisted", ignoreCase = true) || Variation.eases(set.modifiers)
 
     /** One rung of a LADDER board: a catalogue exercise and the figure that clears it. */
     data class Rung(val exercise: String, val metric: Skills.Metric, val target: Int)
