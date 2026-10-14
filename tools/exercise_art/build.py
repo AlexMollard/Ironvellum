@@ -3,7 +3,7 @@
 
     python3 -P tools/exercise_art/build.py --src <upstream dir>          # rewrites assets and the generated Kotlin
     python3 -P tools/exercise_art/build.py --check                       # exits 1 if the Kotlin is stale (no --src needed)
-    python3 -P tools/exercise_art/build.py --owner-only                  # after dropping files in owner/ (see owner/README.md)
+    python3 -P tools/exercise_art/build.py --owner-only                  # trace the art submodule's approved PNGs (see ART_STORAGE.md)
     python3 -P tools/exercise_art/build.py --reweight                    # redraws the shipped assets at art.WEIGHT (no --src)
 
 <upstream dir> holds clones of bryllim/workout-guide and everkinetic/data as wg/ and ek/ (see upstream.py, art.py).
@@ -16,6 +16,7 @@ Outputs:
 Nothing is generated at build time of the app: the Kotlin and the assets are committed, and --check keeps them honest.
 """
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -24,7 +25,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 KT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "ironvellum" / "app" / "domain"
-OWNER = HERE / "owner"
+ART = ROOT / "art"                          # git submodule: github.com/AlexMollard/Open-Exercise-Art
+ART_PNG = ART / "png"                       # png/<slug>.png, the only masters
+CATALOGUE = ART / "catalogue.json"          # open-exercise-art-v1: exercises[].id, png.file, png.sha256
 MISSING = HERE / "missing.json"
 REPLACEMENTS = HERE / "replacement-catalog.json"
 FRAME_COUNTS = HERE / "frame-counts.json"   # a reviewed still asks for 1 frame instead of the entry's count
@@ -262,22 +265,37 @@ def slugify(name):
     return s
 
 
+def approved_art():
+    """The slugs the pinned art repo approves: in art/catalogue.json, with a PNG whose sha256 matches the catalogue.
+    That is the only approval there is. A missing submodule stops the build; a mismatching PNG is reported and not approved."""
+    if not CATALOGUE.exists():
+        sys.exit("The art submodule is not initialised: %s is missing.\nRun: git submodule update --init art" % CATALOGUE)
+    approved = set()
+    for e in json.loads(CATALOGUE.read_text(encoding="utf-8"))["exercises"]:
+        png = ART / e["png"]["file"]
+        if png.is_file() and hashlib.sha256(png.read_bytes()).hexdigest() == e["png"]["sha256"]:
+            approved.add(e["id"])
+        else:
+            print("not approved (PNG missing or hash differs from art/catalogue.json):", e["id"], file=sys.stderr)
+    return approved
+
+
 def apply_owner(mp):
-    """Owner-made drawings in owner/ replace the gap they fill: a technique's proxy or pictogram, or a movement's
+    """Approved drawings from the art submodule replace the gap they fill: a technique's proxy or pictogram, or a movement's
     placeholder. Returns {art id: hanging}. mp is changed in place."""
     owned = {}
-    if not MISSING.exists() or not OWNER.exists():
+    if not MISSING.exists():
         return owned
     sys.path.insert(0, str(HERE))
     import art
-    approved = set((OWNER / "APPROVED").read_text(encoding="utf-8").split()) if (OWNER / "APPROVED").exists() else set()
+    approved = approved_art()
     counts = json.loads(FRAME_COUNTS.read_text(encoding="utf-8")) if FRAME_COUNTS.exists() else {}
     entries = json.loads(MISSING.read_text(encoding="utf-8"))["entries"]
     if REPLACEMENTS.exists():
         entries += json.loads(REPLACEMENTS.read_text(encoding="utf-8"))["entries"]
     for e in entries:
-        files = art.owner_files(OWNER, e["slug"])
-        # Only sets the owner has approved, and only once every frame the entry asks for is there.
+        files = art.owner_files(ART_PNG, e["slug"])
+        # Only slugs the art catalogue approves, and only once every frame the entry asks for is there.
         if e["slug"] not in approved or len(files) < counts.get(e["slug"], e.get("frameCount", 1)):
             continue
         aid = "own_" + e["slug"]
@@ -289,6 +307,9 @@ def apply_owner(mp):
             for name in dict.fromkeys([e["name"], *e.get("aliases", [])]):
                 mp["mapped"].append({"record": "owner:" + e["slug"], "exercise": name, "confidence": "owner", "art": aid,
                                      "frames": len(files), "source": {"kind": "own", "id": e["slug"]}, "used": True})
+            if e.get("technique"):  # the movement's drawing is also the skill-tree technique of the same name
+                mp["techniques"][e["name"]] = {"exercise": e["name"], "art": aid, "frames": len(files),
+                                               "confidence": "owner", "proxy": False}
             if e.get("sourceArt"):
                 for technique in mp["techniques"].values():
                     if technique["art"] == e["sourceArt"]:
@@ -297,7 +318,7 @@ def apply_owner(mp):
 
 
 def build_assets(lib, mp, src, workers, owned, owner_only=False, old_report=None):
-    """Rebuilds every drawing from the upstream clones and owner/; returns the report."""
+    """Rebuilds every drawing from the upstream clones and the art submodule; returns the report."""
     import multiprocessing
     sys.path.insert(0, str(HERE))
     import art
@@ -307,7 +328,7 @@ def build_assets(lib, mp, src, workers, owned, owner_only=False, old_report=None
         ids[aid] = []
     for name, (aid, _) in table.items():
         ids[aid].append(name)
-    jobs = [(aid.split("_", 1)[0], str(OWNER) if aid.startswith("own_") else src, aid.split("_", 1)[1],
+    jobs = [(aid.split("_", 1)[0], str(ART_PNG) if aid.startswith("own_") else src, aid.split("_", 1)[1],
              owned.get(aid, False) or any(art.HANGING.search(n) for n in names), aid)
             for aid, names in sorted(ids.items()) if aid.startswith("own_") or not owner_only]
     ASSETS.mkdir(parents=True, exist_ok=True)
@@ -350,7 +371,7 @@ def main():
     ap.add_argument("--src")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--owner-only", action="store_true", help="rebuild only the owner-made drawings (no --src needed)")
+    ap.add_argument("--owner-only", action="store_true", help="rebuild only the drawings traced from the art submodule (no --src needed)")
     ap.add_argument("--reweight", action="store_true", help="redraw the shipped drawings at art.WEIGHT (no --src needed)")
     ap.add_argument("--select-stills", action="store_true", help="apply selected still poses to existing vector assets")
     a = ap.parse_args()

@@ -41,9 +41,11 @@ SOFTWARE.
 
 ## Exercise illustrations and instructions
 
-- Illustrations: generated for Ironvellum, inspired by [Everkinetic](https://github.com/everkinetic/data)
-  (created by Greg Priday) and [Workout Guide](https://github.com/bryllim/workout-guide) by Bryl Lim.
-  All 553 exercise drawings are approved generated stills under the project licence;
+- Illustrations: [Open Exercise Art](https://github.com/AlexMollard/Open-Exercise-Art) by Alex Mollard
+  (CC BY-SA 4.0), generated and owner-approved, visually inspired by
+  [Everkinetic](https://github.com/everkinetic/data) (created by Greg Priday) and
+  [Workout Guide](https://github.com/bryllim/workout-guide) by Bryl Lim. All 561 exercise drawings are traced
+  from that repository's PNGs (the `art/` submodule) and are adaptations under CC BY-SA 4.0;
   the original upstream artwork and animation geometry have been replaced.
 - Catalogue and instructions: adapted from Everkinetic's records, with instruction text lightly
   edited in `LibraryGuides.kt`. These textual adaptations retain Creative Commons

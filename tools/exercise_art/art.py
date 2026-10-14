@@ -10,7 +10,7 @@ ground line from pose to pose. The app scales the window to its slot with Fit an
 
     workout-guide   assets/<slug>/frame-N.svg   one 512 x 512 <path>
     Everkinetic     dist/svg/<id>-relaxation|tension.svg   rendered into ONE shared box, thresholded, vector-traced (potrace)
-    owner-made      owner/<slug>-N.svg|png                  the same as Everkinetic, see owner/README.md
+    owner-made      art/png/<slug>.png                      the Open-Exercise-Art submodule, see ART_STORAGE.md
 
 The free sets are used as drawn: a frame is dropped only when it is broken (see `analyse`); an exercise left with one
 frame is shipped as a still. Only the line weight changes: the sources range from hairline to heavy, sometimes within one
@@ -77,14 +77,9 @@ OWNER_WIDTH = 1024     # owner-made drawings are rendered or resampled to this w
 
 
 def owner_files(folder, slug):
-    """The owner's frames for one movement, in order: <slug>-1.svg|png, <slug>-2..., contiguous from 1."""
-    out = []
-    for i in range(1, 9):
-        found = [p for ext in ("svg", "png") for p in [Path(folder) / ("%s-%d.%s" % (slug, i, ext))] if p.exists()]
-        if not found:
-            break
-        out.append(found[0])
-    return out
+    """The approved still for one movement: <slug>.png in the art repo's png/ folder, or nothing if it is not there."""
+    p = Path(folder) / (slug + ".png")
+    return [p] if p.exists() else []
 
 
 def _owner_mask(path):

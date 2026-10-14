@@ -8,8 +8,8 @@ Original brief: 108 drawings: 69 Codex techniques (priority 1), 6 gym movements 
 
 1. Generate one representative still per exercise: a full hold or clear defining repetition position.
 2. Save pending images in `tools/exercise_art/drafts/batch-NNN/<slug>-1.png` for local review (RGBA, transparent background, 512 px or wider, 1024 recommended).
-3. Only after user approval, move the still into `tools/exercise_art/owner/`, record its approval hash and list its slug in `owner/APPROVED`. Run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`, then `build.py --check`. Move audit JSON to `reviews/batch-NNN/` and delete all draft images. The builder traces the source PNG and regenerates the vector and Kotlin index.
-4. Rebuild the app. Owner-made art is the project's own and is recorded as such in `docs/ART_ATTRIBUTION.md`.
+3. Only after user approval, commit the still as `png/<slug>.png` (with its SVG and `catalogue.json` row) to the Open-Exercise-Art repository, then bump the `art/` submodule pin. Approval is presence in the pinned catalogue with a matching hash. Run `tools/exercise_art/.venv/Scripts/python -P tools/exercise_art/build.py --owner-only`, then `build.py --check`. Move audit JSON to `reviews/batch-NNN/` and delete all draft images. The builder traces the source PNG and regenerates the vector and Kotlin index.
+4. Rebuild the app. The art is CC BY-SA 4.0 and is credited in `docs/ART_ATTRIBUTION.md`.
 
 ## Style guide
 
@@ -31,14 +31,14 @@ Use the approved generated Ironvellum PNGs below as the style references. Origin
 
 ### Style references to attach
 
-Attach these approved PNGs from `tools/exercise_art/owner/` as style references:
+Attach these approved PNGs from `art/png/` as style references:
 
-- `tools/exercise_art/owner/goblet-squat-1.png`: front view, standing and squatting figure: the reference for anatomy, head, shorts, hands and line weight
-- `tools/exercise_art/owner/front-foot-elevated-split-squat-1.png`: three-quarter view with a bench: the reference for how furniture and a loaded dumbbell are drawn
-- `tools/exercise_art/owner/push-up-1.png`: side view on the floor: the reference for prone figures, long horizontal framing and bare feet
-- `tools/exercise_art/owner/dead-hang-1.png`: front view hanging from a bar: the reference for a fixed bar, straight arms and a hanging body
-- `tools/exercise_art/owner/l-sit-1.png`: front view on parallel bars: the reference for bars as tubes and a held, supported body
-- `tools/exercise_art/owner/handstand-push-up-1.png`: inverted figure: the reference for upside-down anatomy and balance on the hands
+- `art/png/goblet-squat.png`: front view, standing and squatting figure: the reference for anatomy, head, shorts, hands and line weight
+- `art/png/front-foot-elevated-split-squat.png`: three-quarter view with a bench: the reference for how furniture and a loaded dumbbell are drawn
+- `art/png/push-up.png`: side view on the floor: the reference for prone figures, long horizontal framing and bare feet
+- `art/png/dead-hang.png`: front view hanging from a bar: the reference for a fixed bar, straight arms and a hanging body
+- `art/png/l-sit.png`: front view on parallel bars: the reference for bars as tubes and a held, supported body
+- `art/png/handstand-push-up.png`: inverted figure: the reference for upside-down anatomy and balance on the hands
 
 ### Base prompt
 

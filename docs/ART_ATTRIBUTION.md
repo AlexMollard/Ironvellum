@@ -1,10 +1,11 @@
 # Art Attribution
 
-Ironvellum's exercise illustrations are generated for this project, inspired by
-Everkinetic and Workout Guide. The app ships 553 approved single-frame illustrations;
-the original upstream drawings and animations have been replaced. The generated
-illustrations and other project artwork use the project licence (GPL-3.0-or-later,
-see `LICENSE`). Adapted exercise instruction text retains its upstream credit and licence below.
+Ironvellum's exercise illustrations come from
+[Open Exercise Art](https://github.com/AlexMollard/Open-Exercise-Art) by Alex Mollard,
+licensed CC BY-SA 4.0. The app ships 561 single-frame illustrations, traced from that
+repository's PNGs into vector paths. Other project artwork uses the project licence
+(GPL-3.0-or-later, see `LICENSE`). Adapted exercise instruction text retains its upstream
+credit and licence below.
 
 ## Assets
 
@@ -18,26 +19,32 @@ see `LICENSE`). Adapted exercise instruction text retains its upstream credit an
 
 ### Exercise illustrations
 
-The illustrations were generated with Codex's built-in image-generation tool and
-approved individually by the owner. Their visual inspiration was
+The illustrations in the Open Exercise Art repository were generated with Codex's built-in
+image-generation tool and approved individually by the owner. Their visual inspiration was
 [Everkinetic](https://github.com/everkinetic/data), created by Greg Priday, and
 [Workout Guide](https://github.com/bryllim/workout-guide), by Bryl Lim.
 No original upstream exercise SVGs, raster frames or animation path geometry remain
 in the current artwork collection or shipped exercise assets.
 
-`tools/exercise_art/owner/` holds one approved PNG per exercise. Its `INDEX.md`
-links exercise names to files, and `APPROVED` lists buildable slugs. Batch prompt
-and feedback records live in `tools/exercise_art/reviews/`; current approval hashes
-are in `review-decisions.json`. See `tools/exercise_art/ART_STORAGE.md` for the layout.
+The repository is the git submodule `art/`, pinned to a commit. An exercise is approved when
+it is listed in `art/catalogue.json` with a matching PNG hash. Batch prompt and feedback
+records live in `tools/exercise_art/reviews/`. See `tools/exercise_art/ART_STORAGE.md` for
+the layout and how to add art.
 
 `build.py --owner-only` thresholds and traces the approved PNGs, redraws their
 centre lines at one house weight (0.8% of the drawing's long side), and produces
 the single-frame `own_<slug>.paths` assets. The app supplies the ink colour at draw
-time. Fix source images rather than hand-editing the tracing code or built vectors.
+time. Fix source images in the art repository rather than hand-editing the tracing
+code or built vectors.
+
+The traced `.paths` files are adaptations of CC BY-SA 4.0 artwork and carry that licence.
+Credit: Open Exercise Art / Alex Mollard, CC BY-SA 4.0,
+https://github.com/AlexMollard/Open-Exercise-Art; the licence text is in
+`licenses/CC-BY-SA-4.0-exercise-art.txt`.
 
 ### Technique drawings
 
-The Codex uses the approved generated stills. `docs/art/skill-technique-art.json`
+The Codex uses the same approved stills from the art repository. `docs/art/skill-technique-art.json`
 records each technique's mapping, including the shared drawing for load variants
 of the same lift. The app's own pictograms remain available as a fallback.
 

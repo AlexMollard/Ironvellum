@@ -23,7 +23,7 @@ def main():
     for name, (aid, _) in build.art_table(lib, mapping).items():
         names.setdefault(aid, []).append(name)
     selections = json.loads((HERE / 'still-selections.json').read_text())['selections']
-    approved = set((HERE / 'owner/APPROVED').read_text().split())
+    approved = build.approved_art()
     generation = json.loads((HERE / 'generation-review.json').read_text())
     base = generation['stylePrompt'] + ' Smooth egg-shaped blank oval head: ABSOLUTELY NO EARS or ear bumps, no eyes, nose, mouth, eyebrows or hair. Single uniform contour weight about 0.8% of canvas width; all enclosed interiors transparent. Square canvas, entire figure and necessary equipment centered, occupying 70-80%, generous clear margins. Realistic joints, neutral head aligned with chest, fingers and thumbs grip correctly. No labels, arrows, floor line, shadows, panels, border, glow or extra figures. '
     entries = []

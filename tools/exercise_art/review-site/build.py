@@ -31,8 +31,9 @@ overrides_path=art/'pose-overrides.json'
 overrides=json.loads(overrides_path.read_text(encoding='utf-8')) if overrides_path.exists() else {}
 reviews_path=art/'review-decisions.json'
 reviews=json.loads(reviews_path.read_text(encoding='utf-8')) if reviews_path.exists() else {'frames':[]}
-review_by_id={f['id']:f for f in reviews.get('frames',[])}
-approved_slugs=set((art/'owner/APPROVED').read_text(encoding='utf-8').split())
+# approved = in the pinned art repo's catalogue with a matching PNG hash
+catalogue_path=root/'art/catalogue.json'
+catalogue={e['id']:e for e in json.loads(catalogue_path.read_text(encoding='utf-8'))['exercises']} if catalogue_path.exists() else {}
 anchors_path=art/'frame-anchors.json'
 anchors=json.loads(anchors_path.read_text(encoding='utf-8'))['sequences'] if anchors_path.exists() else {}
 entries=[]; available=0
@@ -43,10 +44,9 @@ for e in source['entries']:
         name=f"{e['slug']}-{i}.png"
         path=root/'tools/exercise_art/drafts'/f'batch-{a.batch:03d}'/name
         in_batch=name in batch_ids
-        if in_batch and not path.exists() and e['slug'] in approved_slugs:
-            candidate=art/'owner'/name
-            decision=review_by_id.get(name,{})
-            if candidate.is_file() and decision.get('status')=='approved' and hashlib.sha256(candidate.read_bytes()).hexdigest()==decision.get('sha256'):
+        if in_batch and not path.exists() and e['slug'] in catalogue:
+            candidate=root/'art'/'png'/(e['slug']+'.png')
+            if i==1 and candidate.is_file() and hashlib.sha256(candidate.read_bytes()).hexdigest()==catalogue[e['slug']]['png']['sha256']:
                 path=candidate
         f={'id':name,'number':i,'pose':overrides.get(name,e['poses'][i-1]),'available':False}
         if path.exists() and in_batch:
