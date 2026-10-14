@@ -10,12 +10,10 @@ lives in git (`git log`, `git log -S`), not here.
 
 ## Hosted schema: how a change reaches the live project
 
-The hosted project is at `schema_version()` 28 (owner-verified in the SQL
-editor 2026-10-02): the circles and release patches are applied,
-`circle_draw_code()` works, `sessions` and `public_feed` carry `edited_at`, and
-warbands are gone. Owed: paste `supabase/hosted/2026-10-09-crests.sql` (schema 29, the
-worn crest on profiles, the boards, the feed and `my_circle()`) before shipping the
-crests build; until then the app reads the project as outdated.
+The hosted project is at `schema_version()` 29: the circles, release and crests
+patches are applied (crests pasted by the owner 2026-10-15), `circle_draw_code()`
+works, `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the
+worn crest is on profiles, the boards, the feed and `my_circle()`.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
