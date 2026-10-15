@@ -54,6 +54,7 @@ object GearRequirements {
         "one-arm hang" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "hanging leg raise" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "hanging knee raise" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
+        "hanging oblique knee raise" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "toes-to-bar" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         // Fixed implements.
         "muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),

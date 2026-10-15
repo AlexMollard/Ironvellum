@@ -4085,6 +4085,29 @@ object ExerciseGuides {
             ),
         )
         put(
+            "hanging oblique knee raise",
+            ExerciseGuide(
+                setup = "Hang from a bar with arms straight and shoulders pulled slightly down.",
+                steps = listOf(
+                    "Brace your abs and keep your upper body facing forward.",
+                    "Pull your knees up and across toward one shoulder, curling that side of your waist.",
+                    "Pause briefly at the top.",
+                    "Lower your legs slowly to a straight hang.",
+                    "Repeat to the other side; one rep each way counts as one rep per side.",
+                ),
+                cues = listOf(
+                    "Knees to the armpit",
+                    "Shoulders stay square to the bar",
+                    "No swinging",
+                ),
+                commonMistakes = listOf(
+                    "Swinging the hips side to side to throw the knees up",
+                    "Turning the whole body instead of curling the waist",
+                    "Dropping the legs fast between reps",
+                ),
+            ),
+        )
+        put(
             "ab wheel rollout",
             ExerciseGuide(
                 setup = "Kneel on a mat holding the wheel handles under your shoulders, with your back slightly rounded and abs tight.",

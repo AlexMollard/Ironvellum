@@ -60,7 +60,7 @@ class LibrarySeedUpgradeTest {
     fun upgradeGainsTheNewMovementsExactlyOnce() = runTest {
         val names = listOf(
             "Tuck Front Lever Row", "Front Lever Row", "Box Pistol Squat", "Elevated Pistol Squat", "Airborne Squat",
-            "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat",
+            "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat", "Hanging Oblique Knee Raise",
         )
         db.exerciseDao().insertAll(Seed.exercises.filter { it.name !in names })
         names.forEach { assertNull(db.exerciseDao().byName(it)) }

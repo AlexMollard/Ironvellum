@@ -62,6 +62,7 @@ object Seed {
         // Core
         ExerciseEntity(name = "Hanging Leg Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Hanging Knee Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
+        ExerciseEntity(name = "Hanging Oblique Knee Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Ab Wheel Rollout", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "L-sit", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Dragon Flag", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),

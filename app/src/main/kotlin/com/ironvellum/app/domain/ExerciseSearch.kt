@@ -49,6 +49,7 @@ object ExerciseSearch {
         a("kbs", "swing")
         a("hlr,hlrs", "hanging leg raise")
         a("hkr", "hanging knee raise")
+        a("hokr,oblique knee raise,oblique raise", "hanging oblique knee raise")
         a("hip thrust,glute bridge", "hip thrust", "glute bridge")
         a("hf,human flag", "human flag")
         a("ohs", "overhead squat")

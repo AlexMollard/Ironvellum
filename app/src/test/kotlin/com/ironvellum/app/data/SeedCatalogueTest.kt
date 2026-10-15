@@ -80,6 +80,20 @@ class SeedCatalogueTest {
     }
 
     @Test
+    fun `the hanging oblique knee raise is a bar core move led by the obliques, a rung above the knee raise`() {
+        val name = "Hanging Oblique Knee Raise"
+        val row = catalogue.getValue(name)
+        assertEquals(1, Seed.exercises.count { it.name == name })
+        assertEquals(MuscleGroup.CORE.name, row.muscleGroup)
+        assertEquals(ExerciseMetric.REPS.name, row.metric)
+        assertEquals(false, row.isWeighted)
+        assertTrue(MovementDifficulty.tier(name) > MovementDifficulty.tier("Hanging Knee Raise"))
+        assertEquals(listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)), GearRequirements.needs(name))
+        assertEquals(Muscle.OBLIQUES, MuscleMap.profile(name)!!.muscles.maxByOrNull { it.value }!!.key)
+        assertTrue(ExerciseGuides.forName(name)!!.steps.size >= 3)
+    }
+
+    @Test
     fun `every catalogue movement declares a real muscle group`() {
         val valid = MuscleGroup.entries.map { it.name }.toSet()
         val bad = Seed.exercises.filter { it.muscleGroup !in valid }.map { "${it.name}: ${it.muscleGroup}" }

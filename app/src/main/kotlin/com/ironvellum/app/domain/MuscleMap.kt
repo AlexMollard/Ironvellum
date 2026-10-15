@@ -362,6 +362,12 @@ object MuscleMap {
             muscles = mapOf(Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.CORE, compound = false, stretchBias = true,
         ))
+        // The knees rise up and across to one side: the obliques bend and turn the trunk against the hang, so they
+        // lead; the hip flexors still lift the legs, and the abs curl the pelvis beside them.
+        put("hanging oblique knee raise", ExerciseProfile(
+            muscles = mapOf(Muscle.OBLIQUES to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.ABS to 0.5, Muscle.FOREARMS to 0.5),
+            pattern = MovementPattern.CORE, compound = false, stretchBias = false,
+        ))
         put("ab wheel rollout", ExerciseProfile(
             muscles = mapOf(
                 Muscle.ABS to 1.0, Muscle.LATS to 0.5, Muscle.LOWER_BACK to 0.5,

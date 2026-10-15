@@ -681,6 +681,11 @@ object Skills {
             why = "First hanging core load that teaches the pelvis to curl under control.",
         ),
         SkillDef(
+            "Hanging Oblique Knee Raise", 2, "Core", prerequisites = listOf("Hanging Knee Raise"),
+            standard = "3 sets of 10 reps each side, knees up to the armpit, no swing",
+            why = "Adds the twist to hanging core work, so the obliques are loaded from the bar.",
+        ),
+        SkillDef(
             "Hanging Leg Raise", 2, "Core", prerequisites = listOf("Hanging Knee Raise"),
             standard = "3 sets of 10 reps, legs straight to horizontal, no swing",
             why = "Straight-leg compression from a hang — the road to toes-to-bar.",
