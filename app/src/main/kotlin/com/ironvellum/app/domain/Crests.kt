@@ -1,9 +1,14 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.roundToLong
 
 /** The four shelves of the crest catalogue, in the order the collection lists them. */
-enum class CrestGroup(val label: String) { Ladder("Ladder"), Deeds("Deeds"), Houses("Houses"), Veil("The Veil") }
+enum class CrestGroup(private val labelText: () -> String) {
+    Ladder({ "Ladder" }), Deeds({ Words.deed.cpl }), Houses({ "Houses" }), Veil({ Words.theVeil.c });
+
+    val label: String get() = labelText()
+}
 
 /** What a crest's perk is about, as the sheet's chip names it. */
 enum class CrestKind(val label: String) { Rate("Rate"), Offering("Offering"), Echoes("Echoes"), Away("Away"), Vault("Vault") }
@@ -47,9 +52,9 @@ data class CrestDef(
     val how: String
         get() = when (group) {
             CrestGroup.Ladder -> "Reach level $level"
-            CrestGroup.Deeds -> "Earn the deed ${deed?.name}"
+            CrestGroup.Deeds -> "Earn the ${Words.deed.s} ${deed?.name}"
             CrestGroup.Houses -> "Complete the ${house?.title}"
-            CrestGroup.Veil -> "Chance: a Veil draw that pays a crest"
+            CrestGroup.Veil -> "Chance: ${Words.veilDraw.at} that pays a crest"
         }
 }
 
@@ -191,30 +196,30 @@ object Crests {
     ) = CrestDef(id, name, CrestGroup.Veil, kind, perk, text, short, art, ring, double)
 
     /** All 28, in the order the collection lists them. */
-    val ALL: List<CrestDef> = listOf(
+    val ALL: List<CrestDef> by Words.perMode { listOf(
         ladder("iron", "Iron Crest", 5, CrestKind.Rate, "Steady Hand", "Your essence rate is 3% higher.", "Essence rate +3%", CrestTone.Iron),
         ladder("bronze", "Bronze Crest", 10, CrestKind.Offering, "Frugal Offering", "Extra inscriptions cost 5% less. The first one is 4,750 essence, not 5,000.", "Offerings 5% cheaper", CrestTone.Bronze),
         ladder("silver", "Silver Crest", 15, CrestKind.Echoes, "Echo Trim", "Echoes lift your rate by 1.5% per 100 held, not 1%, and the ceiling rises from 25% to 30%.", "Echoes lift rate 50% more", CrestTone.Iron),
         ladder("gold", "Gold Crest", 20, CrestKind.Echoes, "Echo Purse", "Echo draws pay 50% more echoes.", "Echo draws pay +50%", CrestTone.Gold),
         ladder("jade", "Jade Crest", 25, CrestKind.Away, "Long Day", "Your roll works at full strength for 26 hours before it tires, not 24.", "Full strength 26 h, not 24", CrestTone.Emerald),
         ladder("crimson", "Crimson Crest", 30, CrestKind.Away, "Slow Ember", "On a long absence the roll never falls below 13% of its rate, not 10%.", "Long-absence floor 13%", CrestTone.Red),
-        ladder("obsidian", "Obsidian Crest", 35, CrestKind.Rate, "Heavy Week", "Each trial sealed this week counts 3.5 toward your rate, not 3.", "Each trial counts 3.5, not 3", CrestTone.Ink),
-        ladder("verdant", "Verdant Crest", 40, CrestKind.Rate, "Quick Study", "Mastered techniques lift your rate 15% faster, so early unlocks count for more.", "Techniques lift rate faster", CrestTone.Emerald, CrestTone.Gold),
+        ladder("obsidian", "Obsidian Crest", 35, CrestKind.Rate, "Heavy Week", "Each ${Words.trial.s} ${Words.sealed.s} this week counts 3.5 toward your rate, not 3.", "Each ${Words.trial.s} counts 3.5, not 3", CrestTone.Ink),
+        ladder("verdant", "Verdant Crest", 40, CrestKind.Rate, "Quick Study", "Mastered ${Words.technique.pl} lift your rate 15% faster, so early unlocks count for more.", "${Words.technique.cpl} lift rate faster", CrestTone.Emerald, CrestTone.Gold),
         ladder("ember", "Ember Crest", 45, CrestKind.Offering, "Slow Tithe", "Each inscription you buy raises the next price by 400 essence, not 500.", "Price step 400, not 500", CrestTone.Red, CrestTone.Gold),
         ladder("vellum", "Vellum Crest", 50, CrestKind.Vault, "Set Rite", "House pair bonuses are +8%, not +5%, on every house where you hold two relics.", "Pair bonuses +8%, not +5%", CrestTone.Ink, CrestTone.Gold),
         ladder("sovereign", "Sovereign Crest", 55, CrestKind.Vault, "Hoard", "+0.3% essence for every relic you hold, up to +4.8% with all sixteen.", "+0.3% per relic held", CrestTone.Gold, double = true),
         ladder("ironvellum", "Ironvellum Crest", 60, CrestKind.Vault, "Deep Vault", "Relics beyond your best weigh more: the stacking ceiling rises from x3 to x5.", "Relic stacking ceiling x5", CrestTone.Emerald, CrestTone.Gold, double = true),
 
-        deed("watchfire", "Watchfire Crest", "fortnight_vigil", CrestKind.Rate, "Kept Flame", "Each day of your oath counts 1.5 toward your rate, not 1.", "Oath days count 1.5, not 1", CrestTone.Bronze),
+        deed("watchfire", "Watchfire Crest", "fortnight_vigil", CrestKind.Rate, "Kept Flame", "Each day of your ${Words.oath.s} counts 1.5 toward your rate, not 1.", "${Words.oath.c} days count 1.5, not 1", CrestTone.Bronze),
         deed("anvil", "Anvil Crest", "unbroken", CrestKind.Rate, "Steady Count", "The ceiling on training rises from 30 to 31.5, so a committed week reaches x4.15, not x4.", "Training ceiling +1.5", CrestTone.Iron, CrestTone.Gold),
-        deed("sage", "Sage Crest", "keeper_of_twenty_five", CrestKind.Rate, "Keen Study", "The technique ceiling rises from x2.0 to x2.06.", "Technique ceiling x2.06", CrestTone.Emerald, CrestTone.Gold),
+        deed("sage", "Sage Crest", "keeper_of_twenty_five", CrestKind.Rate, "Keen Study", "The ${Words.technique.s} ceiling rises from x2.0 to x2.06.", "${Words.technique.c} ceiling x2.06", CrestTone.Emerald, CrestTone.Gold),
         deed("dawnroad", "Dawnroad Crest", "eternal_vanguard", CrestKind.Rate, "Walker's Trickle", "A trickle of 1 more essence an hour is added before your multipliers.", "+1 essence/h base", CrestTone.Prism),
         deed("throne", "Throne Crest", "throne_of_iron", CrestKind.Rate, "Heavy Hand", "Every rep you log counts 20% more toward your rate.", "Volume counts 20% more", CrestTone.Gold),
         deed("marathon", "Marathon Crest", "gate_marathon", CrestKind.Away, "Second Wind", "Essence banked while you are away is 5% greater.", "Away-pay +5%", CrestTone.Red, CrestTone.Gold),
 
         house("ironhold", "Ironhold Crest", RelicHouse.Iron, CrestKind.Rate, "Ironhold Rite", "The lifting part of your rate is 6% higher, on top of the house bonus.", "Lifting term +6%", CrestTone.Iron),
         house("bellwarden", "Bellwarden Crest", RelicHouse.Vigil, CrestKind.Rate, "Bellwarden's Watch", "The consistency part of your rate is 15% higher, on top of the house bonus.", "Consistency term +15%", CrestTone.Bronze),
-        house("masterwright", "Masterwright Crest", RelicHouse.Craft, CrestKind.Rate, "Masterwright's Hand", "The technique part of your rate is 8% higher, on top of the house bonus.", "Technique term +8%", CrestTone.Prism),
+        house("masterwright", "Masterwright Crest", RelicHouse.Craft, CrestKind.Rate, "Masterwright's Hand", "The ${Words.technique.s} part of your rate is 8% higher, on top of the house bonus.", "${Words.technique.c} term +8%", CrestTone.Prism),
         house("hearthgate", "Hearthgate Crest", RelicHouse.Return, CrestKind.Away, "Open Gate", "The comeback part of your rate is 10% higher: time paid after the full day counts more.", "Comeback term +10%", CrestTone.Emerald),
 
         chance("aurora", "Aurora Crest", CrestKind.Echoes, "Brighter Echo", "Echo draws always pay at least 60% of their band, so the weak ones vanish.", "Echo draws pay 60%+ of band", CrestTone.Prism),
@@ -231,10 +236,10 @@ object Crests {
         // ceiling gives +1.9 / +2.7 / +3.1% on the same vaults, so the two overlap in kind (the stack)
         // and differ in mechanism (a ceiling against a weight).
         chance("margin", "Margin Crest", CrestKind.Vault, "Close Ranks", "Relics beyond your strongest each weigh a quarter more when they stack.", "Backing relics weigh +25%", CrestTone.Iron),
-        chance("ashenking", "Ashen King's Crest", CrestKind.Rate, "Reigning", "+5% essence while your oath stands at 7 days or more.", "+5% while oath is 7+ days", CrestTone.Red, CrestTone.Gold),
-    )
+        chance("ashenking", "Ashen King's Crest", CrestKind.Rate, "Reigning", "+5% essence while your ${Words.oath.s} stands at 7 days or more.", "+5% while ${Words.oath.s} is 7+ days", CrestTone.Red, CrestTone.Gold),
+    ) }
 
-    private val BY_ID: Map<String, CrestDef> = ALL.associateBy { it.id }
+    private val BY_ID: Map<String, CrestDef> by Words.perMode { ALL.associateBy { it.id } }
 
     fun byId(id: String?): CrestDef? = BY_ID[id]
 

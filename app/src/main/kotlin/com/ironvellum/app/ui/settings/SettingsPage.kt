@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,17 +22,19 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.PushedHeader
 
 /** The Settings sub-screens, each its own `settings/{section}` route under the hub. */
-enum class SettingsSection(val key: String, val title: String) {
-    PROFILE("profile", "PROFILE"),
-    APPEARANCE("appearance", "APPEARANCE"),
-    TRAINING_MODE("training_mode", "TRAINING MODE"),
-    DURING_TRIAL("during_trial", "DURING A TRIAL"),
-    ARMOURY("armoury", "ARMOURY"),
-    SUMMONS("summons", "THE SUMMONS"),
-    HEALTH_CONNECT("health_connect", "HEALTH CONNECT"),
-    DATA("data", "DATA"),
-    ADVANCED("advanced", "ADVANCED"),
+enum class SettingsSection(val key: String, private val titleText: () -> String) {
+    PROFILE("profile", { "PROFILE" }),
+    APPEARANCE("appearance", { "APPEARANCE" }),
+    TRAINING_MODE("training_mode", { "TRAINING MODE" }),
+    DURING_TRIAL("during_trial", { "DURING A ${Words.trial.u}" }),
+    ARMOURY("armoury", { Words.armoury.u }),
+    SUMMONS("summons", { Words.theSummons.u }),
+    HEALTH_CONNECT("health_connect", { "HEALTH CONNECT" }),
+    DATA("data", { "DATA" }),
+    ADVANCED("advanced", { "ADVANCED" }),
     ;
+
+    val title: String get() = titleText()
 
     companion object {
         fun fromKey(key: String?): SettingsSection? = entries.firstOrNull { it.key == key }

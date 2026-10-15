@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
@@ -66,6 +67,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.InkRowPanel
@@ -73,6 +76,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsCaption
+import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkBorder
@@ -87,8 +91,15 @@ import kotlin.math.roundToInt
 internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val palette by viewModel.appearance.collectAsStateWithLifecycle()
     var editingPrimary by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val context = LocalContext.current
     SettingsPage(SettingsSection.APPEARANCE.title, onBack) {
         Spacer(Modifier.height(12.dp))
+        SettingsSwitchRow(
+            label = "Themed names",
+            caption = Lines.themedNamesCaption,
+            checked = Words.themed,
+            onCheckedChange = { Words.setThemed(context.applicationContext, it) },
+        )
         SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
         SectionHeader("COLOUR PAIRS", topPadding = 16.dp)
         InkRowPanel(Modifier.fillMaxWidth()) {
@@ -121,7 +132,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
             }
             InkDivider()
             AccentRow("Primary accent", "Actions and progress", palette.primary) { editingPrimary = true }
-            AccentRow("Reward accent", "Peaks and earned moments", palette.secondary) { editingPrimary = false }
+            AccentRow("Reward accent", "${Words.peak.cpl} and earned moments", palette.secondary) { editingPrimary = false }
         }
         Spacer(Modifier.height(16.dp))
         AccentPreview(palette)
@@ -176,7 +187,7 @@ private fun AccentPreview(palette: AccentPalette) {
             Text("Log set", style = MaterialTheme.typography.labelLarge, color = Color(palette.primary))
         }
         Column(Modifier.weight(1f)) {
-            Text("New peak", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
+            Text("New ${Words.peak.s}", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccentSwatch(palette.secondary)
                 Text("+12 XP", style = MaterialTheme.typography.bodyMedium, color = Color(palette.secondary))

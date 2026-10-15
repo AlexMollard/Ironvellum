@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CrestCatalogue
 import com.ironvellum.app.domain.CrestDef
 import com.ironvellum.app.domain.CrestGroup
@@ -106,7 +107,7 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
         }
     } else {
         Text(
-            "No crest worn. Tap an earned crest to wear it; allies see it on your avatar.",
+            "No crest worn. Tap an earned crest to wear it; ${Words.ally.pl} see it on your avatar.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp),
@@ -133,9 +134,9 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
 
 private fun groupLead(group: CrestGroup): String = when (group) {
     CrestGroup.Ladder -> "Ladder · every ${Veil.MILESTONE_EVERY} levels"
-    CrestGroup.Deeds -> "Deeds"
+    CrestGroup.Deeds -> Words.deed.cpl
     CrestGroup.Houses -> "Houses · complete a house"
-    CrestGroup.Veil -> "The Veil · chance draws"
+    CrestGroup.Veil -> "${Words.theVeil.c} · chance draws"
 }
 
 /** One crest: its plate, name, perk or ask, and for one in reach a count over a short bar. */
@@ -262,10 +263,10 @@ internal fun CrestSheet(
                     )
                     Text(
                         when (def.group) {
-                            CrestGroup.Deeds -> "The deed ${def.deed?.name}. The crest is yours for good once it is earned."
+                            CrestGroup.Deeds -> "The ${Words.deed.s} ${def.deed?.name}. The crest is yours for good once it is earned."
                             CrestGroup.Ladder -> "Every level from here pays toward it. It is yours for good once earned."
                             CrestGroup.Houses -> "Hold all four relics of the house. The crest is yours for good once it is complete."
-                            CrestGroup.Veil -> "It cannot be bought or levelled to: a Veil draw that pays a crest can pay this one."
+                            CrestGroup.Veil -> "It cannot be bought or levelled to: ${Words.veilDraw.at} that pays a crest can pay this one."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
@@ -283,7 +284,7 @@ internal fun CrestSheet(
             InkPanel(Modifier.fillMaxWidth().padding(top = 14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (owned) "VEIL PERK" else "PERK ONCE WORN",
+                        if (owned) "${Words.veil.u} PERK" else "PERK ONCE WORN",
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f),
@@ -333,12 +334,12 @@ internal fun CrestSheet(
                 }
             }
             InkPanel(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                Text("SEEN BY YOUR ALLIES", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text("SEEN BY YOUR ${Words.ally.upl}", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 Text(
                     if (owned) {
-                        "On your avatar wherever your allies see you."
+                        "On your avatar wherever your ${Words.ally.pl} see you."
                     } else {
-                        "Allies see it once you wear it."
+                        "${Words.ally.cpl} see it once you wear it."
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
@@ -360,7 +361,7 @@ internal fun CrestSheet(
             caption = {
                 Text(
                     notice ?: when {
-                        !owned -> "Allies see it once you wear it."
+                        !owned -> "${Words.ally.cpl} see it once you wear it."
                         worn -> "This is the crest you wear."
                         !crests.mayChange -> "You changed your crest today. Come back tomorrow."
                         else -> "Wearing collects your essence first. One change a day."

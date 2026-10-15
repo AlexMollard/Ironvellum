@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.CrestDef
 import com.ironvellum.app.domain.CrestGroup
@@ -126,7 +128,7 @@ internal fun techniquePages(result: SkillClaimResult, sex: Sex): List<Celebratio
         CelebrationPage.TechniqueMastered(
             name = result.skill.name,
             tier = Skills.tierLabel(result.skill.tier),
-            path = "${result.skill.line} path",
+            path = "${result.skill.line} ${Words.path.s}",
             xp = result.xpAwarded,
             opened = result.unlockedNext.map { it.name },
         ),
@@ -146,9 +148,9 @@ internal fun rarityWord(rarity: RewardRarity): String = if (rarity == RewardRari
 internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crestsOwned: Int? = null): CelebrationPage.Inscribed {
     val relic = (result.reward as? Reward.Relic)?.let { reward -> vault?.let { RelicHouses.reveal(reward, it) } }
     val notes = when (val reward = result.reward) {
-        is Reward.Figures -> listOf("Added to the Veil")
+        is Reward.Figures -> listOf("Added to ${Words.theVeil.t}")
         is Reward.Relic -> listOf("Rate multiplier ×%.2f".fmt(reward.multiplier))
-        is Reward.CrestFrame -> listOf("Crest inscribed", "Wear it on your folio")
+        is Reward.CrestFrame -> listOf("Crest inscribed", "Wear it on your ${Words.folio.s}")
     }
     return CelebrationPage.Inscribed(
         rarity = result.rarity,
@@ -188,7 +190,7 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
             if (grant.crests.isNotEmpty()) add("${grant.crests.size} ${if (grant.crests.size == 1) "crest" else "crests"} inscribed")
             if (grant.relics.isNotEmpty()) add("${grant.relics.size} ${if (grant.relics.size == 1) "relic" else "relics"} restored")
         }
-        listOf(CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = "The Veil remembered you", notes = notes))
+        listOf(CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = "${Words.theVeil.c} remembered you", notes = notes))
     } else {
         emptyList()
     }
@@ -199,7 +201,7 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
         CelebrationPage.Inscribed(
             rarity = RewardRarity.Rare,
             name = name,
-            notes = if (id == null) listOf("Crest earned", "Wear it on your folio") else emptyList(),
+            notes = if (id == null) listOf("Crest earned", "Wear it on your ${Words.folio.s}") else emptyList(),
             crestId = id,
             crestLine = crest?.let { earnedLine(it, crestsOwned) },
         )
@@ -213,7 +215,7 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
  */
 internal fun earnedLine(crest: CrestDef, crestsOwned: Int?): String = when (crest.group) {
     CrestGroup.Ladder -> "Level ${crest.level} milestone"
-    CrestGroup.Deeds -> crestLine("Deed crest · ${crest.deed?.name}", crestsOwned)
+    CrestGroup.Deeds -> crestLine("${Words.deed.c} crest · ${crest.deed?.name}", crestsOwned)
     CrestGroup.Houses -> crestLine("House crest · ${crest.house?.title}", crestsOwned)
     CrestGroup.Veil -> crestLine("Chance draw", crestsOwned)
 }
@@ -223,7 +225,7 @@ internal fun inscribedNarrator(rarity: RewardRarity): String = when (rarity) {
     RewardRarity.Common -> "A whisper in the dark."
     RewardRarity.Rare -> "The dark stirs."
     RewardRarity.Epic -> "The dark bends."
-    RewardRarity.Masterwork -> "The Ledger answers."
+    RewardRarity.Masterwork -> Lines.masterworkAnswer
 }
 
 private const val SEAL_AT = 550L
@@ -302,7 +304,7 @@ internal fun AchievementOverlay(
                         MomentPage(
                             step = at,
                             steps = pages.size,
-                            tag = "Technique mastered",
+                            tag = "${Words.technique.c} mastered",
                             name = page.name,
                             beats = MasteredBeats,
                             dock = {
@@ -320,7 +322,7 @@ internal fun AchievementOverlay(
                                 Text("Tier ${page.tier} · ${page.path}", style = MaterialTheme.typography.bodySmall, color = Dim, modifier = it)
                             },
                             xp = page.xp,
-                            notes = page.opened.map { "Technique opened · $it" },
+                            notes = page.opened.map { "${Words.technique.c} opened · $it" },
                         )
                     }
                     is CelebrationPage.Inscribed -> if (page.crestId != null) {
@@ -366,13 +368,13 @@ internal fun AchievementOverlay(
                     is CelebrationPage.GoalMet -> MomentPage(
                         step = at,
                         steps = pages.size,
-                        tag = "Circle's goal met",
+                        tag = "${Words.circle.c}'s goal met",
                         name = page.name,
                         beats = GoalBeats,
                         dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
                         subline = {
                             Text(
-                                "The circle met its weekly goal and you carried your share.",
+                                "The ${Words.circle.s} met its weekly goal and you carried your share.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Dim,
                                 textAlign = TextAlign.Center,

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -64,7 +65,7 @@ fun SupportScreen(onBack: () -> Unit) {
         )
         Spacer(Modifier.height(10.dp))
         SettingsCaption(
-            "The shared cloud the Tidings and the backups live on " +
+            "The shared cloud the ${Words.tidings.t} and the backups live on " +
                 "costs real money every month — about \$25 for hosting. " +
                 "Every cost is public: every invoice in, every " +
                 "coin out.",

@@ -7,6 +7,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.size
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.TermInfo
 import com.ironvellum.app.ui.components.Term
 import androidx.compose.foundation.background
@@ -586,13 +587,13 @@ internal fun SplitPicker(
 /** What the picked split does with the week, in one line. */
 internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
     TrainingSplit.FULL_BODY ->
-        "Every muscle, every rite. Fewest days, longest rites."
+        "Every muscle, every ${Words.rite.s}. Fewest days, longest ${Words.rite.pl}."
     TrainingSplit.UPPER_LOWER ->
         "Upper, then lower, twice each. Every muscle twice a week."
     TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
         "Each muscle once a week. Fine for growth, less practice per exercise."
     } else {
-        "Push, pull, legs twice over. Short rites, every muscle twice a week."
+        "Push, pull, legs twice over. Short ${Words.rite.pl}, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
         "PPL is push / pull / legs: those three days, then upper and lower. Every muscle twice in five days."

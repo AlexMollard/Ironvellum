@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.settings
 
 import androidx.activity.compose.BackHandler
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkDivider
@@ -110,7 +111,7 @@ fun ImportReviewOverlay(
             val range = ui.parsed.dateRange
             Text(
                 buildString {
-                    append("$trials ${plural(trials, "trial", "trials")}")
+                    append("$trials ${plural(trials, Words.trial.s, Words.trial.pl)}")
                     append(" · ${ui.parsed.totalSets} ${plural(ui.parsed.totalSets, "set", "sets")}")
                     if (range != null) {
                         append(" · from ${formatDate(range.second, "d MMM yyyy")}")
@@ -179,8 +180,8 @@ fun ImportReviewOverlay(
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                "Nothing here replaces your Chronicle. Trials already in the app are skipped; " +
-                    "imported trials stay on this device and out of the Tidings.",
+                "Nothing here replaces your ${Words.chronicle.t}. ${Words.trial.cpl} already in the app are skipped; " +
+                    "imported ${Words.trial.pl} stay on this device and out of the ${Words.tidings.t}.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -194,7 +195,7 @@ fun ImportReviewOverlay(
             primary = when {
                 ui.importing -> "Importing"
                 ui.result != null -> "Done"
-                else -> "Import $trials ${plural(trials, "trial", "trials")}"
+                else -> "Import $trials ${plural(trials, Words.trial.s, Words.trial.pl)}"
             },
             onPrimary = if (ui.result == null) onImport else onDismiss,
             primaryEnabled = !ui.importing && (ui.result != null || trials > 0),

@@ -3,6 +3,8 @@ package com.ironvellum.app.data.cloud
 import android.content.Context
 import android.content.SharedPreferences
 import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.SignOutScope
@@ -275,18 +277,18 @@ object Cloud {
             else -> "Sign-in was refused — try again in a moment"
         }
         is PostgrestRestException -> when (error.code) {
-            "23505" -> "That true name is taken"
+            "23505" -> "That ${Words.trueName.s} is taken"
             // circle_keeper_lock refuses a non-Keeper with 42501 and a sentence
             // for the lifter ("Only the Keeper can ..."): the keys may have just
             // been passed on, and the generic line would hide why.
-            "42501" -> error.error.takeIf { it.startsWith(KEEPER_ONLY) }
+            "42501" -> error.error.takeIf { it.startsWith(KEEPER_ONLY) }?.let(Words::fromServer)
                 ?: "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
             // raise exception in our own triggers (rate limits, blocked
             // requests): the message is written for the lifter in the
             // migration, so it is shown as is — "try again" would send them
             // straight back into the same limit.
-            "P0001" -> error.error.ifBlank { "The cloud refused this request — try again" }
+            "P0001" -> Words.fromServer(error.error).ifBlank { "The cloud refused this request — try again" }
             // These codes mean "that table, column or function is not there"
             // for ANY feature — naming one feature was wrong the moment
             // cloud_archives landed and a failed BACKUP blamed the board.
@@ -305,7 +307,7 @@ object Cloud {
         is HttpRequestException -> "Could not reach the cloud — check your connection"
         // Never interpolate exception text: Credential Manager and the auth
         // SDK leak API internals that read as debug noise to a lifter.
-        else -> "The Ledger stumbled — try again in a moment"
+        else -> Lines.stumbled
     }
 
     fun <T> failure(error: Throwable): Result<T> = Result.failure(IllegalStateException(explain(error)))

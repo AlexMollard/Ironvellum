@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /**
  * The one muted line under a set of a lift that has a top set: what the set is for, before it is logged. Pure, so the
  * words are tested; the open card draws what it returns, keyed by set id. Only sets still to log get one.
@@ -29,7 +31,7 @@ object TrialHints {
         if (top.isPending) {
             val beat = lastTop?.let { "Beat ${rep(it.reps, it.weightKg)}" }
             out[top.id] = when {
-                beat != null && wouldPeak -> "$beat · this would be a new peak"
+                beat != null && wouldPeak -> "$beat · this would be a new ${Words.peak.s}"
                 beat != null -> beat
                 else -> "Your top set: as heavy as it goes with clean reps"
             }

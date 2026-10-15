@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.settings.SettingsSection
 import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.text.font.FontWeight
@@ -207,11 +209,11 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun restoreStat(stat: StatEntry) {
-        viewModelScope.launchGuarded("restore reading") { repo.restoreStat(stat) }
+        viewModelScope.launchGuarded("restore ${Words.reading.s}") { repo.restoreStat(stat) }
     }
 
     fun addStat(weightKg: Double, bodyFatPct: Double?) {
-        viewModelScope.launchGuarded("log reading") { repo.addStat(weightKg, bodyFatPct) }
+        viewModelScope.launchGuarded("log ${Words.reading.s}") { repo.addStat(weightKg, bodyFatPct) }
     }
 
     fun syncHealthHistory(days: Int = 90) {
@@ -312,7 +314,7 @@ fun StatsScreen(
             Spacer(Modifier.height(20.dp))
             // Only the title: weight is logged on its card, the chronicle lives on Train.
             Text(
-                "THE LEDGER",
+                Lines.ledgerTitle,
                 style = MaterialTheme.typography.headlineSmall,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -434,7 +436,7 @@ fun StatsScreen(
 private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (String) -> Unit) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            PanelLabel("LIFT PEAKS", Modifier.weight(1f))
+            PanelLabel("LIFT ${Words.peak.upl}", Modifier.weight(1f))
             TermInfo(Term.ONE_REP_MAX)
         }
         if (records.isEmpty()) {
@@ -453,7 +455,7 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
             ListRow(
                 label = record.label,
                 value = Units.fixed(record.bestE1rmKg, 1),
-                subline = if (fresh) listOfNotNull("New peak", change).joinToString(" \u00B7 ") else change,
+                subline = if (fresh) listOfNotNull("New ${Words.peak.s}", change).joinToString(" \u00B7 ") else change,
                 sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 onClickLabel = "Open ${record.label}",
                 onClick = { onOpenLift(record.name) },
@@ -511,7 +513,7 @@ private fun TrainingTab(
         if (ui.sessions.isNotEmpty()) LiftRecordsPanel(records, nowMs, onOpenLift)
 
         InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("STRENGTH SCORE PER TRIAL")
+            PanelLabel("STRENGTH SCORE PER ${Words.trial.u}")
             // 0 means "not scored" (no bodyweight existed yet), not a collapse
             // in strength - plotting it dropped the line to the floor.
             val scored = ui.sessions.filter { it.strengthScore > 0 }
@@ -529,14 +531,14 @@ private fun TrainingTab(
                     dateText = ::day,
                 )
                 ChartCaption(
-                    "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "trial", "trials")} · scaled to bodyweight",
+                    "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, Words.trial.s, Words.trial.pl)} · scaled to bodyweight",
                 )
             } else if (scores.size == 1) {
-                ChartCaption("Best ${scores.first().toInt()} · one more scored trial draws the line.")
+                ChartCaption("Best ${scores.first().toInt()} · one more scored ${Words.trial.s} draws the line.")
             } else if (ui.sessions.isEmpty()) {
-                ChartCaption("Seal a trial to draw this line.")
+                ChartCaption("${Words.seal.c} ${Words.trial.a} to draw this line.")
             } else {
-                ChartCaption("Log bodyweight to score these trials.")
+                ChartCaption("Log bodyweight to score these ${Words.trial.pl}.")
             }
         }
 
@@ -577,7 +579,7 @@ private fun StatDrillSheet(
         actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
     ) {
         if (current == null) {
-            text(null, "This page is still blank. Log readings to fill it.", IronvellumColors.InkMuted)
+            text(null, "This page is still blank. Log ${Words.reading.pl} to fill it.", IronvellumColors.InkMuted)
             return@InfoSheet
         }
         // One caps label for the sheet (BANDS); the chart and the note need none.
@@ -591,14 +593,14 @@ private fun StatDrillSheet(
                     valueText = { "$metric ${formatBodyValue(it)}" },
                     dateText = { seriesDates[it] },
                 )
-                ChartCaption("${series.size} readings in the Ledger")
+                ChartCaption("${series.size} ${Words.reading.pl} in the ${Words.ledger.t}")
             } else {
-                ChartCaption("Two readings draw the line.")
+                ChartCaption("Two ${Words.reading.pl} draw the line.")
             }
         }
         rows("BANDS", bands.indices.map { i -> bands[i].label to Bands.rangeText(table, i) }, collapseAfter = 6)
         val about = listOfNotNull(
-            asOf?.let { "From your reading of $it, the newest with body fat." },
+            asOf?.let { "From your ${Words.reading.s} of $it, the newest with body fat." },
             table.note,
         ).joinToString(" ")
         if (about.isNotEmpty()) text(null, about, IronvellumColors.InkMuted)

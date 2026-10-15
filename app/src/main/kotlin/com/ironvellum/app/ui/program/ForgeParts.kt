@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.TrainingSplit
@@ -304,7 +305,7 @@ internal fun ForgeFailedCard(message: String, onTryAgain: () -> Unit, modifier: 
             .semantics(mergeDescendants = true) {},
     ) {
         Text(
-            "The Forge failed",
+            "${Words.theForge.c} failed",
             style = MaterialTheme.typography.titleMedium,
             color = IronvellumColors.DangerRed,
             modifier = Modifier.semantics { heading() },
@@ -380,7 +381,7 @@ internal fun ForgeAddConflictSheet(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Your cycle already has rites on ${joinDays(takenDays)}. " +
+                    "Your ${Words.cycle.s} already has ${Words.rite.pl} on ${joinDays(takenDays)}. " +
                         "${if (conflict.clashes == 1) "One of" else numberWord(conflict.clashes) + " of"} the new days clash.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -411,14 +412,14 @@ internal fun ForgeAddConflictSheet(
                     if (conflict.fitsAround) {
                         "Fit around my days moves the clashing days to the next free one. Nothing is deleted."
                     } else {
-                        "Your cycle leaves too few free days for this week, so it cannot fit around them."
+                        "Your ${Words.cycle.s} leaves too few free days for this week, so it cannot fit around them."
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
-                QuietAction("Replace my cycle", danger = true, onClick = onReplace)
+                QuietAction("Replace my ${Words.cycle.s}", danger = true, onClick = onReplace)
                 Text(
-                    "Deletes your $savedRites current ${if (savedRites == 1) "rite" else "rites"}. Your Chronicle is kept.",
+                    "Deletes your $savedRites current ${if (savedRites == 1) Words.rite.s else Words.rite.pl}. Your ${Words.chronicle.t} is kept.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )

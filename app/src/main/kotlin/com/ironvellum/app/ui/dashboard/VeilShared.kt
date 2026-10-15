@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkDot
@@ -38,8 +39,8 @@ import kotlinx.coroutines.delay
 import kotlin.math.min
 
 /** Said once to a lifter who has sealed nothing, on Today's Veil and again on the Veil screen. */
-internal const val FIRST_RUN_VEIL_LINE =
-    "The Veil gathers essence while you're away. Seal trials to raise the pace; your echoes and Chronicle will fill in as you train."
+internal val FIRST_RUN_VEIL_LINE: String get() =
+    "${Words.theVeil.c} gathers essence while you're away. ${Words.seal.c} ${Words.trial.pl} to raise the pace; your echoes and ${Words.chronicle.t} will fill in as you train."
 
 /*
  * The Veil's ticker and motes, shared by the Veil section on Today (TodayVeil.kt) and the Veil screen

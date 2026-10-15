@@ -135,7 +135,7 @@ object InboxNotifier {
         if (fresh.isEmpty() || !canNotify(context)) return
 
         val latest = line(fresh.first())
-        val title = if (fresh.size == 1) "A missive" else "${fresh.size} new missives"
+        val title = if (fresh.size == 1) Words.missive.ca else "${fresh.size} new ${Words.missive.pl}"
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -149,7 +149,7 @@ object InboxNotifier {
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
             .setContentTitle(title)
-            .setContentText(if (fresh.size == 1) "New missive from an ally" else "New missives from your allies")
+            .setContentText(if (fresh.size == 1) "New ${Words.missive.s} from ${Words.ally.a}" else "New ${Words.missive.pl} from your ${Words.ally.pl}")
             .build()
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
@@ -191,24 +191,24 @@ object InboxNotifier {
     private fun tributeKey(item: InboxItem.NewReaction) = "${item.sessionId}:${item.actorId}"
 
     private fun line(item: InboxItem): String = when (item) {
-        is InboxItem.NewComment -> "${item.actorName} left a remark: ${item.body}"
+        is InboxItem.NewComment -> "${item.actorName} left ${Words.remark.a}: ${item.body}"
         is InboxItem.NewReply -> {
-            val headline = item.sessionHeadline.ifBlank { "a trial" }
+            val headline = item.sessionHeadline.ifBlank { Words.trial.a }
             "${item.actorName} replied on $headline: ${item.body}"
         }
         is InboxItem.NewReaction -> {
             val reaction = item.reaction.displayName()
-            val headline = item.sessionHeadline.ifBlank { "your trial" }
-            "${item.actorName} paid $reaction tribute to $headline"
+            val headline = item.sessionHeadline.ifBlank { "your ${Words.trial.s}" }
+            "${item.actorName} paid $reaction ${Words.tribute.s} to $headline"
         }
-        is InboxItem.FriendRequest -> "${item.actorName} wants to ally with you"
+        is InboxItem.FriendRequest -> "${item.actorName} wants to ${Words.ally.s} with you"
         is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
-        is InboxItem.NewCircleMember -> "${item.actorName} joined your circle ${item.circleName}"
-        is InboxItem.CircleGoalMet -> "Your circle ${item.circleName} met its weekly goal"
+        is InboxItem.NewCircleMember -> "${item.actorName} joined your ${Words.circle.s} ${item.circleName}"
+        is InboxItem.CircleGoalMet -> "Your ${Words.circle.s} ${item.circleName} met its weekly goal"
         is InboxItem.CircleNotice -> when (item.change) {
-            CircleChange.LEFT -> "${item.actorName} left your circle ${item.circleName}"
-            CircleChange.KEEPER -> "You now keep the circle ${item.circleName}"
-            CircleChange.REMOVED -> "You were removed from the circle ${item.circleName}"
+            CircleChange.LEFT -> "${item.actorName} left your ${Words.circle.s} ${item.circleName}"
+            CircleChange.KEEPER -> "You now keep the ${Words.circle.s} ${item.circleName}"
+            CircleChange.REMOVED -> "You were removed from the ${Words.circle.s} ${item.circleName}"
         }
     }
 }

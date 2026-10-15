@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.program
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -28,11 +29,11 @@ internal fun RiteMusclesSheet(
     val worked = remember(sets) { riteMuscleRows(sets) }
     InfoSheet(
         title = title,
-        subtitle = if (worked.isEmpty()) "Muscles this rite works" else "${worked.size} muscles · ${entries.sumOf { it.sets }} sets",
+        subtitle = if (worked.isEmpty()) "Muscles this ${Words.rite.s} works" else "${worked.size} muscles · ${entries.sumOf { it.sets }} sets",
         onDismiss = onDismiss,
     ) {
         if (worked.isEmpty()) {
-            text(null, "No muscle data for this rite yet.", IronvellumColors.InkMuted)
+            text(null, "No muscle data for this ${Words.rite.s} yet.", IronvellumColors.InkMuted)
         } else {
             rows("SETS PER MUSCLE", worked.map { (muscle, count) -> muscle.label to riteSetsLabel(count) }, collapseAfter = 6)
         }

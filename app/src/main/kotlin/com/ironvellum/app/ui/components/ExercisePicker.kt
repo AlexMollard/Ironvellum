@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.theme.InkEdgeShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -335,7 +337,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
     val active = buildList<Pair<String, () -> Unit>> {
         f.group?.let { add(sentence(it.name) to { controls.filters = controls.filters.copy(group = null) }) }
         f.category?.let { add(sentence(it) to { controls.filters = controls.filters.copy(category = null) }) }
-        if (equipment != null && f.myGear) add("My armoury" to { controls.filters = controls.filters.copy(myGear = false) })
+        if (equipment != null && f.myGear) add("My ${Words.armoury.s}" to { controls.filters = controls.filters.copy(myGear = false) })
         f.facet?.let { add(it.label to { controls.filters = controls.filters.copy(facet = null) }) }
     }
     Column {
@@ -364,10 +366,10 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
                 }
             }
         }
-        FilterGroup("Armoury") {
+        FilterGroup(Words.armoury.c) {
             // Absent without saved equipment: nothing to filter by.
             if (equipment != null) {
-                FilterChip("My armoury", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
+                FilterChip("My ${Words.armoury.s}", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
             }
             EquipmentFacet.entries.forEach { facet ->
                 FilterChip(facet.label, f.facet == facet) {
@@ -440,14 +442,14 @@ private fun LazyListScope.exerciseRows(
         InkPanel(contentPadding = PaddingValues(0.dp)) {
             ListRow(
                 label = "New exercise",
-                subline = "Your own movement, muscles and armoury",
+                subline = "Your own movement, muscles and ${Words.armoury.s}",
                 icon = Icons.Outlined.Add,
                 onClick = { onNew("") },
             )
         }
     }
     if (view.yours.isNotEmpty()) {
-        section("yours", "Yours", "yours", view.yours)
+        section("yours", Words.yours.c, "yours", view.yours)
     }
     if (view.favourites.isNotEmpty()) {
         section("favourites", "Favourites", "fav", view.favourites)
@@ -464,9 +466,9 @@ private fun LazyListScope.exerciseRows(
             // its own line, because the fix (Filters) is not the words.
             Text(
                 when {
-                    gearHidAll -> "Nothing your armoury covers — tap Filters to show everything"
-                    query.isNotBlank() -> "The Ledger holds no exercise matching \"$query\""
-                    else -> "The Ledger holds no exercise for these filters"
+                    gearHidAll -> "Nothing your ${Words.armoury.s} covers — tap Filters to show everything"
+                    query.isNotBlank() -> Lines.noExerciseMatching(query)
+                    else -> Lines.noExerciseForFilters
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -480,7 +482,7 @@ private fun LazyListScope.exerciseRows(
                 InkPanel(contentPadding = PaddingValues(0.dp)) {
                     ListRow(
                         label = "Create \"$name\"",
-                        subline = "Your own movement, muscles and armoury",
+                        subline = "Your own movement, muscles and ${Words.armoury.s}",
                         icon = Icons.Outlined.Add,
                         onClick = { onNew(name) },
                     )
@@ -617,7 +619,7 @@ private fun PickerRow(
                     append(" · ")
                     append(metricWord(exercise.metric))
                     if (exercise.isWeighted) append(" · weighted")
-                    if (skill != null) append(" · technique ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                    if (skill != null) append(" · ${Words.technique.s} ${Skills.tierLabel(skill.tier)} ${skill.line}")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -741,7 +743,7 @@ private fun Modifier.panelSlice(first: Boolean, last: Boolean): Modifier {
 @Composable
 internal fun YoursTag(modifier: Modifier = Modifier) {
     Text(
-        "YOURS",
+        Words.yours.u,
         style = MaterialTheme.typography.labelSmall,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.SemiBold,

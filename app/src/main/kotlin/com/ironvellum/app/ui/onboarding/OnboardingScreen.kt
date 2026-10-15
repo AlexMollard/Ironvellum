@@ -55,6 +55,7 @@ import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Seed
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
@@ -339,7 +340,7 @@ class OnboardingViewModel(
                     planKey = null
                     _plan.value = null
                     _isStarter.value = false
-                    _applyError.value = "The Forge failed: ${it.message}"
+                    _applyError.value = "${Words.theForge.c} failed: ${it.message}"
                 },
             )
         }
@@ -389,7 +390,7 @@ class OnboardingViewModel(
     ) {
         val plan = _plan.value ?: return
         if (!plan.isTakeable()) {
-            _applyError.value = "This cycle has no exercises. Rebuild it from your answers first. Nothing was written."
+            _applyError.value = "This ${Words.cycle.s} has no exercises. Rebuild it from your answers first. Nothing was written."
             return
         }
         // One accept at a time: a second tap would replace the cycle the first one just wrote.
@@ -403,7 +404,7 @@ class OnboardingViewModel(
                     if (starter) repo.applyStarterTemplate() else repo.applyRoutine(plan)
                 }
                 if (written.isFailure) {
-                    _applyError.value = "Could not save the cycle" +
+                    _applyError.value = "Could not save the ${Words.cycle.s}" +
                         (written.exceptionOrNull()?.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
                     return@launch
                 }
@@ -420,7 +421,7 @@ class OnboardingViewModel(
                     }
                 }
                 _applyError.value = bookkeeping.exceptionOrNull()?.let {
-                    "Your cycle was saved, but your goal could not be remembered" +
+                    "Your ${Words.cycle.s} was saved, but your goal could not be remembered" +
                         (it.message?.let { m -> ": $m" } ?: "")
                 }
                 _dismissed.value = true
@@ -551,11 +552,11 @@ fun OnboardingScreen(
     }
     if (confirmReplace) {
         SettingsConfirmDialog(
-            title = "Replace your rites?",
-            text = "Taking this cycle replaces your $existingRites existing " +
-                "${if (existingRites == 1) "rite" else "rites"}. Your Chronicle is kept. This cannot be undone.",
+            title = "Replace your ${Words.rite.pl}?",
+            text = "Taking this ${Words.cycle.s} replaces your $existingRites existing " +
+                "${if (existingRites == 1) Words.rite.s else Words.rite.pl}. Your ${Words.chronicle.t} is kept. This cannot be undone.",
             confirmLabel = "Replace",
-            dismissLabel = "Keep my rites",
+            dismissLabel = "Keep my ${Words.rite.pl}",
             danger = true,
             onConfirm = {
                 confirmReplace = false
@@ -720,7 +721,7 @@ fun OnboardingScreen(
                 reserveLink = false,
             )
             else -> DockedActionBar(
-                primary = "Take this cycle",
+                primary = "Take this ${Words.cycle.s}",
                 onPrimary = {
                     // Taking a cycle replaces every existing rite: never silently.
                     if (existingRites > 0) confirmReplace = true else takeCycle()
@@ -733,8 +734,8 @@ fun OnboardingScreen(
 }
 
 /** What skipping costs, said before it is done. */
-private const val SKIP_COST =
-    "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time."
+private val SKIP_COST: String get() =
+    "Skipping leaves your scores blank and builds no ${Words.cycle.s}. Add your body in Settings and build ${Words.cycle.a} in Train any time."
 
 /** The question the cycle step's Skip setup link asks first. */
 @Composable
@@ -751,18 +752,18 @@ internal fun SkipSetupDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 /** Why Continue is off on the training step until the armoury is answered. */
-private const val ARMOURY_REQUIRED_CAPTION = "Pick your armoury to continue. Nothing means bodyweight only."
+private val ARMOURY_REQUIRED_CAPTION: String get() = "Pick your ${Words.armoury.s} to continue. Nothing means bodyweight only."
 
 /** Per-step title and one line of prose. "Welcome, lifter" on every step was a bug, not a header. */
 private fun stepTitle(step: Int): String = when (step) {
     0 -> "Who you are"
     1 -> "How you train"
-    else -> "Your cycle"
+    else -> "Your ${Words.cycle.s}"
 }
 
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Your sex, height and weight scale every number Ironvellum shows you."
-    1 -> "Answer four things and the Forge builds you a cycle."
+    1 -> "Answer four things and ${Words.theForge.t} builds you ${Words.cycle.a}."
     else -> "Built from your answers. Tap a day to open it, an exercise to adjust it."
 }
 
@@ -785,7 +786,7 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
         if (onSkip != null) {
             InkChip(
                 label = "SKIP",
-                description = "Skip setup. Set your details and cycle later in Settings or the Ledger",
+                description = "Skip setup. Set your details and ${Words.cycle.s} later in Settings or the ${Words.ledger.c}",
                 onClick = onSkip,
             )
         }
@@ -869,7 +870,7 @@ private fun StepNotes(
         step == 0 -> profileHint
         step == 1 && !armouryPicked -> ARMOURY_REQUIRED_CAPTION
         step >= 2 && !planReady ->
-            if (planEmpty) "Add exercises back or rebuild to take a cycle." else "Still consulting the catalogue…"
+            if (planEmpty) "Add exercises back or rebuild to take ${Words.cycle.a}." else "Still consulting the catalogue…"
         else -> null
     }
     if (applyError == null && hint == null) return
@@ -1021,7 +1022,7 @@ private fun TrainingStep(
         FieldCaption(startingSetsCaption(tier))
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("Your armoury")
+        FieldLabel("Your ${Words.armoury.s}")
         GearPicker(equipment = equipment, onChange = onEquipment)
 
         Spacer(Modifier.height(12.dp))
@@ -1030,7 +1031,7 @@ private fun TrainingStep(
             options = listOf(
                 TrainingFocus.STRENGTH to "Power",
                 TrainingFocus.MUSCLE to "Muscle",
-                TrainingFocus.SKILL to "Techniques",
+                TrainingFocus.SKILL to Words.technique.cpl,
                 // "All-round" clipped to "All-roun" at 360dp: four equal
                 // segments leave ~72dp each. Keep every label short.
                 TrainingFocus.GENERAL to "Mixed",
@@ -1148,7 +1149,7 @@ private fun ProposalStep(
             }
             if (current.presets.isEmpty()) {
                 Text(
-                    "Nothing left. Rebuild from your answers, or take the starter cycle instead.",
+                    "Nothing left. Rebuild from your answers, or take the starter ${Words.cycle.s} instead.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1185,14 +1186,14 @@ private fun ProposalStep(
         Spacer(Modifier.height(4.dp))
         if (!isStarter) {
             IronvellumButton(
-                label = "Use the starter cycle",
+                label = "Use the starter ${Words.cycle.s}",
                 onClick = viewModel::previewStarter,
                 quiet = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
             IronvellumButton(
-                label = "Forge from my answers",
+                label = "${Words.forge.c} from my answers",
                 onClick = {
                     if (catalogue.isNotEmpty()) {
                         viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)

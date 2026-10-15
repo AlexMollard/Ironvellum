@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -36,16 +37,16 @@ import com.ironvellum.app.ui.theme.ironvellumFieldColors
  */
 internal fun shareRoutineCode(context: Context, code: String) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
-    clipboard?.setPrimaryClip(ClipData.newPlainText("Ironvellum cycle", code))
-    Toast.makeText(context, "Cycle code copied", Toast.LENGTH_SHORT).show()
+    clipboard?.setPrimaryClip(ClipData.newPlainText("Ironvellum ${Words.cycle.s}", code))
+    Toast.makeText(context, "${Words.cycle.c} code copied", Toast.LENGTH_SHORT).show()
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(
             Intent.EXTRA_TEXT,
-            "Ironvellum cycle \u2014 paste into Train \u203A New Rite \u203A Import code\n$code",
+            "Ironvellum ${Words.cycle.s} \u2014 paste into Train \u203A New ${Words.rite.t} \u203A Import code\n$code",
         )
     }
-    context.startActivity(Intent.createChooser(intent, "Share cycle"))
+    context.startActivity(Intent.createChooser(intent, "Share ${Words.cycle.s}"))
 }
 
 /** The one-line outcome shown under the Workouts header after an import. */
@@ -55,8 +56,8 @@ internal fun importSummary(result: Repository.ImportedRoutine, replaced: Boolean
     if (result.added == 0) {
         return "Nothing imported \u2014 none of those exercises are in your exercise list.$skippedText"
     }
-    val count = if (result.added == 1) "1 rite" else "${result.added} rites"
-    val head = if (replaced) "Cycle replaced with $count." else "Added $count."
+    val count = if (result.added == 1) "1 ${Words.rite.s}" else "${result.added} ${Words.rite.pl}"
+    val head = if (replaced) "${Words.cycle.c} replaced with $count." else "Added $count."
     return head + skippedText
 }
 
@@ -108,7 +109,7 @@ internal fun ImportRoutineDialog(
                     colors = ironvellumFieldColors(),
                     value = text,
                     onValueChange = { text = it.take(RoutineCode.MAX_DECODED_BYTES) },
-                    label = { Text("Cycle code") },
+                    label = { Text("${Words.cycle.c} code") },
                     minLines = 3,
                     maxLines = 5,
                     modifier = Modifier.fillMaxWidth(),
@@ -130,7 +131,7 @@ internal fun ImportRoutineDialog(
                 if (workouts != null) {
                     Spacer(Modifier.height(4.dp))
                     IronvellumButton(
-                        label = "Add as extra rites",
+                        label = "Add as extra ${Words.rite.pl}",
                         onClick = { onImport(workouts, false) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -141,7 +142,7 @@ internal fun ImportRoutineDialog(
                         // slip of the thumb does not land on the destructive one.
                         Spacer(Modifier.height(8.dp))
                         IronvellumButton(
-                            label = "Replace my cycle",
+                            label = "Replace my ${Words.cycle.s}",
                             onClick = { confirmReplace = true },
                             modifier = Modifier.fillMaxWidth(),
                             danger = true,
@@ -159,12 +160,12 @@ internal fun ImportRoutineDialog(
     if (confirmReplace && workouts != null) {
         IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace my cycle?") },
+            title = { Text("Replace my ${Words.cycle.s}?") },
             text = {
-                val now = if (currentWorkouts == 1) "your 1 rite" else "all $currentWorkouts of your rites"
+                val now = if (currentWorkouts == 1) "your 1 ${Words.rite.s}" else "all $currentWorkouts of your ${Words.rite.pl}"
                 Text(
-                    "This deletes $now and your cycle, then adds the ${workouts.size} from this code. " +
-                        "Sealed trials stay in the Chronicle.",
+                    "This deletes $now and your ${Words.cycle.s}, then adds the ${workouts.size} from this code. " +
+                        "${Words.sealed.c} ${Words.trial.pl} stay in ${Words.theChronicle.t}.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -101,10 +102,10 @@ internal fun daySpeech(date: String, trials: Int, rite: Boolean, isToday: Boolea
     buildString {
         append(date)
         when {
-            trials == 1 -> append(", trial sealed")
-            trials > 1 -> append(", $trials trials sealed")
-            rite && future -> append(", rite day")
-            rite -> append(", rite day, no trial sealed")
+            trials == 1 -> append(", ${Words.trial.s} ${Words.sealed.s}")
+            trials > 1 -> append(", $trials ${Words.trial.pl} ${Words.sealed.s}")
+            rite && future -> append(", ${Words.rite.s} day")
+            rite -> append(", ${Words.rite.s} day, no ${Words.trial.s} ${Words.sealed.s}")
         }
         if (isToday) append(", today")
     }
@@ -138,9 +139,9 @@ internal fun TrainingCalendar(
 
     InkPanel(Modifier.fillMaxWidth()) {
         // The oath lives on Today; the month's count is the calendar's own.
-        StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, "trial", "trials"))
+        StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, Words.trial.s, Words.trial.pl))
         Text(
-            if (month == YearMonth.from(today)) "sealed this month" else "sealed in $monthName",
+            if (month == YearMonth.from(today)) "${Words.sealed.s} this month" else "${Words.sealed.s} in $monthName",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -211,8 +212,8 @@ internal fun TrainingCalendar(
 
         Spacer(Modifier.height(LedgerSpace.Panel))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            LegendItem("sealed") { SealedMark() }
-            LegendItem("rite day") { RiteMark() }
+            LegendItem(Words.sealed.s) { SealedMark() }
+            LegendItem("${Words.rite.s} day") { RiteMark() }
             LegendItem("today") {
                 Box(Modifier.size(12.dp).inkBorder(IronvellumColors.Ink, DotShape, 1.5.dp))
             }
@@ -245,7 +246,7 @@ private fun DayCell(
             // A day with a trial opens its latest one; the rest are not controls.
             .then(
                 if (sealed) {
-                    Modifier.clickable(onClickLabel = "Open trial", role = Role.Button) { onOpenTrial(trialIds.last()) }
+                    Modifier.clickable(onClickLabel = Words.openTrial.c, role = Role.Button) { onOpenTrial(trialIds.last()) }
                 } else {
                     Modifier
                 },

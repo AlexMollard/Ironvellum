@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -99,7 +100,7 @@ fun DeedsBoard(
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     val earnedIds = remember(unlocked) { unlocked.keys.toSet() }
-    val progressOf = remember(ledger) {
+    val progressOf = remember(ledger, Words.themed) {
         Titles.ALL.associate { it.id to Titles.progress(it.rule, ledger) }
     }
     var openCategory by rememberSaveable { mutableStateOf<String?>(null) }
@@ -184,7 +185,7 @@ private fun DeedsHome(
 
     // The next rung of each unfinished ladder, nearest first. Ties go to the
     // gentler deed, so a fresh account is pointed at easy wins.
-    val shelf = remember(earnedIds, progressOf) {
+    val shelf = remember(earnedIds, progressOf, Words.themed) {
         DeedLadders.ALL
             .mapNotNull { it.next(earnedIds) }
             .sortedWith(
@@ -227,7 +228,7 @@ private fun DeedsHome(
                         Chevron()
                     }
                     earned.isNotEmpty() -> TapRow(
-                        onClickLabel = "Show the deeds you have earned",
+                        onClickLabel = "Show the ${Words.deed.pl} you have earned",
                         onClick = { scope.launch { listState.animateScrollToItem(wallIndex) } },
                     ) {
                         Text(
@@ -241,7 +242,7 @@ private fun DeedsHome(
                     }
                     else -> Row(Modifier.heightIn(min = LedgerSpace.Target).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "No title worn yet. Earn a deed and its title is yours to wear.",
+                            "No title worn yet. Earn ${Words.deed.a} and its title is yours to wear.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -278,7 +279,7 @@ private fun DeedsHome(
                             onClickLabel = "Open ${c.name}",
                             onClick = { onOpenCategory(c.name) },
                             modifier = Modifier.semantics(mergeDescendants = true) {
-                                contentDescription = "${c.name}. ${c.blurb}. $held of ${defs.size} deeds earned."
+                                contentDescription = "${c.name}. ${c.blurb}. $held of ${defs.size} ${Words.deed.pl} earned."
                             },
                         )
                     }
@@ -431,7 +432,7 @@ private fun EarnedWall(
 ) {
     if (earned.isEmpty()) {
         Text(
-            "Nothing is written here yet. Seal a trial to earn the first deed.",
+            "Nothing is written here yet. ${Words.seal.c} ${Words.trial.a} to earn the first ${Words.deed.s}.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -506,7 +507,7 @@ private fun CategoryScreen(
 ) {
     var range by rememberSaveable(category) { mutableStateOf(DeedRange.ToDo) }
     val blurb = DeedLadders.CATEGORIES.firstOrNull { it.name == category }?.blurb.orEmpty()
-    val ladders = remember(category) { DeedLadders.ALL.filter { it.category == category } }
+    val ladders = remember(category, Words.themed) { DeedLadders.ALL.filter { it.category == category } }
     val total = ladders.sumOf { it.rungs.size }
     val earned = ladders.sumOf { l -> l.rungs.count { it.id in earnedIds } }
 
@@ -534,7 +535,7 @@ private fun CategoryScreen(
                 PushedHeader(category, onBack)
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = "$category deeds: $earned of $total earned. $blurb."
+                        contentDescription = "$category ${Words.deed.pl}: $earned of $total earned. $blurb."
                     },
                 ) {
                     Text(
@@ -566,9 +567,9 @@ private fun CategoryScreen(
             item(key = "empty") {
                 Text(
                     when (range) {
-                        DeedRange.ToDo -> "Every deed in $category is earned."
-                        DeedRange.Earned -> "Nothing is written here yet. Earned deeds appear on this page."
-                        DeedRange.All -> "No deeds here."
+                        DeedRange.ToDo -> "Every ${Words.deed.s} in $category is earned."
+                        DeedRange.Earned -> "Nothing is written here yet. Earned ${Words.deed.pl} appear on this page."
+                        DeedRange.All -> "No ${Words.deed.pl} here."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -611,7 +612,7 @@ private fun LadderCard(
 
     val sentence = buildString {
         append(ladder.title).append(". ")
-        if (series) append("$held of ${ladder.rungs.size} deeds earned. ")
+        if (series) append("$held of ${ladder.rungs.size} ${Words.deed.pl} earned. ")
         if (next != null) {
             if (series) append("Next: ${next.name}, ${next.rarity.label}. ")
             append(next.describeFor(sex)).append(' ')
@@ -669,7 +670,7 @@ private fun LadderCard(
             } else {
                 val whenEarned = unlocked[target.id]?.let { formatDate(it, "d MMM yyyy") }
                 Text(
-                    if (series) "All ${ladder.rungs.size} deeds earned" else "Earned ${whenEarned.orEmpty()}".trim(),
+                    if (series) "All ${ladder.rungs.size} ${Words.deed.pl} earned" else "Earned ${whenEarned.orEmpty()}".trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SovereignGold,
                 )
@@ -709,7 +710,7 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
                 }
             }
             .semantics(mergeDescendants = true) {
-                contentDescription = "$count deeds. $summary"
+                contentDescription = "$count ${Words.deed.pl}. $summary"
                 role = Role.Button
                 onClick(label = "Open ${next.name}") {
                     onOpenDeed(next.id)

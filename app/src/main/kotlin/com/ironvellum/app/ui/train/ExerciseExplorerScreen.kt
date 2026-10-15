@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseMetric
@@ -168,8 +169,8 @@ fun ExerciseExplorerScreen(
                     append(selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() })
                     append(" · ")
                     append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
-                    if (selectedExercise.custom) append(" · yours")
-                    if (skill != null) append(" · technique tier ${Skills.tierLabel(skill.tier)}")
+                    if (selectedExercise.custom) append(" · ${Words.yours.s}")
+                    if (skill != null) append(" · ${Words.technique.s} tier ${Skills.tierLabel(skill.tier)}")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -179,7 +180,7 @@ fun ExerciseExplorerScreen(
             val history = ui.history
             if (history == null || history.isEmpty) {
                 Text(
-                    "The Chronicle holds no sets for this yet. Seal a trial with it and they appear.",
+                    "${Words.theChronicle.c} holds no sets for this yet. ${Words.seal.c} ${Words.trial.a} with it and they appear.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
@@ -262,7 +263,7 @@ private fun PeakCard(history: ExerciseHistory) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
             Text(
-                if (history.variation.isEmpty()) "PEAK" else "PEAK \u00B7 ${history.variation.replace(",", ", ").uppercase()}",
+                if (history.variation.isEmpty()) Words.peak.u else "${Words.peak.u} \u00B7 ${history.variation.replace(",", ", ").uppercase()}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -313,7 +314,7 @@ private fun PeakCard(history: ExerciseHistory) {
             ListRow("Frequency", value = String.format(Locale.US, "%.1f a week", it))
         }
         InkDivider()
-        ListRow("Trials", value = history.sessions.toString())
+        ListRow(Words.trial.cpl, value = history.sessions.toString())
     }
 }
 
@@ -325,17 +326,17 @@ private fun formatScore(v: Double): String =
 private fun ScoreChart(history: ExerciseHistory) {
     val values = history.series.map { it.bestSetScore }
     InkPanel(Modifier.fillMaxWidth()) {
-        Text("Strength per trial", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+        Text("Strength per ${Words.trial.s}", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         Text(
             if (values.size < 2) "Best set score" else
-                "Best set score, ${values.size} ${plural(values.size, "trial", "trials")}",
+                "Best set score, ${values.size} ${plural(values.size, Words.trial.s, Words.trial.pl)}",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         if (values.size < 2) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "One trial written — a trend needs at least two.",
+                "One ${Words.trial.s} written — a trend needs at least two.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -360,7 +361,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
     var open by rememberSaveable { mutableStateOf(false) }
     InkRowPanel(Modifier.fillMaxWidth()) {
         ListRow(
-            "Peaks by set",
+            "${Words.peak.cpl} by set",
             subline = if (isHold) "Best hold for each set number" else "Best weight × reps for each set number",
             onClick = { open = !open },
         )
@@ -399,7 +400,7 @@ private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
             }
         }
         InkDivider()
-        ListRow("Full chronicle", onClick = onOpenChronicle)
+        ListRow("Full ${Words.chronicle.s}", onClick = onOpenChronicle)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -30,7 +31,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** What a path tile reads out loud: name, progress, then where to go next. */
 internal fun tileDescription(line: String, done: Int, total: Int, status: String, recent: Boolean): String =
     buildList {
-        add("$line path")
+        add("$line ${Words.path.s}")
         add("$done of $total mastered")
         add(status)
         if (recent) add("most recent")
@@ -118,7 +119,7 @@ private fun PathRow(
                 label = line,
                 subline = pathSubline(done, total, status, blocker),
                 value = if (recent) "Recent" else null,
-                onClickLabel = "Open path",
+                onClickLabel = "Open ${Words.path.s}",
                 onClick = onClick,
                 modifier = Modifier.semantics(mergeDescendants = true) {
                     contentDescription = tileDescription(line, done, total, status, recent)

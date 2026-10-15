@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -195,7 +196,7 @@ fun MeasurementDetailScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 IronvellumButton(
-                    "Log reading",
+                    "Log ${Words.reading.s}",
                     onClick = {
                         parsed?.let {
                             viewModel.log(Math.round(it * 10.0) / 10.0)
@@ -209,7 +210,7 @@ fun MeasurementDetailScreen(
 
             if (latest == null) {
                 Text(
-                    "This page is blank. Take the first reading above.",
+                    "This page is blank. Take the first ${Words.reading.s} above.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -217,7 +218,7 @@ fun MeasurementDetailScreen(
                 // The latest value, its trend and every reading are one card: one home for the figure.
                 InkRowPanel(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        PanelLabel("READINGS")
+                        PanelLabel(Words.reading.upl)
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Bottom,
@@ -256,7 +257,7 @@ fun MeasurementDetailScreen(
                             )
                         } else {
                             Text(
-                                "Two days of readings draw the line.",
+                                "Two days of ${Words.reading.pl} draw the line.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = IronvellumColors.InkMuted,
                             )
@@ -273,7 +274,7 @@ fun MeasurementDetailScreen(
                     if (newestFirst.size > RECENT_ROWS) {
                         InkDivider()
                         InkListRow(
-                            label = if (showAll) "Show fewer" else "Show all ${newestFirst.size} ${plural(newestFirst.size, "reading", "readings")}",
+                            label = if (showAll) "Show fewer" else "Show all ${newestFirst.size} ${plural(newestFirst.size, Words.reading.s, Words.reading.pl)}",
                             value = null,
                             onClick = { showAll = !showAll },
                         )
@@ -284,7 +285,7 @@ fun MeasurementDetailScreen(
         }
         lastDeleted?.let { gone ->
             UndoBar(
-                "Reading deleted",
+                "${Words.reading.c} deleted",
                 onUndo = {
                     viewModel.restore(gone)
                     lastDeleted = null
@@ -318,7 +319,7 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
         }
         // Immediate: the bar under the page offers Undo.
         InkIconButton(onClick = onDelete) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
+            Icon(Icons.Outlined.Delete, contentDescription = "Delete ${Words.reading.s}", tint = IronvellumColors.InkMuted)
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -298,7 +299,7 @@ fun CircleSection(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 InkSpinner()
                 Text(
-                    "Reading the circle…",
+                    "${Words.reads.c} the ${Words.circle.s}…",
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -346,7 +347,7 @@ fun CircleSection(
     }
     if (showCreate) {
         CircleNameDialog(
-            title = "Form a circle",
+            title = "Form ${Words.circle.a}",
             confirmLabel = "Create",
             initial = "",
             busy = ui.actionBusy,
@@ -360,7 +361,7 @@ fun CircleSection(
     }
     if (showRename && circle != null) {
         CircleNameDialog(
-            title = "Rename the circle",
+            title = "Rename the ${Words.circle.s}",
             confirmLabel = "Save",
             initial = circle.name,
             busy = ui.actionBusy,
@@ -378,7 +379,7 @@ fun CircleSection(
                 vm.dismissActionError()
                 confirmRotate = false
             },
-            title = { Text("New circle code?") },
+            title = { Text("New ${Words.circle.s} code?") },
             text = {
                 Column {
                     Text(
@@ -445,13 +446,13 @@ fun CircleSection(
     if (confirmLeave) {
         IronvellumDialog(
             onDismissRequest = { confirmLeave = false },
-            title = { Text("Leave ${circle?.name ?: "the circle"}?") },
+            title = { Text("Leave ${circle?.name ?: "the ${Words.circle.s}"}?") },
             text = {
                 Text(
                     if ((circle?.members?.size ?: 0) > 1) {
-                        "You leave the circle and its shared week. If you are the Keeper, the longest-standing remaining member takes over."
+                        "You leave the ${Words.circle.s} and its shared week. If you are the ${Words.keeper.t}, the longest-standing remaining member takes over."
                     } else {
-                        "You are the last member — leaving deletes the circle and its code."
+                        "You are the last member — leaving deletes the ${Words.circle.s} and its code."
                     }
                 )
             },
@@ -482,7 +483,7 @@ fun CircleSection(
     }
     ui.paid?.let { paid ->
         AchievementOverlay(
-            pages = listOf(CelebrationPage.GoalMet(name = paid.circleName ?: circle?.name ?: "The circle", xp = paid.xp)),
+            pages = listOf(CelebrationPage.GoalMet(name = paid.circleName ?: circle?.name ?: "The ${Words.circle.s}", xp = paid.xp)),
             onDone = vm::dismissPayout,
         )
     }
@@ -497,14 +498,14 @@ private fun CirclePitch(
 ) {
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "Form a circle of up to 8 allies — share one code, chase one week.",
+            "Form ${Words.circle.a} of up to 8 ${Words.ally.pl} — share one code, chase one week.",
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.Ink,
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            IronvellumButton(label = "Form a circle", onClick = onCreate, enabled = !busy)
-            IronvellumButton(label = "Join a circle", onClick = onJoin, enabled = !busy, quiet = true)
+            IronvellumButton(label = "Form ${Words.circle.a}", onClick = onCreate, enabled = !busy)
+            IronvellumButton(label = "Join ${Words.circle.a}", onClick = onJoin, enabled = !busy, quiet = true)
         }
         InlineActionError(error)
     }
@@ -581,15 +582,15 @@ private fun CircleRoster(
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.weight(1f),
                 )
-                RowAction("Share", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
+                RowAction("Share", IronvellumColors.SystemGreen, contentDescription = "Share the ${Words.circle.s} code") {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(
                             Intent.EXTRA_TEXT,
-                            "Join my Ironvellum circle ${circle.name} — code ${circle.code}",
+                            "Join my Ironvellum ${Words.circle.s} ${circle.name} — code ${circle.code}",
                         )
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share circle"))
+                    context.startActivity(Intent.createChooser(intent, "Share ${Words.circle.s}"))
                 }
             }
         }
@@ -611,7 +612,7 @@ private fun CircleRoster(
         }
         InkDivider()
         ListRow(
-            label = "Manage circle",
+            label = "Manage ${Words.circle.s}",
             value = if (isOwner) "Rename, new code, goal, leave" else "Leave",
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             onClick = onManage,
@@ -633,7 +634,7 @@ private fun SegmentedRail(done: Int, segments: Int, modifier: Modifier = Modifie
             .fillMaxWidth()
             .height(4.dp)
             .semantics {
-                contentDescription = "Circle goal, $filled of $count days"
+                contentDescription = "${Words.circle.c} goal, $filled of $count days"
                 progressBarRangeInfo = ProgressBarRangeInfo(filled.toFloat(), 0f..count.toFloat())
             },
     ) {
@@ -673,11 +674,11 @@ private fun CircleMemberRow(
             frameId = member.crestId,
             ring = if (isMe) AvatarRing.Own else AvatarRing.Iron,
         )
-        val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
+        val role = listOfNotNull("You".takeIf { isMe }, Words.keeper.c.takeIf { isKeeper }).joinToString(" · ")
         // The name and the role share one line, the role small and muted.
         Text(
             buildAnnotatedString {
-                append(member.displayName.ifBlank { "Ironbound" })
+                append(member.displayName.ifBlank { Words.lifter.c })
                 if (role.isNotEmpty()) {
                     withStyle(SpanStyle(color = IronvellumColors.InkMuted, fontSize = 12.sp)) { append("   $role") }
                 }
@@ -712,7 +713,7 @@ private fun CircleMemberRow(
             RowAction(
                 "Remove",
                 IronvellumColors.DangerRed,
-                contentDescription = "Remove ${member.displayName} from the circle",
+                contentDescription = "Remove ${member.displayName} from the ${Words.circle.s}",
                 onClick = it,
             )
         }
@@ -751,14 +752,14 @@ private fun ManageCircleSheet(
                 )
                 if (isOwner) {
                     Spacer(Modifier.height(8.dp))
-                    ListRow("Rename the circle", onClick = onRename)
+                    ListRow("Rename the ${Words.circle.s}", onClick = onRename)
                     ListRow("New code", onClick = onRotate)
                     ListRow("Weekly goal", value = "${circle.perMember} ${plural(circle.perMember, "day", "days")}", onClick = onEditGoal)
                 }
             }
         },
         confirmButton = { IronvellumButton(label = "Done", onClick = onDismiss) },
-        dismissButton = { IronvellumButton(label = "Leave circle", onClick = onLeave, danger = true) },
+        dismissButton = { IronvellumButton(label = "Leave ${Words.circle.s}", onClick = onLeave, danger = true) },
     )
 }
 
@@ -788,7 +789,7 @@ private fun CircleNameDialog(
                     colors = ironvellumFieldColors(),
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("Circle name (1–24)") },
+                    label = { Text("${Words.circle.c} name (1–24)") },
                     singleLine = true,
                     enabled = !busy,
                     isError = name.isNotBlank() && !valid,
@@ -845,7 +846,7 @@ private fun JoinCircleDialog(
 
     IronvellumDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Join a circle") },
+        title = { Text("Join ${Words.circle.a}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -855,14 +856,14 @@ private fun JoinCircleDialog(
                     onValueChange = { raw ->
                         code = raw.uppercase().filter { it.isLetterOrDigit() }.take(8)
                     },
-                    label = { Text("Circle code (8 characters)") },
+                    label = { Text("${Words.circle.c} code (8 characters)") },
                     singleLine = true,
                     enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    "Your days count toward the circle's goal from next Monday.",
+                    "Your days count toward the ${Words.circle.s}'s goal from next Monday.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

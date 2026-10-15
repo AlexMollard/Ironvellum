@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Coverage
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Muscle
@@ -107,7 +108,7 @@ internal fun dockActions(tally: CoverageTally, planned: Boolean, hasRites: Boole
 
 /** The quiet line for rites with no day: "1 rite has no day, so it isn't counted". */
 internal fun uncountedRitesLine(count: Int): String =
-    if (count == 1) "1 rite has no day, so it isn't counted" else "$count rites have no day, so they aren't counted"
+    if (count == 1) "1 ${Words.rite.s} has no day, so it isn't counted" else "$count ${Words.rite.pl} have no day, so they aren't counted"
 
 /** A muscle's weekly hard sets as the page says them: "0 hard sets", "1 hard set", "3.5 hard sets". */
 internal fun hardSetsLabel(sets: Double): String {
@@ -130,7 +131,7 @@ internal fun heavyReason(load: MuscleLoad): Pair<String, Evidence> =
         "Past about ${ProgramRules.HEAVY_WEEK.toInt()} sets a week, each extra set adds less. " +
             "A hint about recovery, not a limit." to Evidence.PELLAND_2026
     } else {
-        "More than ${ProgramRules.HEAVY_SESSION.toInt()} hard sets in one rite is a lot to recover from. " +
+        "More than ${ProgramRules.HEAVY_SESSION.toInt()} hard sets in one ${Words.rite.s} is a lot to recover from. " +
             "Spreading them over more days helps. A hint, not a limit." to Evidence.REMMERT_2025
     }
 

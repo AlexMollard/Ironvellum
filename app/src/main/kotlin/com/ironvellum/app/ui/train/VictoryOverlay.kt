@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.Sex
@@ -136,7 +137,7 @@ internal object CelebrationFlow {
  * ([Repository.CompletionResult.inscriptionsBanked]). Null when none were, so no line is drawn.
  */
 internal fun inscriptionNote(banked: Int): String? =
-    banked.takeIf { it > 0 }?.let { "+$it ${plural(it, "inscription", "inscriptions")} waiting in the Veil" }
+    banked.takeIf { it > 0 }?.let { "+$it ${plural(it, "inscription", "inscriptions")} waiting in ${Words.theVeil.t}" }
 
 /** The level-up page's view of a sealed trial. */
 private fun Repository.CompletionResult.toLevelUp() =
@@ -191,7 +192,7 @@ internal fun TrialCelebration(
                     levelAfter = result.levelAfter,
                     tierAfter = result.classAfter.takeIf { it != result.classBefore },
                     inscriptionsBanked = result.inscriptionsBanked,
-                    caption = "$title · sealed",
+                    caption = "$title · ${Words.sealed.s}",
                     onContinue = onContinue,
                     onSkip = onSkipToSummary,
                     motion = motion,
@@ -286,10 +287,10 @@ private fun SummaryPage(
             // With a breakdown the reveal panel says what earned the XP, quest bonus included.
             if (result.breakdown.lines.isEmpty()) {
                 add(Triple("XP", "+${count(result.xpAwarded)}", true))
-                if (result.questBonus) add(Triple("Today's trial", "+${Xp.QUEST_BONUS} bonus", true))
+                if (result.questBonus) add(Triple("Today's ${Words.trial.s}", "+${Xp.QUEST_BONUS} bonus", true))
             }
             result.rankUp?.let { add(Triple("Rank up", it, true)) }
-            deeds.forEach { add(Triple("Deed", it.name, false)) }
+            deeds.forEach { add(Triple(Words.deed.c, it.name, false)) }
         }
     }
 
@@ -350,7 +351,7 @@ private fun SummaryPage(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Sealed · ${result.durationMinutes} min · ${totals.sets} ${if (totals.sets == 1) "set" else "sets"}",
+                    "${Words.sealed.c} · ${result.durationMinutes} min · ${totals.sets} ${if (totals.sets == 1) "set" else "sets"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Dim,
                     modifier = Modifier.padding(top = 3.dp),
@@ -432,14 +433,14 @@ private fun SummaryPage(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Sealed too soon? Keep going",
+                    "${Words.sealed.c} too soon? Keep going",
                     style = MaterialTheme.typography.labelLarge,
                     color = IronvellumColors.Ink,
                     textDecoration = TextDecoration.Underline,
                 )
             }
         }
-        CelebrationDock(primary = "Done", onPrimary = onDone, link = "Share trial", onLink = onShare)
+        CelebrationDock(primary = "Done", onPrimary = onDone, link = "Share ${Words.trial.s}", onLink = onShare)
     }
 }
 
@@ -457,7 +458,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
     // The best peak is the one earned thing here, so the card wears the gold plate.
     InkPanel(modifier.fillMaxWidth(), metal = Metal.Fabled) {
         Text(
-            if (total == 1) "New peak" else "New peaks · $total",
+            if (total == 1) "New ${Words.peak.s}" else "New ${Words.peak.pl} · $total",
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
@@ -544,9 +545,9 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
 }
 
 private fun peakDescription(peak: SessionPeaks.Peak): String =
-    "New ${peak.kind.label} peak, ${peak.label}, set ${peak.setIndex + 1}, " +
+    "New ${peak.kind.label} ${Words.peak.s}, ${peak.label}, set ${peak.setIndex + 1}, " +
         "${peakFigure(peak.figure, peak.weightKg, peak.isHold)}, was ${peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold)}, " +
-        "up ${peakGain(peak)}, ${peakPay(peak)}" + if (peak.count > 1) ", ${peak.count} peaks" else ""
+        "up ${peakGain(peak)}, ${peakPay(peak)}" + if (peak.count > 1) ", ${peak.count} ${Words.peak.pl}" else ""
 
 /** What the lift's peak pays, said honestly: a jump too small to matter pays nothing but is still a peak. */
 internal fun peakPay(peak: SessionPeaks.Peak): String = if (peak.xp > 0) "+${peak.xp} XP" else "no XP"

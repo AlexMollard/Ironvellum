@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.outlined.FitnessCenter
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.ListRow
@@ -143,15 +144,15 @@ class PresetsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun begin(presetId: Long, onStarted: (Long) -> Unit) {
-        viewModelScope.launchGuarded("begin rite") { onStarted(repo.startSessionFromPreset(presetId)) }
+        viewModelScope.launchGuarded("begin ${Words.rite.s}") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
 
     fun beginQuick(onStarted: (Long) -> Unit) {
-        viewModelScope.launch { onStarted(repo.startFreeformSession("Open Trial")) }
+        viewModelScope.launch { onStarted(repo.startFreeformSession(Words.openTrial.c)) }
     }
 
     fun shareRoutine(onRefused: (String) -> Unit, onCode: (String) -> Unit) {
-        viewModelScope.launchGuarded("share cycle") {
+        viewModelScope.launchGuarded("share ${Words.cycle.s}") {
             val routine = repo.sharedRoutine()
             val refusal = RoutineCode.shareRefusal(routine)
             if (refusal != null) onRefused(refusal) else onCode(RoutineCode.encode(routine))
@@ -263,7 +264,7 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 // No second trial while one is under way.
-                if (focus !is TrainFocus.Live) InkChip("Open trial", "Begin an open trial", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
+                if (focus !is TrainFocus.Live) InkChip(Words.openTrial.s.replaceFirstChar { it.uppercase() }, "Begin ${Words.openTrial.a}", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = GROUP_GAP))
@@ -283,7 +284,7 @@ fun PresetsScreen(
             val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "YOUR CYCLE",
+                    "YOUR ${Words.cycle.u}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -292,8 +293,8 @@ fun PresetsScreen(
                 )
                 Spacer(Modifier.weight(1f))
                 // Sit with the list they add to and export.
-                InkChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
-                InkChip("Share", "Share cycle", Icons.Outlined.Share, onClick = share)
+                InkChip("New", "New ${Words.rite.s}", Icons.Outlined.Add) { showNewChooser = true }
+                InkChip("Share", "Share ${Words.cycle.s}", Icons.Outlined.Share, onClick = share)
             }
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -341,7 +342,7 @@ fun PresetsScreen(
                         }
                         Text(
                             when {
-                                sealed -> "Sealed"
+                                sealed -> Words.sealed.c
                                 isToday && focus is TrainFocus.Live -> "Under way"
                                 isToday -> "Today"
                                 // "~54 min": the tail of the rite's plan line.
@@ -373,7 +374,7 @@ fun PresetsScreen(
                     icon = Icons.Outlined.AccessibilityNew,
                     label = "Weekly coverage",
                     detail = when {
-                        ui.plannedPresets.isEmpty() -> "No cycle yet"
+                        ui.plannedPresets.isEmpty() -> "No ${Words.cycle.s} yet"
                         gaps == 0 -> "Every muscle covered"
                         else -> "$gaps short or missing"
                     },
@@ -385,7 +386,7 @@ fun PresetsScreen(
                 // so the row only stands when that card does not.
                 if (trials.isEmpty()) {
                     InkDivider()
-                    WayOutRow(icon = Icons.Outlined.History, label = "Full chronicle", onClick = onOpenLog)
+                    WayOutRow(icon = Icons.Outlined.History, label = "Full ${Words.chronicle.s}", onClick = onOpenLog)
                 }
             }
 
@@ -393,7 +394,7 @@ fun PresetsScreen(
                 Spacer(Modifier.height(SECTION_GAP))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "RECENT TRIALS",
+                        "RECENT ${Words.trial.upl}",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -401,7 +402,7 @@ fun PresetsScreen(
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     // Named for where it goes: "All" alone says nothing to a screen reader.
-                    InkChip("All", "Open", description = "Full chronicle", onClick = onOpenLog)
+                    InkChip("All", "Open", description = "Full ${Words.chronicle.s}", onClick = onOpenLog)
                 }
                 InkRowPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
@@ -423,16 +424,16 @@ fun PresetsScreen(
                     // Easiest first, each with one plain line, so someone new
                     // can tell the Forge from a blank page without trying both.
                     val options = buildList {
-                        add(Triple("Forge a Cycle", "A full week built from your answers.") { showNewChooser = false; onGenerate("week", null) })
-                        add(Triple("Forge a Rite", "One rite, built for today.") { showNewChooser = false; onGenerate("session", null) })
-                        add(Triple("Start from a pattern", "A hand-written weekly cycle to adjust.") { showNewChooser = false; onGenerate("template", null) })
+                        add(Triple("${Words.forge.c} a ${Words.cycle.t}", "A full week built from your answers.") { showNewChooser = false; onGenerate("week", null) })
+                        add(Triple("${Words.forge.c} a ${Words.rite.t}", "One ${Words.rite.s}, built for today.") { showNewChooser = false; onGenerate("session", null) })
+                        add(Triple("Start from ${Words.pattern.a}", "A hand-written ${Words.pick("weekly cycle", "weekly plan")} to adjust.") { showNewChooser = false; onGenerate("template", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {
-                            add(Triple("Temper a Rite", "Improve one you already have.") { showNewChooser = false; onGenerate("improve", null) })
+                            add(Triple("${Words.temper.c} a ${Words.rite.t}", "Improve one you already have.") { showNewChooser = false; onGenerate("improve", null) })
                         }
-                        add(Triple("Blank Rite", "Pick every exercise yourself.") { showNewChooser = false; onNew() })
-                        add(Triple("Import code", "Paste a cycle someone shared with you.") { showNewChooser = false; showImport = true })
+                        add(Triple("Blank ${Words.rite.t}", "Pick every exercise yourself.") { showNewChooser = false; onNew() })
+                        add(Triple("Import code", "Paste ${Words.cycle.a} someone shared with you.") { showNewChooser = false; showImport = true })
                     }
                     options.forEachIndexed { index, (label, detail, action) ->
                         if (index > 0) InkDivider()
@@ -521,7 +522,7 @@ private fun TrainLeadCard(
         when (focus) {
             is TrainFocus.Live -> {
                 Text(
-                    "TRIAL IN PROGRESS",
+                    "${Words.trial.u} IN PROGRESS",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -531,14 +532,14 @@ private fun TrainLeadCard(
                 LeadButton("Continue ${focus.preset?.name ?: focus.session.label}") { onContinue(focus.session.id) }
             }
             else -> {
-                Text("No cycle yet", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                Text("No ${Words.cycle.s} yet", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
                 Text(
-                    "Forge a week, start from a pattern, or import one.",
+                    "${Words.forge.c} a week, start from ${Words.pattern.a}, or import one.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                LeadButton("Forge a cycle") { onForge() }
+                LeadButton("${Words.forge.c} ${Words.cycle.a}") { onForge() }
             }
         }
     }

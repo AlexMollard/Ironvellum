@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.roundToInt
 
 /**
@@ -14,34 +15,41 @@ import kotlin.math.roundToInt
 enum class RelicHouse(
     val id: String,
     val label: String,
-    val habit: String,
+    private val habitText: () -> String,
     /** What the house follows, as a clause: "Follows the weight you move." */
-    val follows: String,
+    private val followsText: () -> String,
     /** The part of the rate the house lifts, as the vault and the reveal name it. */
-    val term: String,
+    private val termText: () -> String,
     /** The 2-relic bonus, after "2 relics: ". */
-    val pairBonus: String,
+    private val pairBonusText: () -> String,
     /** The 4-relic bonus, after "4 relics: ". */
-    val fullBonus: String,
+    private val fullBonusText: () -> String,
     /** What the 4-relic bonus adds, for "Two more relics add ...". */
-    val fullGain: String,
+    private val fullGainText: () -> String,
 ) {
     Iron(
-        "iron", "Iron", "Lifting", "the trials you seal and the weight you move", "lifting",
-        "lifting term +5%", "full-strength window +2 h", "2 h of full strength",
+        "iron", "Iron", { "Lifting" }, { "the ${Words.trial.pl} you ${Words.seal.s} and the weight you move" }, { "lifting" },
+        { "lifting term +5%" }, { "full-strength window +2 h" }, { "2 h of full strength" },
     ),
     Vigil(
-        "vigil", "Vigil", "Consistency", "how steadily you train", "consistency",
-        "consistency term +5%", "one absence pays 4 days, not 3", "a fourth day of absence pay",
+        "vigil", "Vigil", { "Consistency" }, { "how steadily you train" }, { "consistency" },
+        { "consistency term +5%" }, { "one absence pays 4 days, not 3" }, { "a fourth day of absence pay" },
     ),
     Craft(
-        "craft", "Craft", "Technique", "the techniques you claim", "technique",
-        "technique term +5%", "technique ceiling ×2.0 to ×2.1", "a higher technique ceiling",
+        "craft", "Craft", { Words.technique.c }, { "the ${Words.technique.pl} you ${Words.claim.s}" }, { Words.technique.s },
+        { "${Words.technique.s} term +5%" }, { "${Words.technique.s} ceiling ×2.0 to ×2.1" }, { "a higher ${Words.technique.s} ceiling" },
     ),
     Return(
-        "return", "Return", "Coming back", "how soon you return after a gap", "comeback",
-        "comeback term +5%", "taper floor 10% to 15%", "a higher taper floor",
+        "return", "Return", { "Coming back" }, { "how soon you return after a gap" }, { "comeback" },
+        { "comeback term +5%" }, { "taper floor 10% to 15%" }, { "a higher taper floor" },
     );
+
+    val habit: String get() = habitText()
+    val follows: String get() = followsText()
+    val term: String get() = termText()
+    val pairBonus: String get() = pairBonusText()
+    val fullBonus: String get() = fullBonusText()
+    val fullGain: String get() = fullGainText()
 
     val title: String get() = "House of $label"
 
@@ -247,7 +255,7 @@ object RelicHouses {
      * relics each, a first 2-relic bonus within 4); the single Masterwork sits in Craft,
      * which makes that house's full set the long chase.
      */
-    val CATALOGUE: List<HouseRelic> = listOf(
+    val CATALOGUE: List<HouseRelic> by Words.perMode { listOf(
         HouseRelic(RelicHouse.Iron, "band", "Band of Iron", RewardRarity.Common),
         HouseRelic(RelicHouse.Iron, "crown", "Crown of Iron", RewardRarity.Epic),
         HouseRelic(RelicHouse.Iron, "chain", "Chain of Iron", RewardRarity.Rare),
@@ -267,9 +275,9 @@ object RelicHouses {
         HouseRelic(RelicHouse.Return, "thread", "Thread of Return", RewardRarity.Common),
         HouseRelic(RelicHouse.Return, "gate", "Gate of Return", RewardRarity.Rare),
         HouseRelic(RelicHouse.Return, "door", "Door of Return", RewardRarity.Rare),
-    )
+    ) }
 
-    private val BY_ID: Map<String, HouseRelic> = CATALOGUE.associateBy { it.id }
+    private val BY_ID: Map<String, HouseRelic> by Words.perMode { CATALOGUE.associateBy { it.id } }
 
     fun byId(id: String?): HouseRelic? = BY_ID[id]
 

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.InkSegmented
@@ -49,7 +50,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
 
     // Saveable with the stored value as the initial value only: on restore the
     // loaded profile must not overwrite a typed-but-unsaved edit.
-    var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name ?: "") }
+    var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name?.let(Words::displayName) ?: "") }
     // A whole-number height reads "180", not "180.0" — the decimal adds nothing.
     var heightInput by rememberSaveable(bodyProfile.first) {
         mutableStateOf(bodyProfile.first?.let { SettingsSummaries.formatHeightCm(it) } ?: "")
@@ -93,7 +94,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             FieldResult(saved = nameSaved, error = renameError)
             SettingsCaption(
-                if (signedIn) "Shown on Today and in the Reckoning." else "Shown on Today. Sign in to join the Reckoning.",
+                if (signedIn) "Shown on Today and in ${Words.theReckoning.t}." else "Shown on Today. Sign in to join ${Words.theReckoning.t}.",
             )
             Spacer(Modifier.height(20.dp))
             OutlinedTextField(

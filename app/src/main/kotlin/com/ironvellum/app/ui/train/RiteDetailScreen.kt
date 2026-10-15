@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
@@ -102,7 +103,7 @@ fun RiteDetailScreen(
             ) {
                 Spacer(Modifier.height(20.dp))
                 PushedHeader(
-                    preset?.name ?: "Rite",
+                    preset?.name ?: Words.rite.c,
                     onBack,
                     actions = { if (preset != null) InkChip("Edit", "Edit ${preset.name}") { onEdit(preset.id) } },
                 )

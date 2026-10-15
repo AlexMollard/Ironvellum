@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsCaption
@@ -35,7 +36,7 @@ internal fun TrialSettings(onBack: () -> Unit) {
             SettingsSwitchRow(
                 label = "Rest timer",
                 caption = "Counts the rest down after each set. Off, a ticked set starts no rest. " +
-                    "One movement can opt out from its rite or its menu in the trial.",
+                    "One movement can opt out from its ${Words.rite.s} or its menu in the ${Words.trial.s}.",
                 checked = restOn,
                 onCheckedChange = {
                     restOn = it
@@ -58,7 +59,7 @@ internal fun TrialSettings(onBack: () -> Unit) {
         SettingsGroup(null, topSpace = 10.dp) {
             SettingsSwitchRow(
                 label = "Keep the screen on",
-                caption = "Stops the screen sleeping while a trial is open. The pocket lock on the trial dims it.",
+                caption = "Stops the screen sleeping while ${Words.trial.a} is open. The pocket lock on the ${Words.trial.s} dims it.",
                 checked = awake,
                 onCheckedChange = {
                     awake = it

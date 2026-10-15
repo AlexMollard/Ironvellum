@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.selectedUnderline
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -42,7 +43,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.drop
 
 /** What a path chip reads out loud: the name, how far along it is, and whether it is the open one. */
-internal fun chipDescription(line: String, done: Int, total: Int): String = "$line path, $done of $total mastered"
+internal fun chipDescription(line: String, done: Int, total: Int): String = "$line ${Words.path.s}, $done of $total mastered"
 
 /**
  * An open path: a strip of every path above a pager of their trees. The strip and a horizontal
@@ -163,7 +164,7 @@ private fun PathChip(line: String, done: Int, total: Int, on: Boolean, onClick: 
         Modifier
             .heightIn(min = 48.dp)
             .widthIn(min = 48.dp)
-            .clickable(role = Role.Tab, onClickLabel = "Open $line path") { onClick() }
+            .clickable(role = Role.Tab, onClickLabel = "Open $line ${Words.path.s}") { onClick() }
             .semantics {
                 this.selected = on
                 contentDescription = chipDescription(line, done, total)

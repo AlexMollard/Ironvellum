@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.InkDivider
@@ -66,7 +67,7 @@ fun SkillJournal(
     // An empty Journal is a row of zeros: say what fills it.
     if (log.isEmpty()) {
         Text(
-            "Every attempt at a technique is written here. Open a path, pick a technique and log an attempt.",
+            "Every attempt at ${Words.technique.a} is written here. Open ${Words.path.a}, pick ${Words.technique.a} and log an attempt.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 16.dp),
@@ -136,9 +137,9 @@ fun SkillJournal(
     val more = lines.size - PATHS_NAMED
     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
         ListRow(
-            label = "Paths",
+            label = Words.paths.c,
             subline = lines.take(PATHS_NAMED).joinToString(", ") + if (more > 0) " and $more more" else "",
-            onClickLabel = "Open Paths",
+            onClickLabel = "Open ${Words.paths.c}",
             onClick = onOpenPaths,
         )
     }
@@ -147,7 +148,7 @@ fun SkillJournal(
     SectionHeader("Timeline", topPadding = 16.dp)
     if (log.isEmpty()) {
         Text(
-            "The Journal is blank. Open a technique and log what you actually hit.",
+            "The ${Words.journal.t} is blank. Open ${Words.technique.a} and log what you actually hit.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 12.dp),
@@ -175,7 +176,7 @@ fun SkillJournal(
                     subline = formatDate(entry.practicedAtMs, "HH:mm") +
                         (def?.let { " · ${it.line} · ${Skills.tierLabel(it.tier)}" } ?: ""),
                     value = when {
-                        entry.claimed -> "Claimed"
+                        entry.claimed -> Words.claimed.c
                         entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @${formatLoad(entry.weightKg)}${Units.name}"
                         else -> def?.let { SkillGuidance.withUnit(entry.value, it) } ?: "${entry.value}"
                     },

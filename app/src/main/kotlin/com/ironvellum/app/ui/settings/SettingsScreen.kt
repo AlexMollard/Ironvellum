@@ -23,6 +23,7 @@ import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsValueRow
@@ -97,13 +98,13 @@ fun SettingsScreen(
             SettingsValueRow("Training mode", (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
             }
-            SettingsValueRow("During a trial", SettingsSummaries.trial(trialPrefs.restOff, trialPrefs.restAlert)) {
+            SettingsValueRow("During ${Words.trial.a}", SettingsSummaries.trial(trialPrefs.restOff, trialPrefs.restAlert)) {
                 onOpenSection(SettingsSection.DURING_TRIAL)
             }
-            SettingsValueRow("Armoury", SettingsSummaries.armoury(savedGear)) {
+            SettingsValueRow(Words.armoury.c, SettingsSummaries.armoury(savedGear)) {
                 onOpenSection(SettingsSection.ARMOURY)
             }
-            SettingsValueRow("The Summons", if (summonsOn) "On" else "Off") {
+            SettingsValueRow(Words.theSummons.c, if (summonsOn) "On" else "Off") {
                 onOpenSection(SettingsSection.SUMMONS)
             }
         }
@@ -136,7 +137,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(10.dp))
         Text(
-            "Your readings stay on this device.",
+            "Your ${Words.reading.pl} stay on this device.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),

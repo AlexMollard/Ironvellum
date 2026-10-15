@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
 import android.content.Context
@@ -52,7 +53,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     var pendingArchive by remember { mutableStateOf<String?>(null) }
     val exportTrials: (WorkoutCsvWriter.Period) -> Unit = { period ->
         viewModel.exportCsv(period) { fileName, csv ->
-            scope.launch { shareExport(context, "Export trials", fileName, csv, "text/csv") }
+            scope.launch { shareExport(context, "Export ${Words.trial.pl}", fileName, csv, "text/csv") }
         }
     }
 
@@ -105,16 +106,16 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     },
                 )
                 InkDivider()
-                ListRow("Export trials this week", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
+                ListRow("Export ${Words.trial.pl} this week", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
                 InkDivider()
-                ListRow("Export trials this month", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
+                ListRow("Export ${Words.trial.pl} this month", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
                 InkDivider()
-                ListRow("Export trials this year", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
+                ListRow("Export ${Words.trial.pl} this year", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
             }
             InkDivider()
             ListRow(
                 "Import from another app",
-                subline = "Adds trials from a Strong, Hevy or FitNotes CSV export.",
+                subline = "Adds ${Words.trial.pl} from a Strong, Hevy or FitNotes CSV export.",
                 onClick = {
                     csvLauncher.launch(CSV_MIME_TYPES)
                 },
@@ -183,7 +184,7 @@ internal suspend fun readPickedText(context: Context, uri: android.net.Uri): Str
 internal fun RestoreConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     SettingsConfirmDialog(
         title = "Restore this archive?",
-        text = "Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.",
+        text = "Replaces your ${Words.rite.pl} and ${Words.cycle.s}, ${Words.chronicle.t}, ${Words.reading.pl}, ${Words.deed.pl} and ${Words.journal.t} on this device. This cannot be undone.",
         confirmLabel = "Restore",
         dismissLabel = "Keep local data",
         danger = true,

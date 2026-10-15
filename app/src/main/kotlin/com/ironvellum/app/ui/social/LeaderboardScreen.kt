@@ -35,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ExerciseSearch
 import com.ironvellum.app.domain.LiftGroup
 import com.ironvellum.app.ui.components.InkDivider
@@ -122,21 +124,25 @@ data class LiftsBoardUi(
 )
 
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
-private enum class Board(val label: String) {
-    Training("Training"),
-    Lifts("Lifts"),
-    Muster("The Veil"),
+private enum class Board(private val labelText: () -> String) {
+    Training({ "Training" }),
+    Lifts({ "Lifts" }),
+    Muster({ Words.theVeil.c });
+
+    val label: String get() = labelText()
 }
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
-private enum class BoardMetric(val label: String) {
-    Xp("XP"),
-    Level("Level"),
-    Streak("Oath"),
-    Titles("Deeds"),
-    Strength("Strength score"),
-    Last7("Last 7 days"),
+private enum class BoardMetric(private val labelText: () -> String) {
+    Xp({ "XP" }),
+    Level({ "Level" }),
+    Streak({ Words.oath.c }),
+    Titles({ Words.deed.cpl }),
+    Strength({ "Strength score" }),
+    Last7({ "Last 7 days" }),
     ;
+
+    val label: String get() = labelText()
 
     /** The raw value this metric ranks by. */
     fun value(row: LeaderboardRow): Long = when (this) {
@@ -153,7 +159,7 @@ private enum class BoardMetric(val label: String) {
         Xp -> "${grouped(row.totalXp)} XP"
         Level -> "Level ${row.level}"
         Streak -> "${row.streakDays} " + plural(row.streakDays, "day", "days")
-        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "deed", "deeds")
+        Titles -> "${row.titlesCount} " + plural(row.titlesCount, Words.deed.s, Words.deed.pl)
         Strength -> "STR ${grouped(row.lifetimeStrength)}"
         Last7 -> "${row.sessionsLast7d} in 7 days"
     }
@@ -400,7 +406,7 @@ fun LeaderboardScreen(
 @Composable
 private fun LoadingLine() {
     Text(
-        "Reading the reckoning…",
+        "${Words.reads.c} ${Words.theReckoning.s}…",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -409,7 +415,7 @@ private fun LoadingLine() {
 @Composable
 private fun EmptyBoard(onRefresh: () -> Unit) {
     Text(
-        "No standings yet. Add allies by true name on the Allies tab.",
+        "No standings yet. Add ${Words.ally.pl} by ${Words.trueName.s} on the ${Words.ally.cpl} tab.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -421,7 +427,7 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
 @Composable
 private fun ErrorPanel(onRefresh: () -> Unit) {
     Text(
-        "The Ledger could not read the reckoning. Try again in a moment.",
+        Lines.leaderboardUnread,
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -459,7 +465,7 @@ private fun Board(
 
     if (sorted.size == 1) {
         Text(
-            "You stand alone in the reckoning. Add allies from the Allies tab to fill it.",
+            "You stand alone in ${Words.theReckoning.s}. Add ${Words.ally.pl} from the ${Words.ally.cpl} tab to fill it.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(bottom = 10.dp),
@@ -482,7 +488,7 @@ private fun Board(
         val myRow = sorted[myIndex]
         Spacer(Modifier.height(16.dp))
         Text(
-            "Your standing",
+            "Your ${Words.standing.s}",
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
@@ -649,7 +655,7 @@ private fun PodiumSlot(
             } else {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Ally slot open",
+                    "${Words.ally.c} slot open",
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
@@ -702,7 +708,7 @@ private fun BoardRow(
                     Modifier
                 },
             )
-            .then(if (onClick != null) Modifier.clickable(onClickLabel = "Open folio", role = Role.Button, onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = "Open ${Words.folio.s}", role = Role.Button, onClick = onClick) else Modifier)
             .heightIn(min = 56.dp)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -723,7 +729,7 @@ private fun BoardRow(
         )
         Column(Modifier.weight(1f)) {
             Text(
-                displayName.ifBlank { "Ironbound" },
+                displayName.ifBlank { Words.lifter.c },
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (isMe) FontWeight.SemiBold else FontWeight.Medium,
                 color = IronvellumColors.Ink,
@@ -826,7 +832,7 @@ private fun MusterBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
+                        Lines.veilBoardNote,
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
@@ -863,7 +869,7 @@ private fun MusterBoard(
 @Composable
 private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
     Text(
-        message ?: "The Ledger could not read the Veil's reckoning. Try again in a moment.",
+        message ?: Lines.veilBoardUnread,
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -874,7 +880,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
 @Composable
 private fun MusterEmptyPanel(onRefresh: () -> Unit) {
     Text(
-        "No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed.",
+        Lines.noVeilEchoes,
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -961,7 +967,7 @@ private fun LiftsBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "Rungs only — bodyweight stays on each phone.",
+                        "${Words.rung.cpl} only — bodyweight stays on each phone.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
@@ -1029,7 +1035,7 @@ private fun LiftPicker(
     ListRow(
         label = selected.label,
         subline = selected.group.label,
-        onClickLabel = "Choose a reckoning",
+        onClickLabel = "Choose ${Words.reckoning.a}",
         onClick = { open = true },
     )
     if (!open) return
@@ -1042,13 +1048,13 @@ private fun LiftPicker(
     // Board order within a group is progression order; a query re-sorts by how well it matched.
     val shown = if (query.isBlank()) matches.map { it.first } else matches.sortedBy { it.second }.map { it.first }
     InkPickerSheet(
-        title = "Choose a reckoning",
+        title = "Choose ${Words.reckoning.a}",
         onDismiss = { open = false },
         query = query,
         onQueryChange = { query = it },
-        searchLabel = "Search reckonings",
+        searchLabel = "Search ${Words.reckoning.pl}",
         count = shown.size,
-        countNoun = "reckoning" to "reckonings",
+        countNoun = Words.reckoning.s to Words.reckoning.pl,
     ) {
         LiftGroup.entries.forEach { group ->
             val inGroup = shown.filter { it.group == group }
@@ -1070,9 +1076,9 @@ private fun LiftPicker(
 private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick: () -> Unit) {
     val rungs = LiftBoards.rungs(lift)
     val detail = if (rungs.isEmpty()) {
-        "Bodyweight rungs"
+        "Bodyweight ${Words.rung.pl}"
     } else {
-        "${rungs.size} rungs · ${rungs.first().exercise} to ${rungs.last().exercise}"
+        "${rungs.size} ${Words.rung.pl} · ${rungs.first().exercise} to ${rungs.last().exercise}"
     }
     ChoiceRow(
         label = lift.label,
@@ -1087,7 +1093,7 @@ private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick
 @Composable
 private fun LiftEmptyPanel(onRefresh: () -> Unit) {
     Text(
-        "No allies stand here yet. Log one of its exercises to claim a standing.",
+        Lines.claimStanding,
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )

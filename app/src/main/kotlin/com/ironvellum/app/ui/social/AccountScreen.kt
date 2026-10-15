@@ -5,6 +5,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.text.BasicTextField
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
 import androidx.activity.compose.BackHandler
@@ -511,7 +513,7 @@ fun AccountScreen(
 
         when {
             !cloudConfigured -> NotConfiguredPanel()
-            ui.busy && ui.account == null -> BusyPanel("Linking to the Ledger…")
+            ui.busy && ui.account == null -> BusyPanel(Lines.linking)
             // Signed OUT with a configured cloud: this is the sign-in form itself.
             // Losing this branch left ACCOUNT rendering nothing but its own
             // title, so there was no way to sign in from anywhere in the app.
@@ -590,8 +592,8 @@ internal fun AuthPanels(
     // A login wall with no reason to sign in reads as a requirement. Say it
     // is optional and what it adds before asking for anything.
     Text(
-        "Optional: everything else works without an account. Sign in to back up your trials, " +
-            "add allies, join a circle and stand in the Reckoning.",
+        "Optional: everything else works without an account. Sign in to back up your ${Words.trial.pl}, " +
+            "add ${Words.ally.pl}, join ${Words.circle.a} and ${Words.pick("stand in the Reckoning", "appear on the leaderboard")}.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.Ink,
     )
@@ -663,7 +665,7 @@ internal fun AuthPanels(
         else -> null
     }
     val nameError = when {
-        mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid -> "True name needs 2–24 characters."
+        mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid -> "${Words.trueName.c} needs 2–24 characters."
         mode == AuthMode.SIGN_UP -> serverError
         else -> null
     }
@@ -741,7 +743,7 @@ internal fun AuthPanels(
             colors = ironvellumFieldColors(),
             value = displayName,
             onValueChange = { displayName = it.take(24) },
-            label = { Text("True name") },
+            label = { Text(Words.trueName.c) },
             singleLine = true,
             isError = nameError != null,
             supportingText = nameError?.let { { Text(it, color = IronvellumColors.DangerRed) } },
@@ -782,7 +784,7 @@ internal fun AuthPanels(
     if (mode != AuthMode.RESET || codeSent) {
         Spacer(Modifier.height(8.dp))
         Text(
-            "Readings stay on this device; trials, XP and deeds sync.",
+            "${Words.reading.cpl} stay on this device; ${Words.trial.pl}, XP and ${Words.deed.pl} sync.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -872,7 +874,7 @@ private fun SignedInPanels(
         )
     }
 
-    SectionHeader("Circle", topPadding = 20.dp)
+    SectionHeader(Words.circle.c, topPadding = 20.dp)
     CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
     val incoming = ui.friends.filter { it.incoming && !it.accepted }
@@ -891,7 +893,7 @@ private fun SignedInPanels(
         SocialErrorBanner(it)
     }
 
-    SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}", topPadding = 18.dp)
+    SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else "${Words.ally.cpl} · ${accepted.size}", topPadding = 18.dp)
     AlliesPanel(
         accepted = accepted,
         empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
@@ -949,7 +951,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
 private fun VisibilityChip(visibility: String) {
     val (icon, label) = when (visibility) {
         "public" -> Icons.Outlined.Public to "Public"
-        "friends" -> Icons.Outlined.Group to "Allies only"
+        "friends" -> Icons.Outlined.Group to "${Words.ally.cpl} only"
         else -> Icons.Outlined.Lock to "Private"
     }
     Row(
@@ -988,14 +990,14 @@ private fun ClaimNamePanel(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.InkMuted)
             Text(
-                "Take your true name",
+                "Take your ${Words.trueName.s}",
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
             )
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "This true name is how other Ironbound find and add you.",
+            "This ${Words.trueName.s} is how other ${Words.lifter.t} find and add you.",
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
             maxLines = 2,
@@ -1016,7 +1018,7 @@ private fun ClaimNamePanel(
             colors = ironvellumFieldColors(),
             value = name,
             onValueChange = { name = it.take(24) },
-            label = { Text("True name (2–24)") },
+            label = { Text("${Words.trueName.c} (2–24)") },
             singleLine = true,
             enabled = !busy,
             isError = name.isNotBlank() && !valid,
@@ -1062,7 +1064,7 @@ private fun ClaimNamePanel(
 private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
     val canInvite = friendName.trim().length >= 2 && !loading
-    val label = "Add an ally by true name"
+    val label = "Add ${Words.ally.a} by ${Words.trueName.s}"
     // A caption over a hairline field with "Invite" inside it: no box, like the mockup.
     Column(Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
@@ -1078,7 +1080,7 @@ private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
                 decorationBox = { inner ->
                     Box(Modifier.heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
                         if (friendName.isEmpty()) {
-                            Text("True name", style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+                            Text(Words.trueName.c, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
                         }
                         inner()
                     }
@@ -1107,10 +1109,10 @@ private fun RequestsRow(count: Int, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         InkDivider()
         ListRow(
-            label = "$count ally ${plural(count, "request", "requests")}",
-            value = "Missives",
+            label = "$count ${Words.ally.s} ${plural(count, "request", "requests")}",
+            value = Words.missive.cpl,
             icon = Icons.Outlined.PersonAdd,
-            onClickLabel = "Open Missives",
+            onClickLabel = "Open ${Words.missive.tpl}",
             contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp),
             onClick = onClick,
         )
@@ -1127,7 +1129,7 @@ private fun AlliesPanel(
 ) {
     if (empty) {
         Text(
-            "No allies yet. Invite one by true name above.",
+            "No ${Words.ally.pl} yet. Invite one by ${Words.trueName.s} above.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1151,7 +1153,7 @@ private fun AlliesPanel(
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    friend.displayName.ifBlank { "Ironbound" },
+                    friend.displayName.ifBlank { Words.lifter.c },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     maxLines = 1,

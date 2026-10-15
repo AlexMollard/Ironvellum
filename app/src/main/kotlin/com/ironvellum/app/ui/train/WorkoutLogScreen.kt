@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
@@ -95,7 +96,7 @@ fun WorkoutLogScreen(
     if (ui.history.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            PushedHeader("Chronicle", onBack)
+            PushedHeader(Words.chronicle.c, onBack)
             Column(
                 Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 96.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -104,14 +105,14 @@ fun WorkoutLogScreen(
                 Icon(Icons.Outlined.Book, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "The Chronicle is blank.",
+                    "${Words.theChronicle.c} is blank.",
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Seal a trial and it is written here.",
+                    "${Words.seal.c} ${Words.trial.a} and it is written here.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -126,7 +127,7 @@ fun WorkoutLogScreen(
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Spacer(Modifier.height(20.dp))
-            PushedHeader("Chronicle", onBack)
+            PushedHeader(Words.chronicle.c, onBack)
             Text(
                 totalsLine(ui.history, ui.exercises),
                 style = MaterialTheme.typography.bodySmall,
@@ -180,7 +181,7 @@ private fun totalsLine(
     val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
     val trials = history.size
     return buildList {
-        add("$trials ${plural(trials, "trial", "trials")}")
+        add("$trials ${plural(trials, Words.trial.s, Words.trial.pl)}")
         add("${doneSets.size} ${plural(doneSets.size, "set", "sets")}")
         add("%,d".fmt(totals.reps) + " " + plural(totals.reps, "rep", "reps"))
         if (totals.heldSeconds > 0) add("%,d".fmt(totals.heldSeconds) + "s held")

@@ -31,7 +31,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.MuscleArea
@@ -61,7 +63,7 @@ private const val PICK_NONE = 0
 private const val PICK_SWAP = 1
 private const val PICK_ADD = 2
 
-internal const val ARMOURY_REQUIRED = "Pick your armoury to continue. Nothing means bodyweight only."
+internal val ARMOURY_REQUIRED: String get() = "Pick your ${Words.armoury.s} to continue. Nothing means bodyweight only."
 
 private val STEP_LABELS = listOf("Goal", "Kit", "Focus")
 
@@ -239,7 +241,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
     if (armouryOpen) {
         IronvellumDialog(
             onDismissRequest = { armouryOpen = false },
-            title = { Text("Armoury") },
+            title = { Text(Words.armoury.c) },
             text = { GearPicker(equipment = equipment, onChange = { vm.equipment.value = it }) },
             confirmButton = { IronvellumButton(label = "Done", onClick = { armouryOpen = false }) },
         )
@@ -304,11 +306,11 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
     if (confirmReplace) {
         IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace your cycle?") },
+            title = { Text("Replace your ${Words.cycle.s}?") },
             text = {
                 Text(
-                    "Your ${presets.size} current ${if (presets.size == 1) "rite" else "rites"} will be deleted " +
-                        "and the forged cycle takes their place. Your Chronicle is untouched." +
+                    "Your ${presets.size} current ${if (presets.size == 1) Words.rite.s else Words.rite.pl} will be deleted " +
+                        "and the ${Words.forged.s} ${Words.cycle.s} takes their place. Your ${Words.chronicle.t} is untouched." +
                         if (vm.switchesProgression()) " " + vm.progressionLine() else "",
                 )
             },
@@ -358,7 +360,7 @@ private fun ForgeFormPage(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            ForgeHeader("Forge a cycle", onBack)
+            ForgeHeader("${Words.forge.c} ${Words.cycle.a}", onBack)
             ForgeStepTabs(step, STEP_LABELS, onStep)
         }
         Column(
@@ -379,7 +381,7 @@ private fun ForgeFormPage(
             primary = when (step) {
                 0 -> "Next: kit"
                 1 -> "Next: focus"
-                else -> "Forge cycle"
+                else -> "${Words.forge.c} ${Words.cycle.s}"
             },
             onPrimary = onNext,
             enabled = ready,
@@ -415,7 +417,7 @@ private fun ForgeGoalStep(
         options = listOf(
             TrainingFocus.STRENGTH to "Power",
             TrainingFocus.MUSCLE to "Muscle",
-            TrainingFocus.SKILL to "Techniques",
+            TrainingFocus.SKILL to Words.technique.cpl,
             TrainingFocus.GENERAL to "Mixed",
         ),
         selected = focus,
@@ -453,26 +455,26 @@ private fun ForgeKitStep(
     ForgeLabel("Kit")
     InkDivider()
     ListRow(
-        label = "Armoury",
+        label = Words.armoury.c,
         value = SettingsSummaries.armoury(equipment),
-        onClickLabel = "Choose your armoury",
+        onClickLabel = "Choose your ${Words.armoury.s}",
         onClick = onArmoury,
     )
     InkDivider()
-    ForgeLabel("Rite length")
+    ForgeLabel("${Words.rite.c} length")
     ForgeRadioRow(
-        label = "Rite length",
+        label = "${Words.rite.c} length",
         options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
         selected = sessionMinutes,
         onPick = onSessionMinutes,
     )
-    ForgeCaption("The Forge fits each rite inside this time, warm-up left out.")
+    ForgeCaption(Lines.forgeFits)
     Spacer(Modifier.height(10.dp))
     InkDivider()
     ListRow(
         label = "More options",
-        value = (if (compoundOnly) "Compound · " else "") + "${tier.label} sets · $maxExercises per rite",
-        onClickLabel = "More options: starting sets, compound only, exercises per rite",
+        value = (if (compoundOnly) "Compound · " else "") + "${tier.label} sets · $maxExercises per ${Words.rite.s}",
+        onClickLabel = "More options: starting sets, compound only, exercises per ${Words.rite.s}",
         onClick = onMore,
     )
     InkDivider()
@@ -529,10 +531,10 @@ internal fun MoreOptionsBody(
             Spacer(Modifier.height(12.dp))
         }
         if (sessionMinutes != null) {
-            Text("Rite length", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            Text("${Words.rite.c} length", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
             Spacer(Modifier.height(6.dp))
             ForgeRadioRow(
-                label = "Rite length",
+                label = "${Words.rite.c} length",
                 options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
                 selected = sessionMinutes,
                 onPick = onSessionMinutes,
@@ -541,10 +543,10 @@ internal fun MoreOptionsBody(
         }
         // The same drawn toggle cell as the gear items.
         PickCell(
-            label = "Compound & technique only",
+            label = "Compound & ${Words.technique.s} only",
             selected = compoundOnly,
             modifier = Modifier.fillMaxWidth(),
-            description = "Compound & technique only, ${if (compoundOnly) "on" else "off"}",
+            description = "Compound & ${Words.technique.s} only, ${if (compoundOnly) "on" else "off"}",
             role = Role.Checkbox,
             onClick = { onCompound(!compoundOnly) },
         )
@@ -556,14 +558,14 @@ internal fun MoreOptionsBody(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                "Max exercises per rite",
+                "Max exercises per ${Words.rite.s}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 modifier = Modifier.weight(1f),
             )
             TapPad(
                 label = "−",
-                description = "Fewer exercises per rite, currently $maxExercises",
+                description = "Fewer exercises per ${Words.rite.s}, currently $maxExercises",
                 onClick = { onMaxExercises((maxExercises - 1).coerceAtLeast(ProgramRules.MAX_EXERCISES_RANGE.first)) },
             )
             Text(
@@ -574,7 +576,7 @@ internal fun MoreOptionsBody(
             )
             TapPad(
                 label = "+",
-                description = "More exercises per rite, currently $maxExercises",
+                description = "More exercises per ${Words.rite.s}, currently $maxExercises",
                 onClick = { onMaxExercises((maxExercises + 1).coerceAtMost(ProgramRules.MAX_EXERCISES_RANGE.last)) },
             )
         }
@@ -616,7 +618,7 @@ internal fun ForgePlanPage(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             ForgeHeader(
-                "Proposed cycle",
+                "Proposed ${Words.cycle.s}",
                 onBack,
                 subtitle = subtitle.takeIf { hasPlan },
                 status = when {
@@ -639,7 +641,7 @@ internal fun ForgePlanPage(
                     Spacer(Modifier.height(8.dp))
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = onCoverage)
                     if (savedRites > 0) {
-                        ForgeCaption("Coverage includes your $savedRites existing ${if (savedRites == 1) "rite" else "rites"}.")
+                        ForgeCaption("Coverage includes your $savedRites existing ${if (savedRites == 1) Words.rite.s else Words.rite.pl}.")
                     }
                     Spacer(Modifier.height(8.dp))
                     current.presets.forEachIndexed { presetIndex, preset ->
@@ -671,7 +673,7 @@ internal fun ForgePlanPage(
                         ForgePreviousProposal(it)
                         Spacer(Modifier.height(12.dp))
                     }
-                    ForgeFailedCard(error!!.removePrefix("The Forge failed: ").let { if (it.endsWith(".")) it else "$it." }, onTryAgain)
+                    ForgeFailedCard(error!!.removePrefix("${Words.theForge.c} failed: ").let { if (it.endsWith(".")) it else "$it." }, onTryAgain)
                 }
                 else -> ForgeCaption(
                     when {
@@ -690,14 +692,14 @@ internal fun ForgePlanPage(
             enabled = hasPlan && equipment != null,
             busy = saving,
             note = if (hasPlan && !saving) "A hint on coverage never blocks this." else null,
-            link = if (savedRites > 0 && hasPlan) "Replace my cycle" else null,
+            link = if (savedRites > 0 && hasPlan) "Replace my ${Words.cycle.s}" else null,
             linkDanger = true,
             onLink = onReplace,
             above = {
                 if (saving) {
                     val count = plan?.presets?.size ?: 0
                     Text(
-                        "Writing $count ${if (count == 1) "rite" else "rites"} to your cycle. Edits are paused until this finishes.",
+                        "Writing $count ${if (count == 1) Words.rite.s else Words.rite.pl} to your ${Words.cycle.s}. Edits are paused until this finishes.",
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),

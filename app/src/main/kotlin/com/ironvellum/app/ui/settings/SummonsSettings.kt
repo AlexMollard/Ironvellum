@@ -19,8 +19,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Reminders
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.rememberNotificationAccess
@@ -55,7 +57,7 @@ internal fun SummonsSettings(onBack: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         SettingsSwitchRow(
             label = "Evening reminder",
-            caption = "One evening reminder on days your cycle holds a rite you have not begun.",
+            caption = "One evening reminder on days your ${Words.cycle.s} holds ${Words.rite.a} you have not begun.",
             checked = remindersOn,
             onCheckedChange = setOn,
         )
@@ -63,7 +65,7 @@ internal fun SummonsSettings(onBack: () -> Unit) {
             NotificationBlockedNotice(
                 channelId = Notifications.CHANNEL_SUMMONS,
                 access = access,
-                blockedText = "The Summons won't arrive until you allow notifications.",
+                blockedText = Lines.summonsBlocked,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }

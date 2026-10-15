@@ -48,6 +48,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.HouseProgress
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.RelicHouse
@@ -157,15 +158,15 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
         FactorRow(
             "Training",
             rate.trainingFactor,
-            "${inputs.sessionsLast7d} ${plural(inputs.sessionsLast7d, "trial", "trials")} in 7 days" +
-                " · ${Units.volume(inputs.volumeLast7d)} · oath ${inputs.streakDays} ${plural(inputs.streakDays, "day", "days")}",
+            "${inputs.sessionsLast7d} ${plural(inputs.sessionsLast7d, Words.trial.s, Words.trial.pl)} in 7 days" +
+                " · ${Units.volume(inputs.volumeLast7d)} · ${Words.oath.s} ${inputs.streakDays} ${plural(inputs.streakDays, "day", "days")}",
             ceiling = trainingMax,
         )
         InkDivider()
         FactorRow(
-            "Technique",
+            Words.technique.c,
             rate.skillFactor,
-            "${inputs.skillsUnlocked} ${plural(inputs.skillsUnlocked, "technique", "techniques")} unlocked, kept for good",
+            "${inputs.skillsUnlocked} ${plural(inputs.skillsUnlocked, Words.technique.s, Words.technique.pl)} unlocked, kept for good",
             ceiling = skillMax,
         )
         InkDivider()
@@ -201,7 +202,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
     SectionHeader("While you are away", topPadding = 18.dp)
     AwayCurve(houses.fullStrengthHours, houses.minEfficiency, houses.taperWindowHours)
     Text(
-        "One absence pays at most ${houses.maxEffectiveHours.roundToInt()} h of work. Opening the Veil banks it and starts the clock again.",
+        "One absence pays at most ${houses.maxEffectiveHours.roundToInt()} h of work. Opening ${Words.theVeil.t} banks it and starts the clock again.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(start = 2.dp, top = 6.dp),
@@ -242,7 +243,7 @@ private fun FactorRow(label: String, factor: Double, feeds: String, ceiling: Dou
 private fun termWhere(house: RelicHouse): String = when (house) {
     RelicHouse.Iron -> "Lifting term, inside Training"
     RelicHouse.Vigil -> "Consistency term, inside Training"
-    RelicHouse.Craft -> "Technique term, inside Technique"
+    RelicHouse.Craft -> "${Words.technique.c} term, inside ${Words.technique.t}"
     RelicHouse.Return -> "Comeback term, on the time away"
 }
 

@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.sqrt
 
 /** How a board scores: bodyweight-ratio tiers, or an ordered ladder of skill rungs. */
@@ -239,9 +240,9 @@ object LiftBoards {
     )
 
     private val LADDERS: Map<Lift, List<Rung>> = LADDER_EXERCISES.mapValues { (lift, names) ->
-        require(names.size in 1..MAX_STEP) { "${lift.wire} needs 1..$MAX_STEP rungs" }
+        require(names.size in 1..MAX_STEP) { "${lift.wire} needs 1..$MAX_STEP ${Words.rung.pl}" }
         names.map { name ->
-            val skill = requireNotNull(Skills.forName(name)) { "${lift.wire}: no technique named $name" }
+            val skill = requireNotNull(Skills.forName(name)) { "${lift.wire}: no ${Words.technique.s} named $name" }
             Rung(name, skill.metric, skill.target)
         }
     }
@@ -267,14 +268,14 @@ object LiftBoards {
     /** Headline for a step: the tier name on TIERED boards, the rung's exercise on LADDER boards. */
     fun stepLabel(lift: Lift, step: Int): String {
         if (lift.kind == LiftKind.TIERED) return tierName(step)
-        return rungs(lift).getOrNull(step - 1)?.exercise ?: "No rung yet"
+        return rungs(lift).getOrNull(step - 1)?.exercise ?: "No ${Words.rung.s} yet"
     }
 
     /** "rung 4 of 6" for a LADDER step; null on TIERED boards and for step 0. */
     fun stepDetail(lift: Lift, step: Int): String? {
         val rungs = rungs(lift)
         if (rungs.isEmpty() || step < 1) return null
-        return "rung ${step.coerceAtMost(rungs.size)} of ${rungs.size}"
+        return "${Words.rung.s} ${step.coerceAtMost(rungs.size)} of ${rungs.size}"
     }
 
     /** The highest rung of [lift] cleared by a set of [exercise] worth [reps] / [seconds]; 0 when none. */

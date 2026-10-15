@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.data.Words
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -509,7 +510,7 @@ data class CommentDto(
         id = id,
         sessionId = sessionId,
         userId = userId,
-        authorName = authorName.ifBlank { "Hidden Ironbound" },
+        authorName = authorName.ifBlank { "Hidden ${Words.lifter.t}" },
         body = body,
         createdAtMs = Instant.parse(createdAt).toEpochMilli(),
     )
@@ -639,7 +640,7 @@ data class InboxRowDto(
      */
     internal fun toInboxItem(): InboxItem? {
         val at = Instant.parse(occurredAt).toEpochMilli()
-        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden Ironbound"
+        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden ${Words.lifter.t}"
         return when (kind) {
             "request" -> InboxItem.FriendRequest(at, actorId, name)
             "accepted" -> InboxItem.RequestAccepted(at, actorId, name)

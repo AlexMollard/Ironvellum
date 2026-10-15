@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.Cloud.failure
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -205,7 +206,7 @@ class AccountRepository {
      */
     suspend fun updateDisplayName(raw: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException("Sign in before taking a true name"))
+            ?: return Result.failure(IllegalStateException("Sign in before taking ${Words.trueName.a}"))
         val client = requireClient().getOrElse { return failure(it) }
         trueNameProblem(raw)?.let { return Result.failure(IllegalStateException(it)) }
         val name = sanitizeHandle(raw)
@@ -222,7 +223,7 @@ class AccountRepository {
             val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
             throw IllegalStateException(
-                if (taken) "That true name is taken — another Ironbound got there first"
+                if (taken) "That ${Words.trueName.s} is taken — another ${Words.lifter.t} got there first"
                 else Cloud.explain(error),
             )
         }
@@ -328,10 +329,10 @@ fun trueNameProblem(raw: String): String? {
     val trimmed = raw.trim()
     return when {
         trimmed.length !in WireLimits.DISPLAY_NAME_MIN..WireLimits.DISPLAY_NAME_MAX ->
-            "Your true name must be 2 to 24 characters"
+            "Your ${Words.trueName.s} must be 2 to 24 characters"
         // A claim keeps letters, digits and spaces only; "!!" would otherwise become a seeded-looking handle.
         trimmed.count { it.isLetterOrDigit() } < WireLimits.DISPLAY_NAME_MIN ->
-            "Your true name needs at least 2 letters or digits"
+            "Your ${Words.trueName.s} needs at least 2 letters or digits"
         else -> null
     }
 }
@@ -350,7 +351,7 @@ fun localNameToAdopt(local: String?, cloud: String, profileLoaded: Boolean): Str
 /** What the sign-up name field starts with: the local name, unless it is still the default. */
 fun signUpNamePrefill(local: String?): String {
     val name = local?.trim().orEmpty()
-    return if (name.equals(DEFAULT_PROFILE_NAME, ignoreCase = true) || name.length > WireLimits.DISPLAY_NAME_MAX) "" else name
+    return if (name.equals(DEFAULT_PROFILE_NAME, ignoreCase = true) || name.equals("Lifter", ignoreCase = true) || name.length > WireLimits.DISPLAY_NAME_MAX) "" else name
 }
 
 private const val DEFAULT_PROFILE_NAME = "Ironbound"
@@ -370,7 +371,7 @@ internal fun requireAccount(account: AccountRepository): Result<Account> {
 }
 
 /** The display name was taken before sign-up; shown to the lifter as is. */
-private class NameTakenException : IllegalStateException("That true name is taken — pick another")
+private class NameTakenException : IllegalStateException("That ${Words.trueName.s} is taken — pick another")
 
 /** A repeat sign-up of a registered email; shown to the lifter as is. */
 private class EmailTakenException : IllegalStateException(

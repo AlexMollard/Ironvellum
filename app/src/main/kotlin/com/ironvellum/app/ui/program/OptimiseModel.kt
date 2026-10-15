@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Candidate
 import com.ironvellum.app.domain.ChangeOp
 import com.ironvellum.app.domain.Easing
@@ -133,7 +134,7 @@ private fun reasonOf(tag: ReasonTag): String {
     return when (tag.reason) {
         Reason.DIRECT_MUSCLE -> if (muscle != null) "trains $muscle directly" else "trains it directly"
         Reason.FILLS_SHORT_MUSCLE -> if (muscle != null) "gets $muscle to the minimum" else "fills a short muscle"
-        Reason.FITS_GEAR -> "fits your armoury"
+        Reason.FITS_GEAR -> "fits your ${Words.armoury.s}"
         Reason.YOU_LOG_THIS -> "you already log it"
         Reason.LOW_OVERLAP -> if (tag.other != null) "loads different muscles from ${tag.other}" else "loads the muscles differently"
         Reason.SAME_PATTERN_AS_MAIN -> "same pattern as your main lift"

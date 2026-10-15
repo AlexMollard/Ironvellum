@@ -1,6 +1,7 @@
 package com.ironvellum.app.data.cloud
 
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.PlayerProfile
@@ -167,7 +168,7 @@ class CloudSync(
                     }
                     repo.clearTombstones(tombstones)
                 }.onFailure { error ->
-                    problems += "Deleted trials were not removed from the cloud: ${Cloud.explain(error)}"
+                    problems += "Deleted ${Words.trial.pl} were not removed from the cloud: ${Cloud.explain(error)}"
                 }
             }
             // The worn title is the only profile column push owns. The name
@@ -273,7 +274,7 @@ class CloudSync(
                 pending.forEach { (session, sets) ->
                     val cloudId = cloudIds[session.id]
                     if (cloudId == null) {
-                        problems += "Trial \"${session.label}\" could not be matched on the cloud"
+                        problems += "${Words.trial.c} \"${session.label}\" could not be matched on the cloud"
                         return@forEach
                     }
                     // A skipped set must hold the watermark back: retrying a
@@ -410,7 +411,7 @@ class CloudSync(
                     }
                 }
             }.onFailure { error ->
-                problems += "Lift rungs were not synced: ${Cloud.explain(error)}"
+                problems += "Lift ${Words.rung.pl} were not synced: ${Cloud.explain(error)}"
             }
 
             // Now that every session, set and title has landed, the server has
@@ -624,7 +625,7 @@ class CloudSync(
                 ) {
                     filter { eq("id", sessionId) }
                 }.decodeList<AllyWorkoutSessionDto>().firstOrNull()
-                    ?: throw IllegalStateException("This trial is not visible to you")
+                    ?: throw IllegalStateException("This ${Words.trial.s} is not visible to you")
                 val sets = client.postgrest.from("session_sets").select {
                     filter { eq("session_id", sessionId) }
                     // A workout tops out far below PostgREST's 1000-row cap.
@@ -773,7 +774,7 @@ class CloudSync(
                         userId = other,
                         displayName = profile?.displayName
                             ?: requesterNames[other]?.takeIf { it.isNotBlank() }
-                            ?: "Hidden Ironbound",
+                            ?: "Hidden ${Words.lifter.t}",
                         accepted = row.accepted,
                         // Incoming = they asked us and it is not accepted yet.
                         incoming = row.addresseeId == me.userId && !row.accepted,
@@ -817,13 +818,13 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val trimmed = name.trim()
         if (trimmed.isEmpty()) {
-            return failure(IllegalArgumentException("Give the circle a name"))
+            return failure(IllegalArgumentException("Give the ${Words.circle.s} a name"))
         }
         return runCatching {
             client.postgrest.rpc(RPC_CREATE_CIRCLE, rpcArgs(CreateCircleArgs(name = trimmed)))
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
             fetchCircle(client)
-                ?: throw IllegalStateException("The circle did not appear — pull to refresh")
+                ?: throw IllegalStateException("The ${Words.circle.s} did not appear — pull to refresh")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error), error)
         }
@@ -843,7 +844,7 @@ class CloudSync(
             JoinStatus.refusal(status)?.let { throw IllegalStateException(it) }
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
             fetchCircle(client)
-                ?: throw IllegalStateException("The circle did not appear — pull to refresh")
+                ?: throw IllegalStateException("The ${Words.circle.s} did not appear — pull to refresh")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error), error)
         }
@@ -885,7 +886,7 @@ class CloudSync(
     /** The Keeper renames the circle; the server refuses anyone else. */
     suspend fun renameCircle(name: String): Result<Unit> {
         val trimmed = name.trim()
-        if (trimmed.length !in 1..24) return failure(IllegalArgumentException("A circle name is 1-24 characters"))
+        if (trimmed.length !in 1..24) return failure(IllegalArgumentException("${Words.circle.ca} name is 1-24 characters"))
         return circleWrite { it.postgrest.rpc(RPC_SET_CIRCLE_NAME, rpcArgs(SetCircleNameArgs(name = trimmed))) }
             .map { }
     }
@@ -929,7 +930,7 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val name = displayName.trim()
         if (name.isEmpty()) {
-            return Result.failure(IllegalStateException("Type an Ironbound's true name first"))
+            return Result.failure(IllegalStateException("Type ${Words.lifter.at}'s ${Words.trueName.s} first"))
         }
         return runCatching {
             // Discovery goes through find_hunter(), not a select on `profiles`.
@@ -945,9 +946,9 @@ class CloudSync(
                 rpcArgs(FindHunterArgs(name = name)),
             ).decodeList<ProfileNameDto>()
             val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
-                ?: throw IllegalStateException("No Ironbound has the true name \"$name\"")
+                ?: throw IllegalStateException("No ${Words.lifter.t} has the ${Words.trueName.s} \"$name\"")
             if (exact.id == me.userId) {
-                throw IllegalStateException("You cannot send yourself an ally request")
+                throw IllegalStateException("You cannot send yourself ${Words.ally.a} request")
             }
             client.postgrest.from("friendships").insert(
                 FriendshipDto(requesterId = me.userId, addresseeId = exact.id, accepted = false),
@@ -973,7 +974,7 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (userId == me.userId) {
-            return Result.failure(IllegalStateException("You cannot send yourself an ally request"))
+            return Result.failure(IllegalStateException("You cannot send yourself ${Words.ally.a} request"))
         }
         return runCatching {
             client.postgrest.from("friendships").insert(
@@ -1008,7 +1009,7 @@ class CloudSync(
                 select()
             }.decodeList<FriendshipDto>()
             if (updated.isEmpty()) {
-                throw IllegalStateException("No pending request from that Ironbound")
+                throw IllegalStateException("No pending request from that ${Words.lifter.t}")
             }
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
@@ -1172,7 +1173,7 @@ class CloudSync(
                 }.decodeList<LikerRowDto>().map { row ->
                     Liker(
                         userId = row.userId,
-                        displayName = row.profile?.displayName ?: "Hidden Ironbound",
+                        displayName = row.profile?.displayName ?: "Hidden ${Words.lifter.t}",
                         likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
                         reaction = Reaction.fromWire(row.kind),
                     )
@@ -1180,7 +1181,7 @@ class CloudSync(
             }
         }.recoverCatching { error ->
             if (error is PostgrestRestException && error.code == "42501") {
-                throw IllegalStateException("These tributes are not visible to you")
+                throw IllegalStateException("These ${Words.tribute.pl} are not visible to you")
             }
             throw IllegalStateException(Cloud.explain(error), error)
         }
@@ -1227,7 +1228,7 @@ class CloudSync(
         }
         if (text.length > WireLimits.COMMENT_MAX) {
             return Result.failure(
-                IllegalStateException("Remarks are at most ${WireLimits.COMMENT_MAX} characters"),
+                IllegalStateException("${Words.remark.cpl} are at most ${WireLimits.COMMENT_MAX} characters"),
             )
         }
         return runCatching {
@@ -1259,7 +1260,7 @@ class CloudSync(
                 select(Columns.raw("id"))
             }.decodeList<CommentIdDto>()
             if (deleted.isEmpty()) {
-                throw IllegalStateException("That remark is already gone or not yours to remove")
+                throw IllegalStateException("That ${Words.remark.s} is already gone or not yours to remove")
             }
         }.onSuccess {
             // The session id is not known here; threads are cheap to refetch.
@@ -1375,7 +1376,7 @@ class CloudSync(
                 }.decodeList<BlockDto>().map {
                     BlockedLifter(
                         userId = it.blockedId,
-                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: "Hidden Ironbound",
+                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: "Hidden ${Words.lifter.t}",
                     )
                 }
             }

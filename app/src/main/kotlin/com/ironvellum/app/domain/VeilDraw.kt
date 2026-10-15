@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -117,7 +118,7 @@ object VeilDraw {
                 RelicOutcome.Refined -> "${reward.name} was refined to ×${"%.2f".format(java.util.Locale.US, reward.multiplier)}"
                 else -> "${reward.name} paid ${echoWord(reward.echoes)}"
             }
-            is Reward.Figures -> "${echoWord(reward.count)} added to the Veil"
+            is Reward.Figures -> "${echoWord(reward.count)} added to ${Words.theVeil.t}"
             is Reward.CrestFrame -> "${crestName(reward)} joined your collection"
         }
         return VeilLanding(

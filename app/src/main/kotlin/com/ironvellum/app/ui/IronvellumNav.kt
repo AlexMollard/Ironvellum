@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
@@ -208,12 +209,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
 
     val destinations = listOf(
         BottomDestination(Routes.DASHBOARD, "Today", Icons.Outlined.Home),
-        BottomDestination(Routes.STATS, "Ledger", Icons.Outlined.BarChart),
+        BottomDestination(Routes.STATS, Words.ledger.c, Icons.Outlined.BarChart),
         // Training is what the app is for, so its tab takes the middle slot,
         // under the thumb, and stands proud of the bar.
         BottomDestination(Routes.PRESETS, "Train", DumbbellIcon, raised = true),
-        BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
-        BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Person),
+        BottomDestination(Routes.TITLES, Words.codex.c, Icons.Outlined.AutoStories),
+        BottomDestination(Routes.SOCIAL, Words.ally.cpl, Icons.Outlined.Person),
         // The Garrison is reached from Today's footer, not a tab: five is the
         // most a bottom bar should carry, and it is a place visited now and then.
     )

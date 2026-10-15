@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -109,7 +110,7 @@ internal class LifterViewModel(
 
     fun load(userId: String) {
         if (userId.isBlank()) {
-            _ui.value = LifterUi(loading = false, error = "No Ironbound selected.")
+            _ui.value = LifterUi(loading = false, error = "No ${Words.lifter.t} selected.")
             return
         }
         _ui.value = LifterUi(myUserId = accountRepo.account.value?.userId)
@@ -201,7 +202,7 @@ internal class LifterViewModel(
 
     fun removeAlly(userId: String) = act {
         cloud.removeFriend(userId).onSuccess {
-            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = "No longer allies.")
+            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = "No longer ${Words.ally.pl}.")
         }
     }
 
@@ -253,7 +254,7 @@ internal fun LifterScreen(
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmBlock by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
-    val name = displayName.ifBlank { "this Ironbound" }
+    val name = displayName.ifBlank { "this ${Words.lifter.t}" }
     val canManage = ui.myUserId != null && !isMe
 
     Column(
@@ -264,7 +265,7 @@ internal fun LifterScreen(
     ) {
         Spacer(Modifier.height(18.dp))
 
-        PushedHeader("Folio", onBack)
+        PushedHeader(Words.folio.c, onBack)
         // The ally state sits beside the name: the one offer ("Add ally") is a chip, the
         // settled states are InkMuted text so they never read as a button. Unknown until the
         // friends read answers: nothing is shown, never a premature offer.
@@ -281,12 +282,12 @@ internal fun LifterScreen(
                     when (ui.allyState) {
                         null -> {}
                         AllyState.None -> AllyChip(
-                            label = if (ui.allyBusy) "Sending…" else "Add ally",
+                            label = if (ui.allyBusy) "Sending…" else "Add ${Words.ally.s}",
                             tappable = !ui.allyBusy,
                             onClick = { viewModel.addAlly(userId) },
                         )
                         AllyState.Pending, AllyState.Incoming -> AllyStatus("Request pending", check = false)
-                        AllyState.Ally -> AllyStatus("Ally", check = true)
+                        AllyState.Ally -> AllyStatus(Words.ally.c, check = true)
                     }
                 }
             } else {
@@ -298,25 +299,25 @@ internal fun LifterScreen(
         // so instead of silently guessing or snapping the button back.
         if (canManage && ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
             Spacer(Modifier.height(6.dp))
-            SocialErrorBanner("Ally request failed: ${ui.allyError}")
+            SocialErrorBanner("${Words.ally.c} request failed: ${ui.allyError}")
         }
         Spacer(Modifier.height(14.dp))
 
         when {
             ui.loading -> Text(
-                "Opening the folio…",
+                "Opening the ${Words.folio.s}…",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
 
             ui.error != null -> Text(
-                "The folio won't open. ${ui.error.orEmpty()}",
+                "The ${Words.folio.s} won't open. ${ui.error.orEmpty()}",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.DangerRed,
             )
 
             ui.sessions.isEmpty() -> Text(
-                "Nothing shared. This Ironbound has no trials you may read: either none are sealed, " +
+                "Nothing shared. This ${Words.lifter.t} has no ${Words.trial.pl} you may read: either none are ${Words.sealed.s}, " +
                     "or their visibility does not include you.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -334,11 +335,11 @@ internal fun LifterScreen(
                 val strSeries = chrono.map { it.strengthScore.toDouble() }
 
                 val summary = buildList {
-                    add("${ui.sessions.size} ${plural(ui.sessions.size, "trial", "trials")} shared")
+                    add("${ui.sessions.size} ${plural(ui.sessions.size, Words.trial.s, Words.trial.pl)} shared")
                     add("+${grouped(ui.sessions.sumOf { it.xpAwarded }.toLong())} XP")
                     add(String.format(Locale.ENGLISH, "%.1f", perWeek) + " a week")
                     daysSince?.let {
-                        add("last trial " + when (it) { 0 -> "today"; 1 -> "yesterday"; else -> "$it days ago" })
+                        add("last ${Words.trial.s} " + when (it) { 0 -> "today"; 1 -> "yesterday"; else -> "$it days ago" })
                     }
                 }.joinToString(" · ")
                 Text(
@@ -359,7 +360,7 @@ internal fun LifterScreen(
                         )
                         if (strSeries.size >= 2) {
                             Text(
-                                "PEAK ${strSeries.max().toInt()}",
+                                "${Words.peak.u} ${strSeries.max().toInt()}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = IronvellumColors.SovereignGold,
                                 letterSpacing = IronvellumTracking.InlineLabel,
@@ -379,18 +380,18 @@ internal fun LifterScreen(
                         // A single trial cannot draw a line: say so instead of
                         // leaving a blank canvas.
                         Text(
-                            "One trial on record. The line begins with the next.",
+                            "One ${Words.trial.s} on record. The line begins with the next.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
                     }
                 }
 
-                SectionHeader("Recent trials", topPadding = 20.dp)
+                SectionHeader("Recent ${Words.trial.pl}", topPadding = 20.dp)
                 // Bounded at the source: CloudSync.friendSessions fetches at
                 // most 20 rows, so this plain Column never composes more.
                 ui.sessions.forEach { session ->
-                    val headline = session.title.ifBlank { session.label }.ifBlank { "Trial" }
+                    val headline = session.title.ifBlank { session.label }.ifBlank { Words.trial.c }
                     val subline = buildList {
                         session.completedAtMs?.let { add(formatDate(it, "d MMM")) }
                         add("${session.sets} ${plural(session.sets, "set", "sets")}")
@@ -402,7 +403,7 @@ internal fun LifterScreen(
                         subline = subline,
                         value = "+${grouped(session.xpAwarded.toLong())} XP",
                         valueColor = IronvellumColors.SovereignGold,
-                        onClickLabel = "Open trial",
+                        onClickLabel = Words.openTrial.c,
                         onClick = if (session.id.isNotBlank()) {
                             { onOpenTrial(session.id, userId, headline) }
                         } else {
@@ -417,18 +418,18 @@ internal fun LifterScreen(
         // Last, after the record: these are rare, heavy actions, and at the top
         // they crowded out the training the screen exists to show.
         if (canManage) {
-            SectionHeader("Manage folio", topPadding = 20.dp)
+            SectionHeader("Manage ${Words.folio.s}", topPadding = 20.dp)
             ui.muted?.let { muted ->
                 SettingsSwitchRow(
                     label = "Mute",
-                    caption = "Hides their trials, remarks and tributes. They aren't told.",
+                    caption = "Hides their ${Words.trial.pl}, ${Words.remark.pl} and ${Words.tribute.pl}. They aren't told.",
                     checked = muted,
                     onCheckedChange = { if (!ui.actionBusy) viewModel.setMuted(userId, it) },
                 )
                 InkDivider()
             }
             if (ui.allyState == AllyState.Ally) {
-                ManageRow("Remove ally", IronvellumColors.Ink) { if (!ui.actionBusy) confirmRemove = true }
+                ManageRow("Remove ${Words.ally.s}", IronvellumColors.Ink) { if (!ui.actionBusy) confirmRemove = true }
             }
             ManageRow("Block", IronvellumColors.DangerRed) { if (!ui.actionBusy) confirmBlock = true }
             ManageRow("Report", IronvellumColors.DangerRed) { if (!ui.actionBusy) reporting = true }
@@ -452,8 +453,8 @@ internal fun LifterScreen(
     if (confirmRemove) {
         IronvellumDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove $name as an ally?") },
-            text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },
+            title = { Text("Remove $name as ${Words.ally.a}?") },
+            text = { Text("Their ${Words.ally.pl}-only ${Words.trial.pl} leave your ${Words.tidings.s}. Either of you can send a new request later.") },
             confirmButton = {
                 IronvellumButton(label = "Remove", onClick = {
                     confirmRemove = false
@@ -472,8 +473,8 @@ internal fun LifterScreen(
             title = { Text("Block $name?") },
             text = {
                 Text(
-                    "You and $name will no longer see each other's trials, remarks or tributes, " +
-                        "any alliance ends, and neither of you can send an ally request. Unblock any time under Allies.",
+                    "You and $name will no longer see each other's ${Words.trial.pl}, ${Words.remark.pl} or ${Words.tribute.pl}, " +
+                        "any alliance ends, and neither of you can send ${Words.ally.a} request. Unblock any time under ${Words.ally.tpl}.",
                 )
             },
             confirmButton = {

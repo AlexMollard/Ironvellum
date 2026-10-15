@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -732,7 +733,7 @@ object ProgramGenerator {
                                 why = if (main.name.equals(mainName, true)) {
                                     "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025"
                                 } else {
-                                    "Your armoury's stand-in for the ${mainName}: good for size, less for max strength - " +
+                                    "Your ${Words.armoury.s}'s stand-in for the ${mainName}: good for size, less for max strength - " +
                                         "Kikuchi 2017; Buckner 2017"
                                 },
                             )
@@ -787,12 +788,12 @@ object ProgramGenerator {
         val capacityNote = if (capacityLimited) {
             shortfallNote(volume, capacityAdvice(days))
         } else {
-            shortfallNote(volume, "a fuller armoury would cover them.")
+            shortfallNote(volume, "a fuller ${Words.armoury.s} would cover them.")
         }
         val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
         val built = sessions.filter { it.entries.isNotEmpty() }
         val fewerDaysNote = if (built.size < sessions.size) {
-            "Only ${built.size} of ${sessions.size} days could be planned — your armoury had nothing for the rest."
+            "Only ${built.size} of ${sessions.size} days could be planned — your ${Words.armoury.s} had nothing for the rest."
         } else {
             ""
         }
@@ -817,8 +818,8 @@ object ProgramGenerator {
     }
 
     /** The routine note when the gear and settings leave no movement to build a week from. */
-    internal const val NOTHING_TO_PLAN_NOTE =
-        "No days could be planned — your armoury and settings left nothing to build a week from."
+    internal val NOTHING_TO_PLAN_NOTE: String get() =
+        "No days could be planned — your ${Words.armoury.s} and settings left nothing to build a week from."
 
     /**
      * What to do about muscles the session time could not reach. A sixth day
@@ -826,7 +827,7 @@ object ProgramGenerator {
      * lever left: a priority claims time before the other muscles fill.
      */
     internal fun capacityAdvice(days: Int): String =
-        if (days < 6) "add a day to cover them." else "every rite is full; prioritising them would move time their way."
+        if (days < 6) "add a day to cover them." else "every ${Words.rite.s} is full; prioritising them would move time their way."
 
     /** Routine-level note parts, blank ones dropped, one space between. */
     internal fun joinNotes(vararg parts: String): String = parts.filter { it.isNotBlank() }.joinToString(" ")
@@ -1566,7 +1567,7 @@ object ProgramGenerator {
         }
         if (draft.entries.isEmpty()) return null
         return PlannedPreset(
-            name = draft.role?.let { roleLabel(it) } ?: "Rite",
+            name = draft.role?.let { roleLabel(it) } ?: Words.rite.c,
             note = presetNote(ctx.volume, ctx.focus),
             scheduledDay = scheduledDay,
             entries = spacePullUps(compoundsFirst(draft.entries)),
@@ -1843,7 +1844,7 @@ object ProgramGenerator {
                 if (standIn != null) {
                     record.swap = SwapRecord(
                         standIn,
-                        "Swapped for ${standIn.name}: compound & technique only, and it trains the same " +
+                        "Swapped for ${standIn.name}: compound & ${Words.technique.s} only, and it trains the same " +
                             "muscles - Gentil 2015",
                         standInOptions.getValue(index),
                         clearsLoad = true,
@@ -1853,7 +1854,7 @@ object ProgramGenerator {
                     load = null
                     loadNote = null
                 } else if (dropAllowed) {
-                    record.removal = "Removed: with Compound & technique only on, nothing replaces its muscles - Gentil 2015"
+                    record.removal = "Removed: with Compound & ${Words.technique.s} only on, nothing replaces its muscles - Gentil 2015"
                     continue
                 }
             }
@@ -1903,7 +1904,7 @@ object ProgramGenerator {
             }
             val ceiling = ceilingOf(request, entry, name)
             if (sets > ceiling) {
-                record.sets = ceiling to "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single trial; " +
+                record.sets = ceiling to "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single ${Words.trial.s}; " +
                     "the rest belongs on another exercise or day - Remmert 2025"
                 sets = ceiling
             }
@@ -1966,7 +1967,7 @@ object ProgramGenerator {
             records[gone].dropped = true
             trimOrder += target.entries[gone].exerciseName
             capRemovals += gone to if (cost < 1e-9) {
-                "Removed: over your ${ctx.cap}-exercise cap, and the cycle already covers its muscles - Pelland 2026"
+                "Removed: over your ${ctx.cap}-exercise cap, and the ${Words.cycle.s} already covers its muscles - Pelland 2026"
             } else {
                 "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
             }

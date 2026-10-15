@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import java.util.Locale
 
 /** What a row of the crest catalogue says about progress: a line, and for a crest in reach a count and a bar. */
@@ -17,9 +18,9 @@ object CrestCatalogue {
     /** "Deed crest · Fortnight Vigil · Rare", "Ladder crest · Level 20", "House crest · House of Iron", "Veil crest · Chance draw". */
     fun sourceLine(def: CrestDef): String = when (def.group) {
         CrestGroup.Ladder -> "Ladder crest · Level ${def.level}"
-        CrestGroup.Deeds -> "Deed crest · ${def.deed?.name} · ${def.deed?.rarity?.label}"
+        CrestGroup.Deeds -> "${Words.deed.c} crest · ${def.deed?.name} · ${def.deed?.rarity?.label}"
         CrestGroup.Houses -> "House crest · ${def.house?.title}"
-        CrestGroup.Veil -> "Veil crest · Chance draw"
+        CrestGroup.Veil -> "${Words.veil.c} crest · Chance draw"
     }
 
     /**
@@ -66,7 +67,7 @@ object CrestCatalogue {
                     (have.toFloat() / RelicHouses.FULL).coerceIn(0f, 1f),
                 )
             }
-            CrestGroup.Veil -> CrestProgress("Veil draw · ${def.perk}")
+            CrestGroup.Veil -> CrestProgress("${Words.veilDraw.c} · ${def.perk}")
         }
     }
 
@@ -91,5 +92,5 @@ object CrestCatalogue {
 
     private val DRAW_PERKS = setOf("gold", "aurora", "masterwork")
 
-    const val VEIL_ONLY = "The Veil only: it never touches XP, strength, levels or deeds."
+    val VEIL_ONLY: String get() = "${Words.theVeil.c} only: it never touches XP, strength, levels or ${Words.deed.pl}."
 }

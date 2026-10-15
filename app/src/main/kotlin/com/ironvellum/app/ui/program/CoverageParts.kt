@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
@@ -215,7 +216,7 @@ internal fun CoverageChip(tally: CoverageTally, onOpen: () -> Unit, modifier: Mo
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = ListRowHeight)
-                .clickable(onClickLabel = "Open coverage of this cycle", role = Role.Button, onClick = onOpen)
+                .clickable(onClickLabel = "Open coverage of this ${Words.cycle.s}", role = Role.Button, onClick = onOpen)
                 .semantics(mergeDescendants = true) { contentDescription = "Coverage: $headline" },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -335,7 +336,7 @@ internal fun CoverageExplainer(tally: CoverageTally, onSeeMuscles: () -> Unit, o
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Below minimum is a hint, never a block. Save any cycle you want.",
+            "Below minimum is a hint, never a block. Save any ${Words.cycle.s} you want.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

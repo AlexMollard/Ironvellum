@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
@@ -87,7 +89,7 @@ internal fun toGoUnit(rule: TitleRule, amount: Long): String {
     fun noun(one: String, many: String) = if (amount == 1L) one else many
     return when (rule) {
         TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek, is TitleRule.SportSessions ->
-            noun("trial", "trials")
+            noun(Words.trial.s, Words.trial.pl)
         is TitleRule.ReachLevel -> noun("level", "levels")
         is TitleRule.SetsLogged -> noun("set", "sets")
         is TitleRule.RepsLogged, is TitleRule.SessionReps -> noun("rep", "reps")
@@ -98,7 +100,7 @@ internal fun toGoUnit(rule: TitleRule, amount: Long): String {
         is TitleRule.ActiveKcalInDay -> "kcal"
         is TitleRule.SleepMinutesInNight, is TitleRule.ActivityMinutes -> "min"
         is TitleRule.StepGoalDays, is TitleRule.TrainingStreak -> noun("day", "days")
-        is TitleRule.SkillsMastered -> noun("technique", "techniques")
+        is TitleRule.SkillsMastered -> noun(Words.technique.s, Words.technique.pl)
         is TitleRule.PracticeAttempts -> noun("attempt", "attempts")
         is TitleRule.DistinctActivities -> noun("activity", "activities")
         is TitleRule.LongestHold -> "s"
@@ -142,14 +144,14 @@ internal fun deedProgressText(
 
 /** Where an unearned deed is won, in one plain line. */
 internal fun earnPointer(category: String): String = when (category) {
-    "Trials" -> "Seal trials from Today to earn it."
-    "Level" -> "Seal trials to gain levels."
-    "Volume" -> "Log sets and reps in a trial and they add up here."
-    "Strength" -> "Train in a trial; your logged lifts count toward it."
+    Words.trial.cpl -> "${Words.seal.c} ${Words.trial.pl} from Today to earn it."
+    "Level" -> "${Words.seal.c} ${Words.trial.pl} to gain levels."
+    "Volume" -> "Log sets and reps in ${Words.trial.a} and they add up here."
+    "Strength" -> "Train in ${Words.trial.a}; your logged lifts count toward it."
     "Steps" -> "Walk. Steps, distance and calories come from Health Connect, which you can turn on in Settings."
     "Recovery" -> "Sleep. Your nights come from Health Connect, which you can turn on in Settings."
-    "Mastery" -> "Practise techniques on Paths and log attempts in the Journal."
-    else -> "Log activities in a trial; time, distance and variety all count."
+    "Mastery" -> Lines.practiseSkills
+    else -> "Log activities in ${Words.trial.a}; time, distance and variety all count."
 }
 
 /**
@@ -232,7 +234,7 @@ internal fun RarityStrip(current: TitleRarity, category: String, earned: Boolean
     val order = TitleRarity.entries
     Column(
         Modifier.semantics(mergeDescendants = true) {
-            contentDescription = "Rarity tiers in order: ${order.joinToString(", ") { it.label }}. This deed is ${current.label}."
+            contentDescription = "Rarity tiers in order: ${order.joinToString(", ") { it.label }}. This ${Words.deed.s} is ${current.label}."
         },
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

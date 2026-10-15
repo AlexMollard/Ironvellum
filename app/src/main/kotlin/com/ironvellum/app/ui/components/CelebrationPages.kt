@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
@@ -588,7 +589,7 @@ internal fun DeedsPage(
         },
     ) {
         Text(
-            if (deeds.size == 1) "Deed earned" else "Deeds earned",
+            if (deeds.size == 1) "${Words.deed.c} earned" else "${Words.deed.cpl} earned",
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,

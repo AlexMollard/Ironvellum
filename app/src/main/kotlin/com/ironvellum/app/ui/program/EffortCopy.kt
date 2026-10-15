@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.EffortCue
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.PlannedEntry
@@ -65,7 +66,7 @@ internal fun dumbbellNote(entry: PlannedEntry, equipment: Equipment?, capLabel: 
     val load = entry.targetWeightKg ?: return null
     val cap = equipment?.let { ProgramGenerator.dumbbellCapKg(entry.exerciseName, it) } ?: return null
     if (load < cap - 1e-9) return null
-    return "$capLabel is the heaviest dumbbell in your armoury. " +
+    return "$capLabel is the heaviest dumbbell in your ${Words.armoury.s}. " +
         "When ${entry.repHigh} reps get easy, add reps or a set instead."
 }
 

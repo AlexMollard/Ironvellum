@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.CrashJournal
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.ProbeResult
 import com.ironvellum.app.ui.components.InkDivider
@@ -273,7 +274,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
             InkRowPanel(Modifier.fillMaxWidth()) {
                 ListRow(
                     "Rescore XP with the new rules",
-                    subline = "Previews every trial's old and new XP first; nothing is written until you confirm.",
+                    subline = "Previews every ${Words.trial.s}'s old and new XP first; nothing is written until you confirm.",
                     onClick = viewModel::previewRescore,
                 )
             }
@@ -294,7 +295,7 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                     ui.applied -> "XP rescored"
                     plan != null -> "Rescore XP with the new rules?"
                     ui.error != null -> "Rescore failed"
-                    else -> "Pricing every trial…"
+                    else -> "Pricing every ${Words.trial.s}…"
                 },
             )
         },
@@ -305,8 +306,8 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                 if (plan != null) {
                     val signed = { n: Long -> (if (n > 0) "+" else "") + n }
                     Text(
-                        "${changed.size} of ${plan.changes.size} trials change.\n" +
-                            "Trial XP ${signed(plan.delta)}; total XP ${plan.totalBefore} \u2192 ${plan.totalAfter}" +
+                        "${changed.size} of ${plan.changes.size} ${Words.trial.pl} change.\n" +
+                            "${Words.trial.c} XP ${signed(plan.delta)}; total XP ${plan.totalBefore} \u2192 ${plan.totalAfter}" +
                             " (${signed(plan.applied)}).\n" +
                             "Level ${plan.levelBefore} \u2192 ${plan.levelAfter}" +
                             (if (plan.clamped) " (held: the level never drops)" else "") +

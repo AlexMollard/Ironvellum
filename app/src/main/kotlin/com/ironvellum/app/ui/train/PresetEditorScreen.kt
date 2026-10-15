@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.WornLoad
@@ -533,7 +534,7 @@ fun PresetEditorScreen(
     Column(Modifier.fillMaxSize().imePadding()) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            if (ui.presetId == null) "New rite" else "Edit rite",
+            if (ui.presetId == null) "New ${Words.rite.s}" else "Edit ${Words.rite.s}",
             onBack = { if (editorChanged(baseline, ui)) confirmDiscard = true else onDone() },
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -544,7 +545,7 @@ fun PresetEditorScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
             ) {
-                UnderlineField("Rite name", ui.name, viewModel::setName)
+                UnderlineField("${Words.rite.c} name", ui.name, viewModel::setName)
                 // Wraps over up to four lines: one hard-clipped line cut a note off mid-word.
                 UnderlineField("Note", ui.note, viewModel::setNote, singleLine = false, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default))
                 Spacer(Modifier.height(6.dp))
@@ -609,7 +610,7 @@ fun PresetEditorScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         if (ui.entries.all { it.warmup }) {
-                            "Add an exercise that is not a warm-up: a rite of warm-ups alone has nothing to log."
+                            "Add an exercise that is not a warm-up: ${Words.rite.a} of warm-ups alone has nothing to log."
                         } else {
                             "Fill in the marked targets to save. Loads top out at ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}."
                         },
@@ -630,7 +631,7 @@ fun PresetEditorScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
-                        Text("Delete rite", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+                        Text("Delete ${Words.rite.s}", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
                     }
                 }
                 Spacer(Modifier.height(24.dp))
@@ -651,7 +652,7 @@ fun PresetEditorScreen(
             }
         }
         DockedActionBar(
-            primary = "Save rite",
+            primary = "Save ${Words.rite.s}",
             onPrimary = { viewModel.save(onDone) },
             primaryEnabled = ui.canSave(),
             reserveLink = false,
@@ -819,7 +820,7 @@ fun PresetEditorScreen(
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard your changes?") },
-            text = { Text("Unsaved edits to this rite will be lost.") },
+            text = { Text("Unsaved edits to this ${Words.rite.s} will be lost.") },
             confirmButton = {
                 IronvellumButton(
                     label = "Discard",
@@ -839,11 +840,11 @@ fun PresetEditorScreen(
     if (confirmDelete) {
         IronvellumDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete rite?") },
-            text = { Text("${ui.name.ifBlank { "This rite" }} and its exercises will be removed. Trials you have already sealed stay in your history.") },
+            title = { Text("Delete ${Words.rite.s}?") },
+            text = { Text("${ui.name.ifBlank { "This ${Words.rite.s}" }} and its exercises will be removed. ${Words.trial.cpl} you have already ${Words.sealed.s} stay in your history.") },
             confirmButton = {
                 IronvellumButton(
-                    label = "Delete rite",
+                    label = "Delete ${Words.rite.s}",
                     onClick = {
                         confirmDelete = false
                         viewModel.delete(onDone)
@@ -852,7 +853,7 @@ fun PresetEditorScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep rite", onClick = { confirmDelete = false }, quiet = true)
+                IronvellumButton(label = "Keep ${Words.rite.s}", onClick = { confirmDelete = false }, quiet = true)
             },
         )
     }
@@ -1001,7 +1002,7 @@ private fun EntryItem(
             var restOff by remember(entry.exerciseName) { mutableStateOf(prefs.restOffFor(entry.exerciseName)) }
             SettingsSwitchRow(
                 label = "No rest timer",
-                caption = "Ticking a set of ${entry.exerciseName.ifBlank { "this movement" }} starts no rest, in any rite.",
+                caption = "Ticking a set of ${entry.exerciseName.ifBlank { "this movement" }} starts no rest, in any ${Words.rite.s}.",
                 checked = restOff,
                 onCheckedChange = {
                     restOff = it
@@ -1032,7 +1033,7 @@ private fun EntryItem(
         }
         SettingsSwitchRow(
             label = "Warm-up",
-            caption = "Done before the first working set and ticked off in the trial. It earns no XP and counts toward nothing.",
+            caption = "Done before the first working set and ticked off in the ${Words.trial.s}. It earns no XP and counts toward nothing.",
             checked = entry.warmup,
             onCheckedChange = onWarmup,
         )

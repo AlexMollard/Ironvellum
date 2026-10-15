@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.LoadUnit
@@ -66,7 +67,7 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
         var warmupOn by remember { mutableStateOf(WarmupStore(context).enabled) }
         SettingsSwitchRow(
             label = "Warm-up reminder",
-            caption = "Before your first set, a reminder for 5 minutes of easy cardio and mobility for the trial's muscles.",
+            caption = "Before your first set, a reminder for 5 minutes of easy cardio and mobility for the ${Words.trial.s}'s muscles.",
             checked = warmupOn,
             onCheckedChange = {
                 warmupOn = it

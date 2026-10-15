@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
+
 /** The Type chips of the exercise form: what the movement trains, which fixes its group and category. */
 enum class CustomType(val label: String, val group: MuscleGroup, val category: String) {
     PULL("Pull", MuscleGroup.PULL, ""),
@@ -161,7 +164,7 @@ object CustomExercises {
             ?: MuscleMap.keys.firstOrNull { it == key }?.let { name }
             ?: ExerciseLibrary.names.firstOrNull { it == key }?.let { name }
             ?: LiftBoards.boardsFor(name).firstOrNull()?.let { name }
-        return hit?.let { "\"$it\" is already in the Ledger. Pick it from the list instead." }
+        return hit?.let { Lines.alreadyInLibrary(it) }
     }
 
     // ---------------------------------------------------------------- storage encoding

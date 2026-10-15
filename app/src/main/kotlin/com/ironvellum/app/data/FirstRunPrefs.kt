@@ -12,6 +12,7 @@ object FirstRunPrefs {
     private const val ONBOARDING = "onboarding"
     private const val KEY_WELCOME_SEEN = "welcome_seen"
     private const val KEY_VEIL_INTRO_SEEN = "veil_intro_seen"
+    private const val KEY_VEIL_TERMS_SEEN = "veil_terms_seen"
 
     // The trial's own file and key, so a lifter already asked on an older build is never asked again.
     private const val TRIAL = "trial"
@@ -31,6 +32,12 @@ object FirstRunPrefs {
 
     fun setVeilIntroSeen(context: Context, seen: Boolean = true) =
         onboarding(context).edit { putBoolean(KEY_VEIL_INTRO_SEEN, seen) }
+
+    /** Whether the idle rewards screen has already explained its own words (echoes, crests) in plain mode. */
+    fun veilTermsSeen(context: Context): Boolean = onboarding(context).getBoolean(KEY_VEIL_TERMS_SEEN, false)
+
+    fun setVeilTermsSeen(context: Context, seen: Boolean = true) =
+        onboarding(context).edit { putBoolean(KEY_VEIL_TERMS_SEEN, seen) }
 
     fun notificationsAsked(context: Context): Boolean = trial(context).getBoolean(KEY_ASKED_NOTIFICATIONS, false)
 

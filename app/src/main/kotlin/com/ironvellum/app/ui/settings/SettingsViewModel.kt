@@ -6,6 +6,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.AppearanceStore
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.theme.AccentPalette
 import androidx.compose.runtime.Composable
 import androidx.health.connect.client.HealthConnectClient
@@ -308,7 +309,7 @@ class SettingsViewModel(
             val today = LocalDate.now()
             val csv = try {
                 repo.exportCsv(period, today, ZoneId.systemDefault())
-                    .also { if (it == null) _exportError.value = "No trials logged this ${period.noun}." }
+                    .also { if (it == null) _exportError.value = "No ${Words.trial.pl} logged this ${period.noun}." }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -696,15 +697,15 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             if (stored.isFailure) {
                 _sync.value = _sync.value.copy(
                     available = true,
-                    message = "Could not store the imported reading: " +
+                    message = "Could not store the imported ${Words.reading.s}: " +
                         (stored.exceptionOrNull()?.message ?: "unknown reason"),
                 )
                 return true
             }
             message = if (bodyProfile.value.first == null) {
-                "Imported into your Ledger. Set your height in Profile to unlock BMI."
+                "Imported into your ${Words.ledger.t}. Set your height in Profile to unlock BMI."
             } else {
-                "Imported into your Ledger."
+                "Imported into your ${Words.ledger.t}."
             }
         } else {
             message = "No weight found in Health Connect yet."
@@ -736,7 +737,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             historyMessage = when {
                 read.days.isNotEmpty() || read.bodyReadings.isNotEmpty() ->
                     "Activity history updated — ${read.days.size} days, " +
-                        "${read.bodyReadings.size} readings." +
+                        "${read.bodyReadings.size} ${Words.reading.pl}." +
                         read.problems.firstOrNull()?.let { " Partial: $it" }.orEmpty()
                 // never claim success on an empty write again
                 read.problems.isNotEmpty() -> "Nothing synced — ${read.problems.first()}"

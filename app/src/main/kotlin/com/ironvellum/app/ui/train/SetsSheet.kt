@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.LoadKit
@@ -189,7 +190,7 @@ internal fun SetsSheet(
                     SettingsSwitchRow(
                         label = "Warm-up ramp",
                         caption = when {
-                            (DecimalInput.parse(weight) ?: 0.0) > 0.0 -> "Start the trial with lighter warm-up sets for this lift."
+                            (DecimalInput.parse(weight) ?: 0.0) > 0.0 -> "Start the ${Words.trial.s} with lighter warm-up sets for this lift."
                             WarmupRamp.isBarbell(entry.exerciseName) -> "No load is set yet, so the ramp is the empty bar. Set a load for the full ramp."
                             else -> "No load is set yet, so there is nothing to ramp up to. Set a load above."
                         },

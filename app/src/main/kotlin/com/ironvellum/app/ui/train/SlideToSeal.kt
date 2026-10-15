@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -167,8 +168,8 @@ internal fun SlideToSeal(
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 if (enabled) {
-                    contentDescription = "Seal the trial"
-                    onClick(label = "Seal the trial") {
+                    contentDescription = "${Words.seal.c} the ${Words.trial.s}"
+                    onClick(label = "${Words.seal.c} the ${Words.trial.s}") {
                         if (!sealed) scope.launch { seal() }
                         true
                     }
@@ -179,7 +180,7 @@ internal fun SlideToSeal(
     ) {
         Box(Modifier.fillMaxSize().padding(1.dp)) {
             Text(
-                if (sealed) "Sealed" else label,
+                if (sealed) Words.sealed.c else label,
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,

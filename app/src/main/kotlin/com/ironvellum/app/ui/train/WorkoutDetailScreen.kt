@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Effort
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -225,7 +226,7 @@ class WorkoutDetailViewModel(
         if (ui.value.session?.completedAtMs == null || sets.isEmpty()) return
         val opened = TrialDraft.of(sets)
         if (opened.hasRepeatedMovement) {
-            _amendError.value = "This trial lists one movement twice with different modifiers, so it cannot be amended."
+            _amendError.value = "This ${Words.trial.s} lists one movement twice with different modifiers, so it cannot be amended."
         } else {
             _draft.value = opened
         }
@@ -245,7 +246,7 @@ class WorkoutDetailViewModel(
         viewModelScope.launch {
             runCatching { repo.previewSealedEdit(sessionId, draft) }
                 .onSuccess { _pendingSave.value = it }
-                .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
+                .onFailure { _amendError.value = it.message ?: "The ${Words.trial.s} could not be amended" }
         }
     }
 
@@ -264,7 +265,7 @@ class WorkoutDetailViewModel(
                     _earnedDeeds.value = deedPages(result.newTitles, repo.observeSex().first())
                     CloudSyncWorker.pushNow(appContext)
                 }
-                .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
+                .onFailure { _amendError.value = it.message ?: "The ${Words.trial.s} could not be amended" }
         }
     }
 
@@ -335,17 +336,17 @@ fun WorkoutDetailScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            if (draft != null) "Amend trial" else ui.session?.let { it.title.ifBlank { it.label } } ?: "Trial",
+            if (draft != null) "Amend ${Words.trial.s}" else ui.session?.let { it.title.ifBlank { it.label } } ?: Words.trial.c,
             onBack = { if (draft != null) leaveAmend() else onBack() },
             actions = {
                 ui.session?.takeIf { draft == null }?.let { session ->
                     if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
-                        InkChip("Amend", icon = Icons.Outlined.Edit, description = "Amend this trial", onClick = viewModel::startAmend)
+                        InkChip("Amend", icon = Icons.Outlined.Edit, description = "Amend this ${Words.trial.s}", onClick = viewModel::startAmend)
                     }
                     InkChip(
                         "Share",
                         icon = Icons.Outlined.IosShare,
-                        description = "Share this trial",
+                        description = "Share this ${Words.trial.s}",
                         onClick = { sharing = true },
                     )
                 }
@@ -363,13 +364,13 @@ fun WorkoutDetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Trial not found",
+                    "${Words.trial.c} not found",
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "This trial may have been deleted.",
+                    "This ${Words.trial.s} may have been deleted.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
@@ -453,7 +454,7 @@ fun WorkoutDetailScreen(
         ui.session?.let { session ->
             IronvellumDialog(
                 onDismissRequest = { confirmDelete = false },
-                title = { Text("Delete this trial?") },
+                title = { Text("Delete this ${Words.trial.s}?") },
                 text = {
                     Text(
                         deleteReturnLine(session),
@@ -481,7 +482,7 @@ fun WorkoutDetailScreen(
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard your changes?") },
-            text = { Text("Unsaved edits to this trial will be lost.") },
+            text = { Text("Unsaved edits to this ${Words.trial.s} will be lost.") },
             confirmButton = {
                 IronvellumButton(
                     label = "Discard",
@@ -509,12 +510,12 @@ private fun deleteReturnLine(session: WorkoutSession): String = when {
         "+${session.xpAwarded} XP and ${"%,d".fmt(session.strengthScore)} strength will be taken back."
     session.xpAwarded > 0 -> "+${session.xpAwarded} XP will be taken back."
     session.strengthScore > 0 -> "${"%,d".fmt(session.strengthScore)} strength will be taken back."
-    else -> "This trial will be removed from the Chronicle."
+    else -> "This ${Words.trial.s} will be removed from ${Words.theChronicle.t}."
 }
 
 private fun audienceLabel(audience: SessionAudience): String = when (audience) {
-    SessionAudience.PROFILE -> "Folio"
-    SessionAudience.FRIENDS -> "Allies"
+    SessionAudience.PROFILE -> Words.folio.c
+    SessionAudience.FRIENDS -> Words.ally.cpl
     SessionAudience.PRIVATE -> "Only me"
 }
 
@@ -526,13 +527,13 @@ private fun audienceLabel(audience: SessionAudience): String = when (audience) {
 private fun AudienceSheet(audience: SessionAudience, onPick: (SessionAudience) -> Unit, onDone: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onDone,
-        title = { Text("Who sees this trial") },
+        title = { Text("Who sees this ${Words.trial.s}") },
         text = {
             Column {
                 InkSegmented(
                     options = listOf(
-                        SessionAudience.PROFILE to "Folio",
-                        SessionAudience.FRIENDS to "Allies",
+                        SessionAudience.PROFILE to Words.folio.c,
+                        SessionAudience.FRIENDS to Words.ally.cpl,
                         SessionAudience.PRIVATE to "Only me",
                     ),
                     selected = audience,
@@ -541,8 +542,8 @@ private fun AudienceSheet(audience: SessionAudience, onPick: (SessionAudience) -
                 Spacer(Modifier.height(10.dp))
                 Text(
                     when (audience) {
-                        SessionAudience.PROFILE -> "Follows your folio's visibility on the ALLIES tab."
-                        SessionAudience.FRIENDS -> "Only allies see it, even on a public folio."
+                        SessionAudience.PROFILE -> "Follows your ${Words.folio.s}'s visibility on the ${Words.ally.upl} tab."
+                        SessionAudience.FRIENDS -> "Only ${Words.ally.pl} see it, even on a public ${Words.folio.s}."
                         SessionAudience.PRIVATE -> "Only you see it."
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -566,7 +567,7 @@ private fun DeleteRow(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
-        Text("Delete trial", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+        Text("Delete ${Words.trial.s}", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
     }
 }
 
@@ -579,7 +580,7 @@ private fun NotesCard(session: WorkoutSession) {
         if (session.note.isNotBlank()) {
             Text(session.note, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Spacer(Modifier.height(6.dp))
-            NoteCaption(Icons.Outlined.IosShare, "Shared note · allies see it")
+            NoteCaption(Icons.Outlined.IosShare, "Shared note · ${Words.ally.pl} see it")
         }
         if (session.note.isNotBlank() && session.privateNote.isNotBlank()) Spacer(Modifier.height(16.dp))
         if (session.privateNote.isNotBlank()) {
@@ -656,7 +657,7 @@ private fun DetailHeader(
         energy.missing.forEach { name ->
             Spacer(Modifier.height(4.dp))
             Text(
-                "Add a $name reading for a sharper estimate.",
+                "Add a $name ${Words.reading.s} for a sharper estimate.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 2.dp),

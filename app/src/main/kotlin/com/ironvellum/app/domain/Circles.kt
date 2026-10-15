@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /*
  * An invite-code circle: 2-8 allies sharing a weekly goal of days trained. The
  * server owns the roster, the counting and the settlement
@@ -109,11 +111,11 @@ object JoinStatus {
     /** The refusal to show for [status], or null when the lifter joined. */
     fun refusal(status: String): String? = when (status) {
         JOINED -> null
-        "no_such_code" -> "No circle answers to that code"
-        "full" -> "That circle is full"
+        "no_such_code" -> "No ${Words.circle.s} answers to that code"
+        "full" -> "That ${Words.circle.s} is full"
         // Deliberately neutral: it says nothing of who blocked whom.
-        "closed" -> "That circle is closed to you"
+        "closed" -> "That ${Words.circle.s} is closed to you"
         "throttled" -> "Too many code attempts today — try again tomorrow."
-        else -> "The circle did not take you in — try again"
+        else -> "The ${Words.circle.s} did not take you in — try again"
     }
 }

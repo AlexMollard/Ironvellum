@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CustomExercises
 import com.ironvellum.app.domain.CustomLogged
 import com.ironvellum.app.domain.CustomNeed
@@ -183,7 +184,7 @@ internal fun CustomExerciseSheet(
                         }
                     }
                 }
-                Hint("Machines and cables count as a full gym in MY ARMOURY.")
+                Hint("Machines and cables count as a full gym in MY ${Words.armoury.u}.")
 
                 Spacer(Modifier.height(14.dp))
                 Text("Muscles", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
@@ -197,7 +198,7 @@ internal fun CustomExerciseSheet(
                     when {
                         used == null -> Unit
                         used > 0 -> Text(
-                            "Used by ${plural(used, "1 logged set, rite or note", "$used logged sets, rites and notes")}. " +
+                            "Used by ${plural(used, "1 logged set, ${Words.rite.s} or note", "$used logged sets, ${Words.rite.pl} and notes")}. " +
                                 "It stays while anything uses it, so your history is never orphaned.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,

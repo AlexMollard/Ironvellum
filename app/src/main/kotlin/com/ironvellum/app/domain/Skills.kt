@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /**
  * Skill movements — techniques, not work. Each skill belongs to a progression
  * line, may require prerequisites, and carries a claim standard: the concrete
@@ -94,12 +96,12 @@ object Skills {
             }
     }
 
-    val ALL: List<SkillDef> = listOf(
+    val ALL: List<SkillDef> by Words.perMode { listOf(
         // PULL line — bar hang to one-arm pull-up
         SkillDef(
             "Dead Hang", 1, "Pull",
             standard = "Hang 60s from a bar, arms straight, shoulders active",
-            why = "Grip endurance and shoulder integrity underneath every pulling technique.",
+            why = "Grip endurance and shoulder integrity underneath every pulling ${Words.technique.s}.",
         ),
         SkillDef(
             "Scapular Pull", 1, "Pull", prerequisites = listOf("Dead Hang"),
@@ -119,7 +121,7 @@ object Skills {
         SkillDef(
             "Pull-up", 3, "Pull", prerequisites = listOf("Negative Pull-up"),
             standard = "8 clean reps, chin over bar, dead hang each rep",
-            why = "The foundation every advanced pulling technique is measured against.",
+            why = "The foundation every advanced pulling ${Words.technique.s} is measured against.",
         ),
         SkillDef(
             "L-sit Pull-up", 4, "Pull", prerequisites = listOf("Pull-up", "L-sit"),
@@ -134,7 +136,7 @@ object Skills {
         SkillDef(
             "Weighted Pull-up", 4, "Pull", prerequisites = listOf("Pull-up"),
             standard = "5 reps with a third of your bodyweight added, chin over bar every rep",
-            why = "External load builds the absolute strength ceiling of the whole path, scaled to the body pulling it.",
+            why = "External load builds the absolute strength ceiling of the whole ${Words.path.s}, scaled to the body pulling it.",
         ),
         SkillDef(
             "One-Arm Negative", 4, "Pull", prerequisites = listOf("Archer Pull-up"),
@@ -200,7 +202,7 @@ object Skills {
         SkillDef(
             "Weighted Dip", 4, "Push", prerequisites = listOf("Parallel Bar Dip"),
             standard = "5 reps with a third of your bodyweight added, full depth every rep",
-            why = "Overloaded pressing strength that carries into every ring and planche technique.",
+            why = "Overloaded pressing strength that carries into every ring and planche ${Words.technique.s}.",
         ),
         // HANDSTAND line — balance, press and its extremes
         SkillDef(
@@ -241,7 +243,7 @@ object Skills {
         SkillDef(
             "Freestanding Handstand", 3, "Handstand", prerequisites = listOf("Wall Handstand"),
             standard = "Hold 30s free of any support, balancing with fingers",
-            why = "The gateway technique: every advanced hand-balance is built on a 30s handstand.",
+            why = "The gateway ${Words.technique.s}: every advanced hand-balance is built on a 30s handstand.",
         ),
         SkillDef(
             "Handstand Walk", 3, "Handstand", prerequisites = listOf("Freestanding Handstand"),
@@ -251,7 +253,7 @@ object Skills {
         SkillDef(
             "Handstand Push-up", 4, "Handstand", prerequisites = listOf("Wall HSPU", "Freestanding Handstand"),
             standard = "3 freestanding reps, head touching floor",
-            why = "Full-bodyweight vertical press — the strongest pushing feat on the path.",
+            why = "Full-bodyweight vertical press — the strongest pushing feat on the ${Words.path.s}.",
         ),
         SkillDef(
             "90-Degree Push-up", 5, "Handstand", prerequisites = listOf("Handstand Push-up"),
@@ -282,7 +284,7 @@ object Skills {
         SkillDef(
             "Advanced Tuck Front Lever", 3, "Lever", prerequisites = listOf("Tuck Front Lever"),
             standard = "Hold 12s with an open hip angle, back flat",
-            why = "Doubles the lever arm — the real strength jump on the path.",
+            why = "Doubles the lever arm — the real strength jump on the ${Words.path.s}.",
         ),
         SkillDef(
             "One-Leg Front Lever", 4, "Lever", prerequisites = listOf("Advanced Tuck Front Lever"),
@@ -302,7 +304,7 @@ object Skills {
         SkillDef(
             "Skin the Cat", 2, "Lever", prerequisites = listOf("German Hang"),
             standard = "3 reps, full rotation through German hang and back out",
-            why = "Shoulder extension and rotation capacity that both lever paths build on.",
+            why = "Shoulder extension and rotation capacity that both lever ${Words.path.pl} build on.",
         ),
         SkillDef(
             "Tuck Back Lever", 2, "Lever", prerequisites = listOf("Skin the Cat"),
@@ -338,7 +340,7 @@ object Skills {
         SkillDef(
             "Frog Stand", 1, "Planche",
             standard = "Hold 30s, elbows bent, knees resting on the elbows, feet off floor",
-            why = "Introduces the forward lean the whole planche path depends on.",
+            why = "Introduces the forward lean the whole planche ${Words.path.s} depends on.",
         ),
         SkillDef(
             "Planche Lean", 2, "Planche", prerequisites = listOf("Frog Stand", "Parallel Bar Support Hold"),
@@ -384,7 +386,7 @@ object Skills {
         SkillDef(
             "Ring Support Hold", 1, "Rings",
             standard = "Hold 60s, arms locked, rings turned out, no shaking",
-            why = "Stabilises the shoulders on the unstable surface every ring technique needs.",
+            why = "Stabilises the shoulders on the unstable surface every ring ${Words.technique.s} needs.",
         ),
         SkillDef(
             "RTO Support Hold", 2, "Rings", prerequisites = listOf("Ring Support Hold"),
@@ -542,7 +544,7 @@ object Skills {
         SkillDef(
             "Back Squat", 1, "Squat",
             standard = "5 reps at your bodyweight, hips below knees every rep",
-            why = "The lift every other leg technique is measured against, learned before it is loaded.",
+            why = "The lift every other leg ${Words.technique.s} is measured against, learned before it is loaded.",
         ),
         SkillDef(
             "Pause Squat", 2, "Squat", prerequisites = listOf("Back Squat"),
@@ -562,7 +564,7 @@ object Skills {
         SkillDef(
             "Triple-Bodyweight Squat", 5, "Squat", prerequisites = listOf("Double-Bodyweight Squat"),
             standard = "1 rep at two and three-quarter times bodyweight, full depth, competition-legal",
-            why = "Two and three-quarter times bodyweight is elite squatting; the name keeps the triple few Ironbound ever reach.",
+            why = "Two and three-quarter times bodyweight is elite squatting; the name keeps the triple few ${Words.lifter.t} ever reach.",
         ),
         // BENCH line — the upper-body barbell benchmark (Strength Level standards)
         SkillDef(
@@ -583,7 +585,7 @@ object Skills {
         SkillDef(
             "Heavy Bench Press", 4, "Bench", prerequisites = listOf("Paused Bench Press"),
             standard = "1 rep at one and a half times bodyweight, no bounce",
-            why = "Half again your bodyweight is the bench mark that separates the Ironbound from benchers.",
+            why = "Half again your bodyweight is the bench mark that separates the ${Words.lifter.t} from benchers.",
         ),
         SkillDef(
             "Double-Bodyweight Bench Press", 5, "Bench", prerequisites = listOf("Heavy Bench Press"),
@@ -604,7 +606,7 @@ object Skills {
         SkillDef(
             "Bodyweight Overhead Press", 3, "Press", prerequisites = listOf("Volume Overhead Press"),
             standard = "3 reps at four fifths of your bodyweight, strict, no leg drive",
-            why = "A strict triple at four fifths of bodyweight is intermediate pressing - the full bodyweight the name promises is the next rung.",
+            why = "A strict triple at four fifths of bodyweight is intermediate pressing - the full bodyweight the name promises is the next ${Words.rung.s}.",
         ),
         SkillDef(
             "Heavy Overhead Press", 4, "Press", prerequisites = listOf("Bodyweight Overhead Press"),
@@ -671,7 +673,7 @@ object Skills {
         SkillDef(
             "Manna", 5, "Core", prerequisites = listOf("V-Sit"),
             standard = "Hold 5s, hips above hands, legs overhead",
-            why = "Rarest compression technique in bodyweight training.",
+            why = "Rarest compression ${Words.technique.s} in bodyweight training.",
         ),
         SkillDef(
             "Hanging Knee Raise", 1, "Core",
@@ -732,11 +734,11 @@ object Skills {
         SkillDef(
             "Wrist Prep", 1, "Mobility",
             standard = "10-minute drill: rocks, pulses and stretches both directions, pain-free",
-            why = "Keeps wrists healthy enough to load every handstand and planche technique.",
+            why = "Keeps wrists healthy enough to load every handstand and planche ${Words.technique.s}.",
         ),
-    )
+    ) }
 
-    val BY_NAME: Map<String, SkillDef> = ALL.associateBy { it.name }
+    val BY_NAME: Map<String, SkillDef> by Words.perMode { ALL.associateBy { it.name } }
 
     fun forName(name: String): SkillDef? = BY_NAME[name]
 

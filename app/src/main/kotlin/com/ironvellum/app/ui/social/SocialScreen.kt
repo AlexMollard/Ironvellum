@@ -12,6 +12,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,13 +39,15 @@ import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkTabbedPager
 
-private enum class GuildTab(val label: String) {
-    FEED("Tidings"),
-    INBOX("Missives"),
-    BOARD("Reckoning"),
+private enum class GuildTab(private val labelText: () -> String) {
+    FEED({ Words.tidings.c }),
+    INBOX({ Words.inbox.c }),
+    BOARD({ Words.reckoning.c }),
     // "ALLIES", not "GUILD" — the bottom nav tab already says Allies; repeating
     // it here put the same word on screen three times.
-    ALLIES("Allies"),
+    ALLIES({ Words.ally.cpl });
+
+    val label: String get() = labelText()
 }
 
 /**
@@ -121,8 +124,8 @@ fun SocialScreen(
     if (explainNotifications) {
         IronvellumDialog(
             onDismissRequest = { explainNotifications = false },
-            title = { Text("Ally notifications?") },
-            text = { Text("See ally requests, remarks and tributes.") },
+            title = { Text("${Words.ally.c} notifications?") },
+            text = { Text("See ${Words.ally.s} requests, ${Words.remark.pl} and ${Words.tribute.pl}.") },
             // ALLOW is the only path to the system prompt; NOT NOW just closes.
             confirmButton = {
                 IronvellumButton(
@@ -149,7 +152,7 @@ fun SocialScreen(
     Column(Modifier.fillMaxSize()) {
         // One shared title above the pills, the same weight as the other tabs' headers.
         Text(
-            "ALLIES",
+            Words.ally.upl,
             style = MaterialTheme.typography.headlineSmall,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,

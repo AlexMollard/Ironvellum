@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.social
 
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -196,7 +197,7 @@ internal class CommentsViewModel(
         viewModelScope.launch {
             val row = cloud.friends().getOrNull()?.firstOrNull { it.userId == userId }
             _ui.value = _ui.value.copy(
-                owner = OwnerIdentity(userId, row?.displayName ?: "Ironbound", row?.level, row?.currentTitleId, row?.crestId),
+                owner = OwnerIdentity(userId, row?.displayName ?: Words.lifter.c, row?.level, row?.currentTitleId, row?.crestId),
             )
         }
     }
@@ -320,7 +321,7 @@ internal fun CommentsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        PushedHeader("TRIAL", onBack)
+        PushedHeader(Words.trial.u, onBack)
 
         val err = ui.error
         LazyColumn(
@@ -335,7 +336,7 @@ internal fun CommentsScreen(
                     isMe = isMe,
                     onOpenLifter = {
                         val owner = ui.owner
-                        onOpenLifter(owner?.userId ?: lifterId, owner?.name ?: "Ironbound")
+                        onOpenLifter(owner?.userId ?: lifterId, owner?.name ?: Words.lifter.c)
                     },
                     onRetry = { viewModel.loadWorkout(force = true) },
                 )
@@ -345,7 +346,7 @@ internal fun CommentsScreen(
                 if (workout.exercises.isEmpty()) {
                     item(key = "work-empty") {
                         Text(
-                            "No sets were shared with this trial.",
+                            "No sets were shared with this ${Words.trial.s}.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -355,7 +356,7 @@ internal fun CommentsScreen(
                     ExercisePanel(exercise)
                 }
             }
-            item(key = "reactions-header") { SectionHeader("TRIBUTES") }
+            item(key = "reactions-header") { SectionHeader(Words.tribute.upl) }
             item(key = "reactions") {
                 ReactionsPanel(
                     ui = ui,
@@ -363,12 +364,12 @@ internal fun CommentsScreen(
                     onRetry = viewModel::loadReactions,
                 )
             }
-            item(key = "comments-header") { SectionHeader("REMARKS") }
+            item(key = "comments-header") { SectionHeader(Words.remark.upl) }
             when {
                 ui.loading && ui.comments.isEmpty() -> item(key = "comments-loading") {
                     InkPanel(Modifier.fillMaxWidth()) {
                         Text(
-                            "Reading the thread…",
+                            "${Words.reads.c} the thread…",
                             style = MaterialTheme.typography.bodyMedium,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -389,7 +390,7 @@ internal fun CommentsScreen(
                 ui.comments.isEmpty() -> item(key = "comments-empty") {
                     InkPanel(Modifier.fillMaxWidth()) {
                         Text(
-                            "No remarks yet — say something first.",
+                            "No ${Words.remark.pl} yet — say something first.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -434,7 +435,7 @@ internal fun CommentsScreen(
                 colors = ironvellumFieldColors(),
                 value = ui.draft,
                 onValueChange = viewModel::onDraft,
-                label = { Text("Remark") },
+                label = { Text(Words.remark.c) },
                 maxLines = 4,
                 modifier = Modifier.weight(1f),
             )
@@ -456,7 +457,7 @@ internal fun CommentsScreen(
     confirmDelete?.let { comment ->
         IronvellumDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete this remark?") },
+            title = { Text("Delete this ${Words.remark.s}?") },
             text = { Text("It disappears for everyone. This can't be undone.") },
             confirmButton = {
                 IronvellumButton(label = "Delete", onClick = {
@@ -508,7 +509,7 @@ private fun WorkoutHeaderPanel(
             Spacer(Modifier.height(10.dp))
         }
         Text(
-            workout?.headline?.ifBlank { null } ?: headline.ifBlank { "Trial" },
+            workout?.headline?.ifBlank { null } ?: headline.ifBlank { Words.trial.c },
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -552,7 +553,7 @@ private fun WorkoutHeaderPanel(
             else -> {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Opening the trial…",
+                    "Opening the ${Words.trial.s}…",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -701,7 +702,7 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
         ui.reactionError?.let {
             Spacer(Modifier.height(6.dp))
             Text(
-                "Tribute not saved: $it",
+                "${Words.tribute.c} not saved: $it",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,
@@ -715,19 +716,19 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
                 SocialRefreshLink(onClick = onRetry, label = "Try again")
             }
             likers == null -> Text(
-                "Reading the tributes…",
+                "${Words.reads.c} the ${Words.tribute.pl}…",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
             )
             likers.isEmpty() -> Text(
-                "No tributes yet.",
+                "No ${Words.tribute.pl} yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             else -> {
                 Text(
-                    "WHO PAID TRIBUTE",
+                    "WHO PAID ${Words.tribute.u}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.EmeraldBright,
@@ -784,7 +785,7 @@ private fun CommentRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                comment.authorName.ifBlank { "IRONBOUND" },
+                comment.authorName.ifBlank { Words.lifter.u },
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -795,7 +796,7 @@ private fun CommentRow(
                     .weight(1f, fill = false)
                     .heightIn(min = 44.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClickLabel = "Open folio") { onOpenLifter() }
+                    .clickable(role = Role.Button, onClickLabel = "Open ${Words.folio.s}") { onOpenLifter() }
                     .wrapContentHeight(),
             )
             Text(
@@ -868,7 +869,7 @@ internal fun ReportDialog(
     var note by remember { mutableStateOf("") }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Report ${lifterName.ifBlank { "this Ironbound" }}") },
+        title = { Text("Report ${lifterName.ifBlank { "this ${Words.lifter.t}" }}") },
         text = {
             Column {
                 Text(

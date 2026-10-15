@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /**
  * Six hand-authored programs, keyed by split and goal - full body, upper/
  * lower and push/pull/legs for muscle; full body, upper/lower and a
@@ -34,7 +36,7 @@ object ProgramTemplates {
     private fun day(name: String, scheduledDay: Int, entries: List<PlannedEntry>) =
         PlannedPreset(name = name, note = "", scheduledDay = scheduledDay, entries = entries)
 
-    val ALL: List<ProgramTemplate> = listOf(
+    val ALL: List<ProgramTemplate> by Words.perMode { listOf(
         ProgramTemplate(
             id = "full_body_strength",
             split = TrainingSplit.FULL_BODY,
@@ -42,7 +44,7 @@ object ProgramTemplates {
             focus = TrainingFocus.STRENGTH,
             name = "Full-Body Barbell",
             summary = "Three full-body days on five big lifts. Add a little weight " +
-                "each trial while it keeps moving (ACSM 2009).",
+                "each ${Words.trial.s} while it keeps moving (ACSM 2009).",
             days = listOf(
                 day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 5),
@@ -67,7 +69,7 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.MUSCLE,
             name = "Full-Body Size",
-            summary = "Three full-body days: every muscle each trial, big lifts " +
+            summary = "Three full-body days: every muscle each ${Words.trial.s}, big lifts " +
                 "first, stretch-focused exercises after (Pelland 2026).",
             days = listOf(
                 day("Full Body A", 1, listOf(
@@ -141,7 +143,7 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.MUSCLE,
             name = "Upper/Lower Size",
-            summary = "Upper/lower twice a week, each rite led by a big lift " +
+            summary = "Upper/lower twice a week, each ${Words.rite.s} led by a big lift " +
                 "and finished with stretch-focused exercises (Pelland 2026; Maeo 2021).",
             days = listOf(
                 day("Upper A", 1, listOf(
@@ -290,7 +292,7 @@ object ProgramTemplates {
                 )),
             ),
         ),
-    )
+    ) }
 
     // ------------------------------------------------------------------ build
 
@@ -375,10 +377,10 @@ object ProgramTemplates {
                     "Your dumbbell is too light for the ${entry.exerciseName}; the " +
                         "${exercise.name} is harder - Lopez 2021"
                 } else if (substituted && compoundOnly && MovementDifficulty.isIsolation(entry.exerciseName)) {
-                    "Compound & technique only: the ${exercise.name} stands in for the " +
+                    "Compound & ${Words.technique.s} only: the ${exercise.name} stands in for the " +
                         "${entry.exerciseName} - Gentil 2015"
                 } else if (substituted) {
-                    "Nothing in your armoury for the ${entry.exerciseName}; the ${exercise.name} is the " +
+                    "Nothing in your ${Words.armoury.s} for the ${entry.exerciseName}; the ${exercise.name} is the " +
                         "closest match - Kikuchi 2017; Calatayud 2015"
                 } else if (template.focus == TrainingFocus.STRENGTH && isMainLift) {
                     "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025; Lopez 2021"
@@ -459,7 +461,7 @@ object ProgramTemplates {
         }
         val fitted = fitToRange(capped, work.map { it.second }, template.focus, range, budget)
         val shortfall = ProgramGenerator.shortfallNote(
-            ProgramRules.weeklyVolume(fitted), "forge a cycle to fill them.",
+            ProgramRules.weeklyVolume(fitted), "${Words.forge.s} ${Words.cycle.a} to fill them.",
         )
         return RoutinePlan(
             fitted.map { day -> day.copy(entries = ProgramGenerator.spacePullUps(day.entries)) },

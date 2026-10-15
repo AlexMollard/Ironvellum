@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Retired words from the glossary's Never columns that cannot be innocent. */
+/** The plain words for glossary concepts (the Never columns' unambiguous entries). */
 internal val RETIRED_WORDS: List<Regex> = listOf(
     "quests?", "lifters?", "lifter's", "routines?", "warbands?", "garrison", "vessel",
     "hunts?", "cheers?", "cheered", "streaks?", "marshal", "soldiers?", "recruit",
@@ -15,14 +15,28 @@ internal val RETIRED_WORDS: List<Regex> = listOf(
     "workouts?", "sessions?", "stats", "skills?", "plans?", "programs?", "gear", "equipment",
     "schedule", "scheduled", "schedules", "templates?", "achievements?", "badges?", "friends?",
     "followers?", "feed", "comments?", "rest days?", "daily reminders?", "onboarding",
+    "kudos", "display names?", "practice logs?", "idle rewards", "weekly plans?", "empty workouts?", "mark(?:ed)? as mastered",
 ).map { Regex("""(?i)(?<![\w'])$it(?![\w'])""") }
 
 /**
- * docs/GLOSSARY.md gives every concept one name. The words it retired drifted
- * back the last time nothing checked them, so this scans every string literal
- * under src/main for them. Like InkCoverageTest it is a source scan, justified
- * the same way: the contract is textual and the alternative is a human
- * spotting a stray "quest" on a phone.
+ * The themed names for glossary concepts. Unlike the plain words these also match as a possessive ("circle's"),
+ * since "Ironbound's" is as much the word as "Ironbound". Ambiguous English (standing, frame, pattern, yours) is
+ * left out: those are reviewed by hand and reach the screen only through Words.
+ */
+internal val THEMED_WORDS: List<Regex> = listOf(
+    "ironbound", "true names?", "folios?", "rites?", "cycles?", "trials?", "seal(?:s|ed|ing)?", "unsealed",
+    "chronicles?", "oaths?", "respites?", "summons", "the binding", "deeds?", "techniques?", "journals?", "ledger",
+    "readings?", "allies", "ally", "circles?", "keepers?", "tidings", "reckonings?", "rungs?", "tributes?",
+    "remarks?", "missives?", "armoury", "armouries", "forge[sd]?", "temper", "codex", "veil", "paths?", "peaks?",
+    "claim(?:s|ed|ing)?", "acolyte", "adept", "warden", "magister", "archon", "exarch", "sovereign",
+).map { Regex("""(?i)(?<!\w)$it(?!\w)""") }
+
+/**
+ * docs/GLOSSARY.md gives every concept a plain word and a themed name, and the app shows one or the other
+ * (Words, chosen in Settings). So a concept word typed into a string literal is a bug in one mode: it would stay
+ * themed with the switch off, or plain with it on. This scans every string literal under src/main for both
+ * vocabularies; the words belong to Words and WordLines. Like InkCoverageTest it is a source scan, justified
+ * the same way: the contract is textual and the alternative is a human flipping the switch on every screen.
  *
  * `${…}` templates are stripped before matching, matching is whole-word and
  * case-insensitive, and every exception is listed with the reason it stays.
@@ -34,10 +48,19 @@ class GlossaryTest {
     private val sources: List<File> =
         root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
 
-    private val retired = RETIRED_WORDS
+    private val retired = RETIRED_WORDS + THEMED_WORDS
 
     /** Files whose literals are data formats, not copy. */
     private val exemptFiles = mapOf(
+        "data/Words.kt" to "the vocabulary: both vocabularies are written out here",
+        "data/WordLines.kt" to "whole lines in both vocabularies",
+        "ui/dashboard/TodayNarration.kt" to "Today's narration, written out in both vocabularies",
+        "domain/LibraryGuides.kt" to "exercise instructions: \"technique\", \"path\" and \"circle\" are the English words",
+        "domain/ExerciseGuides.kt" to "exercise instructions: the English words",
+        "domain/ExerciseArtIndex.kt" to "exercise names and art ids",
+        "domain/ExerciseLibrary.kt" to "exercise names and cues: the English words",
+        "domain/Evidence.kt" to "citations, always plain (journal titles)",
+        "ui/settings/OpenSourceNotices.kt" to "licence texts",
         "domain/CsvWorkoutReader.kt" to "parses other apps' CSV headers (\"Workout Name\")",
         "domain/WorkoutCsvWriter.kt" to "writes Strong's CSV header (\"Workout Name\")",
         "domain/ImportAliases.kt" to "maps other apps' exercise names on import",
@@ -49,14 +72,39 @@ class GlossaryTest {
 
     /** Literal (after template stripping) to the reason it may keep a retired word. */
     private val allowed = mapOf(
-        "(?:Hunter|Lifter|Ironbound)" to "legacy seeded handles still count as unclaimed",
         "Hunter 2014" to "citation author",
         "Inbox poll failed" to "logcat line, never shown",
         "Remmert JF," to "citation, always plain (\"Is There Too Much of a Good Thing... Session\")",
         "Moesgaard L et al." to "citation, always plain (\"...Programs\")",
         "comments/" to "nav route, a protected name",
         "Workout Guide (Bryl Lim" to "proper name of the upstream project credited in the licence panel",
+        "Acolyte" to "ascension names, themed only: plain mode shows \"Level\" (ArmyClass.Tier.title)",
+        "Adept" to "ascension name, themed only",
+        "Warden" to "ascension name, themed only",
+        "Magister" to "ascension name, themed only",
+        "Archon" to "ascension name, themed only",
+        "Exarch" to "ascension name, themed only",
+        "Sovereign" to "ascension name and crest id, themed only / a name that stays in both modes",
+        "Set Rite" to "a crest's name, kept in both modes",
+        "Ironhold Rite" to "a crest's name, kept in both modes",
+        "Ledger Crest" to "a crest's name, kept in both modes",
+        "Tribute" to "a crest perk's name, kept in both modes",
+        "Seal of Vigil" to "a relic's name, kept in both modes",
+        "Seal of Craft" to "a relic's name, kept in both modes",
+        "the Ledger" to "a relic house's name, kept in both modes",
+        "The peak of hand balance" to "the English word",
+        "rite of passage" to "the English idiom",
+        "path data" to "a developer error about SVG path data",
+        ".paths" to "the file extension of the exercise art path files",
+        "(?:Hunter|Lifter|Ironbound)" to "legacy seeded handles still count as unclaimed",
     )
+
+    /** Whole literals that are data, not copy, with the reason. */
+    private val allowedExact = mapOf(
+        "Ironbound" to "the seeded default name and the wire handle prefix: a sentinel stored and matched, never printed as a word",
+        "Lifter" to "the plain-mode default name, matched as unclaimed so signup does not prefill it",
+        "Only the Keeper" to "the wire text a refusal starts with; Words.fromServer turns the rest plain for display",
+    ).keys
 
     /** Raised messages that name a retired word on purpose, with the reason. */
     private val allowedRaises = mapOf(
@@ -82,7 +130,7 @@ class GlossaryTest {
                 val words = text.replace(TEMPLATE, " ")
                 // Routes, cache keys, tags and channel ids: no space, no capital outside {args}.
                 if (KEY.matches(words.trim())) continue
-                if (allowed.keys.any { words.contains(it) }) continue
+                if (allowed.keys.any { words.contains(it) } || words.trim() in allowedExact) continue
                 retired.firstOrNull { it.containsMatchIn(words) }?.let {
                     hits += "$rel:$line  \"${text.take(90)}\"  (${it.find(words)!!.value})"
                 }
@@ -114,7 +162,7 @@ class GlossaryTest {
             messages++
             val text = m.groupValues[1].replace("''", "'")
             if (text in allowedRaises) continue
-            retired.firstOrNull { it.containsMatchIn(text) }?.let {
+            RETIRED_WORDS.firstOrNull { it.containsMatchIn(text) }?.let {
                 hits += "\"$text\"  (${it.find(text)!!.value})"
             }
         }

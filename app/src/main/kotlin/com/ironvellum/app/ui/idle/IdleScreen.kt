@@ -19,9 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -59,7 +61,9 @@ import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.CollectionTab
@@ -182,6 +186,20 @@ class IdleViewModel(private val repo: Repository, private val appContext: Contex
     fun introSeen() {
         _intro.value = false
         FirstRunPrefs.setVeilIntroSeen(appContext)
+        FirstRunPrefs.setVeilTermsSeen(appContext)
+    }
+
+    private val _terms = MutableStateFlow(false)
+
+    /**
+     * True while the plain-words explainer is on screen: in plain mode the game's own words (essence, echoes,
+     * relics, inscriptions, crests) keep their names, so the first visit says what each one is, once.
+     */
+    val terms: StateFlow<Boolean> = _terms.asStateFlow()
+
+    fun termsSeen() {
+        _terms.value = false
+        FirstRunPrefs.setVeilTermsSeen(appContext)
     }
 
     init {
@@ -198,6 +216,7 @@ class IdleViewModel(private val repo: Repository, private val appContext: Contex
                 val crests = repo.observeOwnedFrames().first().size
                 if (FirstRun.veilIntroDue(seen = false, state.lifetimeEssence, relics, crests)) _intro.value = true else introSeen()
             }
+            if (!_intro.value && !Words.themed && !FirstRunPrefs.veilTermsSeen(appContext)) _terms.value = true
             val awayMs = (System.currentTimeMillis() - state.lastCollectedAtMs).coerceAtLeast(0L)
             val banked = repo.collectIdle(System.currentTimeMillis())
             if (banked > 0) _away.value = AwayReport(banked, awayMs)
@@ -313,6 +332,7 @@ fun IdleScreen(
     val offerings by viewModel.offerings.collectAsStateWithLifecycle()
     val pity by viewModel.pity.collectAsStateWithLifecycle()
     val intro by viewModel.intro.collectAsStateWithLifecycle()
+    val terms by viewModel.terms.collectAsStateWithLifecycle()
     val reveal by viewModel.reveal.collectAsStateWithLifecycle()
     val landing by viewModel.landing.collectAsStateWithLifecycle()
     var buyOpen by rememberSaveable { mutableStateOf(false) }
@@ -333,12 +353,12 @@ fun IdleScreen(
     Column(Modifier.fillMaxSize()) {
         // Opened from Today's footer, not a tab, so it carries its own way out.
         PushedHeader(
-            "The Veil",
+            Words.theVeil.c,
             onBack = { onBack() },
             modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
             actions = {
                 InkIconButton(onClick = { helpOpen = true }) {
-                    Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "How the Veil works", tint = IronvellumColors.InkMuted)
+                    Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = Lines.veilHowTitle, tint = IronvellumColors.InkMuted)
                 }
             },
         )
@@ -420,6 +440,7 @@ fun IdleScreen(
     val fullHours = (snapshot?.rate?.effects ?: HouseEffects.NONE).fullStrengthHours.toInt()
     if (helpOpen) VeilIntroSheet(fullHours, onDone = { helpOpen = false })
     if (intro) VeilIntroSheet(fullHours, onDone = viewModel::introSeen)
+    if (terms && !intro) VeilIntroSheet(fullHours, onDone = viewModel::termsSeen)
 }
 
 /**
@@ -431,7 +452,7 @@ fun IdleScreen(
 private fun VeilIntroSheet(fullHours: Int, onDone: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onDone,
-        title = { Text("How the Veil works") },
+        title = { Text(Lines.veilHowTitle) },
         text = {
             Column {
                 IntroRow(
@@ -440,9 +461,18 @@ private fun VeilIntroSheet(fullHours: Int, onDone: () -> Unit) {
                     "It gathers on its own while you are away. Full strength for $fullHours hours after you last collected, then it tapers.",
                 )
                 InkDivider()
+                // In plain mode the game's own words keep their names, so each says what it is.
+                if (!Words.themed) {
+                    IntroRow(Icons.Outlined.Bolt, "Echoes", "Your ${Words.trial.pl} leave them behind, and they gather essence for you.")
+                    InkDivider()
+                }
                 IntroRow(Icons.Outlined.StarBorder, "Inscriptions", "Each level-up earns one. Spend it on echoes, a relic or a crest.")
                 InkDivider()
                 IntroRow(Icons.Outlined.Diamond, "Relics", "They lift your rate. Only the strongest counts in full.")
+                if (!Words.themed) {
+                    InkDivider()
+                    IntroRow(Icons.Outlined.WorkspacePremium, "Crests", "The mark you wear on your ${Words.folio.s}. Its perk only works in ${Words.theVeil.t}.")
+                }
             }
         },
         confirmButton = { IronvellumButton(label = "Got it", onClick = onDone) },
@@ -866,13 +896,13 @@ private fun CircleBannerLine(onOpen: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClickLabel = "Open the circle", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = "Open the ${Words.circle.s}", onClick = onOpen)
                     .heightIn(min = 48.dp)
                     .padding(horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Circle · ${b.name}" + if (goal > 0) " · $total / $goal this week" + if (met) " · goal met" else "" else "",
+                    "${Words.circle.c} · ${b.name}" + if (goal > 0) " · $total / $goal this week" + if (met) " · goal met" else "" else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     modifier = Modifier.weight(1f),

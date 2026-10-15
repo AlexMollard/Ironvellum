@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.rackFooter
 import com.ironvellum.app.ui.components.PairRow
 import com.ironvellum.app.ui.components.BarChooser
@@ -34,9 +35,9 @@ internal fun ArmourySettings(onBack: () -> Unit) {
         SettingsGroup(null, topSpace = 12.dp) {
             SettingsCaption(
                 if (savedGear == null) {
-                    "Not set: the Forge and MY ARMOURY offer everything."
+                    "Not set: ${Words.theForge.t} and MY ${Words.armoury.u} offer everything."
                 } else {
-                    "The Forge and the MY ARMOURY filter use only this."
+                    "${Words.theForge.c} and the MY ${Words.armoury.u} filter use only this."
                 },
             )
             Spacer(Modifier.height(10.dp))

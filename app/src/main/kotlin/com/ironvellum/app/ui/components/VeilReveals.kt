@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.DrawChange
 import com.ironvellum.app.domain.Gacha
@@ -512,7 +513,7 @@ internal fun CrestRevealPage(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "VEIL PERK · ${def.kind.label.uppercase()}",
+                    "${Words.veil.u} PERK · ${def.kind.label.uppercase()}",
                     style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 1.sp,
                     color = Dim,

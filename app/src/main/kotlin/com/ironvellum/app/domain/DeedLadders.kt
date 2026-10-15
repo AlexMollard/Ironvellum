@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /**
  * A series of deeds that ask for the same thing in growing amounts: trials
  * sealed 1 / 25 / 50 / 100 / 250 / 500. The codex shows one row per ladder
@@ -39,19 +41,19 @@ data class DeedCategory(val name: String, val blurb: String)
 object DeedLadders {
 
     /** Every category [Titles.category] can return, in the order the codex lists them. */
-    val CATEGORIES: List<DeedCategory> = listOf(
-        DeedCategory("Trials", "Trials sealed and oaths kept"),
+    val CATEGORIES: List<DeedCategory> by Words.perMode { listOf(
+        DeedCategory(Words.trial.cpl, "${Words.trial.cpl} ${Words.sealed.s} and ${Words.oath.pl} kept"),
         DeedCategory("Level", "Levels you have reached"),
         DeedCategory("Volume", "Sets and reps logged"),
         DeedCategory("Strength", "Lifts and strength scores"),
         DeedCategory("Steps", "Steps, distance and daily burn"),
         DeedCategory("Recovery", "Nights of sleep"),
-        DeedCategory("Mastery", "Techniques mastered and attempts"),
+        DeedCategory("Mastery", "${Words.technique.cpl} mastered and attempts"),
         DeedCategory("Activities", "Time, distance and variety"),
-    )
+    ) }
 
     /** The ladders of the shipped catalogue, derived once. */
-    val ALL: List<DeedLadder> by lazy { derive(Titles.ALL) }
+    val ALL: List<DeedLadder> by Words.perMode { derive(Titles.ALL) }
 
     /**
      * Groups [defs] into ladders: same rule type and same metric, differing
@@ -84,13 +86,13 @@ object DeedLadders {
 
     /** The metric a rule measures, ignoring how much of it is asked for. */
     private fun family(rule: TitleRule): Family = when (rule) {
-        TitleRule.FirstWorkout, is TitleRule.Workouts -> Family("trials", "Trials sealed")
-        is TitleRule.WorkoutsInWeek -> Family("trials-week", "Trials in a week")
-        is TitleRule.TrainingStreak -> Family("oath", "Oath kept")
+        TitleRule.FirstWorkout, is TitleRule.Workouts -> Family("trials", "${Words.trial.cpl} ${Words.sealed.s}")
+        is TitleRule.WorkoutsInWeek -> Family("trials-week", "${Words.trial.cpl} in a week")
+        is TitleRule.TrainingStreak -> Family("oath", "${Words.oath.c} kept")
         is TitleRule.ReachLevel -> Family("level", "Level reached")
         is TitleRule.SetsLogged -> Family("sets", "Sets logged")
         is TitleRule.RepsLogged -> Family("reps", "Reps logged")
-        is TitleRule.SessionStrength -> Family("strength-trial", "Strength in one trial")
+        is TitleRule.SessionStrength -> Family("strength-trial", "Strength in one ${Words.trial.s}")
         is TitleRule.LifetimeStrength -> Family("strength-life", "Lifetime strength")
         is TitleRule.StepsInDay -> Family("steps-day", "Steps in a day")
         is TitleRule.StepsLifetime -> Family("steps-life", "Lifetime steps")
@@ -98,20 +100,20 @@ object DeedLadders {
         is TitleRule.ActiveKcalInDay -> Family("kcal-day", "Active calories in a day")
         is TitleRule.StepGoalDays -> Family("step-goal-days", "10,000-step days")
         is TitleRule.SleepMinutesInNight -> Family("sleep", "Sleep in a night")
-        is TitleRule.SkillsMastered -> Family("techniques", "Techniques mastered")
-        is TitleRule.PracticeAttempts -> Family("attempts", "Journal attempts")
+        is TitleRule.SkillsMastered -> Family("techniques", "${Words.technique.cpl} mastered")
+        is TitleRule.PracticeAttempts -> Family("attempts", "${Words.journal.c} attempts")
         is TitleRule.ActivityMinutes -> Family("activity-minutes", "Activity time")
         is TitleRule.ActivityDistanceKm -> Family("activity-km", "Activity distance")
         is TitleRule.DistinctActivities -> Family("activities-tried", "Activities tried")
         is TitleRule.LongestRun -> Family("run", "Longest run")
         is TitleRule.LongestSwim -> Family("swim", "Longest swim")
         is TitleRule.HardestGrade -> Family("climb", "Hardest climb")
-        is TitleRule.SportSessions -> Family("sport", "Trials with sport play")
+        is TitleRule.SportSessions -> Family("sport", "${Words.trial.cpl} with sport play")
         // A lift is the same ladder only when it is the same movements.
         is TitleRule.LiftMultiple ->
             Family("lift:" + rule.names.sorted().joinToString(","), "${movement(rule.names)} by bodyweight")
         is TitleRule.SessionReps ->
-            Family("reps-trial:" + rule.names.sorted().joinToString(","), "${movement(rule.names)} reps in one trial")
+            Family("reps-trial:" + rule.names.sorted().joinToString(","), "${movement(rule.names)} reps in one ${Words.trial.s}")
         is TitleRule.LongestHold -> Family("hold", "Longest hold")
     }
 

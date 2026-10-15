@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.components.crestLook
@@ -118,7 +119,7 @@ internal fun IdentityRow(
             LifterAvatar(displayName = displayName, size = badgeSize, frameId = frameId, ring = ring)
             Column(Modifier.weight(1f)) {
                 Text(
-                    displayName.ifBlank { "IRONBOUND" },
+                    displayName.ifBlank { Words.lifter.u },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = if (plain) FontWeight.SemiBold else FontWeight.Bold,

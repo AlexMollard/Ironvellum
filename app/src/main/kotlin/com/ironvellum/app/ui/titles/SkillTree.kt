@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.ExerciseDrawing
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -371,7 +372,7 @@ private fun SkillNode(
     Column(
         modifier
             .width(width)
-            .clickable(role = Role.Button, onClickLabel = "Open technique") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = "Open ${Words.technique.s}") { onClick() }
             // One sentence for the whole node; the visible texts stay in the
             // merged node so it is still found by its name.
             .semantics(mergeDescendants = true) { contentDescription = description },
@@ -526,7 +527,7 @@ private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: In
             .heightIn(min = textH / 2 * lines)
             .clip(TileShape)
             .background(MaterialTheme.colorScheme.background)
-            .clickable(role = Role.Button, onClickLabel = "Open ${need.skill}, ${need.line} path") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = "Open ${need.skill}, ${need.line} ${Words.path.s}") { onClick() }
             .padding(horizontal = 3.dp),
     )
 }

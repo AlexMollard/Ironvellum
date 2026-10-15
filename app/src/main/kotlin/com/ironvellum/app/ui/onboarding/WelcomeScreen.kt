@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.ironvellum.app.R
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.ListRow
@@ -146,14 +148,14 @@ internal fun WelcomeScreen(
                     modifier = Modifier.padding(top = 20.dp),
                 )
                 Text(
-                    "Seal each trial. Keep the Ledger. Watch the Veil fill.",
+                    Lines.welcomeTagline,
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 10.dp).widthIn(max = 300.dp),
                 )
                 Text(
-                    "Three short steps: who you are, how you train, and the cycle the Forge builds for you.",
+                    "Three short steps: who you are, how you train, and the ${Words.cycle.s} ${Words.theForge.t} builds for you.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -180,8 +182,8 @@ internal fun WelcomeScreen(
             InkDivider()
             ListRow(
                 "Import from Strong, Hevy or FitNotes",
-                subline = "Adds your trials from a CSV export. You still set up next.",
-                onClickLabel = "Import trials from a CSV file",
+                subline = "Adds your ${Words.trial.pl} from a CSV export. You still set up next.",
+                onClickLabel = "Import ${Words.trial.pl} from a CSV file",
                 onClick = { csvPicker.launch(CSV_MIME_TYPES) },
             )
             InkDivider()

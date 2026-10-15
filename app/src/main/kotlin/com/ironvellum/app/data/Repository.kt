@@ -549,7 +549,7 @@ class Repository(
         val (id, name, position) = if (presetId == null) {
             Triple(presetDao.insertPreset(PresetEntity(name = exerciseName, note = "", scheduledDay = null)), exerciseName, 0)
         } else {
-            val rite = presetDao.presetWithEntries(presetId) ?: error("Rite $presetId no longer exists")
+            val rite = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId no longer exists")
             Triple(presetId, rite.preset.name, (rite.entries.maxOfOrNull { it.position } ?: -1) + 1)
         }
         presetDao.insertEntries(
@@ -645,7 +645,7 @@ class Repository(
     suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset): Long {
         val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
         val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
-        require(unknown.isEmpty()) { "Unknown exercises in rite \"${preset.name}\": $unknown" }
+        require(unknown.isEmpty()) { "Unknown exercises in ${Words.rite.s} \"${preset.name}\": $unknown" }
         // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
         // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
         val kept = presetId?.let { presetDao.presetWithEntries(it) }
@@ -829,7 +829,7 @@ class Repository(
             val resolved = presets.map { preset ->
                 val missing = preset.entries.filterNot { it.exerciseName in idByName }
                 require(missing.isEmpty()) {
-                    "Unknown exercises in rite \"${preset.name}\": ${missing.map { it.exerciseName }}"
+                    "Unknown exercises in ${Words.rite.s} \"${preset.name}\": ${missing.map { it.exerciseName }}"
                 }
                 preset
             }
@@ -992,7 +992,7 @@ class Repository(
 
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
         claimLiveSession()?.let { return@withTransaction it }
-        val pw = presetDao.presetWithEntries(presetId) ?: error("Rite $presetId not found")
+        val pw = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId not found")
         val sessionId = sessionDao.insertSession(
             SessionEntity(
                 presetId = presetId,
@@ -1296,7 +1296,7 @@ class Repository(
         sessionDao.insertSession(
             SessionEntity(
                 presetId = null,
-                label = label.ifBlank { "Open Trial" },
+                label = label.ifBlank { Words.openTrial.c },
                 startedAtMs = System.currentTimeMillis(),
                 completedAtMs = null,
                 xpAwarded = 0,
@@ -1757,8 +1757,8 @@ class Repository(
     }
 
     suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
-        val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
-        check(session.completedAtMs == null) { "Trial already sealed" }
+        val session = sessionDao.byId(sessionId) ?: error("${Words.trial.c} $sessionId not found")
+        check(session.completedAtMs == null) { "${Words.trial.c} already ${Words.sealed.s}" }
         val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
         // Strength work (reps AND static holds) earns difficulty-weighted XP
@@ -2683,7 +2683,7 @@ class Repository(
      * no mastery: claiming is a separate, deliberate act.
      */
     suspend fun logSkillPractice(skillName: String, value: Int, weightKg: Double? = null) {
-        require(Skills.forName(skillName) != null) { "Unknown technique $skillName" }
+        require(Skills.forName(skillName) != null) { "Unknown ${Words.technique.s} $skillName" }
         require(value >= 0) { "Practice value cannot be negative" }
         skillPracticeDao.insert(
             SkillPracticeEntity(
@@ -2700,7 +2700,7 @@ class Repository(
      * Level-up inscriptions are banked here, in the claim's own transaction.
      */
     suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
-        val def = Skills.forName(skillName) ?: error("Unknown technique $skillName")
+        val def = Skills.forName(skillName) ?: error("Unknown ${Words.technique.s} $skillName")
         check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
         // The prerequisite check lives here, not just in the UI: this call mints
         // tier x 120 XP — 600 at the top of the tree — and an import restore or
@@ -2762,7 +2762,7 @@ class Repository(
      * deliberately kept: a title once earned is not taken back.
      */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
-        Skills.forName(skillName) ?: error("Unknown technique $skillName")
+        Skills.forName(skillName) ?: error("Unknown ${Words.technique.s} $skillName")
         val claim = skillPracticeDao.claim(skillName) ?: return@withTransaction
         // A claimed skill that others REQUIRE cannot stand down while they
         // stand on it: dropping Dead Hang would leave Scapular Pull claimed
@@ -2776,7 +2776,7 @@ class Repository(
         val refund = Skills.claimRefund(skillName, claim.value)
         val total = profileDao.get()?.totalXp ?: 0L
         check(total >= refund) {
-            "$skillName paid $refund XP but only $total XP is left - it stays claimed"
+            "$skillName paid $refund XP but only $total XP is left - it stays ${Words.claimed.s}"
         }
         skillPracticeDao.deleteClaims(skillName)
         profileDao.addXp(-refund.toLong())
@@ -2799,7 +2799,7 @@ class Repository(
     suspend fun deleteWorkout(sessionId: Long) = db.withTransaction {
         val session = sessionDao.byId(sessionId) ?: return@withTransaction
         check(session.completedAtMs != null) {
-            "Trial $sessionId is still live - abandon it instead"
+            "${Words.trial.c} $sessionId is still live - abandon it instead"
         }
         // Clamped so a ledger since spent down cannot go negative.
         val total = profileDao.get()?.totalXp ?: 0L
@@ -2951,11 +2951,11 @@ class Repository(
         session.sealedXp ?: if (session.editedAtMs != null) session.xpAwarded / 2 else session.xpAwarded
 
     private suspend fun planAmend(sessionId: Long, draft: TrialDraft, nowMs: Long): AmendPlan {
-        val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
+        val session = sessionDao.byId(sessionId) ?: error("${Words.trial.c} $sessionId not found")
         val completedAt = session.completedAtMs
-        check(completedAt != null) { "Trial $sessionId is still live - edit it on the trial screen" }
+        check(completedAt != null) { "${Words.trial.c} $sessionId is still live - edit it on the ${Words.trial.s} screen" }
         require(draft.tickedCount >= 1) {
-            "An amended trial needs at least one ticked set - delete the trial instead"
+            "An amended ${Words.trial.s} needs at least one ticked set - delete the ${Words.trial.s} instead"
         }
         // One block per movement: the cloud keys sets on (movement, index),
         // and two blocks of one movement would collide there and in records.
@@ -3361,7 +3361,7 @@ class Repository(
                         preset.entries.sortedBy { it.position }.mapNotNull { entry ->
                             val exerciseId = resolveExercise(entry.exerciseName)
                             if (exerciseId == null) {
-                                problems.add("rite \"${preset.name}\" entry dropped: no exercise name")
+                                problems.add("${Words.rite.s} \"${preset.name}\" entry dropped: no exercise name")
                                 return@mapNotNull null
                             }
                             PresetEntryEntity(
@@ -3407,7 +3407,7 @@ class Repository(
                             val exerciseId = resolveExercise(s.exerciseName)
                             if (exerciseId == null) {
                                 problems.add(
-                                    "trial \"${session.label}\" set dropped: no exercise name",
+                                    "${Words.trial.s} \"${session.label}\" set dropped: no exercise name",
                                 )
                                 return@mapNotNull null
                             }
@@ -3442,7 +3442,7 @@ class Repository(
                     // lose readings and still report a clean import.
                     if (!ok) {
                         problems.add(
-                            "reading from ${Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate()} dropped: " +
+                            "${Words.reading.s} from ${Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate()} dropped: " +
                                 "${it.weightKg} kg / ${it.bodyFatPct ?: "-"}% outside plausible range",
                         )
                     }
@@ -3668,7 +3668,7 @@ class Repository(
             val sessionId = sessionDao.insertSession(
                 SessionEntity(
                     presetId = null,
-                    label = workout.label.trim().ifBlank { "Imported trial" },
+                    label = workout.label.trim().ifBlank { "Imported ${Words.trial.s}" },
                     startedAtMs = workout.startedAtMs,
                     completedAtMs = workout.completedAtMs ?: workout.startedAtMs,
                     xpAwarded = 0,

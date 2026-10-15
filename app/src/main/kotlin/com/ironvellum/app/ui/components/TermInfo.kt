@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.SetKind
@@ -31,9 +32,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
  * and plain on purpose: a beginner reads them mid-screen, and anyone who
  * already knows the word never has to open one.
  */
-enum class Term(
-    val title: String,
-    val definition: String,
+enum class Term private constructor(
+    private val titleText: () -> String,
+    private val definitionText: () -> String,
     /** Word stems that name this term in running copy; empty for terms only shown by hand. */
     val stems: List<String> = emptyList(),
 ) {
@@ -44,8 +45,8 @@ enum class Term(
     ),
     FFMI(
         "FFMI",
-        "Fat-free mass index: your weight minus body fat, divided by your height squared. " +
-            "It rates how much muscle you carry for your height. It needs a body fat % reading.",
+        { "Fat-free mass index: your weight minus body fat, divided by your height squared. " +
+            "It rates how much muscle you carry for your height. It needs a body fat % ${Words.reading.s}." },
     ),
     NAVY_TAPE(
         "Navy tape method",
@@ -60,25 +61,29 @@ enum class Term(
     ),
     DOUBLE_PROGRESSION(
         "Double progression",
-        "Keep the load and add reps each trial until you reach the top of the rep range, then " +
-            "add load and start again at the bottom. Muscle mode trains this way.",
+        { "Keep the load and add reps each ${Words.trial.s} until you reach the top of the rep range, then " +
+            "add load and start again at the bottom. Muscle mode trains this way." },
     ),
     DELOAD(
         "Deload",
-        "If you fail the same load three trials in a row, the next one drops it by 10% so you " +
-            "can recover and build back past where you stalled. It happens on its own.",
+        { "If you fail the same load three ${Words.trial.pl} in a row, the next one drops it by 10% so you " +
+            "can recover and build back past where you stalled. It happens on its own." },
     ),
     RANKS(
-        "Strength Rank and Ascension",
-        "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
+        { Words.pick("Strength Rank and Ascension", "Strength Rank") },
+        { "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
             "Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, " +
             "over the last ${Rank.WINDOW_DAYS} days. Each takes its best mark: a squat, bench press, " +
             "deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your " +
-            "bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank " +
+            "bodyweight, or a pull, push or leg ${Words.technique.s} you cleared, at its tier. Your rank " +
             "is the average of the patterns you trained, rounded down. One you skipped is left out, " +
-            "and core work never lowers it. " +
-            "Ascension follows your level, which rises with the XP each trial " +
-            "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + ".",
+            "and core work never lowers it." +
+            if (Words.themed) {
+                " Ascension follows your level, which rises with the XP each ${Words.trial.s} " +
+                    "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + "."
+            } else {
+                ""
+            } },
     ),
     TUCK(
         "Tuck",
@@ -95,9 +100,9 @@ enum class Term(
     ),
     SCAPULA(
         "Scapula",
-        "Your shoulder blade. Depression pulls it down away from your ears, retraction " +
+        { "Your shoulder blade. Depression pulls it down away from your ears, retraction " +
             "squeezes it toward your spine, and protraction pushes it forward around your ribs. " +
-            "Many techniques start with the shoulder blade moving before the arm bends.",
+            "Many ${Words.technique.pl} start with the shoulder blade moving before the arm bends." },
         stems = listOf("scapul", "protract"),
     ),
     HOLLOW(
@@ -125,49 +130,61 @@ enum class Term(
         stems = listOf("negative", "eccentric", "concentric"),
     ),
     TRIAL(
-        "Trial",
-        "One time through your training: you begin it, log your sets, then seal it. Only a sealed trial " +
-            "counts toward your XP, strength score, oath and deeds.",
+        { Words.trial.c },
+        { "One time through your training: you begin it, log your sets, then ${Words.seal.s} it. Only ${Words.sealed.a} ${Words.trial.s} " +
+            "counts toward your XP, strength score, ${Words.oath.s} and ${Words.deed.pl}." },
     ),
     RITE(
-        "Rite",
-        "A saved trial to repeat: its movements and the sets set out for each. Begin a trial from a " +
-            "rite, and edit it any time without touching the trials you have already sealed.",
+        { Words.rite.c },
+        { "A saved ${Words.trial.s} to repeat: its movements and the sets set out for each. Begin ${Words.trial.a} from a " +
+            "${Words.rite.s}, and edit it any time without touching the ${Words.trial.pl} you have already ${Words.sealed.s}." },
     ),
     CYCLE(
-        "Cycle",
-        "Your week of rites, each set on a day. Sealing the rite that falls on today " +
-            "earns a bonus on top of the trial's XP.",
+        { Words.cycle.c },
+        { "Your week of ${Words.rite.pl}, each set on a day. ${Words.sealing.c} the ${Words.rite.s} that falls on today " +
+            "earns a bonus on top of the ${Words.trial.s}'s XP." },
     ),
     LEVEL(
-        "Level and XP",
-        "Each sealed trial earns XP. Fill the XP bar to reach your next level. " +
+        { "Level and XP" },
+        { "Each ${Words.sealed.s} ${Words.trial.s} earns XP. Fill the XP bar to reach your next level. " +
             "The numbers show XP earned within this level and the XP it needs. " +
-            "Your ascension title follows your level; your Strength Rank follows your strength.",
+            Words.pick(
+                "Your ascension title follows your level; your Strength Rank follows your strength.",
+                "Your Strength Rank follows your strength, not your level.",
+            ) },
     ),
     OATH(
-        "Oath",
-        "The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: " +
+        { Words.oath.c },
+        { "The days you have kept training without a break. Every ${Words.sealed.s} ${Words.trial.s} keeps it, and so does a day of ${Words.respite.s}: " +
             "it only breaks when more than ${Streak.MAX_GAP_DAYS} days pass without one. " +
             "The count is the days since the chain began, so it grows every morning it lives. " +
-            "The Oath bar shows progress towards the next oath deed milestone.",
+            "The ${Words.oath.t} bar shows progress towards the next ${Words.oath.s} ${Words.deed.s} milestone." },
     ),
     SEAL(
-        "Seal",
-        "Finishing a trial. Sealing banks its XP and adds its strength score to your lifetime " +
-            "total. A sealed trial can still be amended later, and the difference is settled.",
+        { Words.seal.c },
+        { "Finishing ${Words.trial.a}. ${Words.sealing.c} banks its XP and adds its strength score to your lifetime " +
+            "total. ${Words.sealed.ca} ${Words.trial.s} can still be amended later, and the difference is settled." },
     ),
     SET_TYPES(
         "Set types",
-        "Each set wears a tag you can tap to change. " +
+        { "Each set wears a tag you can tap to change. " +
             SetKind.entries.joinToString(" ") { "${it.label}: ${it.blurb}" } +
-            " Only a warm-up is left out of XP and volume. On a lift with a top set, only the top set can set a peak or a record.",
+            " Only a warm-up is left out of XP and volume. On a lift with a top set, only the top set can set ${Words.peak.a} or a record." },
     ),
     THE_VEIL(
-        "The Veil",
-        "Where echoes gather essence while you are away. Your recent training sets the pace, " +
-            "so seal trials to raise it, then return to collect.",
+        { Words.theVeil.c },
+        { "Where echoes gather essence while you are away. Your recent training sets the pace, " +
+            "so ${Words.seal.s} ${Words.trial.pl} to raise it, then return to collect." },
     ),
+    ;
+
+    constructor(title: String, definition: String, stems: List<String> = emptyList()) : this({ title }, { definition }, stems)
+
+    /** Mixed forms: a fixed title over a definition that names concepts. */
+    constructor(title: String, definition: () -> String, stems: List<String> = emptyList()) : this({ title }, definition, stems)
+
+    val title: String get() = titleText()
+    val definition: String get() = definitionText()
 }
 
 /** Every [Term] named in [text], in declaration order, each once. */

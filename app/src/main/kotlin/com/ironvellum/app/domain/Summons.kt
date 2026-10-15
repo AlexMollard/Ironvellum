@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -72,15 +73,15 @@ object Summons {
         val setText = if (sets == 1) "1 set" else "$sets sets"
         val days = pluralDays(oathDays)
         val oathLine = when {
-            oathAtRisk -> "Your oath of $days ends tonight unless you seal a trial."
-            oathDays == 0 -> "Today's Trial starts the oath."
-            nextDeedDays != null -> "Oath · $days kept. Next deed at ${pluralDays(nextDeedDays)}."
-            else -> "Oath · $days kept."
+            oathAtRisk -> "Your ${Words.oath.s} of $days ends tonight unless you ${Words.seal.s} ${Words.trial.a}."
+            oathDays == 0 -> "Today's ${Words.trial.t} starts the ${Words.oath.s}."
+            nextDeedDays != null -> "${Words.oath.c} · $days kept. Next ${Words.deed.s} at ${pluralDays(nextDeedDays)}."
+            else -> "${Words.oath.c} · $days kept."
         }
         return Copy(
             // The rite keeps its own name and case (GLOSSARY: "THE SUMMONS · Heavy Pull").
-            title = "THE SUMMONS · $riteName",
-            text = if (oathAtRisk) "$exerciseText · $setText · your oath ends tonight." else "$exerciseText · $setText waiting.",
+            title = "${Words.theSummons.u} · $riteName",
+            text = if (oathAtRisk) "$exerciseText · $setText · your ${Words.oath.s} ends tonight." else "$exerciseText · $setText waiting.",
             bigText = "$riteName: $exerciseText, $setText today. $oathLine",
         )
     }

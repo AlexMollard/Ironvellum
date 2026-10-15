@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -43,10 +44,10 @@ internal fun NotificationAskSheet(onAllow: () -> Unit, onNotNow: () -> Unit) {
                 Column(Modifier.padding(top = 8.dp)) {
                     AskRow(Icons.Outlined.Timer, "Rest is over", "One buzz when the rest between sets is over.")
                     InkDivider()
-                    AskRow(Icons.Outlined.Notifications, "Trial in progress", "Live progress of the trial you have open, with Seal.")
+                    AskRow(Icons.Outlined.Notifications, "${Words.trial.c} in progress", "Live progress of the ${Words.trial.s} you have open, with ${Words.seal.t}.")
                 }
                 Text(
-                    "Not now asks again on your next trial, up to ${FirstRun.MAX_NOTIFICATION_ASKS} times in all. You can also allow it later in Settings.",
+                    "Not now asks again on your next ${Words.trial.s}, up to ${FirstRun.MAX_NOTIFICATION_ASKS} times in all. You can also allow it later in Settings.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 10.dp),

@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /** The scheme the Sets sheet marks SUGGESTED for a lift, with the one line that says why. */
 data class SuggestedScheme(val type: SchemeType, val reason: String)
 
@@ -19,7 +21,7 @@ object SchemeSuggestion {
             MuscleMap.isMobility(exerciseName) ->
                 SuggestedScheme(SchemeType.STRAIGHT, "Mobility drill: the same easy sets, never taken heavy or to a drop.")
             MuscleMap.isControl(exerciseName) || MuscleMap.isTechnique(exerciseName) ->
-                SuggestedScheme(SchemeType.STRAIGHT, "Technique-led: clean, even sets beat a heavy top set here.")
+                SuggestedScheme(SchemeType.STRAIGHT, "${Words.technique.c}-led: clean, even sets beat a heavy top set here.")
             bodyweightLift && oneSided ->
                 SuggestedScheme(SchemeType.STRAIGHT, "Balance-limited on one side: even sets keep the form, not a heavy top set.")
             profile?.compound == true ->

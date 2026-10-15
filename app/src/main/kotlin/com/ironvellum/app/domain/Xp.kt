@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.roundToInt
 
 /**
@@ -302,18 +303,20 @@ object Xp {
 
     // ------------------------------------------------------------ breakdown
 
-    enum class Kind(val label: String, val setDriven: Boolean) {
-        EXERCISE("", true),
-        ACTIVITY("", true),
-        PEAK("New peak", true),
-        RECORD("Strength record", true),
-        HONEST_EFFORT("Honest effort", false),
-        RITE_AS_PLANNED("Rite as planned", false),
-        WEEK_COVERED("Week covered", false),
-        WELCOME_BACK("Welcome back", false),
-        FIRST_OF_WEEK("First of the week", false),
-        QUEST("Today's trial", false),
-        COMPLETION("Trial complete", false),
+    enum class Kind(private val labelText: () -> String, val setDriven: Boolean) {
+        EXERCISE({ "" }, true),
+        ACTIVITY({ "" }, true),
+        PEAK({ "New ${Words.peak.s}" }, true),
+        RECORD({ "Strength record" }, true),
+        HONEST_EFFORT({ "Honest effort" }, false),
+        RITE_AS_PLANNED({ "${Words.rite.c} as planned" }, false),
+        WEEK_COVERED({ "Week covered" }, false),
+        WELCOME_BACK({ "Welcome back" }, false),
+        FIRST_OF_WEEK({ "First of the week" }, false),
+        QUEST({ "Today's ${Words.trial.s}" }, false),
+        COMPLETION({ "${Words.trial.c} complete" }, false);
+
+        val label: String get() = labelText()
     }
 
     /**

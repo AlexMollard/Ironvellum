@@ -51,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ChangeOp
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
@@ -197,14 +198,14 @@ internal fun OptimiseScreen(
             }
 
             else -> MessagePage(
-                title = "Optimise rites",
+                title = "Optimise ${Words.rite.pl}",
                 body = when (current) {
-                    OptimiseState.NoRites -> "No rites to optimise yet. Forge a cycle first, then come back and tighten it."
-                    OptimiseState.NeedsArmoury -> "Optimise ranks movements against your armoury. Choose it in the Forge, then come back."
-                    else -> "Reading your rites…"
+                    OptimiseState.NoRites -> "No ${Words.rite.pl} to optimise yet. ${Words.forge.c} ${Words.cycle.a} first, then come back and tighten it."
+                    OptimiseState.NeedsArmoury -> "Optimise ranks movements against your ${Words.armoury.s}. Choose it in ${Words.theForge.t}, then come back."
+                    else -> "${Words.reads.c} your ${Words.rite.pl}…"
                 },
                 action = when (current) {
-                    OptimiseState.NoRites, OptimiseState.NeedsArmoury -> "Forge a cycle" to onForgeCycle
+                    OptimiseState.NoRites, OptimiseState.NeedsArmoury -> "${Words.forge.c} ${Words.cycle.a}" to onForgeCycle
                     else -> null
                 },
                 onBack = onBack,
@@ -288,7 +289,7 @@ private fun ReadyPages(
                     subtitle = if (finding.load.weekly > ProgramRules.HEAVY_WEEK) {
                         "${hardSetsLabel(finding.load.weekly)} a week"
                     } else {
-                        "${hardSetsLabel(finding.load.maxSession)} in one rite"
+                        "${hardSetsLabel(finding.load.maxSession)} in one ${Words.rite.s}"
                     },
                     report = report,
                     focus = finding.muscle,
@@ -366,7 +367,7 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(20.dp))
         ForgeHeader(
-            "Optimise rites",
+            "Optimise ${Words.rite.pl}",
             onBack,
             subtitle = if (report.nothing) "Nothing to change" else "${report.findings} ${if (report.findings == 1) "thing" else "things"} to look at",
         )
@@ -374,7 +375,7 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
             if (report.nothing) {
                 NothingCard()
             } else {
-                OptNote("Suggestions change the rites you already have. Nothing is written until you apply it.")
+                OptNote("Suggestions change the ${Words.rite.pl} you already have. Nothing is written until you apply it.")
             }
             if (report.gaps.isNotEmpty()) {
                 OptLabel("Gaps")
@@ -400,7 +401,7 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
                     report.heavy.forEachIndexed { index, finding ->
                         if (index > 0) InkDivider()
                         val weekly = finding.load.weekly > ProgramRules.HEAVY_WEEK
-                        val sets = if (weekly) "${hardSetsLabel(finding.load.weekly)} a week" else "${hardSetsLabel(finding.load.maxSession)} in one rite"
+                        val sets = if (weekly) "${hardSetsLabel(finding.load.weekly)} a week" else "${hardSetsLabel(finding.load.maxSession)} in one ${Words.rite.s}"
                         FindingRow(
                             state = CoverageState.HEAVY,
                             title = finding.muscle.label,
@@ -462,7 +463,7 @@ private fun NothingCard() {
             color = IronvellumColors.Ink,
             modifier = Modifier.semantics { heading() },
         )
-        OptNote("Your rites cover every muscle without running any heavy, and no two movements do one job.")
+        OptNote("Your ${Words.rite.pl} cover every muscle without running any heavy, and no two movements do one job.")
     }
 }
 
@@ -498,7 +499,7 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     if ((load?.weekly ?: 0.0) <= 0.0) {
-                        "Nothing in your cycle trains ${muscle.label.lowercase()} directly. ${ProgramRules.COVERED_MIN.toInt()} or more hard sets a week gets it covered."
+                        "Nothing in your ${Words.cycle.s} trains ${muscle.label.lowercase()} directly. ${ProgramRules.COVERED_MIN.toInt()} or more hard sets a week gets it covered."
                     } else {
                         "${ProgramRules.COVERED_MIN.toInt()} or more hard sets a week gets ${muscle.label.lowercase()} covered."
                     },
@@ -506,10 +507,10 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
                     color = IronvellumColors.InkMuted,
                 )
                 if (ranked.isEmpty()) {
-                    OptNote("Nothing in your armoury trains it. Another armoury, or a rite forged for it, would.")
+                    OptNote("Nothing in your ${Words.armoury.s} trains it. Another ${Words.armoury.s}, or ${Words.rite.a} ${Words.forged.s} for it, would.")
                 } else {
                     Text(
-                        "Fits your armoury · ranked best first",
+                        "Fits your ${Words.armoury.s} · ranked best first",
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.semantics { heading() },
@@ -914,7 +915,7 @@ private fun OverlapPage(
                         onChoose = { onPicks(picks.with(change, picks.keepOf(change), it)) },
                     )
                 } else {
-                    OptNote("Nothing in your armoury makes a better pair, so the change removes $from.")
+                    OptNote("Nothing in your ${Words.armoury.s} makes a better pair, so the change removes $from.")
                 }
                 Spacer(Modifier.height(8.dp))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
@@ -990,7 +991,7 @@ private fun AppliedPage(applied: Applied, saving: Boolean, error: String?, onUnd
             primary = "Done",
             onPrimary = onDone,
             enabled = !saving,
-            link = if (applied.riteNames.size == 1) "Undo, put ${applied.riteNames.single()} back" else "Undo, put the rites back",
+            link = if (applied.riteNames.size == 1) "Undo, put ${applied.riteNames.single()} back" else "Undo, put the ${Words.rite.pl} back",
             onLink = onUndo,
         )
     }

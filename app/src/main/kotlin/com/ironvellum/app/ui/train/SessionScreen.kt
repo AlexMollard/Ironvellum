@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
@@ -427,7 +428,7 @@ class SessionViewModel(
         _routineUpdate.value = null
         if (accepted.isEmpty() && swaps.isEmpty() && additions.isEmpty() && links.isEmpty()) return
         // The screen may leave straight after; the write must not die with it.
-        viewModelScope.launchGuarded("update rite") {
+        viewModelScope.launchGuarded("update ${Words.rite.s}") {
             withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted, swaps, additions, links) }
         }
     }
@@ -632,7 +633,7 @@ class SessionViewModel(
      * guard on the screen never sees a sealed trial with no result and leaves.
      */
     fun reopen(onReopened: () -> Unit, onRefused: (SealedReopen.Refusal) -> Unit) {
-        viewModelScope.launchGuarded("reopen trial") {
+        viewModelScope.launchGuarded("reopen ${Words.trial.s}") {
             when (val decision = repo.reopenSealedTrial(sessionId)) {
                 is SealedReopen.Decision.Refuse -> onRefused(decision.reason)
                 is SealedReopen.Decision.Reopen -> {
@@ -839,7 +840,7 @@ fun SessionScreen(
     if (session == null) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Opening the trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text("Opening the ${Words.trial.s}…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         return
     }
@@ -850,7 +851,7 @@ fun SessionScreen(
     if (session.completedAtMs != null && completion == null && !claiming) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Trial already sealed.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text("${Words.trial.c} already ${Words.sealed.s}.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         LaunchedEffect(session.id) { onSealed() }
         return
@@ -1043,7 +1044,7 @@ fun SessionScreen(
     // and it read "Trial in progress" behind a sealed trial).
     if (completion != null) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Trial sealed", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+            Text("${Words.trial.c} ${Words.sealed.s}", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
             Text(session.title.ifBlank { session.label }, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
     } else Box(Modifier.fillMaxSize()) {
@@ -1296,9 +1297,9 @@ fun SessionScreen(
                     Spacer(Modifier.height(32.dp))
                     SlideToSeal(
                         label = if (anyDone) {
-                            "$unlogged ${plural(unlogged, "set", "sets")} left · slide to seal"
+                            "$unlogged ${plural(unlogged, "set", "sets")} left · slide to ${Words.seal.s}"
                         } else {
-                            "Log a set to seal the trial"
+                            "Log a set to ${Words.seal.s} the ${Words.trial.s}"
                         },
                         enabled = anyDone && !claiming,
                         onSealed = ::requestSeal,
@@ -1374,8 +1375,8 @@ fun SessionScreen(
     if (confirmAbandon) {
         IronvellumDialog(
             onDismissRequest = { confirmAbandon = false },
-            title = { Text("Abandon this trial?") },
-            text = { Text("Unsealed trials grant no XP and are erased from the Chronicle.") },
+            title = { Text("Abandon this ${Words.trial.s}?") },
+            text = { Text("${Words.unsealed.c} ${Words.trial.pl} grant no XP and are erased from ${Words.theChronicle.t}.") },
             // Staying is the filled action; abandoning wears the danger style, so a
             // reflex tap on the bright button never erases the trial.
             confirmButton = {
@@ -1431,16 +1432,16 @@ fun SessionScreen(
             title = {
                 Text(
                     if (unlogged == 0) {
-                        "Seal the trial?"
+                        "${Words.seal.c} the ${Words.trial.s}?"
                     } else {
-                        "Seal with $unlogged ${plural(unlogged, "set", "sets")} unlogged?"
+                        "${Words.seal.c} with $unlogged ${plural(unlogged, "set", "sets")} unlogged?"
                     },
                 )
             },
             text = {
                 Text(
                     if (unlogged == 0) {
-                        "Every set is logged. Seal it now?"
+                        "Every set is logged. ${Words.seal.c} it now?"
                     } else {
                         "${plural(unlogged, "It", "They")} won't count."
                     },
@@ -1450,7 +1451,7 @@ fun SessionScreen(
             // slot; KEEP GOING is the safe default.
             confirmButton = {
                 IronvellumButton(
-                    if (unlogged == 0) "Seal" else "Seal anyway",
+                    if (unlogged == 0) Words.seal.c else "${Words.seal.c} anyway",
                     onClick = {
                         confirmClaim = false
                         viewModel.complete()
@@ -1758,11 +1759,11 @@ fun SessionScreen(
     if (confirmReopen) {
         IronvellumDialog(
             onDismissRequest = { confirmReopen = false },
-            title = { Text("Reopen this trial?") },
-            text = { Text("The XP it paid is taken back until you seal again.") },
+            title = { Text("Reopen this ${Words.trial.s}?") },
+            text = { Text("The XP it paid is taken back until you ${Words.seal.s} again.") },
             // Keeping it sealed is the filled action: a reflex tap changes nothing.
             confirmButton = {
-                IronvellumButton("Keep it sealed", onClick = { confirmReopen = false })
+                IronvellumButton("Keep it ${Words.sealed.s}", onClick = { confirmReopen = false })
             },
             dismissButton = {
                 IronvellumButton(
@@ -1783,7 +1784,7 @@ fun SessionScreen(
     reopenRefusal?.let { reason ->
         IronvellumDialog(
             onDismissRequest = { reopenRefusal = null },
-            title = { Text("This trial stays sealed") },
+            title = { Text("This ${Words.trial.s} stays ${Words.sealed.s}") },
             text = { Text(reopenRefusalText(reason)) },
             confirmButton = { IronvellumButton("OK", onClick = { reopenRefusal = null }) },
         )
@@ -1801,10 +1802,10 @@ fun SessionScreen(
 
 /** Why a trial cannot be reopened, in the words the dialog shows. */
 private fun reopenRefusalText(reason: SealedReopen.Refusal): String = when (reason) {
-    SealedReopen.Refusal.NOT_SEALED -> "This trial is already open."
-    SealedReopen.Refusal.WINDOW_CLOSED -> "Ten minutes have passed. Amend it from the Chronicle instead."
-    SealedReopen.Refusal.ANOTHER_LIVE -> "Another trial is open. Seal or abandon it first."
-    SealedReopen.Refusal.AMENDED -> "It was amended after sealing, so it cannot be taken back."
+    SealedReopen.Refusal.NOT_SEALED -> "This ${Words.trial.s} is already open."
+    SealedReopen.Refusal.WINDOW_CLOSED -> "Ten minutes have passed. Amend it from ${Words.theChronicle.t} instead."
+    SealedReopen.Refusal.ANOTHER_LIVE -> "Another ${Words.trial.s} is open. ${Words.seal.c} or abandon it first."
+    SealedReopen.Refusal.AMENDED -> "It was amended after ${Words.sealing.s}, so it cannot be taken back."
     SealedReopen.Refusal.LEDGER_SHORT -> "The XP it paid has been spent, so it cannot be taken back."
 }
 
@@ -2071,7 +2072,7 @@ private fun referenceLine(
         if (lastText != null) append("Last $lastText")
         if (lastText != null && peakText != null) append(" · ")
         if (peakText != null) {
-            append("Peak ")
+            append("${Words.peak.c} ")
             withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(peakText) }
         }
     }
@@ -2148,7 +2149,7 @@ private fun TrialHeader(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Trial in progress",
+                    "${Words.trial.c} in progress",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 1,
@@ -2171,7 +2172,7 @@ private fun TrialHeader(
                 "BACK",
                 Icons.AutoMirrored.Filled.ArrowBack,
                 onClick = onBack,
-                modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
+                modifier = Modifier.semantics { onClick(label = "Leave, the ${Words.trial.s} keeps running", action = null) },
             )
             InkIconButton(onClick = onLock, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Outlined.Lock, contentDescription = "Lock the screen", tint = IronvellumColors.InkMuted)
@@ -2195,7 +2196,7 @@ private fun TrialHeader(
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text("Abandon trial", color = IronvellumColors.DangerRed) },
+                        text = { Text("Abandon ${Words.trial.s}", color = IronvellumColors.DangerRed) },
                         onClick = {
                             menuOpen = false
                             onAbandon()
@@ -2833,7 +2834,7 @@ private fun TrialSetRow(
             )
             Spacer(Modifier.width(3.dp))
             Text(
-                "NEW PEAK",
+                "NEW ${Words.peak.u}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
@@ -3145,7 +3146,7 @@ private fun TrialEndRows(
         FolderRuleFull()
         EndRow(Icons.Filled.Add, "Add exercise", null, false, onAddExercise)
         FolderRuleFull()
-        EndRow(Icons.Outlined.Edit, "Name this trial", nameValue, nameSet, onName)
+        EndRow(Icons.Outlined.Edit, "Name this ${Words.trial.s}", nameValue, nameSet, onName)
         FolderRuleFull()
         EndRow(Icons.Outlined.EditNote, "Add a note", noteValue ?: "Share it, or keep it private", noteValue != null, onNote)
         FolderRuleFull()
@@ -3221,11 +3222,11 @@ private fun TrialFooter(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            allLogged -> SlideToSeal(label = "Slide to seal", onSealed = onSealed, resetKey = slideReset)
+            allLogged -> SlideToSeal(label = "Slide to ${Words.seal.s}", onSealed = onSealed, resetKey = slideReset)
             rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip, effortSet, effortLabel, onRate)
             nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, noRestYet, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
-            else -> SlideToSeal(label = "Log a set to seal the trial", onSealed = onSealed, enabled = false)
+            else -> SlideToSeal(label = "Log a set to ${Words.seal.s} the ${Words.trial.s}", onSealed = onSealed, enabled = false)
         }
     }
 }
@@ -3623,7 +3624,7 @@ private fun TrialNameDialog(
     var draft by rememberSaveable { mutableStateOf(current) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Name this trial") },
+        title = { Text("Name this ${Words.trial.s}") },
         text = {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
@@ -3633,7 +3634,7 @@ private fun TrialNameDialog(
                 label = {
                     FieldLabel(
                         icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
-                        text = if (signedIn) "Name · optional, shown in Tidings" else "Name · optional",
+                        text = if (signedIn) "Name · optional, shown in ${Words.tidings.t}" else "Name · optional",
                         color = IronvellumColors.InkMuted,
                     )
                 },
@@ -3669,7 +3670,7 @@ private fun ExerciseNoteDialog(
         title = {
             Column {
                 Text(name)
-                Text("Note for this trial", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text("Note for this ${Words.trial.s}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
         },
         text = {
@@ -3723,11 +3724,11 @@ private fun TrialNoteDialog(
                     label = {
                         FieldLabel(
                             icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
-                            text = if (signedIn) "Public note · every Ironbound in Tidings can read this" else "Note · shared with allies once you sign in",
+                            text = if (signedIn) "Public note · every ${Words.lifter.t} in ${Words.tidings.t} can read this" else "Note · shared with ${Words.ally.pl} once you sign in",
                             color = IronvellumColors.SystemGreen,
                         )
                     },
-                    placeholder = { Text("How did the trial go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                    placeholder = { Text("How did the ${Words.trial.s} go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
                     trailingIcon = { CharCounter(pub.length, PUBLIC_NOTE_CAP, IronvellumColors.SystemGreen) },
                     colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
                     modifier = Modifier.fillMaxWidth(),
@@ -4106,11 +4107,11 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (offer.changes.isEmpty()) {
-                        if (offer.swaps.isNotEmpty()) "Keep today's swaps in your rite?" else "Keep today's changes in your rite?"
+                        if (offer.swaps.isNotEmpty()) "Keep today's swaps in your ${Words.rite.s}?" else "Keep today's changes in your ${Words.rite.s}?"
                     } else if (shortDay) {
                         "Unticked sets don't lower the set count. Tick the changes to keep."
                     } else {
-                        "Bring your rite in line with today's trial?"
+                        "Bring your ${Words.rite.s} in line with today's ${Words.trial.s}?"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -4142,7 +4143,7 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Keep in rite" else "Just this once",
+                        label = if (on) "Keep in ${Words.rite.s}" else "Just this once",
                         figures = swap.line,
                         labelWidth = 104.dp,
                     ) { kept = if (on) kept - swap.entry.id else kept + swap.entry.id }
@@ -4152,7 +4153,7 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Add to rite" else "Just this once",
+                        label = if (on) "Add to ${Words.rite.s}" else "Just this once",
                         figures = "${add.line} · " + SchemeText.figure(
                             add.entry.scheme, add.entry.targetSets, add.entry.targetReps, add.entry.targetWeightKg,
                             load = { Units.label(it, true) }, hold = add.isHold,
@@ -4168,7 +4169,7 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Link in rite" else "Just this once",
+                        label = if (on) "Link in ${Words.rite.s}" else "Just this once",
                         figures = "Superset: ${link.line}" + if (ready) "" else " (needs the added lift)",
                         labelWidth = 104.dp,
                     ) { if (ready) linksKept = if (on) linksKept - link else linksKept + link }
@@ -4189,12 +4190,12 @@ private fun RoutineUpdateDialog(
                     }
                 }
                 IronvellumButton(
-                    "Update rite",
+                    "Update ${Words.rite.s}",
                     enabled = narrowed.isNotEmpty() || keptSwaps.isNotEmpty() || keptAdditions.isNotEmpty() || keptLinks.isNotEmpty(),
                     onClick = { onUpdate(narrowed, keptSwaps, keptAdditions, keptLinks) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                IronvellumButton("Keep rite", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
+                IronvellumButton("Keep ${Words.rite.s}", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
             }
         },
     )

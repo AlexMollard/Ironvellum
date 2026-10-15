@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PocketLock
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -87,9 +88,9 @@ internal fun PocketLockOverlay(
                 })
             }
             .semantics(mergeDescendants = true) {
-                contentDescription = "Trial locked. ${summary ?: "Hold to unlock."}"
-                customActions = listOf(CustomAccessibilityAction("Unlock the trial") { unlock(); true })
-                onLongClick(label = "Unlock the trial") { unlock(); true }
+                contentDescription = "${Words.trial.c} locked. ${summary ?: "Hold to unlock."}"
+                customActions = listOf(CustomAccessibilityAction("Unlock the ${Words.trial.s}") { unlock(); true })
+                onLongClick(label = "Unlock the ${Words.trial.s}") { unlock(); true }
             },
         contentAlignment = Alignment.Center,
     ) {

@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
@@ -200,7 +202,7 @@ fun SkillDetailSheet(
         {
             InfoFigures(
                 listOf(
-                    InfoFigure("TO CLAIM", SkillGuidance.withUnit(skill.target, skill)),
+                    InfoFigure("TO ${Words.claim.u}", SkillGuidance.withUnit(skill.target, skill)),
                     InfoFigure("REWARD", "+${skill.xp}", unit = "XP", color = IronvellumColors.SovereignGold),
                 ),
             )
@@ -221,7 +223,7 @@ fun SkillDetailSheet(
             else if (!unlocked) add(InfoChip("Locked", IronvellumColors.DangerRed))
         },
         // Fixed in the header, so the question stays on screen whichever page is open.
-        subtitle = if (mastered && confirmUnclaim) "Give the technique back? The $refundXp XP is removed too." else null,
+        subtitle = if (mastered && confirmUnclaim) "Give the ${Words.technique.s} back? The $refundXp XP is removed too." else null,
         subtitleColor = IronvellumColors.DangerRed,
         actions = when {
             mastered && confirmUnclaim -> listOf(
@@ -234,7 +236,7 @@ fun SkillDetailSheet(
             )
             unlocked -> listOf(
                 InfoAction("Train it", onTrain, quiet = true),
-                InfoAction("Claim", onClaim, gold = cleared, quiet = !cleared),
+                InfoAction(Words.claim.c, onClaim, gold = cleared, quiet = !cleared),
             )
             else -> listOf(InfoAction("Train it", onTrain, quiet = true))
         },
@@ -262,7 +264,7 @@ fun SkillDetailSheet(
                             }
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(0.58f)) {
-                                PanelLabel("CLAIM STANDARD")
+                                PanelLabel(Lines.claimStandard)
                                 Spacer(Modifier.height(8.dp))
                                 Text(standard, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
                                 Spacer(Modifier.height(20.dp))
@@ -273,7 +275,7 @@ fun SkillDetailSheet(
                         }
                     }
                 } else {
-                    text("CLAIM STANDARD", standard, IronvellumColors.SovereignGold)
+                    text(Lines.claimStandard, standard, IronvellumColors.SovereignGold)
                     text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
                 }
                 // The same figure and gear line the exercise sheet shows.
@@ -334,7 +336,7 @@ fun SkillDetailSheet(
                         "ATTEMPTS",
                         recent.map { entry ->
                             formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
-                                entry.claimed -> "CLAIMED"
+                                entry.claimed -> Words.claimed.u
                                 entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}${Units.name}"
                                 else -> SkillGuidance.withUnit(entry.value, skill)
                             }
@@ -348,9 +350,8 @@ fun SkillDetailSheet(
                 formFacts(skill.name)
                 if (!mastered && unlocked) {
                     text(
-                        "BEFORE YOU CLAIM",
-                        (if (cleared) "You've cleared this: claim it when you're ready. " else "Claiming is self-declared: the app never claims for you. ") +
-                            "Claim only once you can hit ${SkillGuidance.withUnit(skill.target, skill)} on demand. It awards ${skill.xp} XP and can be undone.",
+                        "BEFORE YOU ${Words.claim.u}",
+                        Lines.claimHelp(cleared, SkillGuidance.withUnit(skill.target, skill), skill.xp),
                         IronvellumColors.InkMuted,
                     )
                 }

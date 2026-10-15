@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -102,8 +103,9 @@ internal fun sealGeometry(rarity: TitleRarity): SealGeometry = Seals.getValue(ra
  * The category glyphs on a 24-unit grid, one stroked path set each: the mockup's SVG paths
  * verbatim. An unknown name falls back to Activities.
  */
+private val TrialGlyph = listOf("M3 7h13l5 2-2 2h-4c0 2-1 3-3 3v2h3v3H7v-3h3v-2C6 14 4 11 3 7z")
+
 private val GlyphPaths: Map<String, List<String>> = mapOf(
-    "Trials" to listOf("M3 7h13l5 2-2 2h-4c0 2-1 3-3 3v2h3v3H7v-3h3v-2C6 14 4 11 3 7z"),
     "Level" to listOf("M5 12l7-7 7 7M5 19l7-7 7 7"),
     "Volume" to listOf("M5 5V19M9.5 5V19M14 5V19M18.5 5V19M3 16.5L21 7.5"),
     "Strength" to listOf(
@@ -120,7 +122,7 @@ private val GlyphPaths: Map<String, List<String>> = mapOf(
 )
 
 private fun glyphPath(category: String): Path {
-    val d = GlyphPaths[category] ?: GlyphPaths.getValue("Activities")
+    val d = if (category == Words.trial.cpl) TrialGlyph else GlyphPaths[category] ?: GlyphPaths.getValue("Activities")
     return Path().also { all -> d.forEach { all.addPath(PathParser().parsePathString(it).toPath()) } }
 }
 

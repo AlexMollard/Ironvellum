@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 /**
  * What kind of set a logged set is. Working is the default and the only kind a
  * plain tick ever writes. Top, Back-off, Drop, Failure and Rest-pause are working
@@ -15,15 +17,17 @@ enum class SetKind(
     /** The letter on the set row's tag; blank for a plain working set. */
     val tag: String,
     /** One line for the explainer sheet. */
-    val blurb: String,
+    private val blurbText: () -> String,
 ) {
-    WORKING("working", "Working", "", "A normal set you count: it earns XP and can set a peak."),
-    WARMUP("warmup", "Warm-up", "W", "A lighter set to prepare. It never earns XP, volume or a peak."),
-    TOP("top", "Top set", "T", "The heaviest set of the lift, taken near your limit. It counts as a working set and is the one a peak is judged on."),
-    BACKOFF("backoff", "Back-off", "B", "A lighter set after the top set, for volume. It counts as a working set."),
-    DROP("drop", "Drop", "D", "Straight after a set to the limit, cut the load and keep going. It counts as a working set."),
-    FAILURE("failure", "Failure", "F", "Taken until no clean rep was left. It counts as a working set."),
-    REST_PAUSE("rest_pause", "Rest-pause", "R", "A short breath mid-set, then more reps at the same load. It counts as a working set.");
+    WORKING("working", "Working", "", { "A normal set you count: it earns XP and can set ${Words.peak.a}." }),
+    WARMUP("warmup", "Warm-up", "W", { "A lighter set to prepare. It never earns XP, volume or ${Words.peak.a}." }),
+    TOP("top", "Top set", "T", { "The heaviest set of the lift, taken near your limit. It counts as a working set and is the one ${Words.peak.a} is judged on." }),
+    BACKOFF("backoff", "Back-off", "B", { "A lighter set after the top set, for volume. It counts as a working set." }),
+    DROP("drop", "Drop", "D", { "Straight after a set to the limit, cut the load and keep going. It counts as a working set." }),
+    FAILURE("failure", "Failure", "F", { "Taken until no clean rep was left. It counts as a working set." }),
+    REST_PAUSE("rest_pause", "Rest-pause", "R", { "A short breath mid-set, then more reps at the same load. It counts as a working set." });
+
+    val blurb: String get() = blurbText()
 
     /** False only for a warm-up. */
     val countsAsWork: Boolean get() = this != WARMUP

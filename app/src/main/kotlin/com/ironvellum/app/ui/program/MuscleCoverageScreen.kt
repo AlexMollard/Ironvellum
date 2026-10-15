@@ -59,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.MuscleMap
@@ -284,7 +285,7 @@ internal fun CoveragePreviewScreen(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            PushedHeader("Coverage of this cycle", onBack)
+            PushedHeader("Coverage of this ${Words.cycle.s}", onBack)
             Spacer(Modifier.height(8.dp))
             Text(
                 coverageHeadline(tally),
@@ -343,14 +344,14 @@ private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             if (onOptimise != null) {
                 IronvellumButton(
-                    label = "Optimise rites",
+                    label = "Optimise ${Words.rite.pl}",
                     onClick = onOptimise,
                     quiet = onForge != null,
                     modifier = Modifier.weight(1f),
                 )
             }
             if (onForge != null) {
-                IronvellumButton(label = "Forge a rite", onClick = onForge, modifier = Modifier.weight(1f))
+                IronvellumButton(label = "${Words.forge.c} ${Words.rite.a}", onClick = onForge, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -396,9 +397,9 @@ internal fun CoveragePage(
         if (empty) {
             Text(
                 if (view == CoverageView.CYCLE) {
-                    "No rites are written yet. Build a cycle and it will be mapped here."
+                    "No ${Words.rite.pl} are written yet. Build ${Words.cycle.a} and it will be mapped here."
                 } else {
-                    "The Chronicle is blank for the last 7 days. Seal a trial and it is mapped here."
+                    "${Words.theChronicle.c} is blank for the last 7 days. ${Words.seal.c} ${Words.trial.a} and it is mapped here."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.InkMuted,
@@ -560,7 +561,7 @@ private fun UncountedRitesLine(count: Int, onOpen: () -> Unit) {
             .heightIn(min = 48.dp)
             .clickable(
                 role = Role.Button,
-                onClickLabel = if (count == 1) "Open that rite to give it a day" else "Open your rites to give them days",
+                onClickLabel = if (count == 1) "Open that ${Words.rite.s} to give it a day" else "Open your ${Words.rite.pl} to give them days",
                 onClick = onOpen,
             )
             .semantics(mergeDescendants = true) { contentDescription = line },

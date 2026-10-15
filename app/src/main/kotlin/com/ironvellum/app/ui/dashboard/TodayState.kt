@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.dashboard
 
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.HouseEffects
@@ -246,28 +247,6 @@ private fun rowsThatFit(b: TodayBudget, room: Int, mayTruncate: Boolean): Pair<I
 /** "40" for a whole rate, "12.5" otherwise. */
 internal fun rateLabel(perHour: Double): String =
     if (perHour % 1.0 == 0.0) "%.0f".format(java.util.Locale.US, perHour) else "%.1f".format(java.util.Locale.US, perHour)
-
-/**
- * The one italic line under the rite name, by state. All of Today's narration lives here so the voice
- * is read, tested and kept free of retired words in one place. [setsDone] and [setsTotal] are the live
- * trial's working sets; [daysKept] is the oath's count.
- */
-internal fun narratorLine(kind: DayKind, setsDone: Int = 0, setsTotal: Int = 0, daysKept: Int = 0): String = when (kind) {
-    DayKind.BEGIN ->
-        if (daysKept > 0) "The page is blank. $daysKept ${plural(daysKept, "day", "days")} of ink behind it."
-        else "The page is blank."
-    DayKind.LIVE -> when {
-        setsDone <= 0 -> "The page is blank. Ink the first set."
-        setsDone >= setsTotal -> "Every set is inked. Seal the page."
-        setsDone * 3 < setsTotal -> "$setsDone ${plural(setsDone, "set", "sets")} inked. The page begins to fill."
-        else -> "$setsDone ${plural(setsDone, "set", "sets")} inked. The page is half written."
-    }
-    DayKind.SEALED -> "The Ledger gilds its page."
-    DayKind.PLANNED -> "The page waits for its day."
-    DayKind.RESPITE ->
-        if (daysKept > 0) "The Ledger rests its pen. Your oath holds." else "The Ledger rests its pen."
-    DayKind.NO_CYCLE -> "Your cycle is unwritten. Forge one and its rites land here."
-}
 
 /**
  * The Veil's reserved inscriptions line. It is shown in every Veil form whether or not any wait, so the

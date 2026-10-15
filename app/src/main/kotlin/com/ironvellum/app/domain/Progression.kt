@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+
 enum class TrainingMode {
     STRENGTH,
     HYPERTROPHY,
@@ -176,7 +178,7 @@ object Progression {
                 return Recommendation(
                     backedOff,
                     if (hold) targetReps else band.first,
-                    "Stalled ${stalls + 1} trials — deload to ${Loads.withUnit(backedOff, unit)}, $rebuild",
+                    "Stalled ${stalls + 1} ${Words.trial.pl} — deload to ${Loads.withUnit(backedOff, unit)}, $rebuild",
                     deload = true,
                     changed = true,
                 )
@@ -194,30 +196,30 @@ object Progression {
             Lever.CONTROL -> return Recommendation(
                 weight, targetReps,
                 listOf(
-                    "Trial cleared — reach a little further before adding reps",
-                    "Trial cleared — slow the way out to 3 s",
-                    "Trial cleared — add 2 reps, same range and pace",
+                    "${Words.trial.c} cleared — reach a little further before adding reps",
+                    "${Words.trial.c} cleared — slow the way out to 3 s",
+                    "${Words.trial.c} cleared — add 2 reps, same range and pace",
                 )[cue],
                 changed = true,
             )
             Lever.MOBILITY -> return Recommendation(
                 weight, targetReps,
                 listOf(
-                    "Trial cleared — move a little further into the range",
-                    "Trial cleared — hold the end position 2 s longer",
-                    "Trial cleared — go slower into the end range",
+                    "${Words.trial.c} cleared — move a little further into the range",
+                    "${Words.trial.c} cleared — hold the end position 2 s longer",
+                    "${Words.trial.c} cleared — go slower into the end range",
                 )[cue],
                 changed = true,
             )
             Lever.SKILL -> return Recommendation(
-                weight, targetReps, "Trial cleared — own this step, then move to the next one", changed = true,
+                weight, targetReps, "${Words.trial.c} cleared — own this step, then move to the next one", changed = true,
             )
             Lever.HOLD -> {
                 val grown = (lastReps + HOLD_STEP_SECONDS).coerceAtMost(range?.last ?: Int.MAX_VALUE)
                 return if (grown > lastReps) {
-                    Recommendation(weight, grown, "Trial cleared — hold ${grown - lastReps} s longer next trial", changed = true)
+                    Recommendation(weight, grown, "${Words.trial.c} cleared — hold ${grown - lastReps} s longer next ${Words.trial.s}", changed = true)
                 } else {
-                    Recommendation(weight, lastReps, "Trial cleared — top of your range, hold $lastReps s again")
+                    Recommendation(weight, lastReps, "${Words.trial.c} cleared — top of your range, hold $lastReps s again")
                 }
             }
             Lever.LOAD, Lever.REPS_THEN_LOAD -> Unit

@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.currentStateAsState
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CrestDef
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.VaultSlot
@@ -169,7 +170,7 @@ internal fun VeilSection(
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .clickable(role = Role.Button, onClickLabel = "Open the Veil", onClick = onOpen)
+                        .clickable(role = Role.Button, onClickLabel = "Open ${Words.theVeil.t}", onClick = onOpen)
                         .padding(top = if (form == VeilForm.COMPACT) 2.dp else 10.dp),
                 ) {
                     when (form) {
@@ -217,7 +218,7 @@ private fun PerkChip(crest: CrestDef, perHour: Double, onOpen: () -> Unit) {
 private fun TitleRow(trailing: @Composable RowScope.() -> Unit, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "The Veil",
+            Words.theVeil.c,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = IronvellumColors.Ink,
@@ -423,7 +424,7 @@ private fun InscriptionsSlot(waiting: Int?, buyPrice: Long?, onOpen: () -> Unit)
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
                     .heightIn(min = SLOT_HEIGHT)
-                    .clickable(role = Role.Button, onClickLabel = if (line.waiting) "Inscribe in the Veil" else "Buy an inscription in the Veil", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = if (line.waiting) "Inscribe in ${Words.theVeil.t}" else "Buy an inscription in ${Words.theVeil.t}", onClick = onOpen)
                     .padding(start = 12.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
             )

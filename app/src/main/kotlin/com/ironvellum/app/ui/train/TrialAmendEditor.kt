@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.data.Units
 import androidx.compose.foundation.clickable
@@ -337,7 +338,7 @@ internal fun AmendSaveBar(canSave: Boolean, xpDelta: Int?, onSave: () -> Unit, o
     } else {
         Column(Modifier.fillMaxWidth().background(IronvellumColors.VaultHigh).padding(16.dp)) {
             Text(
-                "Tick at least one set to save. A trial with nothing done is deleted, not amended.",
+                "Tick at least one set to save. ${Words.trial.ca} with nothing done is deleted, not amended.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
@@ -428,7 +429,7 @@ internal fun AmendConfirmDialog(
 ) {
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Amend this trial?", color = IronvellumColors.Ink) },
+        title = { Text("Amend this ${Words.trial.s}?", color = IronvellumColors.Ink) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -439,12 +440,12 @@ internal fun AmendConfirmDialog(
                     color = if (settlement.applied > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink,
                 )
                 Text(
-                    "Allies see it marked amended. Deeds already earned stay earned, and no inscriptions are paid.",
+                    "${Words.ally.cpl} see it marked amended. ${Words.deed.cpl} already earned stay earned, and no inscriptions are paid.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
                 Text(
-                    "Within 48 h of sealing, a change can raise XP to at most double what the trial first paid. After that it can only lower it.",
+                    "Within 48 h of ${Words.sealing.s}, a change can raise XP to at most double what the ${Words.trial.s} first paid. After that it can only lower it.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

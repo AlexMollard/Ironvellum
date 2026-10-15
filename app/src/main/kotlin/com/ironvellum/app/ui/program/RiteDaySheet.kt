@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
@@ -31,7 +32,7 @@ internal val DAY_PICKS = listOf(
  * rite, and "No day" says what it costs: Weekly coverage counts only rites that have a day.
  */
 internal fun daySheetNote(picked: Int?, saved: List<WorkoutPreset>): String {
-    if (picked == null) return "A rite with no day is not counted in Weekly coverage."
+    if (picked == null) return "${Words.rite.ca} with no day is not counted in Weekly coverage."
     val holders = saved.filter { it.scheduledDay == picked }.map { it.name }
     return if (holders.isEmpty()) {
         "${dayLabel(picked)} is free."
@@ -58,7 +59,7 @@ internal fun RiteDaySheet(
     val taken = saved.filter { it.scheduledDay != null }.groupBy { it.scheduledDay!! }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Which day is ${riteName.ifBlank { "this rite" }} on?") },
+        title = { Text("Which day is ${riteName.ifBlank { "this ${Words.rite.s}" }} on?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DAY_PICKS.chunked(4).forEach { chunk ->
@@ -96,7 +97,7 @@ internal fun RiteDaySheet(
                 }
             }
         },
-        confirmButton = { IronvellumButton(label = "Add this rite", onClick = onConfirm, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) },
+        confirmButton = { IronvellumButton(label = "Add this ${Words.rite.s}", onClick = onConfirm, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) },
         dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
     )
 }

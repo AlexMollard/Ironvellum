@@ -18,6 +18,7 @@ import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Supersets
@@ -248,11 +249,11 @@ class WorkoutSessionService : Service() {
         val total = sets.count { !it.warmup }
         val next = Supersets.nextSet(sets)
         // The exercise the lifter is on now, not the first one of the day.
-        val title = (next ?: sets.firstOrNull())?.exerciseName ?: "Trial"
+        val title = (next ?: sets.firstOrNull())?.exerciseName ?: Words.trial.c
         val resting = rest != null && !rest.isOver(SystemClock.elapsedRealtime())
         val body = when {
-            total == 0 -> "Opening the trial…"
-            next == null -> "Every set is done. Seal the Trial."
+            total == 0 -> "Opening the ${Words.trial.s}…"
+            next == null -> "Every set is done. ${Words.seal.c} the ${Words.trial.t}."
             resting -> "Rest · then ${nextLine(next, sets)}"
             else -> nextLine(next, sets).orEmpty()
         }
@@ -262,7 +263,7 @@ class WorkoutSessionService : Service() {
             .setColor(Notifications.ACCENT)
             .setContentTitle(title)
             .setContentText(body)
-            .setSubText("TRIAL · $done / $total $setWord")
+            .setSubText("${Words.trial.u} · $done / $total $setWord")
             .setProgress(total.coerceAtLeast(1), done, total == 0)
             // Public on the lock screen, so the set in hand and the buttons below show
             // there. It carries only the movement, the set and its figures: never a note.
@@ -300,7 +301,7 @@ class WorkoutSessionService : Service() {
                 broadcast(TrialActionReceiver.ACTION_EXTEND_REST, sessionId, -1L, Notifications.REQUEST_EXTEND_REST),
             )
         } else if (done > 0) {
-            builder.addAction(0, "Seal", trialIntent(sessionId, seal = true, requestCode = Notifications.REQUEST_SEAL))
+            builder.addAction(0, Words.seal.c, trialIntent(sessionId, seal = true, requestCode = Notifications.REQUEST_SEAL))
         }
         return builder.build()
     }

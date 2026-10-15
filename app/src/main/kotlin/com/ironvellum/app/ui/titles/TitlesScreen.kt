@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -187,7 +188,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
      */
     fun addToRite(skillName: String, presetId: Long?) {
         val def = Skills.forName(skillName) ?: return
-        viewModelScope.launchGuarded("add to rite") {
+        viewModelScope.launchGuarded("add to ${Words.rite.s}") {
             val rite = repo.addExerciseToRite(skillName, presetId, targetSets = 3, targetReps = def.target.coerceAtLeast(1))
             _trainResult.value = "$skillName is in $rite."
         }
@@ -205,7 +206,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun claim(skillName: String) {
-        viewModelScope.launchGuarded("claim technique") {
+        viewModelScope.launchGuarded("claim ${Words.technique.s}") {
             val result = repo.claimSkill(skillName)
             // Inscriptions are banked inside the claim's own transaction.
             _claim.value = result
@@ -213,7 +214,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun unclaim(skillName: String) {
-        viewModelScope.launchGuarded("unclaim technique") {
+        viewModelScope.launchGuarded("unclaim ${Words.technique.s}") {
             try {
                 repo.unclaimSkill(skillName)
             } catch (refused: IllegalStateException) {
@@ -256,7 +257,7 @@ internal fun bestEfforts(
  * clause dash set as the em dash the rest of the app's copy uses.
  */
 internal fun unclaimRefusalCopy(refused: IllegalStateException): String =
-    refused.message?.replace(" - ", " — ") ?: "This technique stays claimed."
+    refused.message?.replace(" - ", " — ") ?: "This ${Words.technique.s} stays ${Words.claimed.s}."
 
 @Composable
 fun TitlesScreen(
@@ -352,7 +353,7 @@ fun TitlesScreen(
     // leave the confirm row sitting there with nothing happening.
     val unclaimRefusal by viewModel.unclaimRefusal.collectAsStateWithLifecycle()
     unclaimRefusal?.let { message ->
-        InfoNotice("Still claimed", message, onDismiss = viewModel::dismissUnclaimRefusal)
+        InfoNotice("Still ${Words.claimed.s}", message, onDismiss = viewModel::dismissUnclaimRefusal)
     }
 
     // Header and tabs stay put; every page runs edge to edge under them and owns its scroll,
@@ -364,7 +365,7 @@ fun TitlesScreen(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             Text(
-                "CODEX",
+                Words.codex.u,
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -377,7 +378,7 @@ fun TitlesScreen(
         // A path drilled into does not stop the swipe: the tabs stay live there too, and a swipe
         // is the same move as tapping one. PATHS reopens on that path when swiped back to.
         InkTabbedPager(
-            labels = listOf("DEEDS", "PATHS", "JOURNAL"),
+            labels = listOf(Words.deed.upl, Words.paths.u, Words.journal.u),
             state = pager,
             modifier = Modifier.weight(1f),
             tabsModifier = Modifier.padding(horizontal = 16.dp),
@@ -402,7 +403,7 @@ fun TitlesScreen(
                             // No "Skill Tree" heading: the selected pill above already says it.
                             // The tally is the line worth keeping here.
                             Text(
-                                "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
+                                "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} ${Words.technique.pl} mastered",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = IronvellumColors.InkMuted,
                             )
@@ -499,7 +500,7 @@ private fun RiteChoiceDialog(
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    "Add it to the end of a rite, three sets at the standard.",
+                    "Add it to the end of ${Words.rite.a}, three sets at the standard.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -509,7 +510,7 @@ private fun RiteChoiceDialog(
                     RiteChoiceRow(name) { onPick(id) }
                 }
                 RiteChoiceDivider()
-                RiteChoiceRow("New rite · $skillName", accent = IronvellumColors.SystemGreen) { onPick(null) }
+                RiteChoiceRow("New ${Words.rite.s} · $skillName", accent = IronvellumColors.SystemGreen) { onPick(null) }
             }
         },
         confirmButton = {

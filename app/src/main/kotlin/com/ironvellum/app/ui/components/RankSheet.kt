@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
@@ -17,7 +18,7 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
         summary = if (breakdown != null) ({ RankProgress(breakdown) }) else null,
     ) {
         if (breakdown == null) {
-            text(null, "Seal a trial with a pull, push or leg technique you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.")
+            text(null, "${Words.seal.c} ${Words.trial.a} with a pull, push or leg ${Words.technique.s} you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.")
             explainer()
             return@InfoSheet
         }
@@ -27,7 +28,7 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
                 listOfNotNull(
                     "${Rank.forStep(p.step)}, from ${p.source}",
                     p.liftTarget?.let { "Next lift: $it" },
-                    p.skillTarget?.let { "Next technique: $it" },
+                    p.skillTarget?.let { "Next ${Words.technique.s}: $it" },
                     if (p.liftTarget == null && p.skillTarget == null) {
                         "Next: " + if (p.step >= LiftBoards.MAX_STEP) {
                             "Top of the scale"

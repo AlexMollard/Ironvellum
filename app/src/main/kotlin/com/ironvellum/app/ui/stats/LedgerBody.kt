@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkChip
@@ -167,8 +169,8 @@ internal fun BodyTab(
                 }
                 Spacer(Modifier.height(4.dp))
                 when {
-                    plot == null -> ChartNote("No reading in the last ${range.label}. Widen the range.")
-                    plot.values.size < 2 -> ChartNote("Two readings draw the line.")
+                    plot == null -> ChartNote("No ${Words.reading.s} in the last ${range.label}. Widen the range.")
+                    plot.values.size < 2 -> ChartNote("Two ${Words.reading.pl} draw the line.")
                     else -> TrendChart(
                         plot.values,
                         IronvellumColors.Emerald,
@@ -210,7 +212,7 @@ internal fun BodyTab(
             InkDivider()
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
-                label = "Tape readings",
+                label = "Tape ${Words.reading.pl}",
                 value = "$logged of ${MeasurementSite.entries.size} logged",
                 supporting = "stays on this device",
                 onClick = onOpenTape,
@@ -236,7 +238,7 @@ private fun WeightEmpty(onLogWeight: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
         Text(
-            "The Ledger knows nothing of your frame yet.",
+            Lines.noBodyData,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -281,7 +283,7 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
         InkListRow(
             label = "Consistency",
             value = if (perWeek == 0.0) "\u2014" else "${"%.1f".format(java.util.Locale.US, perWeek)} a week",
-            supporting = "sealed days per week, last 12 weeks",
+            supporting = "${Words.sealed.s} days per week, last 12 weeks",
             onClick = onOpen,
         )
         // Twelve flat dashes said nothing; until a week has a trial, say what fills it.
@@ -289,7 +291,7 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
             WeekStrip(weeks, Modifier.padding(horizontal = 16.dp))
         } else {
             Text(
-                "Each week fills in here as you seal trials.",
+                "Each week fills in here as you ${Words.seal.s} ${Words.trial.pl}.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -307,7 +309,7 @@ private fun WeekStrip(weeks: List<Int>, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(height)
             .clearAndSetSemantics {
-                contentDescription = "Sealed days per week over the last ${weeks.size} weeks, oldest first: " +
+                contentDescription = "${Words.sealed.c} days per week over the last ${weeks.size} weeks, oldest first: " +
                     weeks.joinToString(", ")
             },
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -338,7 +340,7 @@ internal fun WeightHistoryPage(
     onBack: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("WEIGHT HISTORY", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to Ledger")
+        PushedHeader("WEIGHT HISTORY", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
         Box(Modifier.weight(1f).padding(horizontal = LedgerSpace.Gutter)) {
             if (stats.isEmpty()) {
                 Text(
@@ -359,7 +361,7 @@ internal fun WeightHistoryPage(
         }
         if (lastDeleted != null) {
             UndoBar(
-                "Reading deleted",
+                "${Words.reading.c} deleted",
                 onUndo = onUndo,
                 modifier = Modifier.padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel),
                 onExpired = onUndoExpired,
@@ -392,7 +394,7 @@ private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> 
         }
         // Immediate: the bar under the list offers Undo, which puts the reading back as it was.
         InkIconButton(onClick = onDelete) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
+            Icon(Icons.Outlined.Delete, contentDescription = "Delete ${Words.reading.s}", tint = IronvellumColors.InkMuted)
         }
     }
 }

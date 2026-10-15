@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Energy
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.Exercise
@@ -306,7 +307,7 @@ private fun EnergyMethodDialog(stats: List<StatEntry>, onDismiss: () -> Unit) {
         text(
             "ESTIMATES",
             "Estimates use net MET: the Compendium MET minus 1, because Health Connect's active calories leave resting burn out. " +
-                "Walking is costed at 2.5 net MET, lifting by trial time.",
+                "Walking is costed at 2.5 net MET, lifting by ${Words.trial.s} time.",
         )
         text(
             "RESTING BURN",

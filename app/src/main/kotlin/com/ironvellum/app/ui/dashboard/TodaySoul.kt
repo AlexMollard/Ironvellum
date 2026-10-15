@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.TitleRule
 import com.ironvellum.app.domain.Titles
@@ -154,7 +155,7 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
         )
         Spacer(Modifier.width(20.dp))
         ProgressColumn(
-            title = "Oath",
+            title = Words.oath.c,
             fraction = next?.let { days.toFloat() / it.first } ?: 1f,
             value = buildAnnotatedString {
                 // Gold is for what was earned: no days kept yet reads in plain Ink.
@@ -162,12 +163,12 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
                 append(next?.let { " / ${it.first} days" } ?: " ${plural(days, "day", "days")} kept")
             },
             caption = when {
-                days == 0 -> "Seal a trial to begin"
+                days == 0 -> "${Words.seal.c} ${Words.trial.a} to begin"
                 next != null -> "Next: ${next.second.name}"
                 else -> "Milestones complete"
             },
             fill = Metal.Fabled.bounds(),
-            tag = "today-oath", barTag = "today-oath-bar", onClickLabel = "Explain Oath",
+            tag = "today-oath", barTag = "today-oath-bar", onClickLabel = "Explain ${Words.oath.t}",
             state = "$days ${plural(days, "day", "days")} kept" + (next?.let { "; next milestone at ${it.first} days" } ?: ""),
             modifier = Modifier.weight(1f), onClick = onOath,
         )
@@ -274,7 +275,7 @@ internal fun SealedRiteGlyph(
             )
             Spacer(Modifier.width(3.dp))
             Text(
-                "SEALED",
+                Words.sealed.u,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 9.sp,

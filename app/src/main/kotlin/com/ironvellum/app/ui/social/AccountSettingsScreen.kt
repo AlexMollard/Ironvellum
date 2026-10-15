@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -121,7 +122,7 @@ fun AccountSettingsScreen(
         PushedHeader("ACCOUNT", onBack)
 
         SettingsGroup("PROFILE", rows = true) {
-            TapRow(onClickLabel = "Edit true name", onClick = { editingName = true }) {
+            TapRow(onClickLabel = "Edit ${Words.trueName.s}", onClick = { editingName = true }) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         acct.displayName,
@@ -152,16 +153,16 @@ fun AccountSettingsScreen(
                 Spacer(Modifier.height(12.dp))
                 // Wire values stay public/friends/private; only the labels differ.
                 InkSegmented(
-                    options = listOf("public" to "Public", "friends" to "Allies only", "private" to "Private"),
+                    options = listOf("public" to "Public", "friends" to "${Words.ally.cpl} only", "private" to "Private"),
                     selected = acct.visibility,
                     onPick = viewModel::setVisibility,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     when (acct.visibility) {
-                        "public" -> "Every Ironbound can read your trials."
-                        "friends" -> "Only your allies can read your trials."
-                        else -> "No one but you can read your trials."
+                        "public" -> "Every ${Words.lifter.t} can read your ${Words.trial.pl}."
+                        "friends" -> "Only your ${Words.ally.pl} can read your ${Words.trial.pl}."
+                        else -> "No one but you can read your ${Words.trial.pl}."
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
@@ -191,9 +192,9 @@ fun AccountSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Ally activity", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                    Text("${Words.ally.c} activity", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
                     Text(
-                        "Requests, remarks and tributes",
+                        "Requests, ${Words.remark.pl} and ${Words.tribute.pl}",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -218,7 +219,7 @@ fun AccountSettingsScreen(
                 NotificationBlockedNotice(
                     channelId = Notifications.CHANNEL_ALLIES,
                     access = allyAccess,
-                    blockedText = "Ally activity won't arrive until you allow notifications.",
+                    blockedText = "${Words.ally.c} activity won't arrive until you allow notifications.",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
@@ -229,10 +230,10 @@ fun AccountSettingsScreen(
             ActionRow(
                 label = "Sync",
                 subline = if (outcome == null) {
-                    "Uploads after each trial"
+                    "Uploads after each ${Words.trial.s}"
                 } else {
                     buildString {
-                        append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
+                        append("Pushed ${outcome.sessions} ${plural(outcome.sessions, Words.trial.s, Words.trial.pl)} · ")
                         append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
                         append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                         if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
@@ -281,8 +282,8 @@ fun AccountSettingsScreen(
             if (confirmRestore) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        "This replaces EVERYTHING logged on this phone — trials, " +
-                            "titles, techniques and readings — with the cloud " +
+                        "This replaces EVERYTHING logged on this phone — ${Words.trial.pl}, " +
+                            "titles, ${Words.technique.pl} and ${Words.reading.pl} — with the cloud " +
                             "archive. Anything not in that archive is lost for good.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.DangerRed,
@@ -313,7 +314,7 @@ fun AccountSettingsScreen(
             ui.lastRestore?.let { outcome ->
                 Text(
                     buildString {
-                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
+                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, Words.trial.s, Words.trial.pl)} · ")
                         append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
                         append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                         if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
@@ -329,11 +330,11 @@ fun AccountSettingsScreen(
         SettingsGroup("PRIVACY", rows = true) {
             var showBlocked by remember { mutableStateOf(false) }
             TapRow(
-                onClickLabel = if (showBlocked) "Hide blocked Ironbound" else "Show blocked Ironbound",
+                onClickLabel = if (showBlocked) "Hide blocked ${Words.lifter.t}" else "Show blocked ${Words.lifter.t}",
                 onClick = { showBlocked = !showBlocked },
             ) {
                 Text(
-                    "Blocked Ironbound",
+                    "Blocked ${Words.lifter.t}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
@@ -355,7 +356,7 @@ fun AccountSettingsScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Readings and private notes never leave this device.",
+                    "${Words.reading.cpl} and private notes never leave this device.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -375,7 +376,7 @@ fun AccountSettingsScreen(
             if (confirmDelete) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        "This deletes your account, folio, synced trials, titles, allies " +
+                        "This deletes your account, ${Words.folio.s}, synced ${Words.trial.pl}, titles, ${Words.ally.pl} " +
                             "and cloud backup for good, and signs you out. Training on this " +
                             "phone stays on this phone.",
                         style = MaterialTheme.typography.bodySmall,
@@ -515,7 +516,7 @@ private fun EditNameDialog(
 
     IronvellumDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("True name") },
+        title = { Text(Words.trueName.c) },
         text = {
             Column {
                 OutlinedTextField(
@@ -523,7 +524,7 @@ private fun EditNameDialog(
                     colors = ironvellumFieldColors(),
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("True name (2–24)") },
+                    label = { Text("${Words.trueName.c} (2–24)") },
                     singleLine = true,
                     enabled = !busy,
                     isError = name.isNotBlank() && !valid,
@@ -567,7 +568,7 @@ private fun EditNameDialog(
 private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Unit) {
     if (blocked.isEmpty()) {
         Text(
-            "Nobody blocked. Block an Ironbound from their folio.",
+            "Nobody blocked. Block ${Words.lifter.at} from their ${Words.folio.s}.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 4.dp),
@@ -580,7 +581,7 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                lifter.displayName.ifBlank { "Hidden Ironbound" },
+                lifter.displayName.ifBlank { "Hidden ${Words.lifter.t}" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 maxLines = 1,

@@ -51,6 +51,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.CircleChange
@@ -212,7 +214,7 @@ internal fun InboxScreen(
             when {
                 !ui.loaded -> InkPanel(Modifier.fillMaxWidth()) {
                     Text(
-                        "Reading your missives…",
+                        "${Words.reads.c} your ${Words.missive.pl}…",
                         style = MaterialTheme.typography.bodyMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -229,7 +231,7 @@ internal fun InboxScreen(
                 }
                 else -> {
                     if (err != null) {
-                        SocialErrorBanner("The ink has faded — these missives are from your last sync: $err")
+                        SocialErrorBanner(Lines.inboxStale(err))
                         Spacer(Modifier.height(10.dp))
                     }
                     ui.actionError?.let {
@@ -278,7 +280,7 @@ internal fun InboxScreen(
                                                 ui.myUserId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
                                             },
                                             onAccept = { viewModel.accept(item.actorId) },
-                                            onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "An Ironbound" }) },
+                                            onDecline = { viewModel.decline(item.actorId, item.actorName.ifBlank { "${Words.lifter.cat}" }) },
                                         )
                                     }
                                 }
@@ -305,14 +307,14 @@ private fun EmptyInbox() {
     // One quiet plate, the same card the list would sit in: a plain title and one muted line.
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "No missives yet",
+            "No ${Words.missive.pl} yet",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.Ink,
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            "Ally requests, remarks and tributes on your trials land here.",
+            "${Words.ally.c} requests, ${Words.remark.pl} and ${Words.tribute.pl} on your ${Words.trial.pl} land here.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -332,22 +334,22 @@ private fun InboxRow(
     onDecline: () -> Unit,
 ) {
     val (icon, line) = when (item) {
-        is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to "wants to be your ally"
-        is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ally request"
-        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left a remark on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewReply -> Icons.Outlined.Forum to "replied on ${item.sessionHeadline.ifBlank { "a trial" }}"
-        is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} tribute on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to "joined your circle ${item.circleName}"
-        is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "sealed the trial that met your circle's weekly goal"
+        is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to "wants to be your ${Words.ally.s}"
+        is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ${Words.ally.s} request"
+        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left ${Words.remark.a} on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewReply -> Icons.Outlined.Forum to "replied on ${item.sessionHeadline.ifBlank { Words.trial.a }}"
+        is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} ${Words.tribute.s} on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to "joined your ${Words.circle.s} ${item.circleName}"
+        is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "${Words.sealed.s} the ${Words.trial.s} that met your ${Words.circle.s}'s weekly goal"
         is InboxItem.CircleNotice -> Icons.Outlined.GroupAdd to when (item.change) {
-            CircleChange.LEFT -> "left your circle ${item.circleName}"
+            CircleChange.LEFT -> "left your ${Words.circle.s} ${item.circleName}"
             CircleChange.KEEPER -> "passed you the keys of ${item.circleName}"
             CircleChange.REMOVED -> "removed you from ${item.circleName}"
         }
     }
     val open: () -> Unit = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
-        is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { "a trial" }, false) } }
+        is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { Words.trial.a }, false) } }
         is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet, is InboxItem.CircleNotice -> onOpenCircle
         else -> onOpenLifter
@@ -385,7 +387,7 @@ private fun InboxRow(
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    item.actorName.ifBlank { "An Ironbound" },
+                    item.actorName.ifBlank { "${Words.lifter.cat}" },
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Medium,
@@ -458,4 +460,4 @@ private fun AnswerLabel(text: String) {
     )
 }
 
-private fun String.orWorkout(): String = ifBlank { "your trial" }
+private fun String.orWorkout(): String = ifBlank { "your ${Words.trial.s}" }

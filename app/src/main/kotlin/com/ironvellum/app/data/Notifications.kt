@@ -84,14 +84,14 @@ object Notifications {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.createNotificationChannels(
             listOf(
-                NotificationChannel(CHANNEL_SUMMONS, "The Summons", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "One evening summons while today's trial is still unsealed."
+                NotificationChannel(CHANNEL_SUMMONS, Words.theSummons.c, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "One evening ${Words.summons.s} while today's ${Words.trial.s} is still ${Words.unsealed.s}."
                 },
-                NotificationChannel(CHANNEL_ALLIES, "Allies", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Requests, remarks and tributes from your allies."
+                NotificationChannel(CHANNEL_ALLIES, Words.ally.cpl, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "Requests, ${Words.remark.pl} and ${Words.tribute.pl} from your ${Words.ally.pl}."
                 },
-                NotificationChannel(CHANNEL_TRIAL, "Trial in progress", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Live progress of the trial you have open."
+                NotificationChannel(CHANNEL_TRIAL, "${Words.trial.c} in progress", NotificationManager.IMPORTANCE_LOW).apply {
+                    description = "Live progress of the ${Words.trial.s} you have open."
                 },
                 // High so it can reach a locked phone on the bench; one short
                 // buzz and no sound, because a gym is loud and a chime is not

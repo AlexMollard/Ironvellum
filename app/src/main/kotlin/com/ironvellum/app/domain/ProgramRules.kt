@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import kotlin.math.floor
 
 /**
@@ -357,8 +358,8 @@ object ProgramRules {
      * in the STRUCTURE of the plan may change by sex, so the generator takes
      * sex and deliberately ignores it.
      */
-    const val SEX_NOTE: String =
-        "Same cycle for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
+    val SEX_NOTE: String get() =
+        "Same ${Words.cycle.s} for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
 
     // ------------------------------------------------------------------ rest
 

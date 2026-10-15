@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.GearRequirements
@@ -45,7 +47,7 @@ internal fun ExerciseInfoSheet(
         add(InfoChip(exercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() }))
         add(InfoChip(metricWord(exercise.metric).replaceFirstChar { it.uppercase() }))
         add(InfoChip(if (exercise.isWeighted) "Weighted" else "Bodyweight"))
-        if (exercise.custom) add(InfoChip("Yours"))
+        if (exercise.custom) add(InfoChip(Words.yours.c))
         if (skill != null) add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))
     }
 
@@ -66,12 +68,12 @@ internal fun ExerciseInfoSheet(
                 section(null) {
                     ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp))
                 }
-                if (lastLine != null) text("LAST TRIAL", lastLine)
+                if (lastLine != null) text("LAST ${Words.trial.u}", lastLine)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
                 gearFacts(exercise.name)
                 if (skill != null) {
-                    section("TECHNIQUE") {
-                        TechniqueLine("${skill.line} · claim: ${skill.standard}", IronvellumColors.Ink)
+                    section(Words.technique.u) {
+                        TechniqueLine("${skill.line} · ${Lines.claimAt}: ${skill.standard}", IronvellumColors.Ink)
                         if (skill.why.isNotBlank()) TechniqueLine(skill.why, IronvellumColors.InkMuted)
                         if (skill.prerequisites.isNotEmpty()) {
                             TechniqueLine("Needs ${skill.prerequisites.joinToString(" and ")} first", IronvellumColors.InkMuted)
@@ -80,12 +82,12 @@ internal fun ExerciseInfoSheet(
                 }
                 if (boards.isNotEmpty()) {
                     bullets(
-                        "THE RECKONING",
+                        Words.theReckoning.u,
                         boards.map { board ->
                             if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
-                                "${board.lift.label} reckoning — rung ${board.rung} of ${board.rungCount}"
+                                "${board.lift.label} ${Words.reckoning.s} — ${Words.rung.s} ${board.rung} of ${board.rungCount}"
                             } else {
-                                "Counts toward the ${board.lift.label.lowercase()} reckoning"
+                                "Counts toward the ${board.lift.label.lowercase()} ${Words.reckoning.s}"
                             }
                         },
                     )
@@ -123,7 +125,7 @@ internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", sh
     if (shares.isNotEmpty()) {
         section("MUSCLES") { ExerciseMuscles(shares, name, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
     } else if (showMissingMuscles) {
-        text("MUSCLES", "The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
+        text("MUSCLES", Lines.noMuscleData, IronvellumColors.InkMuted)
     }
 }
 
@@ -145,5 +147,5 @@ private fun InfoSheetScope.mistakeFacts(name: String) {
 internal fun InfoSheetScope.gearFacts(name: String) {
     val gear = GearRequirements.needs(name)
         .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
-    if (gear.isNotEmpty()) text("ARMOURY", gear.replaceFirstChar { it.uppercase() })
+    if (gear.isNotEmpty()) text(Words.armoury.u, gear.replaceFirstChar { it.uppercase() })
 }

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -89,7 +90,7 @@ fun ShareCardDialog(
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Share this trial") },
+        title = { Text("Share this ${Words.trial.s}") },
         text = {
             Column {
                 Text(
@@ -149,7 +150,7 @@ fun ShareCardDialog(
                         onClick = {
                             scope.launch {
                                 clipboard.setClipEntry(
-                                    ClipEntry(ClipData.newPlainText("Ironvellum trial", text)),
+                                    ClipEntry(ClipData.newPlainText("Ironvellum ${Words.trial.s}", text)),
                                 )
                             }
                             copied = true
@@ -164,7 +165,7 @@ fun ShareCardDialog(
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, text)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share this trial"))
+                            context.startActivity(Intent.createChooser(intent, "Share this ${Words.trial.s}"))
                         },
                         modifier = Modifier.weight(1f),
                     )

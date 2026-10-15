@@ -5,6 +5,7 @@ import android.os.StrictMode
 import com.ironvellum.app.data.CircleBonus
 import com.ironvellum.app.data.CirclePayoutStore
 import com.ironvellum.app.data.DbSnapshot
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
@@ -58,6 +59,13 @@ class IronvellumApp : Application() {
         appearanceStore // Restore accents before any window or notification reads them.
         com.ironvellum.app.data.Units.init(this) // And the load unit, before any screen or notification prints a load.
         com.ironvellum.app.data.EffortSetting.init(this) // And whether effort is asked for, before the trial screen reads it.
+        // Which vocabulary to print, decided before the database file or any screen exists: a lifter who already has a database keeps
+        // the themed names, a fresh install starts plain. Must run before DbSnapshot or Room can create the file.
+        Words.init(
+            this,
+            databaseExists = getDatabasePath(com.ironvellum.app.data.IronvellumDatabase.NAME).exists(),
+            welcomeSeen = com.ironvellum.app.data.FirstRunPrefs.welcomeSeen(this),
+        )
         // Every channel must exist before anything posts on O+; the workers
         // and the trial service can all start in a cold process, so the
         // cold-start call is the reliable one.

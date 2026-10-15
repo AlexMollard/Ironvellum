@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
@@ -46,7 +47,7 @@ internal fun TapePage(
 ) {
     val latest = Measurements.latest(entries)
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("TAPE READINGS", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to Ledger")
+        PushedHeader("TAPE ${Words.reading.upl}", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
         Column(
             Modifier
                 .fillMaxSize()
@@ -58,7 +59,7 @@ internal fun TapePage(
             // One hint for the whole list, not one on every empty site.
             if (MeasurementSite.entries.any { latest[it] == null }) {
                 Text(
-                    "Tap a site to take its first reading.",
+                    "Tap a site to take its first ${Words.reading.s}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -87,7 +88,7 @@ internal fun TapePage(
                     tint = IronvellumColors.InkMuted,
                 )
                 Text(
-                    "Stays on this device. Readings are excluded from cloud sync by design.",
+                    "Stays on this device. ${Words.reading.cpl} are excluded from cloud sync by design.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

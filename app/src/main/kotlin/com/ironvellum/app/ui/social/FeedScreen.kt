@@ -62,7 +62,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FeedEntry
@@ -306,11 +308,11 @@ fun FeedScreen(
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
-                    SocialErrorBanner("The ink has faded — these tidings are from your last sync: ${ui.error}")
+                    SocialErrorBanner(Lines.feedStale(ui.error.orEmpty()))
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
-                    SocialErrorBanner("Ally request failed: $it")
+                    SocialErrorBanner("${Words.ally.c} request failed: $it")
                     Spacer(Modifier.height(10.dp))
                 }
                 Feed(
@@ -333,7 +335,7 @@ fun FeedScreen(
 private fun LoadingPanel() {
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "Reading the tidings…",
+            "${Words.reads.c} the ${Words.tidings.s}…",
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -344,7 +346,7 @@ private fun LoadingPanel() {
 @Composable
 private fun EmptyFeed(onRefresh: () -> Unit) {
     Text(
-        "No tidings yet. Make your trials public in Account settings and be the first.",
+        "No ${Words.tidings.s} yet. Make your ${Words.trial.pl} public in Account settings and be the first.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -370,7 +372,7 @@ internal fun SocialErrorBanner(message: String) {
 @Composable
 private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
     Text(
-        "The Ledger refused: $reason",
+        Lines.refused(reason),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -395,7 +397,7 @@ private fun Feed(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            "Every Ironbound's public trials, newest first",
+            "Every ${Words.lifter.t}'s public ${Words.trial.pl}, newest first",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -455,7 +457,7 @@ private fun Feed(
         if (ui.pagingError != null) {
             item(key = "paging-error") {
                 Text(
-                    "Older trials slipped away — keep pulling to try again.",
+                    "Older ${Words.trial.pl} slipped away — keep pulling to try again.",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -468,7 +470,7 @@ private fun Feed(
         if (ui.loadingMore) {
             item(key = "loading-more") {
                 Text(
-                    "Turning to older trials…",
+                    "Turning to older ${Words.trial.pl}…",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -481,7 +483,7 @@ private fun Feed(
         if (ui.exhausted) {
             item(key = "end") {
                 Text(
-                    "You've reached the first page of the tidings.",
+                    "You've reached the first page of the ${Words.tidings.s}.",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -610,7 +612,7 @@ private fun FeedCard(
                 // moment it is picked; the VM reconciles or rolls back.
                 CountButton(
                     icon = (entry.myReaction ?: Reaction.SALUTE).glyph(),
-                    iconDescription = entry.myReaction?.let { "Your tribute: ${it.displayName()}" } ?: "Pay tribute",
+                    iconDescription = entry.myReaction?.let { "Your ${Words.tribute.s}: ${it.displayName()}" } ?: "Pay ${Words.tribute.s}",
                     count = entry.likeCount,
                     lit = entry.myReaction != null || picking,
                     expanded = picking,
@@ -618,7 +620,7 @@ private fun FeedCard(
                 )
                 CountButton(
                     icon = Icons.Outlined.ChatBubbleOutline,
-                    iconDescription = "Remarks",
+                    iconDescription = Words.remark.cpl,
                     count = entry.commentCount,
                     lit = false,
                     onClick = { onOpenComments(entry) },
@@ -627,9 +629,9 @@ private fun FeedCard(
                 if (!isMe) {
                     // The one offer is a chip; a settled state is plain muted text.
                     when (ally) {
-                        AllyState.None -> InkChip(label = "Add ally", icon = Icons.Outlined.PersonAdd) { onAddAlly(entry.userId) }
+                        AllyState.None -> InkChip(label = "Add ${Words.ally.s}", icon = Icons.Outlined.PersonAdd) { onAddAlly(entry.userId) }
                         AllyState.Pending, AllyState.Incoming -> AllyNote("Pending")
-                        AllyState.Ally -> AllyNote("Ally")
+                        AllyState.Ally -> AllyNote(Words.ally.c)
                     }
                 }
             }
@@ -647,7 +649,7 @@ private fun FeedCard(
             // reserved strip left a blank band under every card.
             if (reactionError != null) {
                 Text(
-                    "Tribute not saved: $reactionError",
+                    "${Words.tribute.c} not saved: $reactionError",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -792,7 +794,7 @@ internal fun Reaction.displayName(): String = when (this) {
 }
 
 /** What a workout is called on the comments screen and in the inbox. */
-internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { "Trial" }
+internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { Words.trial.c }
 
 /**
  * The entry as it reads once [next] replaces the lifter's reaction. like_count

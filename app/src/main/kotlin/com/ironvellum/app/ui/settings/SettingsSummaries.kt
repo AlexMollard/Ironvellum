@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.RestAlert
@@ -31,7 +32,7 @@ object SettingsSummaries {
 
     /** "Sam · 180 cm · Male"; a missing height says so, since Today asks for it. */
     fun profile(name: String?, heightCm: Double?, sex: Sex): String = listOfNotNull(
-        name?.trim()?.takeIf { it.isNotEmpty() },
+        name?.trim()?.takeIf { it.isNotEmpty() }?.let(Words::displayName),
         heightCm?.let { "${formatHeightCm(it)} cm" } ?: "height not set",
         sex.name.lowercase().replaceFirstChar { it.uppercase() },
     ).joinToString(" · ")
@@ -49,13 +50,13 @@ object SettingsSummaries {
     private fun count(n: Int, one: String, many: String = one + "s") = "$n ${if (n == 1) one else many}"
 
     fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int): String =
-        "Imported ${count(sessions, "trial")} · ${count(sets, "set")} · +$xp XP · $skipped already in your Chronicle"
+        "Imported ${count(sessions, Words.trial.s)} · ${count(sets, "set")} · +$xp XP · $skipped already in your ${Words.chronicle.t}"
 
     fun archiveRestored(
         presets: Int, sessions: Int, sets: Int, stats: Int, titles: Int, skills: Int, healthDays: Int,
-    ): String = "restored ${count(presets, "rite")} · ${count(sessions, "sealed trial")} · " +
-        "${count(sets, "set")} · ${count(stats, "reading")} · ${count(titles, "deed")} · " +
-        "${count(skills, "Journal attempt")} · ${count(healthDays, "health day")}"
+    ): String = "restored ${count(presets, Words.rite.s)} · ${count(sessions, "${Words.sealed.s} ${Words.trial.s}")} · " +
+        "${count(sets, "set")} · ${count(stats, Words.reading.s)} · ${count(titles, Words.deed.s)} · " +
+        "${count(skills, "${Words.journal.c} attempt")} · ${count(healthDays, "health day")}"
 
     /**
      * Heights are almost always whole centimetres: show "180", not "180.0".

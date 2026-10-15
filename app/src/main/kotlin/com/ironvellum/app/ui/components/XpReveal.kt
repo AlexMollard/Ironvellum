@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -140,7 +141,7 @@ internal object XpReveal {
         Xp.Kind.HONEST_EFFORT -> "Every top set rated"
         Xp.Kind.RITE_AS_PLANNED -> "Every planned set done, hard"
         Xp.Kind.WEEK_COVERED -> "Every muscle at 4+ hard sets"
-        Xp.Kind.WELCOME_BACK -> "First trial in ${Xp.WELCOME_BACK_DAYS}+ days"
+        Xp.Kind.WELCOME_BACK -> "First ${Words.trial.s} in ${Xp.WELCOME_BACK_DAYS}+ days"
         else -> ""
     }
 
@@ -170,8 +171,8 @@ internal object XpReveal {
     /** The level moment's quiet line: what the level banked, from the inscriptions actually paid; null when none were. */
     fun veilLine(banked: Int): String? = when {
         banked <= 0 -> null
-        banked == 1 -> "An inscription waits in the Veil"
-        else -> "$banked inscriptions wait in the Veil"
+        banked == 1 -> "An inscription waits in ${Words.theVeil.t}"
+        else -> "$banked inscriptions wait in ${Words.theVeil.t}"
     }
 
     /** What the whole panel says in one breath, for the heading. */
