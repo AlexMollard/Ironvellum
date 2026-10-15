@@ -18,7 +18,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -94,6 +93,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -889,14 +889,16 @@ fun SessionScreen(
     val effortSet = effortFor?.let { id -> ui.sets.firstOrNull { it.id == id } }?.takeIf { it.done && !it.warmup }
     // shortcut: the rest-bar chips cover rep sets only (a hold falls back to the under-row strip); add a hold chip set if holds need rating from the rest bar.
     // Flips to false once when the rest runs out, so the effort question can move off the rest bar.
-    val restRunning by produceState(rest?.let { !it.isOver(SystemClock.elapsedRealtime()) } ?: false, rest) {
+    // remember(rest), not produceState: a produceState keeps the old value for a frame after a new rest starts, so the footer drew once without the effort chips and then grew.
+    val restRunningState = remember(rest) { mutableStateOf(rest?.let { !it.isOver(SystemClock.elapsedRealtime()) } ?: false) }
+    LaunchedEffect(rest) {
         val left = rest?.let { it.endsAtMs - SystemClock.elapsedRealtime() } ?: 0L
-        value = left > 0
         if (left > 0) {
             delay(left)
-            value = false
+            restRunningState.value = false
         }
     }
+    val restRunning = restRunningState.value
     // A set logged any other way (the lock screen, the notification) takes the question over; a set taken back loses it.
     val loggedIds = ui.sets.filter { it.done && !it.warmup }.map { it.id }
     var loggedSeen by remember { mutableStateOf<Set<Long>?>(null) }
@@ -1208,7 +1210,7 @@ fun SessionScreen(
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
-                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, ::kgLabel, hold = metric == ExerciseMetric.HOLD)
+                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, { kg -> kgLabel(kg, weighted) }, hold = metric == ExerciseMetric.HOLD)
                                 } else {
                                     emptyMap()
                                 },
@@ -1394,7 +1396,7 @@ fun SessionScreen(
             IronvellumDialog(
                 onDismissRequest = { confirmRemoveExercise = null },
                 title = { Text("Remove $name?") },
-                text = { Text("Its $logged logged ${plural(logged, "set", "sets")} go with it. Undo stays on screen for a few seconds.") },
+                text = { Text("${if (logged == 1) "Its 1 logged set goes" else "Its $logged logged sets go"} with it. Undo stays on screen for a few seconds.") },
                 // Keeping it is the filled action: a reflex tap removes nothing.
                 confirmButton = { IronvellumButton("Keep it", onClick = { confirmRemoveExercise = null }) },
                 dismissButton = {
@@ -1692,6 +1694,7 @@ fun SessionScreen(
                     RoutineUpdateDialog(
                         offer = offer,
                         shortDay = shortDay,
+                        weightedOf = { id -> exercises.firstOrNull { it.id == id }?.isWeighted ?: false },
                         onUpdate = viewModel::applyRoutineUpdate,
                         onKeep = viewModel::keepPlan,
                     )
@@ -2216,16 +2219,18 @@ private fun TrialHeader(
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )
-            if (gain != null) {
-                LiveGainTag(gain, motion, onGainGone, Modifier.weight(1f, fill = false))
-            } else if (minutesLeft != null) {
-                Text(
-                    " · ~$minutesLeft min left",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = IronvellumColors.InkMuted,
-                )
+            // One slot takes all the room the clock leaves, so a long lift name gives way, never the XP.
+            Box(Modifier.weight(1f)) {
+                if (gain != null) {
+                    LiveGainTag(gain, motion, onGainGone)
+                } else if (minutesLeft != null) {
+                    Text(
+                        " · ~$minutesLeft min left",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = IronvellumColors.InkMuted,
+                    )
+                }
             }
-            Spacer(Modifier.weight(1f))
             SessionElapsed(startedAtMs)
         }
         Spacer(Modifier.height(8.dp))
@@ -2930,38 +2935,29 @@ private fun FigureStepper(
             Modifier
                 .widthIn(min = FIGURE_WIDTH)
                 .heightIn(min = 48.dp)
-                .then(
-                    if (onType != null) {
-                        // A thin rule under the number, the mark of a field: it can be typed, not only stepped.
-                        Modifier
-                            .drawBehind {
-                                drawRect(
-                                    IronvellumColors.InkMuted.copy(alpha = 0.55f),
-                                    topLeft = Offset(6.dp.toPx(), size.height - 5.dp.toPx()),
-                                    size = Size(size.width - 12.dp.toPx(), 1.dp.toPx()),
-                                )
-                            }
-                            .clickable(onClickLabel = "Type ${figure.what}", role = Role.Button, onClick = onType)
-                    } else {
-                        Modifier
-                    },
-                ),
+                .then(if (onType != null) Modifier.clickable(onClickLabel = "Type ${figure.what}", role = Role.Button, onClick = onType) else Modifier),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                figure.value,
-                style = MaterialTheme.typography.titleLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                // A five-character figure ("102.5") steps down so it fits between the glyphs.
-                fontSize = if (figure.value.length >= 5) 18.sp else 22.sp,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                softWrap = false,
-            )
+            // The rule sits right under the digits and is only as wide as they are: the mark of a field that can be typed, not only stepped.
+            Column(Modifier.width(IntrinsicSize.Min), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    figure.value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    // A five-character figure ("102.5") steps down so it fits between the glyphs.
+                    fontSize = if (figure.value.length >= 5) 18.sp else 22.sp,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                if (onType != null) {
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.InkMuted.copy(alpha = 0.55f)))
+                }
+            }
             if (figure.unit.isNotEmpty()) {
-                Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted)
+                Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 2.dp))
             }
         }
         StepButton("+", "Increase ${figure.what}") { onEdit(figure.plus) }
@@ -3430,18 +3426,32 @@ private fun LiveGainTag(gain: LiveGain, motion: Boolean, onGone: (serial: Int) -
         else delay(500)
         onGone(gain.serial)
     }
-    Text(
-        " · ${gain.name} +${gain.amount} XP",
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.SemiBold,
-        color = IronvellumColors.Emerald,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier
+    Row(
+        modifier
             .graphicsLayer { this.alpha = alpha.value }
             .clearAndSetSemantics { },
-    )
+    ) {
+        val style = MaterialTheme.typography.labelMedium
+        Text(
+            " · ${gain.name}",
+            style = style,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            color = IronvellumColors.Emerald,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Text(
+            " +${gain.amount} XP",
+            style = style,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            color = IronvellumColors.Emerald,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }
 
 /** "+164 XP" in the trial header: what the ticked sets have earned so far. A polite live region, so it is announced as it grows. */
@@ -3882,7 +3892,7 @@ private fun ModifierPickerDialog(
 }
 
 /** A field's label and its "before → after" figures, as the update dialog lists them. */
-private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field): Pair<String, String> {
+private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field, weighted: Boolean): Pair<String, String> {
     val (before, after) = change
     val unit = if (change.isHold) "s" else ""
     return when (field) {
@@ -3890,7 +3900,7 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
         RoutineUpdate.Field.REPS ->
             (if (change.isHold) "Hold" else "Reps") to "${before.targetReps}$unit → ${after.targetReps}$unit"
         // "60 kg", spaced like every other load on the screen (formatKg's "60kg" is the compact rite-row form).
-        RoutineUpdate.Field.LOAD -> "Load" to "${Units.label(before.targetWeightKg)} → ${Units.label(after.targetWeightKg)}"
+        RoutineUpdate.Field.LOAD -> "Load" to "${Units.label(before.targetWeightKg, weighted)} → ${Units.label(after.targetWeightKg, weighted)}"
         RoutineUpdate.Field.MODIFIERS ->
             "Modifiers" to "${before.modifiers.ifBlank { "None" }} → ${after.modifiers.ifBlank { "None" }}"
         RoutineUpdate.Field.SCHEME ->
@@ -4062,6 +4072,7 @@ private fun WarmupRow(
 private fun RoutineUpdateDialog(
     offer: Repository.RoutineUpdateOffer,
     shortDay: Boolean,
+    weightedOf: (Long) -> Boolean,
     onUpdate: (List<RoutineUpdate.Change>, List<RiteSwap.Swap>) -> Unit,
     onKeep: () -> Unit,
 ) {
@@ -4108,7 +4119,7 @@ private fun RoutineUpdateDialog(
                     change.fields.forEach { field ->
                         val accepted = ticked[change].orEmpty()
                         val on = field in accepted
-                        val (label, figures) = fieldLine(change, field)
+                        val (label, figures) = fieldLine(change, field, weightedOf(change.before.exerciseId))
                         ToggleLine(on, label, figures) {
                             ticked = ticked + (change to if (on) accepted - field else accepted + field)
                         }

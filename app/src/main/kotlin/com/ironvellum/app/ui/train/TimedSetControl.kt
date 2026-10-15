@@ -130,6 +130,8 @@ internal fun TimedSetControl(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             val getReady = phase == SetClock.Phase.GET_READY
+            // The digits and their label share a baseline inside one group, and the group centres against the action: baselines across the whole row pushed Start off the digits' middle.
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 if (getReady) readySeconds.toString() else SetClock.face(seconds),
                 fontFamily = ChakraPetch,
@@ -164,12 +166,12 @@ internal fun TimedSetControl(
                 fontWeight = if (reached) FontWeight.Bold else null,
                 color = if (reached) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 modifier = Modifier
-                    .weight(1f)
                     // The label sits on the digits' baseline, not at their middle.
                     .alignByBaseline()
                     // Said once when it appears: the state is in words, not only in colour.
                     .semantics { if (reached) liveRegion = LiveRegionMode.Polite },
             )
+            }
             when {
                 phase == SetClock.Phase.IDLE || clock == null ->
                     RowAction(if (countdown) "Start" else "Start stopwatch", IronvellumColors.Ink) {
