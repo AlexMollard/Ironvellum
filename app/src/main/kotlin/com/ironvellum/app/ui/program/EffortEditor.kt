@@ -35,6 +35,7 @@ import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.ui.components.EntryCard
+import com.ironvellum.app.ui.components.StepperRow
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /*
@@ -60,7 +61,7 @@ internal fun wornFor(entry: PlannedEntry, equipment: Equipment?, catalogue: List
     )
 }
 
-/** A label, then − value +; the pads are 48dp and say whose count they change. */
+/** A label, then - value +, in the shared stepper look; the pads say whose count they change. */
 @Composable
 internal fun EffortStepper(
     label: String,
@@ -72,49 +73,21 @@ internal fun EffortStepper(
     onMore: () -> Unit,
     lessEnabled: Boolean = true,
     moreEnabled: Boolean = true,
-) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-        StepPad("−", less, lessEnabled, onLess)
-        Text(
-            value,
-            style = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
-            color = IronvellumColors.Ink,
-            modifier = Modifier
-                .width(56.dp)
-                .semantics { contentDescription = "$label, $value${unit?.let { " $it" }.orEmpty()}" },
-        )
-        StepPad("+", more, moreEnabled, onMore)
-        Text(
-            unit.orEmpty(),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.width(28.dp).padding(start = 4.dp).clearAndSetSemantics {},
-        )
-    }
-}
-
-@Composable
-private fun StepPad(glyph: String, description: String, enabled: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(48.dp)
-            .clickable(enabled = enabled, onClickLabel = description, onClick = onClick)
-            .semantics {
-                contentDescription = description
-                role = Role.Button
-                if (!enabled) disabled()
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            glyph,
-            style = MaterialTheme.typography.titleLarge,
-            color = if (enabled) IronvellumColors.InkMuted else IronvellumColors.Rune,
-            modifier = Modifier.clearAndSetSemantics {},
-        )
-    }
-}
+) = StepperRow(
+    label = label,
+    value = value,
+    unit = unit,
+    less = less,
+    more = more,
+    error = false,
+    decimal = false,
+    maxDigits = 0,
+    onValue = null,
+    onLess = onLess,
+    onMore = onMore,
+    lessEnabled = lessEnabled,
+    moreEnabled = moreEnabled,
+)
 
 /** A quiet 48dp text action. [description] says what it does when its label alone does not. */
 @Composable

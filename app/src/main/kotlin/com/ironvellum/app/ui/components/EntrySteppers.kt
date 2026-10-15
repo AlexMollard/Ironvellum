@@ -21,11 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -191,7 +193,7 @@ internal fun DecimalStepper(
 /**
  * A label, then - value +. The value is still typeable when [onValue] is given, so 62.5 kg does
  * not take twenty taps; without it the figure is plain text between the pads. [caption] is a quiet
- * second line under the label ("stop with this many in hand"). The pads draw 34dp inside a 40 x 48dp hit area,
+ * second line under the label ("2 sets in the last block"). The pads draw 34dp inside a 40 x 48dp hit area,
  * the figure carries an underline directly under its digits, and the unit sits after the figure, outside it,
  * so every row's + lines up at the row's right edge.
  */
@@ -208,13 +210,15 @@ internal fun StepperRow(
     onValue: ((String) -> Unit)?,
     onLess: () -> Unit,
     onMore: () -> Unit,
-    /** What an empty figure reads: a dash between two minus-looking pads read as a third one, so loads say "none". */
+    /** What an empty figure reads: a dash between two minus-looking pads read as a third one, so loads say "Add" (or "BW"). */
     emptyText: String = "–",
     caption: String? = null,
+    lessEnabled: Boolean = true,
+    moreEnabled: Boolean = true,
 ) {
     Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         RowLabel(label, caption, Modifier.weight(1f))
-        StepperGroup(label, StepperPart(value, less, more, onLess, onMore, onValue, maxDigits), unit, error, decimal, emptyText)
+        StepperGroup(label, StepperPart(value, less, more, onLess, onMore, onValue, maxDigits, lessEnabled, moreEnabled), unit, error, decimal, emptyText)
     }
 }
 
@@ -239,6 +243,8 @@ internal class StepperPart(
     val onMore: () -> Unit,
     val onValue: ((String) -> Unit)? = null,
     val maxDigits: Int = 0,
+    val lessEnabled: Boolean = true,
+    val moreEnabled: Boolean = true,
 )
 
 /** - figure + as one compact unit: no label, so a range can put two of them in a row. */
@@ -253,7 +259,7 @@ internal fun StepperGroup(
     valueWidth: Dp = 48.dp,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        CompactStepButton("−", part.less, part.onLess)
+        CompactStepButton("−", part.less, part.onLess, part.lessEnabled)
         val underline = IronvellumColors.InkMuted.copy(alpha = 0.55f)
         Box(
             Modifier
@@ -305,7 +311,7 @@ internal fun StepperGroup(
         if (unit != null && part.value.isNotEmpty()) {
             Text(unit, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(start = 3.dp))
         }
-        CompactStepButton("+", part.more, part.onMore)
+        CompactStepButton("+", part.more, part.onMore, part.moreEnabled)
     }
 }
 
@@ -327,21 +333,23 @@ private val RANGE_VALUE_WIDTH = 32.dp
 
 /** A compact stepper pad: 34dp drawn, inside a 40 x 48dp hit area, so a range of two steppers fits a phone. */
 @Composable
-internal fun CompactStepButton(glyph: String, description: String, onClick: () -> Unit) {
+internal fun CompactStepButton(glyph: String, description: String, onClick: () -> Unit, enabled: Boolean = true) {
     Box(
         Modifier
             .width(40.dp)
             .height(48.dp)
-            .clickable(onClickLabel = description, onClick = onClick)
+            .clickable(enabled = enabled, onClickLabel = description, onClick = onClick)
             .semantics {
                 contentDescription = description
                 role = Role.Button
+                if (!enabled) disabled()
             },
         contentAlignment = Alignment.Center,
     ) {
         Box(
             Modifier
                 .size(34.dp)
+                .alpha(if (enabled) 1f else 0.4f)
                 .background(IronvellumColors.VaultHigh, MaterialTheme.shapes.extraSmall)
                 .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
             contentAlignment = Alignment.Center,
