@@ -1210,6 +1210,26 @@ object ProgramGenerator {
 
         fun heavy(exercise: Exercise, sets: Int) = !allowHeavy && heavyWeek(volume, exercise, sets)
 
+        // Tracked priorities only: an area may name helpers (front delts under Shoulders).
+        val priorities = ctx.priorityMuscles.filter { it in ProgramRules.TRACKED }
+
+        /**
+         * A helper set may not lift an unprioritised major from under the
+         * lowest priority to level with or past it: a fly for the lower chest
+         * once took mid chest from 6 to 9 over an arms priority at 8.1. A major
+         * the backbone already put past a short priority is not the helper's
+         * doing. Weeks without a priority never see it.
+         */
+        fun outgrowsPriority(exercise: Exercise, sets: Int): Boolean {
+            if (muscle !in ProgramRules.HELPERS || priorities.isEmpty()) return false
+            fun after(m: Muscle) = (volume[m] ?: 0.0) + sets * share(exercise.name, m)
+            val lowestBefore = priorities.minOf { volume[it] ?: 0.0 }
+            val lowestAfter = priorities.minOf { after(it) }
+            return ProgramRules.TRACKED.any {
+                it !in priorities && (volume[it] ?: 0.0) < lowestBefore - 1e-9 && after(it) >= lowestAfter - 1e-9
+            }
+        }
+
         /**
          * Collateral a set spends on tracked muscles already at their target.
          * Zero-waste growth goes first: a quad set from a leg extension beats
@@ -1225,7 +1245,7 @@ object ProgramGenerator {
             val entry = s.entries[index]
             val exercise = ctx.pool.firstOrNull { it.name == entry.exerciseName } ?: return false
             if (entry.sets >= entry.setsMax || entry.sets >= ProgramRules.ENTRY_SANITY_MAX_SETS) return false
-            if (!roomFor(s, exercise, 1) || heavy(exercise, 1)) return false
+            if (!roomFor(s, exercise, 1) || heavy(exercise, 1) || outgrowsPriority(exercise, 1)) return false
             s.entries[index] = entry.copy(sets = entry.sets + 1)
             return true
         }
@@ -1236,7 +1256,7 @@ object ProgramGenerator {
                 .filter { groupFitsSession(s.role, it.muscleGroup) && !redundantIn(s, it) }
                 .filter { waste(it.name) <= maxWaste && roomFor(s, it, startSets(ctx, it, muscle)) }
                 .sortedBy { waste(it.name) }
-                .firstOrNull { !heavy(it, startSets(ctx, it, muscle)) }
+                .firstOrNull { !heavy(it, startSets(ctx, it, muscle)) && !outgrowsPriority(it, startSets(ctx, it, muscle)) }
                 ?: return false
             sawMovement = true
             val deficit = targetOf(muscle) - (volume[muscle] ?: 0.0)

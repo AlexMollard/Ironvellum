@@ -125,6 +125,22 @@ class ProgramGeneratorTest {
     }
 
     @Test
+    fun `a helper's fill never lifts an unprioritised muscle level with the prioritised arms`() {
+        // Helper work once took mid chest, lats and abs level with or past arms at 9.0 here.
+        for (kit in listOf(Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)) {
+            val request = ProgramRequest(
+                TrainingFocus.MUSCLE, VolumeLevel.STANDARD, kit,
+                daysPerWeek = 3, priorities = setOf(MuscleArea.ARMS), split = TrainingSplit.PUSH_PULL_LEGS, maxExercises = 8,
+            )
+            val volume = volumeOf(ProgramGenerator.week(request, catalogue, strength))
+            val arms = minOf(volume[Muscle.BICEPS]!!, volume[Muscle.TRICEPS]!!)
+            ProgramRules.TRACKED.filter { it != Muscle.BICEPS && it != Muscle.TRICEPS }.forEach {
+                assertTrue("$kit: $it ${volume[it]} not under arms $arms", (volume[it] ?: 0.0) < arms)
+            }
+        }
+    }
+
+    @Test
     fun `every muscle a generated week leaves under four hard sets is named in its routine note, never a workout's`() {
         // The coverage map calls any muscle below four hard sets BELOW_MINIMUM,
         // even 3.9; a plan that shows that there without saying so here reads
