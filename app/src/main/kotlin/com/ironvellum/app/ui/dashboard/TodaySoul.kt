@@ -325,8 +325,8 @@ internal fun LedgerMotif(modifier: Modifier = Modifier) {
 }
 
 /**
- * The header's name line: [name], then [rank]. The rank is measured first and never shortened; the name
- * takes what is left and ellipsizes only when it must.
+ * The header's name line: [name], then [rank] beside it when both fit. When they do not, the rank drops to a
+ * second line under the name, so neither is clipped; the name ellipsizes only when it alone is wider than the line.
  */
 @Composable
 internal fun NameRow(
@@ -343,11 +343,20 @@ internal fun NameRow(
     ) { measurables, constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val rankP = measurables[1].measure(loose)
-        val nameP = measurables[0].measure(loose.copy(maxWidth = (constraints.maxWidth - rankP.width).coerceAtLeast(0)))
-        val height = maxOf(nameP.height, rankP.height)
-        layout(nameP.width + rankP.width, height) {
-            nameP.place(0, (height - nameP.height) / 2)
-            rankP.place(nameP.width, (height - rankP.height) / 2)
+        val fullName = measurables[0].measure(loose)
+        if (fullName.width + rankP.width > constraints.maxWidth && rankP.width > 0) {
+            // Both do not fit on one line: the rank link drops under the name rather than clipping it.
+            layout(maxOf(fullName.width, rankP.width), fullName.height + rankP.height) {
+                fullName.place(0, 0)
+                rankP.place(0, fullName.height)
+            }
+        } else {
+            val nameP = fullName
+            val height = maxOf(nameP.height, rankP.height)
+            layout(nameP.width + rankP.width, height) {
+                nameP.place(0, (height - nameP.height) / 2)
+                rankP.place(nameP.width, (height - rankP.height) / 2)
+            }
         }
     }
 }
