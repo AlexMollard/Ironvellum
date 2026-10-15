@@ -126,20 +126,20 @@ account. It exists for a throwaway project and for the gate's round trip.
    `.aab` from step 3.
 
 
-## 7. F-Droid merge request
+## 7. F-Droid
 
-The fdroiddata MR (https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49794)
-carries the 1.0 recipe. linsui (2026-09-23): update the MR with every new
-release, or it stalls. After tagging vX.Y per step 2:
+Ironvellum is live on F-Droid (https://f-droid.org/packages/com.ironvellum.app/).
+The fdroiddata recipe uses `AutoUpdateMode: Version` and `UpdateCheckMode: Tags`,
+so a release needs no merge request:
 
-1. Append a new `Builds:` block to `docs/fdroid/com.ironvellum.app.yml`
-   (versionName/versionCode from step 2, `commit:` = `git rev-parse vX^{commit}`,
-   keep only the latest block in the MR).
-2. Bump `CurrentVersion`/`CurrentVersionCode`.
-3. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` upstream
-   if the release changes anything user-visible.
-4. Commit the recipe change to the `ironvellum` branch of the fork
-   (AlexMollard/fdroiddata) and let the MR pipeline run.
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts` (step 2).
+2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (500
+   characters at most); it is the release note F-Droid shows.
+3. Commit, then push the tag `vX.Y` on that commit. F-Droid's update checker
+   finds the tag, adds the build to the recipe and builds the `foss` flavour;
+   it usually appears within a few days.
+4. Store text and screenshots ship from `fastlane/metadata/android/en-US/` at
+   the tagged commit, so update them before tagging.
 
 ## 8. Post-upload
 

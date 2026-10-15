@@ -1,20 +1,30 @@
-Ironvellum is a free, offline strength tracker. It plans your training, makes logging fast, and shows you what’s working.
+Ironvellum is a free, open-source strength tracker that works fully offline. It builds your week around effort, makes logging fast, and shows you what is working.
 
 PLAN
-• Answer a few questions and get a weekly plan for your goal and the gear you own, from a full gym to a pull-up bar.
+• Answer a few questions and get a weekly plan for your goal, your gear and the time you have, from a full gym to a pull-up bar.
+• Plans are built on hard sets and reps left in reserve: a weekly floor for every muscle and a cap so none is buried.
+• Training days are spaced for recovery. Each slot offers three ranked suggestions, and you can take each one on its own.
 • See which muscles your week covers, and fill any gap in a tap.
 
 TRAIN
-• Log a set with one tap; last session’s numbers carry over.
-• Rest timers, warm-ups, timed holds and notes built in.
-• It tells you when to add weight.
+• Log a set with one tap; last session's numbers carry over.
+• Choose a scheme per lift: straight sets, a top set with back-offs, drop sets, or your own mix. Back-offs fill in from the top set.
+• Rate each set by reps in reserve or RPE. Rest timers, supersets, hold timers, warm-up ramps and notes are built in.
+• It tells you when to add weight, with rep ranges and double progression.
+• Weighted vest and dip belt support, a plate calculator, and kg or lb.
 
-GROW
-• Hundreds of exercises with drawings, and bodyweight skills on progression paths.
+PROGRESS
+• Hundreds of exercises, each with a line drawing, and bodyweight skills on progression paths.
+• Personal records per lift, kept apart per variation, with strength charts over time.
 • Earn XP, levels and deeds as you train.
-• Charts for your lifts and bodyweight, with optional Health Connect.
+• Import your history from Strong, Hevy or FitNotes CSV exports.
+• Optional Health Connect for bodyweight.
 
-YOURS
+MAKE IT YOURS
+• Plain gym words by default. Switch to themed names if you want the full fantasy, including the Veil: relics you collect that raise how much essence you earn while you are away.
+• Pick your accent colour.
+
+PRIVATE AND FREE
 • Works fully offline. No ads, no trackers, no paid tier.
-• Optional account to back up and train with friends.
+• An account is optional: use it to back up and to add friends and join groups.
 • Free and open source (GPL-3.0).
