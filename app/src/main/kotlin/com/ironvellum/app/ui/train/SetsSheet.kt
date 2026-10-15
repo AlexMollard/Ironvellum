@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -137,7 +139,7 @@ internal fun SetsSheet(
     )
     val noFixedYet = scheme.type == SchemeType.TOP_BACKOFF && fixedMode && effective.backoffFixedKg == null
     val loadLabel = if (lift.bodyweightLift) "Added load" else "Load"
-    val loadEmpty = if (lift.bodyweightLift) "BW" else "none"
+    val loadEmpty = LoadTargetStepperPlaceholder(lift.bodyweightLift)
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
@@ -403,7 +405,7 @@ private fun TopBackoffCards(
     RoleCard("TOP SET", "1 set", SetKind.TOP.tint()) {
         LoadTargetStepper(
             weight, loadGridLb(exerciseName), false, worn,
-            label = if (bodyweight) "Added load" else "Load", emptyText = if (bodyweight) "BW" else "none", onKgText = onWeight,
+            label = if (bodyweight) "Added load" else "Load", emptyText = LoadTargetStepperPlaceholder(bodyweight), onKgText = onWeight,
         )
         IntRangeStepper("Reps", "top reps", scheme.topReps, 1, max) { onScheme(scheme.copy(topReps = it)) }
         EffortChips(scheme.topRir) { onScheme(scheme.copy(topRir = it)) }
@@ -470,68 +472,127 @@ private fun Segment(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * Reps left as five chips, 0 1 2 3 4+, multi-select over the contiguous range the top set is meant to finish in: a chip
- * outside the range stretches it, an end chip shrinks it, a chip inside it makes it the only one. "4+" is four up to
- * ten. A lifter who reads effort as RPE sees the RPE equivalents (10 is none left, 7 is three, 6 or less is four or more).
+ * Reps left as five chips, 0 1 2 3 4+, that read as one range: the chosen chips join into a single bar and the line under
+ * them says it in words. "4+" is four up to ten. A lifter who reads effort as RPE sees the RPE equivalents (10 is none
+ * left, 7 is three, 6 or less is four or more) and the same range, worded as an RPE.
  */
 @Composable
 private fun EffortChips(range: IntRange, onRange: (IntRange) -> Unit) {
     val rpe = EffortSetting.enabled && EffortSetting.scale == EffortScale.RPE
     val faces = if (rpe) listOf("10", "9", "8", "7", "≤6") else listOf("0", "1", "2", "3", "4+")
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        RowLabel(
-            if (rpe) "RPE" else "Reps left",
-            if (rpe) "stop at this effort" else "stop with this many in hand",
-            Modifier.weight(1f),
-        )
-        faces.forEachIndexed { i, face ->
-            val on = if (i == 4) range.last >= 4 else i in range
-            Box(
-                Modifier
-                    .width(34.dp)
-                    .height(48.dp)
-                    .clickable(role = Role.Checkbox, onClickLabel = "Stop with $face ${if (rpe) "effort" else "reps left"}") {
-                        onRange(nextRirRange(range, i))
-                    }
-                    .semantics { this.selected = on },
-                contentAlignment = Alignment.Center,
-            ) {
+    val label = if (rpe) "RPE" else "Reps left"
+    val from = minOf(range.first, 4)
+    val to = minOf(range.last, 4)
+    val base = MaterialTheme.shapes.extraSmall
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = "$label, ${rirRangeSpoken(range, rpe)}" },
+    ) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            RowLabel(label, null, Modifier.weight(1f))
+            faces.forEachIndexed { i, face ->
+                val on = i in from..to
+                val shape = if (!on) base else base.copy(
+                    topStart = if (i == from) base.topStart else ZeroCornerSize,
+                    bottomStart = if (i == from) base.bottomStart else ZeroCornerSize,
+                    topEnd = if (i == to) base.topEnd else ZeroCornerSize,
+                    bottomEnd = if (i == to) base.bottomEnd else ZeroCornerSize,
+                )
                 Box(
                     Modifier
-                        .size(30.dp)
-                        .background(if (on) IronvellumColors.Emerald else IronvellumColors.VaultHigh, MaterialTheme.shapes.extraSmall)
-                        .inkBorder(if (on) IronvellumColors.Emerald else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
+                        .width(34.dp)
+                        .height(48.dp)
+                        .clickable(role = Role.Button, onClickLabel = "Stop with ${rirRangeSpoken(i..(if (i == 4) 10 else i), rpe)}") {
+                            onRange(nextRirRange(range, i))
+                        }
+                        .semantics {
+                            this.selected = on
+                            stateDescription = if (on) "In the range" else "Not in the range"
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        face,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (on) MaterialTheme.colorScheme.onPrimary else IronvellumColors.Ink,
-                    )
+                    // A chosen chip fills its whole width so neighbours touch: the run reads as one bar.
+                    Box(
+                        Modifier
+                            .width(if (on) 34.dp else 30.dp)
+                            .height(30.dp)
+                            .background(if (on) IronvellumColors.Emerald else IronvellumColors.VaultHigh, shape)
+                            .then(if (on) Modifier else Modifier.inkBorder(IronvellumColors.Rune, shape, 1.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            face,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (on) MaterialTheme.colorScheme.onPrimary else IronvellumColors.Ink,
+                        )
+                    }
                 }
             }
         }
+        Text(rirRangeLine(range, rpe), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
     }
 }
 
 /**
- * The reps-left range after a tap on chip [i] (0 to 4, the last being "4 or more"): a chip outside the range stretches
- * it, an end chip shrinks it (never to nothing), a chip inside it makes it the only one. "4+" reaches ten.
+ * The reps-left range after a tap on chip [i] (0 to 4, the last being "4 or more"). With one value chosen, a tap on
+ * another stretches the range to cover both; with a range chosen, a tap starts over with that one value; a tap on the
+ * only value keeps it. "4+" reaches ten.
  */
 internal fun nextRirRange(range: IntRange, i: Int): IntRange {
     val a0 = minOf(range.first, 4)
     val b0 = minOf(range.last, 4)
-    val (a, b) = when {
-        i !in a0..b0 -> minOf(a0, i) to maxOf(b0, i)
-        a0 == b0 -> a0 to b0
-        i == a0 -> (i + 1) to b0
-        i == b0 -> a0 to (i - 1)
-        else -> i to i
+    if (a0 != b0) return if (i == 4) 4..10 else i..i
+    if (i == a0) return range
+    val lo = minOf(a0, i)
+    val hi = maxOf(b0, i)
+    return lo..(if (hi == 4) (if (b0 == 4) maxOf(range.last, 4) else 10) else hi)
+}
+
+/** The RPE a count of reps left stands for: 3 left is RPE 7, 4 or more is RPE 6. */
+private fun rpeOf(rir: Int) = 10 - minOf(rir, 4)
+
+/** The line under the chips: "Stop with 0–1 reps left", "Stop around RPE 9–10". */
+internal fun rirRangeLine(range: IntRange, rpe: Boolean): String {
+    val lo = minOf(range.first, 4)
+    val open = range.last >= 4
+    return if (!rpe) {
+        when {
+            lo == 0 && open -> "Stop with any number of reps left"
+            open -> "Stop with $lo or more reps left"
+            lo == range.last -> "Stop with $lo ${if (lo == 1) "rep" else "reps"} left"
+            else -> "Stop with $lo–${range.last} reps left"
+        }
+    } else {
+        when {
+            lo == 0 && open -> "Stop at any RPE"
+            open -> "Stop around RPE ${rpeOf(lo)} or lower"
+            lo == range.last -> "Stop around RPE ${rpeOf(lo)}"
+            else -> "Stop around RPE ${rpeOf(range.last)}–${rpeOf(lo)}"
+        }
     }
-    val first = if (a == a0 && a == 4) range.first else a
-    val last = if (b == 4) (if (b0 == 4) maxOf(range.last, 4) else 10) else b
-    return first..last
+}
+
+/** The range as a screen reader says it: "0 to 1", "2", "4 or more" (RPE: "RPE 9 to 10", "RPE 6 or lower"). */
+internal fun rirRangeSpoken(range: IntRange, rpe: Boolean): String {
+    val lo = minOf(range.first, 4)
+    val open = range.last >= 4
+    return if (!rpe) {
+        when {
+            lo == 0 && open -> "any number"
+            open -> "$lo or more"
+            lo == range.last -> "$lo"
+            else -> "$lo to ${range.last}"
+        }
+    } else {
+        when {
+            lo == 0 && open -> "any RPE"
+            open -> "RPE ${rpeOf(lo)} or lower"
+            lo == range.last -> "RPE ${rpeOf(lo)}"
+            else -> "RPE ${rpeOf(range.last)} to ${rpeOf(lo)}"
+        }
+    }
 }
 
 /** A whole-number range as two compact steppers. */

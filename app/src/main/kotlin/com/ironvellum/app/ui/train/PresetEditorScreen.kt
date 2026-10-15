@@ -413,12 +413,17 @@ private val DRAG_STEP = 56.dp
 private fun loadTarget(kgText: String): String =
     DecimalInput.parse(kgText)?.let { Units.withUnit(it) } ?: "$kgText ${Units.name}"
 
+/** What a load stepper reads while no load is set: it never says "none"; the figure is 48dp wide, so one short word. A bodyweight lift reads "BW". */
+internal const val LOAD_EMPTY = "Add"
+
+internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean) = if (bodyweight) "BW" else LOAD_EMPTY
+
 /**
  * The rite editor's load target. It is stored as kg text, so in lb the stepper works on lb text kept
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", emptyText: String = "none", caption: String? = null, onKgText: (String) -> Unit) {
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", emptyText: String = LOAD_EMPTY, caption: String? = null, onKgText: (String) -> Unit) {
     val unit = Units.current
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
@@ -580,6 +585,7 @@ fun PresetEditorScreen(
                                 ProgramAnswersStore.kit, entry.exerciseName,
                                 ui.exercises.firstOrNull { it.id == entry.exerciseId }?.isWeighted, metric,
                             ),
+                            bodyweightLift = ui.exercises.firstOrNull { it.id == entry.exerciseId }?.isWeighted == false,
                             open = open == index,
                             supersetNumber = numbers[index],
                             partners = supersetPartners(ui.entries, index),
@@ -877,6 +883,8 @@ private fun EntryItem(
     offeredModifiers: List<String>,
     /** The vest and belt this movement is loaded with ([WornLoad.forLift]); null steps the load as ever. */
     worn: LoadKit?,
+    /** True for a lift whose load is the body: an empty load reads "BW". */
+    bodyweightLift: Boolean,
     open: Boolean,
     /** The "Superset 1" this entry is in, by its place in the rite; null when it is in none. */
     supersetNumber: Int?,
@@ -991,7 +999,7 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn) { onEntry(entry.copy(weight = it)) }
+                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn, emptyText = LoadTargetStepperPlaceholder(bodyweightLift)) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
