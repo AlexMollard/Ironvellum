@@ -161,4 +161,65 @@ class RoutineUpdateTest {
         // Rows but nothing ticked: a skipped movement proposes nothing, not even its count.
         assertTrue(RoutineUpdate.propose(listOf(trio), List(2) { set(1, 0, 8, 12.5, done = false) }, metricOf).isEmpty())
     }
+
+    private fun grouped(exerciseId: Long, position: Int, group: Int?, reps: Int = 8, kg: Double? = 40.0) =
+        set(exerciseId, position, reps, kg).copy(supersetGroup = group)
+
+    @Test
+    fun `a lift added in the trial is offered with today's figures, after the lift it followed`() {
+        val rite = listOf(entry(10, 1, 0, 3, 5, 60.0), entry(11, 2, 1, 3, 8, 20.0))
+        val sets = listOf(set(1, 0, 5, 60.0), set(5, 1, 12, 15.0), set(5, 1, 10, 15.0), set(2, 2, 8, 20.0))
+        val adds = RoutineUpdate.additions(setOf(1L, 2L), sets, emptySet(), { ExerciseMetric.REPS })
+        val add = adds.single()
+        assertEquals(5L, add.entry.exerciseId)
+        assertEquals(1L, add.afterExerciseId)
+        assertEquals(2, add.entry.targetSets)
+        assertEquals(11, add.entry.targetReps)
+        assertEquals(15.0, add.entry.targetWeightKg)
+        // A swap's newcomer is the swap's, a warm-up exercise of the rite is not new, a skipped add says nothing.
+        assertTrue(RoutineUpdate.additions(setOf(1L, 2L), sets, setOf(5L), { ExerciseMetric.REPS }).isEmpty())
+        assertTrue(RoutineUpdate.additions(setOf(1L, 2L, 5L), sets, emptySet(), { ExerciseMetric.REPS }).isEmpty())
+        assertTrue(RoutineUpdate.additions(setOf(1L), listOf(set(5, 1, 10, 15.0, done = false)), emptySet(), { ExerciseMetric.REPS }).isEmpty())
+        // Kept, it lands second, between the two, with positions renumbered.
+        val arranged = RoutineUpdate.arrange(rite, adds, emptyList())
+        assertEquals(listOf(1L, 5L, 2L), arranged.map { it.exerciseId })
+        assertEquals(listOf(0, 1, 2), arranged.map { it.position })
+        assertEquals(0L, arranged[1].id)
+        // Unticked, nothing is passed and the rite is as it was.
+        assertEquals(rite.map { it.exerciseId }, RoutineUpdate.arrange(rite, emptyList(), emptyList()).map { it.exerciseId })
+    }
+
+    @Test
+    fun `a superset made in the trial is offered as a link, and linking moves the partner next to it`() {
+        val rite = listOf(entry(10, 1, 0, 3, 5, 60.0), entry(11, 2, 1, 3, 8, 20.0), entry(12, 3, 2, 3, 8, 20.0))
+        val sets = listOf(grouped(1, 0, 1), grouped(3, 1, 1), set(2, 2, 8, 20.0))
+        val link = RoutineUpdate.links(rite, sets, emptySet()).single()
+        assertEquals(listOf(1L, 3L), link.exerciseIds)
+        val arranged = RoutineUpdate.arrange(rite, emptyList(), listOf(link))
+        assertEquals(listOf(1L, 3L, 2L), arranged.map { it.exerciseId })
+        assertEquals(arranged[0].supersetGroup, arranged[1].supersetGroup)
+        assertTrue(arranged[0].supersetGroup != null)
+        assertEquals(null, arranged[2].supersetGroup)
+        // Already a superset in the rite: nothing to offer.
+        val already = rite.map { if (it.exerciseId == 1L || it.exerciseId == 3L) it.copy(supersetGroup = 1) else it }
+            .let { listOf(it[0], it[2], it[1]).mapIndexed { i, e -> e.copy(position = i) } }
+        assertTrue(RoutineUpdate.links(already, sets, emptySet()).isEmpty())
+        // No superset in the trial, none offered.
+        assertTrue(RoutineUpdate.links(rite, listOf(set(1, 0, 5, 60.0), set(2, 1, 8, 20.0)), emptySet()).isEmpty())
+    }
+
+    @Test
+    fun `a link to an added lift is offered and applies once the lift is kept`() {
+        val rite = listOf(entry(10, 1, 0, 3, 5, 60.0))
+        val sets = listOf(grouped(1, 0, 1), grouped(5, 1, 1))
+        val adds = RoutineUpdate.additions(setOf(1L), sets, emptySet(), { ExerciseMetric.REPS })
+        val link = RoutineUpdate.links(rite, sets, adds.map { it.entry.exerciseId }.toSet()).single()
+        // Link without the lift: skipped. With it: both grouped.
+        assertEquals(listOf(1L), RoutineUpdate.arrange(rite, emptyList(), listOf(link)).map { it.exerciseId })
+        val both = RoutineUpdate.arrange(rite, adds, listOf(link))
+        assertEquals(listOf(1L, 5L), both.map { it.exerciseId })
+        assertTrue(both.all { it.supersetGroup != null })
+        // A lift outside both the rite and the additions drops the link.
+        assertTrue(RoutineUpdate.links(rite, listOf(grouped(1, 0, 1), grouped(9, 1, 1)), emptySet()).isEmpty())
+    }
 }

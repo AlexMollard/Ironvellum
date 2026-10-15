@@ -616,6 +616,9 @@ object ProgramGenerator {
                 exercise.name, group, strength, reps.coerceAtMost(ProgramRules.MAX_WORKING_REPS), rir, worn,
             )
         }
+        if (base == null) {
+            base = StarterLoads.loadKg(exercise, strength.starter, reps.coerceAtMost(ProgramRules.MAX_WORKING_REPS), rir, worn)
+        }
         base ?: return null
         val cap = dumbbellCapKg(exercise.name, equipment)
         if (cap == null || base.first <= cap) return LoadFill(base.first, reps, base.second, overCap = false)

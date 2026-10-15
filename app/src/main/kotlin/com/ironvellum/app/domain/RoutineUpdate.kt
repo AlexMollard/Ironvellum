@@ -176,35 +176,146 @@ object RoutineUpdate {
             val metric = metricOf(entry.exerciseId) ?: ExerciseMetric.REPS
             if (!metric.isStrength) return@mapNotNull null
             val block = blocksByExercise[entry.exerciseId]?.getOrNull(nth).orEmpty()
-            val done = block.filter { it.done }
-            if (done.isEmpty()) return@mapNotNull null
-            // The prescription is read off the sets that carry it: a top set speaks for the lift, and drops and
-            // back-offs are lighter by design, so they never move the rite's reps or load.
-            val tops = done.filter { it.kind == SetKind.TOP }
-            val base = tops.ifEmpty { done.filter { it.kind != SetKind.DROP && it.kind != SetKind.BACKOFF } }.ifEmpty { done }
-            val scheme = inferScheme(entry.scheme, block)
-            val figures = base.map { set ->
-                if (metric == ExerciseMetric.HOLD) (set.durationSec ?: set.reps) else set.reps
-            }
-            val modifiers = done.first().modifiers
-            val after = entry.copy(
-                // Rows, not done sets: a set left unticked is a short day and
-                // keeps the count, while removeSet deletes the row, so a set
-                // taken out on purpose is the only way the count drops. A drop
-                // is an extra set on top of the count, not one of its sets.
-                targetSets = block.count { it.kind != SetKind.DROP },
-                // A top scheme keeps its reps as a range of its own, led by the entry's figure; so does a rep range.
-                targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) {
-                    scheme.topReps.first
-                } else {
-                    scheme.repsRange(SetKind.WORKING)?.first ?: medianDown(figures)
-                },
-                targetWeightKg = mostUsedLoad(base.map { it.weightKg }),
-                modifiers = if (sameModifiers(modifiers, entry.modifiers)) entry.modifiers else modifiers,
-                scheme = scheme,
-            )
+            val after = proposed(entry, block, metric) ?: return@mapNotNull null
             if (after == entry) null else Change(entry, after, isHold = metric == ExerciseMetric.HOLD)
         }
+    }
+
+    /**
+     * [entry] as the finished [block] of its lift reads (see [propose] for how each figure is taken); null when no
+     * set of the block is done.
+     */
+    private fun proposed(entry: PresetEntry, block: List<SessionSet>, metric: ExerciseMetric): PresetEntry? {
+        val done = block.filter { it.done }
+        if (done.isEmpty()) return null
+        // The prescription is read off the sets that carry it: a top set speaks for the lift, and drops and
+        // back-offs are lighter by design, so they never move the rite's reps or load.
+        val tops = done.filter { it.kind == SetKind.TOP }
+        val base = tops.ifEmpty { done.filter { it.kind != SetKind.DROP && it.kind != SetKind.BACKOFF } }.ifEmpty { done }
+        val scheme = inferScheme(entry.scheme, block)
+        val figures = base.map { set ->
+            if (metric == ExerciseMetric.HOLD) (set.durationSec ?: set.reps) else set.reps
+        }
+        val modifiers = done.first().modifiers
+        return entry.copy(
+            // Rows, not done sets: a set left unticked is a short day and
+            // keeps the count, while removeSet deletes the row, so a set
+            // taken out on purpose is the only way the count drops. A drop
+            // is an extra set on top of the count, not one of its sets.
+            targetSets = block.count { it.kind != SetKind.DROP },
+            // A top scheme keeps its reps as a range of its own, led by the entry's figure; so does a rep range.
+            targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) {
+                scheme.topReps.first
+            } else {
+                scheme.repsRange(SetKind.WORKING)?.first ?: medianDown(figures)
+            },
+            targetWeightKg = mostUsedLoad(base.map { it.weightKg }),
+            modifiers = if (sameModifiers(modifiers, entry.modifiers)) entry.modifiers else modifiers,
+            scheme = scheme,
+        )
+    }
+
+    /** A movement done in the trial that the rite never named, offered unticked: one-offs are common. */
+    data class Addition(
+        /** The rite entry it would become (id 0), with the sets, reps and load done today. */
+        val entry: PresetEntry,
+        /** The rite lift it followed in the trial, or null when it came before all of them: where it goes. */
+        val afterExerciseId: Long?,
+        val isHold: Boolean = false,
+    ) {
+        val line: String get() = entry.exerciseName
+    }
+
+    /** A superset made in the trial between movements the rite holds apart, offered unticked. */
+    data class Link(val exerciseIds: List<Long>, val names: List<String>) {
+        val line: String get() = names.joinToString(" + ")
+    }
+
+    /**
+     * The movements to offer as additions, in trial order: a lift with at least one done working set that is in
+     * no entry of the rite ([riteIds], warm-up exercises included) and not [excluded] (a swap's newcomer is
+     * offered as the swap, not twice). Each carries the figures [propose] would write.
+     */
+    fun additions(
+        riteIds: Set<Long>,
+        sets: List<SessionSet>,
+        excluded: Set<Long>,
+        metricOf: (Long) -> ExerciseMetric?,
+    ): List<Addition> {
+        val blocks = Supersets.blocks(sets.filter { !it.warmup })
+        var lastRite: Long? = null
+        return blocks.mapNotNull { block ->
+            val id = block.exerciseId
+            if (id in riteIds) {
+                lastRite = id
+                return@mapNotNull null
+            }
+            if (id in excluded) return@mapNotNull null
+            val metric = metricOf(id) ?: ExerciseMetric.REPS
+            if (!metric.isStrength) return@mapNotNull null
+            val stub = PresetEntry(exerciseId = id, exerciseName = block.sets.first().exerciseName, targetSets = 0, targetReps = 0)
+            val entry = proposed(stub, block.sets, metric) ?: return@mapNotNull null
+            Addition(entry, lastRite, isHold = metric == ExerciseMetric.HOLD)
+        }
+    }
+
+    /**
+     * The supersets of the trial to offer as links: each run of two or more neighbours in the trial whose
+     * movements the rite does not already hold as one superset. A member may be an addition ([additionIds]); the
+     * link then needs that addition kept. A run with a member in neither is dropped.
+     */
+    fun links(
+        entries: List<PresetEntry>,
+        sets: List<SessionSet>,
+        additionIds: Set<Long>,
+    ): List<Link> {
+        val blocks = Supersets.blocks(sets.filter { !it.warmup })
+        val worked = entries.filter { !it.warmup }.sortedBy { it.position }
+        val riteGroups = Supersets.effective(worked.map { it.supersetGroup })
+        val riteIds = worked.map { it.exerciseId }
+        return Supersets.runs(blocks.map { it.group }).mapNotNull { run ->
+            val members = run.map { blocks[it] }
+            val ids = members.map { it.exerciseId }
+            if (ids.any { it !in riteIds && it !in additionIds }) return@mapNotNull null
+            val together = ids.all { it in riteIds } && ids.map { id -> riteIds.indexOf(id) }.let { at ->
+                val g = riteGroups[at.first()]
+                g != null && at.all { riteGroups[it] == g }
+            }
+            if (together) return@mapNotNull null
+            Link(ids, members.map { it.sets.first().exerciseName })
+        }
+    }
+
+    /**
+     * The rite's entries as they read once the kept [additions] are in (each after the lift it followed, past the
+     * end of that lift's superset so a group is never split) and the kept [links] made: linked lifts move next to
+     * each other and share a group, and drop their drop sets (a superset cannot hold them). A link whose members
+     * are not all in the rite is skipped. Entries come back in order with positions renumbered gap-free; a new
+     * one has id 0. Warm-up exercises lead and stay out of every superset.
+     */
+    fun arrange(entries: List<PresetEntry>, additions: List<Addition>, links: List<Link>): List<PresetEntry> {
+        var list = entries.sortedBy { it.position }
+        for (add in additions) {
+            if (list.any { it.exerciseId == add.entry.exerciseId }) continue
+            val anchor = add.afterExerciseId?.let { id -> list.indexOfFirst { it.exerciseId == id && !it.warmup } }
+            var at = if (anchor == null || anchor < 0) list.indexOfLast { it.warmup } + 1 else anchor + 1
+            val group = list.getOrNull(at - 1)?.supersetGroup
+            while (group != null && list.getOrNull(at)?.supersetGroup == group) at++
+            list = list.take(at) + add.entry.copy(id = 0, position = at, supersetGroup = null) + list.drop(at)
+        }
+        for (link in links) {
+            for ((a, b) in link.exerciseIds.zipWithNext()) {
+                val ia = list.indexOfFirst { it.exerciseId == a && !it.warmup }
+                val ib = list.indexOfFirst { it.exerciseId == b && !it.warmup }
+                if (ia < 0 || ib < 0) break
+                val layout = Supersets.link(list.map { it.supersetGroup }, ia, ib) ?: continue
+                list = layout.order.mapIndexed { slot, old ->
+                    val e = list[old].copy(supersetGroup = layout.groups[slot])
+                    if (e.supersetGroup != null) e.copy(scheme = e.scheme.withoutDrops()) else e
+                }
+            }
+        }
+        return list.mapIndexed { i, e -> e.copy(position = i) }
     }
 
     /** Median, the even case taking the mean of the middle pair rounded down: 5,5,5,3 -> 5; 10,9,7 -> 9. */

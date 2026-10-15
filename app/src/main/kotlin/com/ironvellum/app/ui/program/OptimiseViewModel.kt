@@ -67,7 +67,7 @@ internal class OptimiseViewModel(
             if (catalogue.isEmpty()) return@mapLatest OptimiseState.Loading
             val answers = ProgramAnswersStore.get(appContext)
             val equipment = answers?.equipment ?: ProgramAnswersStore.equipment.value ?: return@mapLatest OptimiseState.NeedsArmoury
-            val strength = repo.strengthProfile()
+            val strength = repo.strengthProfile().copy(starter = repo.starterBasis(sex, answers?.volume ?: VolumeLevel.STANDARD))
             val request = ProgramRequest(
                 focus = answers?.focus ?: TrainingFocus.GENERAL,
                 volume = answers?.volume ?: VolumeLevel.STANDARD,

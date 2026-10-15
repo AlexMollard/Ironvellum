@@ -74,6 +74,8 @@ import com.ironvellum.app.domain.LoggedLift
 import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.StarterBasis
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.WarmupRamp
@@ -788,6 +790,13 @@ class Repository(
                 .filter { it.done && (it.weightKg ?: 0.0) > 0.0 && !Variation.eases(it.modifiers) }
                 .map { LoggedLift(it.exerciseName, it.weightKg!!, it.reps) },
         )
+
+    /** The lifter's latest weigh-in, or null before the first. */
+    suspend fun latestBodyweightKg(): Double? = statDao.observeAll().first().firstOrNull()?.weightKg
+
+    /** The starting point for loads a lifter has no history for, or null while their bodyweight is unknown. */
+    suspend fun starterBasis(sex: Sex, level: VolumeLevel): StarterBasis? =
+        latestBodyweightKg()?.takeIf { it > 0.0 }?.let { StarterBasis(it, sex, level) }
 
     /** The first completed session's day, or null for a lifter with no history. */
     suspend fun firstSessionEpochDay(): Long? =
@@ -1852,6 +1861,10 @@ class Repository(
         val changes: List<RoutineUpdate.Change>,
         /** Lifts swapped for others during the trial, each offered as a rite change of its own. */
         val swaps: List<RiteSwap.Swap> = emptyList(),
+        /** Lifts added during the trial, each offered unticked. */
+        val additions: List<RoutineUpdate.Addition> = emptyList(),
+        /** Supersets made during the trial that the rite does not hold, each offered unticked. */
+        val links: List<RoutineUpdate.Link> = emptyList(),
     )
 
     /**
@@ -1890,6 +1903,7 @@ class Repository(
                 done = s.done,
                 durationSec = s.durationSec,
                 kind = s.setKind(),
+                supersetGroup = s.supersetGroup,
             )
         }
         val changes = RoutineUpdate.propose(entries, sets) { id ->
@@ -1898,8 +1912,18 @@ class Repository(
         val swaps = RiteSwap.detect(entries, sets) { id ->
             catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
         }
-        if (changes.isEmpty() && swaps.isEmpty()) return null
-        return RoutineUpdateOffer(pw.preset.id, pw.preset.name, changes, swaps)
+        val metricOf = { id: Long ->
+            catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
+        }
+        val additions = RoutineUpdate.additions(
+            riteIds = pw.entries.map { it.exerciseId }.toSet(),
+            sets = sets,
+            excluded = swaps.map { it.toId }.toSet(),
+            metricOf = metricOf,
+        )
+        val links = RoutineUpdate.links(entries, sets, additions.map { it.entry.exerciseId }.toSet())
+        if (changes.isEmpty() && swaps.isEmpty() && additions.isEmpty() && links.isEmpty()) return null
+        return RoutineUpdateOffer(pw.preset.id, pw.preset.name, changes, swaps, additions, links)
     }
 
     /**
@@ -1913,6 +1937,8 @@ class Repository(
         presetId: Long,
         accepted: List<RoutineUpdate.Change>,
         swaps: List<RiteSwap.Swap> = emptyList(),
+        additions: List<RoutineUpdate.Addition> = emptyList(),
+        links: List<RoutineUpdate.Link> = emptyList(),
     ) = db.withTransaction {
         val current = presetDao.presetWithEntries(presetId)?.entries?.associateBy { it.id } ?: return@withTransaction
         keepSwaps(presetId, swaps)
@@ -1929,6 +1955,40 @@ class Repository(
                 ),
             )
         }
+        if (additions.isNotEmpty() || links.isNotEmpty()) arrangeRite(presetId, additions, links)
+    }
+
+    /**
+     * Puts the kept [additions] into the rite and makes the kept [links] ([RoutineUpdate.arrange] decides the
+     * order and groups), writing only the rows that moved and inserting the new ones.
+     */
+    private suspend fun arrangeRite(presetId: Long, additions: List<RoutineUpdate.Addition>, links: List<RoutineUpdate.Link>) {
+        val rows = presetDao.presetWithEntries(presetId)?.entries?.associateBy { it.id } ?: return
+        val entries = rows.values.map { e ->
+            PresetEntry(
+                id = e.id, exerciseId = e.exerciseId, targetSets = e.targetSets, targetReps = e.targetReps,
+                targetWeightKg = e.targetWeightKg, modifiers = e.modifiers, position = e.position,
+                supersetGroup = e.supersetGroup, scheme = SetScheme.decode(e.setScheme), warmup = e.warmup,
+            )
+        }
+        val arranged = RoutineUpdate.arrange(entries, additions, links)
+        val fresh = mutableListOf<PresetEntryEntity>()
+        arranged.forEach { e ->
+            val row = rows[e.id]
+            if (row == null) {
+                fresh += PresetEntryEntity(
+                    presetId = presetId, exerciseId = e.exerciseId, targetSets = e.targetSets, targetReps = e.targetReps,
+                    targetWeightKg = e.targetWeightKg, modifiers = e.modifiers, position = e.position,
+                    supersetGroup = e.supersetGroup, setScheme = e.scheme.normalised().encode(),
+                )
+            } else {
+                val scheme = if (e.scheme != SetScheme.decode(row.setScheme)) e.scheme.normalised().encode() else row.setScheme
+                if (row.position != e.position || row.supersetGroup != e.supersetGroup || scheme != row.setScheme) {
+                    presetDao.updateEntry(row.copy(position = e.position, supersetGroup = e.supersetGroup, setScheme = scheme))
+                }
+            }
+        }
+        if (fresh.isNotEmpty()) presetDao.insertEntries(fresh)
     }
 
     /**

@@ -324,7 +324,7 @@ class OnboardingViewModel(
                             sessionMinutes = sessionMinutes,
                         ),
                         catalogue,
-                        StrengthProfile(),
+                        StrengthProfile(starter = repo.starterBasis(sex, tier)),
                     )
                 }
             }.fold(

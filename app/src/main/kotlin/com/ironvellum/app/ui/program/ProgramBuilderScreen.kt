@@ -132,6 +132,17 @@ class ProgramBuilderViewModel(
 
     /** Her logged lifts, once read: a plan built before they arrive is rebuilt with them. */
     val strength: StateFlow<StrengthProfile> = _strength.asStateFlow()
+
+    /**
+     * True once her lifts and starting basis are read. The first proposal waits for it, so loads never arrive
+     * on a plan she has already begun to edit.
+     */
+    private val _strengthLoaded = MutableStateFlow(false)
+    val strengthLoaded: StateFlow<Boolean> = _strengthLoaded.asStateFlow()
+
+    /** [_strength] with the starting loads this sex and level call for, for a lift she has never logged. */
+    private fun strengthNow(): StrengthProfile =
+        _strength.value.let { s -> s.copy(starter = s.starter?.copy(sex = sex.value, level = tier.value)) }
     private val _firstSessionEpochDay = MutableStateFlow<Long?>(null)
 
     /** Whether any completed session exists - what the tier caption quotes. */
@@ -244,8 +255,9 @@ class ProgramBuilderViewModel(
                 historyYears.value = _firstSessionEpochDay.value?.let { first ->
                     ((LocalDate.now().toEpochDay() - first) / 365.25 * 10).toLong() / 10.0
                 }
-                _strength.value = repo.strengthProfile()
+                _strength.value = repo.strengthProfile().copy(starter = repo.starterBasis(sex.value, tier.value))
             }.onFailure { _error.value = "Could not read your Chronicle: ${it.message}" }
+            _strengthLoaded.value = true
             // The suggestion lands once, from real history; after she touches
             // the control it is hers, and a later load cannot re-suggest.
             if (!tierTouched) {
@@ -330,6 +342,7 @@ class ProgramBuilderViewModel(
     fun generate() {
         val cat = catalogue.value
         if (cat.isEmpty()) return clearProposal()
+        if (!_strengthLoaded.value) return
         // The screen asks for the armoury and shows no preview until it is set.
         val gear = equipment.value ?: return clearProposal()
         // A preset picker that is still loading is not "nothing to improve":
@@ -348,7 +361,7 @@ class ProgramBuilderViewModel(
             if (sel != selectedPresetId.value) selectedPresetId.value = sel
         }
         val key = listOf(
-            answersNow(), cat, sex.value, _strength.value,
+            answersNow(), cat, sex.value, strengthNow(),
             // Only these modes read the saved rites; a week or pattern does not care that she saved one.
             if (mode == "session" || mode == "improve") presets.value else null,
         )
@@ -361,7 +374,7 @@ class ProgramBuilderViewModel(
                     Generated(
                         chosen?.let {
                             ProgramTemplates.build(
-                                it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value, sessionMinutes.value,
+                                it, tier.value, gear, cat, strengthNow(), compoundOnly.value, maxExercises.value, sessionMinutes.value,
                             )
                         },
                     )
@@ -369,7 +382,7 @@ class ProgramBuilderViewModel(
                 "session" -> {
                     val week = planned(presets.value)
                     val preset = ProgramGenerator.session(
-                        request(), sessionKind.value, sessionDay.value, week, cat, _strength.value,
+                        request(), sessionKind.value, sessionDay.value, week, cat, strengthNow(),
                     )
                     // Null is a message for her, not a silent blank. For
                     // "what my week is missing" it means nothing is missing -
@@ -378,7 +391,7 @@ class ProgramBuilderViewModel(
                     requireNotNull(preset) {
                         val isolationWouldFill = compoundOnly.value && ProgramGenerator.session(
                             request().copy(compoundOnly = false), sessionKind.value, sessionDay.value,
-                            week, cat, _strength.value,
+                            week, cat, strengthNow(),
                         ) != null
                         when {
                             isolationWouldFill ->
@@ -405,12 +418,12 @@ class ProgramBuilderViewModel(
                         val rest = all.filterIndexed { i, _ -> i != index }
                         Generated(
                             plan = null,
-                            improvement = ProgramGenerator.improve(target, rest, request(), cat, _strength.value),
+                            improvement = ProgramGenerator.improve(target, rest, request(), cat, strengthNow()),
                             improvementFor = sel,
                         )
                     }
                 }
-                else -> Generated(weekGenerator(request(), cat, _strength.value))
+                else -> Generated(weekGenerator(request(), cat, strengthNow()))
             }
         }.fold(
             onSuccess = { result ->
@@ -467,7 +480,7 @@ class ProgramBuilderViewModel(
     }
 
     private fun newEntryFor(exercise: Exercise, sets: Int?): PlannedEntry = newPlannedEntry(
-        exercise, sets, tier.value, focus.value, equipment.value ?: Equipment.NOTHING, _strength.value,
+        exercise, sets, tier.value, focus.value, equipment.value ?: Equipment.NOTHING, strengthNow(),
     )
 
     fun removeEntry(presetIndex: Int, entryIndex: Int) {
@@ -644,6 +657,7 @@ fun ProgramBuilderScreen(
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
     val generated by viewModel.generatedPlan.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
+    val strengthLoaded by viewModel.strengthLoaded.collectAsStateWithLifecycle()
     val profileMode by viewModel.trainingMode.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
     val tier by viewModel.tier.collectAsStateWithLifecycle()
@@ -691,7 +705,7 @@ fun ProgramBuilderScreen(
     // Any answer change rebuilds, and generate() itself skips a call whose inputs did not change (a rotation
     // re-runs this effect), so hand edits survive. The tier suggestion has settled by the time the
     // catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, strength, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionMinutes, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    LaunchedEffect(mode, catalogue, presets, strength, strengthLoaded, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionMinutes, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
     }
 

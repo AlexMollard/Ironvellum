@@ -245,7 +245,11 @@ data class ProgramRequest(
  * Best estimated one-rep max per movement, in the MARKED kilos the lifter
  * logs (not force), keyed by lowercase exercise name. Empty for a new lifter.
  */
-data class StrengthProfile(val bestE1rmKg: Map<String, Double> = emptyMap())
+data class StrengthProfile(
+    val bestE1rmKg: Map<String, Double> = emptyMap(),
+    /** Where a loaded lift with no logged relative starts; see [StarterLoads]. Null leaves such a lift unloaded. */
+    val starter: StarterBasis? = null,
+)
 
 /** A logged working set, the raw material of a [StrengthProfile]. */
 data class LoggedLift(val exerciseName: String, val weightKg: Double, val reps: Int)

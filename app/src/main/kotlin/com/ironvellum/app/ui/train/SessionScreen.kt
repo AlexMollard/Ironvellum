@@ -413,14 +413,22 @@ class SessionViewModel(
     private val _routineUpdate = MutableStateFlow<Repository.RoutineUpdateOffer?>(null)
     val routineUpdate: StateFlow<Repository.RoutineUpdateOffer?> = _routineUpdate
 
-    /** Writes [accepted], each already narrowed to the fields the lifter ticked, and the [swaps] they chose to keep. */
-    fun applyRoutineUpdate(accepted: List<RoutineUpdate.Change>, swaps: List<RiteSwap.Swap>) {
+    /**
+     * Writes [accepted], each already narrowed to the fields the lifter ticked, and the [swaps], [additions] and
+     * superset [links] they chose to keep.
+     */
+    fun applyRoutineUpdate(
+        accepted: List<RoutineUpdate.Change>,
+        swaps: List<RiteSwap.Swap>,
+        additions: List<RoutineUpdate.Addition>,
+        links: List<RoutineUpdate.Link>,
+    ) {
         val offer = _routineUpdate.value ?: return
         _routineUpdate.value = null
-        if (accepted.isEmpty() && swaps.isEmpty()) return
+        if (accepted.isEmpty() && swaps.isEmpty() && additions.isEmpty() && links.isEmpty()) return
         // The screen may leave straight after; the write must not die with it.
         viewModelScope.launchGuarded("update rite") {
-            withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted, swaps) }
+            withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted, swaps, additions, links) }
         }
     }
 
@@ -2421,7 +2429,8 @@ internal fun OpenExerciseCard(
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        // The superset strip's own height already sits above the first row.
+        Spacer(Modifier.height(if (superset != null) 0.dp else 8.dp))
         block.sets.forEach { set ->
             if (set.warmup && foldWarmups) {
                 if (set.id == block.sets.first { it.warmup }.id) {
@@ -2585,7 +2594,7 @@ private fun SupersetStrip(line: SupersetLine, name: String, onUnlink: () -> Unit
         )
         Box(
             Modifier
-                .heightIn(min = 44.dp)
+                .heightIn(min = 36.dp)
                 .clickable(onClickLabel = "Unlink $name from its superset", role = Role.Button, onClick = onUnlink)
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
@@ -4073,7 +4082,7 @@ private fun RoutineUpdateDialog(
     offer: Repository.RoutineUpdateOffer,
     shortDay: Boolean,
     weightedOf: (Long) -> Boolean,
-    onUpdate: (List<RoutineUpdate.Change>, List<RiteSwap.Swap>) -> Unit,
+    onUpdate: (List<RoutineUpdate.Change>, List<RiteSwap.Swap>, List<RoutineUpdate.Addition>, List<RoutineUpdate.Link>) -> Unit,
     onKeep: () -> Unit,
 ) {
     var ticked by remember(offer) {
@@ -4081,6 +4090,9 @@ private fun RoutineUpdateDialog(
     }
     // Entry ids of the swaps to keep; none to start with, so a swap is "just this once" until chosen.
     var kept by remember(offer) { mutableStateOf(emptySet<Long>()) }
+    // Exercises added and superset links made today: one-offs are common, so both start unticked.
+    var addedKept by remember(offer) { mutableStateOf(emptySet<Long>()) }
+    var linksKept by remember(offer) { mutableStateOf(emptySet<RoutineUpdate.Link>()) }
     IronvellumDialog(
         onDismissRequest = onKeep,
         title = {
@@ -4094,7 +4106,7 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (offer.changes.isEmpty()) {
-                        "Keep today's swaps in your rite?"
+                        if (offer.swaps.isNotEmpty()) "Keep today's swaps in your rite?" else "Keep today's changes in your rite?"
                     } else if (shortDay) {
                         "Unticked sets don't lower the set count. Tick the changes to keep."
                     } else {
@@ -4135,6 +4147,32 @@ private fun RoutineUpdateDialog(
                         labelWidth = 104.dp,
                     ) { kept = if (on) kept - swap.entry.id else kept + swap.entry.id }
                 }
+                offer.additions.forEach { add ->
+                    val on = add.entry.exerciseId in addedKept
+                    Spacer(Modifier.height(6.dp))
+                    ToggleLine(
+                        on = on,
+                        label = if (on) "Add to rite" else "Just this once",
+                        figures = "${add.line} · " + SchemeText.figure(
+                            add.entry.scheme, add.entry.targetSets, add.entry.targetReps, add.entry.targetWeightKg,
+                            load = { Units.label(it, true) }, hold = add.isHold,
+                        ),
+                        labelWidth = 104.dp,
+                    ) { addedKept = if (on) addedKept - add.entry.exerciseId else addedKept + add.entry.exerciseId }
+                }
+                offer.links.forEach { link ->
+                    // A link to an added lift is only a link once that lift is kept.
+                    val needs = link.exerciseIds.filter { id -> offer.additions.any { it.entry.exerciseId == id } }
+                    val ready = needs.all { it in addedKept }
+                    val on = link in linksKept && ready
+                    Spacer(Modifier.height(6.dp))
+                    ToggleLine(
+                        on = on,
+                        label = if (on) "Link in rite" else "Just this once",
+                        figures = "Superset: ${link.line}" + if (ready) "" else " (needs the added lift)",
+                        labelWidth = 104.dp,
+                    ) { if (ready) linksKept = if (on) linksKept - link else linksKept + link }
+                }
             }
         },
         // Stacked full width on purpose: side by side the two labels wrapped
@@ -4144,10 +4182,16 @@ private fun RoutineUpdateDialog(
                 // Preset order, whatever order the toggles were flipped in.
                 val narrowed = offer.changes.mapNotNull { it.only(ticked[it].orEmpty()) }
                 val keptSwaps = offer.swaps.filter { it.entry.id in kept }
+                val keptAdditions = offer.additions.filter { it.entry.exerciseId in addedKept }
+                val keptLinks = offer.links.filter { link ->
+                    link in linksKept && link.exerciseIds.all { id ->
+                        offer.additions.none { it.entry.exerciseId == id } || id in addedKept
+                    }
+                }
                 IronvellumButton(
                     "Update rite",
-                    enabled = narrowed.isNotEmpty() || keptSwaps.isNotEmpty(),
-                    onClick = { onUpdate(narrowed, keptSwaps) },
+                    enabled = narrowed.isNotEmpty() || keptSwaps.isNotEmpty() || keptAdditions.isNotEmpty() || keptLinks.isNotEmpty(),
+                    onClick = { onUpdate(narrowed, keptSwaps, keptAdditions, keptLinks) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 IronvellumButton("Keep rite", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())

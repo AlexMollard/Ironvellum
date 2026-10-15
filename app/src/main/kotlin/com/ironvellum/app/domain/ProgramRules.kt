@@ -238,7 +238,7 @@ object ProgramRules {
     private fun maxE1rmLabel(e1rm: Double): String =
         if (e1rm % 1.0 == 0.0) e1rm.toInt().toString() else "%.1f".fmt(e1rm)
 
-    private fun loadFromE1rm(
+    internal fun loadFromE1rm(
         exerciseName: String,
         muscleGroup: String,
         e1rm: Double,
@@ -313,12 +313,23 @@ object ProgramRules {
         rir: Int,
         worn: LoadKit? = null,
     ): Pair<Double, String>? {
+        val (marked, source) = estimatedE1rmKg(exerciseName, strength) ?: return null
+        val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir, worn)
+        val sourceLabel = source.split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+        return load to "estimate from $sourceLabel"
+    }
+
+    /**
+     * The marked-kilo e1RM [estimatedLoadKg] works from, and the lower-case name of the logged relative it came
+     * from; null when no relative is in [strength].
+     */
+    internal fun estimatedE1rmKg(exerciseName: String, strength: StrengthProfile): Pair<Double, String>? {
         val key = exerciseName.trim().lowercase()
         val ownFactor = MovementDifficulty.loadFactor(exerciseName)
         // Deterministic order: the table's own sequence, so the first logged
         // relative always wins and two logged relatives cannot tie-break.
         for ((a, b, ratio) in related) {
-            val (source, target, r) =
+            val (source, _, r) =
                 if (b == key) Triple(a, b, ratio)
                 else if (a == key) Triple(b, a, 1.0 / ratio)
                 else continue
@@ -326,10 +337,7 @@ object ProgramRules {
             val sourceFactor = MovementDifficulty.loadFactor(source)
             val forceE1rm = sourceE1rm * sourceFactor
             val estimatedForce = forceE1rm * r * ESTIMATE_SAFETY_MARGIN
-            val marked = estimatedForce / ownFactor
-            val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir, worn)
-            val sourceLabel = source.split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
-            return load to "estimate from $sourceLabel"
+            return estimatedForce / ownFactor to source
         }
         return null
     }
