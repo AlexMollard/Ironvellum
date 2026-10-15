@@ -42,6 +42,20 @@ class CoverageStateTest {
     }
 
     @Test
+    fun `helper muscles raise no warning, so the headline and the plan note count the same muscles`() {
+        val loads = ProgramRules.TRACKED.associateWith { MuscleLoad(it, 6.0, 6.0) }.toMutableMap()
+        loads[Muscle.SIDE_DELTS] = MuscleLoad(Muscle.SIDE_DELTS, 2.0, 2.0)
+        // Every helper is light, as on a fresh plan.
+        ProgramRules.HELPERS.forEach { loads[it] = MuscleLoad(it, 0.5, 0.5) }
+        val tally = coverageTally(loads)
+        assertEquals(1, tally.gaps)
+        assertEquals("1 muscle needs more sets", coverageHeadline(tally))
+        assertTrue(ProgramRules.HELPERS.all { tally.states[it] == CoverageState.BELOW_MINIMUM })
+        val note = ProgramGenerator.shortfallNote(loads.mapValues { it.value.weekly }, "add a day.")
+        assertTrue(note, note.startsWith("1 muscle below 4 hard sets (side delts)"))
+    }
+
+    @Test
     fun `a busy session alone makes a muscle heavy`() {
         assertEquals(CoverageState.HEAVY, stateOf(load(weekly = 12.0, session = 10.5)))
         assertEquals(CoverageState.COVERED, stateOf(load(weekly = 12.0, session = 10.0)))
@@ -71,7 +85,7 @@ class CoverageStateTest {
         val all = JUDGED_MUSCLES.associateWith { 6.0 }.toMutableMap()
         assertEquals("Every muscle covered", coverageHeadline(coverageTally(asLoads(all))))
 
-        all[Muscle.FOREARMS] = 0.0
+        all[Muscle.LATS] = 0.0
         all[Muscle.REAR_DELTS] = 3.0
         all[Muscle.CALVES] = 2.0
         val two = coverageTally(asLoads(all))
@@ -103,21 +117,22 @@ class CoverageStateTest {
     @Test
     fun `a muscle missing from the loads is not trained and the neck is never judged`() {
         val tally = coverageTally(emptyMap<Muscle, MuscleLoad>())
-        assertEquals(JUDGED_MUSCLES.size, tally.notTrained.size)
+        // Helpers are on the page but raise no warning, so only the direct muscles are counted.
+        assertEquals(ProgramRules.TRACKED.size, tally.notTrained.size)
         assertTrue(Muscle.NECK !in tally.states)
     }
 
     @Test
     fun `the list shows heavy first, then untrained, then the least trained below the minimum`() {
         val all = JUDGED_MUSCLES.associateWith { 6.0 }.toMutableMap()
-        all[Muscle.FOREARMS] = 0.0
+        all[Muscle.LATS] = 0.0
         all[Muscle.REAR_DELTS] = 3.0
         all[Muscle.CALVES] = 2.0
         all[Muscle.FRONT_DELTS] = 24.0
         all[Muscle.QUADS] = 22.0
         val l = asLoads(all)
         assertEquals(
-            listOf(Muscle.FRONT_DELTS, Muscle.QUADS, Muscle.FOREARMS, Muscle.CALVES, Muscle.REAR_DELTS),
+            listOf(Muscle.FRONT_DELTS, Muscle.QUADS, Muscle.LATS, Muscle.CALVES, Muscle.REAR_DELTS),
             attentionOrder(l, coverageTally(l)),
         )
     }

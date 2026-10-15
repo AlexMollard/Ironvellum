@@ -37,7 +37,7 @@ class ProposalCoverageTest {
         assertEquals(coverageHeadline(chip), coverageHeadline(page))
         // And it is the domain's own coverage rule, not a second one.
         val domain = ProgramRules.coverage(sample)
-        val below = domain.values.count { it.weekly > 0.0 && it.weekly < ProgramRules.COVERED_MIN && it.muscle in JUDGED_MUSCLES }
+        val below = domain.values.count { it.weekly > 0.0 && it.weekly < ProgramRules.COVERED_MIN && it.muscle in ProgramRules.TRACKED }
         assertEquals(below, chip.below.size)
         // One push day leaves most of the body short, so the check is not vacuous.
         assertTrue(chip.gaps > 0)

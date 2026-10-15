@@ -51,8 +51,10 @@ internal data class CoverageTally(val states: Map<Muscle, CoverageState>) {
     private fun of(state: CoverageState) = JUDGED_MUSCLES.filter { states[it] == state }
 
     val heavy: List<Muscle> get() = of(CoverageState.HEAVY)
-    val below: List<Muscle> get() = of(CoverageState.BELOW_MINIMUM)
-    val notTrained: List<Muscle> get() = of(CoverageState.NOT_TRAINED)
+    // A warning is about direct work: the muscles a lift trains as its primary mover. The helpers stay on the page
+    // and the figure in their own state, but never count toward a gap (the plan's shortfall note counts the same way).
+    val below: List<Muscle> get() = of(CoverageState.BELOW_MINIMUM).filter { it in ProgramRules.TRACKED }
+    val notTrained: List<Muscle> get() = of(CoverageState.NOT_TRAINED).filter { it in ProgramRules.TRACKED }
     val covered: List<Muscle> get() = of(CoverageState.COVERED)
 
     /** Muscles short of the minimum or not trained at all: the one count every summary line gives. */
