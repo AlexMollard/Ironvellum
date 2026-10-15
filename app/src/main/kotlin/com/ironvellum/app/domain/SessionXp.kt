@@ -12,54 +12,83 @@ import java.time.temporal.TemporalAdjusters
  *
  * Built from the lifter's completed trials: the best before this trial is
  * [history], and what the [RepMax] peak rule judges against is [peakBook]. [excludeSessionId] keeps a trial from being its own benchmark.
+ * Pricing many trials oldest first ([XpRescore]) takes its books from a [Timeline] instead, which never refolds history.
  */
-class SessionXp(
+class SessionXp private constructor(
     private val exercises: Map<Long, Exercise>,
-    completed: List<Pair<WorkoutSession, List<SessionSet>>>,
     private val bodyweightAt: (Long) -> Double,
-    excludeSessionId: Long? = null,
-    /** The muscles a week must cover for the week-covered bonus: [Xp.WEEK_COVERED_MUSCLES] by default. */
-    private val coverageMuscles: Collection<Muscle> = Xp.WEEK_COVERED_MUSCLES,
-    /**
-     * Only trials that started before this count as history: a trial is judged against
-     * what the lifter had done by then, so an older imported workout is not priced
-     * against sessions logged after it. Null (a trial still live) takes every completed trial.
-     */
-    beforeMs: Long? = null,
+    private val coverageMuscles: Collection<Muscle>,
+    private val others: List<Pair<WorkoutSession, List<SessionSet>>>,
+    knownHistory: Xp.History?,
+    knownPeakBook: RepBook?,
 ) {
-    private val others = completed.filter { (session, _) ->
-        session.id != excludeSessionId && session.completedAtMs != null &&
-            (beforeMs == null || session.startedAtMs < beforeMs)
-    }
+    constructor(
+        exercises: Map<Long, Exercise>,
+        completed: List<Pair<WorkoutSession, List<SessionSet>>>,
+        bodyweightAt: (Long) -> Double,
+        excludeSessionId: Long? = null,
+        /** The muscles a week must cover for the week-covered bonus: [Xp.WEEK_COVERED_MUSCLES] by default. */
+        coverageMuscles: Collection<Muscle> = Xp.WEEK_COVERED_MUSCLES,
+        /**
+         * Only trials that started before this count as history: a trial is judged against
+         * what the lifter had done by then, so an older imported workout is not priced
+         * against sessions logged after it. Null (a trial still live) takes every completed trial.
+         */
+        beforeMs: Long? = null,
+    ) : this(
+        exercises,
+        bodyweightAt,
+        coverageMuscles,
+        completed.filter { (session, _) ->
+            session.id != excludeSessionId && session.completedAtMs != null &&
+                (beforeMs == null || session.startedAtMs < beforeMs)
+        },
+        knownHistory = null,
+        knownPeakBook = null,
+    )
 
     /** Best e1RM and longest hold before this trial. */
-    val history: Xp.History = others
+    val history: Xp.History = knownHistory ?: others
         .sortedBy { (session, _) -> session.startedAtMs }
-        .fold(Xp.History.EMPTY) { acc, (session, sets) ->
-            val bw = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
-            acc.after(sets.filter { it.done }.map(::effortOf), bw)
-        }
+        .fold(Xp.History.EMPTY) { acc, (session, sets) -> acc.afterTrial(exercises, bodyweightAt, session, sets) }
 
     /** Every working set lifted before this trial, for the peak rule. */
     val peakBook: RepBook by lazy {
-        RepMax.book(others) { set -> exercises[set.exerciseId]?.metric }
+        knownPeakBook ?: RepMax.book(others) { set -> exercises[set.exerciseId]?.metric }
     }
 
-    fun effortOf(set: SessionSet): Xp.SetEffort {
-        val exercise = exercises[set.exerciseId]
-        val metric = exercise?.metric ?: ExerciseMetric.REPS
-        return Xp.SetEffort(
-            exerciseName = set.exerciseName.ifEmpty { exercise?.name ?: "" },
-            reps = set.reps,
-            holdSeconds = if (metric == ExerciseMetric.HOLD) set.durationSec else null,
-            weightKg = set.weightKg,
-            modifiers = set.modifiers,
-            metric = metric,
-            exerciseId = set.exerciseId,
-            rpe = set.rpe,
-            kind = set.kind,
-            externalLoad = exercise?.isWeighted == true,
-        )
+    fun effortOf(set: SessionSet): Xp.SetEffort = effortOf(exercises, set)
+
+    /**
+     * The books of trials priced oldest first, each against the completed trials of [completed] that
+     * started before it: what [SessionXp] with that trial's `beforeMs` builds, but the history is folded
+     * once along the way and the peak book is a view of one [RepMax.Ledger], so pricing every trial
+     * costs one pass over the history rather than one per trial.
+     */
+    class Timeline(
+        private val exercises: Map<Long, Exercise>,
+        completed: List<Pair<WorkoutSession, List<SessionSet>>>,
+        private val bodyweightAt: (Long) -> Double,
+        private val coverageMuscles: Collection<Muscle> = Xp.WEEK_COVERED_MUSCLES,
+    ) {
+        private val sorted = completed
+            .filter { (session, _) -> session.completedAtMs != null }
+            .sortedBy { (session, _) -> session.startedAtMs }
+        private val ledger = RepMax.Ledger(sorted) { set -> exercises[set.exerciseId]?.metric }
+        private var folded = 0
+        private var history = Xp.History.EMPTY
+        private var lastBeforeMs = Long.MIN_VALUE
+
+        /** The book for a trial that started at [beforeMs]; calls must not go back in time. */
+        fun before(beforeMs: Long): SessionXp {
+            require(beforeMs >= lastBeforeMs) { "A timeline is read oldest first" }
+            lastBeforeMs = beforeMs
+            while (folded < sorted.size && sorted[folded].first.startedAtMs < beforeMs) {
+                val (session, sets) = sorted[folded++]
+                history = history.afterTrial(exercises, bodyweightAt, session, sets)
+            }
+            return SessionXp(exercises, bodyweightAt, coverageMuscles, sorted.subList(0, folded), history, ledger.first(folded))
+        }
     }
 
     /** Movements ([Variation.liftKey]) whose done sets set a new peak by [RepMax], with what each pays. */
@@ -242,5 +271,33 @@ class SessionXp(
         fun weekStartOf(ms: Long, zone: ZoneId): LocalDate =
             Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
                 .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+        fun effortOf(exercises: Map<Long, Exercise>, set: SessionSet): Xp.SetEffort {
+            val exercise = exercises[set.exerciseId]
+            val metric = exercise?.metric ?: ExerciseMetric.REPS
+            return Xp.SetEffort(
+                exerciseName = set.exerciseName.ifEmpty { exercise?.name ?: "" },
+                reps = set.reps,
+                holdSeconds = if (metric == ExerciseMetric.HOLD) set.durationSec else null,
+                weightKg = set.weightKg,
+                modifiers = set.modifiers,
+                metric = metric,
+                exerciseId = set.exerciseId,
+                rpe = set.rpe,
+                kind = set.kind,
+                externalLoad = exercise?.isWeighted == true,
+            )
+        }
+
+        /** This history with one completed trial's done sets added, at the weigh-in in force when it started. */
+        fun Xp.History.afterTrial(
+            exercises: Map<Long, Exercise>,
+            bodyweightAt: (Long) -> Double,
+            session: WorkoutSession,
+            sets: List<SessionSet>,
+        ): Xp.History {
+            val bw = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
+            return after(sets.filter { it.done }.map { effortOf(exercises, it) }, bw)
+        }
     }
 }

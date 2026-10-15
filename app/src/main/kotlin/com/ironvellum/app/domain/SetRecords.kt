@@ -129,10 +129,18 @@ object SetRecords {
         if (stats.isEmpty()) return { fallbackKg }
         val sorted = stats.sortedBy { it.takenAtMs }
         val earliest = sorted.first()
+        val takenAt = LongArray(sorted.size) { sorted[it].takenAtMs }
         return { atMs ->
+            // How many readings were taken at or before atMs: the last of them is in force.
+            var low = 0
+            var high = takenAt.size
+            while (low < high) {
+                val mid = (low + high) ushr 1
+                if (takenAt[mid] <= atMs) low = mid + 1 else high = mid
+            }
             // A set logged before any weigh-in uses the earliest reading: it is
             // the closest truth available, better than a blind fallback.
-            sorted.lastOrNull { it.takenAtMs <= atMs }?.weightKg ?: earliest.weightKg
+            if (low == 0) earliest.weightKg else sorted[low - 1].weightKg
         }
     }
 

@@ -181,7 +181,7 @@ object Xp {
                     val seconds = holdSecondsOf(set)
                     if (seconds > (holds[key] ?: 0)) holds[key] = seconds
                 } else {
-                    val e1 = e1rmOf(set, bodyweightKg) ?: continue
+                    val e1 = repE1rmOf(set, bodyweightKg) ?: continue
                     if (e1 > (e1rm[key] ?: 0.0)) e1rm[key] = e1
                     val liftKey = Variation.liftKey(set.exerciseName, set.modifiers)
                     if (e1 > (byLift[liftKey] ?: 0.0)) byLift[liftKey] = e1
@@ -220,8 +220,11 @@ object Xp {
     }
 
     /** Estimated 1-rep max of a rep set, null for a hold or a set with nothing to judge. */
-    internal fun e1rmOf(set: SetEffort, bodyweightKg: Double?): Double? {
-        if (isHold(set) || set.reps < 1) return null
+    internal fun e1rmOf(set: SetEffort, bodyweightKg: Double?): Double? = if (isHold(set)) null else repE1rmOf(set, bodyweightKg)
+
+    /** [e1rmOf] for a set already known not to be a hold. */
+    private fun repE1rmOf(set: SetEffort, bodyweightKg: Double?): Double? {
+        if (set.reps < 1) return null
         val load = systemLoadKg(set, bodyweightKg) ?: return null
         return ProgramRules.epley(load, set.reps.coerceAtMost(MAX_JUDGED_REPS))
     }

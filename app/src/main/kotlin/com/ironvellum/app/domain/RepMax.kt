@@ -79,6 +79,41 @@ object RepMax {
         return out
     }
 
+    /**
+     * [book] for every prefix of [history] at once: each mark remembers which trial it came from, so the
+     * book of the first n trials is a view of one pass rather than a rebuild. [history] is in prefix order.
+     */
+    class Ledger(history: List<Pair<WorkoutSession, List<SessionSet>>>, metricOf: (SessionSet) -> ExerciseMetric?) {
+        private val marks = HashMap<String, MutableList<Mark>>()
+        private val trialOf = HashMap<String, MutableList<Int>>()
+
+        init {
+            history.forEachIndexed { trial, (_, sets) ->
+                val one = HashMap<String, MutableList<Mark>>()
+                record(one, sets, metricOf)
+                for ((key, added) in one) {
+                    marks.getOrPut(key) { mutableListOf() } += added
+                    trialOf.getOrPut(key) { mutableListOf() }.addAll(List(added.size) { trial })
+                }
+            }
+        }
+
+        /** The book of the first [count] trials. */
+        fun first(count: Int): RepBook = object : AbstractMap<String, List<Mark>>() {
+            override fun get(key: String): List<Mark>? {
+                val all = marks[key] ?: return null
+                // The insertion point of [count]: how many of this lift's marks came from earlier trials.
+                val upTo = -(trialOf.getValue(key).binarySearch { if (it < count) -1 else 1 } + 1)
+                return if (upTo == 0) null else all.subList(0, upTo)
+            }
+
+            override fun containsKey(key: String): Boolean = get(key) != null
+
+            override val entries: Set<Map.Entry<String, List<Mark>>>
+                get() = marks.keys.mapNotNullTo(LinkedHashSet()) { key -> get(key)?.let { java.util.AbstractMap.SimpleImmutableEntry(key, it) } }
+        }
+    }
+
     /** Adds one trial's done working strength sets to [book]. */
     private fun record(book: MutableMap<String, MutableList<Mark>>, sets: List<SessionSet>, metricOf: (SessionSet) -> ExerciseMetric?) {
         // A lift with a top set is judged on that set alone: its back-offs are lighter by design.

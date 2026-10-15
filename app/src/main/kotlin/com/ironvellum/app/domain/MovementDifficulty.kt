@@ -477,7 +477,7 @@ object MovementDifficulty {
         // A metric that states something else is believed: a movement renamed
         // to "plank" but logged in reps must not be re-read as seconds.
         if (metric != null && metric != ExerciseMetric.REPS) return false
-        if (modifiers.split(",").any { it.trim().lowercase().startsWith(HOLD_MODIFIER) }) return true
+        if (modifiers.isNotEmpty() && modifiers.split(",").any { it.trim().lowercase().startsWith(HOLD_MODIFIER) }) return true
         return isHoldByName(exerciseName)
     }
 

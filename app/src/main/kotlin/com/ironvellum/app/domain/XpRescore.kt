@@ -99,25 +99,28 @@ object XpRescore {
         plannedSets: (Long) -> Map<Long, Int>?,
         scheduledDay: (Long) -> Int?,
         zone: ZoneId = ZoneId.systemDefault(),
-    ): List<Change> = history
-        .filter { (session, _) -> session.completedAtMs != null && !session.imported }
-        .sortedWith(compareBy({ it.first.startedAtMs }, { it.first.id }))
-        .map { (session, sets) ->
-            val book = SessionXp(exercises, history, bodyweightAt, excludeSessionId = session.id, beforeMs = session.startedAtMs)
-            val done = sets.filter { it.done && !it.warmup }
-            val quest = questEarned(session, sets, history, scheduledDay, zone)
-            val facts = book.factsFor(session, done, session.presetId?.let(plannedSets), quest, zone)
-            val bodyweight = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
-            Change(
-                sessionId = session.id,
-                label = session.title.ifBlank { session.label },
-                startedAtMs = session.startedAtMs,
-                oldXp = session.xpAwarded,
-                newXp = book.breakdown(done, bodyweight, facts, doneSetCount = done.size).total,
-                amended = session.editedAtMs != null || session.sealedXp != null,
-                sealedXp = session.sealedXp,
-            )
-        }
+    ): List<Change> {
+        val timeline = SessionXp.Timeline(exercises, history, bodyweightAt)
+        return history
+            .filter { (session, _) -> session.completedAtMs != null && !session.imported }
+            .sortedWith(compareBy({ it.first.startedAtMs }, { it.first.id }))
+            .map { (session, sets) ->
+                val book = timeline.before(session.startedAtMs)
+                val done = sets.filter { it.done && !it.warmup }
+                val quest = questEarned(session, sets, history, scheduledDay, zone)
+                val facts = book.factsFor(session, done, session.presetId?.let(plannedSets), quest, zone)
+                val bodyweight = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
+                Change(
+                    sessionId = session.id,
+                    label = session.title.ifBlank { session.label },
+                    startedAtMs = session.startedAtMs,
+                    oldXp = session.xpAwarded,
+                    newXp = book.breakdown(done, bodyweight, facts, doneSetCount = done.size).total,
+                    amended = session.editedAtMs != null || session.sealedXp != null,
+                    sealedXp = session.sealedXp,
+                )
+            }
+    }
 
     /**
      * The seal's own rule, read back: the quest bonus is paid once, for a trial with a done set of the
