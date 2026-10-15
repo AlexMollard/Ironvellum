@@ -20,121 +20,121 @@
 
 ## What it is
 
-Ironvellum is a training log for Android that keeps its own book of what you
-do. You plan a week, perform it set by set, and every finished session is
-written down and scored. Nothing needs an account, a signal or a subscription.
+Ironvellum is a strength training app for Android that plans your week, logs
+it set by set, and shows you what is working. Nothing needs an account, a
+signal or a subscription.
 
-Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a
-set by what it cost you: your bodyweight is factored in, a marked kilogram is
-priced by the machine it was lifted on, and a handstand push-up is not the same
-rep as a push-up. The result is a number you can chase without gaming it.
+Plans are built around effort, not guesswork: hard sets taken close to
+failure, a weekly floor for every muscle and a cap so none is buried. Most
+trackers add up kilograms, which rewards being heavy; Ironvellum scores a set
+by what it cost you, with your bodyweight factored in, so the number is one
+you can chase without gaming it.
 
-The app speaks in its own words, all defined in
-[docs/GLOSSARY.md](docs/GLOSSARY.md). A saved workout is a **rite**. The weekly
-plan that places rites on days is a **cycle**. Performing a rite is a
-**trial**, and finishing it **seals** it into your **Chronicle**. You are an
-Ironbound, and the iron-bound book that keeps the record is the **Ledger**.
+The app uses plain gym words by default. If you want the fantasy, turn on
+**Themed names** in Settings and a routine becomes a **rite**, a workout a
+**trial**, your history the **Chronicle**. The reward layer (deeds, crests,
+relics and the Veil) keeps its names either way. Every word is defined in
+[docs/GLOSSARY.md](docs/GLOSSARY.md).
 
 <div align="center">
 
-| Today | Train | The trial |
+| Today | Train | A workout |
 |:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/dashboard.png" width="230" alt="Today: level and oath progress, the week strip, the day card (a rest day here) and the Veil" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/train.png" width="230" alt="Train: your cycle of rites with the sealed one ticked, weekly coverage and recent trials" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/session.png" width="230" alt="A trial in progress: one open exercise with load and rep steppers and a docked action bar" /> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/dashboard.png" width="230" alt="Today: level and streak, the week strip, the day card and the Veil" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/train.png" width="230" alt="Train: your weekly plan with the finished routine ticked, weekly coverage and recent workouts" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/session.png" width="230" alt="A workout in progress: one open exercise with load and rep steppers and a docked action bar" /> |
 
-| Paths | Deeds | Share text |
+| Skills | Deeds | Share text |
 |:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/skilltree.png" width="230" alt="The Pull path as technique nodes joined by prerequisite lines, with the path strip above" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/codex.png" width="230" alt="The Codex: the deeds closest to earning with progress bars, above the categories" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/share.png" width="230" alt="A sealed trial as Wordle-style share text: a row per movement, a square per set, a trophy on record sets" /> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/skilltree.png" width="230" alt="The Pull skill path as nodes joined by prerequisite lines" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/codex.png" width="230" alt="Progress: the deeds closest to earning with progress bars" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/share.png" width="230" alt="A finished workout as Wordle-style share text: a row per movement, a square per set" /> |
 
-| Weekly coverage | The Chronicle | Info sheet |
+| Weekly coverage | History | Info sheet |
 |:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/coverage.png" width="230" alt="Weekly coverage: a body map and one list of muscles, the short ones first, above a docked Forge a rite button" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/chronicle.png" width="230" alt="The Chronicle: a totals line and a card of sealed trials per month, each with its XP and strength" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/info.png" width="230" alt="A swipeable exercise info sheet showing the muscles worked on the body figure" /> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/coverage.png" width="230" alt="Weekly coverage: a body map and one list of muscles, the short ones first" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/chronicle.png" width="230" alt="History: a totals line and a card of finished workouts per month" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/info.png" width="230" alt="A swipeable exercise info sheet showing the muscles worked on the body figure" /> |
 
 </div>
 
 ## Features
 
-### Today
+### Getting started
 
-- A status page: the rite your cycle puts on today, the level seal, your
-  Strength Rank and the way into the Veil. Swipe between days.
-- **The Binding**, a guided first run: pick your split, weekly volume, armoury
-  (the equipment you own) and goal, then review an editable cycle built from
-  the real catalogue. No cycle is imposed on you.
-- **The Clean look**: one flat appearance, pop-ups as bottom sheets, and accent
-  pairs you can change in settings.
+- **Make it yours:** pick plain or themed names, kg or lb and an accent colour
+  before anything else.
+- **Setup** asks who you are, your equipment, what you are chasing and how you
+  rate effort (reps left or RPE), then builds an editable weekly plan from the
+  real catalogue, starting loaded lifts on sensible weights. Skip it and build
+  your own instead.
+- **Today** is one status page: the routine your plan puts on today, your
+  level, streak and Strength Rank, and the way into the Veil. Swipe between
+  days.
+
+### Planning
+
+- **The plan builder** (the Forge, in themed names) builds a week in three
+  steps around effort: hard sets with reps in reserve, a weekly floor per
+  muscle, a cap so none is buried, days spaced for recovery and a session that
+  fits your clock. Each slot offers three ranked suggestions.
+- **Weekly coverage** shows the hard sets each muscle gets against its target,
+  short muscles first, and **Optimise routines** fills the gaps in a tap.
+- **Set schemes per lift:** straight sets, a top set with back-offs, drop sets
+  or your own mix, drawn as bars in the Sets sheet so you can read the plan at
+  a glance. Rep ranges progress by double progression, and back-offs fill in
+  from the top set and round to the plates you own.
+- **Warm-ups:** ramps for loaded lifts, and warm-up exercises in a routine that
+  never count toward your stats.
+- **Over 570 exercises**, each with a line drawing and a swipeable info sheet
+  of the muscles it works, plus your own exercises with their muscles and gear.
+  Records and progression are kept apart per variation.
 
 ### Training
 
-- **Live trial.** One exercise open at a time and a docked action bar.
-  - Type a set's exact load. A load or rep count you change by hand carries to
-    the later sets.
-  - Rest runs on a timer with -15 s and +15 s buttons, a ready time for each
-    movement, a ready buzz and a suggested maximum.
-  - Mark sets as warm-ups, or turn on an optional warm-up step before the first
-    set.
-  - Keep a note per exercise and see it again as *Last time*.
-  - Undo a removed set or exercise, and continue a trial you left.
-  - Swapped an exercise? The app offers to keep the swap in the rite.
-- **After a trial**, tick which changes to sets, reps, load and modifiers go
-  back into your cycle. **Amend** a sealed trial later, or delete it from its
-  detail page.
-- **Progression advice follows the movement.** Each exercise asks for the one
-  thing that moves it forward: load; reps, then load; control; mobility; holds;
-  or skill. Strength and hypertrophy schools have their own rep bands and
-  per-exercise load steps, and a stall deloads instead of repeating a failed
-  trial.
-- **Weekly coverage.** A body map on the Train tab shows the sets each muscle
-  gets in your cycle or the last seven days against the range for your volume
-  and goal. Open it for one list with the short muscles first.
-- **The Forge** builds a cycle or a single rite from hand-written patterns,
-  fitted to your volume and armoury, with the reason for every pick and its
-  citation. **Forge a cycle** previews the coverage the cycle would give you
-  before you accept it, and **Temper** improves a rite you already have.
-- **256 exercises**: barbell, dumbbell, cable, machine, bodyweight, cardio,
-  sport, climbing, water and mobility. Each has a swipeable info sheet showing
-  the muscles it works, on the live trial screen too.
+- **Live workout.** One exercise open at a time and a docked action bar.
+  - Log a set in a tap; a load or rep count you change carries to the later
+    sets.
+  - Rate effort by reps left or RPE, asked under the exercise it belongs to.
+  - Rest timer with -15 s and +15 s, a suggested maximum and lock-screen
+    controls; a pocket lock, keep-awake and tick haptics.
+  - Supersets, hold timers with a get-ready count, and a distance stopwatch.
+  - A plate calculator that finds every exact build, weighted vest and dip
+    belt loads, kg or lb.
+  - Notes per exercise, Undo on removal, and continue a workout you left.
+- **When you finish**, tick which of today's changes go back into the
+  routine: loads, reps, added exercises and new supersets. Edit a finished
+  workout later, or delete it.
 
 ### Progress
 
 - **Body-scaled scoring.** A rep is worth `reps × (bodyweight + added) /
-  bodyweight^0.67`, the allometric exponent. Loads are converted per implement
-  (a sled, a smith bar, a pinned stack), movements are weighted by difficulty,
-  and strength is normalised by muscle group with per-sex standards.
-- **XP, level and Strength Rank** (Untrained to Elite), built from your best
-  marks on pull, push and legs.
-- **The Ledger** charts body (weight, body fat, BMI, FFMI), training (lift
-  records and a calendar) and daily readings. Health Connect reading is
-  optional.
-- **The Chronicle** lists every sealed trial, month by month.
-- **Share a trial** as plain text in the shape of a Wordle grid: a row per
-  movement, a square per set, a trophy on a record set, and your load. No link,
-  no image. Your per-exercise notes go in only if you opt in; the private note
-  never does.
-- **The Veil** is an idle layer: each trial leaves an echo, echoes gather
-  essence while you are away, and you spend it on relics. Crests (28: levels, deeds, houses and the Veil) are worn for a small Veil-only perk and shown to your allies.
+  bodyweight^0.67`, the allometric exponent. Loads are converted per
+  implement, movements are weighted by difficulty, and strength is normalised
+  by muscle group with per-sex standards (held until you choose).
+- **PRs that agree everywhere:** a lift's page, its chart, the Stats board and
+  the live "New PR" tag all use its best estimated 1RM.
+- **XP, levels and Strength Rank**, built from your best marks on pull, push
+  and legs, with XP earned by effort.
+- **Stats** charts body (weight, body fat, BMI, FFMI), training (lift records
+  and a calendar) and daily measurements. Health Connect reading is optional.
+- **125 skills** on progression paths (pull, push, handstand, lever, planche,
+  rings, legs, core, mobility and the barbell ladders), each gated on the one
+  before it with a written standard, and **105 deeds** to earn.
+- **Share a workout** as plain text in the shape of a Wordle grid: a row per
+  movement, a square per set, a trophy on a record set. No link, no image.
+- **The Veil** is an idle layer: workouts leave echoes, echoes gather essence
+  while you are away, and you spend it on relics in houses with set bonuses.
+  **28 crests** are worn for a small Veil-only perk and shown to your friends.
 
-### Codex
-
-- **119 techniques on 14 paths** (pull, push, handstand, lever, planche, rings,
-  movement, legs, core, mobility, and squat, bench, press and deadlift
-  ladders). Each technique is gated on the one before it and carries a written
-  claim standard.
-- **105 deeds** with progress you can watch. Each grants a title to wear.
-
-### Allies
+### Friends
 
 Optional, and only with an account.
 
-- Add allies and read their **tidings**.
-- Form a **circle** of 2 to 8 allies with a shared weekly goal and a Keeper.
-- Stand in **the Reckoning**, a leaderboard for each lift.
+- Add friends and read their feed, with kudos and comments.
+- Form a **group** of 2 to 8 with a shared weekly goal.
+- Climb **the leaderboard** for each lift.
 
 ### Your data
 
 - Everything is stored on the phone first.
-- Export a full JSON archive or a CSV of your trials, and import the archive
+- Export a full JSON archive or a CSV of your workouts, and import the archive
   again.
-- Import trials from a Strong, Hevy or FitNotes CSV.
+- Import workouts from a Strong, Hevy or FitNotes CSV.
 - Delete your cloud account from inside the app at any time.
 
 ## Install
@@ -162,9 +162,9 @@ Optional, and only with an account.
 Ironvellum works with no account and no network. All training data lives in a
 local database, which Android's own backup does not copy.
 
-If you sign in, the app syncs your training record and nothing more: completed
-trials and their sets, display name, visibility, earned titles, tributes and
-alliances. Body measurements and everything read from Health Connect never
+If you sign in, the app syncs your training record and nothing more: finished
+workouts and their sets, display name, visibility, earned titles, kudos and
+friends. Body measurements and everything read from Health Connect never
 leave the device. You can export or import your data at any time.
 
 The cloud is optional and does not have to be ours. Settings, then Cloud,
@@ -182,9 +182,8 @@ Health Connect 1.1.0 (read only), and Supabase 3.8.0 over Ktor 3.5.2. AGP
 most of it is covered by fast unit tests. Room is the source of truth; the
 cloud is a backup, never an authority.
 
-**There is no CI.** The repository is private and every runner minute is
-billed, so the workflows are manual (`workflow_dispatch`) only. The gate runs
-on your machine:
+**Tests run locally.** The workflows are manual (`workflow_dispatch`) only;
+the gate runs on your machine:
 
 ```bash
 python3 tools/gate.py              # build, unit, lint, instrumented
@@ -222,14 +221,15 @@ Depth lives in `docs/`:
 
 Ironvellum is free software under the
 [GNU General Public License v3.0 or later](LICENSE), with no ads, trackers or
-paid tier. The artwork is original or generated for this project and shares
-that licence; see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md). The Chakra
+paid tier. Project artwork shares that licence; see
+[docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md). The Chakra
 Petch font is under the SIL Open Font License 1.1, and the muscle map's body
 shapes derive from
 [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
-(MIT). Exercise illustrations are generated for Ironvellum, inspired by
-[Everkinetic](https://github.com/everkinetic/data) and
-[Workout Guide](https://github.com/bryllim/workout-guide). The exercise instructions
+(MIT). Exercise illustrations come from
+[Open Exercise Art](https://github.com/AlexMollard/Open-Exercise-Art)
+(CC BY-SA 4.0), inspired by [Everkinetic](https://github.com/everkinetic/data)
+and [Workout Guide](https://github.com/bryllim/workout-guide). The exercise instructions
 remain adapted from Everkinetic under CC BY-SA 4.0
 (see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md)). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
