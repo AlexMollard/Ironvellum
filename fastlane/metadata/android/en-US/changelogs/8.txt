@@ -1,0 +1,10 @@
+• Plain gym words by default; themed names are one switch away
+• New first screen: names, units and accent colour
+• Plans built on effort, starting on real weights
+• Set schemes per lift with a redesigned Sets sheet
+• Supersets, RIR/RPE, hold timers, lock-screen rest controls
+• Weighted vest, dip belt, plate calculator, kg or lb
+• 575 exercises redrawn; create your own
+• Crests, a rebuilt Veil, and PRs that agree everywhere
+
+Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md
