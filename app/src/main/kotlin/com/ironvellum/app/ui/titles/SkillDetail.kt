@@ -56,6 +56,7 @@ import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.domain.SexHold
 import com.ironvellum.app.domain.Skills
 import androidx.compose.foundation.layout.ColumnScope
 import com.ironvellum.app.ui.components.InfoAction
@@ -117,6 +118,8 @@ fun SkillDetailSheet(
     /** Latest weigh-in; null when none, which leaves a loaded standard unjudged. */
     bodyweightKg: Double? = null,
     female: Boolean = false,
+    /** No sex chosen yet and this standard depends on it: the standard and its progress read [SexHold.TEXT]. */
+    sexHeld: Boolean = false,
     /** The XP an unclaim takes back: what the claim actually paid. */
     refundXp: Int = skill.xp,
     /** Every mastered technique, so each prerequisite chip can say whether it is met. */
@@ -139,7 +142,7 @@ fun SkillDetailSheet(
     // lifter who already hit it in a session must not read "to go".
     val trained = training
     val bestOverall = maxOf(best, trained?.value ?: 0)
-    val cleared = remember(skill, practiced, trained, bodyweightKg, female) {
+    val clearedAtDefault = remember(skill, practiced, trained, bodyweightKg, female) {
         SkillGuidance.cleared(
             skill,
             practiced.map { SkillGuidance.Effort(it.value, it.weightKg) } +
@@ -148,6 +151,7 @@ fun SkillDetailSheet(
             female,
         )
     }
+    val cleared = !sexHeld && clearedAtDefault
     val terms = remember(skill, sexBar) { termsIn("${skill.name} ${sexBar ?: skill.standard} ${skill.why}") }
     // Starts on the last attempt, or zero. Logging stays off until the value
     // is set by hand, so one tap can never record a hold nobody did.
@@ -171,6 +175,7 @@ fun SkillDetailSheet(
         val needKg = SkillGuidance.requiredKg(skill, bodyweightKg, female)
         val added = Skills.loadBar(skill.name, female)?.added == true
         when {
+            sexHeld -> SexHold.TEXT
             cleared -> "standard cleared"
             // Reps alone cannot judge a bodyweight-multiple bar.
             !SkillGuidance.judgeable(skill, bodyweightKg, female) -> "check the load yourself"
@@ -243,7 +248,7 @@ fun SkillDetailSheet(
         pages = listOf(
             InfoPage("ABOUT", summary) {
                 // A female lifter reads her own published bar, not the male default.
-                val standard = sexBar ?: skill.standard
+                val standard = if (sexHeld) SexHold.TEXT else sexBar ?: skill.standard
                 val drawing = techniqueDrawing(skill.name)
                 if (drawing != null) {
                     // The drawing in its plate, with the standard and the reason beside it: the art fills

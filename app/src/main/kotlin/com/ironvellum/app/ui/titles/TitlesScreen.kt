@@ -47,6 +47,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.SkillTrainingEvidence
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.SexHold
 import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.SessionSet
@@ -267,6 +268,7 @@ fun TitlesScreen(
         viewModel(factory = viewModelFactory { initializer { TitlesViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(androidx.compose.ui.platform.LocalContext.current.applicationContext).collectAsStateWithLifecycle()
     val claimResult by viewModel.claim.collectAsStateWithLifecycle()
     val mastered = ui.claimedSkills
     // Saveable like openLine: a rotation must not drop the lifter off their tab,
@@ -310,6 +312,7 @@ fun TitlesScreen(
                 entries = entries,
                 training = ui.training[Titles.normaliseName(name)],
                 sexBar = if (ui.sex == Sex.FEMALE) Skills.femaleStandard(name) else null,
+                sexHeld = sexUnset && SexHold.skillScaled(name),
                 masteredSkills = mastered,
                 bodyweightKg = ui.bodyweightKg,
                 female = ui.sex == Sex.FEMALE,
@@ -384,7 +387,7 @@ fun TitlesScreen(
                     DeedsBoard(
                         unlocked = ui.unlocked,
                         equippedId = ui.currentTitleId,
-                        ledger = ui.ledger,
+                        ledger = ui.ledger.copy(sexUnset = sexUnset),
                         onEquip = { viewModel.equip(it) },
                         sex = ui.sex,
                         // weight(1f) gives the lazy list a real height inside the non-scrolling page.
@@ -428,7 +431,8 @@ fun TitlesScreen(
                                 onOpenPrerequisite = jumpTo,
                                 focus = focusSkill,
                                 onFocusHandled = { focusSkill = null },
-                                best = ui.bestEffort,
+                                // A sex-scaled standard shows no progress cue until a sex is chosen.
+                                best = if (sexUnset) ui.bestEffort.filterKeys { !SexHold.skillScaled(it) } else ui.bestEffort,
                                 bodyweightKg = ui.bodyweightKg,
                                 female = ui.sex == Sex.FEMALE,
                                 modifier = Modifier.weight(1f),

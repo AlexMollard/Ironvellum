@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.domain.DeedLadders
 import com.ironvellum.app.domain.RungState
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.SexHold
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.InkDivider
@@ -102,7 +103,11 @@ fun DeedsBoard(
 ) {
     val earnedIds = remember(unlocked) { unlocked.keys.toSet() }
     val progressOf = remember(ledger, Words.themed) {
-        Titles.ALL.associate { it.id to Titles.progress(it.rule, ledger) }
+        Titles.ALL.associate { def ->
+            val p = Titles.progress(def.rule, ledger)
+            // A sex-scaled bar with no sex yet shows an empty rail, not progress against the default.
+            def.id to if (ledger.sexUnset && SexHold.deedScaled(def.rule)) p.copy(current = 0L) else p
+        }
     }
     var openCategory by rememberSaveable { mutableStateOf<String?>(null) }
     var sheetId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -358,7 +363,7 @@ private fun Chevron() {
 @Composable
 private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Ledger, sex: Sex, onClick: () -> Unit) {
     val toGo = deedProgressText(def, progress, ledger, earned = false).toGo
-    val requirement = def.describeFor(sex)
+    val requirement = deedRequirement(def, sex, ledger)
     Column(
         Modifier
             .fillMaxWidth()
@@ -623,7 +628,7 @@ private fun LadderCard(
         if (series) append("$held of ${ladder.rungs.size} ${Words.deed.pl} earned. ")
         if (next != null) {
             if (series) append("Next: ${next.name}, ${next.rarity.label}. ")
-            append(next.describeFor(sex)).append(' ')
+            append(deedRequirement(next, sex, ledger)).append(' ')
             append("${text.counts}, ${text.toGo}.")
         } else {
             append("Complete.")
@@ -667,7 +672,7 @@ private fun LadderCard(
                     RarityMark(next.rarity)
                 }
                 Text(
-                    next.describeFor(sex),
+                    deedRequirement(next, sex, ledger),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 2,

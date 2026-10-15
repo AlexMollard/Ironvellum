@@ -15,6 +15,12 @@ object SexHold {
     /** A sex-scaled figure's muted line (FFMI's "from 3 Oct"), or the hold text while the sex is unset. */
     fun line(normal: String, sexUnset: Boolean): String = if (sexUnset) TEXT else normal
 
+    /** True for a deed whose bar differs by sex (a lift as a multiple of bodyweight). */
+    fun deedScaled(rule: TitleRule): Boolean = rule is TitleRule.LiftMultiple && rule.male != rule.female
+
+    /** True for a technique whose standard has a published female bar. */
+    fun skillScaled(name: String): Boolean = Skills.femaleStandard(name) != null
+
     /** A sex-scaled figure itself: a dash while the sex is unset. */
     fun figure(normal: String, sexUnset: Boolean): String = if (sexUnset) "—" else normal
 }

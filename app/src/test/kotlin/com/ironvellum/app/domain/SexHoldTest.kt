@@ -19,4 +19,12 @@ class SexHoldTest {
         assertEquals("from 3 Oct", SexHold.line("from 3 Oct", sexUnset = false))
         assertEquals("19.8", SexHold.figure("19.8", sexUnset = false))
     }
+
+    @Test
+    fun onlyBarsThatDifferBySexAreScaled() {
+        assertEquals(true, SexHold.deedScaled(TitleRule.LiftMultiple(setOf("bench press"), 1.0, 0.5)))
+        assertEquals(false, SexHold.deedScaled(TitleRule.LiftMultiple(setOf("bench press"), 1.0, 1.0)))
+        assertEquals(false, SexHold.deedScaled(TitleRule.LongestHold(60)))
+        assertEquals(false, SexHold.skillScaled("Not A Technique"))
+    }
 }

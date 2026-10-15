@@ -594,6 +594,9 @@ object Titles {
         // strength score scales the feat; defaults to MALE so a ledger built
         // without a profile never falsely strips a female lifter of reach.
         val sex: Sex = Sex.MALE,
+        // True while no sex has been chosen: a deed whose bar depends on sex then reads [SexHold.TEXT]
+        // instead of progress against the stored default. Display only; the awarder never reads it.
+        val sexUnset: Boolean = false,
         // Normalised exercise name -> best marked-load e1RM as a multiple of
         // the bodyweight in force at that session. Empty when no weigh-in
         // history was supplied: an unknown bodyweight can never half-satisfy

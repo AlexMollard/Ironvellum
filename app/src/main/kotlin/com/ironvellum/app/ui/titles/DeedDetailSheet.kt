@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.SexHold
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.domain.TitleRule
@@ -109,6 +110,10 @@ internal fun toGoUnit(rule: TitleRule, amount: Long): String {
     }
 }
 
+/** What a deed asks, in the lifter's own bar; the hold text while a sex-scaled bar has no sex to scale by. */
+internal fun deedRequirement(def: TitleDef, sex: Sex, ledger: Titles.Ledger): String =
+    if (ledger.sexUnset && SexHold.deedScaled(def.rule)) SexHold.TEXT else def.describeFor(sex)
+
 internal fun deedProgressText(
     def: TitleDef,
     progress: Titles.Progress,
@@ -116,6 +121,10 @@ internal fun deedProgressText(
     earned: Boolean,
 ): DeedProgressText {
     val rule = def.rule
+    // A bar that depends on sex waits for one: no figure is shown against the stored default.
+    if (ledger.sexUnset && !earned && SexHold.deedScaled(rule)) {
+        return DeedProgressText(counts = "—", toGo = "needs your sex", caption = "")
+    }
     // Climbing grades are ranks, not amounts: "7 / 12" would mean nothing.
     if (rule is TitleRule.HardestGrade) {
         val best = if (earned) rule.grade else ledger.hardestGrade.ifBlank { "none yet" }
@@ -203,10 +212,10 @@ internal fun DeedDetailSheet(
         actions = if (earned && !worn) listOf(InfoAction("Wear title", onWear)) else emptyList(),
     ) {
         if (earnedAtMs != null) {
-            text(null, def.describeFor(sex))
+            text(null, deedRequirement(def, sex, ledger))
             if (worn) text(null, "Worn now", IronvellumColors.InkMuted)
         } else {
-            text(null, def.describeFor(sex))
+            text(null, deedRequirement(def, sex, ledger))
             text("HOW TO EARN IT", earnPointer(category), IronvellumColors.InkMuted)
         }
         section("RARITY") { RarityStrip(def.rarity, category, earned) }
