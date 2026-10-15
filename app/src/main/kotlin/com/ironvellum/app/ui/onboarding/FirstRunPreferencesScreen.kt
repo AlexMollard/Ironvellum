@@ -3,6 +3,8 @@ package com.ironvellum.app.ui.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -66,12 +68,17 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
             .background(IronvellumColors.Abyss)
             .statusBarsPadding(),
     ) {
+        // The page is short, so it is centred in the space above Continue (and scrolls when it does not fit),
+        // rather than hanging at the top over a blank half screen.
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+        val pageHeight = maxHeight
         Column(
             Modifier
-                .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .heightIn(min = pageHeight)
                 .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Center,
         ) {
             Spacer(Modifier.height(24.dp))
             Text(
@@ -149,21 +156,20 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
+            Text(
+                "You can change these later in Settings.",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(24.dp))
+        }
         }
 
         DockedActionBar(
             primary = "Continue",
             onPrimary = onContinue,
             reserveLink = false,
-            caption = {
-                Text(
-                    "You can change these later in Settings.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(bottom = 10.dp),
-                )
-            },
         )
     }
 }

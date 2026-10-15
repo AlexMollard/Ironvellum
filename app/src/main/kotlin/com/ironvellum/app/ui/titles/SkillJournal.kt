@@ -3,6 +3,8 @@ package com.ironvellum.app.ui.titles
 import com.ironvellum.app.data.Units
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -103,28 +105,33 @@ fun SkillJournal(
     // Colour alone carries the cells, so the grid reads out as one summary and its cells stay
     // out of the accessibility tree.
     val summary = heatmapSummary(byDay, start, today)
-    Row(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = summary },
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        repeat(WEEKS) { w ->
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                repeat(7) { d ->
-                    val date = start.plusDays((w * 7 + d).toLong())
-                    // Days that have not happened draw nothing, so the corner reads as an
-                    // unfinished week rather than missing cells.
-                    if (date.isAfter(today)) {
-                        Spacer(Modifier.fillMaxWidth().aspectRatio(1f))
-                    } else {
-                        Spacer(
-                            Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .background(heatColor(byDay[date] ?: 0), TileShape)
-                                .then(
-                                    if (date == today) Modifier.inkBorder(IronvellumColors.Ink, TileShape, 1.5.dp) else Modifier,
-                                ),
-                        )
+    // One cell size for the whole grid. Per-column weights and aspect ratios rounded each column's cells to
+    // different pixel heights, so the columns drifted apart by a few pixels towards the bottom row.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val gap = 3.dp
+        val cell = (maxWidth - gap * (WEEKS - 1)) / WEEKS
+        Row(
+            Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = summary },
+            horizontalArrangement = Arrangement.spacedBy(gap),
+        ) {
+            repeat(WEEKS) { w ->
+                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                    repeat(7) { d ->
+                        val date = start.plusDays((w * 7 + d).toLong())
+                        // Days that have not happened draw nothing, so the corner reads as an
+                        // unfinished week rather than missing cells.
+                        if (date.isAfter(today)) {
+                            Spacer(Modifier.size(cell))
+                        } else {
+                            Spacer(
+                                Modifier
+                                    .size(cell)
+                                    .background(heatColor(byDay[date] ?: 0), TileShape)
+                                    .then(
+                                        if (date == today) Modifier.inkBorder(IronvellumColors.Ink, TileShape, 1.5.dp) else Modifier,
+                                    ),
+                            )
+                        }
                     }
                 }
             }
@@ -140,6 +147,8 @@ fun SkillJournal(
             label = Words.paths.c,
             subline = lines.take(PATHS_NAMED).joinToString(", ") + if (more > 0) " and $more more" else "",
             onClickLabel = "Open ${Words.paths.c}",
+            // Inside a panel with no padding of its own, so the row pads itself off the border.
+            contentPadding = PaddingValues(horizontal = 16.dp),
             onClick = onOpenPaths,
         )
     }

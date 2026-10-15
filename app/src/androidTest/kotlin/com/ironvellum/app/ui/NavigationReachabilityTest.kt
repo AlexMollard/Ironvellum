@@ -71,7 +71,7 @@ class NavigationReachabilityTest {
         open("Ledger", "THE LEDGER")
         open("Codex", "PATHS")
         // Signed out (the test profile is), Allies is the account screen alone.
-        open("Allies", "ACCOUNT")
+        open("Allies", "ALLIES")
 
         // The Garrison left the nav bar for Today's footer.
         open("Today", "Oath")

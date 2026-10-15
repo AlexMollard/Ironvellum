@@ -203,8 +203,9 @@ private fun FigureBlock(
         if (interactive && selection.value != null) SelectedMuscleLine(selection.value, lineFor)
         FlowRow(
             Modifier.fillMaxWidth().padding(top = 6.dp).then(quiet),
-            horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            // From the page margin, wrapping at the margin: centred keys started off it and crowded three to a row.
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) { key() }
     }

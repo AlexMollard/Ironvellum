@@ -4,6 +4,7 @@ import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.TabTitle
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -40,8 +41,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.History
 import com.ironvellum.app.ui.components.IronvellumDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,6 +77,7 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.program.coverageHeadline
 import com.ironvellum.app.ui.program.coverageTally
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
@@ -251,18 +255,8 @@ fun PresetsScreen(
                 shareRefusal = null
                 viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
             }
-            // A fixed height: the chip leaves (a trial is under way) and the title would otherwise drop 22px.
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "TRAIN",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    color = IronvellumColors.Ink,
-                    letterSpacing = 1.sp,
-                    // The one heading on an empty board, where the cycle's is hidden.
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
+            // The title's row is a fixed height: the chip leaves (a trial is under way) and the title stays put.
+            TabTitle("TRAIN") {
                 // No second trial while one is under way.
                 if (focus !is TrainFocus.Live) InkChip(Words.openTrial.s.replaceFirstChar { it.uppercase() }, "Begin ${Words.openTrial.a}", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
@@ -353,6 +347,12 @@ fun PresetsScreen(
                             color = IronvellumColors.InkMuted,
                             maxLines = 1,
                         )
+                        // The row opens the rite, like the rows below it, so it says so.
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = IronvellumColors.InkMuted,
+                        )
                     }
                     if (preset != ui.presets.last()) InkDivider()
                 }
@@ -366,7 +366,7 @@ fun PresetsScreen(
             val trials = ui.history.filter { it.first.completedAtMs != null }
                 .sortedByDescending { it.first.completedAtMs }
                 .take(recentRows)
-            val gaps = remember(ui.plannedPresets) { coverageTally(ProgramRules.coverage(ui.plannedPresets)).gaps }
+            val coverageLine = remember(ui.plannedPresets) { coverageHeadline(coverageTally(ProgramRules.coverage(ui.plannedPresets))) }
             // The ways out: what the cycle covers, the catalogue, the record. Rows
             // rather than buttons, so nothing here competes with Begin.
             InkRowPanel(Modifier.fillMaxWidth()) {
@@ -375,8 +375,7 @@ fun PresetsScreen(
                     label = "Weekly coverage",
                     detail = when {
                         ui.plannedPresets.isEmpty() -> "No ${Words.cycle.s} yet"
-                        gaps == 0 -> "Every muscle covered"
-                        else -> "$gaps short or missing"
+                        else -> coverageLine
                     },
                     onClick = onOpenCoverage,
                 )

@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.titles
 
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -201,7 +202,14 @@ private fun DeedsHome(
         contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
     ) {
         item(key = "header") {
-            DeedsHeader(earned = earned.size, total = Titles.ALL.size)
+            Column {
+                DeedsHeader(earned = earned.size, total = Titles.ALL.size)
+                // Deeds keep their name in both modes, so the first visit says what one is.
+                FirstUseLine(
+                    "deeds",
+                    "${Words.deed.cpl} are the milestones you earn by training. Each grants a title to wear.",
+                )
+            }
         }
 
         item(key = "worn") {

@@ -222,12 +222,20 @@ internal fun CoverageChip(tally: CoverageTally, onOpen: () -> Unit, modifier: Mo
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CoverageMark(tally.lead)
-            Text(
-                headline,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                modifier = Modifier.weight(1f),
-            )
+            Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+                Text(
+                    headline,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                )
+                if (tally.gaps > 0) {
+                    Text(
+                        COVERAGE_REASON,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                }
+            }
             Text(
                 "Coverage ›",
                 style = MaterialTheme.typography.labelMedium,

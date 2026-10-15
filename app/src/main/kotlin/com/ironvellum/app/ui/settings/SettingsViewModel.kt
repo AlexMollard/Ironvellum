@@ -235,6 +235,11 @@ class SettingsViewModel(
     val bodyProfile: StateFlow<Pair<Double?, Sex>> = repo.observeBodyProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null to Sex.MALE)
 
+    /** The newest weigh-in, shown read-only on Profile: weight is logged on Stats, where its history lives. */
+    val latestWeightKg: StateFlow<Double?> = repo.observeStats()
+        .map { it.firstOrNull()?.weightKg }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val healthDays = repo.observeHealthDays()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

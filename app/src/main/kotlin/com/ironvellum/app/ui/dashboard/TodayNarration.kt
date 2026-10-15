@@ -42,6 +42,6 @@ private fun plainNarration(kind: DayKind, setsDone: Int, setsTotal: Int, daysKep
     DayKind.SEALED -> "Workout finished. Nice work."
     DayKind.PLANNED -> "Planned for this day."
     DayKind.RESPITE ->
-        if (daysKept > 0) "Rest day. Your streak holds." else "Rest day."
+        if (daysKept > 0) "Nothing planned today. Your streak holds." else "Nothing planned today. Recover well."
     DayKind.NO_CYCLE -> "You have no weekly plan yet. Build one and its routines land here."
 }

@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.stats
 
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkChip
@@ -164,8 +165,8 @@ internal fun BodyTab(
                     )
                     // The one way to log a weight once there is one, beside the
                     // readings behind the chart.
-                    InkChip("Log", "Log weight", Icons.Outlined.Add, onClick = onLogWeight)
-                    InkChip("History", "Open weight history", onClick = onOpenHistory)
+                    InkChip("Log", "Log weight", Icons.Outlined.Add, height = 48.dp, onClick = onLogWeight)
+                    InkChip("History", "Open weight history", height = 48.dp, onClick = onOpenHistory)
                 }
                 Spacer(Modifier.height(4.dp))
                 when {
@@ -205,6 +206,7 @@ internal fun BodyTab(
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
+            FirstUseLine("bmi_ffmi", "BMI relates weight to height; FFMI relates lean mass to height. Tap either for its ranges.")
         }
 
         InkRowPanel(Modifier.fillMaxWidth()) {

@@ -45,6 +45,8 @@ fun InkChip(
     icon: ImageVector? = null,
     description: String? = null,
     modifier: Modifier = Modifier,
+    /** The drawn height; 32dp by default, 48dp where the chip is the one control a card is for. */
+    height: androidx.compose.ui.unit.Dp = 32.dp,
     onClick: () -> Unit,
 ) {
     val press = remember { MutableInteractionSource() }
@@ -59,7 +61,7 @@ fun InkChip(
     ) {
         Row(
             Modifier
-                .height(32.dp)
+                .height(height)
                 .clip(shape)
                 .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), shape, 1.dp)
                 .indication(press, InkPressIndication)

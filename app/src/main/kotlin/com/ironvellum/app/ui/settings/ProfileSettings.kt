@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.DecimalInput
@@ -45,6 +46,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val nameSaved by viewModel.nameSaved.collectAsStateWithLifecycle()
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     val heightStatus by viewModel.heightStatus.collectAsStateWithLifecycle()
+    val latestWeightKg by viewModel.latestWeightKg.collectAsStateWithLifecycle()
     val focus = LocalFocusManager.current
     LaunchedEffect(Unit) { viewModel.clearSavedTicks() }
 
@@ -118,6 +120,18 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             FieldResult(saved = heightStatus.saved, error = heightStatus.error)
             SettingsCaption("Used for BMI, FFMI and step length.")
+            Spacer(Modifier.height(14.dp))
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
+                value = latestWeightKg?.let { Units.withUnit(it) } ?: "Not logged yet",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Weight") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SettingsCaption("Your latest weigh-in. Log a new one on the ${Words.ledger.c} tab.")
             Spacer(Modifier.height(14.dp))
             InkSegmented(
                 options = Sex.entries.map { it to sexLabel(it) },

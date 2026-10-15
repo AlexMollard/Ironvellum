@@ -128,8 +128,11 @@ object Words {
      * The profile name to show. A fresh profile is stored as "Ironbound" whatever the mode (it is a sentinel the
      * sign-up and cloud code match), so the default reads as the current word for a lifter; a typed name never changes.
      */
+    fun isDefaultName(stored: String): Boolean =
+        stored.equals("Ironbound", ignoreCase = true) || stored.equals("Lifter", ignoreCase = true)
+
     fun displayName(stored: String): String =
-        if (stored.equals("Ironbound", ignoreCase = true) || stored.equals("Lifter", ignoreCase = true)) lifter.c else stored
+        if (isDefaultName(stored)) lifter.c else stored
 
     /** The line for the current mode, for text that cannot be reached by swapping words. Used only by the vocabulary files. */
     fun pick(themedText: String, plainText: String): String = if (themed) themedText else plainText

@@ -2211,12 +2211,12 @@ object ProgramGenerator {
      * Refalo 2023).
      */
     internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
-        val effort = "Compound exercises: stop 0-2 reps short of failure; single-joint: last set to failure"
+        val effort = "Compound exercises: stop 0–2 reps short of failure; single-joint: last set to failure"
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
-            "Rest 3-5 min on compound exercises, 90 s on the rest. $effort " +
+            "Rest 3–5 min on compound exercises, 90 s on the rest. $effort " +
                 "(Schoenfeld 2016; Singer 2024; Refalo 2023)."
         } else {
-            "Rest 2-3 min, at least 90 s. $effort (Singer 2024; Refalo 2023)."
+            "Rest 2–3 min, at least 90 s. $effort (Singer 2024; Refalo 2023)."
         }
     }
 

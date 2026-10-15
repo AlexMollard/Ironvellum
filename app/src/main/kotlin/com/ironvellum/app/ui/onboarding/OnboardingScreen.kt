@@ -37,6 +37,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -87,6 +88,7 @@ import com.ironvellum.app.ui.program.coverageTally
 import com.ironvellum.app.ui.program.startingSetsCaption
 import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
+import com.ironvellum.app.ui.program.PickCell
 import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.program.SourcesPanel
 import com.ironvellum.app.ui.program.planTexts
@@ -477,11 +479,12 @@ private fun joinHuman(items: List<String>): String = when (items.size) {
  * What sits above Continue on step 1: what is still missing, and what is typed but out of range. An
  * out-of-range figure is named as such, never as missing, with the range the repository enforces.
  */
-internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weight: BodyLimits.Reading): String? {
+internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weight: BodyLimits.Reading, sexMissing: Boolean = false): String? {
     val missing = buildList {
         if (nameMissing) add("a name")
         if (height == BodyLimits.Reading.EMPTY) add("height")
         if (weight == BodyLimits.Reading.EMPTY) add("weight")
+        if (sexMissing) add("sex")
     }
     val outOfRange = buildList {
         if (height == BodyLimits.Reading.OUT_OF_RANGE) add(heightRangeLine())
@@ -535,7 +538,8 @@ fun OnboardingScreen(
     val preferencesSeen by viewModel.preferencesSeen.collectAsStateWithLifecycle()
     // Step 1 answers; the weight is hoisted above the front screens because the preferences' unit pick converts it.
     var name by rememberSaveable { mutableStateOf("") }
-    var sex by rememberSaveable { mutableStateOf(Sex.MALE) }
+    // No default: a lifter who has not chosen has not answered, so Continue waits for it.
+    var sex by rememberSaveable { mutableStateOf<Sex?>(null) }
     var heightInput by rememberSaveable { mutableStateOf("") }
     var weightInput by rememberSaveable { mutableStateOf("") }
     if (!welcomeSeen) {
@@ -617,9 +621,9 @@ fun OnboardingScreen(
     // name what is missing instead of leaving a dead button to explain itself.
     val heightReading = BodyLimits.readHeight(heightInput)
     val weightReading = BodyLimits.readWeight(weightInput, Units.current)
-    val profileValid = name.trim().isNotEmpty() &&
+    val profileValid = name.trim().isNotEmpty() && sex != null &&
         heightReading == BodyLimits.Reading.VALID && weightReading == BodyLimits.Reading.VALID
-    val profileHint = profileHint(name.trim().isEmpty(), heightReading, weightReading)
+    val profileHint = profileHint(name.trim().isEmpty(), heightReading, weightReading, sexMissing = sex == null)
 
     // Hoisted so the page keeps its place while the coverage page is up.
     val pageScroll = rememberScrollState()
@@ -726,7 +730,8 @@ fun OnboardingScreen(
                         equipment = equipment ?: Equipment.NOTHING,
                         focus = focus,
                         tier = tier,
-                        sex = sex,
+                        // Step 3 is reachable only through step 1, which needs a sex.
+                        sex = sex ?: Sex.MALE,
                         onOpenCoverage = { coverageOpen = true },
                     )
                 }
@@ -752,7 +757,7 @@ fun OnboardingScreen(
                     // the same bounds the repository enforces, checked first.
                     viewModel.saveProfile(
                         name,
-                        sex,
+                        sex!!,
                         DecimalInput.parse(heightInput)!!,
                         Loads.toKg(DecimalInput.parse(weightInput)!!, Units.current),
                     )
@@ -812,7 +817,7 @@ private fun stepTitle(step: Int): String = when (step) {
 
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Your sex, height and weight scale every number Ironvellum shows you."
-    1 -> "Answer four things and ${Words.theForge.t} builds you ${Words.cycle.a}."
+    1 -> "Answer five things and get ${Words.cycle.a} built for you."
     else -> "Built from your answers. Tap a day to open it, an exercise to adjust it."
 }
 
@@ -827,7 +832,8 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .padding(horizontal = 8.dp),
+            // The chip adds its own 8dp at the start; the end matches the page's 16dp margin.
+            .padding(start = 8.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         InkChip(
@@ -951,7 +957,7 @@ private fun StepNotes(
 private fun ProfileStep(
     name: String,
     onName: (String) -> Unit,
-    sex: Sex,
+    sex: Sex?,
     onSex: (Sex) -> Unit,
     heightInput: String,
     onHeight: (String) -> Unit,
@@ -1025,11 +1031,18 @@ private fun ProfileStep(
         )
         Spacer(Modifier.height(14.dp))
         FieldLabel("Sex")
-        InkSegmented(
-            options = Sex.entries.map { it to it.name.lowercase().replaceFirstChar(Char::titlecase) },
-            selected = sex,
-            onPick = onSex,
-        )
+        // The same boxed cells as the setup's other single choices, with nothing lit until one is picked.
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            Sex.entries.forEach { option ->
+                PickCell(
+                    label = option.name.lowercase().replaceFirstChar(Char::titlecase),
+                    selected = sex == option,
+                    modifier = Modifier.weight(1f),
+                    role = Role.RadioButton,
+                    onClick = { onSex(option) },
+                )
+            }
+        }
     }
 }
 
@@ -1077,10 +1090,6 @@ private fun TrainingStep(
         FieldCaption(startingSetsCaption(tier))
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("Your ${Words.armoury.s}")
-        GearPicker(equipment = equipment, onChange = onEquipment)
-
-        Spacer(Modifier.height(12.dp))
         FieldLabel("What you are chasing")
         InkSegmented(
             options = listOf(
@@ -1115,6 +1124,11 @@ private fun TrainingStep(
             onPick = onEffortScale,
         )
         FieldCaption(Effort.hint(effortScale))
+
+        // Last: it is the longest question and the one Continue waits for.
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("Your ${Words.armoury.s}")
+        GearPicker(equipment = equipment, onChange = onEquipment)
     }
 }
 

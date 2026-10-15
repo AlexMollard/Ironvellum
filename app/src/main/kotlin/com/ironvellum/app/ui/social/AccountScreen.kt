@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.BasicTextField
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.TabTitle
 import androidx.compose.foundation.clickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -508,7 +509,7 @@ fun AccountScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
-        Spacer(Modifier.height(if (pushed) 8.dp else 20.dp))
+        Spacer(Modifier.height(if (pushed) 8.dp else 12.dp))
         AccountTitle(pushed, onBack)
 
         when {
@@ -541,12 +542,8 @@ private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
     if (pushed) {
         PushedHeader("ACCOUNT", onBack)
     } else {
-        Text(
-            "ACCOUNT",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-        )
+        // The tab says what it is for; the account is how a lifter gets in.
+        TabTitle(Words.ally.upl)
     }
     Spacer(Modifier.height(12.dp))
 }
@@ -589,8 +586,15 @@ internal fun AuthPanels(
     // The link under the form steps back to sign-in; system back does the same before it leaves.
     BackHandler(enabled = mode != AuthMode.SIGN_IN) { mode = AuthMode.SIGN_IN }
 
-    // A login wall with no reason to sign in reads as a requirement. Say it
-    // is optional and what it adds before asking for anything.
+    // A login wall with no reason to sign in reads as a requirement. Say what the tab gives, that it is
+    // optional, and what signing in adds, before asking for anything.
+    Text(
+        "${Words.ally.cpl} see your ${Words.sealed.s} ${Words.trial.pl} and answer with ${Words.tribute.pl} and ${Words.remark.pl}. " +
+            "${Words.circle.cpl} share a weekly goal, and the ${Words.reckoning.s} ranks everyone.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = IronvellumColors.Ink,
+    )
+    Spacer(Modifier.height(8.dp))
     Text(
         "Optional: everything else works without an account. Sign in to back up your ${Words.trial.pl}, " +
             "add ${Words.ally.pl}, join ${Words.circle.a} and ${Words.pick("stand in the Reckoning", "appear on the leaderboard")}.",
@@ -769,6 +773,19 @@ internal fun AuthPanels(
         enabled = canSubmit,
         modifier = Modifier.fillMaxWidth(),
     )
+    if (!canSubmit && !busy) {
+        // A greyed button with no reason reads as broken.
+        Spacer(Modifier.height(6.dp))
+        Text(
+            when (mode) {
+                AuthMode.SIGN_IN -> "Enter your email and password to sign in."
+                AuthMode.SIGN_UP -> "Fill in every field to create your account."
+                AuthMode.RESET -> if (codeSent) "Enter the code and a new password." else "Enter your email to get a code."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
     Spacer(Modifier.height(8.dp))
     // Which form this is, and the way to the other one: a link, not a switch.
     IronvellumButton(

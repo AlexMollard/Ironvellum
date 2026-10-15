@@ -50,6 +50,8 @@ class OnboardingBackTest {
         compose.onNodeWithText("Your name").performTextInput("Sam")
         compose.onNodeWithText("Height (cm)").performTextInput("165")
         compose.onNodeWithText("Weight (kg)").performTextInput("61")
+        // No sex is preselected: the form will not continue until one is chosen.
+        compose.onNodeWithText("Male").performClick()
         compose.onNodeWithText("Continue").performClick()
         // The step advances once the profile is written, which Room does off the main thread.
         compose.waitUntil(timeoutMillis = 10_000) {

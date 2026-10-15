@@ -119,7 +119,8 @@ internal fun rememberTodayMotion(): Boolean {
 /** How often the live essence is recomputed from the domain accrual. */
 private const val TICK_MS = 3_000L
 
-/** The rune ring's diameter on a respite day. */
+/** The rune ring's diameter on a respite day: the least it takes, and the most it grows to. */
+private val RING_MIN = 128.dp
 private val RING_SIZE = 184.dp
 
 /**
@@ -164,24 +165,21 @@ internal fun VeilSection(
 
     Column(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("veil-section")) {
         InkDivider()
-        Box(Modifier.fillMaxWidth()) {
-            VeilMotes(motes, phase, animate, Modifier.matchParentSize())
-            Column(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button, onClickLabel = "Open ${Words.theVeil.t}", onClick = onOpen)
-                        .padding(top = if (form == VeilForm.COMPACT) 2.dp else 10.dp),
-                ) {
-                    when (form) {
-                        VeilForm.COMPACT -> CompactBody(snapshot, essence, strength, phase, animate)
-                        VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate, firstRun)
-                        VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate, grow)
-                    }
+        Column(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button, onClickLabel = "Open ${Words.theVeil.t}", onClick = onOpen)
+                    .padding(top = if (form == VeilForm.COMPACT) 2.dp else 10.dp),
+            ) {
+                when (form) {
+                    VeilForm.COMPACT -> CompactBody(snapshot, essence, strength, phase, animate)
+                    VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate, firstRun)
+                    VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate, grow, motes)
                 }
-                veil?.worn?.takeIf { form != VeilForm.COMPACT }?.let { PerkChip(it, veil.wornWorth, onOpenCrest) }
-                InscriptionsSlot(veil?.inscriptions, veil?.buyPrice, onOpen)
             }
+            veil?.worn?.takeIf { form != VeilForm.COMPACT }?.let { PerkChip(it, veil.wornWorth, onOpenCrest) }
+            InscriptionsSlot(veil?.inscriptions, veil?.buyPrice, onOpen)
         }
     }
 }
@@ -325,13 +323,21 @@ private fun HeroBody(
     phase: State<Float>,
     animate: Boolean,
     grow: Dp,
+    motes: List<VeilMote>,
 ) {
     TitleRow(trailing = { RateLabel(snapshot) })
-    if (active != null) {
-        RelicCentrepiece(snapshot, active, essence, animate, grow)
-    } else Box(Modifier.fillMaxWidth().height(RING_SIZE + 8.dp).testTag("veil-hero"), contentAlignment = Alignment.Center) {
+    // The ring takes the least it needs and grows into whatever room the page has left, so a page with a few
+    // extra rows keeps the hero instead of dropping to the compact line over a blank half screen.
+    val ringSize = (RING_MIN + grow).coerceAtMost(RING_SIZE)
+    // The motes drift behind the hero only: everywhere else on Today there is text, and a particle on a word
+    // reads as a smudge.
+    Box(Modifier.fillMaxWidth()) {
+        VeilMotes(motes, phase, animate, Modifier.matchParentSize())
+        if (active != null) {
+            RelicCentrepiece(snapshot, active, essence, animate, grow)
+        } else Box(Modifier.fillMaxWidth().height(ringSize + 8.dp).testTag("veil-hero"), contentAlignment = Alignment.Center) {
         BreathingGlow(phase)
-        RuneRing(phase, Modifier.size(RING_SIZE))
+        RuneRing(phase, Modifier.size(ringSize))
         if (essence != null && snapshot != null) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 EssenceFigure(essence, 40.sp, animate)
@@ -343,6 +349,7 @@ private fun HeroBody(
                     maxLines = 1,
                 )
             }
+        }
         }
     }
     strength?.let {

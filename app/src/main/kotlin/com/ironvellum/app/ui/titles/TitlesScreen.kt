@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.InfoNotice
+import com.ironvellum.app.ui.components.FirstUseLine
+import com.ironvellum.app.ui.components.TabTitle
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -363,16 +365,10 @@ fun TitlesScreen(
     // while the other two scroll.
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                Words.codex.u,
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = 6.sp,
-            )
-            // Techniques mastered are counted on PATHS, deeds on DEEDS.
             Spacer(Modifier.height(12.dp))
+            TabTitle(Words.codex.u)
+            // Techniques mastered are counted on PATHS, deeds on DEEDS.
+            Spacer(Modifier.height(8.dp))
         }
         // One persistent selector row: the three tabs. Paths are chosen from the grid below.
         // A path drilled into does not stop the swipe: the tabs stay live there too, and a swipe
@@ -407,6 +403,7 @@ fun TitlesScreen(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = IronvellumColors.InkMuted,
                             )
+                            FirstUseLine("skill_tiers", "Each ${Words.technique.s} has a tier from I to V; some need an easier one first.")
                             Spacer(Modifier.height(10.dp))
                             PathGrid(
                                 mastered = mastered,

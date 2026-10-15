@@ -345,7 +345,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             }
                         },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onSetHeight = {
+                        onAddName = {
                             // Hub first, so BACK from Profile lands on Settings
                             // and the sub-screen finds the hub's view model.
                             navController.navigate(Routes.SETTINGS)
@@ -630,7 +630,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
 private val BarHeight = 64.dp
 
 /** How far Train's round button stands above the bar's top rule. */
-private val TrainRise = 9.dp
+// 12dp with a 44dp plate puts the raised slot's label on the same line as the other four (20dp icon slots).
+private val TrainRise = 12.dp
 
 /**
  * The mockup's dumbbell: a 2dp round-capped stroke on a 24 grid, tinted by the
@@ -752,7 +753,7 @@ private fun IronvellumBottomBar(
                         if (destination.raised) {
                             Box(
                                 Modifier
-                                    .size(48.dp)
+                                    .size(44.dp)
                                     .clip(DotShape)
                                     .background(IronvellumColors.Vault)
                                     .indication(interaction, InkPressIndication)

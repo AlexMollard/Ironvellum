@@ -1,11 +1,27 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.domain.WorkoutPreset
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FirstRunTodayTest {
+
+    @Test
+    fun `a new cycle opens with its earliest rite whatever weekday it is taken on`() {
+        // Taken on a Thursday: Monday's A and Wednesday's B are past, the calendar's next rite is Friday's C.
+        val cycle = listOf(
+            WorkoutPreset(id = 3, name = "Full Body C", scheduledDay = 5),
+            WorkoutPreset(id = 1, name = "Full Body A", scheduledDay = 1),
+            WorkoutPreset(id = 2, name = "Full Body B", scheduledDay = 3),
+            WorkoutPreset(id = 4, name = "Unscheduled"),
+        )
+        assertEquals("Full Body A", firstCycleRite(cycle)?.name)
+        assertNull(firstCycleRite(listOf(WorkoutPreset(id = 4, name = "Unscheduled"))))
+        assertNull(firstCycleRite(emptyList()))
+    }
 
     @Test
     fun `a first run is a profile with nothing sealed`() {

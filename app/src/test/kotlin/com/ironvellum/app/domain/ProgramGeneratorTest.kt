@@ -387,7 +387,7 @@ class ProgramGeneratorTest {
         }
         assertTrue(
             "note carries no rest guidance: ${plan.presets.first().note}",
-            plan.presets.first().note.contains("3-5 min") && plan.presets.first().note.contains("short of failure"),
+            plan.presets.first().note.contains("3–5 min") && plan.presets.first().note.contains("short of failure"),
         )
         // Small pool: linear progression on few lifts (ACSM 2009).
         assertTrue(

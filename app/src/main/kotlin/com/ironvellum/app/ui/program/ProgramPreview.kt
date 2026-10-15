@@ -158,7 +158,7 @@ fun ProposedDay(
                 color = IronvellumColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier.weight(1f),
             )
             Text(
                 if (dayOpen) hardSetsText(dayHardSets(preset)) else movementsText(preset.entries.size),
@@ -171,7 +171,9 @@ fun ProposedDay(
                     if (dayOpen) "⌃" else "›",
                     style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
+                    textAlign = TextAlign.End,
+                    // A fixed slot, so the open and closed glyphs sit at the same edge.
+                    modifier = Modifier.width(16.dp).clearAndSetSemantics {},
                 )
             }
         }
@@ -565,7 +567,7 @@ internal fun SplitPicker(
     fun daysFor(option: TrainingSplit) = TrainingSplit.OPTIONS.filter { it.first == option }.map { it.second }
     Column {
         InkSegmented(
-            options = TrainingSplit.OPTIONS.map { it.first }.distinct().map { it to it.label },
+            options = TrainingSplit.OPTIONS.map { it.first }.distinct().map { it to it.pickerLabel },
             selected = split,
             onPick = { picked ->
                 val counts = daysFor(picked)
@@ -591,12 +593,12 @@ internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split
     TrainingSplit.UPPER_LOWER ->
         "Upper, then lower, twice each. Every muscle twice a week."
     TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
-        "Each muscle once a week. Fine for growth, less practice per exercise."
+        "PPL is push / pull / legs. Each muscle once a week: fine for growth, less practice per exercise."
     } else {
-        "Push, pull, legs twice over. Short ${Words.rite.pl}, every muscle twice a week."
+        "PPL is push / pull / legs, twice over. Short ${Words.rite.pl}, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
-        "PPL is push / pull / legs: those three days, then upper and lower. Every muscle twice in five days."
+        "Hybrid: push / pull / legs, then upper and lower. Every muscle twice in five days."
 }
 
 /**
@@ -641,6 +643,14 @@ internal fun PickCell(
                 contentDescription = null,
                 tint = IronvellumColors.Ink,
                 modifier = Modifier.padding(end = 4.dp).size(14.dp),
+            )
+        } else if (role == Role.Checkbox) {
+            // An empty box says the cell can be switched on before it is tapped.
+            Box(
+                Modifier
+                    .padding(end = 6.dp)
+                    .size(14.dp)
+                    .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall, 1.dp),
             )
         }
         Text(
@@ -741,6 +751,7 @@ internal fun GearPicker(
                         selected = on,
                         modifier = Modifier.weight(1f),
                         description = "${gear.label}, ${if (on) "on" else "off"}",
+                        role = Role.Checkbox,
                         onClick = {
                             val gearSet = if (on) current.gear - gear else current.gear + gear
                             // First dumbbell tap sets the max so the stepper has a number to edit.
@@ -821,6 +832,7 @@ private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
             selected = vestOn,
             modifier = Modifier.weight(1f),
             description = "Weighted vest, ${if (vestOn) "on" else "off"}",
+            role = Role.Checkbox,
             onClick = {
                 onChange(current.copy(kit = kit.copy(vestMaxKg = if (vestOn) null else LoadKit.DEFAULT_VEST_KG)))
             },
@@ -830,6 +842,7 @@ private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
             selected = kit.dipBelt,
             modifier = Modifier.weight(1f),
             description = "Dip belt, ${if (kit.dipBelt) "on" else "off"}",
+            role = Role.Checkbox,
             onClick = { onChange(current.copy(kit = kit.copy(dipBelt = !kit.dipBelt))) },
         )
     }

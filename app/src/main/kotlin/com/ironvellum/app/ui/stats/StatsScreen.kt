@@ -37,6 +37,7 @@ import com.ironvellum.app.domain.Measurements
 import kotlinx.coroutines.flow.Flow
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkTextLink
+import com.ironvellum.app.ui.components.TabTitle
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
@@ -311,17 +312,9 @@ fun StatsScreen(
             onBack = { pageIndex = 0 },
         )
         LedgerPage.MAIN -> Column(Modifier.fillMaxSize()) {
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
             // Only the title: weight is logged on its card, the chronicle lives on Train.
-            Text(
-                Lines.ledgerTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.Ink,
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter).heightIn(min = 44.dp).wrapContentHeight().semantics { heading() },
-            )
+            TabTitle(Lines.ledgerTitle, Modifier.padding(horizontal = LedgerSpace.Gutter))
             Spacer(Modifier.height(8.dp))
 
             // Pages run edge to edge under the strip, each with its own hoisted scroll.

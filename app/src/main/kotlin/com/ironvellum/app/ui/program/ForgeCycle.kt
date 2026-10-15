@@ -411,7 +411,7 @@ private fun ForgeGoalStep(
     onSplit: (TrainingSplit) -> Unit,
     onDays: (Int) -> Unit,
 ) {
-    ForgeLabel("Aim")
+    ForgeLabel("What you are chasing")
     ForgeRadioRow(
         label = "Goal",
         options = listOf(
@@ -424,10 +424,10 @@ private fun ForgeGoalStep(
         onPick = onFocus,
     )
     ForgeCaption(goalCaption(focus))
-    ForgeLabel("Week")
+    ForgeLabel("How you divide the week")
     ForgeRadioRow(
         label = "Week split",
-        options = FORGE_SPLITS.map { it to it.label },
+        options = FORGE_SPLITS.map { it to it.pickerLabel },
         selected = split,
         onPick = onSplit,
     )
@@ -452,7 +452,7 @@ private fun ForgeKitStep(
     maxExercises: Int,
     onMore: () -> Unit,
 ) {
-    ForgeLabel("Kit")
+    ForgeLabel("Your ${Words.armoury.s}")
     InkDivider()
     ListRow(
         label = Words.armoury.c,

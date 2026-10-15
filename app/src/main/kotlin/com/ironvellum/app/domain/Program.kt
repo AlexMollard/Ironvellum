@@ -72,12 +72,15 @@ enum class VolumeLevel(val label: String) {
  * day counts it fits. Persisted by constant name (ProgramAnswers), so never
  * rename a constant.
  */
-enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
+enum class TrainingSplit(val label: String, val dayOptions: List<Int>, shortLabel: String? = null) {
     FULL_BODY("Full body", listOf(1, 2, 3)),
     UPPER_LOWER("Upper / lower", listOf(4)),
-    PUSH_PULL_LEGS("Push / pull / legs", listOf(3, 6)),
-    UPPER_LOWER_PPL("Upper / lower + PPL", listOf(5)),
+    PUSH_PULL_LEGS("Push / pull / legs", listOf(3, 6), shortLabel = "PPL"),
+    UPPER_LOWER_PPL("Upper / lower + PPL", listOf(5), shortLabel = "Hybrid"),
     ;
+
+    /** The label for a one-line tab, so a four-way picker never wraps a word onto a second line. */
+    val pickerLabel: String = shortLabel ?: label
 
     companion object {
         /** The conventional split for a day count: what a request without a split gets. */

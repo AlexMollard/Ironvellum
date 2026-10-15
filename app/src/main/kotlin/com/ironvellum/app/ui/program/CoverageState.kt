@@ -55,7 +55,7 @@ internal data class CoverageTally(val states: Map<Muscle, CoverageState>) {
     val notTrained: List<Muscle> get() = of(CoverageState.NOT_TRAINED)
     val covered: List<Muscle> get() = of(CoverageState.COVERED)
 
-    /** Muscles short of the minimum: the count the Train card calls "short or missing". */
+    /** Muscles short of the minimum or not trained at all: the one count every summary line gives. */
     val gaps: Int get() = below.size + notTrained.size
 
     val allClear: Boolean get() = heavy.isEmpty() && gaps == 0
@@ -81,17 +81,21 @@ internal fun coverageTally(presets: List<PlannedPreset>, dismissedHeavy: Set<Mus
     coverageTally(loadsOf(presets), dismissedHeavy)
 
 /**
- * The one-line summary: "2 below minimum · 1 not trained", "1 heavy · 1 below minimum", or
- * "Every muscle covered". A hint only, never a gate.
+ * The one-line summary, worded the same on every screen that shows it: "3 muscles need more sets",
+ * "1 heavy · 1 muscle needs more sets", or "Every muscle covered". Below minimum and not trained are one
+ * thing to a lifter, a muscle that wants more hard sets, so they are one count here; the page keeps the
+ * two states apart on the figure and in its legend. A hint only, never a gate.
  */
 internal fun coverageHeadline(tally: CoverageTally): String {
     val parts = buildList {
         if (tally.heavy.isNotEmpty()) add("${tally.heavy.size} heavy")
-        if (tally.below.isNotEmpty()) add("${tally.below.size} below minimum")
-        if (tally.notTrained.isNotEmpty()) add("${tally.notTrained.size} not trained")
+        if (tally.gaps > 0) add("${tally.gaps} ${if (tally.gaps == 1) "muscle needs" else "muscles need"} more sets")
     }
     return if (parts.isEmpty()) "Every muscle covered" else parts.joinToString(" · ")
 }
+
+/** Why a muscle "needs more sets", said once beside the summary wherever there is a gap. */
+internal val COVERAGE_REASON: String get() = "About ${ProgramRules.COVERED_MIN.toInt()} hard sets a week per muscle is a sound floor."
 
 /** Which of the coverage dock's two actions have something to do. */
 internal data class DockActions(val forge: Boolean, val optimise: Boolean) {

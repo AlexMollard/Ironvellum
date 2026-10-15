@@ -52,6 +52,12 @@ object FirstRunPrefs {
     fun setVeilTermsSeen(context: Context, seen: Boolean = true) =
         onboarding(context).edit { putBoolean(KEY_VEIL_TERMS_SEEN, seen) }
 
+    /** Whether the one-line explanation of the word [key] has been dismissed ("Got it"): one flag per word. */
+    fun termSeen(context: Context, key: String): Boolean = onboarding(context).getBoolean("term_seen_$key", false)
+
+    fun setTermSeen(context: Context, key: String, seen: Boolean = true) =
+        onboarding(context).edit { putBoolean("term_seen_$key", seen) }
+
     fun notificationsAsked(context: Context): Boolean = trial(context).getBoolean(KEY_ASKED_NOTIFICATIONS, false)
 
     fun setNotificationsAsked(context: Context, asked: Boolean = true) =

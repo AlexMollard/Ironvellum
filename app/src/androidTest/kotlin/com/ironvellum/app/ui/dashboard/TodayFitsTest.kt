@@ -204,7 +204,7 @@ class TodayFitsTest {
         assertDoesNotScroll()
         assertPlaced("veil-hero")
         assertInside("essence")
-        assertInside("Add a weight reading")
+        assertInside("Add your weight")
         assertInside("3 inscriptions waiting")
         saveShot("today-respite-full")
     }

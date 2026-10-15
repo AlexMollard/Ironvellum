@@ -158,8 +158,9 @@ class ProgramBuilderViewModel(
     val tier = MutableStateFlow(VolumeLevel.LOW)
     /** Null until the lifter has picked (or Settings / onboarding saved) an armoury; no cycle is built on a guess. */
     val equipment = MutableStateFlow<Equipment?>(null)
-    val daysPerWeek = MutableStateFlow(4)
-    val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
+    // The same starting answers as first-run setup: full body, three days.
+    val daysPerWeek = MutableStateFlow(3)
+    val split = MutableStateFlow(TrainingSplit.FULL_BODY)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
     val compoundOnly = MutableStateFlow(false)
     val maxExercises = MutableStateFlow(ProgramRules.DEFAULT_MAX_EXERCISES)

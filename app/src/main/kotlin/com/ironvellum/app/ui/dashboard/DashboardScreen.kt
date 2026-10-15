@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +113,8 @@ import com.ironvellum.app.ui.components.veilGrantPages
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.components.CrestPlate
@@ -121,6 +126,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -324,6 +331,32 @@ class DashboardViewModel(
     val crestsOwned: StateFlow<Int?> = repo.observeOwnedFrames().map<Set<String>, Int?> { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    private val _bodyError = MutableStateFlow<String?>(null)
+
+    /** Why the last body save was refused, for the sheet that asked; null while there is nothing to say. */
+    val bodyError: StateFlow<String?> = _bodyError.asStateFlow()
+
+    fun clearBodyError() {
+        _bodyError.value = null
+    }
+
+    /**
+     * Saves the figures the body sheet collected. Height goes first on purpose: addStat stamps the profile
+     * height onto the weigh-in, so the other order would leave the first reading without one.
+     */
+    fun saveBody(heightCm: Double?, weightKg: Double?, onSaved: () -> Unit) {
+        _bodyError.value = null
+        viewModelScope.launch {
+            runCatching {
+                heightCm?.let { repo.setHeight(it) }
+                weightKg?.let { repo.logTodaysWeight(it) }
+            }.fold(
+                onSuccess = { onSaved() },
+                onFailure = { _bodyError.value = "Could not save: ${it.message}" },
+            )
+        }
+    }
+
     fun wearCrest(frameId: String) {
         viewModelScope.launchGuarded("wear crest") { repo.equipFrame(frameId) }
     }
@@ -402,8 +435,8 @@ fun DashboardScreen(
     onOpenGarrison: () -> Unit,
     onOpenCrest: () -> Unit = {},
     onOpenWorkout: (Long) -> Unit,
-    /** Set height: straight to Settings → Profile, where height lives. */
-    onSetHeight: () -> Unit = onOpenSettings,
+    /** The header's "Add your name": straight to Settings > Profile, where the name lives. */
+    onAddName: () -> Unit = onOpenSettings,
     /** A fresh peak's row opens that lift. */
     onOpenLift: (String) -> Unit = { onOpenLedger() },
     viewModel: DashboardViewModel =
@@ -448,6 +481,19 @@ fun DashboardScreen(
     // Today's cards, the Veil and the rank line have all been read: the launch screen can lift.
     if (ui.loaded && veil != null && strengthRank.isNotEmpty()) SideEffect { StartupGate.open() }
 
+    var bodyOpen by rememberSaveable { mutableStateOf(false) }
+    val bodyError by viewModel.bodyError.collectAsStateWithLifecycle()
+    bodyGap?.let { gap ->
+        if (bodyOpen) {
+            BodyDetailsDialog(
+                gap = gap,
+                error = bodyError,
+                onDismiss = { bodyOpen = false; viewModel.clearBodyError() },
+                onSave = { h, w -> viewModel.saveBody(h, w) { bodyOpen = false } },
+            )
+        }
+    }
+
     TodayContent(
         ui = ui,
         selectedDay = selectedDay,
@@ -468,7 +514,8 @@ fun DashboardScreen(
             onOpenGarrison = onOpenGarrison,
             onOpenCrest = onOpenCrest,
             onOpenWorkout = onOpenWorkout,
-            onSetHeight = onSetHeight,
+            onAddBody = { bodyOpen = true },
+            onAddName = onAddName,
             onOpenLift = onOpenLift,
             onSelectDay = viewModel::selectDay,
             onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
@@ -504,7 +551,10 @@ internal class TodayActions(
     val onOpenGarrison: () -> Unit = {},
     val onOpenCrest: () -> Unit = {},
     val onOpenWorkout: (Long) -> Unit = {},
-    val onSetHeight: () -> Unit = {},
+    /** Add the missing height and/or weight: opens the body sheet. */
+    val onAddBody: () -> Unit = {},
+    /** The header asks for a name while the profile still has the default one. */
+    val onAddName: () -> Unit = {},
     val onOpenLift: (String) -> Unit = {},
     val onSelectDay: (Int) -> Unit = {},
     val onBeginPreset: (Long) -> Unit = {},
@@ -562,13 +612,24 @@ internal fun TodayContent(
                                 )
                             }
                             Spacer(Modifier.width(8.dp))
+                            // A skipped setup leaves the default name; the header asks for a real one instead of
+                            // wearing "Lifter" as if it were chosen.
+                            val unnamed = profile?.name?.let(Words::isDefaultName) == true
                             Text(
-                                profile?.name?.let(Words::displayName) ?: Words.lifter.c,
+                                if (unnamed) "Add your name" else profile?.name?.let(Words::displayName) ?: Words.lifter.c,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = IronvellumColors.Ink,
+                                color = if (unnamed) IronvellumColors.SystemGreen else IronvellumColors.Ink,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                                modifier = if (unnamed) {
+                                    Modifier
+                                        .heightIn(min = 48.dp)
+                                        .wrapContentHeight(Alignment.CenterVertically)
+                                        .clickable(role = Role.Button, onClickLabel = "Add your name") { actions.onAddName() }
+                                } else {
+                                    Modifier
+                                },
                             )
                         }
                     },
@@ -618,6 +679,13 @@ internal fun TodayContent(
         }
 
         HeaderProgress(progress, ui.streak, onLevel = { levelOpen = true }, onOath = { oathOpen = true })
+        // The level title stays in its own voice in both modes, so the first screen says what it is.
+        if (isFirstRun(profile?.totalXp)) {
+            FirstUseLine(
+                "rank_titles",
+                "${ArmyClass.LADDER.first().title} is your level title and rises with your XP. Strength Rank is set by what you lift.",
+            )
+        }
         WeekRail(
             selectedDay = selectedDay,
             today = today.dayOfWeek.value,
@@ -705,7 +773,9 @@ private fun TodayDayBody(
     val daysKept = ui.streak
     val firstRun = isFirstRun(ui.profile?.totalXp)
     val card: @Composable (rows: @Composable () -> Unit) -> Unit = { rows ->
-        InkPanel(Modifier.fillMaxWidth().padding(top = 8.dp), onClick = cardClick) {
+        // A rest day ends on its 44dp "Next:" link, whose own height already pads the bottom: less is added.
+        val cardPadding = if (kind == DayKind.RESPITE && nextRite != null) PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 6.dp) else PaddingValues(16.dp)
+        InkPanel(Modifier.fillMaxWidth().padding(top = 8.dp), onClick = cardClick, contentPadding = cardPadding) {
             when (kind) {
                 DayKind.LIVE -> {
                     val trial = liveTrial!!
@@ -811,13 +881,14 @@ private fun TodayDayBody(
             }
         }
         // Setup can end on a day the cycle leaves free: there is still something to begin.
-        firstBegins(kind, isTodaySelected, firstRun, nextRite != null).forEach { begin ->
+        val openingRite = firstCycleRite(ui.presets)
+        firstBegins(kind, isTodaySelected, firstRun, openingRite != null).forEach { begin ->
             add {
                 when (begin) {
                     FirstBegin.RITE -> ListRow(
-                        label = "Begin ${nextRite!!.name}",
-                        subline = "Your ${Words.cycle.s}'s next ${Words.rite.s}, a day early",
-                        onClick = { actions.onBeginPreset(nextRite.id) },
+                        label = "Begin ${openingRite!!.name}",
+                        subline = "The first ${Words.rite.s} of your ${Words.cycle.s}",
+                        onClick = { actions.onBeginPreset(openingRite.id) },
                     )
                     FirstBegin.OPEN -> ListRow(
                         label = "Begin ${Words.openTrial.a}",
@@ -837,10 +908,9 @@ private fun TodayDayBody(
                 )
             }
         }
-        // Height lives in Settings and weight is a Ledger reading, so the link
-        // goes to whichever one is still missing, height first.
+        // One sheet takes whichever of height and weight is still missing.
         bodyGap?.let { gap ->
-            add { BodyGapRow(gap, onFix = if (gap == BodyGap.WEIGHT) actions.onOpenLedger else actions.onSetHeight) }
+            add { BodyGapRow(gap, onFix = actions.onAddBody) }
         }
         if (peak != null) add { PeakRow(peak) { actions.onOpenLift(peak.name) } }
     }
@@ -866,7 +936,7 @@ private fun TodayDayBody(
                 kind == DayKind.RESPITE -> VeilForm.HERO
                 else -> VeilForm.FULL
             }
-            VeilSection(veil, form, nowMs, actions.onOpenGarrison, onOpenCrest = actions.onOpenCrest, firstRun = firstRun && kind != DayKind.NO_CYCLE, grow = grow)
+            VeilSection(veil, form, nowMs, actions.onOpenGarrison, onOpenCrest = actions.onOpenCrest, firstRun = firstRun, grow = grow)
         },
     )
 }
@@ -1253,7 +1323,7 @@ private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
     val (label, subline) = when (gap) {
         BodyGap.BOTH -> "Add your height and weight" to "Unlocks your scores"
         BodyGap.HEIGHT -> "Add your height" to "Unlocks BMI, FFMI and your scores"
-        BodyGap.WEIGHT -> "Add a weight ${Words.reading.s}" to "Unlocks your scores"
+        BodyGap.WEIGHT -> "Add your weight" to "Unlocks your scores"
     }
     Row(
         Modifier
@@ -1270,7 +1340,7 @@ private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
             Text(subline, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         Text(
-            if (gap == BodyGap.WEIGHT) "Add ${Words.reading.s}" else "Set height",
+            "Add",
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.SystemGreen,
             maxLines = 1,

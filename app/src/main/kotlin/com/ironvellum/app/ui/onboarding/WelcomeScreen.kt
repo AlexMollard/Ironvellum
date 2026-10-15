@@ -5,7 +5,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -132,8 +137,16 @@ internal fun WelcomeScreen(
             .background(IronvellumColors.Abyss)
             .statusBarsPadding(),
     ) {
-        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        // The intro and the two other ways in are one group, centred in the space above Begin (and scrolling
+        // when it does not fit), so nothing hangs apart from the rest across a blank half screen.
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val pageHeight = maxHeight
             Motes()
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = pageHeight),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
             Column(
                 Modifier.padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -162,10 +175,9 @@ internal fun WelcomeScreen(
                     modifier = Modifier.padding(top = 28.dp).widthIn(max = 320.dp),
                 )
             }
-        }
 
-        // The two ways in that are not a fresh start.
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp)) {
+            // The two ways in that are not a fresh start.
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 40.dp, bottom = 12.dp)) {
             Text(
                 "Already train somewhere?",
                 style = MaterialTheme.typography.bodySmall,
@@ -195,6 +207,8 @@ internal fun WelcomeScreen(
             importUi.problems?.let {
                 Spacer(Modifier.height(4.dp))
                 SettingsCaption(it)
+            }
+            }
             }
         }
 

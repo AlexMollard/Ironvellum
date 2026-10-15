@@ -75,13 +75,13 @@ class CoverageStateTest {
         all[Muscle.REAR_DELTS] = 3.0
         all[Muscle.CALVES] = 2.0
         val two = coverageTally(asLoads(all))
-        assertEquals("2 below minimum · 1 not trained", coverageHeadline(two))
+        assertEquals("3 muscles need more sets", coverageHeadline(two))
         assertEquals(3, two.gaps)
 
         all[Muscle.FRONT_DELTS] = 24.0
         all[Muscle.CALVES] = 6.0
         val heavy = coverageTally(asLoads(all))
-        assertEquals("1 heavy · 1 below minimum · 1 not trained", coverageHeadline(heavy))
+        assertEquals("1 heavy · 2 muscles need more sets", coverageHeadline(heavy))
         assertEquals(CoverageState.BELOW_MINIMUM, heavy.lead)
     }
 

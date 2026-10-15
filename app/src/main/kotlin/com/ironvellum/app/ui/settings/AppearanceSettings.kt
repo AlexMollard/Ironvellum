@@ -100,8 +100,10 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
             checked = Words.themed,
             onCheckedChange = { Words.setThemed(context.applicationContext, it) },
         )
-        SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
         SectionHeader("COLOUR PAIRS", topPadding = 16.dp)
+        // With the pairs it describes, not under the Themed names row above.
+        SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
+        Spacer(Modifier.height(8.dp))
         InkRowPanel(Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup()) {
                 AccentPresets.entries.forEach { preset ->

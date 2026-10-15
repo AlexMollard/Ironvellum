@@ -241,7 +241,7 @@ class ProgramTemplatesTest {
         }
         // Goal- and tier-appropriate note, not the summary, on every day.
         plan.presets.forEach { day ->
-            assertTrue(day.note.contains("Rest 3-5 min"))
+            assertTrue(day.note.contains("Rest 3–5 min"))
             assertTrue(day.note.contains("short of failure"))
         }
     }

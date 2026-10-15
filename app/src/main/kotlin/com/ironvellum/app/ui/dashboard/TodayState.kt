@@ -66,7 +66,7 @@ internal fun isFirstRun(totalXp: Long?): Boolean = totalXp != null && totalXp <=
 
 /** The ways to start that a first-run Today adds when the day itself has nothing to begin. */
 internal enum class FirstBegin {
-    /** Begin the cycle's next rite, a day early. */
+    /** Begin the cycle's first rite, even when today is not its day. */
     RITE,
 
     /** Begin a trial with no rite. */
@@ -84,6 +84,14 @@ internal fun firstBegins(kind: DayKind, isToday: Boolean, firstRun: Boolean, has
     } else {
         emptyList()
     }
+
+/**
+ * The rite a new cycle opens with: the earliest scheduled day's, whatever weekday today is. A cycle taken on a
+ * Thursday has its first two rites on days already past; offering the calendar's next rite (the third) would
+ * start the lifter in the middle of it.
+ */
+internal fun firstCycleRite(presets: List<WorkoutPreset>): WorkoutPreset? =
+    presets.filter { it.scheduledDay != null }.minByOrNull { it.scheduledDay!! }
 
 /** One movement in the day card: its [value] reads "3×7" before, "4/5" under way, "3/3 · 90 kg × 7" sealed. */
 internal data class DayRow(
