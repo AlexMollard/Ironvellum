@@ -103,4 +103,39 @@ class LiveTallyTest {
         // A chip's stored value is the same RPE either way: RIR 2 and RPE 8 are one rating.
         assertEquals(restEffortChips(EffortScale.RIR).first { it.second == "2" }.first, 8)
     }
+
+    @Test
+    fun aMemoisedTallyIsTheSameAsAColdOneOnEveryTick() {
+        val memo = SessionXp.TallyMemo()
+        // Ticking the trial one set at a time, as the screen does.
+        for (done in 0..trial.size) {
+            val soFar = trial.take(done)
+            assertEquals("after $done sets", book.tally(soFar, bodyweight), book.tally(soFar, bodyweight, memo))
+        }
+    }
+
+    @Test
+    fun aMemoisedTallyFollowsAnEditUntickAndRemovalInTheMiddle() {
+        val memo = SessionXp.TallyMemo()
+        book.tally(trial, bodyweight, memo)
+        val edited = trial.toMutableList().also { it[1] = it[1].copy(weightKg = 30.0, reps = 6) }
+        assertEquals(book.tally(edited, bodyweight), book.tally(edited, bodyweight, memo))
+        val unticked = edited.toMutableList().also { it[0] = it[0].copy(done = false) }
+        assertEquals(book.tally(unticked, bodyweight), book.tally(unticked, bodyweight, memo))
+        val removed = unticked.filterIndexed { index, _ -> index != 2 }
+        assertEquals(book.tally(removed, bodyweight), book.tally(removed, bodyweight, memo))
+        // And back to the full trial: nothing stale survives the round trip.
+        assertEquals(book.tally(trial, bodyweight), book.tally(trial, bodyweight, memo))
+    }
+
+    @Test
+    fun aMemoNeverCarriesPricesAcrossAnotherBookOrBodyweight() {
+        val memo = SessionXp.TallyMemo()
+        book.tally(trial, bodyweight, memo)
+        // Another history prices the same sets differently; the memo must not hand back the first book's totals.
+        val heavy = session(2, 500_000, set(pullUp, 0, 0, 5, 60.0), set(pullUp, 0, 1, 5, 60.0), set(dip, 1, 0, 20))
+        val other = SessionXp(exercises, listOf(past, heavy), { bodyweight })
+        assertEquals(other.tally(trial, bodyweight), other.tally(trial, bodyweight, memo))
+        assertEquals(other.tally(trial, 95.0), other.tally(trial, 95.0, memo))
+    }
 }

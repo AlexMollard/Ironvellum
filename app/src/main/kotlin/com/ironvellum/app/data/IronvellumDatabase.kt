@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 43
+        const val VERSION = 44
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -646,6 +646,20 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * History at scale: the three columns the history queries filter and sort on get an index. `sessions` had none
+         * (every "completed" or "latest" read scanned the table) and `set_logs` only one on the session, while the
+         * per-lift queries join on `exerciseId`. Indices only: no row is read or rewritten, and the names are the ones
+         * Room derives, so the migrated schema is the one a fresh install gets.
+         */
+        private val MIGRATION_43_44 = object : Migration(43, 44) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sessions_startedAtMs` ON `sessions` (`startedAtMs`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sessions_completedAtMs` ON `sessions` (`completedAtMs`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_set_logs_exerciseId` ON `set_logs` (`exerciseId`)")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -679,6 +693,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_40_41,
             MIGRATION_41_42,
             MIGRATION_42_43,
+            MIGRATION_43_44,
         )
 
         const val NAME = "ironvellum.db"

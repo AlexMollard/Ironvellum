@@ -120,11 +120,11 @@ object Reminders {
         val rite = repo.observePresets().firstOrNull()
             ?.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
 
-        val history = repo.observeHistory().firstOrNull() ?: emptyList()
-        val dates = history.mapNotNull { it.first.completedAtMs?.let(::dayOf) }.toSet()
+        val sessions = repo.completedSessions()
+        val dates = sessions.mapNotNull { it.completedAtMs?.let(::dayOf) }.toSet()
         // Today's rite already taken early this week has nothing left to summon to.
         val weekStart = today.with(java.time.DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
-        val riteSealed = rite != null && TrainFocus.sealing(rite, history.map { it.first }, weekStart) != null
+        val riteSealed = rite != null && TrainFocus.sealing(rite, sessions, weekStart) != null
         // Sealed today, or mid-trial: the kindest notification is silence.
         val live = repo.observeLiveSession().firstOrNull()
         if (!Summons.wanted(

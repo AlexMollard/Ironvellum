@@ -792,11 +792,10 @@ class Repository(
      */
     suspend fun strengthProfile(): StrengthProfile =
         ProgramRules.strengthProfile(
-            observeHistory().first()
-                .flatMap { (_, sets) -> sets }
+            sessionDao.completedLoadedSets()
                 // An easier version (assisted, incline) is not the movement's 1RM; a harder one still counts.
-                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 && !Variation.eases(it.modifiers) }
-                .map { LoggedLift(it.exerciseName, it.weightKg!!, it.reps) },
+                .filter { !Variation.eases(it.modifiers) }
+                .map { LoggedLift(it.exerciseName, it.weightKg, it.reps) },
         )
 
     /** The lifter's latest weigh-in, or null before the first. */
@@ -824,7 +823,7 @@ class Repository(
 
     /** The first completed session's day, or null for a lifter with no history. */
     suspend fun firstSessionEpochDay(): Long? =
-        observeHistory().first().minOfOrNull { (session, _) -> session.startedAtMs }
+        sessionDao.firstCompletedStartMs()
             ?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay() }
 
     /** Name-resolved rows awaiting the write; the resolve step runs before any
@@ -2047,37 +2046,56 @@ class Repository(
     suspend fun resumableSessionId(nowMs: Long): Long? =
         sessionDao.liveSession()?.takeIf { nowMs - it.startedAtMs in 0..RESUME_WINDOW_MS }?.id
 
-    /** Full activity log: every completed session with its sets. */
+    /**
+     * Full activity log: every completed session with its sets.
+     *
+     * Distinct, because Room re-runs the query on ANY write to its tables, and a tick in a live trial writes
+     * `set_logs`: without this every consumer re-priced the whole history on each tick, which at three years is
+     * most of a second of work on the main thread for a log that had not changed.
+     */
     fun observeHistory(): Flow<List<Pair<WorkoutSession, List<SessionSet>>>> = combine(
         sessionDao.observeCompletedWithSets(),
         exerciseDao.observeAll(),
     ) { sessions, exercises ->
         val names = exercises.associate { it.id to it.name }
-        sessions.map { sws ->
-            sws.session.toDomain() to sws.sets.map { s ->
-                SessionSet(
-                    id = s.id,
-                    exerciseId = s.exerciseId,
-                    exerciseName = names[s.exerciseId] ?: "Unknown",
-                    // Without this every set defaulted to position 0, so the
-                    // session record grouped a five-exercise workout under one
-                    // heading with SET 1 repeating once per exercise.
-                    exercisePosition = s.exercisePosition,
-                    setIndex = s.setIndex,
-                    reps = s.reps,
-                    weightKg = s.weightKg,
-                    modifiers = s.modifiers,
-                    done = s.done,
-                    durationSec = s.durationSec,
-                    distanceM = s.distanceM,
-                    grade = s.grade,
-                    kind = s.setKind(),
-                    supersetGroup = s.supersetGroup,
-                    rpe = s.rpe,
-                )
-            }
-        }
+        sessions.map { it.toHistoryRow(names) }
+    }.distinctUntilChanged()
+
+    /** One completed session with its sets, as [observeHistory] holds it; null while it is live or gone. */
+    fun observeWorkout(sessionId: Long): Flow<Pair<WorkoutSession, List<SessionSet>>?> = combine(
+        sessionDao.observeCompletedWithSetsById(sessionId),
+        exerciseDao.observeAll(),
+    ) { row, exercises ->
+        val names = exercises.associate { it.id to it.name }
+        row?.toHistoryRow(names)
     }
+
+    /** Every completed session without its sets, newest first: for what only reads dates and rites. */
+    suspend fun completedSessions(): List<WorkoutSession> = sessionDao.completedSessions().map { it.toDomain() }
+
+    private fun SessionWithSets.toHistoryRow(names: Map<Long, String>): Pair<WorkoutSession, List<SessionSet>> =
+        session.toDomain() to sets.map { s ->
+            SessionSet(
+                id = s.id,
+                exerciseId = s.exerciseId,
+                exerciseName = names[s.exerciseId] ?: "Unknown",
+                // Without this every set defaulted to position 0, so the
+                // session record grouped a five-exercise workout under one
+                // heading with SET 1 repeating once per exercise.
+                exercisePosition = s.exercisePosition,
+                setIndex = s.setIndex,
+                reps = s.reps,
+                weightKg = s.weightKg,
+                modifiers = s.modifiers,
+                done = s.done,
+                durationSec = s.durationSec,
+                distanceM = s.distanceM,
+                grade = s.grade,
+                kind = s.setKind(),
+                supersetGroup = s.supersetGroup,
+                rpe = s.rpe,
+            )
+        }
 
     /** Complete record of one movement in one [Variation] (the plain one by default): its logged sets plus derived stats. */
     fun observeExerciseHistory(exerciseId: Long, variation: String? = null): Flow<ExerciseHistory?> = combine(
@@ -2293,10 +2311,7 @@ class Repository(
                     sessionDao.updateSession(row.session.copy(strengthScore = score))
                 }
             }
-            profileDao.setLifetimeStrength(
-                sessionDao.observeCompletedWithSets().first()
-                    .sumOf { it.session.strengthScore.toLong() },
-            )
+            profileDao.setLifetimeStrength(sessionDao.lifetimeStrength())
         }
     }
 
@@ -2938,9 +2953,7 @@ class Repository(
         )
         if (plan.settlement.applied != 0) profileDao.addXp(plan.settlement.applied.toLong())
         // Re-summed, not nudged: the sum IS the lifetime figure.
-        profileDao.setLifetimeStrength(
-            sessionDao.observeCompletedWithSets().first().sumOf { it.session.strengthScore.toLong() },
-        )
+        profileDao.setLifetimeStrength(sessionDao.lifetimeStrength())
 
         val newly = if (plan.settlement.withinWindow) {
             val profile = profileDao.get() ?: error("Profile missing")

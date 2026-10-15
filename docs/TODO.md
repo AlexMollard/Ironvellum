@@ -31,12 +31,45 @@ account. It exists for a throwaway project and for the gate's round trip.
 Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
 2026-10-16 (GymMane, Flexify, wger, LibreFit, Bati, RepForge and others).
 
-1. **History at scale.** Seed a fictional three-year history on the emulator and
-   time the slow paths first. Then: indices on `sessions(startedAtMs)`,
-   `sessions(completedAtMs)` and `set_logs(exerciseId)` (one migration); replace
-   callers of `observeCompletedWithSets()` that only need a date, a count or one
-   lift with targeted queries; remove the O(n^2) tally in `SessionScreen.kt`.
-   Done when the before/after numbers are recorded here.
+1. **History at scale.** Done 2026-10-16. Seeded a fictional three-year lifter
+   (3 sessions a week, 468 sessions, 8,424 sets over real catalogue lifts, a
+   weigh-in a week) with `ThreeYearHistoryTimingTest` (opt-in: `timings=true`,
+   see its header) and timed the paths that read the whole history. Median of
+   three on the emulator, ms; one run of the old code against one of the new, and
+   the emulator drifts by up to 40% between runs (Today read 680 to 968 before
+   and 621 to 660 after, with nothing about it changed), so read the large gaps:
+
+   | Path | Before | After |
+   |---|---|---|
+   | Five set ticks in a live trial, history re-priced by the session screen | 9,850 (5 re-pricings, on the main thread) | 0 (none) |
+   | One live-tally tick, 24 sets | 82 to 153 | 3 (54 for a cold open) |
+   | Lift page (Bench Press) to first data | 594 to 784 | 130 |
+   | Workout detail to first data | 64 | 10 |
+   | First session date | 53 | 1 |
+   | Strength profile / load for an extra set | 73 / 66 | 38 / 28 |
+   | Today to first data | 680 to 968 | 621 to 660 (unchanged) |
+   | Stats, Workout log to first data | 64, 58 | 49, 34 |
+   | Titles ledger, Strength Rank | 143, 121 | 146, 102 (unchanged) |
+   | Finishing a workout (18 sets) | 1,282 to 1,690 | 1,315 (unchanged) |
+
+   What the measurement found, which was not what the item guessed. The indices
+   are in (migration 43 to 44) but move nothing at this size: the per-lift
+   queries were already 1 to 9 ms on 8,400 sets. What hurt was that Room re-runs
+   `observeCompletedWithSets()` on any write to `set_logs`, so every set ticked in a
+   live trial re-priced the whole history in the session screen's four consumers,
+   about two seconds a tick on the main thread. `observeHistory()` is now
+   `distinctUntilChanged()`, which removes it. The tally keeps what it priced
+   (`SessionXp.TallyMemo`), so a tick prices the new set alone instead of every
+   prefix, and the `shortcut:` comment is gone. The Lift page scores only its own
+   movement (`SetRecords.recordsOf`), and the first-session date, lifetime
+   strength, strength profile, workout detail and reminder read targeted queries.
+
+   Left on the full history, because they price or rank every set: Today, Stats,
+   the log, the Titles ledger and Strength Rank, `completeSession`, the cloud push
+   fingerprints, the XP rescore, the export and `SessionViewModel`'s records. What
+   remains slow is compute, not queries: `SessionXp` costs about 1.2 s to build
+   (its best-so-far fold and peak book over every set) and finishing a workout
+   waits on it once. That is the next thing to profile.
 2. **Scheduled file backup.** Settings > Data: pick a folder (Storage Access
    Framework), weekly archive export, keep the newest 5. Off until chosen.
 3. **1.7 leftovers.** Plan builder `EffortStepper` in the Sets sheet style;

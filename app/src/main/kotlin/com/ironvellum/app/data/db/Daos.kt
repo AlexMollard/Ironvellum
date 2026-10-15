@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.ironvellum.app.domain.ExerciseSetRow
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LiftSetRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -257,6 +258,31 @@ interface SessionDao {
     @Transaction
     @Query("SELECT * FROM sessions WHERE completedAtMs IS NOT NULL ORDER BY startedAtMs DESC")
     fun observeCompletedWithSets(): Flow<List<SessionWithSets>>
+
+    /** One completed session with its sets; null while it is live or gone. */
+    @Transaction
+    @Query("SELECT * FROM sessions WHERE id = :id AND completedAtMs IS NOT NULL")
+    fun observeCompletedWithSetsById(id: Long): Flow<SessionWithSets?>
+
+    /** Every completed session without its sets, newest first: for callers that read dates and rites, not sets. */
+    @Query("SELECT * FROM sessions WHERE completedAtMs IS NOT NULL ORDER BY startedAtMs DESC")
+    suspend fun completedSessions(): List<SessionEntity>
+
+    /** When the earliest completed session began; null before the first. */
+    @Query("SELECT MIN(startedAtMs) FROM sessions WHERE completedAtMs IS NOT NULL")
+    suspend fun firstCompletedStartMs(): Long?
+
+    /** The lifetime strength: the banked score of every completed session, summed. */
+    @Query("SELECT COALESCE(SUM(strengthScore), 0) FROM sessions WHERE completedAtMs IS NOT NULL")
+    suspend fun lifetimeStrength(): Long
+
+    /** The loaded done sets of completed sessions, by movement name: what the strength profile is built from. */
+    @Query(
+        "SELECT e.name AS exerciseName, s.weightKg AS weightKg, s.reps AS reps, s.modifiers AS modifiers " +
+            "FROM set_logs s JOIN sessions x ON s.sessionId = x.id JOIN exercises e ON e.id = s.exerciseId " +
+            "WHERE s.done = 1 AND s.weightKg > 0 AND x.completedAtMs IS NOT NULL",
+    )
+    suspend fun completedLoadedSets(): List<LiftSetRow>
 
     /**
      * Completed sessions banked with no strength score that nevertheless hold

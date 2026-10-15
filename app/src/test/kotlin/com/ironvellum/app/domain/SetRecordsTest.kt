@@ -284,4 +284,30 @@ class SetRecordsTest {
             1e-9,
         )
     }
+
+    @Test
+    fun recordsOfOneMovementAreTheFullHistorysRecordsForThatMovement() {
+        fun lift(exerciseId: Long, name: String, index: Int, reps: Int, kg: Double?, modifiers: String = "") = SessionSet(
+            exerciseId = exerciseId, exerciseName = name, setIndex = index, reps = reps, weightKg = kg,
+            modifiers = modifiers, done = true,
+        )
+        val history = listOf(
+            session(1, 1_000) to listOf(
+                lift(1, "Bench Press", 0, 8, 60.0), lift(1, "Bench Press", 1, 6, 65.0),
+                lift(2, "Back Squat", 0, 5, 100.0), lift(3, "Pull-up", 0, 8, null),
+            ),
+            // Another casing of the same name, a variation, and a trailing space: one movement as the keys see it.
+            session(2, 2_000) to listOf(
+                lift(1, "bench press", 0, 8, 62.5), lift(1, "Bench Press ", 1, 6, 67.5),
+                lift(1, "Bench Press", 0, 8, 50.0, "Incline"), lift(2, "Back Squat", 0, 5, 110.0),
+            ),
+            session(3, 3_000) to listOf(lift(2, "Back Squat", 0, 5, 120.0)),
+        )
+        val full = SetRecords.records(history, bwAt)
+        val own = SetRecords.recordsOf("Bench Press", history, bwAt)
+        val expected = full.filterKeys { it.first.startsWith("bench press") }
+        assertTrue("the fixture must have bench records", expected.isNotEmpty())
+        assertEquals(expected, own)
+        assertTrue("no other lift is scored", own.keys.none { it.first.startsWith("back squat") || it.first.startsWith("pull-up") })
+    }
 }

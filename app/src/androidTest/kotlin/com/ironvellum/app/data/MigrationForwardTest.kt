@@ -1084,4 +1084,64 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 43 -> 44, history at scale: `sessions` gains indices on its two time columns and `set_logs` one on
+     * the exercise. Indices only, so every row survives untouched, and the planner picks them up: the per-lift
+     * join and the completed-session lookup no longer scan. Inserts only into the trial tables (never exercises),
+     * so it holds on whatever v43 adds to the catalogue.
+     */
+    @Test
+    fun upgradeTo44IndexesTheHistoryColumnsAndKeepsEveryRow() = runTest {
+        helper.createDatabase(dbName, 43).use { old ->
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (2, NULL, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (3, NULL, 'Live', 1789882608320, NULL, 0, 0, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, reps, weightKg, modifiers, " +
+                    "done, durationSec, distanceM, grade, kind, supersetGroup, rpe) " +
+                    "VALUES (7, 2, 5, 0, 0, 5, 100.0, 'Pause', 1, NULL, NULL, NULL, 'WORKING', 3, NULL)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 44, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT id, label, startedAtMs, completedAtMs, strengthScore FROM sessions ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(2L, c.getLong(0))
+                assertEquals("Push", c.getString(1))
+                assertEquals(1789782608320L, c.getLong(2))
+                assertEquals(1789785525853L, c.getLong(3))
+                assertEquals(610, c.getInt(4))
+                assertTrue(c.moveToNext())
+                assertTrue("a live session is still live", c.isNull(3))
+            }
+            db.query("SELECT reps, weightKg, modifiers, supersetGroup FROM set_logs WHERE id = 7").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(5, c.getInt(0))
+                assertEquals(100.0, c.getDouble(1), 0.0)
+                assertEquals("Pause", c.getString(2))
+                assertEquals(3, c.getInt(3))
+            }
+            val indices = HashSet<String>()
+            db.query("SELECT name FROM sqlite_master WHERE type = 'index'").use { c ->
+                while (c.moveToNext()) indices += c.getString(0)
+            }
+            assertTrue(indices.toString(), indices.containsAll(listOf(
+                "index_sessions_startedAtMs", "index_sessions_completedAtMs",
+                "index_set_logs_exerciseId", "index_set_logs_sessionId",
+            )))
+            fun plan(sql: String): String = buildString {
+                db.query("EXPLAIN QUERY PLAN $sql").use { c -> while (c.moveToNext()) append(c.getString(c.columnCount - 1)).append(';') }
+            }
+            assertTrue(plan("SELECT * FROM set_logs WHERE exerciseId = 5").contains("index_set_logs_exerciseId"))
+            assertTrue(plan("SELECT * FROM sessions WHERE completedAtMs IS NULL").contains("index_sessions_completedAtMs"))
+            assertTrue(plan("SELECT MIN(startedAtMs) FROM sessions").contains("index_sessions_startedAtMs"))
+        }
+    }
 }

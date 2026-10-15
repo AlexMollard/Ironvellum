@@ -68,7 +68,10 @@ data class PresetEntryEntity(
     val warmup: Boolean = false,
 )
 
-@Entity(tableName = "sessions")
+@Entity(
+    tableName = "sessions",
+    indices = [Index("startedAtMs"), Index("completedAtMs")],
+)
 data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val presetId: Long?,
@@ -120,7 +123,7 @@ data class SessionEntity(
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("sessionId")],
+    indices = [Index("sessionId"), Index("exerciseId")],
 )
 data class SetLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

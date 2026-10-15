@@ -121,23 +121,47 @@ class SessionXp(
     }
 
     /**
+     * What the last [tally] priced, so the next one need not price it again: each prefix's total is a pure function
+     * of the sets up to it (and of the [SessionXp] and bodyweight that priced them), so a prefix the new call shares
+     * with the last keeps its total. Hold one per live screen; it is only ever a cache.
+     */
+    class TallyMemo {
+        internal var owner: SessionXp? = null
+        internal var bodyweightKg: Double? = null
+        internal var done: List<SessionSet> = emptyList()
+        internal var totals: IntArray = IntArray(0)
+    }
+
+    /**
      * The live tally: the done strength sets in trial order, each priced by
      * [breakdown] itself, so the running total is exactly the set-driven part
      * of what the seal awards for the same sets. A set's gain is what it added
      * to the lift's segment (a peak or record landing on it included).
+     *
+     * Pricing a set prices the sets before it, so a cold call is quadratic in the sets. With a [memo] a tick that
+     * adds a set at the end prices only that set's prefix, which is the one thing that changed: linear per tick.
      */
-    fun tally(sets: List<SessionSet>, bodyweightKg: Double?): Tally {
+    fun tally(sets: List<SessionSet>, bodyweightKg: Double?, memo: TallyMemo? = null): Tally {
         val done = sets
             .filter { it.done && !it.warmup }
             .sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
-        var before = 0
-        val gains = LinkedHashMap<Long, Int>()
-        for (i in done.indices) {
-            val total = breakdown(done.take(i + 1), bodyweightKg).setDriven
-            gains[done[i].id] = total - before
-            before = total
+        val totals = IntArray(done.size)
+        var shared = 0
+        if (memo != null && memo.owner === this && memo.bodyweightKg == bodyweightKg) {
+            val limit = minOf(done.size, memo.done.size)
+            while (shared < limit && memo.done[shared] == done[shared]) shared++
+            memo.totals.copyInto(totals, endIndex = shared)
         }
-        return Tally(before, gains)
+        for (i in shared until done.size) totals[i] = breakdown(done.take(i + 1), bodyweightKg).setDriven
+        if (memo != null) {
+            memo.owner = this
+            memo.bodyweightKg = bodyweightKg
+            memo.done = done
+            memo.totals = totals
+        }
+        val gains = LinkedHashMap<Long, Int>()
+        for (i in done.indices) gains[done[i].id] = totals[i] - (if (i == 0) 0 else totals[i - 1])
+        return Tally(if (done.isEmpty()) 0 else totals.last(), gains)
     }
 
     /**

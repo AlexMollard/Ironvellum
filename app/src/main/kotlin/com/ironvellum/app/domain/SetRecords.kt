@@ -106,6 +106,24 @@ object SetRecords {
         return best
     }
 
+    /**
+     * [records] for the one movement called [name] (any variation): the figures it gives for that movement, without
+     * scoring every other lift in the history. A movement's records read only its own sets, so the result matches
+     * the full call's entries for the name; the keys of other movements are simply absent.
+     */
+    fun recordsOf(
+        name: String,
+        history: List<Pair<WorkoutSession, List<SessionSet>>>,
+        bodyweightAt: (atMs: Long) -> Double,
+        metricOf: (SessionSet) -> ExerciseMetric? = { null },
+    ): Map<Pair<String, Int>, Record> {
+        val wanted = name.lowercase().trim()
+        val own = history.mapNotNull { (session, sets) ->
+            sets.filter { it.exerciseName.lowercase().trim() == wanted }.takeIf { it.isNotEmpty() }?.let { session to it }
+        }
+        return records(own, bodyweightAt, metricOf = metricOf)
+    }
+
     /** Bodyweight as at [atMs]: the most recent reading at or before that moment, else the earliest known, else [fallbackKg]. */
     fun bodyweightLookup(stats: List<StatEntry>, fallbackKg: Double = 0.0): (Long) -> Double {
         if (stats.isEmpty()) return { fallbackKg }

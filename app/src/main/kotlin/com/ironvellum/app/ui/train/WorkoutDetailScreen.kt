@@ -130,14 +130,13 @@ class WorkoutDetailViewModel(
     private val sessionId: Long,
     private val appContext: android.content.Context,
 ) : ViewModel() {
-    // The log source of truth is the history stream: a session absent from it
+    // The log source of truth is the completed-session stream: a session absent from it
     // is genuinely not viewable, so the screen renders "not found" honestly.
     val ui: StateFlow<WorkoutDetailUi> = combine(
-        repo.observeHistory(),
+        repo.observeWorkout(sessionId),
         repo.observeStats().map { it.firstOrNull()?.weightKg },
         repo.observeExercises(),
-    ) { history, bodyKg, exercises ->
-        val hit = history.firstOrNull { it.first.id == sessionId }
+    ) { hit, bodyKg, exercises ->
         val session = hit?.first
         val sets = hit?.second.orEmpty()
         // Same pure estimate the stats screen uses; minutes come from the wall

@@ -199,6 +199,14 @@ data class UnlockedTitle(
     val unlockedAtMs: Long,
 )
 
+/** Room projection: a done, loaded set of a completed session, by movement name - all the strength profile reads. */
+data class LiftSetRow(
+    val exerciseName: String,
+    val weightKg: Double,
+    val reps: Int,
+    val modifiers: String,
+)
+
 /** Room projection: one logged set of one exercise with its session timestamp. */
 data class ExerciseSetRow(
     val sessionId: Long,

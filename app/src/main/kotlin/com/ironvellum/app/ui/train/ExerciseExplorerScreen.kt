@@ -96,7 +96,7 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
         val records = if (sel == null || history == null) {
             emptyMap()
         } else {
-            SetRecords.records(allHistory, SetRecords.bodyweightLookup(stats)) { sel.metric }
+            SetRecords.recordsOf(sel.name, allHistory, SetRecords.bodyweightLookup(stats)) { sel.metric }
                 .values
                 .filter { it.exerciseName.equals(sel.name, ignoreCase = true) && it.variation == history.variation }
                 .associateBy { it.setIndex }

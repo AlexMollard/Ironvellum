@@ -935,9 +935,10 @@ fun SessionScreen(
     val underRowEffort = effortSet?.takeIf { effortAsk == EffortAsk.UNDER_ROW }
     // The live tally: what the ticked sets have earned, priced by the one function the seal uses.
     val doneForTally = remember(ui.sets) { ui.sets.filter { it.done && !it.warmup } }
-    // shortcut: the tally re-prices every prefix of the done sets (O(n^2) in sets, fine at trial size); price incrementally if trials reach hundreds of sets.
+    // Remembers what the last tick priced, so a tick that adds a set prices that set alone.
+    val tallyMemo = remember { SessionXp.TallyMemo() }
     val tally = remember(xpBook, doneForTally, bodyweight) {
-        xpBook?.tally(doneForTally, bodyweight) ?: SessionXp.Tally.EMPTY
+        xpBook?.tally(doneForTally, bodyweight, tallyMemo) ?: SessionXp.Tally.EMPTY
     }
     var gain by remember { mutableStateOf<LiveGain?>(null) }
     var gainSeen by remember { mutableStateOf<Set<Long>?>(null) }
