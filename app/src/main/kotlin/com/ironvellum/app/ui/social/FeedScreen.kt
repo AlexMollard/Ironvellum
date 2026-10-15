@@ -864,8 +864,8 @@ private fun MovementLine(entry: FeedEntry) {
     // load-bearing set exists, so a run no longer reports "1 x BW" and this
     // screen needs no cardio special-case of its own. A run's substance is its
     // distance, a climb's is its grade — headline whichever the hunt has.
-    // The view writes "8 x 100.0 kg"; the card shows the app's own "8×100.0 kg".
-    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "Best ${it.replace(" x ", "×")}" }
+    // The view writes "8 x 100.0 kg"; the card shows the app's own "8 × 100.0 kg".
+    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "Best ${it.replace(" x ", " × ")}" }
         ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { "Hardest $it" }
         ?: entry.distanceM?.takeIf { it > 0 }?.let { "${formatDistance(it)} covered" }
     // One muted line: the best set leads, then the exercise count and duration.

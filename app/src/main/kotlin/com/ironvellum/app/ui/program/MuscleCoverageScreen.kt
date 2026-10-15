@@ -614,7 +614,7 @@ private fun CreditRow(credit: ProgramRules.MuscleCredit) {
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         Text(
-            "${credit.sets}×${trimSets(credit.share)} = ${trimSets(credit.credited)}",
+            "${credit.sets} × ${trimSets(credit.share)} = ${trimSets(credit.credited)}",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,

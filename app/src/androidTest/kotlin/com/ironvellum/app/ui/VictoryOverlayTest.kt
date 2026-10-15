@@ -146,7 +146,7 @@ class VictoryOverlayTest {
         compose.saveDialogScreenshot("victory-summary")
         compose.onNodeWithText("New peaks · 3").assertExists()
         // The best peak is the hero; a peak row reads as one sentence to TalkBack.
-        compose.onNodeWithContentDescription("New heavier peak, Bench Press, set 1, 6×82.5kg, was 6×80kg, up +2.5 kg, +15 XP, 2 peaks").assertExists()
+        compose.onNodeWithContentDescription("New heavier peak, Bench Press, set 1, 6 × 82.5kg, was 6 × 80kg, up +2.5 kg, +15 XP, 2 peaks").assertExists()
         compose.onNodeWithContentDescription("New more reps peak, Plank, set 1, 45s, was 30s", substring = true).assertExists()
         compose.onNodeWithText("+186").assertExists()
         compose.onNodeWithText("18 sets · 142 reps · 90 s held · 6,140 kg moved").assertExists()

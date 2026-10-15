@@ -29,10 +29,10 @@ internal fun lastLoggedFigure(last: LastLogged, exercise: Exercise): String {
     val added = !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")
     val load = last.weightKg?.takeIf { it > 0.0 }?.let { (if (added) "+" else "") + Units.withUnit(it) }
     return when (exercise.metric) {
-        ExerciseMetric.REPS -> "${last.reps}×${load ?: Units.label(null, exercise.isWeighted)}"
+        ExerciseMetric.REPS -> "${last.reps} × ${load ?: Units.label(null, exercise.isWeighted)}"
         ExerciseMetric.HOLD -> {
             val seconds = setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure
-            if (load == null) "${seconds}s" else "${seconds}s×$load"
+            if (load == null) "${seconds}s" else "${seconds}s × $load"
         }
         ExerciseMetric.DURATION -> "${setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure} min"
         ExerciseMetric.DISTANCE_TIME -> setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure

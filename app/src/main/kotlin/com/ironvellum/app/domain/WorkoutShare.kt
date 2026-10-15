@@ -234,7 +234,7 @@ object WorkoutShare {
     private fun figures(done: List<Int>, hold: Boolean): String {
         if (done.isEmpty()) return ""
         val unit = if (hold) "s" else ""
-        return if (done.size >= 3 && done.distinct().size == 1) "${done.size}×${done.first()}$unit"
+        return if (done.size >= 3 && done.distinct().size == 1) "${done.size} × ${done.first()}$unit"
         else done.joinToString("/") + unit
     }
 

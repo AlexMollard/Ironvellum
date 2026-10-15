@@ -565,10 +565,10 @@ internal fun peakGain(peak: SessionPeaks.Peak): String {
     }
 }
 
-/** "6×82.5kg", "10×BW", or a hold's "45s" (with any added load). Same shape as the live badge. */
+/** "6 × 82.5kg", "10 × BW", or a hold's "45s" (with any added load). Same shape as the live badge. */
 private fun peakFigure(figure: Int, weightKg: Double?, isHold: Boolean): String =
     if (isHold) {
         "${figure}s" + (weightKg?.takeIf { it > 0.0 }?.let { " +${formatKg(it)}" } ?: "")
     } else {
-        "$figure×${formatKg(weightKg)}"
+        "$figure × ${formatKg(weightKg)}"
     }
