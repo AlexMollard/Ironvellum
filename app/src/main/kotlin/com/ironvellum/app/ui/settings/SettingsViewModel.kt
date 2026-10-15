@@ -1,11 +1,13 @@
 package com.ironvellum.app.ui.settings
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.AppearanceStore
+import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.theme.AccentPalette
 import androidx.compose.runtime.Composable
@@ -181,6 +183,26 @@ class SettingsViewModel(
 
     private val _exporting = MutableStateFlow(false)
     val exporting: StateFlow<Boolean> = _exporting.asStateFlow()
+
+    private val _backingUp = MutableStateFlow(false)
+    val backingUp: StateFlow<Boolean> = _backingUp.asStateFlow()
+
+    fun backupState(context: Context) = AutoBackup.state(context.applicationContext)
+
+    /** A folder was picked: switch the weekly backup on for it and make the first one now. */
+    fun chooseBackupFolder(context: Context, tree: Uri) = backUp(context) { AutoBackup.enable(it, repo, tree) }
+
+    fun backUpNow(context: Context) = backUp(context) { AutoBackup.run(it, repo) }
+
+    fun stopBackups(context: Context) = AutoBackup.disable(context.applicationContext)
+
+    private fun backUp(context: Context, work: suspend (Context) -> Unit) {
+        if (_backingUp.value) return
+        _backingUp.value = true
+        viewModelScope.launch {
+            try { work(context.applicationContext) } finally { _backingUp.value = false }
+        }
+    }
 
     private val _exportError = MutableStateFlow<String?>(null)
     val exportError: StateFlow<String?> = _exportError.asStateFlow()

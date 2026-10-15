@@ -133,6 +133,8 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 )
             }
         }
+        Spacer(Modifier.height(12.dp))
+        AutoBackupPanel(viewModel)
         exportError?.let {
             Spacer(Modifier.height(8.dp))
             SettingsCaption(it, color = IronvellumColors.DangerRed)
