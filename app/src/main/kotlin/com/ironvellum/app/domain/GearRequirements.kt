@@ -15,7 +15,7 @@ package com.ironvellum.app.domain
  *   toggles. The table therefore lists no machine rows; the rule covers them.
  * - Bar-hanging moves need a PULL_UP_BAR or RINGS, except where the
  *   implement is fixed (muscle-up: bar; skin the cat / ring muscle-up: rings).
- * - Inverted row / australian pull-up: RINGS, or a BARBELL set low in a rack.
+ * - Inverted row / australian pull-up: RINGS, a BARBELL set low in a rack, or DIP_BARS (rowed lying under them).
  * - Dip / parallel bar dip: DIP_BARS or RINGS. Bench dip needs nothing
  *   (a chair). Ab wheel rollout: AB_WHEEL. L-sit: parallettes, dip bars or
  *   the floor (holds are excluded from the generator anyway).
@@ -67,9 +67,9 @@ object GearRequirements {
         "ring dip" to listOf(setOf(Gear.RINGS)),
         "rto support hold" to listOf(setOf(Gear.RINGS)),
         "banded iron cross" to listOf(setOf(Gear.RINGS)),
-        // Horizontal pulling under the bar: rings, or a bar set low in a rack.
-        "inverted row" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
-        "australian pull-up" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
+        // Horizontal pulling under the bar: rings, a bar set low in a rack, or lying under dip bars on a neutral grip.
+        "inverted row" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL), setOf(Gear.DIP_BARS)),
+        "australian pull-up" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL), setOf(Gear.DIP_BARS)),
         // Rowed from a tuck front lever hold: the bar (or rings) carries the whole body.
         "tuck front lever row" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "front lever row" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),

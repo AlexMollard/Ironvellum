@@ -1,5 +1,6 @@
 package com.ironvellum.app.data
 
+import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.Gear
@@ -77,6 +78,15 @@ class SeedCatalogueTest {
         assertEquals(listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)), GearRequirements.needs(name))
         assertEquals(Muscle.LATS, MuscleMap.profile(name)!!.muscles.maxByOrNull { it.value }!!.key)
         assertTrue(ExerciseGuides.forName(name)!!.steps.size >= 3)
+    }
+
+    @Test
+    fun `dip bars alone are enough to row under`() {
+        val dipBars = Equipment(fullGym = false, gear = setOf(Gear.DIP_BARS))
+        listOf("Inverted Row", "Australian Pull-up").forEach { name ->
+            assertTrue(name, GearRequirements.allows(name, isWeighted = false, equipment = dipBars))
+            assertTrue(name, !GearRequirements.allows(name, isWeighted = false, equipment = Equipment.NOTHING))
+        }
     }
 
     @Test
