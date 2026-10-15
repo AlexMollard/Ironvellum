@@ -476,6 +476,7 @@ fun DashboardScreen(
     val liveSets by viewModel.liveSets.collectAsStateWithLifecycle()
     val bodyGap by viewModel.bodyGap.collectAsStateWithLifecycle()
     val strengthRank by viewModel.strengthRank.collectAsStateWithLifecycle()
+    val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(androidx.compose.ui.platform.LocalContext.current.applicationContext).collectAsStateWithLifecycle()
     val rankBreakdown by viewModel.rankBreakdown.collectAsStateWithLifecycle()
     val veil by viewModel.veil.collectAsStateWithLifecycle()
     // Today's cards, the Veil and the rank line have all been read: the launch screen can lift.
@@ -502,6 +503,7 @@ fun DashboardScreen(
         liveSets = liveSets,
         bodyGap = bodyGap,
         strengthRank = strengthRank,
+        sexUnset = sexUnset,
         rankBreakdown = rankBreakdown,
         veil = veil,
         actions = TodayActions(
@@ -575,6 +577,8 @@ internal fun TodayContent(
     bodyGap: BodyGap?,
     strengthRank: String,
     rankBreakdown: RankBreakdown?,
+    /** No sex chosen yet: the rank holds as "Add sex in Profile", a link to Profile. */
+    sexUnset: Boolean = false,
     veil: VeilGlance?,
     actions: TodayActions,
     nowMs: Long = System.currentTimeMillis(),
@@ -639,12 +643,12 @@ internal fun TodayContent(
                         Row(
                             Modifier
                                 .heightIn(min = 44.dp)
-                                .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true }
+                                .clickable(role = Role.Button, onClickLabel = if (sexUnset) "Add your sex in Profile" else "Show Strength Rank") { if (sexUnset) actions.onAddName() else rankOpen = true }
                                 .padding(start = 10.dp, end = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                strengthRank.ifEmpty { Rank.UNRANKED },
+                                com.ironvellum.app.domain.SexHold.rank(strengthRank.ifEmpty { Rank.UNRANKED }, sexUnset),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = IronvellumColors.SystemGreen,
                                 maxLines = 1,

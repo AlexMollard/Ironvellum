@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.BodyStats
+import com.ironvellum.app.domain.SexHold
 import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.LedgerRange
 import com.ironvellum.app.domain.MeasurementSite
@@ -99,6 +100,8 @@ internal fun BodyTab(
     onDrill: (String) -> Unit,
     onLogWeight: () -> Unit,
     onSetHeight: () -> Unit,
+    /** No sex chosen yet: FFMI is scaled by it, so it holds as "Add sex in Profile". */
+    sexUnset: Boolean = false,
     onOpenTraining: () -> Unit,
     onOpenTape: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -199,10 +202,13 @@ internal fun BodyTab(
                 )
                 StatChip(
                     "FFMI",
-                    ffmi?.let { formatBodyValue(it.value) } ?: "\u2014",
-                    ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
-                        ?: if (heightKnown) "needs a body fat %" else "tap to set your height",
-                    onClick = { if (heightKnown) onDrill("FFMI") else onSetHeight() },
+                    SexHold.figure(ffmi?.let { formatBodyValue(it.value) } ?: "\u2014", sexUnset),
+                    SexHold.line(
+                        ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
+                            ?: if (heightKnown) "needs a body fat %" else "tap to set your height",
+                        sexUnset,
+                    ),
+                    onClick = { if (heightKnown && !sexUnset) onDrill("FFMI") else onSetHeight() },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }

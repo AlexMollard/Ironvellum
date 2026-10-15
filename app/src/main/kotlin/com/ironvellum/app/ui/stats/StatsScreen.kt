@@ -251,6 +251,7 @@ fun StatsScreen(
     val zone = rememberZoneId()
     // Sealed days are bucketed here, with the zone the screen is showing, not in
     // the ViewModel with whatever zone was current at the last Room emission.
+    val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(androidx.compose.ui.platform.LocalContext.current.applicationContext).collectAsStateWithLifecycle()
     val ui = remember(stream, zone) {
         stream.copy(completedDates = stream.sessions.map { trialDay(it, zone) }.toSet())
     }
@@ -338,6 +339,7 @@ fun StatsScreen(
                         onDrill = { drill = it },
                         onLogWeight = { showAdd = true },
                         onSetHeight = { onOpenSettings(SettingsSection.PROFILE) },
+                        sexUnset = sexUnset,
                         onOpenTraining = {
                             scope.launch {
                                 // The hoisted scroll is saveable: without this Training reopened mid-page.
