@@ -69,8 +69,11 @@ import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlannedPreset
+import com.ironvellum.app.domain.MuscleMap
+import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.LoggedLift
+import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
@@ -544,28 +547,33 @@ class Repository(
         presetId: Long?,
         targetSets: Int,
         targetReps: Int,
-    ): String = db.withTransaction {
+        level: VolumeLevel = VolumeLevel.STANDARD,
+    ): String {
         val exerciseId = exerciseIdByName(exerciseName) ?: error("$exerciseName is not in the catalogue")
-        val (id, name, position) = if (presetId == null) {
-            Triple(presetDao.insertPreset(PresetEntity(name = exerciseName, note = "", scheduledDay = null)), exerciseName, 0)
-        } else {
-            val rite = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId no longer exists")
-            Triple(presetId, rite.preset.name, (rite.entries.maxOfOrNull { it.position } ?: -1) + 1)
-        }
-        presetDao.insertEntries(
-            listOf(
-                PresetEntryEntity(
-                    presetId = id,
-                    exerciseId = exerciseId,
-                    targetSets = targetSets,
-                    targetReps = targetReps,
-                    targetWeightKg = null,
-                    modifiers = "",
-                    position = position,
+        // Worked out before the transaction: it reads history, and the write below needs none of it.
+        val startKg = addedLoadKg(exerciseId, targetReps, level)
+        return db.withTransaction {
+            val (id, name, position) = if (presetId == null) {
+                Triple(presetDao.insertPreset(PresetEntity(name = exerciseName, note = "", scheduledDay = null)), exerciseName, 0)
+            } else {
+                val rite = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId no longer exists")
+                Triple(presetId, rite.preset.name, (rite.entries.maxOfOrNull { it.position } ?: -1) + 1)
+            }
+            presetDao.insertEntries(
+                listOf(
+                    PresetEntryEntity(
+                        presetId = id,
+                        exerciseId = exerciseId,
+                        targetSets = targetSets,
+                        targetReps = targetReps,
+                        targetWeightKg = startKg,
+                        modifiers = "",
+                        position = position,
+                    ),
                 ),
-            ),
-        )
-        name
+            )
+            name
+        }
     }
 
     /** Zero presets means setup has never run; the UI uses this to tell an
@@ -797,6 +805,22 @@ class Repository(
     /** The starting point for loads a lifter has no history for, or null while their bodyweight is unknown. */
     suspend fun starterBasis(sex: Sex, level: VolumeLevel): StarterBasis? =
         latestBodyweightKg()?.takeIf { it > 0.0 }?.let { StarterBasis(it, sex, level) }
+
+    /**
+     * The load a loaded movement starts at when it is added outside a plan (a rite entry, a mid-trial extra): the
+     * same rule the plan builder uses ([ProgramGenerator.fillLoad]), so the lifter's logged lifts win and a lift
+     * with none falls back to the bodyweight starter. Null for a bodyweight lift, a movement that is not strength
+     * work, or when there is nothing to start from (no weigh-in and no history); the set then stays unloaded.
+     */
+    suspend fun addedLoadKg(exerciseId: Long, reps: Int, level: VolumeLevel = VolumeLevel.STANDARD): Double? {
+        val exercise = exerciseDao.byId(exerciseId)?.toDomain() ?: return null
+        if (!exercise.isWeighted || !exercise.metric.isStrength) return null
+        val sex = observeBodyProfile().first().second
+        val strength = strengthProfile().copy(starter = starterBasis(sex, level))
+        val rir = ProgramRules.loadRir(MuscleMap.profile(exercise.name)?.compound ?: false)
+        val equipment = Equipment.FULL_GYM.copy(kit = loadKit())
+        return ProgramGenerator.fillLoad(exercise, strength, reps, rir, equipment)?.kg
+    }
 
     /** The first completed session's day, or null for a lifter with no history. */
     suspend fun firstSessionEpochDay(): Long? =
@@ -2300,7 +2324,7 @@ class Repository(
     fun observeMeasurements(): Flow<List<MeasurementEntry>> =
         measurementDao.observeAll().map { list ->
             list.mapNotNull { e ->
-                // Unknown site strings must never crash the app � drop the row.
+                // Unknown site strings must never crash the app - drop the row.
                 val site = MeasurementSite.entries.firstOrNull { it.name == e.site }
                     ?: return@mapNotNull null
                 MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)

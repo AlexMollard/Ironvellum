@@ -228,6 +228,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.WEIGHTED_MODIFIER
@@ -556,14 +557,16 @@ class SessionViewModel(
     /**
      * A movement added mid-session starts at a sane default: ten reps, or a
      * [DEFAULT_HOLD_SECONDS] hold. Adding a hold with "10 reps" is how the
-     * seconds-as-reps confusion started.
+     * seconds-as-reps confusion started. A loaded lift starts on the plan builder's own load
+     * ([Repository.addedLoadKg]), not at 0 kg.
      */
     fun addExercise(exerciseId: Long, isHold: Boolean) {
         viewModelScope.launch {
             if (isHold) {
                 repo.addExtraSet(sessionId, exerciseId, 0, null, "", DEFAULT_HOLD_SECONDS)
             } else {
-                repo.addExtraSet(sessionId, exerciseId, 10, null, "")
+                val level = ProgramAnswersStore.get(appContext)?.volume ?: VolumeLevel.STANDARD
+                repo.addExtraSet(sessionId, exerciseId, 10, repo.addedLoadKg(exerciseId, 10, level), "")
             }
         }
     }
