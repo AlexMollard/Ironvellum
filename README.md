@@ -36,14 +36,18 @@ The app uses plain gym words by default. If you want the fantasy, turn on
 relics and the Veil) keeps its names either way. Every word is defined in
 [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
-<div align="center">
-
-| | | | |
-|:---:|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-today.png" width="200" alt="Today: the day's workout, level, streak and the Veil" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-live-workout.png" width="200" alt="A live workout: top set, back-offs, rest timer and reps-left chips" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-sets-sheet.png" width="200" alt="The Sets sheet: a top set with back-offs drawn as bars" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-finish.png" width="200" alt="The finish page: XP for effort, bonuses and new PRs" /> |
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/05-lift-progress.png" width="200" alt="A lift page: PR, estimated 1RM and its strength chart" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/06-deeds.png" width="200" alt="Progress: the deeds closest to earning" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/07-plan-builder.png" width="200" alt="The plan builder: a proposed weekly plan with loads" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/08-veil.png" width="200" alt="The Veil: essence, the strongest relic and the collection" /> |
-
-</div>
+<p align="center">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-today.png" width="24%" alt="Today: the day's workout, level, streak and the Veil" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-live-workout.png" width="24%" alt="A live workout: top set, back-offs, rest timer and reps-left chips" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-sets-sheet.png" width="24%" alt="The Sets sheet: a top set with back-offs drawn as bars" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-finish.png" width="24%" alt="The finish page: XP for effort, bonuses and new PRs" />
+</p>
+<p align="center">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/05-lift-progress.png" width="24%" alt="A lift page: PR, estimated 1RM and its strength chart" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/06-deeds.png" width="24%" alt="Progress: the deeds closest to earning" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/07-plan-builder.png" width="24%" alt="The plan builder: a proposed weekly plan with loads" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/08-veil.png" width="24%" alt="The Veil: essence, the strongest relic and the collection" />
+</p>
 
 ## Features
 
