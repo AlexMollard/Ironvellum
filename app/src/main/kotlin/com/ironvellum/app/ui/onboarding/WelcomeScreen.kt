@@ -155,7 +155,7 @@ internal fun WelcomeScreen(
                     modifier = Modifier.padding(top = 10.dp).widthIn(max = 300.dp),
                 )
                 Text(
-                    "Three short steps: who you are, how you train, and the ${Words.cycle.s} ${Words.theForge.t} builds for you.",
+                    "Three short steps: who you are, how you train, and the ${Words.cycle.s} built for you.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,

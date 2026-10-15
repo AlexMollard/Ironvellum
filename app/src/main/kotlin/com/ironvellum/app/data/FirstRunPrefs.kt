@@ -11,6 +11,7 @@ object FirstRunPrefs {
 
     private const val ONBOARDING = "onboarding"
     private const val KEY_WELCOME_SEEN = "welcome_seen"
+    private const val KEY_PREFS_SEEN = "preferences_seen"
     private const val KEY_VEIL_INTRO_SEEN = "veil_intro_seen"
     private const val KEY_VEIL_TERMS_SEEN = "veil_terms_seen"
 
@@ -27,6 +28,18 @@ object FirstRunPrefs {
 
     fun setWelcomeSeen(context: Context, seen: Boolean = true) =
         onboarding(context).edit { putBoolean(KEY_WELCOME_SEEN, seen) }
+
+    /**
+     * Whether the first-run preferences screen (names, units, colour) has been passed. An install that left the
+     * Welcome screen before this screen existed has no stored answer and counts as having passed it.
+     */
+    fun preferencesSeen(context: Context): Boolean {
+        val prefs = onboarding(context)
+        return if (prefs.contains(KEY_PREFS_SEEN)) prefs.getBoolean(KEY_PREFS_SEEN, true) else welcomeSeen(context)
+    }
+
+    fun setPreferencesSeen(context: Context, seen: Boolean = true) =
+        onboarding(context).edit { putBoolean(KEY_PREFS_SEEN, seen) }
 
     fun veilIntroSeen(context: Context): Boolean = onboarding(context).getBoolean(KEY_VEIL_INTRO_SEEN, false)
 

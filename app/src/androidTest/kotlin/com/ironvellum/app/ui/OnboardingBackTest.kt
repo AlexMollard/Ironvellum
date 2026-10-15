@@ -41,6 +41,10 @@ class OnboardingBackTest {
         // The Welcome screen is the front door; Begin leads to the first step.
         compose.onNodeWithText("Begin").performClick()
         compose.waitForIdle()
+        // The preferences screen stands between it and step 1.
+        compose.onNodeWithText("Make it yours").assertIsDisplayed()
+        compose.onNodeWithText("Continue").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("Who you are").assertIsDisplayed()
 
         compose.onNodeWithText("Your name").performTextInput("Sam")
@@ -60,6 +64,11 @@ class OnboardingBackTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Who you are").assertIsDisplayed()
+
+        // And back from step 1 returns to the preferences rather than leaving the app.
+        compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        compose.onNodeWithText("Make it yours").assertIsDisplayed()
     }
 
     companion object {
@@ -88,7 +97,7 @@ class OnboardingBackTest {
         fun letTheAppBackIn() = runBlocking {
             app.database.profileDao().setHeight(TestProfile.HEIGHT_CM)
             prefs.edit().putBoolean("dismissed", dismissedBefore).apply()
-            prefs.edit().putBoolean("welcome_seen", welcomeSeenBefore).apply()
+            prefs.edit().putBoolean("welcome_seen", welcomeSeenBefore).remove("preferences_seen").apply()
         }
 
         private lateinit var prefs: android.content.SharedPreferences

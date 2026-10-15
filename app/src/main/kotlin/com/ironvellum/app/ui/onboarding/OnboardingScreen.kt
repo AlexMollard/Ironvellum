@@ -109,6 +109,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.content.Context
 import androidx.core.content.edit
+import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Effort
+import com.ironvellum.app.domain.EffortScale
+import com.ironvellum.app.domain.Loads
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -152,9 +157,27 @@ class OnboardingViewModel(
     private val _welcomeSeen = MutableStateFlow(FirstRunPrefs.welcomeSeen(appContext))
     val welcomeSeen: StateFlow<Boolean> = _welcomeSeen.asStateFlow()
 
+    /** The preferences screen (names, units, colour) stands between Welcome and step 1 until it has been passed. */
+    private val _preferencesSeen = MutableStateFlow(FirstRunPrefs.preferencesSeen(appContext))
+    val preferencesSeen: StateFlow<Boolean> = _preferencesSeen.asStateFlow()
+
     fun leaveWelcome() {
+        // Written first and explicitly, so leaving Welcome on a fresh install always lands on the preferences.
+        FirstRunPrefs.setPreferencesSeen(appContext, false)
+        _preferencesSeen.value = false
         _welcomeSeen.value = true
         FirstRunPrefs.setWelcomeSeen(appContext)
+    }
+
+    fun leavePreferences() {
+        _preferencesSeen.value = true
+        FirstRunPrefs.setPreferencesSeen(appContext)
+    }
+
+    /** Back from step 1 returns to the preferences. */
+    fun reopenPreferences() {
+        _preferencesSeen.value = false
+        FirstRunPrefs.setPreferencesSeen(appContext, false)
     }
 
     /**
@@ -474,7 +497,7 @@ internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weigh
 
 private fun heightRangeLine() = "Height must be ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm."
 
-private fun weightRangeLine() = "Weight must be ${BodyLimits.say(BodyLimits.WEIGHT_KG)} kg."
+private fun weightRangeLine() = "Weight must be ${BodyLimits.weightRangeText(Units.current)} ${Units.name}."
 
 /**
  * First-run setup, walked in three windows: who you are, how you train, and a
@@ -509,6 +532,12 @@ fun OnboardingScreen(
 ) {
     var step by rememberSaveable { mutableIntStateOf(0) }
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
+    val preferencesSeen by viewModel.preferencesSeen.collectAsStateWithLifecycle()
+    // Step 1 answers; the weight is hoisted above the front screens because the preferences' unit pick converts it.
+    var name by rememberSaveable { mutableStateOf("") }
+    var sex by rememberSaveable { mutableStateOf(Sex.MALE) }
+    var heightInput by rememberSaveable { mutableStateOf("") }
+    var weightInput by rememberSaveable { mutableStateOf("") }
     if (!welcomeSeen) {
         WelcomeScreen(
             onBegin = viewModel::leaveWelcome,
@@ -517,12 +546,18 @@ fun OnboardingScreen(
         )
         return
     }
-
-    // Step 1 answers.
-    var name by rememberSaveable { mutableStateOf("") }
-    var sex by rememberSaveable { mutableStateOf(Sex.MALE) }
-    var heightInput by rememberSaveable { mutableStateOf("") }
-    var weightInput by rememberSaveable { mutableStateOf("") }
+    if (!preferencesSeen) {
+        FirstRunPreferencesScreen(
+            onContinue = viewModel::leavePreferences,
+            // A weight already typed keeps its meaning when the unit flips.
+            onUnitPicked = { unit ->
+                DecimalInput.parse(weightInput)?.let { typed ->
+                    weightInput = Loads.format(Loads.toKg(typed, Units.current), unit)
+                }
+            },
+        )
+        return
+    }
 
     // Step 2 answers.
     var daysPerWeek by rememberSaveable { mutableIntStateOf(3) }
@@ -531,6 +566,8 @@ fun OnboardingScreen(
     var equipment by rememberSaveable(stateSaver = OptionalEquipmentSaver) { mutableStateOf<Equipment?>(null) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
     var tier by rememberSaveable { mutableStateOf(VolumeLevel.LOW) }
+    // RIR is the default for a fresh install; it is written to the effort setting at Continue.
+    var effortScale by rememberSaveable { mutableStateOf(EffortScale.RIR) }
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -579,7 +616,7 @@ fun OnboardingScreen(
     // The same bounds the repository enforces, checked here so the footer can
     // name what is missing instead of leaving a dead button to explain itself.
     val heightReading = BodyLimits.readHeight(heightInput)
-    val weightReading = BodyLimits.readWeight(weightInput)
+    val weightReading = BodyLimits.readWeight(weightInput, Units.current)
     val profileValid = name.trim().isNotEmpty() &&
         heightReading == BodyLimits.Reading.VALID && weightReading == BodyLimits.Reading.VALID
     val profileHint = profileHint(name.trim().isEmpty(), heightReading, weightReading)
@@ -615,11 +652,13 @@ fun OnboardingScreen(
     val stepBack: () -> Unit = {
         if (fieldFocused) {
             focusManager.clearFocus()
+        } else if (step == 0) {
+            viewModel.reopenPreferences()
         } else {
             step -= 1
         }
     }
-    BackHandler(enabled = fieldFocused || step > 0, onBack = stepBack)
+    BackHandler(onBack = stepBack)
 
     // Flat Abyss, the app's own surface: the bar and Skip on top, the page
     // taking every remaining pixel and scrolling when it does not fit (the
@@ -675,6 +714,8 @@ fun OnboardingScreen(
                         onFocus = { focus = it },
                         tier = tier,
                         onTier = { tier = it },
+                        effortScale = effortScale,
+                        onEffortScale = { effortScale = it },
                     )
                     else -> ProposalStep(
                         viewModel = viewModel,
@@ -709,14 +750,22 @@ fun OnboardingScreen(
                 onPrimary = {
                     // Only reachable when profileValid, so the !! is safe -
                     // the same bounds the repository enforces, checked first.
-                    viewModel.saveProfile(name, sex, DecimalInput.parse(heightInput)!!, DecimalInput.parse(weightInput)!!)
+                    viewModel.saveProfile(
+                        name,
+                        sex,
+                        DecimalInput.parse(heightInput)!!,
+                        Loads.toKg(DecimalInput.parse(weightInput)!!, Units.current),
+                    )
                 },
                 primaryEnabled = profileValid && !busy,
                 reserveLink = false,
             )
             1 -> DockedActionBar(
                 primary = "Continue",
-                onPrimary = { step = 2 },
+                onPrimary = {
+                    EffortSetting.setScale(appContext.applicationContext, effortScale)
+                    step = 2
+                },
                 primaryEnabled = equipment != null,
                 reserveLink = false,
             )
@@ -781,7 +830,11 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (step > 0) InkChip(label = "BACK", description = "Back to ${stepTitle(step - 1).lowercase()}", onClick = onBack)
+        InkChip(
+            label = "BACK",
+            description = if (step > 0) "Back to ${stepTitle(step - 1).lowercase()}" else "Back to your preferences",
+            onClick = onBack,
+        )
         Spacer(Modifier.weight(1f))
         if (onSkip != null) {
             InkChip(
@@ -948,7 +1001,7 @@ private fun ProfileStep(
                 colors = ironvellumFieldColors(),
                 value = weightInput,
                 onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                label = { Text("Weight (kg)") },
+                label = { Text("Weight (${Units.name})") },
                 singleLine = true,
                 isError = weightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Done),
@@ -962,7 +1015,7 @@ private fun ProfileStep(
         )
         Text(
             if (ranges.isEmpty()) {
-                "Height ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm. Weight ${BodyLimits.say(BodyLimits.WEIGHT_KG)} kg."
+                "Height ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm. Weight ${BodyLimits.weightRangeText(Units.current)} ${Units.name}."
             } else {
                 ranges.joinToString(" ")
             },
@@ -1006,6 +1059,8 @@ private fun TrainingStep(
     onFocus: (TrainingFocus) -> Unit,
     tier: VolumeLevel,
     onTier: (VolumeLevel) -> Unit,
+    effortScale: EffortScale,
+    onEffortScale: (EffortScale) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         FieldLabel("How you divide the week")
@@ -1051,6 +1106,15 @@ private fun TrainingStep(
                     "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
             },
         )
+
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("How you rate effort")
+        InkSegmented(
+            options = listOf(EffortScale.RIR to "RIR (reps left)", EffortScale.RPE to "RPE (how hard)"),
+            selected = effortScale,
+            onPick = onEffortScale,
+        )
+        FieldCaption(Effort.hint(effortScale))
     }
 }
 

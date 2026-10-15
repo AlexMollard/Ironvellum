@@ -34,6 +34,16 @@ object BodyLimits {
 
     fun readWeight(raw: String): Reading = read(raw, WEIGHT_KG)
 
+    /** A weight typed in [unit] (kg or lb), judged against the kg range it will be stored in. */
+    fun readWeight(raw: String, unit: LoadUnit): Reading {
+        val value = DecimalInput.parse(raw) ?: return Reading.EMPTY
+        return if (Loads.toKg(value, unit) in WEIGHT_KG) Reading.VALID else Reading.OUT_OF_RANGE
+    }
+
+    /** The weight range as it is typed in [unit]: "20 to 400" kg, "45 to 880" lb. */
+    fun weightRangeText(unit: LoadUnit): String =
+        "${plain(Math.ceil(Loads.toUnit(WEIGHT_KG.start, unit)))} to ${plain(Math.floor(Loads.toUnit(WEIGHT_KG.endInclusive, unit)))}"
+
     /** "50 to 272": a range as a person says it, whole numbers without their ".0". */
     fun say(range: ClosedFloatingPointRange<Double>): String = "${plain(range.start)} to ${plain(range.endInclusive)}"
 

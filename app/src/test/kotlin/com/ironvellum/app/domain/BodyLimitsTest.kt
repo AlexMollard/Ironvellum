@@ -26,6 +26,15 @@ class BodyLimitsTest {
     }
 
     @Test
+    fun `a weight typed in pounds is judged on the kilos it will be stored as`() {
+        assertEquals(BodyLimits.Reading.VALID, BodyLimits.readWeight("176", LoadUnit.LB))
+        assertEquals(BodyLimits.Reading.OUT_OF_RANGE, BodyLimits.readWeight("30", LoadUnit.LB))
+        assertEquals(BodyLimits.Reading.EMPTY, BodyLimits.readWeight("", LoadUnit.LB))
+        assertEquals("45 to 881", BodyLimits.weightRangeText(LoadUnit.LB))
+        assertEquals("20 to 400", BodyLimits.weightRangeText(LoadUnit.KG))
+    }
+
+    @Test
     fun `real bodies are accepted at both extremes`() {
         assertTrue(BodyLimits.validWeight(45.0))
         assertTrue(BodyLimits.validWeight(180.0))
