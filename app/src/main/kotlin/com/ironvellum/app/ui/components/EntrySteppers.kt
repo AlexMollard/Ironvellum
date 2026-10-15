@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,6 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -28,11 +32,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.inkStroke
 import com.ironvellum.app.ui.train.MAX_LOAD_KG
 
 /**
@@ -163,6 +170,7 @@ internal fun DecimalStepper(
     /** A load: the pads walk the [step] grid ([stepOnGrid]) rather than add it to whatever is there. */
     onGrid: Boolean = false,
     emptyText: String = "–",
+    caption: String? = null,
     onValue: (String) -> Unit,
 ) = StepperRow(
     label = label,
@@ -177,11 +185,15 @@ internal fun DecimalStepper(
     onLess = { onValue(if (onGrid) stepOnGrid(value, -1, step, max) else stepDecimal(value, -1, step, max)) },
     onMore = { onValue(if (onGrid) stepOnGrid(value, 1, step, max) else stepDecimal(value, 1, step, max)) },
     emptyText = emptyText,
+    caption = caption,
 )
 
 /**
- * A label, then − value +. The value is still typeable when [onValue] is given, so 62.5 kg does
- * not take twenty taps; without it the figure is plain text between the pads.
+ * A label, then - value +. The value is still typeable when [onValue] is given, so 62.5 kg does
+ * not take twenty taps; without it the figure is plain text between the pads. [caption] is a quiet
+ * second line under the label ("stop with this many in hand"). The pads draw 34dp inside a 40 x 48dp hit area,
+ * the figure carries an underline directly under its digits, and the unit sits after the figure, outside it,
+ * so every row's + lines up at the row's right edge.
  */
 @Composable
 internal fun StepperRow(
@@ -198,39 +210,91 @@ internal fun StepperRow(
     onMore: () -> Unit,
     /** What an empty figure reads: a dash between two minus-looking pads read as a third one, so loads say "none". */
     emptyText: String = "–",
+    caption: String? = null,
 ) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-        StepButton("−", less, onLess)
-        Box(Modifier.width(56.dp).heightIn(min = 44.dp), contentAlignment = Alignment.Center) {
+    Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
+        RowLabel(label, caption, Modifier.weight(1f))
+        StepperGroup(label, StepperPart(value, less, more, onLess, onMore, onValue, maxDigits), unit, error, decimal, emptyText)
+    }
+}
+
+/** The 46dp row height the compact steppers and the Sets sheet's rows share. */
+internal val ROW_MIN_HEIGHT = 46.dp
+
+/** A row's label, with its quiet [caption] under it. */
+@Composable
+internal fun RowLabel(label: String, caption: String?, modifier: Modifier = Modifier) {
+    Column(modifier.padding(end = 8.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        if (caption != null) Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+    }
+}
+
+/** One stepper's figure and what its pads do; [onValue] makes the figure typeable. */
+internal class StepperPart(
+    val value: String,
+    val less: String,
+    val more: String,
+    val onLess: () -> Unit,
+    val onMore: () -> Unit,
+    val onValue: ((String) -> Unit)? = null,
+    val maxDigits: Int = 0,
+)
+
+/** - figure + as one compact unit: no label, so a range can put two of them in a row. */
+@Composable
+internal fun StepperGroup(
+    name: String,
+    part: StepperPart,
+    unit: String? = null,
+    error: Boolean = false,
+    decimal: Boolean = false,
+    emptyText: String = "–",
+    valueWidth: Dp = 48.dp,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CompactStepButton("−", part.less, part.onLess)
+        val underline = IronvellumColors.InkMuted.copy(alpha = 0.55f)
+        Box(
+            Modifier
+                .width(valueWidth)
+                .height(30.dp)
+                .drawBehind {
+                    val y = size.height - 3.dp.toPx()
+                    val inset = if (size.width > 40.dp.toPx()) 10.dp.toPx() else 4.dp.toPx()
+                    inkStroke(Offset(inset, y), Offset(size.width - inset, y), underline, 1.dp.toPx())
+                },
+            contentAlignment = Alignment.Center,
+        ) {
             val figure = MaterialTheme.typography.titleMedium.copy(
                 color = if (error) IronvellumColors.DangerRed else IronvellumColors.Ink,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
-            if (onValue != null) {
+            val typed = part.onValue
+            if (typed != null) {
                 BasicTextField(
-                    value = value,
+                    value = part.value,
                     onValueChange = { input ->
-                        onValue(
+                        typed(
                             if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)
-                            else DecimalInput.sanitizeWhole(input, maxDigits),
+                            else DecimalInput.sanitizeWhole(input, part.maxDigits),
                         )
                     },
                     singleLine = true,
                     textStyle = figure,
                     cursorBrush = SolidColor(IronvellumColors.SystemGreen),
                     keyboardOptions = if (decimal) decimalKeyboard(ImeAction.Next) else wholeKeyboard(ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = name },
                 )
             } else {
                 Text(
-                    value,
+                    part.value,
                     style = figure,
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "$label, $value" },
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "$name, ${part.value}" },
                 )
             }
-            if (value.isEmpty()) {
+            if (part.value.isEmpty()) {
                 Text(
                     emptyText,
                     style = if (emptyText.length > 1) MaterialTheme.typography.bodySmall else MaterialTheme.typography.titleMedium,
@@ -238,14 +302,52 @@ internal fun StepperRow(
                 )
             }
         }
-        StepButton("+", more, onMore)
-        // Every row keeps the unit's slot so the figures line up down the card.
-        Text(
-            unit.orEmpty(),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.width(28.dp).padding(start = 4.dp),
-        )
+        if (unit != null && part.value.isNotEmpty()) {
+            Text(unit, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(start = 3.dp))
+        }
+        CompactStepButton("+", part.more, part.onMore)
+    }
+}
+
+/**
+ * A label, then a range as two steppers around a dash: "Reps  - 4 +  -  - 6 +". The two figures are narrower than a
+ * lone stepper's so the row fits a 360dp phone inside a card.
+ */
+@Composable
+internal fun RangeStepperRow(label: String, from: StepperPart, to: StepperPart, caption: String? = null, toEmpty: String = "–") {
+    Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
+        RowLabel(label, caption, Modifier.weight(1f))
+        StepperGroup("$label, from", from, valueWidth = RANGE_VALUE_WIDTH)
+        Text("–", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
+        StepperGroup("$label, up to", to, emptyText = toEmpty, valueWidth = RANGE_VALUE_WIDTH)
+    }
+}
+
+private val RANGE_VALUE_WIDTH = 32.dp
+
+/** A compact stepper pad: 34dp drawn, inside a 40 x 48dp hit area, so a range of two steppers fits a phone. */
+@Composable
+internal fun CompactStepButton(glyph: String, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .width(40.dp)
+            .height(48.dp)
+            .clickable(onClickLabel = description, onClick = onClick)
+            .semantics {
+                contentDescription = description
+                role = Role.Button
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(34.dp)
+                .background(IronvellumColors.VaultHigh, MaterialTheme.shapes.extraSmall)
+                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(glyph, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+        }
     }
 }
 

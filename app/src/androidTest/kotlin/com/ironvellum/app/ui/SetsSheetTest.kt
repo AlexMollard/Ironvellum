@@ -49,8 +49,8 @@ class SetsSheetTest {
     fun choosingTopAndBackoffsPreviewsThemAndDoneSavesTheScheme() {
         show(entry)
         compose.onNodeWithText("Sets for Weighted Pull-Up").assertExists()
-        compose.onNodeWithText("Top set + back-offs").performScrollTo().performClick()
-        compose.onNodeWithText("You'll do").performScrollTo().assertExists()
+        compose.onNodeWithText("Top + back-offs").performScrollTo().performClick()
+        compose.onNodeWithText("YOU'LL DO", substring = true).performScrollTo().assertExists()
         compose.onNodeWithText("Done").performClick()
 
         val saved = done
@@ -72,7 +72,7 @@ class SetsSheetTest {
         )
         show(owner)
         // The back-offs' own load is shown as given, not worked out from the top set.
-        compose.onNodeWithText("4–5 × +" + Units.withUnit(15.0)).performScrollTo().assertExists()
+        compose.onNodeWithText("× +" + Units.format(15.0), substring = true).performScrollTo().assertExists()
         compose.onNodeWithText("Done").performClick()
         assertEquals(15.0, done!!.scheme.backoffFixedKg!!, 0.0)
         assertEquals("4", done!!.sets)
@@ -90,7 +90,6 @@ class SetsSheetTest {
     @Test
     fun straightSetsTakeARepRangeAndDoneSavesItFromTheEntrysReps() {
         show(entry.copy(sets = "3", reps = "8", scheme = SetScheme()))
-        compose.onNodeWithText("More: rest, reps, warm-up ramp").performScrollTo().performClick()
         // No range yet: one tap makes it one rep wide, four more take the top to 13.
         repeat(5) { compose.onNodeWithContentDescription("Higher reps range top").performScrollTo().performClick() }
         compose.onNodeWithText("Done").performClick()
@@ -102,6 +101,6 @@ class SetsSheetTest {
     fun dropSetsAreRefusedInsideASuperset() {
         show(entry.copy(supersetGroup = 1), inSuperset = true)
         compose.onNodeWithText("Not inside a superset").performScrollTo().assertExists()
-        compose.onNodeWithText("Drop sets").assertIsNotEnabled()
+        compose.onNodeWithText("Drops").assertIsNotEnabled()
     }
 }

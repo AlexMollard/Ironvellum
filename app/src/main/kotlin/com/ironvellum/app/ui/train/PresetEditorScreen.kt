@@ -418,7 +418,7 @@ private fun loadTarget(kgText: String): String =
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", onKgText: (String) -> Unit) {
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", emptyText: String = "none", caption: String? = null, onKgText: (String) -> Unit) {
     val unit = Units.current
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
@@ -435,12 +435,12 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
             },
             onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
             onMore = { onKgText(formatSteppedFigure(worn.nextKg(kg, unit) ?: kg)) },
-            emptyText = "none",
+            emptyText = emptyText, caption = caption,
         )
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = "none", onValue = onKgText)
+        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, onValue = onKgText)
         return
     }
     fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
@@ -453,7 +453,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
         label, shown, "lb", "Lighter load", "Heavier load", gridLb, error,
-        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = "none",
+        max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = emptyText, caption = caption,
     ) { lb ->
         typed = lb
         if (lb.isBlank()) onKgText("") else kgOf(lb)?.let { onKgText(formatSteppedFigure(it)) }
