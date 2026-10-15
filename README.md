@@ -38,17 +38,10 @@ relics and the Veil) keeps its names either way. Every word is defined in
 
 <div align="center">
 
-| Today | Train | A workout |
-|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/dashboard.png" width="230" alt="Today: level and streak, the week strip, the day card and the Veil" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/train.png" width="230" alt="Train: your weekly plan with the finished routine ticked, weekly coverage and recent workouts" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/session.png" width="230" alt="A workout in progress: one open exercise with load and rep steppers and a docked action bar" /> |
-
-| Skills | Deeds | Share text |
-|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/skilltree.png" width="230" alt="The Pull skill path as nodes joined by prerequisite lines" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/codex.png" width="230" alt="Progress: the deeds closest to earning with progress bars" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/share.png" width="230" alt="A finished workout as Wordle-style share text: a row per movement, a square per set" /> |
-
-| Weekly coverage | History | Info sheet |
-|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/coverage.png" width="230" alt="Weekly coverage: a body map and one list of muscles, the short ones first" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/chronicle.png" width="230" alt="History: a totals line and a card of finished workouts per month" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/info.png" width="230" alt="A swipeable exercise info sheet showing the muscles worked on the body figure" /> |
+| | | | |
+|:---:|:---:|:---:|:---:|
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-today.png" width="200" alt="Today: the day's workout, level, streak and the Veil" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-live-workout.png" width="200" alt="A live workout: top set, back-offs, rest timer and reps-left chips" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-sets-sheet.png" width="200" alt="The Sets sheet: a top set with back-offs drawn as bars" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-finish.png" width="200" alt="The finish page: XP for effort, bonuses and new PRs" /> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/05-lift-progress.png" width="200" alt="A lift page: PR, estimated 1RM and its strength chart" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/06-deeds.png" width="200" alt="Progress: the deeds closest to earning" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/07-plan-builder.png" width="200" alt="The plan builder: a proposed weekly plan with loads" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/08-veil.png" width="200" alt="The Veil: essence, the strongest relic and the collection" /> |
 
 </div>
 
