@@ -1,7 +1,5 @@
 package com.ironvellum.app.domain
 
-import com.ironvellum.app.data.Words
-
 /**
  * The muster ladder. You begin as nothing; every class is seized by leveling.
  * It follows level (XP); [Rank] follows strength and never reads level.
@@ -11,10 +9,8 @@ import com.ironvellum.app.data.Words
  */
 object ArmyClass {
 
-    /** [themedTitle] is the ascension's name; plain mode names the band "Level", so the sigil reads "Level 13". */
-    data class Tier(val level: Int, private val themedTitle: String) {
-        val title: String get() = Words.pick(themedTitle, "Level")
-    }
+    /** The ascension's name, themed in both modes: rank titles are part of the reward layer. */
+    data class Tier(val level: Int, val title: String)
 
     val LADDER: List<Tier> = listOf(
         Tier(1, "Acolyte"),

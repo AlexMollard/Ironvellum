@@ -69,20 +69,26 @@ object Words {
         private val themedProper: String = titleCase(themed),
         themedProperPlural: String? = null,
         private val keepCase: Boolean = false,
+        /** True for the reward layer: the themed name shows in both modes, whatever the switch says. */
+        private val bothModes: Boolean = false,
     ) {
         private val themedPl = themedPlural ?: (themed + "s")
         private val plainPl = plainPlural ?: (plain + "s")
         private val themedProperPl = themedProperPlural ?: (if (themedPlural != null) titleCase(themedPlural) else themedProper + "s")
 
-        private val sing get() = if (Words.themed) themed else plain
-        private val plur get() = if (Words.themed) themedPl else plainPl
+        private val on get() = bothModes || Words.themed
+        private val sing get() = if (on) themed else plain
+        private val plur get() = if (on) themedPl else plainPl
+
+        /** The themed name, capitalised, in whatever mode: for a name that always stays themed (a deed called "Three-Day Oath"). */
+        val themedName: String get() = cap(themedProper)
 
         val s: String get() = sing
         val pl: String get() = plur
-        val c: String get() = if (Words.themed) cap(themedProper) else if (keepCase) plain else cap(plain)
-        val cpl: String get() = if (Words.themed) cap(themedProperPl) else if (keepCase) plainPl else cap(plainPl)
-        val t: String get() = if (Words.themed) themedProper else plain
-        val tpl: String get() = if (Words.themed) themedProperPl else plainPl
+        val c: String get() = if (on) cap(themedProper) else if (keepCase) plain else cap(plain)
+        val cpl: String get() = if (on) cap(themedProperPl) else if (keepCase) plainPl else cap(plainPl)
+        val t: String get() = if (on) themedProper else plain
+        val tpl: String get() = if (on) themedProperPl else plainPl
         val u: String get() = sing.uppercase()
         val upl: String get() = plur.uppercase()
         val a: String get() = article(sing) + " " + sing
@@ -195,7 +201,8 @@ object Words {
 
     // Codex
     val codex = Concept("codex", "progress", themedPlural = "codices", plainPlural = "progress")
-    val deed = Concept("deed", "achievement")
+    /** Reward layer: themed in both modes. */
+    val deed = Concept("deed", "achievement", bothModes = true)
     val path = Concept("path", "skill tree")
     /** The section that lists the paths (a tab label, a button). */
     val paths = Concept("paths", "skills", plainPlural = "skills")
@@ -221,16 +228,16 @@ object Words {
     val reckoning = Concept("reckoning", "leaderboard")
     val theReckoning = Concept("the reckoning", "leaderboard", themedPlural = "the reckonings", themedProper = "the Reckoning")
     val rung = Concept("rung", "tier")
-    val standing = Concept("standing", "rank", themedPlural = "standings")
+    val standing = Concept("standing", "position", themedPlural = "standings")
     val tribute = Concept("tribute", "kudos", plainPlural = "kudos")
     val remark = Concept("remark", "comment")
     val missive = Concept("missive", "message")
     val inbox = Concept("missives", "inbox", themedPlural = "missives", plainPlural = "inboxes")
 
-    private val serverTerms get() = listOf(trueName, folio, rite, cycle, trial, oath, deed, ally, circle, keeper, tribute, remark, missive, lifter)
+    private val serverTerms get() = listOf(trueName, folio, rite, cycle, trial, oath, ally, circle, keeper, tribute, remark, missive, lifter)
 
     // The Veil
-    val veil = Concept("veil", "idle rewards", plainPlural = "idle rewards")
-    val veilDraw = Concept("veil draw", "idle-rewards draw", themedProper = "Veil draw")
-    val theVeil = Concept("the veil", "idle rewards", themedProper = "the Veil")
+    val veil = Concept("veil", "idle rewards", plainPlural = "idle rewards", bothModes = true)
+    val veilDraw = Concept("veil draw", "idle-rewards draw", themedProper = "Veil draw", bothModes = true)
+    val theVeil = Concept("the veil", "idle rewards", themedProper = "the Veil", bothModes = true)
 }

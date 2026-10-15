@@ -302,7 +302,7 @@ object Titles {
         // Training streaks
         TitleDef(
             "three_day_oath",
-            "Three-Day ${Words.oath.c}",
+            "Three-Day ${Words.oath.themedName}",
             "Keep a 3-day ${Words.oath.s}.",
             TitleRule.TrainingStreak(3),
             TitleRarity.Common,
@@ -352,7 +352,7 @@ object Titles {
         ),
         TitleDef(
             "six_gate_week",
-            "Six-${Words.trial.c} Week",
+            "Six-${Words.trial.themedName} Week",
             "${Words.seal.c} 6 ${Words.trial.pl} in a single week.",
             TitleRule.WorkoutsInWeek(6),
             TitleRarity.Epic,
@@ -360,7 +360,7 @@ object Titles {
         // Skills mastered
         TitleDef(
             "first_technique",
-            "First ${Words.technique.c}",
+            "First ${Words.technique.themedName}",
             "Master 1 ${Words.technique.s}.",
             TitleRule.SkillsMastered(1),
             TitleRarity.Common,

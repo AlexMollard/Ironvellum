@@ -42,25 +42,25 @@ object Lines {
     val veilBoardUnread: String
         get() = Words.pick(
             "The Ledger could not read the Veil's reckoning. Try again in a moment.",
-            "The idle rewards leaderboard could not be loaded. Try again in a moment.",
+            "The Veil leaderboard could not be loaded. Try again in a moment.",
         )
 
     val veilBoardNote: String
         get() = Words.pick(
             "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
-            "Ranks idle rewards progress — echoes inscribed — separate from the training leaderboard.",
+            "Ranks Veil progress — echoes inscribed — separate from the training leaderboard.",
         )
 
     val noVeilEchoes: String
         get() = Words.pick(
             "No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed.",
-            "No lifter has inscribed echoes yet. Idle rewards has no ranking yet and every top rank here is open.",
+            "No lifter has inscribed echoes yet. The Veil is empty and every top position here is open.",
         )
 
     val claimStanding: String
         get() = Words.pick(
             "No allies stand here yet. Log one of its exercises to claim a standing.",
-            "No friends are ranked here yet. Log one of its exercises to get a rank.",
+            "No friends are ranked here yet. Log one of its exercises to get a position.",
         )
 
     val noBodyData: String
@@ -72,7 +72,7 @@ object Lines {
     val welcomeTagline: String
         get() = Words.pick(
             "Seal each trial. Keep the Ledger. Watch the Veil fill.",
-            "Finish each workout. Keep your stats. Watch your idle rewards fill.",
+            "Finish each workout. Keep your stats. Watch the Veil fill.",
         )
 
     val forgeFits: String
@@ -126,5 +126,5 @@ object Lines {
         get() = "Uses the app's fantasy names: Workout becomes Trial, Routine becomes Rite."
 
     val veilHowTitle: String
-        get() = Words.pick("How the Veil works", "How idle rewards work")
+        get() = "How the Veil works"
 }

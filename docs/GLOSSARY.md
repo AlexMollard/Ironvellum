@@ -12,6 +12,17 @@ string in the code.
 The Plain column below is the default; the Term column is the themed name. A
 concept marked "same" keeps its name in both modes.
 
+**The reward layer is themed in both modes** (owner decision, 2026-10-15). The
+switch renames the training and account words a newcomer has to understand
+(workout, routine, history, PR, streak, friends, ...); it does not touch what
+the app gives back. Marked **both modes** below: achievements (**Deed**, and
+every deed's own name such as "Threefold Iron"), the rank titles of the
+ascension ladder (Acolyte ... Sovereign), crests and other awards, and the
+Veil with everything in it. These are rewards, not vocabulary: a plain name
+would erase the thing that makes them rewarding, and a new lifter meets each
+one with a one-line first-time explanation instead. In code a concept in this
+layer is declared `bothModes = true` in `Words`.
+
 ## The world
 
 The themed names are dark fantasy in ink on vellum, matching the house art
@@ -62,9 +73,11 @@ the techniques to master. Allies gather in **Circles** and are measured in
    article ("a routine", "an ally"), and the verb forms (finish, finished,
    finishing). A sentence that cannot be reached by swapping a word is a line
    in `WordLines.kt`.
-9. **The Veil's own words stay.** Essence, echoes, relics, inscriptions and
-   crests keep their names in both modes; in plain mode the idle rewards
-   screen explains each in one line the first time it opens (and from its "?").
+9. **The Veil's own words stay.** The Veil, essence, echoes, relics,
+   inscriptions and crests keep their names in both modes; the Veil explains
+   each in one line the first time it opens, in either mode (and from its "?").
+   Deeds and rank titles likewise get a one-line explanation the first time
+   one appears.
 
 ## Navigation
 
@@ -87,7 +100,7 @@ Train, Progress, Friends.
 | **True name** | display name | The public display name | "Take your true name", "True name (2–24)", "That true name is taken" |
 | **Folio** | profile | An Ironbound's public page | "Open folio", "Manage folio", "This folio is private" |
 | **Frame** | body | The body being measured | "YOUR FRAME", "Frame rating" |
-| **Ascension** | "Level N" (the band is not named; the sigil reads "Level 13") | The tier ladder that follows level: Acolyte · Adept · Warden · Magister · Archon · Exarch · Sovereign. A band of levels, never a second kind of progress: it names the level, never a stat beside it | on the level sigil in place of "LV": "ADEPT 13"; under the XP rail, the next one: "WARDEN AT 15"; on reaching one, on the level-up page itself: "YOU ASCEND", the old tier struck through; reward line "LEVEL UP 4 → 5 · ADEPT" |
+| **Ascension** (both modes) | same: the sigil reads "Acolyte 4" / "Adept 13" whatever the switch says | The tier ladder that follows level: Acolyte · Adept · Warden · Magister · Archon · Exarch · Sovereign. A band of levels, never a second kind of progress: it names the level, never a stat beside it | on the level sigil in place of "LV": "ADEPT 13"; under the XP rail, the next one: "WARDEN AT 15"; on reaching one, on the level-up page itself: "YOU ASCEND", the old tier struck through; reward line "LEVEL UP 4 → 5 · ADEPT" |
 | **Strength Rank** | same | Current strength by pattern, Pull, Push and Legs: each takes its best mark in the last 90 days, a loaded lift's estimated 1-rep max over bodyweight or a cleared technique at its tier, and the rank is their average, rounded down: Untrained, Novice, Intermediate, Advanced, Elite; **Unranked** before any | its own labelled value, never joined to the ascension; "STRENGTH RANK · Unranked" |
 
 ## Training
@@ -129,7 +142,7 @@ Train, Progress, Friends.
 | Term | Plain (default) | Means | Use |
 |---|---|---|---|
 | **Codex** | progress | Tab holding Deeds, Paths and Journal | nav tab, "6 deeds · 1 technique" |
-| **Deed** | achievement | An achievement with a written bar | "DEED EARNED", "EARNED 12", "earned 3 Sep 2026", dashboard "DEEDS 5/105" |
+| **Deed** (both modes) | same (plain: no plain word) | An achievement with a written bar | "DEED EARNED", "EARNED 12", "earned 3 Sep 2026", dashboard "DEEDS 5/105" |
 | **Title** | same | The name a deed grants, worn on the folio | "you may wear *First Mark*", "Wear title", "NO TITLE WORN" |
 | **Wear** | same | Putting on a title or crest | "Wear", "WORN", "TAP TO WEAR" |
 | **Rarity** | same | Common · Rare · Fabled · Masterwork, for deeds and inscriptions | as listed |
@@ -158,7 +171,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 | **Tidings** | feed | What allies have done | "TIDINGS", "Every Ironbound's public trials" |
 | **The Reckoning** | leaderboard | A leaderboard; each lift and the Veil have their own | "THE RECKONING", "Choose a reckoning", "the Pull-up reckoning" |
 | **Rung** | tier | One tier on a lift's reckoning: Initiate · Ash I–II · Bone I–II · Silver I–II · Gold I–II · Umbral I–II | "rung 4 of 11", "Counts toward the Pull-up reckoning" |
-| **Standing** | rank | Your place in a reckoning | "YOUR STANDING", "#4" |
+| **Standing** | position (never "rank": Strength Rank is its own label on the same screens) | Your place in a reckoning | "YOUR STANDING", "#4" |
 | **Tribute** | kudos | A reaction: Honour, Iron or Flame | "3 tributes", "WHO PAID TRIBUTE", "Your tribute: Iron" |
 | **Remark** | comment | A comment on a trial | "Remarks", "Add a remark", "Delete this remark?" |
 | **Missives** | inbox | The inbox | "MISSIVES", "3 new missives", "No missives" |
@@ -167,7 +180,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 
 | Term | Plain (default) | Means | Use |
 |---|---|---|---|
-| **The Veil** | idle rewards | The idle screen, opened from Today | "Open the Veil", "THE VEIL" |
+| **The Veil** (both modes) | same (screen title "The Veil") | The idle screen, opened from Today | "Open the Veil", "THE VEIL" |
 | **Echo** | same | One unit beyond the veil; trials leave them | "+40 ECHOES", "The echoes are gathering…" |
 | **Essence** | same | What echoes gather while you are away | "ESSENCE", "ESS" in tight columns |
 | **Inscribe** | same | Spend an inscription to draw a reward | "INSCRIBE", "3 INSCRIPTIONS WAITING", each level-up earns one |

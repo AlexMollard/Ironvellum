@@ -46,7 +46,7 @@ object FirstRunPrefs {
     fun setVeilIntroSeen(context: Context, seen: Boolean = true) =
         onboarding(context).edit { putBoolean(KEY_VEIL_INTRO_SEEN, seen) }
 
-    /** Whether the idle rewards screen has already explained its own words (echoes, crests) in plain mode. */
+    /** Whether the Veil has already explained its own words (echoes, crests) in either mode. */
     fun veilTermsSeen(context: Context): Boolean = onboarding(context).getBoolean(KEY_VEIL_TERMS_SEEN, false)
 
     fun setVeilTermsSeen(context: Context, seen: Boolean = true) =

@@ -52,7 +52,7 @@ class WordsTest {
         assertEquals("kudos", Words.tribute.pl)
         assertEquals("Friends", Words.ally.cpl)
         assertEquals("Stats", Words.ledger.c)
-        assertEquals("Idle rewards", Words.theVeil.c)
+        assertEquals("Position", Words.standing.c)
         assertEquals("a routine", Words.rite.a)
         assertEquals("a friend", Words.ally.a)
         assertEquals("a lifter", Words.lifter.at)
@@ -129,10 +129,21 @@ class WordsTest {
     }
 
     @Test
-    fun `an ascension tier is Level in plain mode and keeps its name when themed`() {
+    fun `the reward layer stays themed in both modes`() {
+        for (themed in listOf(false, true)) {
+            Words.useForTest(themed)
+            assertEquals("deed", Words.deed.s)
+            assertEquals("Deeds", Words.deed.cpl)
+            assertEquals("The Veil", Words.theVeil.c)
+            assertEquals("the Veil", Words.theVeil.t)
+            assertEquals("Adept", com.ironvellum.app.domain.ArmyClass.forLevel(13).title)
+            assertEquals("Three-Day Oath", "Three-Day ${Words.oath.themedName}")
+        }
+    }
+
+    @Test
+    fun `plain Standing is not Rank, which Strength Rank already uses`() {
         Words.useForTest(false)
-        assertEquals("Level", com.ironvellum.app.domain.ArmyClass.forLevel(13).title)
-        Words.useForTest(true)
-        assertEquals("Adept", com.ironvellum.app.domain.ArmyClass.forLevel(13).title)
+        assertEquals("position", Words.standing.s)
     }
 }

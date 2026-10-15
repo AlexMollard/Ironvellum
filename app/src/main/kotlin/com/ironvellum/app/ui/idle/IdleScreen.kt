@@ -192,8 +192,8 @@ class IdleViewModel(private val repo: Repository, private val appContext: Contex
     private val _terms = MutableStateFlow(false)
 
     /**
-     * True while the plain-words explainer is on screen: in plain mode the game's own words (essence, echoes,
-     * relics, inscriptions, crests) keep their names, so the first visit says what each one is, once.
+     * True while the explainer is on screen: the game's own words (essence, echoes, relics, inscriptions, crests)
+     * keep their names in both modes, so the first visit says what each one is, once.
      */
     val terms: StateFlow<Boolean> = _terms.asStateFlow()
 
@@ -216,7 +216,7 @@ class IdleViewModel(private val repo: Repository, private val appContext: Contex
                 val crests = repo.observeOwnedFrames().first().size
                 if (FirstRun.veilIntroDue(seen = false, state.lifetimeEssence, relics, crests)) _intro.value = true else introSeen()
             }
-            if (!_intro.value && !Words.themed && !FirstRunPrefs.veilTermsSeen(appContext)) _terms.value = true
+            if (!_intro.value && !FirstRunPrefs.veilTermsSeen(appContext)) _terms.value = true
             val awayMs = (System.currentTimeMillis() - state.lastCollectedAtMs).coerceAtLeast(0L)
             val banked = repo.collectIdle(System.currentTimeMillis())
             if (banked > 0) _away.value = AwayReport(banked, awayMs)
@@ -461,18 +461,14 @@ private fun VeilIntroSheet(fullHours: Int, onDone: () -> Unit) {
                     "It gathers on its own while you are away. Full strength for $fullHours hours after you last collected, then it tapers.",
                 )
                 InkDivider()
-                // In plain mode the game's own words keep their names, so each says what it is.
-                if (!Words.themed) {
-                    IntroRow(Icons.Outlined.Bolt, "Echoes", "Your ${Words.trial.pl} leave them behind, and they gather essence for you.")
-                    InkDivider()
-                }
+                // The reward words keep their names in both modes, so each says what it is.
+                IntroRow(Icons.Outlined.Bolt, "Echoes", "Your ${Words.trial.pl} leave them behind, and they gather essence for you.")
+                InkDivider()
                 IntroRow(Icons.Outlined.StarBorder, "Inscriptions", "Each level-up earns one. Spend it on echoes, a relic or a crest.")
                 InkDivider()
                 IntroRow(Icons.Outlined.Diamond, "Relics", "They lift your rate. Only the strongest counts in full.")
-                if (!Words.themed) {
-                    InkDivider()
-                    IntroRow(Icons.Outlined.WorkspacePremium, "Crests", "The mark you wear on your ${Words.folio.s}. Its perk only works in ${Words.theVeil.t}.")
-                }
+                InkDivider()
+                IntroRow(Icons.Outlined.WorkspacePremium, "Crests", "The mark you wear on your ${Words.folio.s}. Its perk only works in ${Words.theVeil.t}.")
             }
         },
         confirmButton = { IronvellumButton(label = "Got it", onClick = onDone) },

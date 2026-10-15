@@ -70,7 +70,7 @@ enum class Term private constructor(
             "can recover and build back past where you stalled. It happens on its own." },
     ),
     RANKS(
-        { Words.pick("Strength Rank and Ascension", "Strength Rank") },
+        { "Strength Rank and Ascension" },
         { "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
             "Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, " +
             "over the last ${Rank.WINDOW_DAYS} days. Each takes its best mark: a squat, bench press, " +
@@ -78,12 +78,8 @@ enum class Term private constructor(
             "bodyweight, or a pull, push or leg ${Words.technique.s} you cleared, at its tier. Your rank " +
             "is the average of the patterns you trained, rounded down. One you skipped is left out, " +
             "and core work never lowers it." +
-            if (Words.themed) {
-                " Ascension follows your level, which rises with the XP each ${Words.trial.s} " +
-                    "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + "."
-            } else {
-                ""
-            } },
+            " Ascension follows your level, which rises with the XP each ${Words.trial.s} " +
+            "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + "." },
     ),
     TUCK(
         "Tuck",
@@ -148,10 +144,7 @@ enum class Term private constructor(
         { "Level and XP" },
         { "Each ${Words.sealed.s} ${Words.trial.s} earns XP. Fill the XP bar to reach your next level. " +
             "The numbers show XP earned within this level and the XP it needs. " +
-            Words.pick(
-                "Your ascension title follows your level; your Strength Rank follows your strength.",
-                "Your Strength Rank follows your strength, not your level.",
-            ) },
+            "Your ascension title follows your level; your Strength Rank follows your strength." },
     ),
     OATH(
         { Words.oath.c },
