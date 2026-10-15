@@ -26,6 +26,37 @@ assertions after); older patches migrate warbands and are not re-run there.
 **Never paste `supabase/reset.sql` into the live project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.
 
+## 1.8 plan (owner agreed 2026-10-16, built in this order, one build at a time)
+
+Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
+2026-10-16 (GymMane, Flexify, wger, LibreFit, Bati, RepForge and others).
+
+1. **History at scale.** Seed a fictional three-year history on the emulator and
+   time the slow paths first. Then: indices on `sessions(startedAtMs)`,
+   `sessions(completedAtMs)` and `set_logs(exerciseId)` (one migration); replace
+   callers of `observeCompletedWithSets()` that only need a date, a count or one
+   lift with targeted queries; remove the O(n^2) tally in `SessionScreen.kt`.
+   Done when the before/after numbers are recorded here.
+2. **Scheduled file backup.** Settings > Data: pick a folder (Storage Access
+   Framework), weekly archive export, keep the newest 5. Off until chosen.
+3. **1.7 leftovers.** Plan builder `EffortStepper` in the Sets sheet style;
+   "Rank" vs "Strength Rank"; Today header truncation beside "Add sex in
+   Profile"; routine editor Load stepper showing "none"; persist Muscle Coverage
+   dismissals per muscle; re-audit the 24-48dp touch targets.
+4. **Measure.** Release APK size, and frame stats on the owner's phone.
+5. **Home-screen widget.** Today's routine and streak; tap starts the workout.
+6. **Honour the system font scale.** Drop `FIXED_FONT_SCALE`, fix every screen
+   at large text, and add an instrumented font-scale sweep (closes the
+   text-scale verification gap below).
+7. **Health Connect write-back.** A finished workout is written as an exercise
+   session. Needs a write permission, so the Play health-data form changes.
+8. **String extraction.** Move UI text into string resources, plain and themed
+   names included, with a lint guard against new literals. No translations yet;
+   inviting translators is 1.9.
+9. **Light theme.** Appearance: System, Dark, Light. Check the art on light.
+
+Skipped deliberately: Wear OS.
+
 ## Blocked on the owner (credentials or console access)
 
 | Item | Why it is blocking | Notes |
@@ -72,15 +103,8 @@ account. It exists for a throwaway project and for the gate's round trip.
   claims. Moving curves, quest detection and reconciliation server-side ends
   offline-first XP and leaves two implementations forever. Revisit only if the
   boards become competitive.
-- **Honouring the system font scale.** Text is pinned to one size on purpose
-  (`FIXED_FONT_SCALE`, dialogs re-pinned with `FixedTextScale`): a lifter who
-  enlarges system text gets no larger text here, an accessibility cost taken for
-  one correct layout. Display size still applies. Revisit if the app ever needs
-  a store accessibility review.
 - **Baseline profile / macrobenchmark.** Release cold start measured a median
   932 ms on a software-GPU emulator, an upper bound. No sign of a startup
   problem; revisit if a real-device number says otherwise.
-- **String extraction for localisation.** `strings.xml` holds one string, the
-  UI is Kotlin literals, and no second locale was asked for.
 - **Automatic CI.** Every workflow is `workflow_dispatch` only; the gate runs
   locally (`python3 tools/gate.py`, see `AGENTS.md`). Do not add a trigger.
