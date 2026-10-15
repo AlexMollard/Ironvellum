@@ -57,6 +57,31 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
 
 Skipped deliberately: Wear OS.
 
+## 1.9 and 2.0: Google Play (owner agreed 2026-10-16)
+
+1.9 prepares, 2.0 launches. The `play` flavour, Google sign-in and
+`docs/PLAY_DATA_SAFETY.md` already exist; the owner items below (keystore,
+privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
+
+- **1.9: translations and Play prep.** Invite translators onto the 1.8 string
+  resources. Owner: developer account ($25, identity check), release keystore,
+  privacy policy at a public URL with an in-app link, store listing, health-data
+  declaration (now including the 1.8 write permission).
+- **Closed test, started during 1.9.** A new personal account needs 12 testers
+  opted in for 14 continuous days before production access (Play Console Help
+  14151465). Recruit spares: guides report the clock resetting if the count
+  drops, which Google's page does not state.
+- **2.0: production launch on Play.** The owner's Supabase project stays the
+  default so social works for Play users; before launch turn on its spend cap
+  and usage alerts, rate-limit sign-ups, and recheck the free-tier limits.
+- **Developer verification.** Google's verification for apps installed outside
+  Play was scheduled for four countries from 2026-09-30 and worldwide in 2027;
+  the Play account's identity check should cover the F-Droid build too. Recheck
+  the status before 2.0.
+- **iPhone: not planned.** Near rewrite (Compose UI, HealthKit, Live
+  Activities, Sign in with Apple), $99/yr and a Mac. Revisit if Play shows
+  traction.
+
 ## Blocked on the owner (credentials or console access)
 
 | Item | Why it is blocking | Notes |
