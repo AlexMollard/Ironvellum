@@ -2159,19 +2159,24 @@ private fun TrialHeader(
                     color = IronvellumColors.InkMuted,
                     maxLines = 1,
                 )
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = IronvellumColors.Ink,
-                    // One line, cut with an ellipsis: a wide XP chip never pushes it onto a second line.
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (xp > 0) {
-                // The gap the title keeps from the chip; the chip itself never shrinks.
-                Spacer(Modifier.width(12.dp))
-                XpChip(xp)
+                // The chip shares the title's line, not the label's: beside the BACK, lock and menu controls it left the
+                // label "Workout in" wide, and a +280 XP chip is wider still.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.Ink,
+                        // One line, cut with an ellipsis: a wide XP chip never pushes it onto a second line.
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (xp > 0) {
+                        // The gap the title keeps from the chip; the chip itself never shrinks.
+                        Spacer(Modifier.width(12.dp))
+                        XpChip(xp)
+                    }
+                }
             }
             NavChip(
                 "BACK",

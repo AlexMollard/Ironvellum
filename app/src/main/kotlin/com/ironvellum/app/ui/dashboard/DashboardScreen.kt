@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.dashboard
 import androidx.compose.runtime.SideEffect
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.StartupGate
+import com.ironvellum.app.ui.stats.trialDay
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -192,10 +193,17 @@ internal fun weekDoneDays(
     zone: ZoneId,
 ): Map<Int, WorkoutSession> {
     val weekStart = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
-    return presets.mapNotNull { preset ->
+    val sealed = presets.mapNotNull { preset ->
         val day = preset.scheduledDay ?: return@mapNotNull null
         TrainFocus.sealing(preset, sessions, weekStart)?.let { day to it }
     }.toMap()
+    // An imported or free workout belongs to no rite, so it ticks the weekday it happened on: the same
+    // "a workout happened that day" the Stats calendar marks (see trialDay).
+    val free = sessions
+        .filter { it.presetId == null && it.completedAtMs != null && it.completedAtMs!! >= weekStart }
+        .sortedBy { it.completedAtMs }
+        .associateBy { trialDay(it, zone).dayOfWeek.value }
+    return free + sealed
 }
 
 /**

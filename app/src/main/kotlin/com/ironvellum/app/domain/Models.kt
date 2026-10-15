@@ -219,6 +219,8 @@ data class ExerciseSessionPoint(
     val atMs: Long,
     val bestSetScore: Double,
     val totalReps: Int,
+    /** The figure the page's chart plots: the top set's estimated 1RM, or [bestSetScore] when the movement has no loaded sets. */
+    val peakValue: Double = bestSetScore,
 )
 
 /**
@@ -236,6 +238,8 @@ data class ExerciseSetEntry(
     val done: Boolean,
     val score: Double,
     val kind: SetKind = SetKind.WORKING,
+    /** Epley estimate of the marked load; null for a hold, an unloaded set or one past [ProgramRules.MAX_E1RM_REPS] reps. */
+    val e1rmKg: Double? = null,
 )
 
 data class ExerciseHistory(
@@ -263,6 +267,13 @@ data class ExerciseHistory(
     val variations: List<String> = emptyList(),
     /** The [Variation.key] this history is of; "" for the plain movement. Everything above is of this variation alone. */
     val variation: String = "",
+    /**
+     * The set the page names as the peak: the best done set among those that count (a top set alone when the trial had one),
+     * by estimated 1RM, or by score for a movement with no loaded sets. Null when none qualifies.
+     */
+    val peak: ExerciseSetEntry? = null,
+    /** True when [peak] and the chart are judged by estimated 1RM, the measure the Stats records board uses. */
+    val peakIsE1rm: Boolean = false,
 ) {
     val isEmpty: Boolean get() = entries.isEmpty()
 }
@@ -319,6 +330,14 @@ object ExerciseHistoryCalculator {
         val isHold = exercise.metric == ExerciseMetric.HOLD
         fun figureOf(r: ExerciseSetRow): Int = if (isHold) (r.durationSec ?: r.reps) else r.reps
 
+        // Loaded rep work is judged by estimated 1RM, the same measure as the Stats records board: a rep-volume score
+        // ranks a 90 x 7 back-off above a 100 x 4 top set and sends the chart down the day a heavier top set lands.
+        val byE1rm = !isHold && exercise.metric.isStrength && rows.any { it.done && (it.weightKg ?: 0.0) > 0.0 }
+        fun e1rmOf(r: ExerciseSetRow): Double? {
+            val kg = r.weightKg ?: return null
+            if (kg <= 0.0 || r.reps < 1 || r.reps > ProgramRules.MAX_E1RM_REPS) return null
+            return ProgramRules.epley(kg, r.reps)
+        }
         val entries = rows.map { r ->
             val figure = figureOf(r)
             ExerciseSetEntry(
@@ -330,6 +349,7 @@ object ExerciseHistoryCalculator {
                 modifiers = r.modifiers,
                 done = r.done,
                 kind = SetKind.fromName(r.kind),
+                e1rmKg = if (byE1rm) e1rmOf(r) else null,
                 // Same suppression as hold tonnage below: an activity metric's
                 // figure is an attempt count or a distance, and repScore would
                 // invent a bodyweight-rep number from it. 0.0 is the value the
@@ -356,6 +376,15 @@ object ExerciseHistoryCalculator {
         // lie. Volume is only reported when every completed set has a known load.
         val unknownLoad = done.any { it.weightKg == null && bodyweightKg == null }
 
+        // The sets that may name a peak, per trial: done working sets, a top set alone when the trial had one.
+        fun counting(sets: List<ExerciseSetEntry>): List<ExerciseSetEntry> {
+            val worked = sets.filter { it.done && it.kind != SetKind.WARMUP }
+            return worked.filter { it.kind == SetKind.TOP }.ifEmpty { worked }
+        }
+        fun peakValue(e: ExerciseSetEntry): Double = if (byE1rm) e.e1rmKg ?: 0.0 else e.score
+        val peakSets = entries.groupBy { it.sessionId }.values.flatMap { counting(it) }
+        val peak = peakSets.filter { peakValue(it) > 0.0 }.maxByOrNull { peakValue(it) }
+
         val series = entries
             .groupBy { it.sessionId }
             .map { (_, sets) ->
@@ -363,6 +392,7 @@ object ExerciseHistoryCalculator {
                     atMs = sets.minOf { it.atMs },
                     bestSetScore = sets.filter { it.kind == SetKind.TOP && it.done }.ifEmpty { sets }.maxOf { it.score },
                     totalReps = sets.filter { it.done }.sumOf { it.reps },
+                    peakValue = counting(sets).maxOfOrNull { peakValue(it) } ?: 0.0,
                 )
             }
             .sortedBy { it.atMs }
@@ -398,6 +428,8 @@ object ExerciseHistoryCalculator {
             entries = entries,
             variations = variations,
             variation = shown,
+            peak = peak,
+            peakIsE1rm = byE1rm,
         )
     }
 }

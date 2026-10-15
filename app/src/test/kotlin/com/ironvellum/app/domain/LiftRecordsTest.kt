@@ -64,6 +64,26 @@ class LiftRecordsTest {
     }
 
     @Test
+    fun `a lift is new only when its latest session beat every earlier one`() {
+        // Best came two weeks of sessions ago, then a lighter session: still inside the window, not a new PR.
+        val slipped = board(
+            session(1, 20) to listOf(set(bench, 90.0, 5)),
+            session(2, 8) to listOf(set(bench, 100.0, 5)),
+            session(3, 2) to listOf(set(bench, 95.0, 5)),
+        ).single()
+        assertFalse(LiftRecords.isFresh(slipped, now))
+        // The first session of a lift is history starting, not a PR.
+        val first = board(session(1, 2) to listOf(set(bench, 100.0, 5))).single()
+        assertFalse(LiftRecords.isFresh(first, now))
+        // A session that beats the earlier ones, inside the window, is.
+        val up = board(
+            session(1, 20) to listOf(set(bench, 90.0, 5)),
+            session(2, 2) to listOf(set(bench, 100.0, 5)),
+        ).single()
+        assertTrue(LiftRecords.isFresh(up, now))
+    }
+
+    @Test
     fun `a lift with no history that old has no trend yet and an old best is not fresh`() {
         val lift = board(session(1, 30) to listOf(set(bench, 100.0, 1))).single()
         assertNull(lift.deltaKg)

@@ -73,4 +73,16 @@ class WeekDoneDaysTest {
         // Taken early on Tuesday, Wednesday's rite is already done.
         assertEquals(setOf(3), weekDoneDays(listOf(trial(2, sunday.minusDays(5))), cycle, sunday, zone).keys)
     }
+
+    @Test
+    fun `an imported or free workout ticks the weekday it happened on`() {
+        // Tuesday of the week of Thursday 1 Oct, imported with no rite, as the Stats calendar marks it.
+        val tuesday = thursday.minusDays(2)
+        val imported = WorkoutSession(presetId = null, label = "Full Body A", startedAtMs = at(tuesday), completedAtMs = at(tuesday, 11), imported = true)
+        val lastWeek = WorkoutSession(presetId = null, label = "old", startedAtMs = at(thursday.minusDays(9)), completedAtMs = at(thursday.minusDays(9), 11))
+        val unsealed = WorkoutSession(presetId = null, label = "live", startedAtMs = at(thursday), completedAtMs = null)
+        val done = weekDoneDays(listOf(imported, lastWeek, unsealed), presets, thursday, zone)
+        assertEquals(setOf(2), done.keys)
+        assertEquals(imported, done[2])
+    }
 }

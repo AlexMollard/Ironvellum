@@ -219,10 +219,6 @@ internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
     if (hold) "$reps s" + (weightKg?.let { " · ${Units.format(it)}" } ?: "")
     else (weightKg?.let { Units.format(it) } ?: "BW") + " × $reps"
 
-/** The done set with the best strength score: the one the hero names. Null when none scored. */
-internal fun peakSet(history: ExerciseHistory): ExerciseSetEntry? =
-    history.entries.filter { it.done && it.score > 0.0 }.maxByOrNull { it.score }
-
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a
  * week. Null below two trials: one trial has no rate, only a date.
@@ -258,7 +254,7 @@ private fun VariationChips(variations: List<String>, shown: String, onPick: (Str
 @Composable
 private fun PeakCard(history: ExerciseHistory) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
-    val peak = peakSet(history)
+    val peak = history.peak
     val frequency = remember(history) { trialsPerWeek(history.sessions, history.firstLoggedAtMs, System.currentTimeMillis()) }
     InkRowPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
@@ -283,7 +279,7 @@ private fun PeakCard(history: ExerciseHistory) {
                 )
                 if (peak != null) {
                     Text(
-                        "score ${formatScore(history.bestScore)}",
+                        if (history.peakIsE1rm) "est. 1RM ${Units.fixed(peak.e1rmKg ?: 0.0, 1)}" else "score ${formatScore(peak.score)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         maxLines = 1,
@@ -324,12 +320,15 @@ private fun formatScore(v: Double): String =
 /** One flat line of best-set score per trial; gold only on the peak point, which the chart draws. */
 @Composable
 private fun ScoreChart(history: ExerciseHistory) {
-    val values = history.series.map { it.bestSetScore }
+    val points = history.series.filter { it.peakValue > 0.0 }
+    val values = points.map { it.peakValue }
+    val e1rm = history.peakIsE1rm
     InkPanel(Modifier.fillMaxWidth()) {
         Text("Strength per ${Words.trial.s}", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         Text(
-            if (values.size < 2) "Best set score" else
-                "Best set score, ${values.size} ${plural(values.size, Words.trial.s, Words.trial.pl)}",
+            (if (e1rm) "Estimated 1RM" else "Best set score").let { what ->
+                if (values.size < 2) what else "$what, ${values.size} ${plural(values.size, Words.trial.s, Words.trial.pl)}"
+            },
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -346,10 +345,10 @@ private fun ScoreChart(history: ExerciseHistory) {
                 values,
                 fromZero = false,
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
-                startLabel = formatDate(history.series.first().atMs, "d MMM"),
-                endLabel = formatDate(history.series.last().atMs, "d MMM"),
-                valueText = { "%.1f score".fmt(it) },
-                dateText = { formatDate(history.series[it].atMs, "d MMM") },
+                startLabel = formatDate(points.first().atMs, "d MMM"),
+                endLabel = formatDate(points.last().atMs, "d MMM"),
+                valueText = { if (e1rm) Units.fixed(it, 1) else "%.1f score".fmt(it) },
+                dateText = { formatDate(points[it].atMs, "d MMM") },
             )
         }
     }

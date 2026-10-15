@@ -94,6 +94,13 @@ object LiftRecords {
         }.sortedByDescending { it.lastAtMs }.take(limit)
     }
 
-    /** A record set inside the last [RECENT_DAYS] days. */
-    fun isFresh(record: LiftRecord, nowMs: Long): Boolean = nowMs - record.bestAtMs <= RECENT_DAYS * DAY_MS
+    /**
+     * Wears the PR tag: the lift's LATEST trial set a best that beats every earlier trial, inside the last
+     * [RECENT_DAYS] days. A lift's first trial is history starting, and a best set a few trials back is not news.
+     */
+    fun isFresh(record: LiftRecord, nowMs: Long): Boolean =
+        nowMs - record.bestAtMs <= RECENT_DAYS * DAY_MS &&
+            record.bestAtMs == record.lastAtMs &&
+            record.series.size >= 2 &&
+            record.series.last() > record.series.dropLast(1).max()
 }
