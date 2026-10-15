@@ -958,7 +958,7 @@ private fun EntryItem(
     ) {
         if (onSets != null) {
             ListRow(
-                label = "Sets",
+                label = "Set scheme",
                 value = SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1) ?: "Straight",
                 onClickLabel = "Sets for $name",
                 contentPadding = PaddingValues(0.dp),

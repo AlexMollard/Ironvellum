@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -65,6 +66,8 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.RangeStepperRow
 import com.ironvellum.app.ui.components.RowLabel
+import com.ironvellum.app.ui.components.ROW_MIN_HEIGHT
+import com.ironvellum.app.ui.components.StepperGroup
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.StepperPart
 import com.ironvellum.app.ui.components.StepperRow
@@ -140,7 +143,8 @@ internal fun SetsSheet(
         onDismissRequest = onDismiss,
         title = { Text("Sets for ${entry.exerciseName.ifBlank { "this lift" }}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Tall enough to fill the sheet whatever the scheme, so switching schemes never changes its height.
+            Column(Modifier.heightIn(min = LocalConfiguration.current.screenHeightDp.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     SchemeType.entries.forEach { type ->
                         SchemeTile(
@@ -193,28 +197,42 @@ internal fun SetsSheet(
                             if (scheme.type == SchemeType.CUSTOM) {
                                 WholeStepper("Reps", reps, "reps", false, 3, 500) { reps = it }
                             } else {
-                                RangeStepperRow(
-                                    "Reps",
-                                    from = StepperPart(
-                                        reps, "Fewer reps", "More reps",
-                                        onLess = { reps = stepWhole(reps, -1, 500) }, onMore = { reps = stepWhole(reps, 1, 500) },
-                                        onValue = { reps = it }, maxDigits = 3,
-                                    ),
-                                    to = StepperPart(
-                                        repsUp?.takeIf { it > repsFrom }?.toString() ?: "", "Lower reps range top", "Higher reps range top",
-                                        onLess = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, -1) },
-                                        onMore = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, 1) },
-                                    ),
-                                    toEmpty = "none",
+                                val fromPart = StepperPart(
+                                    reps, "Fewer reps", "More reps",
+                                    onLess = { reps = stepWhole(reps, -1, 500) }, onMore = { reps = stepWhole(reps, 1, 500) },
+                                    onValue = { reps = it }, maxDigits = 3,
                                 )
+                                if (repsUp != null && repsUp!! > repsFrom) {
+                                    RangeStepperRow(
+                                        "Reps",
+                                        from = fromPart,
+                                        to = StepperPart(
+                                            repsUp.toString(), "Lower reps range top", "Higher reps range top",
+                                            onLess = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, -1) },
+                                            onMore = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, 1) },
+                                        ),
+                                    )
+                                } else {
+                                    // One figure until the lifter asks for a range; the range's top steps down to this again.
+                                    Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
+                                        RowLabel("Reps", null, Modifier.weight(1f))
+                                        Box(
+                                            Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = "Add a reps range") {
+                                                repsUp = SetScheme.stepRepsUp(repsFrom, null, 2)
+                                            }.padding(horizontal = 8.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) { Text("Add range", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen) }
+                                        StepperGroup("Reps", fromPart)
+                                    }
+                                }
                             }
                         }
                         if (scheme.type == SchemeType.DROPS) {
-                            RoleCard("DROPS", "${scheme.dropSets} × ${scheme.dropCount}", SetKind.DROP.tint()) {
-                                IntStepper("Sets that drop", scheme.dropSets, "drop sets", 1, setCount) { scheme = scheme.copy(dropSets = it) }
-                                IntStepper("Drops each", scheme.dropCount, "drops", 1, SetScheme.MAX_DROPS) { scheme = scheme.copy(dropCount = it) }
+                            RoleCard("DROPS", dropsHeader(scheme), SetKind.DROP.tint()) {
+                                IntStepper("Last sets that drop", scheme.dropSets, "drop sets", 1, setCount) { scheme = scheme.copy(dropSets = it) }
+                                IntStepper("Drops after each", scheme.dropCount, "drops", 1, SetScheme.MAX_DROPS) { scheme = scheme.copy(dropCount = it) }
                                 IntStepper(
-                                    "Each drop lighter by", scheme.dropPercent, "drop percent",
+                                    "Each drop is lighter by", scheme.dropPercent, "drop percent",
                                     SetScheme.PERCENT_RANGE.first, SetScheme.PERCENT_RANGE.last, step = 5, unit = "%",
                                 ) { scheme = scheme.copy(dropPercent = it) }
                             }
@@ -309,6 +327,12 @@ private fun SchemeTile(type: SchemeType, selected: Boolean, enabled: Boolean, mo
     }
 }
 
+/** "1 drop after the last set", "2 drops after each of the last 3 sets". */
+internal fun dropsHeader(scheme: SetScheme): String {
+    val drops = if (scheme.dropCount == 1) "1 drop" else "${scheme.dropCount} drops"
+    return drops + if (scheme.dropSets == 1) " after the last set" else " after each of the last ${scheme.dropSets} sets"
+}
+
 /** A group of settings for one role of set: a 3dp left edge in the role's colour, its name and count on the first line. */
 @Composable
 private fun RoleCard(title: String, count: String?, color: Color, content: @Composable ColumnScope.() -> Unit) {
@@ -329,7 +353,12 @@ private fun RoleCard(title: String, count: String?, color: Color, content: @Comp
                 letterSpacing = IronvellumTracking.InlineLabel,
                 color = if (color == IronvellumColors.Bracket) IronvellumColors.InkMuted else color,
             )
-            if (count != null) Text(count, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            if (count != null) {
+                Text(
+                    count, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted,
+                    textAlign = TextAlign.End, modifier = Modifier.weight(1f).padding(start = 12.dp),
+                )
+            }
         }
         content()
     }
@@ -600,6 +629,12 @@ private fun CustomSets(scheme: SetScheme, inSuperset: Boolean, onKinds: (List<Se
     }
 }
 
+/** A set's bar in the "You'll do" drawing: top gold, back-offs mint, working sets the accent, drops its darker green. */
+private fun SetKind.previewColor() = when (this) {
+    SetKind.WORKING -> IronvellumColors.Emerald
+    else -> barColor()
+}
+
 /** The short word over a bar in the "You'll do" drawing. */
 private fun SetKind.roleWord() = when (this) {
     SetKind.TOP -> "TOP"
@@ -610,7 +645,7 @@ private fun SetKind.roleWord() = when (this) {
 }
 
 private const val DRAWN_SETS_MAX = 5
-private val BAR_AREA = 54.dp
+private val BAR_AREA = 64.dp
 
 /**
  * The live "You'll do" drawing: one bar per working set the trial will begin with, from the same planner the trial uses.
@@ -626,7 +661,8 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     val totals = planned.map { bodyKg + (it.weightKg ?: 0.0) }
     val heaviest = totals.maxOrNull() ?: 0.0
     val levels = SchemeText.bars(normalised, sets).filter { it.kind != SetKind.WARMUP }.map { it.level }
-    fun height(i: Int): Float = (if (heaviest > 0.0) (totals[i] / heaviest).toFloat() else levels.getOrNull(i) ?: 0.8f).coerceIn(0.25f, 1f)
+    // Squared, so a set a fifth lighter is visibly shorter; the heaviest is always the full height.
+    fun height(i: Int): Float = (if (heaviest > 0.0) (totals[i] / heaviest).let { it * it }.toFloat() else levels.getOrNull(i) ?: 0.8f).coerceIn(0.25f, 1f)
     fun figure(set: PlannedSet, withUnit: Boolean): String {
         val repsText = set.range?.let { SchemeText.reps(it) } ?: set.reps.toString()
         val load = set.weightKg?.let { (if (lift.bodyweightLift) "+" else "") + (if (withUnit) Units.withUnit(it) else Units.format(it)) }
@@ -664,7 +700,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
             val narrow = planned.size > 3
             Row(Modifier.fillMaxWidth().height(BAR_AREA + if (narrow) 66.dp else 46.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                 planned.forEachIndexed { i, set ->
-                    val colour = set.kind.barColor()
+                    val colour = set.kind.previewColor()
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom)) {
                         Text(set.kind.roleWord(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = colour.copy(alpha = 1f))
                         Box(Modifier.fillMaxWidth().height(BAR_AREA * height(i)).background(colour.copy(alpha = 0.9f), MaterialTheme.shapes.extraSmall))

@@ -90,8 +90,9 @@ class SetsSheetTest {
     @Test
     fun straightSetsTakeARepRangeAndDoneSavesItFromTheEntrysReps() {
         show(entry.copy(sets = "3", reps = "8", scheme = SetScheme()))
-        // No range yet: one tap makes it one rep wide, four more take the top to 13.
-        repeat(5) { compose.onNodeWithContentDescription("Higher reps range top").performScrollTo().performClick() }
+        // No range yet: "Add range" opens one two reps wide (10), three more taps take the top to 13.
+        compose.onNodeWithText("Add range").performScrollTo().performClick()
+        repeat(3) { compose.onNodeWithContentDescription("Higher reps range top").performScrollTo().performClick() }
         compose.onNodeWithText("Done").performClick()
         assertEquals(8..13, done!!.scheme.workingReps)
         assertEquals("8", done!!.reps)

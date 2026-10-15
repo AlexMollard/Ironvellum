@@ -80,6 +80,12 @@ class SetsSheetShotsTest {
     }
 
     @Test
+    fun straightBenchWithARange() {
+        show(bench.copy(scheme = SetScheme(workingReps = 8..12)), barbell)
+        shoot("straight_bench_range", "Warm-up ramp")
+    }
+
+    @Test
     fun topAndBackoffsBench() {
         show(bench.copy(sets = "3", scheme = SetScheme(type = SchemeType.TOP_BACKOFF)), barbell)
         shoot("top_bench")

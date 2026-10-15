@@ -32,4 +32,13 @@ class NextRirRangeTest {
     fun aChipInsideTheRangeMakesItTheOnlyOne() {
         assertEquals(2..2, nextRirRange(0..4, 2))
     }
+
+    @Test
+    fun theDropsHeaderSaysWhereTheDropsFall() {
+        assertEquals("1 drop after the last set", dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 1, dropCount = 1)))
+        assertEquals(
+            "2 drops after each of the last 3 sets",
+            dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 3, dropCount = 2)),
+        )
+    }
 }
