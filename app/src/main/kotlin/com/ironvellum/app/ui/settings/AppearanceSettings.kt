@@ -182,7 +182,7 @@ private fun AccentRow(label: String, subline: String, colour: Int, onClick: () -
 private fun AccentPreview(palette: AccentPalette) {
     Row(
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(Modifier.weight(1f)) {

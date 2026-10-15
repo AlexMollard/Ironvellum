@@ -1068,6 +1068,17 @@ fun SessionScreen(
                 onLock = { locked = true },
                 onAbandon = { confirmAbandon = true },
             )
+            // Pinned under the header, not in the scrolling list: it is always there while blocked, so it must never
+            // slide away under the header with the first exercise.
+            Box(Modifier.padding(horizontal = 16.dp)) {
+                NotificationBlockedNotice(
+                    channelId = Notifications.restChannel(trialPrefs.restAlert),
+                    access = restAccess,
+                    blockedText = "Notifications are off, so the rest timer will not alert you when a rest ends.",
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    compact = true,
+                )
+            }
             Column(
                 Modifier
                     .weight(1f)
@@ -1075,15 +1086,6 @@ fun SessionScreen(
                     .verticalScroll(scroll)
                     .padding(horizontal = 16.dp),
             ) {
-                // Always there while blocked, never only during a rest: a line that came and went with every rest
-                // moved the whole screen and sat under the XP toast. The countdown still runs; only its alert cannot arrive.
-                NotificationBlockedNotice(
-                    channelId = Notifications.restChannel(trialPrefs.restAlert),
-                    access = restAccess,
-                    blockedText = "Notifications are off, so the rest timer will not alert you when a rest ends.",
-                    modifier = Modifier.padding(top = 8.dp),
-                    compact = true,
-                )
                 // Before the first set is logged; a logged set takes it away for good.
                 val warmupItems by viewModel.warmupItems.collectAsStateWithLifecycle()
                 val warmupTicked by viewModel.warmupTicked.collectAsStateWithLifecycle()
