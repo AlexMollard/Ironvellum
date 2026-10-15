@@ -276,6 +276,8 @@ object ExerciseArtIndex {
         "handstand-to-bridge" to ref("own_handstand-to-bridge", 1),
         "hanging knee raise" to ref("own_hanging-knee-raise", 1),
         "hanging leg raise" to ref("own_hanging-leg-raise", 1),
+        "hanging oblique knee raise" to ref("own_hanging-oblique-knee-raises", 1),
+        "hanging oblique knee raises" to ref("own_hanging-oblique-knee-raises", 1),
         "head-supported rear delt raise" to ref("own_head-supported-rear-delt-raise", 1),
         "heavy bench press" to ref("own_bench-press", 1),
         "heavy deadlift" to ref("own_deadlift", 1),

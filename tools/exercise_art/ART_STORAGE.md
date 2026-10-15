@@ -1,6 +1,6 @@
 # Exercise art storage
 
-All 561 exercise illustrations live in a separate public repository,
+All 562 exercise illustrations live in a separate public repository,
 [Open-Exercise-Art](https://github.com/AlexMollard/Open-Exercise-Art) (artwork CC BY-SA 4.0,
 code GPL-3.0). It is the single source of truth for the images. Monarch pins it as the
 git submodule `art/`; there are no copies of the PNGs here.

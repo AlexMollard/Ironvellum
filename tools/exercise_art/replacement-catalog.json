@@ -8603,6 +8603,20 @@
       "hanging": false,
       "note": "Original new artwork approved by the owner and published in Open Exercise Art (png/deficit-advanced-shrimp-squat.png); skill-tree step.",
       "technique": true
+    },
+    {
+      "name": "Hanging Oblique Knee Raise",
+      "slug": "hanging-oblique-knee-raises",
+      "kind": "movement",
+      "frameCount": 1,
+      "poses": [
+        "Hang from a pull-up bar with straight arms; raise both bent knees together diagonally to one side with a controlled pelvic rotation."
+      ],
+      "aliases": [
+        "Hanging Oblique Knee Raises"
+      ],
+      "hanging": true,
+      "note": "Original artwork approved by the owner and published in Open Exercise Art on 2026-10-15."
     }
   ]
 }
