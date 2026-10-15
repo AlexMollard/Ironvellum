@@ -49,6 +49,7 @@ fun SettingsScreen(
     val appearance by viewModel.appearance.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
+    val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(context).collectAsStateWithLifecycle()
     val renameError by viewModel.renameError.collectAsStateWithLifecycle()
     val heightStatus by viewModel.heightStatus.collectAsStateWithLifecycle()
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
@@ -85,7 +86,7 @@ fun SettingsScreen(
                 } else if (heightStatus.error != null) {
                     "Height not saved"
                 } else {
-                    SettingsSummaries.profile(profile?.name, bodyProfile.first, bodyProfile.second)
+                    SettingsSummaries.profile(profile?.name, bodyProfile.first, bodyProfile.second.takeUnless { sexUnset })
                 },
             ) { onOpenSection(SettingsSection.PROFILE) }
             SettingsValueRow("Account", if (signedIn) "Signed in" else "Not signed in") {

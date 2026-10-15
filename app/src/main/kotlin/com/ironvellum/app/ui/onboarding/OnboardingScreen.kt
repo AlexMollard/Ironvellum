@@ -289,6 +289,7 @@ class OnboardingViewModel(
                 runCatching {
                     if (name.trim().isNotEmpty()) repo.rename(name)
                     repo.setSex(sex)
+                    FirstRunPrefs.setSexUnset(appContext, false)
                     repo.setHeight(heightCm)
                     repo.logTodaysWeight(weightKg)
                 }.fold(
@@ -458,6 +459,8 @@ class OnboardingViewModel(
     }
 
     fun skip() {
+        // Skipped before the sex question was answered: the stored default is not a choice (Profile shows none).
+        if (!_profileSaved.value) FirstRunPrefs.setSexUnset(appContext, true)
         _dismissed.value = true
         prefs.edit { putBoolean(KEY_DISMISSED, true) }
     }

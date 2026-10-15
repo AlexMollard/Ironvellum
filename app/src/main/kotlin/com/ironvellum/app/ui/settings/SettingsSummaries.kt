@@ -31,10 +31,10 @@ object SettingsSummaries {
     fun trial(restOff: Boolean, alert: RestAlert): String = if (restOff) "Rest off" else "Rest · ${alert.label.lowercase()}"
 
     /** "Sam · 180 cm · Male"; a missing height says so, since Today asks for it. */
-    fun profile(name: String?, heightCm: Double?, sex: Sex): String = listOfNotNull(
+    fun profile(name: String?, heightCm: Double?, sex: Sex?): String = listOfNotNull(
         name?.trim()?.takeIf { it.isNotEmpty() }?.let(Words::displayName),
         heightCm?.let { "${formatHeightCm(it)} cm" } ?: "height not set",
-        sex.name.lowercase().replaceFirstChar { it.uppercase() },
+        sex?.name?.lowercase()?.replaceFirstChar { it.uppercase() },
     ).joinToString(" · ")
 
     /** Whether Health Connect is linked, and how many days it has filled. */

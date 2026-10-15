@@ -683,8 +683,10 @@ fun ProgramBuilderScreen(
     // The goal question defaults from the profile's own training mode - the
     // setting she already made - until she picks otherwise. The touch guard
     // stops a late Room emission overwriting a pick she already made.
-    LaunchedEffect(profileMode) {
+    LaunchedEffect(profileMode, hasHistory) {
         if (viewModel.focusTouched()) return@LaunchedEffect
+        // The stored mode is a default until the lifter has trained: a first plan opens on Mixed, like setup does.
+        if (!hasHistory) return@LaunchedEffect
         when (profileMode) {
             TrainingMode.STRENGTH -> viewModel.focus.value = TrainingFocus.STRENGTH
             TrainingMode.HYPERTROPHY -> viewModel.focus.value = TrainingFocus.MUSCLE

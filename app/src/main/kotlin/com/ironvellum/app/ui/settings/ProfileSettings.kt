@@ -18,10 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Sex
@@ -48,6 +50,8 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val heightStatus by viewModel.heightStatus.collectAsStateWithLifecycle()
     val latestWeightKg by viewModel.latestWeightKg.collectAsStateWithLifecycle()
     val focus = LocalFocusManager.current
+    val context = LocalContext.current
+    val sexUnset by FirstRunPrefs.sexUnsetFlow(context).collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.clearSavedTicks() }
 
     // Saveable with the stored value as the initial value only: on restore the
@@ -133,10 +137,14 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             )
             SettingsCaption("Your latest weigh-in. Log a new one on the ${Words.ledger.c} tab.")
             Spacer(Modifier.height(14.dp))
-            InkSegmented(
+            InkSegmented<Sex?>(
                 options = Sex.entries.map { it to sexLabel(it) },
-                selected = bodyProfile.second,
-                onPick = { viewModel.setSex(it) },
+                selected = if (sexUnset) null else bodyProfile.second,
+                onPick = {
+                    if (it == null) return@InkSegmented
+                    FirstRunPrefs.setSexUnset(context, false)
+                    viewModel.setSex(it)
+                },
             )
             Spacer(Modifier.height(8.dp))
             SettingsCaption("Sets the body-fat formula and strength scaling.")

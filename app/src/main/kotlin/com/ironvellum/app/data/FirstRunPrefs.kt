@@ -2,6 +2,8 @@ package com.ironvellum.app.data
 
 import android.content.Context
 import androidx.core.content.edit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The first-run flags that live in SharedPreferences: the Welcome screen, the Veil's introduction and
@@ -57,6 +59,24 @@ object FirstRunPrefs {
 
     fun setTermSeen(context: Context, key: String, seen: Boolean = true) =
         onboarding(context).edit { putBoolean("term_seen_$key", seen) }
+
+    private const val KEY_SEX_UNSET = "sex_unset"
+    private val sexUnset = MutableStateFlow<Boolean?>(null)
+
+    /**
+     * True after a Skip that never asked for a sex: the profile row holds the MALE default, but the lifter has not
+     * chosen it, so Profile shows no selection until they do. Existing installs never set it.
+     */
+    fun sexUnsetFlow(context: Context): StateFlow<Boolean> {
+        if (sexUnset.value == null) sexUnset.value = onboarding(context).getBoolean(KEY_SEX_UNSET, false)
+        @Suppress("UNCHECKED_CAST")
+        return sexUnset as StateFlow<Boolean>
+    }
+
+    fun setSexUnset(context: Context, unset: Boolean) {
+        onboarding(context).edit { putBoolean(KEY_SEX_UNSET, unset) }
+        sexUnset.value = unset
+    }
 
     fun notificationsAsked(context: Context): Boolean = trial(context).getBoolean(KEY_ASKED_NOTIFICATIONS, false)
 

@@ -11,6 +11,7 @@ import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TabTitle
 import androidx.compose.foundation.clickable
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
@@ -502,6 +503,9 @@ fun AccountScreen(
         return
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    // The panels sit in the middle of what the title leaves, so a short sign-in form does not hang off the top of an empty page.
+    val panelsMin = maxHeight - 100.dp
     Column(
         Modifier
             .fillMaxSize()
@@ -512,6 +516,7 @@ fun AccountScreen(
         Spacer(Modifier.height(if (pushed) 8.dp else 12.dp))
         AccountTitle(pushed, onBack)
 
+        Column(Modifier.fillMaxWidth().heightIn(min = panelsMin), verticalArrangement = Arrangement.Center) {
         when {
             !cloudConfigured -> NotConfiguredPanel()
             ui.busy && ui.account == null -> BusyPanel(Lines.linking)
@@ -531,8 +536,10 @@ fun AccountScreen(
                 onResetPassword = viewModel::resetPassword,
             )
         }
+        }
 
         Spacer(Modifier.height(28.dp))
+    }
     }
 }
 

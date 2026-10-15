@@ -188,7 +188,8 @@ internal fun <T> ForgeRadioRow(
             val on = value == selected
             Box(
                 Modifier
-                    .weight(1f)
+                    // A four-way row gives a longer label more of the width, so "Upper / lower" stays on one line.
+                    .weight(if (options.size > 3) text.length + 4f else 1f)
                     .heightIn(min = 48.dp)
                     .fillMaxHeight()
                     .background(if (on) IronvellumColors.Ink.copy(alpha = 0.05f) else androidx.compose.ui.graphics.Color.Transparent)

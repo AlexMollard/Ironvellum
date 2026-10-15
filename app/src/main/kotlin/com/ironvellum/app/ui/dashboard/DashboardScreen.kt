@@ -933,7 +933,7 @@ private fun TodayDayBody(
         veil = { full, grow ->
             val form = when {
                 !full -> VeilForm.COMPACT
-                kind == DayKind.RESPITE -> VeilForm.HERO
+                kind == DayKind.RESPITE || kind == DayKind.NO_CYCLE -> VeilForm.HERO
                 else -> VeilForm.FULL
             }
             VeilSection(veil, form, nowMs, actions.onOpenGarrison, onOpenCrest = actions.onOpenCrest, firstRun = firstRun, grow = grow)
