@@ -107,9 +107,13 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    Checked on the emulator in begin, live, done and rest-day states at 2x1 and 4x2
    (`.tmp/widget-shots/`). Live elapsed minutes only move when something is written, so
    they can lag a minute or more between sets.
-6. **Honour the system font scale.** Drop `FIXED_FONT_SCALE`, fix every screen
-   at large text, and add an instrumented font-scale sweep (closes the
-   text-scale verification gap below).
+6. **Honour the system font scale.** Done 2026-10-16 (131a1e53, e57b90b5, a7e09c50).
+   `FIXED_FONT_SCALE` is gone, so Compose follows the system scale. Every screen and
+   sheet was audited at 1.0, 1.3 and 2.0 on the emulator with seeded data and fixed to
+   wrap, grow, stack or scroll. Scale is capped only where an element cannot grow, via
+   `CappedFontScale`, each with a comment: bottom-bar labels, the week rail, the
+   body-map FRONT/BACK labels and the sealed-day stamp. `FontScaleSweepTest` sets the
+   real system scale to 2.0 and asserts that key controls are shown and not clipped.
 7. **Health Connect write-back.** A finished workout is written as an exercise
    session. Needs a write permission, so the Play health-data form changes.
 8. **String extraction.** Move UI text into string resources, plain and themed
@@ -180,8 +184,8 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
 - Emulator screenshots are not pixel-comparable with the phone (software
   rasterizer, anti-aliasing differs). Diff within one target, never
   across.
-- Text-scale regressions have no automated guard: the scale is pinned
-  (`FIXED_FONT_SCALE`), and the instrumented suite does not sweep display size.
+- The font-scale sweep covers the main screens and sheets at 2.0 only; 1.3 and the
+  later onboarding steps are checked by hand, not by the suite.
 
 ## Not planned
 
