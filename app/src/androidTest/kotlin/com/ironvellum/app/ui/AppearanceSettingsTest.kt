@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui
 
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -50,16 +51,16 @@ class AppearanceSettingsTest {
         compose.onNodeWithText("Sapphire & Amber").assertIsDisplayed()
         compose.onNode(hasText("Appearance") and hasClickAction()).performClick()
         advance()
-        compose.onNodeWithText("Reset to emerald & gold").performScrollTo().performClick()
+        compose.onNodeWithText("Reset to emerald & gold").scrolled().performClick()
         advance()
     }
 
     @Test fun invalidCustomHexCannotReplaceSavedPalette() {
         compose.onNode(hasText("Appearance") and hasClickAction()).performClick()
         advance()
-        compose.onNodeWithText("Reset to emerald & gold").performScrollTo().performClick()
+        compose.onNodeWithText("Reset to emerald & gold").scrolled().performClick()
         advance()
-        compose.onNodeWithText("Primary accent").performScrollTo().performClick()
+        compose.onNodeWithText("Primary accent").scrolled().performClick()
         advance()
         compose.onNodeWithTag("accent-hex").performTextReplacement("#ZZZZZZ")
         advance()
@@ -75,7 +76,7 @@ class AppearanceSettingsTest {
     @Test fun hueChoiceSurvivesZeroBrightnessAndSaturation() {
         compose.onNode(hasText("Appearance") and hasClickAction()).performClick()
         advance()
-        compose.onNodeWithText("Primary accent").performScrollTo().performClick()
+        compose.onNodeWithText("Primary accent").scrolled().performClick()
         advance()
         compose.onNodeWithTag("accent-hex").performTextReplacement("#000000")
         advance()
@@ -95,13 +96,13 @@ class AppearanceSettingsTest {
         compose.onNodeWithText("Apply").performClick()
         advance()
         compose.onNodeWithText("#00FF00").assertIsDisplayed()
-        compose.onNodeWithText("Reset to emerald & gold").performScrollTo().performClick()
+        compose.onNodeWithText("Reset to emerald & gold").scrolled().performClick()
         advance()
     }
     @Test fun padTapAndDragChoosesSaturationAndBrightnessTogether() {
         compose.onNode(hasText("Appearance") and hasClickAction()).performClick()
         advance()
-        compose.onNodeWithText("Primary accent").performScrollTo().performClick()
+        compose.onNodeWithText("Primary accent").scrolled().performClick()
         advance()
         compose.onNodeWithTag("accent-hex").performTextReplacement("#000000")
         advance()
@@ -118,8 +119,16 @@ class AppearanceSettingsTest {
         compose.onNodeWithText("Apply").performClick()
         advance()
         compose.onNodeWithText("#008000").assertIsDisplayed()
-        compose.onNodeWithText("Reset to emerald & gold").performScrollTo().performClick()
+        compose.onNodeWithText("Reset to emerald & gold").scrolled().performClick()
         advance()
     }
     private fun advance() = compose.mainClock.advanceTimeBy(1_200L)
+
+    /** The Theme rows made the page taller than the screen: a scroll needs the clock running, or it never settles. */
+    private fun SemanticsNodeInteraction.scrolled(): SemanticsNodeInteraction {
+        compose.mainClock.autoAdvance = true
+        performScrollTo()
+        compose.mainClock.autoAdvance = false
+        return this
+    }
 }

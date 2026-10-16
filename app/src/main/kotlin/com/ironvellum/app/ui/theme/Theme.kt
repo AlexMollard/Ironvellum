@@ -12,7 +12,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalDensity
@@ -351,9 +351,10 @@ fun ironvellumFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
  */
 @Composable
 fun IronvellumTheme(light: Boolean = false, content: @Composable () -> Unit) {
-    // Written before any child reads a token. Every token is a getter over this snapshot state, so a flip
-    // re-draws the whole tree, including dialogs and sheets, which compose in windows of their own.
-    remember(light) { IronvellumColors.light = light; light }
+    // Every token is a getter over this snapshot state, so a flip re-draws the whole tree, including dialogs and
+    // sheets, which compose in windows of their own. The store and MainActivity.onCreate set it before the first
+    // frame; this follows a later change (the phone's dark mode flipping under System).
+    SideEffect { if (IronvellumColors.light != light) IronvellumColors.light = light }
     // The text scale is pinned in MainActivity.attachBaseContext, which every
     // window of the app inherits — including dialogs, which compose in their
     // own window and so ignored a CompositionLocal installed here.

@@ -34,7 +34,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.isSystemDark
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
 
@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         // The theme resolved before the first frame, so the window background and the bars wear it from the start.
         val app = application as IronvellumApp
         val lightNow = app.appearanceStore.mode.value.isLight(isSystemDark(this))
+        IronvellumColors.light = lightNow
         setTheme(if (lightNow) R.style.Theme_Ironvellum_Light else R.style.Theme_Ironvellum_Dark)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = barStyle(lightNow), navigationBarStyle = barStyle(lightNow))
@@ -67,7 +68,8 @@ class MainActivity : ComponentActivity() {
             val mode by app.appearanceStore.mode.collectAsState()
             val light = mode.isLight(isSystemInDarkTheme())
             // The bars follow the theme in force: dark icons on parchment, light icons on charcoal.
-            SideEffect {
+            // Only when the resolved theme changes: not on every recomposition (an accent change recomposes this scope).
+            LaunchedEffect(light) {
                 enableEdgeToEdge(statusBarStyle = barStyle(light), navigationBarStyle = barStyle(light))
                 window.decorView.setBackgroundColor(IronvellumColors.Vault.toArgb())
             }
