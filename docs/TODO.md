@@ -176,8 +176,20 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    earlier entries in Health Connect.
 8. **String extraction.** Move UI text into string resources, plain and themed
    names included, with a lint guard against new literals. No translations yet;
-   inviting translators is 1.9.
+   inviting translators is 1.9. Owner decisions 2026-10-16: built AFTER item 9;
+   scope is screen text only (every screen, dialog, notification, widget, setting,
+   error and generated hint, about 3,300 literals); exercise names, the exercise
+   guides and title/skill names stay English data for a later step. Plain and
+   themed become two whole sentences per key (`key` and `key__t`), no concept
+   interpolation, `<plurals>` and positional args; `Words` resolves the pair at
+   runtime. A language ships on its plain strings; the Themed names switch only
+   shows for languages whose themed strings are complete. Phases, each behind the
+   gate: foundation (`UiText`, a disk-backed test resolver, a ratcheting guard
+   test, GlossaryTest reading strings.xml), Words and WordLines, notifications and
+   widgets, small screens, train and program screens, domain-generated copy, then
+   Weblate prep with an en-XA pseudolocale sweep.
 9. **Light theme.** Appearance: System, Dark, Light. Check the art on light.
+   Built before item 8 (owner, 2026-10-16); palette mocked up and approved first.
 
 Skipped deliberately: Wear OS.
 
