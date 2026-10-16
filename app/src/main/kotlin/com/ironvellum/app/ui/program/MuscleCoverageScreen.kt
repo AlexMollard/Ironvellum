@@ -32,8 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -58,6 +58,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.DismissedHeavyStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
@@ -128,18 +129,25 @@ internal fun previewCoverage(presets: List<PlannedPreset>): CoverageUi = Coverag
 )
 
 /**
- * Heavy flags the lifter has dismissed on this page, kept through rotation. A dismissed muscle reads as plain
- * covered, which it still is.
- * shortcut: lives with the screen, so a dismissal lasts the visit; persist per muscle if it should outlive it.
+ * Heavy flags the lifter has dismissed, kept per muscle on the device ([DismissedHeavyStore]). A dismissed muscle
+ * reads as plain covered, which it still is.
  */
 @Composable
-internal fun rememberDismissedHeavy(): MutableState<Set<Muscle>> =
-    rememberSaveable(
-        stateSaver = listSaver<Set<Muscle>, String>(
-            save = { set -> set.map { it.name } },
-            restore = { names -> names.map(Muscle::valueOf).toSet() },
-        ),
-    ) { mutableStateOf(emptySet()) }
+internal fun rememberDismissedHeavy(): MutableState<Set<Muscle>> {
+    val context = LocalContext.current
+    val store = remember { DismissedHeavyStore(context.applicationContext) }
+    val state = remember { mutableStateOf(store.muscles) }
+    return remember {
+        object : MutableState<Set<Muscle>> by state {
+            override var value: Set<Muscle>
+                get() = state.value
+                set(next) {
+                    state.value = next
+                    store.muscles = next
+                }
+        }
+    }
+}
 
 class MuscleCoverageViewModel(
     private val repo: Repository,

@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.SharedPreferences
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.SetClock
 import org.junit.Assert.assertEquals
@@ -71,6 +72,25 @@ class TrialPrefsTest {
         assertTrue(RestAlert.VIBRATE.vibrates && !RestAlert.VIBRATE.sounds)
         assertTrue(RestAlert.SOUND_VIBRATE.vibrates && RestAlert.SOUND_VIBRATE.sounds)
         assertTrue(!RestAlert.SILENT.vibrates && !RestAlert.SILENT.sounds)
+    }
+}
+
+/** Muscle Coverage's dismissed Heavy flags outlive the screen: they are stored per muscle on the device. */
+class DismissedHeavyStoreTest {
+
+    @Test
+    fun `a dismissal is kept per muscle and read back by a fresh store`() {
+        val prefs = FakePrefs()
+        assertEquals(emptySet<Muscle>(), DismissedHeavyStore(prefs).muscles)
+        DismissedHeavyStore(prefs).muscles = setOf(Muscle.QUADS, Muscle.CALVES)
+        assertEquals(setOf(Muscle.QUADS, Muscle.CALVES), DismissedHeavyStore(prefs).muscles)
+    }
+
+    @Test
+    fun `a muscle name that no longer exists is skipped, not fatal`() {
+        val prefs = FakePrefs()
+        prefs.edit().putStringSet("coverage_heavy_dismissed", mutableSetOf("QUADS", "GONE")).apply()
+        assertEquals(setOf(Muscle.QUADS), DismissedHeavyStore(prefs).muscles)
     }
 }
 
