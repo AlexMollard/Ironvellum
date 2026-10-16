@@ -144,6 +144,42 @@ class GlossaryTest {
         )
     }
 
+    /** strings.xml keys that may keep a word of the other vocabulary, with the reason. */
+    private val allowedResources: Map<String, String> = emptyMap()
+
+    /**
+     * The string resources are copy too: with plain and themed written as two whole sentences (`key` and `key__t`,
+     * docs/STRINGS.md), a plain value must hold no themed vocabulary and a themed value no retired word. A plain key
+     * with no `__t` twin is shown in both modes, so a themed word in it is the same bug the Kotlin scan finds.
+     */
+    @Test
+    fun `plain strings hold no themed words and themed strings no retired ones`() {
+        val hits = mutableListOf<String>()
+        var scanned = 0
+        for (dir in File("src/main/res").listFiles { f -> f.name == "values" || f.name.startsWith("values-") }.orEmpty()) {
+            val file = File(dir, "strings.xml").takeIf { it.isFile } ?: continue
+            for (entry in StringsXml.read(file)) {
+                if (entry.name in allowedResources || !entry.translatable) continue
+                val themedKey = entry.name.endsWith("__t")
+                val vocabulary = if (themedKey) RETIRED_WORDS else THEMED_WORDS
+                for (text in entry.text?.let { listOf(it) } ?: entry.items!!.values) {
+                    scanned++
+                    vocabulary.firstOrNull { it.containsMatchIn(text) }?.let {
+                        val kind = if (themedKey) "themed value holds a retired word" else "plain value holds a themed word"
+                        hits += "${dir.name}/${entry.name}  \"${text.take(90)}\"  ($kind: ${it.find(text)!!.value})"
+                    }
+                }
+            }
+        }
+        assertTrue("no string resources scanned; the scan below would pass vacuously", scanned > 0)
+        assertEquals(
+            "strings.xml holds the wrong vocabulary (plain values: plain words only; key__t values: themed names, " +
+                "no retired words), or add an allowedResources entry with a reason:\n" + hits.joinToString("\n"),
+            0,
+            hits.size,
+        )
+    }
+
     /**
      * The baseline's `raise exception` messages are copy too: Cloud.explain
      * passes a P0001 through word for word (a remark rate limit, a blocked ally
@@ -196,72 +232,8 @@ class GlossaryTest {
 
     private companion object {
         val KEY = Regex("""[a-z0-9_./:?&=\-]*(\{[A-Za-z]+\}[a-z0-9_./:?&=\-]*)*""")
-        val TEMPLATE = Regex("""\$\{[^{}]*(\{[^{}]*\}[^{}]*)*\}|\$\w+""")
+        val TEMPLATE = SourceScan.TEMPLATE
 
-        /** Every string literal in [src] with its starting line; comments and char literals skipped. */
-        fun literals(src: String): List<Pair<Int, String>> {
-            val out = mutableListOf<Pair<Int, String>>()
-            var i = 0
-            var line = 1
-            while (i < src.length) {
-                val c = src[i]
-                when {
-                    c == '\n' -> { line++; i++ }
-                    src.startsWith("//", i) -> i = src.indexOf('\n', i).let { if (it < 0) src.length else it }
-                    src.startsWith("/*", i) -> {
-                        val end = src.indexOf("*/", i + 2).let { if (it < 0) src.length else it + 2 }
-                        line += src.substring(i, end).count { it == '\n' }
-                        i = end
-                    }
-                    c == '\'' -> {
-                        val close = if (src.getOrNull(i + 1) == '\\') i + 3 else i + 2
-                        i = if (src.getOrNull(close) == '\'') close + 1 else i + 1
-                    }
-                    c == '"' -> {
-                        val triple = src.startsWith("\"\"\"", i)
-                        val (end, text) = readString(src, i + if (triple) 3 else 1, triple)
-                        out += line to text
-                        line += text.count { it == '\n' }
-                        i = end
-                    }
-                    else -> i++
-                }
-            }
-            return out
-        }
-
-        /** Index after the closing quote, and the raw text with `${…}` kept verbatim. */
-        fun readString(src: String, start: Int, triple: Boolean): Pair<Int, String> {
-            val sb = StringBuilder()
-            var i = start
-            while (i < src.length) {
-                if (triple && src.startsWith("\"\"\"", i)) return i + 3 to sb.toString()
-                val c = src[i]
-                if (!triple && c == '\\') { sb.append(src, i, minOf(i + 2, src.length)); i += 2; continue }
-                if (!triple && c == '"') return i + 1 to sb.toString()
-                if (src.startsWith("\${", i)) {
-                    var depth = 1
-                    var j = i + 2
-                    while (j < src.length && depth > 0) {
-                        when (src[j]) {
-                            '"' -> {
-                                val inner = src.startsWith("\"\"\"", j)
-                                j = readString(src, j + if (inner) 3 else 1, inner).first
-                                continue
-                            }
-                            '{' -> depth++
-                            '}' -> depth--
-                        }
-                        j++
-                    }
-                    sb.append(src, i, j)
-                    i = j
-                    continue
-                }
-                sb.append(c)
-                i++
-            }
-            return i to sb.toString()
-        }
+        fun literals(src: String) = SourceScan.literals(src)
     }
 }

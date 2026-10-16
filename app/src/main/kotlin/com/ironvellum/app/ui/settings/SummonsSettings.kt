@@ -18,11 +18,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.data.Lines
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Reminders
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.rememberNotificationAccess
@@ -56,8 +58,11 @@ internal fun SummonsSettings(onBack: () -> Unit) {
     SettingsPage(SettingsSection.SUMMONS.title, onBack) {
         Spacer(Modifier.height(12.dp))
         SettingsSwitchRow(
-            label = "Evening reminder",
-            caption = "One evening reminder on days your ${Words.cycle.s} holds ${Words.rite.a} you have not begun.",
+            label = stringResource(R.string.settings_summons_evening_label),
+            caption = UiText.themed(
+                R.string.settings_summons_evening_caption,
+                R.string.settings_summons_evening_caption__t,
+            ).asString(),
             checked = remindersOn,
             onCheckedChange = setOn,
         )
@@ -65,7 +70,10 @@ internal fun SummonsSettings(onBack: () -> Unit) {
             NotificationBlockedNotice(
                 channelId = Notifications.CHANNEL_SUMMONS,
                 access = access,
-                blockedText = Lines.summonsBlocked,
+                blockedText = UiText.themed(
+                    R.string.settings_summons_blocked,
+                    R.string.settings_summons_blocked__t,
+                ).asString(),
                 modifier = Modifier.padding(top = 4.dp),
             )
         }

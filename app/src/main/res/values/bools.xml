@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        True when this language writes every key__t the default strings.xml does. A translation that is not
+        finished sets it to false in its own values-xx/bools.xml: the app then shows its plain strings and
+        hides the Themed names switch. StringsXmlTest requires every values-xx with strings to declare it.
+    -->
+    <bool name="themed_strings_complete">true</bool>
+</resources>

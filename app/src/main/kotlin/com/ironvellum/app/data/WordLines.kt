@@ -81,12 +81,6 @@ object Lines {
             "The plan builder fits each routine inside this time, warm-up left out.",
         )
 
-    val summonsBlocked: String
-        get() = Words.pick(
-            "The Summons won't arrive until you allow notifications.",
-            "The reminder won't arrive until you allow notifications.",
-        )
-
     val claimStandard: String
         get() = Words.pick("CLAIM STANDARD", "MASTERY STANDARD")
 

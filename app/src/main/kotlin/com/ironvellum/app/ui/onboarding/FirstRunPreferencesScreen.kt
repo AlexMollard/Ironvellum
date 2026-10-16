@@ -44,6 +44,7 @@ import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.rememberThemedStringsComplete
 import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
@@ -99,26 +100,29 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
                 color = IronvellumColors.InkMuted,
             )
 
-            SectionHeader("Names", topPadding = 24.dp)
-            InkSegmented(
-                options = listOf(false to "Plain", true to "Themed"),
-                selected = Words.themed,
-                onPick = { Words.setThemed(context, it) },
-            )
-            Spacer(Modifier.height(10.dp))
-            InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
+            // A language without its themed strings has only the plain words to show, so there is nothing to choose.
+            if (rememberThemedStringsComplete()) {
+                SectionHeader("Names", topPadding = 24.dp)
+                InkSegmented(
+                    options = listOf(false to "Plain", true to "Themed"),
+                    selected = Words.themed,
+                    onPick = { Words.setThemed(context, it) },
+                )
+                Spacer(Modifier.height(10.dp))
+                InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
+                    Text(
+                        "Begin ${Words.trial.s}  ·  Your ${Words.rite.pl}  ·  ${Words.peak.cpl}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    "Begin ${Words.trial.s}  ·  Your ${Words.rite.pl}  ·  ${Words.peak.cpl}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.Ink,
+                    if (Words.themed) "The app's own fantasy names." else "Everyday gym words.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (Words.themed) "The app's own fantasy names." else "Everyday gym words.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
 
             SectionHeader("Weight unit", topPadding = 24.dp)
             InkSegmented(

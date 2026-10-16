@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Ironvellum</string>
+    <string name="app_name" translatable="false">Ironvellum</string>
     <string name="widget_today_label">Today</string>
     <string name="widget_today_description">Today\'s routine and a button to start it.</string>
     <string name="widget_week_label">Streak &amp; week</string>
     <string name="widget_week_description">Your streak and this week at a glance, with a button to start today\'s workout.</string>
+
+    <!-- Settings > Summons: the one evening reminder. -->
+    <string name="settings_summons_evening_label">Evening reminder</string>
+    <string name="settings_summons_evening_caption">One evening reminder on days your weekly plan holds a routine you have not begun.</string>
+    <string name="settings_summons_evening_caption__t">One evening reminder on days your cycle holds a rite you have not begun.</string>
+    <string name="settings_summons_blocked">The reminder won\'t arrive until you allow notifications.</string>
+    <string name="settings_summons_blocked__t">The Summons won\'t arrive until you allow notifications.</string>
 </resources>

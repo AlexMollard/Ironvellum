@@ -77,6 +77,7 @@ import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsSwitchRow
+import com.ironvellum.app.ui.rememberThemedStringsComplete
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkBorder
@@ -129,12 +130,15 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
             }
         }
         Spacer(Modifier.height(12.dp))
-        SettingsSwitchRow(
-            label = "Themed names",
-            caption = Lines.themedNamesCaption,
-            checked = Words.themed,
-            onCheckedChange = { Words.setThemed(context.applicationContext, it) },
-        )
+        // A language without its themed strings has only the plain words to show, so there is nothing to switch.
+        if (rememberThemedStringsComplete()) {
+            SettingsSwitchRow(
+                label = "Themed names",
+                caption = Lines.themedNamesCaption,
+                checked = Words.themed,
+                onCheckedChange = { Words.setThemed(context.applicationContext, it) },
+            )
+        }
         SectionHeader("COLOUR PAIRS", topPadding = 16.dp)
         // With the pairs it describes, not under the Themed names row above.
         SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")

@@ -79,6 +79,12 @@ to look at, about 40s of the suite). The captures are now opt-in and the gate sk
 `adb pull /data/local/tmp/optimise-shots`. Measured in one worktree: the gate took 4m38s with captures
 (verify 274s) and 4m19s / 4m25s without (verify 231s / 230s).
 
+## Screen text goes in string resources
+
+New screen text is a resource in `res/values/strings.xml` (plain `key`, themed `key__t`), never a literal in Kotlin.
+`HardcodedUiLiteralTest` fails when a file has more literals than its checked-in baseline, and also when it has fewer
+(lower the baseline). The guide, naming, plurals and the ratchet are in `docs/STRINGS.md`.
+
 ## One emulator, shared between sessions
 
 Parallel sessions all use `emulator-5554`, and an install, `pm clear` or
