@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ironvellum</string>
+    <string name="widget_today_label">Today</string>
+    <string name="widget_today_description">Today\'s routine and a button to start it.</string>
+    <string name="widget_week_label">Streak &amp; week</string>
+    <string name="widget_week_description">Your streak and this week at a glance, with a button to start today\'s workout.</string>
 </resources>

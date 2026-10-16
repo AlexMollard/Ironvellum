@@ -64,6 +64,16 @@ object Notifications {
     const val TAB_TODAY = "today"
     const val TAB_TRIAL = "trial"
 
+    /** The home-screen widgets' button: continue the live trial, or begin today's rite, as Today does. */
+    const val TAB_BEGIN = "begin"
+
+    /** With [TAB_BEGIN]: no rite to begin, so begin an empty workout (Today's own link). */
+    const val EXTRA_EMPTY = "empty"
+
+    /** The widgets' own tap: the app on Today, and the plan builder for a lifter with no plan. */
+    const val TAB_HOME = "home"
+    const val TAB_FORGE = "forge"
+
     /** The channel a rest's end is announced on under [alert]. */
     fun restChannel(alert: RestAlert): String = when (alert) {
         RestAlert.VIBRATE -> CHANNEL_REST

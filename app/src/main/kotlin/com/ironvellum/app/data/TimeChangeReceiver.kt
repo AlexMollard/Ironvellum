@@ -3,6 +3,7 @@ package com.ironvellum.app.data
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.ironvellum.app.widget.TodayWidget
 
 /**
  * Re-books the Summons when the wall clock moves under it. WorkManager keeps
@@ -14,7 +15,10 @@ import android.content.Intent
 class TimeChangeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED -> Reminders.reschedule(context)
+            Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED -> {
+                Reminders.reschedule(context)
+                TodayWidget.onClockChanged(context)
+            }
         }
     }
 }

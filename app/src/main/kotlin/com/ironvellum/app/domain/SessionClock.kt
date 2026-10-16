@@ -133,6 +133,23 @@ object SessionClock {
         if (remainingSeconds <= 0) "EST ${minutes(totalSeconds)} MIN"
         else "EST ${minutes(totalSeconds)} MIN · ~${minutes(remainingSeconds)} LEFT"
 
+    /** Estimated clock seconds of a preset's entries before it starts; [planLine] and the home-screen widget read it. */
+    fun planSeconds(
+        entries: List<PlannedEntry>,
+        focus: TrainingFocus,
+        paceSeconds: Int? = null,
+        metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
+    ): Int = entries.sumOf { entry ->
+        val set = SessionSet(
+            exerciseId = 0,
+            exerciseName = entry.exerciseName,
+            setIndex = 0,
+            reps = entry.reps,
+            modifiers = entry.modifiers,
+        )
+        entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds)
+    }
+
     /**
      * "5 EXERCISES · 20 SETS · ~55 MIN" for a preset before it starts; [paceSeconds] as in [setSeconds].
      * Each entry is priced by [setSeconds], so a hold entry (its seconds kept in
@@ -146,16 +163,7 @@ object SessionClock {
         metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
     ): String {
         val sets = entries.sumOf { it.sets }
-        val seconds = entries.sumOf { entry ->
-            val set = SessionSet(
-                exerciseId = 0,
-                exerciseName = entry.exerciseName,
-                setIndex = 0,
-                reps = entry.reps,
-                modifiers = entry.modifiers,
-            )
-            entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds)
-        }
+        val seconds = planSeconds(entries, focus, paceSeconds, metricOf)
         val exercises = if (entries.size == 1) "EXERCISE" else "EXERCISES"
         val setWord = if (sets == 1) "SET" else "SETS"
         return "${entries.size} $exercises · $sets $setWord · ~${minutes(seconds)} MIN"

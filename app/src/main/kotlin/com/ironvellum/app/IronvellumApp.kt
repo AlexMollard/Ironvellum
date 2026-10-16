@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import com.ironvellum.app.data.CrashJournal
+import androidx.room.InvalidationTracker
+import com.ironvellum.app.widget.TodayWidget
 import com.ironvellum.app.data.PrefsHighestBandStore
 
 
@@ -108,6 +110,10 @@ class IronvellumApp : Application() {
         appScope.launch { runCatching { com.ironvellum.app.data.ProgramAnswersStore.get(this@IronvellumApp) } }
         appScope.launch {
             repository.ensureSeeded()
+            // The home-screen widgets show the plan, the live trial (its sets ticked) and the finished ones: any write to them redraws.
+            database.invalidationTracker.addObserver(object : InvalidationTracker.Observer("sessions", "set_logs", "presets", "preset_entries") {
+                override fun onInvalidated(tables: Set<String>) = TodayWidget.refresh(this@IronvellumApp)
+            })
             // Signed in, the cloud name is the profile name. Started once the
             // profile row exists, so the first account load cannot be dropped.
             appScope.launch {
@@ -146,6 +152,7 @@ class IronvellumApp : Application() {
         // Moves an upgraded install off the old periodic job, and books a run
         // for one whose queue was lost; a queued run is kept as it is.
         Reminders.ensureScheduled(this)
+        TodayWidget.ensureScheduled(this)
         CloudSyncWorker.schedule(this)
         AutoBackup.ensureScheduled(this)
         // No backend at all is known now, without waiting for any restore.

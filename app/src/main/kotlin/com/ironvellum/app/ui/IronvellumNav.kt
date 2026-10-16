@@ -177,6 +177,9 @@ object Routes {
  */
 data class TrialRequest(val serial: Int, val sessionId: Long, val seal: Boolean)
 
+/** A home-screen widget's tap that lands on [route]: Today, or the plan builder. [serial] as in [TrialRequest]. */
+data class RouteRequest(val serial: Int, val route: String)
+
 private data class BottomDestination(
     val route: String,
     val label: String,
@@ -185,7 +188,7 @@ private data class BottomDestination(
 )
 
 @Composable
-fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: TrialRequest? = null) {
+fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: TrialRequest? = null, routeRequest: RouteRequest? = null) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -277,6 +280,19 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     popUpTo(Routes.DASHBOARD) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
+                }
+            }
+        }
+        // A widget tap that opens a screen: the same options as tapping the tab, so Back returns to Today.
+        var servedRouteRequest by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(routeRequest?.serial) {
+            val request = routeRequest ?: return@LaunchedEffect
+            if (request.serial <= servedRouteRequest) return@LaunchedEffect
+            servedRouteRequest = request.serial
+            lifecycle.withStarted {
+                navController.navigate(request.route) {
+                    popUpTo(Routes.DASHBOARD) { saveState = false }
+                    launchSingleTop = true
                 }
             }
         }

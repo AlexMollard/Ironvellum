@@ -25,7 +25,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import android.graphics.Color
 import com.ironvellum.app.ui.IronvellumRoot
+import com.ironvellum.app.ui.RouteRequest
+import com.ironvellum.app.ui.Routes
 import com.ironvellum.app.ui.TrialRequest
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.widget.loadWidgetState
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.ironvellum.app.ui.theme.IronvellumTheme
 
 class MainActivity : ComponentActivity() {
@@ -84,7 +90,7 @@ class MainActivity : ComponentActivity() {
             val palette by app.appearanceStore.palette.collectAsState()
             IronvellumTheme(palette = palette) {
                 CompositionLocalProvider(LocalBodySex provides bodySex) {
-                    IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest)
+                    IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest, routeRequest = routeRequest)
                 }
             }
         }
@@ -119,6 +125,9 @@ class MainActivity : ComponentActivity() {
         when (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB)) {
             Notifications.TAB_INBOX -> inboxRequest++
             Notifications.TAB_TODAY -> todayRequest++
+            Notifications.TAB_BEGIN -> beginFromWidget(intent.getBooleanExtra(Notifications.EXTRA_EMPTY, false))
+            Notifications.TAB_HOME -> goTo(Routes.DASHBOARD)
+            Notifications.TAB_FORGE -> goTo(Routes.programBuilder("week", null))
             Notifications.TAB_TRIAL -> {
                 val id = intent.getLongExtra(Notifications.EXTRA_SESSION_ID, -1L)
                 if (id > 0L) {
@@ -133,6 +142,31 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * The widget's Start, resolved against the state as it is now: the live trial is opened, else today's
+     * rite is begun by the same call Today's button makes; anything else (sealed since, day turned over)
+     * just lands on Today.
+     */
+    private fun beginFromWidget(empty: Boolean) {
+        val repo = (application as IronvellumApp).repository
+        lifecycleScope.launch {
+            val state = runCatching { loadWidgetState(applicationContext, repo) }.getOrNull()
+            val sessionId = runCatching {
+                when {
+                    state?.sessionId != null -> state.sessionId
+                    empty -> repo.startFreeformSession(Words.openTrial.c)
+                    state?.presetId != null -> repo.startSessionFromPreset(state.presetId)
+                    else -> null
+                }
+            }.getOrNull()
+            if (sessionId == null) {
+                goTo(Routes.DASHBOARD)
+            } else {
+                trialRequest = TrialRequest(serial = (trialRequest?.serial ?: 0) + 1, sessionId = sessionId, seal = false)
+            }
+        }
+    }
+
+    /**
      * Bumped per notification tap so two taps in a row both navigate; the UI
      * compares counts, not values. Saved with the activity because the UI's
      * served counts are: a count reset to 0 by a rotation would sit below
@@ -141,6 +175,12 @@ class MainActivity : ComponentActivity() {
     private var inboxRequest by mutableIntStateOf(0)
     private var todayRequest by mutableIntStateOf(0)
     private var trialRequest by mutableStateOf<TrialRequest?>(null)
+    private var routeRequest by mutableStateOf<RouteRequest?>(null)
+
+    /** A widget tap that lands on a screen of its own; see [RouteRequest]. */
+    private fun goTo(route: String) {
+        routeRequest = RouteRequest(serial = (routeRequest?.serial ?: 0) + 1, route = route)
+    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

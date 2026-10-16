@@ -98,6 +98,32 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home-screen widgets: "Today" (the day card) and "Streak & week". Redrawn by the
+             app (widget/TodayWidget.kt); the platform's APPWIDGET_UPDATE is only the first
+             draw when one is placed. -->
+        <receiver
+            android:name=".widget.TodayWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_today_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.WeekWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_week_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/week_widget_info" />
+        </receiver>
+
         <!--
           Android 14+ requires a privacy-rationale entry point for health
           permissions. Without it every read throws IllegalStateException
