@@ -43,7 +43,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] 6 Honour the system font scale, with a 200% sweep test (131a1e53 to 61106a9b)
 - [x] 7 Health Connect write-back of finished workouts, opt-in (c21654c7)
 - [ ] 8 String extraction into resources, with a lint guard against new literals
-- [ ] 9 Light theme: System, Dark, Light
+- [x] 9 Light theme: System, Dark, Light (47d97395, 384353ba, fbd34fa7)
 - [ ] Gate housekeeping: back under 5 minutes (runs took 5m38s to 11m24s) and the lint warnings that rose from 32 to 56
 - [ ] Release: version 1.8, changelog, README and store text and screenshots (widgets, light theme)
 - [ ] Owner: push tag `v1.8`
@@ -190,6 +190,7 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    Weblate prep with an en-XA pseudolocale sweep.
 9. **Light theme.** Appearance: System, Dark, Light. Check the art on light.
    Built before item 8 (owner, 2026-10-16); palette mocked up and approved first.
+   Done: Vellum tokens, per-theme accents, themed widgets (47d97395, 384353ba, fbd34fa7).
 
 Skipped deliberately: Wear OS.
 
