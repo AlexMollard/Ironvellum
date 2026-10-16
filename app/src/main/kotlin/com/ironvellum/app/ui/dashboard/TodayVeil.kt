@@ -133,7 +133,7 @@ private val RELIC_HERO_HEIGHT = 144.dp
 private val RELIC_GROW_MAX = 76.dp
 
 /** The Veil's reserved inscriptions slot: the same height whether or not any wait. */
-private val SLOT_HEIGHT = 44.dp
+private val SLOT_HEIGHT = 48.dp
 
 private val RING_TICK = Color(0xFF5C5850)
 

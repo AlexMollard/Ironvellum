@@ -118,7 +118,7 @@ fun PickerSearchField(query: String, onQueryChange: (String) -> Unit, label: Str
             .heightIn(min = 48.dp)
             .background(IronvellumColors.Vault, MaterialTheme.shapes.extraSmall)
             .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Filled.Search, contentDescription = null, tint = IronvellumColors.InkMuted)
@@ -135,18 +135,21 @@ fun PickerSearchField(query: String, onQueryChange: (String) -> Unit, label: Str
                 // read the same thing twice.
                 modifier = Modifier
                     .fillMaxWidth()
-                    // A single line of text measured 20dp, under the WCAG AA
-                    // floor; the row's own padding supplies the visual height.
-                    .heightIn(min = 24.dp)
                     .semantics { contentDescription = label },
+                // The decoration is the field's own 48dp, so the whole row takes the tap, not a 20dp line of text.
+                decorationBox = { inner ->
+                    Box(Modifier.fillMaxWidth().heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) {
+                        if (query.isEmpty()) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                        inner()
+                    }
+                },
             )
-            if (query.isEmpty()) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
         }
     }
 }

@@ -371,7 +371,7 @@ private fun RoleCard(title: String, count: String?, color: Color, content: @Comp
 private fun MoreLink(label: String, open: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClickLabel = if (open) "Hide $label" else "Show $label", onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {

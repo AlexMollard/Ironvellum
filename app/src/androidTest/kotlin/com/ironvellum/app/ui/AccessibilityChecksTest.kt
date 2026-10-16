@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui
 
+import android.util.Log
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
@@ -134,6 +135,57 @@ class AccessibilityChecksTest {
                     ?: "unnamed"
                 "\"%s\" %.0fx%.0f dp".format(label, size.width / density, size.height / density)
             }
+    }
+
+    /** Tappable controls whose laid-out size is inside the band between the WCAG floor and the Material 48dp target. */
+    private fun controlsInTheBand(): List<String> {
+        val density = compose.density.density
+        return compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+            .filter { it.size.width > 0 }
+            .mapNotNull { node ->
+                val w = node.size.width / density
+                val h = node.size.height / density
+                if (w >= MIN_TARGET_DP && h >= MIN_TARGET_DP) return@mapNotNull null
+                if (w < WCAG_FLOOR_DP || h < WCAG_FLOOR_DP) return@mapNotNull null
+                val label = node.config.valueOrNull(SemanticsProperties.Text)?.joinToString(" ") { it.text }
+                    ?: node.config.valueOrNull(SemanticsProperties.ContentDescription)?.joinToString(" ")
+                    ?: "unnamed"
+                "\"%s\" %.0fx%.0f dp".format(label, w, h)
+            }
+    }
+
+    /**
+     * Opt-in report, not a check: logs (tag TouchAudit) every tappable control between 24 and 48dp on each screen
+     * the sweeps reach, for the touch-target row in docs/TODO.md. Run with
+     * `-Pandroid.testInstrumentationRunnerArguments.touchAudit=true`; read it with `adb logcat -d -s TouchAudit`.
+     */
+    @Test
+    fun reportControlsBelowTheMaterialTarget() {
+        if (InstrumentationRegistry.getArguments().getString("touchAudit") != "true") return
+        val rows = sortedSetOf<String>()
+        fun record(where: String) = controlsInTheBand().forEach { rows += "$where | $it" }
+        fun walk(paths: List<List<String>>) {
+            for (path in paths) {
+                returnToNavigation()
+                compose.onNodeWithContentDescription(path.first()).performClick()
+                if (path.drop(1).any { !openSurface(it) }) continue
+                compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+                record(path.joinToString("/"))
+                if (path.first() == "Ledger") leaveLedgerPane()
+                for (dismiss in listOf("Cancel", "Got it")) {
+                    val button = compose.onAllNodesWithText(dismiss)
+                    if (button.fetchSemanticsNodes().isNotEmpty()) {
+                        button.onFirst().performClick()
+                        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+                    }
+                }
+            }
+        }
+        walk(DESTINATIONS.map { listOf(it) })
+        walk(DEEPER_SURFACES)
+        withVeilSeeded { walk(VEIL_SURFACES) }
+        rows.forEach { Log.i("TouchAudit", it) }
+        Log.i("TouchAudit", "done: ${rows.size} controls")
     }
 
     @Test

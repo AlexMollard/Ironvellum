@@ -119,12 +119,12 @@ internal fun EntryCard(
     }
 }
 
-/** A quiet, 44dp-tall text action; [description] is what a screen reader says when the label alone is not enough. */
+/** A quiet, 48dp-tall text action; [description] is what a screen reader says when the label alone is not enough. */
 @Composable
 internal fun TextAction(label: String, onClick: () -> Unit, description: String = label) {
     Box(
         Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { if (description != label) contentDescription = description }
             .padding(horizontal = 4.dp),
@@ -359,12 +359,12 @@ internal fun CompactStepButton(glyph: String, description: String, onClick: () -
     }
 }
 
-/** One fixed 44dp stepper control; the glyph alone reads to TalkBack as a dash or a cross. */
+/** One fixed 48dp stepper control; the glyph alone reads to TalkBack as a dash or a cross. */
 @Composable
 internal fun StepButton(glyph: String, description: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(44.dp)
+            .size(48.dp)
             .clickable(onClickLabel = description, onClick = onClick)
             .semantics {
                 contentDescription = description

@@ -1074,7 +1074,7 @@ private fun ReorderHandle(
     val stepPx = with(LocalDensity.current) { DRAG_STEP.toPx() }
     Box(
         Modifier
-            .size(44.dp)
+            .size(48.dp)
             .pointerInput(Unit) {
                 var travelled = 0f
                 detectVerticalDragGestures(

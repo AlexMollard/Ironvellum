@@ -257,7 +257,7 @@ fun IronvellumButton(
     val boxless = quiet || danger || LocalTextButtons.current
     Box(
         modifier
-            .then(if (boxless) Modifier.heightIn(min = 48.dp) else Modifier)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .then(
                 if (boxless) {

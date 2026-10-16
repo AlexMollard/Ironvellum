@@ -639,7 +639,7 @@ private fun PickerRow(
         val infoLabel = "About ${exercise.name}"
         Box(
             Modifier
-                .size(44.dp)
+                .size(48.dp)
                 .clip(MaterialTheme.shapes.extraSmall)
                 .clickable(onClickLabel = infoLabel) { showInfo = true }
                 .semantics {
@@ -657,7 +657,7 @@ private fun PickerRow(
         val starLabel = if (favourite) "Remove ${exercise.name} from favourites" else "Add ${exercise.name} to favourites"
         Box(
             Modifier
-                .size(44.dp)
+                .size(48.dp)
                 .clip(MaterialTheme.shapes.extraSmall)
                 .clickable(onClickLabel = starLabel) { onFavourite(!favourite) }
                 .semantics {

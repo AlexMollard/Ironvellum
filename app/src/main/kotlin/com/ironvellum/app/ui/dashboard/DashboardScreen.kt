@@ -650,7 +650,7 @@ internal fun TodayContent(
                     rank = {
                         Row(
                             Modifier
-                                .heightIn(min = 44.dp)
+                                .heightIn(min = 48.dp)
                                 .clickable(role = Role.Button, onClickLabel = if (sexUnset) "Add your sex in Profile" else "Show Strength Rank") { if (sexUnset) actions.onAddName() else rankOpen = true }
                                 .padding(start = 10.dp, end = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -1261,7 +1261,7 @@ private fun NextLink(next: WorkoutPreset, chevron: Boolean, onClick: () -> Unit)
     val day = next.scheduledDay!!
     Row(
         Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClickLabel = "Show ${dayName(day)}", onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),

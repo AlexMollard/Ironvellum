@@ -2349,7 +2349,7 @@ internal fun OpenExerciseCard(
             Row(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .clickable(onClickLabel = infoLabel, onClick = onInfo)
                     .semantics {
                         contentDescription = infoLabel
@@ -2519,7 +2519,7 @@ private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clickable(onClickLabel = "Show the warm-up sets", role = Role.Button, onClick = onOpen)
             .semantics { contentDescription = "$text, done" }
             .padding(start = 12.dp, end = 16.dp),
@@ -2544,7 +2544,7 @@ private fun DropStrip(name: String, onEnd: () -> Unit) {
         )
         Box(
             Modifier
-                .heightIn(min = 44.dp)
+                .heightIn(min = 48.dp)
                 .clickable(onClickLabel = "End the drops for $name", role = Role.Button, onClick = onEnd)
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
@@ -2913,7 +2913,7 @@ internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modif
                 Box(
                     Modifier
                         .weight(1f)
-                        .height(44.dp)
+                        .height(48.dp)
                         .selectable(selected = chosen, role = Role.RadioButton, onClick = { onPick(if (chosen) null else value) })
                         .padding(horizontal = 2.dp, vertical = 4.dp)
                         .clip(shape)
@@ -2940,7 +2940,7 @@ internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modif
     }
 }
 
-/** − number +, plain glyphs on 44dp targets; tapping the number types it. */
+/** − number +, plain glyphs on 48dp-high targets; tapping the number types it. */
 @Composable
 private fun FigureStepper(
     figure: Figure,
@@ -3365,7 +3365,7 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
                         Box(
                             Modifier
                                 .weight(1f)
-                                .height(44.dp)
+                                .height(48.dp)
                                 .selectable(
                                     selected = chosen,
                                     role = Role.RadioButton,
@@ -3956,7 +3956,7 @@ private fun ToggleLine(
             )
             .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
             .toggleable(value = on, role = Role.Checkbox) { onToggle() }
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

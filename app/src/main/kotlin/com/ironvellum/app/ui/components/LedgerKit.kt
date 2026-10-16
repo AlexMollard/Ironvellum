@@ -184,6 +184,7 @@ fun InkTextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifie
     Box(
         modifier
             .heightIn(min = LedgerSpace.Target)
+            .widthIn(min = LedgerSpace.Target)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.CenterStart,
     ) {
