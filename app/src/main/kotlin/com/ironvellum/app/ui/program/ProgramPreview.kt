@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.platform.LocalDensity
@@ -147,26 +149,42 @@ fun ProposedDay(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                day,
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier.width(92.dp),
-            )
-            Text(
-                preset.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                if (dayOpen) hardSetsText(dayHardSets(preset)) else movementsText(preset.entries.size),
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-                maxLines = 1,
-            )
+            val countText = if (dayOpen) hardSetsText(dayHardSets(preset)) else movementsText(preset.entries.size)
+            if (LocalDensity.current.fontScale > 1.3f) {
+                // Large text: the day, name and count stack in one column instead of sharing a line.
+                Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
+                    Text(day, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                    Text(
+                        preset.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.Ink,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(countText, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                }
+            } else {
+                Text(
+                    day,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.width(92.dp),
+                )
+                Text(
+                    preset.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    countText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                )
+            }
             if (folded) {
                 Text(
                     if (dayOpen) "⌃" else "›",
@@ -254,6 +272,17 @@ fun ProposedEntryRow(
         .map { Evidence.split(it).first }
         .filter { it.isNotBlank() }
     val opens = editable || reasons.isNotEmpty()
+    // Large text: the rep guide and load go under the name rather than squeezing it beside them.
+    val stackDetail = LocalDensity.current.fontScale > 1.3f
+    val detail: @Composable () -> Unit = {
+        Text(
+            movementDetail(entry, entry.targetWeightKg?.let { Units.withUnit(it) }),
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.SystemGreen,
+            textAlign = if (stackDetail) TextAlign.Start else TextAlign.End,
+        )
+    }
     if (expanded && editable) {
         EffortEntryEditor(
             entry = entry,
@@ -299,15 +328,12 @@ fun ProposedEntryRow(
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
+                if (stackDetail) detail()
             }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                movementDetail(entry, entry.targetWeightKg?.let { Units.withUnit(it) }),
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                textAlign = TextAlign.End,
-            )
+            if (!stackDetail) {
+                Spacer(Modifier.width(8.dp))
+                detail()
+            }
             // Collapsed-state hint: the row gave no visible sign it opens. Decorative - the clickable
             // already announces open/close - and only on rows that actually open.
             if (opens) {
@@ -768,11 +794,7 @@ internal fun GearPicker(
         }
         if (equipment != null && !equipment.fullGym && Gear.DUMBBELLS in equipment.gear) {
             val maxKg = equipment.dumbbellMaxKg ?: DEFAULT_DUMBBELL_KG
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            val oneOrPair: @Composable RowScope.() -> Unit = {
                 PickCell(
                     label = "One",
                     selected = !equipment.dumbbellPair,
@@ -787,6 +809,8 @@ internal fun GearPicker(
                     description = "A pair of dumbbells",
                     onClick = { onChange(equipment.copy(dumbbellPair = true)) },
                 )
+            }
+            val lower: @Composable () -> Unit = {
                 TapPad(
                     label = "−",
                     description = "Lower dumbbell max, currently up to ${maxKg.toInt()} kg",
@@ -794,11 +818,8 @@ internal fun GearPicker(
                         onChange(equipment.copy(dumbbellMaxKg = (maxKg - 1.0).coerceAtLeast(MIN_DUMBBELL_KG)))
                     },
                 )
-                Text(
-                    "Up to ${maxKg.toInt()} kg",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.Ink,
-                )
+            }
+            val raise: @Composable () -> Unit = {
                 TapPad(
                     label = "+",
                     description = "Raise dumbbell max, currently up to ${maxKg.toInt()} kg",
@@ -806,6 +827,42 @@ internal fun GearPicker(
                         onChange(equipment.copy(dumbbellMaxKg = (maxKg + 1.0).coerceAtMost(MAX_DUMBBELL_KG)))
                     },
                 )
+            }
+            val maxText: @Composable (Modifier) -> Unit = { m ->
+                Text(
+                    "Up to ${maxKg.toInt()} kg",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.Ink,
+                    modifier = m,
+                )
+            }
+            if (LocalDensity.current.fontScale > 1.3f) {
+                // Large text: one or pair on one line, the max stepper on the next, so no label is squeezed.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { oneOrPair() }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    lower()
+                    maxText(Modifier.weight(1f).wrapContentWidth(Alignment.CenterHorizontally))
+                    raise()
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    oneOrPair()
+                    lower()
+                    maxText(Modifier)
+                    raise()
+                }
             }
         }
         WornKitPicker(current, onChange)
