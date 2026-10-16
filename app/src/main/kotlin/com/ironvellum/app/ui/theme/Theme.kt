@@ -186,5 +186,17 @@ fun IronvellumTheme(palette: AccentPalette = IronvellumColors.accents, content: 
     }
 }
 
-/** The single scale every Ironvellum layout is designed and verified at. */
-const val FIXED_FONT_SCALE = 1f
+/**
+ * Caps the system font scale at [max] for [content]. The app honours the system font scale everywhere, so this is
+ * for the rare element that cannot grow: a fixed-size slot such as the bottom bar labels, whose box the layout
+ * around it is built on. Every use says in a comment why that slot cannot grow; prefer letting the container grow.
+ */
+@Composable
+fun CappedFontScale(max: Float = 1.3f, content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    if (density.fontScale <= max) {
+        content()
+    } else {
+        CompositionLocalProvider(LocalDensity provides Density(density.density, max), content = content)
+    }
+}
