@@ -91,6 +91,10 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    standings lines and the empty measurement line follow the vocabulary switch;
    the 24-48dp audit is in Open decisions, with the controls raised.
 4. **Measure.** Release APK size, and frame stats on the owner's phone.
+   APK measured 2026-10-16 (unsigned, R8): foss 14.3 MB, play 15.0 MB; of foss,
+   `classes.dex` 8.4 MB (the guide and catalogue data in Kotlin included) and
+   `assets` 5.4 MB (exercise art paths). No action needed. Frame stats still
+   owed: they need the phone connected.
 5. **Home-screen widget.** Today's routine and streak; tap starts the workout.
 6. **Honour the system font scale.** Drop `FIXED_FONT_SCALE`, fix every screen
    at large text, and add an instrumented font-scale sweep (closes the
