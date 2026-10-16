@@ -41,7 +41,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [ ] 4 Measure: release APK size done (foss 14.3 MB); frame stats on the owner's phone owed (needs the phone plugged in)
 - [x] 5 Home-screen widgets "Today" and "Streak & week", 2x1 and 4x2 (8bef739a, f046207e, 9a120550)
 - [x] 6 Honour the system font scale, with a 200% sweep test (131a1e53 to 61106a9b)
-- [ ] 7 Health Connect write-back of finished workouts, opt-in (in progress)
+- [x] 7 Health Connect write-back of finished workouts, opt-in (c21654c7)
 - [ ] 8 String extraction into resources, with a lint guard against new literals
 - [ ] 9 Light theme: System, Dark, Light
 - [ ] Gate housekeeping: back under 5 minutes (runs took 5m38s to 11m24s) and the lint warnings that rose from 32 to 56
@@ -158,8 +158,22 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    `CappedFontScale`, each with a comment: bottom-bar labels, the week rail, the
    body-map FRONT/BACK labels and the sealed-day stamp. `FontScaleSweepTest` sets the
    real system scale to 2.0 and asserts that key controls are shown and not clipped.
-7. **Health Connect write-back.** A finished workout is written as an exercise
-   session. Needs a write permission, so the Play health-data form changes.
+7. **Health Connect write-back.** Done 2026-10-16 (c21654c7). Settings > Health Connect
+   has "Save finished workouts to Health Connect" (off by default; turning it on asks
+   for `WRITE_EXERCISE` only). A sealed, non-imported workout is written as one
+   strength-training `ExerciseSessionRecord` (start, end, title or routine name, public
+   note), after the Room commit, on an app-lifetime scope, so a seal never waits on or
+   fails because of it. Idempotent: client id `ironvellum-<id>-<startedAtMs>` (the start
+   time guards against a reinstall reusing an id), version = the latest of seal, amend
+   and write time, so amends and title or note edits replace the entry; delete and
+   reopen remove it. Failures are logged and show as "Last save failed" on the page; a
+   revoked permission shows plainly and the switch reads off. No exercise segments:
+   Health Connect checks segment types against the session type and wants per-exercise
+   timing, which means a catalogue-to-type table and invented timings. The Play declaration is in the owner list below. Checked on the emulator (API 35, real Health
+   Connect): write, amend (still one entry) and delete (entry gone), screenshots in
+   `.tmp/hc-shots/`. Not backed up (`health_write` prefs): the grant does not survive a
+   reinstall. Not hooked: archive or cloud restore and "delete all data", which leave any
+   earlier entries in Health Connect.
 8. **String extraction.** Move UI text into string resources, plain and themed
    names included, with a lint guard against new literals. No translations yet;
    inviting translators is 1.9.
