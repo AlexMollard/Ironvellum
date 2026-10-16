@@ -95,7 +95,18 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    `classes.dex` 8.4 MB (the guide and catalogue data in Kotlin included) and
    `assets` 5.4 MB (exercise art paths). No action needed. Frame stats still
    owed: they need the phone connected.
-5. **Home-screen widget.** Today's routine and streak; tap starts the workout.
+5. **Home-screen widget.** Done 2026-10-16 (8bef739a). Two widgets from one state
+   function (`widget/TodayWidgetState.kt`, built on Today's own day kind, week ticks
+   and streak): "Today" (the day card) and "Streak & week", each in a 2x1 and a 4x2
+   layout, designs approved by the owner. Classic RemoteViews, no new dependency. The
+   button begins today's rite through the call Today's Begin makes, resumes a trial
+   under way, begins an empty workout on a free day and opens the plan builder with no
+   plan; anywhere else opens Today. Pushed, never polled: a Room invalidation observer
+   (sessions, set_logs, presets) redraws on any workout, set or plan write, and a
+   WorkManager run at 00:01 local turns the day over, re-aimed by `TimeChangeReceiver`.
+   Checked on the emulator in begin, live, done and rest-day states at 2x1 and 4x2
+   (`.tmp/widget-shots/`). Live elapsed minutes only move when something is written, so
+   they can lag a minute or more between sets.
 6. **Honour the system font scale.** Drop `FIXED_FONT_SCALE`, fix every screen
    at large text, and add an instrumented font-scale sweep (closes the
    text-scale verification gap below).
