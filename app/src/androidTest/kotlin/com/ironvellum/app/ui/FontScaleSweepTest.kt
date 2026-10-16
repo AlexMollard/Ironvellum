@@ -46,7 +46,9 @@ import kotlin.math.abs
 @RunWith(AndroidJUnit4::class)
 class FontScaleSweepTest {
 
-    private val systemScale = SystemFontScale(2.0f)
+    private val systemScale = SystemFontScale(
+        InstrumentationRegistry.getArguments().getString("fontscale")?.toFloatOrNull() ?: 2.0f,
+    )
     private val activity = createAndroidComposeRule<MainActivity>()
 
     // The setting has to be in place before the activity is created, or the activity starts at 1.0 and is recreated.
@@ -190,6 +192,16 @@ class FontScaleSweepTest {
             }
             back()
         }
+        // Equipment with dumbbells only: the One / Pair and max stepper sub-row appears, then the default goes back.
+        screen("settings-equipment-dumbbells") {
+            driver.click("Equipment")
+            driver.click("Nothing")
+            driver.click("Dumbbells")
+            whole("Pair")
+            whole("One")
+        }
+        runCatching { driver.click("Full gym") }
+        back()
 
         check(failures.isEmpty()) { "At 200% text:\n" + failures.joinToString("\n") }
     }
@@ -316,6 +328,8 @@ class FontScaleSweepTest {
         val layouts = ArrayList<TextLayoutResult>()
         info.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(layouts)
         check(layouts.none { layout -> (0 until layout.lineCount).any(layout::isLineEllipsized) }) { "\"$text\" is cut short with an ellipsis" }
+        // A single word on more than one line has been broken mid-word by a box too narrow for it.
+        check(' ' in text.trim() || layouts.none { layout -> layout.lineCount > 1 }) { "\"$text\" is broken across lines" }
     }
 
     private val advanceLabels get() = listOf("Continue", "Done", "Keep ${Words.rite.s}")
