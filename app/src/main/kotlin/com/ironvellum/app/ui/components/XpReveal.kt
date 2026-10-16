@@ -183,14 +183,15 @@ internal object XpReveal {
     internal fun liftShade(index: Int, count: Int): Color =
         lerp(
             lerp(IronvellumColors.Emerald, Color.Black, 0.35f),
-            lerp(IronvellumColors.EmeraldBright, Color.White, 0.45f),
+            // On parchment the light end stays a full accent: a pale tint would vanish.
+            if (IronvellumColors.light) IronvellumColors.Emerald else lerp(IronvellumColors.EmeraldBright, Color.White, 0.45f),
             if (count <= 1) 0.35f else index / (count - 1f),
         )
 
     internal fun bonusShade(index: Int, count: Int): Color =
         lerp(
             lerp(IronvellumColors.SovereignGold, Color.Black, 0.30f),
-            lerp(IronvellumColors.SovereignGold, Color.White, 0.45f),
+            if (IronvellumColors.light) IronvellumColors.SovereignGold else lerp(IronvellumColors.SovereignGold, Color.White, 0.45f),
             if (count <= 1) 0.35f else index / (count - 1f),
         )
 }

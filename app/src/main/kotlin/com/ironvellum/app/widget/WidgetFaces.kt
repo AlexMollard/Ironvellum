@@ -1,5 +1,6 @@
 package com.ironvellum.app.widget
 
+import com.ironvellum.app.ui.theme.lightAccent
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -9,35 +10,96 @@ import android.graphics.Paint
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
-import androidx.compose.ui.graphics.toArgb
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.dashboard.DayKind
-import com.ironvellum.app.ui.theme.IronvellumColors
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
 
 /**
+ * The colours one widget draw wears: the dark card, or Vellum when the app's theme choice (System resolved
+ * against the phone) is light. The accent is the lifter's own pair for that theme.
+ */
+private class Skin(
+    val light: Boolean,
+    val ink: Int, val muted: Int, val rune: Int, val panel: Int,
+    val accent: Int, val accentText: Int, val reward: Int, val onFill: Int,
+    val tint: Int, val tintBorder: Int,
+)
+
+/**
  * The faces of the two widgets, as the approved mockups draw them. Colours that are the lifter's own
  * (the accent, the reward gold) are read from the theme at draw time and tinted in; the structural
- * paper, ink and rune are fixed, as in the app.
+ * paper, ink and rune follow the app's theme choice (Dark, or Vellum for Light).
  */
 internal object WidgetFaces {
-    private const val INK = 0xFFE8E8E4.toInt()
-    private const val MUTED = 0xFFA3A099.toInt()
-    private const val RUNE = 0xFF32302B.toInt()
+    // Set at the top of every face, on the main thread that draws them all.
+    private var skin: Skin = darkSkin()
+    private val INK get() = skin.ink
+    private val MUTED get() = skin.muted
+    private val RUNE get() = skin.rune
+
+    private fun darkSkin(): Skin {
+        val accents = com.ironvellum.app.ui.theme.AccentPalette.Default
+        return Skin(
+            false, 0xFFE8E8E4.toInt(), 0xFFA3A099.toInt(), 0xFF32302B.toInt(), 0xFF171715.toInt(),
+            accents.primary, accents.primary, accents.secondary, 0xFF0C0C0B.toInt(), 0xFF10241C.toInt(), 0xFF1F5C46.toInt(),
+        )
+    }
+
+    private fun skinFor(context: Context): Skin {
+        val store = (context.applicationContext as com.ironvellum.app.IronvellumApp).appearanceStore
+        if (!store.mode.value.isLight(com.ironvellum.app.ui.theme.isSystemDark(context))) {
+            val dark = store.palette.value
+            return darkSkin().let { Skin(false, it.ink, it.muted, it.rune, it.panel, dark.primary, dark.primary, dark.secondary, it.onFill, it.tint, it.tintBorder) }
+        }
+        val roles = store.lightPalette.value.lightAccent()
+        return Skin(
+            true, 0xFF1F1C17.toInt(), 0xFF5F594D.toInt(), 0xFFD8CFBE.toInt(), 0xFFFBF8F2.toInt(),
+            roles.fill, roles.text, roles.reward, com.ironvellum.app.ui.theme.lightAccentForeground(roles.fill), roles.tint, roles.border,
+        )
+    }
+
+    /** The card, and every colour the layout files fix at the dark values. */
+    private fun RemoteViews.skinned(): RemoteViews {
+        setInt(android.R.id.background, "setBackgroundResource", if (skin.light) R.drawable.widget_bg_light else R.drawable.widget_bg)
+        listOf(R.id.a_streak, R.id.a_title, R.id.b_title).forEach { setTextColor(it, INK) }
+        listOf(R.id.a_meta, R.id.a_next, R.id.a_open, R.id.a_sub, R.id.b_label, R.id.b_meta, R.id.b_line).forEach { setTextColor(it, MUTED) }
+        setInt(R.id.a_rule, "setColorFilter", RUNE)
+        listOf(R.id.btn_out_ring_l, R.id.btn_out_ring_c, R.id.btn_out_ring_r).forEach { setInt(it, "setColorFilter", RUNE) }
+        listOf(R.id.btn_out_face_l, R.id.btn_out_face_c, R.id.btn_out_face_r).forEach { setInt(it, "setColorFilter", skin.panel) }
+        setTextColor(R.id.btn_fill_text, skin.onFill)
+        listOf(R.id.btn_fill_icon, R.id.w_square_icon).forEach { setInt(it, "setColorFilter", skin.onFill) }
+        return this
+    }
+
+    /** The week widget's cell for today: the app's accent-tinted box, drawn at the lifter's own tint. */
+    private fun todayCell(): Bitmap {
+        val w = 96
+        val h = 92
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        fun chamfer(inset: Float, c: Float) = android.graphics.Path().apply {
+            moveTo(inset + c, inset); lineTo(w - inset - c, inset); lineTo(w - inset, inset + c); lineTo(w - inset, h - inset - c)
+            lineTo(w - inset - c, h - inset); lineTo(inset + c, h - inset); lineTo(inset, h - inset - c); lineTo(inset, inset + c); close()
+        }
+        canvas.drawPath(chamfer(0f, 12f), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = skin.tintBorder })
+        canvas.drawPath(chamfer(2f, 11f), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = skin.tint })
+        return bitmap
+    }
 
     private const val REQUEST_OPEN = 20
     private const val REQUEST_BEGIN = 21
     private const val REQUEST_EMPTY = 22
     private const val REQUEST_FORGE = 23
 
-    private val accent get() = IronvellumColors.Emerald.toArgb()
-    private val reward get() = IronvellumColors.SovereignGold.toArgb()
+    private val accent get() = skin.accent
+    private val accentText get() = skin.accentText
+    private val reward get() = skin.reward
 
     // ---- words ----
 
@@ -130,7 +192,8 @@ internal object WidgetFaces {
     // ---- widget A: the day card ----
 
     fun day(context: Context, state: WidgetState): RemoteViews {
-        val v = RemoteViews(context.packageName, R.layout.widget_a)
+        skin = skinFor(context)
+        val v = RemoteViews(context.packageName, R.layout.widget_a).skinned()
         val live = state.kind == DayKind.LIVE
         val kicker = when (state.kind) {
             DayKind.LIVE -> "In progress · ${state.liveMinutes} min"
@@ -155,7 +218,7 @@ internal object WidgetFaces {
             else -> "Build one and today's ${Words.rite.s} shows here."
         }
         v.text(R.id.a_kicker, kicker)
-        v.setTextColor(R.id.a_kicker, if (live) accent else MUTED)
+        v.setTextColor(R.id.a_kicker, if (live) accentText else MUTED)
         // No streak to show on a first day: the chip would only say "0-day streak".
         v.show(R.id.a_streak_chip, state.kind != DayKind.NO_CYCLE && state.streak > 0)
         v.text(R.id.a_streak, streakChip(state))
@@ -174,7 +237,7 @@ internal object WidgetFaces {
         val outline = state.kind == DayKind.RESPITE || state.kind == DayKind.NO_CYCLE
         v.show(R.id.btn_out, outline)
         v.text(R.id.btn_out_text, if (state.kind == DayKind.RESPITE) emptyLabel() else forgeLabel())
-        v.setTextColor(R.id.btn_out_text, accent)
+        v.setTextColor(R.id.btn_out_text, accentText)
         v.show(R.id.a_footer, state.kind == DayKind.SEALED)
         v.text(R.id.a_next, next(state).orEmpty())
 
@@ -191,7 +254,8 @@ internal object WidgetFaces {
     }
 
     fun dayCompact(context: Context, state: WidgetState): RemoteViews {
-        val v = RemoteViews(context.packageName, R.layout.widget_a_compact)
+        skin = skinFor(context)
+        val v = RemoteViews(context.packageName, R.layout.widget_a_compact).skinned()
         val title = when (state.kind) {
             DayKind.RESPITE -> Words.respite.c
             DayKind.NO_CYCLE -> "No ${Words.cycle.s}"
@@ -263,7 +327,8 @@ internal object WidgetFaces {
     }
 
     fun week(context: Context, state: WidgetState): RemoteViews {
-        val v = RemoteViews(context.packageName, R.layout.widget_b)
+        skin = skinFor(context)
+        val v = RemoteViews(context.packageName, R.layout.widget_b).skinned()
         val title = weekTitle(state)
         val meta = weekMeta(state)
         v.text(R.id.b_number, state.streak.toString())
@@ -277,6 +342,7 @@ internal object WidgetFaces {
             val today = i + 1 == state.dayOfWeek
             val letter = DayOfWeek.of(i + 1).getDisplayName(TextStyle.NARROW, Locale.getDefault())
             v.show(DAY_CELLS[i], today)
+            if (skin.light) v.setImageViewBitmap(DAY_CELLS[i], todayCell())
             v.show(DAY_LABELS[i], !today)
             v.show(DAY_LABELS_BOLD[i], today)
             v.text(DAY_LABELS[i], letter)
@@ -325,7 +391,8 @@ internal object WidgetFaces {
     }
 
     fun weekCompact(context: Context, state: WidgetState): RemoteViews {
-        val v = RemoteViews(context.packageName, R.layout.widget_b_compact)
+        skin = skinFor(context)
+        val v = RemoteViews(context.packageName, R.layout.widget_b_compact).skinned()
         v.text(R.id.b_number, state.streak.toString())
         v.setTextColor(R.id.b_number, reward)
         v.text(R.id.b_label, "day ${Words.oath.s}")

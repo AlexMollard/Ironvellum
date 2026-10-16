@@ -137,6 +137,7 @@
             android:visibility="gone">
 
             <ImageView
+                android:id="@+id/a_rule"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:importantForAccessibility="no"
