@@ -55,6 +55,10 @@ class HardcodedUiLiteralTest {
         "main/domain/ImportAliases.kt" to "maps other apps' exercise names on import",
         "main/domain/ExportReader.kt" to "reads archive JSON keys",
         "main/domain/ExportWriter.kt" to "writes archive JSON keys",
+        "main/domain/Skills.kt" to "skill names and descriptions: data, deferred with title/skill names (owner, 2026-10-16)",
+        "main/domain/TitleEngine.kt" to "title and deed names and descriptions: data, deferred with title/skill names",
+        "main/domain/Crests.kt" to "crest names and descriptions: data, deferred with title/skill names",
+        "main/domain/CrestCatalogue.kt" to "crest names and descriptions: data, deferred with title/skill names",
         "main/data/IronvellumDatabase.kt" to "SQL and migrations",
         "main/data/db/Daos.kt" to "SQL",
     )

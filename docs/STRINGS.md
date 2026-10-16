@@ -5,8 +5,9 @@ the 1.8 plan (docs/TODO.md); docs/GLOSSARY.md says which word each concept uses.
 screens move over phase by phase, and the guard below keeps new text from landing in Kotlin meanwhile.
 
 Scope: every screen, dialog, notification, widget, setting, error and generated hint. Not in scope (English data,
-a later step): exercise names, the exercise guides (`ExerciseGuides.kt`, `LibraryGuides.kt`), and title, skill and
-deed names. User data (a routine called "Full Body A", a typed note) is never a resource: pass it as an argument or
+a later step): exercise names, the exercise guides (`ExerciseGuides.kt`, `LibraryGuides.kt`), and the title, skill
+and crest catalogues (names and descriptions: `Skills.kt`, `TitleEngine.kt`, `Crests.kt`, `CrestCatalogue.kt`, exempt
+from the guard below until title/skill names move). User data (a routine called "Full Body A", a typed note) is never a resource: pass it as an argument or
 `UiText.Raw`.
 
 ## Plain and themed are two whole sentences
@@ -25,12 +26,50 @@ GlossaryTest rejects themed words in plain values and retired words in themed va
 
 A string that names no concept (a button called "Save", "Rest timer") is plain-only: one `key`, shown in both modes.
 
+## Concept words: `Words.kt` is a facade over resources
+
+A concept word (trial, routine, ally...) is never a Kotlin literal. `Words.trial.s` still works, but each form is a
+resource pair, written whole because capitals, plurals and articles are not the same rules in every language:
+
+```xml
+<string name="concept_trial_s">workout</string>   <string name="concept_trial_s__t">trial</string>
+<string name="concept_trial_a">a workout</string> <string name="concept_trial_a__t">a trial</string>
+```
+
+Forms: `s` lower case, `c` capitalised, `t` as the themed name is written mid-sentence, `u` upper case, `pl` `cpl` `tpl`
+`upl` their plurals, `a` `ca` `at` `cat` with the article. A `Concept` in `Words.kt` lists only the forms a screen
+reads and which resource holds each; there are no derived forms. A form nobody reads has no strings, and asking for it
+throws (`WordsFormsTest` scans the sources for every `Words.<concept>.<form>` and resolves each in both modes, so a
+new form without strings fails the build, not a screen). To add one: write `concept_<name>_<form>` and `__t`, then add
+`"<form>" to f(R.string..., R.string...__t)` to the concept.
+
+A concept is for a word shown ON ITS OWN (a tab label, a heading, a chip, a button). A concept inside a sentence is not
+a form: the whole sentence becomes a `key` / `key__t` pair and the call site stops concatenating (see the recipe below).
+
+`bothModes` concepts (the reward layer: deed, the Veil) are themed whatever the switch says, so each form is one
+string with no twin, named `always_<name>_<form>`. The `always_` prefix is the contract for any text shown the same in
+both modes (it may hold themed words; GlossaryTest skips it): `always_oath_name` is the themed name that stays themed
+(`themedName`), `always_themed_names_caption` is the Settings example that names both vocabularies.
+
+The words come from `Words.init` (the app's resources). A JVM unit test has no `init`, so `Words` falls back to the
+`StringSource` registered in `src/test/resources/META-INF/services`, which is `DiskStrings`: tests run with
+`Words.themed = true` and read `strings.xml` from disk, no setup in each test class.
+
+`Words.fromServer` (plain-mode rewrite of the server's English refusals) matches the server's themed English words,
+which stay Kotlin data in a small table (`ServerTerm`), and replaces them with the plain form from the concept's
+resources.
+
+`data/WordLines.kt` (`Lines`) and Today's narration (`ui/dashboard/TodayNarration.kt`) are the same idea for whole
+sentences: `line_*` and `narration_*` pairs (narration counts are `<plurals>`), read through `Words.text(UiText)`, so
+callers still get a `String` that follows the switch.
+
 ## Naming: `screen_element_role`
 
 Lower snake case, most general first: `settings_summons_evening_label`, `settings_summons_blocked`,
 `session_rest_ended_notification_title`. Roles: `label`, `caption`, `title`, `button`, `hint`, `error`, `description`
 (accessibility text), `empty`. The themed twin is the same name plus a final `__t` (a double underscore, once, at the
-end). Shared text (OK, Cancel) goes under `common_`.
+end). Shared text (OK, Cancel) goes under `common_`. The Phase 2 families are `concept_<name>_<form>`, `always_*`, `line_*`
+(the shared lines that were `Lines`) and `narration_*`.
 
 ## Using them
 

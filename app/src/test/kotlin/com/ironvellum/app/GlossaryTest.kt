@@ -52,9 +52,7 @@ class GlossaryTest {
 
     /** Files whose literals are data formats, not copy. */
     private val exemptFiles = mapOf(
-        "data/Words.kt" to "the vocabulary: both vocabularies are written out here",
-        "data/WordLines.kt" to "whole lines in both vocabularies",
-        "ui/dashboard/TodayNarration.kt" to "Today's narration, written out in both vocabularies",
+        "data/Words.kt" to "the themed English words the server writes, which fromServer matches (wire data); the words themselves are resources",
         "domain/LibraryGuides.kt" to "exercise instructions: \"technique\", \"path\" and \"circle\" are the English words",
         "domain/ExerciseGuides.kt" to "exercise instructions: the English words",
         "domain/ExerciseArtIndex.kt" to "exercise names and art ids",
@@ -145,12 +143,18 @@ class GlossaryTest {
     }
 
     /** strings.xml keys that may keep a word of the other vocabulary, with the reason. */
-    private val allowedResources: Map<String, String> = emptyMap()
+    private val allowedResources: Map<String, String> = mapOf(
+        "line_veil_board_unread" to "the Veil is the reward layer, themed in both modes",
+        "line_veil_board_note" to "the Veil is the reward layer, themed in both modes",
+        "line_no_veil_echoes" to "the Veil is the reward layer, themed in both modes",
+        "line_welcome_tagline" to "the Veil is the reward layer, themed in both modes",
+    )
 
     /**
      * The string resources are copy too: with plain and themed written as two whole sentences (`key` and `key__t`,
      * docs/STRINGS.md), a plain value must hold no themed vocabulary and a themed value no retired word. A plain key
-     * with no `__t` twin is shown in both modes, so a themed word in it is the same bug the Kotlin scan finds.
+     * with no `__t` twin is shown in both modes, so a themed word in it is the same bug the Kotlin scan finds, unless
+     * it is named `always_...`, which says so.
      */
     @Test
     fun `plain strings hold no themed words and themed strings no retired ones`() {
@@ -159,7 +163,8 @@ class GlossaryTest {
         for (dir in File("src/main/res").listFiles { f -> f.name == "values" || f.name.startsWith("values-") }.orEmpty()) {
             val file = File(dir, "strings.xml").takeIf { it.isFile } ?: continue
             for (entry in StringsXml.read(file)) {
-                if (entry.name in allowedResources || !entry.translatable) continue
+                // `always_` text is shown the same in both modes (the reward layer, a name that stays themed): it has no twin.
+                if (entry.name in allowedResources || !entry.translatable || entry.name.startsWith("always_")) continue
                 val themedKey = entry.name.endsWith("__t")
                 val vocabulary = if (themedKey) RETIRED_WORDS else THEMED_WORDS
                 for (text in entry.text?.let { listOf(it) } ?: entry.items!!.values) {

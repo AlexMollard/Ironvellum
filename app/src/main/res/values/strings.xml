@@ -12,4 +12,510 @@
     <string name="settings_summons_evening_caption__t">One evening reminder on days your cycle holds a rite you have not begun.</string>
     <string name="settings_summons_blocked">The reminder won\'t arrive until you allow notifications.</string>
     <string name="settings_summons_blocked__t">The Summons won\'t arrive until you allow notifications.</string>
+
+    <!--
+        Concept words (data/Words.kt), one string for each form a screen uses, plain then its __t themed twin.
+        s lower case, c capitalised, t as a proper noun mid-sentence, u upper case, pl/cpl/tpl/upl the plural
+        of each, a/ca/at/cat with the article. A concept shown in both modes (the reward layer) and a themed
+        name that stays themed are one always_ string with no twin. docs/STRINGS.md.
+    -->
+    <!-- lifter -->
+    <string name="concept_lifter_s">lifter</string>
+    <string name="concept_lifter_s__t">ironbound</string>
+    <string name="concept_lifter_c">Lifter</string>
+    <string name="concept_lifter_c__t">Ironbound</string>
+    <string name="concept_lifter_t">lifter</string>
+    <string name="concept_lifter_t__t">Ironbound</string>
+    <string name="concept_lifter_u">LIFTER</string>
+    <string name="concept_lifter_u__t">IRONBOUND</string>
+    <string name="concept_lifter_pl">lifters</string>
+    <string name="concept_lifter_pl__t">ironbound</string>
+    <string name="concept_lifter_at">a lifter</string>
+    <string name="concept_lifter_at__t">an Ironbound</string>
+    <string name="concept_lifter_cat">A lifter</string>
+    <string name="concept_lifter_cat__t">An Ironbound</string>
+    <!-- trueName -->
+    <string name="concept_true_name_s">display name</string>
+    <string name="concept_true_name_s__t">true name</string>
+    <string name="concept_true_name_c">Display name</string>
+    <string name="concept_true_name_c__t">True Name</string>
+    <string name="concept_true_name_pl">display names</string>
+    <string name="concept_true_name_pl__t">true names</string>
+    <string name="concept_true_name_a">a display name</string>
+    <string name="concept_true_name_a__t">a true name</string>
+    <!-- folio -->
+    <string name="concept_folio_s">profile</string>
+    <string name="concept_folio_s__t">folio</string>
+    <string name="concept_folio_c">Profile</string>
+    <string name="concept_folio_c__t">Folio</string>
+    <string name="concept_folio_pl">profiles</string>
+    <string name="concept_folio_pl__t">folios</string>
+    <!-- frame -->
+    <!-- rite -->
+    <string name="concept_rite_s">routine</string>
+    <string name="concept_rite_s__t">rite</string>
+    <string name="concept_rite_c">Routine</string>
+    <string name="concept_rite_c__t">Rite</string>
+    <string name="concept_rite_t">routine</string>
+    <string name="concept_rite_t__t">Rite</string>
+    <string name="concept_rite_pl">routines</string>
+    <string name="concept_rite_pl__t">rites</string>
+    <string name="concept_rite_cpl">Routines</string>
+    <string name="concept_rite_cpl__t">Rites</string>
+    <string name="concept_rite_upl">ROUTINES</string>
+    <string name="concept_rite_upl__t">RITES</string>
+    <string name="concept_rite_a">a routine</string>
+    <string name="concept_rite_a__t">a rite</string>
+    <string name="concept_rite_ca">A routine</string>
+    <string name="concept_rite_ca__t">A rite</string>
+    <!-- cycle -->
+    <string name="concept_cycle_s">weekly plan</string>
+    <string name="concept_cycle_s__t">cycle</string>
+    <string name="concept_cycle_c">Weekly plan</string>
+    <string name="concept_cycle_c__t">Cycle</string>
+    <string name="concept_cycle_t">weekly plan</string>
+    <string name="concept_cycle_t__t">Cycle</string>
+    <string name="concept_cycle_u">WEEKLY PLAN</string>
+    <string name="concept_cycle_u__t">CYCLE</string>
+    <string name="concept_cycle_pl">weekly plans</string>
+    <string name="concept_cycle_pl__t">cycles</string>
+    <string name="concept_cycle_cpl">Weekly plans</string>
+    <string name="concept_cycle_cpl__t">Cycles</string>
+    <string name="concept_cycle_a">a weekly plan</string>
+    <string name="concept_cycle_a__t">a cycle</string>
+    <!-- trial -->
+    <string name="concept_trial_s">workout</string>
+    <string name="concept_trial_s__t">trial</string>
+    <string name="concept_trial_c">Workout</string>
+    <string name="concept_trial_c__t">Trial</string>
+    <string name="concept_trial_t">workout</string>
+    <string name="concept_trial_t__t">Trial</string>
+    <string name="concept_trial_u">WORKOUT</string>
+    <string name="concept_trial_u__t">TRIAL</string>
+    <string name="concept_trial_pl">workouts</string>
+    <string name="concept_trial_pl__t">trials</string>
+    <string name="concept_trial_cpl">Workouts</string>
+    <string name="concept_trial_cpl__t">Trials</string>
+    <string name="concept_trial_upl">WORKOUTS</string>
+    <string name="concept_trial_upl__t">TRIALS</string>
+    <string name="concept_trial_a">a workout</string>
+    <string name="concept_trial_a__t">a trial</string>
+    <string name="concept_trial_ca">A workout</string>
+    <string name="concept_trial_ca__t">A trial</string>
+    <string name="always_trial_name">Trial</string>
+    <!-- openTrial -->
+    <string name="concept_open_trial_s">empty workout</string>
+    <string name="concept_open_trial_s__t">open trial</string>
+    <string name="concept_open_trial_c">Empty workout</string>
+    <string name="concept_open_trial_c__t">Open Trial</string>
+    <string name="concept_open_trial_a">an empty workout</string>
+    <string name="concept_open_trial_a__t">an open trial</string>
+    <!-- seal -->
+    <string name="concept_seal_s">finish</string>
+    <string name="concept_seal_s__t">seal</string>
+    <string name="concept_seal_c">Finish</string>
+    <string name="concept_seal_c__t">Seal</string>
+    <string name="concept_seal_t">finish</string>
+    <string name="concept_seal_t__t">Seal</string>
+    <!-- seals -->
+    <!-- sealed -->
+    <string name="concept_sealed_s">finished</string>
+    <string name="concept_sealed_s__t">sealed</string>
+    <string name="concept_sealed_c">Finished</string>
+    <string name="concept_sealed_c__t">Sealed</string>
+    <string name="concept_sealed_u">FINISHED</string>
+    <string name="concept_sealed_u__t">SEALED</string>
+    <string name="concept_sealed_a">a finished</string>
+    <string name="concept_sealed_a__t">a sealed</string>
+    <string name="concept_sealed_ca">A finished</string>
+    <string name="concept_sealed_ca__t">A sealed</string>
+    <!-- sealing -->
+    <string name="concept_sealing_s">finishing</string>
+    <string name="concept_sealing_s__t">sealing</string>
+    <string name="concept_sealing_c">Finishing</string>
+    <string name="concept_sealing_c__t">Sealing</string>
+    <!-- unsealed -->
+    <string name="concept_unsealed_s">unfinished</string>
+    <string name="concept_unsealed_s__t">unsealed</string>
+    <string name="concept_unsealed_c">Unfinished</string>
+    <string name="concept_unsealed_c__t">Unsealed</string>
+    <!-- chronicle -->
+    <string name="concept_chronicle_s">history</string>
+    <string name="concept_chronicle_s__t">chronicle</string>
+    <string name="concept_chronicle_c">History</string>
+    <string name="concept_chronicle_c__t">Chronicle</string>
+    <string name="concept_chronicle_t">history</string>
+    <string name="concept_chronicle_t__t">Chronicle</string>
+    <!-- theChronicle -->
+    <string name="concept_the_chronicle_c">Your history</string>
+    <string name="concept_the_chronicle_c__t">The Chronicle</string>
+    <string name="concept_the_chronicle_t">your history</string>
+    <string name="concept_the_chronicle_t__t">the Chronicle</string>
+    <!-- yours -->
+    <string name="concept_yours_s">custom</string>
+    <string name="concept_yours_s__t">yours</string>
+    <string name="concept_yours_c">Custom</string>
+    <string name="concept_yours_c__t">Yours</string>
+    <string name="concept_yours_u">CUSTOM</string>
+    <string name="concept_yours_u__t">YOURS</string>
+    <!-- peak -->
+    <string name="concept_peak_s">PR</string>
+    <string name="concept_peak_s__t">peak</string>
+    <string name="concept_peak_c">PR</string>
+    <string name="concept_peak_c__t">Peak</string>
+    <string name="concept_peak_u">PR</string>
+    <string name="concept_peak_u__t">PEAK</string>
+    <string name="concept_peak_pl">PRs</string>
+    <string name="concept_peak_pl__t">peaks</string>
+    <string name="concept_peak_cpl">PRs</string>
+    <string name="concept_peak_cpl__t">Peaks</string>
+    <string name="concept_peak_upl">PRS</string>
+    <string name="concept_peak_upl__t">PEAKS</string>
+    <string name="concept_peak_a">a PR</string>
+    <string name="concept_peak_a__t">a peak</string>
+    <!-- oath -->
+    <string name="concept_oath_s">streak</string>
+    <string name="concept_oath_s__t">oath</string>
+    <string name="concept_oath_c">Streak</string>
+    <string name="concept_oath_c__t">Oath</string>
+    <string name="concept_oath_t">streak</string>
+    <string name="concept_oath_t__t">Oath</string>
+    <string name="concept_oath_pl">streaks</string>
+    <string name="concept_oath_pl__t">oaths</string>
+    <string name="concept_oath_a">a streak</string>
+    <string name="concept_oath_a__t">an oath</string>
+    <string name="always_oath_name">Oath</string>
+    <!-- respite -->
+    <string name="concept_respite_s">rest day</string>
+    <string name="concept_respite_s__t">respite</string>
+    <string name="concept_respite_c">Rest day</string>
+    <string name="concept_respite_c__t">Respite</string>
+    <!-- summons -->
+    <string name="concept_summons_s">reminder</string>
+    <string name="concept_summons_s__t">summons</string>
+    <!-- theSummons -->
+    <string name="concept_the_summons_c">Reminder</string>
+    <string name="concept_the_summons_c__t">The Summons</string>
+    <string name="concept_the_summons_u">REMINDER</string>
+    <string name="concept_the_summons_u__t">THE SUMMONS</string>
+    <!-- theBinding -->
+    <!-- pattern -->
+    <string name="concept_pattern_s">template</string>
+    <string name="concept_pattern_s__t">pattern</string>
+    <string name="concept_pattern_cpl">Templates</string>
+    <string name="concept_pattern_cpl__t">Patterns</string>
+    <string name="concept_pattern_a">a template</string>
+    <string name="concept_pattern_a__t">a pattern</string>
+    <!-- forge -->
+    <string name="concept_forge_s">build</string>
+    <string name="concept_forge_s__t">forge</string>
+    <string name="concept_forge_c">Build</string>
+    <string name="concept_forge_c__t">Forge</string>
+    <!-- forged -->
+    <string name="concept_forged_s">built</string>
+    <string name="concept_forged_s__t">forged</string>
+    <!-- theForge -->
+    <string name="concept_the_forge_c">Plan builder</string>
+    <string name="concept_the_forge_c__t">The Forge</string>
+    <string name="concept_the_forge_t">plan builder</string>
+    <string name="concept_the_forge_t__t">the Forge</string>
+    <!-- temper -->
+    <string name="concept_temper_s">improve</string>
+    <string name="concept_temper_s__t">temper</string>
+    <string name="concept_temper_c">Improve</string>
+    <string name="concept_temper_c__t">Temper</string>
+    <!-- armoury -->
+    <string name="concept_armoury_s">equipment</string>
+    <string name="concept_armoury_s__t">armoury</string>
+    <string name="concept_armoury_c">Equipment</string>
+    <string name="concept_armoury_c__t">Armoury</string>
+    <string name="concept_armoury_u">EQUIPMENT</string>
+    <string name="concept_armoury_u__t">ARMOURY</string>
+    <!-- codex -->
+    <string name="concept_codex_c">Progress</string>
+    <string name="concept_codex_c__t">Codex</string>
+    <string name="concept_codex_u">PROGRESS</string>
+    <string name="concept_codex_u__t">CODEX</string>
+    <!-- deed -->
+    <string name="always_deed_s">deed</string>
+    <string name="always_deed_c">Deed</string>
+    <string name="always_deed_pl">deeds</string>
+    <string name="always_deed_cpl">Deeds</string>
+    <string name="always_deed_upl">DEEDS</string>
+    <string name="always_deed_a">a deed</string>
+    <!-- path -->
+    <string name="concept_path_s">skill tree</string>
+    <string name="concept_path_s__t">path</string>
+    <string name="concept_path_pl">skill trees</string>
+    <string name="concept_path_pl__t">paths</string>
+    <string name="concept_path_a">a skill tree</string>
+    <string name="concept_path_a__t">a path</string>
+    <!-- paths -->
+    <string name="concept_paths_c">Skills</string>
+    <string name="concept_paths_c__t">Paths</string>
+    <string name="concept_paths_u">SKILLS</string>
+    <string name="concept_paths_u__t">PATHS</string>
+    <!-- technique -->
+    <string name="concept_technique_s">skill</string>
+    <string name="concept_technique_s__t">technique</string>
+    <string name="concept_technique_c">Skill</string>
+    <string name="concept_technique_c__t">Technique</string>
+    <string name="concept_technique_t">skill</string>
+    <string name="concept_technique_t__t">Technique</string>
+    <string name="concept_technique_u">SKILL</string>
+    <string name="concept_technique_u__t">TECHNIQUE</string>
+    <string name="concept_technique_pl">skills</string>
+    <string name="concept_technique_pl__t">techniques</string>
+    <string name="concept_technique_cpl">Skills</string>
+    <string name="concept_technique_cpl__t">Techniques</string>
+    <string name="concept_technique_a">a skill</string>
+    <string name="concept_technique_a__t">a technique</string>
+    <string name="always_technique_name">Technique</string>
+    <!-- claim -->
+    <string name="concept_claim_s">mark as mastered</string>
+    <string name="concept_claim_s__t">claim</string>
+    <string name="concept_claim_c">Mark as mastered</string>
+    <string name="concept_claim_c__t">Claim</string>
+    <string name="concept_claim_u">MARK AS MASTERED</string>
+    <string name="concept_claim_u__t">CLAIM</string>
+    <!-- claiming -->
+    <!-- claimed -->
+    <string name="concept_claimed_s">mastered</string>
+    <string name="concept_claimed_s__t">claimed</string>
+    <string name="concept_claimed_c">Mastered</string>
+    <string name="concept_claimed_c__t">Claimed</string>
+    <string name="concept_claimed_u">MASTERED</string>
+    <string name="concept_claimed_u__t">CLAIMED</string>
+    <!-- journal -->
+    <string name="concept_journal_c">Practice log</string>
+    <string name="concept_journal_c__t">Journal</string>
+    <string name="concept_journal_t">practice log</string>
+    <string name="concept_journal_t__t">Journal</string>
+    <string name="concept_journal_u">PRACTICE LOG</string>
+    <string name="concept_journal_u__t">JOURNAL</string>
+    <!-- ledger -->
+    <string name="concept_ledger_c">Stats</string>
+    <string name="concept_ledger_c__t">Ledger</string>
+    <string name="concept_ledger_t">stats</string>
+    <string name="concept_ledger_t__t">Ledger</string>
+    <!-- reading -->
+    <string name="concept_reading_s">measurement</string>
+    <string name="concept_reading_s__t">reading</string>
+    <string name="concept_reading_c">Measurement</string>
+    <string name="concept_reading_c__t">Reading</string>
+    <string name="concept_reading_pl">measurements</string>
+    <string name="concept_reading_pl__t">readings</string>
+    <string name="concept_reading_cpl">Measurements</string>
+    <string name="concept_reading_cpl__t">Readings</string>
+    <string name="concept_reading_upl">MEASUREMENTS</string>
+    <string name="concept_reading_upl__t">READINGS</string>
+    <!-- reads -->
+    <string name="concept_reads_c">Loading</string>
+    <string name="concept_reads_c__t">Reading</string>
+    <!-- narrator -->
+    <!-- ally -->
+    <string name="concept_ally_s">friend</string>
+    <string name="concept_ally_s__t">ally</string>
+    <string name="concept_ally_c">Friend</string>
+    <string name="concept_ally_c__t">Ally</string>
+    <string name="concept_ally_pl">friends</string>
+    <string name="concept_ally_pl__t">allies</string>
+    <string name="concept_ally_cpl">Friends</string>
+    <string name="concept_ally_cpl__t">Allies</string>
+    <string name="concept_ally_tpl">friends</string>
+    <string name="concept_ally_tpl__t">Allies</string>
+    <string name="concept_ally_upl">FRIENDS</string>
+    <string name="concept_ally_upl__t">ALLIES</string>
+    <string name="concept_ally_a">a friend</string>
+    <string name="concept_ally_a__t">an ally</string>
+    <!-- circle -->
+    <string name="concept_circle_s">group</string>
+    <string name="concept_circle_s__t">circle</string>
+    <string name="concept_circle_c">Group</string>
+    <string name="concept_circle_c__t">Circle</string>
+    <string name="concept_circle_pl">groups</string>
+    <string name="concept_circle_pl__t">circles</string>
+    <string name="concept_circle_cpl">Groups</string>
+    <string name="concept_circle_cpl__t">Circles</string>
+    <string name="concept_circle_a">a group</string>
+    <string name="concept_circle_a__t">a circle</string>
+    <string name="concept_circle_ca">A group</string>
+    <string name="concept_circle_ca__t">A circle</string>
+    <!-- keeper -->
+    <string name="concept_keeper_s">owner</string>
+    <string name="concept_keeper_s__t">keeper</string>
+    <string name="concept_keeper_c">Owner</string>
+    <string name="concept_keeper_c__t">Keeper</string>
+    <string name="concept_keeper_t">owner</string>
+    <string name="concept_keeper_t__t">Keeper</string>
+    <string name="concept_keeper_pl">owners</string>
+    <string name="concept_keeper_pl__t">keepers</string>
+    <!-- tidings -->
+    <string name="concept_tidings_s">feed</string>
+    <string name="concept_tidings_s__t">tidings</string>
+    <string name="concept_tidings_c">Feed</string>
+    <string name="concept_tidings_c__t">Tidings</string>
+    <string name="concept_tidings_t">feed</string>
+    <string name="concept_tidings_t__t">Tidings</string>
+    <!-- reckoning -->
+    <string name="concept_reckoning_s">leaderboard</string>
+    <string name="concept_reckoning_s__t">reckoning</string>
+    <string name="concept_reckoning_c">Leaderboard</string>
+    <string name="concept_reckoning_c__t">Reckoning</string>
+    <string name="concept_reckoning_pl">leaderboards</string>
+    <string name="concept_reckoning_pl__t">reckonings</string>
+    <string name="concept_reckoning_a">a leaderboard</string>
+    <string name="concept_reckoning_a__t">a reckoning</string>
+    <!-- theReckoning -->
+    <string name="concept_the_reckoning_s">leaderboard</string>
+    <string name="concept_the_reckoning_s__t">the reckoning</string>
+    <string name="concept_the_reckoning_t">leaderboard</string>
+    <string name="concept_the_reckoning_t__t">the Reckoning</string>
+    <string name="concept_the_reckoning_u">LEADERBOARD</string>
+    <string name="concept_the_reckoning_u__t">THE RECKONING</string>
+    <!-- rung -->
+    <string name="concept_rung_s">tier</string>
+    <string name="concept_rung_s__t">rung</string>
+    <string name="concept_rung_pl">tiers</string>
+    <string name="concept_rung_pl__t">rungs</string>
+    <string name="concept_rung_cpl">Tiers</string>
+    <string name="concept_rung_cpl__t">Rungs</string>
+    <!-- standing -->
+    <string name="concept_standing_s">position</string>
+    <string name="concept_standing_s__t">standing</string>
+    <string name="concept_standing_c">Position</string>
+    <string name="concept_standing_c__t">Standing</string>
+    <!-- tribute -->
+    <string name="concept_tribute_s">kudos</string>
+    <string name="concept_tribute_s__t">tribute</string>
+    <string name="concept_tribute_c">Kudos</string>
+    <string name="concept_tribute_c__t">Tribute</string>
+    <string name="concept_tribute_u">KUDOS</string>
+    <string name="concept_tribute_u__t">TRIBUTE</string>
+    <string name="concept_tribute_pl">kudos</string>
+    <string name="concept_tribute_pl__t">tributes</string>
+    <string name="concept_tribute_upl">KUDOS</string>
+    <string name="concept_tribute_upl__t">TRIBUTES</string>
+    <!-- remark -->
+    <string name="concept_remark_s">comment</string>
+    <string name="concept_remark_s__t">remark</string>
+    <string name="concept_remark_c">Comment</string>
+    <string name="concept_remark_c__t">Remark</string>
+    <string name="concept_remark_pl">comments</string>
+    <string name="concept_remark_pl__t">remarks</string>
+    <string name="concept_remark_cpl">Comments</string>
+    <string name="concept_remark_cpl__t">Remarks</string>
+    <string name="concept_remark_upl">COMMENTS</string>
+    <string name="concept_remark_upl__t">REMARKS</string>
+    <string name="concept_remark_a">a comment</string>
+    <string name="concept_remark_a__t">a remark</string>
+    <!-- missive -->
+    <string name="concept_missive_s">message</string>
+    <string name="concept_missive_s__t">missive</string>
+    <string name="concept_missive_pl">messages</string>
+    <string name="concept_missive_pl__t">missives</string>
+    <string name="concept_missive_cpl">Messages</string>
+    <string name="concept_missive_cpl__t">Missives</string>
+    <string name="concept_missive_tpl">messages</string>
+    <string name="concept_missive_tpl__t">Missives</string>
+    <string name="concept_missive_ca">A message</string>
+    <string name="concept_missive_ca__t">A missive</string>
+    <!-- inbox -->
+    <string name="concept_inbox_c">Inbox</string>
+    <string name="concept_inbox_c__t">Missives</string>
+    <!-- veil -->
+    <string name="always_veil_c">Veil</string>
+    <string name="always_veil_u">VEIL</string>
+    <!-- veilDraw -->
+    <string name="always_veil_draw_c">Veil draw</string>
+    <string name="always_veil_draw_at">a Veil draw</string>
+    <!-- theVeil -->
+    <string name="always_the_veil_c">The Veil</string>
+    <string name="always_the_veil_t">the Veil</string>
+
+    <!-- Sentences that used to live in data/WordLines.kt: the app's own voice, shared across screens. -->
+    <string name="line_stumbled">Something went wrong — try again in a moment</string>
+    <string name="line_stumbled__t">The Ledger stumbled — try again in a moment</string>
+    <string name="line_already_in_library">\"%1$s\" is already in the exercise list. Pick it from the list instead.</string>
+    <string name="line_already_in_library__t">\"%1$s\" is already in the Ledger. Pick it from the list instead.</string>
+    <string name="line_masterwork_answer">A masterwork find.</string>
+    <string name="line_masterwork_answer__t">The Ledger answers.</string>
+    <string name="line_no_muscle_data">No muscle data for this exercise yet.</string>
+    <string name="line_no_muscle_data__t">The Ledger holds no muscle data for this exercise yet.</string>
+    <string name="line_no_exercise_matching">No exercise matches \"%1$s\"</string>
+    <string name="line_no_exercise_matching__t">The Ledger holds no exercise matching \"%1$s\"</string>
+    <string name="line_no_exercise_for_filters">No exercise matches these filters</string>
+    <string name="line_no_exercise_for_filters__t">The Ledger holds no exercise for these filters</string>
+    <string name="line_linking">Connecting…</string>
+    <string name="line_linking__t">Linking to the Ledger…</string>
+    <string name="line_refused">That did not go through: %1$s</string>
+    <string name="line_refused__t">The Ledger refused: %1$s</string>
+    <string name="line_leaderboard_unread">The leaderboard could not be loaded. Try again in a moment.</string>
+    <string name="line_leaderboard_unread__t">The Ledger could not read the reckoning. Try again in a moment.</string>
+    <string name="line_veil_board_unread">The Veil leaderboard could not be loaded. Try again in a moment.</string>
+    <string name="line_veil_board_unread__t">The Ledger could not read the Veil\'s reckoning. Try again in a moment.</string>
+    <string name="line_veil_board_note">Ranks Veil progress — echoes inscribed — separate from the training leaderboard.</string>
+    <string name="line_veil_board_note__t">Ranks Veil progress — echoes inscribed — separate from the training reckoning.</string>
+    <string name="line_no_veil_echoes">No lifter has inscribed echoes yet. The Veil is empty and every top position here is open.</string>
+    <string name="line_no_veil_echoes__t">No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed.</string>
+    <string name="line_claim_standing">No friends are ranked here yet. Log one of its exercises to get a position.</string>
+    <string name="line_claim_standing__t">No allies stand here yet. Log one of its exercises to claim a standing.</string>
+    <string name="line_no_body_data">No weigh-ins yet.</string>
+    <string name="line_no_body_data__t">The Ledger knows nothing of your frame yet.</string>
+    <string name="line_ledger_title">STATS</string>
+    <string name="line_ledger_title__t">THE LEDGER</string>
+    <string name="line_welcome_tagline">Finish each workout. Keep your stats. Watch the Veil fill.</string>
+    <string name="line_welcome_tagline__t">Seal each trial. Keep the Ledger. Watch the Veil fill.</string>
+    <string name="line_forge_fits">The plan builder fits each routine inside this time, warm-up left out.</string>
+    <string name="line_forge_fits__t">The Forge fits each rite inside this time, warm-up left out.</string>
+    <string name="line_claim_standard">MASTERY STANDARD</string>
+    <string name="line_claim_standard__t">CLAIM STANDARD</string>
+    <string name="line_claim_at">mastered at</string>
+    <string name="line_claim_at__t">claim</string>
+    <string name="line_claim_help_cleared">You\'ve cleared this: mark it as mastered when you\'re ready. Do it only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
+    <string name="line_claim_help_cleared__t">You\'ve cleared this: claim it when you\'re ready. Claim only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
+    <string name="line_claim_help_open">Marking as mastered is self-declared: the app never does it for you. Do it only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
+    <string name="line_claim_help_open__t">Claiming is self-declared: the app never claims for you. Claim only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
+    <string name="line_master_all">Master all %1$d skills.</string>
+    <string name="line_master_all__t">Master all %1$d techniques. Every path is yours.</string>
+    <string name="line_practise_skills">Practise skills on the Skills tab and log attempts in the practice log.</string>
+    <string name="line_practise_skills__t">Practise techniques on Paths and log attempts in the Journal.</string>
+    <string name="line_feed_stale">Could not refresh — this feed is from your last sync: %1$s</string>
+    <string name="line_feed_stale__t">The ink has faded — these tidings are from your last sync: %1$s</string>
+    <string name="line_inbox_stale">Could not refresh — this inbox is from your last sync: %1$s</string>
+    <string name="line_inbox_stale__t">The ink has faded — these missives are from your last sync: %1$s</string>
+    <string name="line_standings_stale">Could not refresh — these positions are from your last sync: %1$s</string>
+    <string name="line_standings_stale__t">The ink has faded — these standings are from your last sync: %1$s</string>
+    <string name="line_roster_stale">Could not refresh — this list is from your last sync. Pull down to try again.</string>
+    <string name="line_roster_stale__t">The ink has faded — this roster is from your last sync. Pull down to try again.</string>
+    <string name="line_tape_readings">Body measurements</string>
+    <string name="line_tape_readings__t">Tape readings</string>
+    <string name="line_first_reading_prompt">No measurements yet. Add the first one above.</string>
+    <string name="line_first_reading_prompt__t">This page is blank. Take the first reading above.</string>
+    <string name="always_themed_names_caption">Uses the app\'s fantasy names: Workout becomes Trial, Routine becomes Rite.</string>
+    <string name="always_veil_how_title">How the Veil works</string>
+
+    <!-- Today: the italic line under the routine name (ui/dashboard/TodayNarration.kt). %d is a count. -->
+    <string name="narration_begin">Ready when you are.</string>
+    <string name="narration_begin__t">The page is blank.</string>
+    <string name="narration_live_none">Log your first set.</string>
+    <string name="narration_live_none__t">The page is blank. Ink the first set.</string>
+    <string name="narration_live_done">Every set is logged. Finish the workout.</string>
+    <string name="narration_live_done__t">Every set is inked. Seal the page.</string>
+    <string name="narration_sealed">Workout finished. Nice work.</string>
+    <string name="narration_sealed__t">The Ledger gilds its page.</string>
+    <string name="narration_planned">Planned for this day.</string>
+    <string name="narration_planned__t">The page waits for its day.</string>
+    <string name="narration_respite">Nothing planned today. Recover well.</string>
+    <string name="narration_respite__t">The Ledger rests its pen.</string>
+    <string name="narration_respite_streak">Nothing planned today. Your streak holds.</string>
+    <string name="narration_respite_streak__t">The Ledger rests its pen. Your oath holds.</string>
+    <string name="narration_no_cycle">You have no weekly plan yet. Build one and its routines land here.</string>
+    <string name="narration_no_cycle__t">Your cycle is unwritten. Forge one and its rites land here.</string>
+    <plurals name="narration_begin_streak"><item quantity="one">Ready when you are. Your streak is %d day.</item><item quantity="other">Ready when you are. Your streak is %d days.</item></plurals>
+    <plurals name="narration_begin_streak__t"><item quantity="one">The page is blank. %d day of ink behind it.</item><item quantity="other">The page is blank. %d days of ink behind it.</item></plurals>
+    <plurals name="narration_live_start"><item quantity="one">%d set logged. Good start.</item><item quantity="other">%d sets logged. Good start.</item></plurals>
+    <plurals name="narration_live_start__t"><item quantity="one">%d set inked. The page begins to fill.</item><item quantity="other">%d sets inked. The page begins to fill.</item></plurals>
+    <plurals name="narration_live_half"><item quantity="one">%d set logged. Over halfway.</item><item quantity="other">%d sets logged. Over halfway.</item></plurals>
+    <plurals name="narration_live_half__t"><item quantity="one">%d set inked. The page is half written.</item><item quantity="other">%d sets inked. The page is half written.</item></plurals>
 </resources>

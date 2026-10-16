@@ -1,145 +1,101 @@
 package com.ironvellum.app.data
 
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+
 /**
  * Whole lines that swapping a word cannot turn into plain English: the app's own voice ("The Ledger refused") or
- * a sentence whose shape changes with the word. Each is written out once for each vocabulary, themed first, and
- * read through [Words.pick] so it follows the Settings switch. docs/GLOSSARY.md lists the concepts behind them.
+ * a sentence whose shape changes with the word. Each is a `line_*` string and its `__t` twin in strings.xml (written
+ * whole in each vocabulary, docs/STRINGS.md) and is read through [Words] so it follows the Settings switch.
+ * docs/GLOSSARY.md lists the concepts behind them. A line with no twin (`always_*`) is the same in both modes.
  */
 object Lines {
-    val stumbled: String
-        get() = Words.pick("The Ledger stumbled — try again in a moment", "Something went wrong — try again in a moment")
+    private fun line(plain: Int, themed: Int, vararg args: Any): String = Words.text(UiText.themed(plain, themed, *args))
 
-    fun alreadyInLibrary(name: String): String = Words.pick(
-        "\"$name\" is already in the Ledger. Pick it from the list instead.",
-        "\"$name\" is already in the exercise list. Pick it from the list instead.",
-    )
+    val stumbled: String
+        get() = line(R.string.line_stumbled, R.string.line_stumbled__t)
+
+    fun alreadyInLibrary(name: String): String = line(R.string.line_already_in_library, R.string.line_already_in_library__t, name)
 
     val masterworkAnswer: String
-        get() = Words.pick("The Ledger answers.", "A masterwork find.")
+        get() = line(R.string.line_masterwork_answer, R.string.line_masterwork_answer__t)
 
     val noMuscleData: String
-        get() = Words.pick("The Ledger holds no muscle data for this exercise yet.", "No muscle data for this exercise yet.")
+        get() = line(R.string.line_no_muscle_data, R.string.line_no_muscle_data__t)
 
-    fun noExerciseMatching(query: String): String = Words.pick(
-        "The Ledger holds no exercise matching \"$query\"",
-        "No exercise matches \"$query\"",
-    )
+    fun noExerciseMatching(query: String): String = line(R.string.line_no_exercise_matching, R.string.line_no_exercise_matching__t, query)
 
     val noExerciseForFilters: String
-        get() = Words.pick("The Ledger holds no exercise for these filters", "No exercise matches these filters")
+        get() = line(R.string.line_no_exercise_for_filters, R.string.line_no_exercise_for_filters__t)
 
     val linking: String
-        get() = Words.pick("Linking to the Ledger…", "Connecting…")
+        get() = line(R.string.line_linking, R.string.line_linking__t)
 
-    fun refused(reason: String): String = Words.pick("The Ledger refused: $reason", "That did not go through: $reason")
+    fun refused(reason: String): String = line(R.string.line_refused, R.string.line_refused__t, reason)
 
     val leaderboardUnread: String
-        get() = Words.pick(
-            "The Ledger could not read the reckoning. Try again in a moment.",
-            "The leaderboard could not be loaded. Try again in a moment.",
-        )
+        get() = line(R.string.line_leaderboard_unread, R.string.line_leaderboard_unread__t)
 
     val veilBoardUnread: String
-        get() = Words.pick(
-            "The Ledger could not read the Veil's reckoning. Try again in a moment.",
-            "The Veil leaderboard could not be loaded. Try again in a moment.",
-        )
+        get() = line(R.string.line_veil_board_unread, R.string.line_veil_board_unread__t)
 
     val veilBoardNote: String
-        get() = Words.pick(
-            "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
-            "Ranks Veil progress — echoes inscribed — separate from the training leaderboard.",
-        )
+        get() = line(R.string.line_veil_board_note, R.string.line_veil_board_note__t)
 
     val noVeilEchoes: String
-        get() = Words.pick(
-            "No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed.",
-            "No lifter has inscribed echoes yet. The Veil is empty and every top position here is open.",
-        )
+        get() = line(R.string.line_no_veil_echoes, R.string.line_no_veil_echoes__t)
 
     val claimStanding: String
-        get() = Words.pick(
-            "No allies stand here yet. Log one of its exercises to claim a standing.",
-            "No friends are ranked here yet. Log one of its exercises to get a position.",
-        )
+        get() = line(R.string.line_claim_standing, R.string.line_claim_standing__t)
 
     val noBodyData: String
-        get() = Words.pick("The Ledger knows nothing of your frame yet.", "No weigh-ins yet.")
+        get() = line(R.string.line_no_body_data, R.string.line_no_body_data__t)
 
     val ledgerTitle: String
-        get() = Words.pick("THE LEDGER", "STATS")
+        get() = line(R.string.line_ledger_title, R.string.line_ledger_title__t)
 
     val welcomeTagline: String
-        get() = Words.pick(
-            "Seal each trial. Keep the Ledger. Watch the Veil fill.",
-            "Finish each workout. Keep your stats. Watch the Veil fill.",
-        )
+        get() = line(R.string.line_welcome_tagline, R.string.line_welcome_tagline__t)
 
     val forgeFits: String
-        get() = Words.pick(
-            "The Forge fits each rite inside this time, warm-up left out.",
-            "The plan builder fits each routine inside this time, warm-up left out.",
-        )
+        get() = line(R.string.line_forge_fits, R.string.line_forge_fits__t)
 
     val claimStandard: String
-        get() = Words.pick("CLAIM STANDARD", "MASTERY STANDARD")
+        get() = line(R.string.line_claim_standard, R.string.line_claim_standard__t)
 
     val claimAt: String
-        get() = Words.pick("claim", "mastered at")
+        get() = line(R.string.line_claim_at, R.string.line_claim_at__t)
 
-    fun claimHelp(cleared: Boolean, target: String, xp: Int): String = Words.pick(
-        (if (cleared) "You've cleared this: claim it when you're ready. " else "Claiming is self-declared: the app never claims for you. ") +
-            "Claim only once you can hit $target on demand. It awards $xp XP and can be undone.",
-        (if (cleared) "You've cleared this: mark it as mastered when you're ready. " else "Marking as mastered is self-declared: the app never does it for you. ") +
-            "Do it only once you can hit $target on demand. It awards $xp XP and can be undone.",
-    )
+    /** Two whole sentences (cleared or not), each in both vocabularies, never a prefix glued to a shared tail. */
+    fun claimHelp(cleared: Boolean, target: String, xp: Int): String =
+        if (cleared) line(R.string.line_claim_help_cleared, R.string.line_claim_help_cleared__t, target, xp)
+        else line(R.string.line_claim_help_open, R.string.line_claim_help_open__t, target, xp)
 
-    fun masterAll(count: Int): String = Words.pick(
-        "Master all $count techniques. Every path is yours.",
-        "Master all $count skills.",
-    )
+    fun masterAll(count: Int): String = line(R.string.line_master_all, R.string.line_master_all__t, count)
 
     val practiseSkills: String
-        get() = Words.pick(
-            "Practise techniques on Paths and log attempts in the Journal.",
-            "Practise skills on the Skills tab and log attempts in the practice log.",
-        )
+        get() = line(R.string.line_practise_skills, R.string.line_practise_skills__t)
 
-    fun feedStale(error: String): String = Words.pick(
-        "The ink has faded — these tidings are from your last sync: $error",
-        "Could not refresh — this feed is from your last sync: $error",
-    )
+    fun feedStale(error: String): String = line(R.string.line_feed_stale, R.string.line_feed_stale__t, error)
 
-    fun inboxStale(error: String): String = Words.pick(
-        "The ink has faded — these missives are from your last sync: $error",
-        "Could not refresh — this inbox is from your last sync: $error",
-    )
+    fun inboxStale(error: String): String = line(R.string.line_inbox_stale, R.string.line_inbox_stale__t, error)
 
-    fun standingsStale(error: String?): String = Words.pick(
-        "The ink has faded — these standings are from your last sync: $error",
-        "Could not refresh — these positions are from your last sync: $error",
-    )
+    fun standingsStale(error: String?): String = line(R.string.line_standings_stale, R.string.line_standings_stale__t, error.orEmpty())
 
     val rosterStale: String
-        get() = Words.pick(
-            "The ink has faded — this roster is from your last sync. Pull down to try again.",
-            "Could not refresh — this list is from your last sync. Pull down to try again.",
-        )
+        get() = line(R.string.line_roster_stale, R.string.line_roster_stale__t)
 
     /** The tape pane's title and the Ledger row that opens it. */
     val tapeReadings: String
-        get() = Words.pick("Tape readings", "Body measurements")
+        get() = line(R.string.line_tape_readings, R.string.line_tape_readings__t)
 
     val firstReadingPrompt: String
-        get() = Words.pick(
-            "This page is blank. Take the first reading above.",
-            "No measurements yet. Add the first one above.",
-        )
+        get() = line(R.string.line_first_reading_prompt, R.string.line_first_reading_prompt__t)
 
     /** The Settings switch's example. The same in both modes: it names both vocabularies. */
     val themedNamesCaption: String
-        get() = "Uses the app's fantasy names: Workout becomes Trial, Routine becomes Rite."
+        get() = Words.text(UiText.res(R.string.always_themed_names_caption))
 
     val veilHowTitle: String
-        get() = "How the Veil works"
+        get() = Words.text(UiText.res(R.string.always_veil_how_title))
 }

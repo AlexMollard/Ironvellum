@@ -251,6 +251,29 @@ class TodayStateTest {
     }
 
     @Test
+    fun `the narrator says the same things in plain words when the themed names are off`() {
+        com.ironvellum.app.data.Words.useForTest(false)
+        try {
+            assertEquals("Ready when you are. Your streak is 4 days.", narratorLine(DayKind.BEGIN, daysKept = 4))
+            assertEquals("Ready when you are. Your streak is 1 day.", narratorLine(DayKind.BEGIN, daysKept = 1))
+            assertEquals("Ready when you are.", narratorLine(DayKind.BEGIN))
+            assertEquals("Log your first set.", narratorLine(DayKind.LIVE, 0, 19))
+            assertEquals("1 set logged. Good start.", narratorLine(DayKind.LIVE, 1, 19))
+            assertEquals("7 sets logged. Over halfway.", narratorLine(DayKind.LIVE, 7, 19))
+            assertEquals("Every set is logged. Finish the workout.", narratorLine(DayKind.LIVE, 19, 19))
+            assertEquals("Workout finished. Nice work.", narratorLine(DayKind.SEALED))
+            assertEquals("Planned for this day.", narratorLine(DayKind.PLANNED))
+            assertEquals("Nothing planned today. Your streak holds.", narratorLine(DayKind.RESPITE, daysKept = 4))
+            assertEquals("Nothing planned today. Recover well.", narratorLine(DayKind.RESPITE))
+            assertEquals("You have no weekly plan yet. Build one and its routines land here.", narratorLine(DayKind.NO_CYCLE))
+            val lines = DayKind.entries.flatMap { kind -> listOf(narratorLine(kind), narratorLine(kind, 3, 10, 2), narratorLine(kind, 10, 10, 1)) }
+            assertEquals(emptyList<String>(), lines.filter { line -> com.ironvellum.app.THEMED_WORDS.any { it.containsMatchIn(line) } })
+        } finally {
+            com.ironvellum.app.data.Words.useForTest(true)
+        }
+    }
+
+    @Test
     fun `the narrator speaks once per state, and every line is free of retired words`() {
         assertEquals("The page is blank. 4 days of ink behind it.", narratorLine(DayKind.BEGIN, daysKept = 4))
         assertEquals("The page is blank. 1 day of ink behind it.", narratorLine(DayKind.BEGIN, daysKept = 1))

@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 4539 in 187 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 3525 in 181 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/WorkoutSessionService.kt 7
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
@@ -10,15 +10,12 @@ main/data/InboxNotifier.kt 12
 main/data/Notifications.kt 10
 main/data/PlateStore.kt 6
 main/data/Repository.kt 33
-main/data/WordLines.kt 59
-main/data/Words.kt 39
+main/data/Words.kt 2
 main/data/cloud/AccountRepository.kt 3
 main/data/cloud/Cloud.kt 17
 main/data/cloud/CloudSync.kt 11
 main/domain/BodyStats.kt 13
 main/domain/Circles.kt 6
-main/domain/CrestCatalogue.kt 14
-main/domain/Crests.kt 113
 main/domain/CustomExercises.kt 11
 main/domain/DeedLadders.kt 30
 main/domain/Effort.kt 9
@@ -47,9 +44,7 @@ main/domain/SessionXp.kt 1
 main/domain/SetKind.kt 15
 main/domain/SetScheme.kt 14
 main/domain/SexHold.kt 1
-main/domain/Skills.kt 541
 main/domain/Summons.kt 10
-main/domain/TitleEngine.kt 228
 main/domain/TrialHints.kt 6
 main/domain/VeilDraw.kt 6
 main/domain/WarmupStep.kt 6
@@ -87,7 +82,6 @@ main/ui/components/XpPage.kt 14
 main/ui/components/XpReveal.kt 18
 main/ui/dashboard/BodyDetailsDialog.kt 9
 main/ui/dashboard/DashboardScreen.kt 42
-main/ui/dashboard/TodayNarration.kt 22
 main/ui/dashboard/TodaySoul.kt 13
 main/ui/dashboard/TodayState.kt 6
 main/ui/dashboard/TodayVeil.kt 9
