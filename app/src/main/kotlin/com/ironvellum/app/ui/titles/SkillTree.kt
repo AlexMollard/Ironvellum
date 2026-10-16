@@ -70,16 +70,16 @@ private val TextGap = TEXT_GAP_DP.dp
 private val EdgeW = 2.dp
 
 /** The locked node ring: InkMuted, 3:1 against the page and dimmer than the open node. */
-internal val LockedDot = IronvellumColors.InkMuted
+internal val LockedDot get() = IronvellumColors.InkMuted
 
 /** The strength of a locked node's Iron ring. */
 private const val LOCKED_RING = 0.55f
 
 /** The locked node's fill, where its glyph has the least contrast. */
-internal val LockedRowBg = IronvellumColors.Vault
+internal val LockedRowBg get() = IronvellumColors.Vault
 
 /** A locked glyph: part of the silhouette, deliberately close to its disc. */
-internal val LockedGlyph = IronvellumColors.Rune
+internal val LockedGlyph get() = IronvellumColors.Rune
 
 /** What a node is, in shape, glyph and badge as well as colour. */
 private enum class NodeState { MASTERED, NEXT, LOCKED }

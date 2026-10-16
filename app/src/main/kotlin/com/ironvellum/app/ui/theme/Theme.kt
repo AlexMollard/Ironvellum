@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -9,9 +8,12 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.CompositionLocalProvider
@@ -24,34 +26,180 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.R
 
-object IronvellumColors {
-    // Snapshot state keeps existing drawing callbacks and non-composable
-    // helpers reactive without a second palette at hundreds of call sites.
-    internal var accents by androidx.compose.runtime.mutableStateOf(AccentPalette.Default)
+/** Appearance > Theme. System follows the phone's dark mode. */
+enum class ThemeMode {
+    SYSTEM, DARK, LIGHT;
+
+    /** True when Vellum (the light paper) is in force, given whether the phone is in dark mode. */
+    fun isLight(systemDark: Boolean): Boolean = when (this) {
+        SYSTEM -> !systemDark
+        DARK -> false
+        LIGHT -> true
+    }
+}
+
+/** True when the phone is in dark mode: the one resolver the activity and the widgets share. */
+fun isSystemDark(context: android.content.Context): Boolean =
+    (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+
+/** The structural palette of one theme: paper, ink, lines and the two status tones. */
+internal interface Paper {
+    val Abyss: Color // deepest paper (the page)
+    val Vault: Color // panel paper
+    val VaultHigh: Color // raised paper (navigation, sheets)
+    val Ink: Color
+    val InkMuted: Color
+    val Rune: Color // structure lines
+    val Bracket: Color // brush ticks
+    val DangerRed: Color
+    val Caution: Color
+    val Wells: WellTones
+    val PlateGround: Color // the ground under relic, crest and seal art
+    val PlateEdge: Color // the rim of a tile whose reward is not held yet
+    val PlateDeep: Color // the infill a crest mark draws over its plate
+    val Silhouette: Color // a reward not held yet: its flat outline
+    val SilhouetteGround: Color
+    val UnheldName: Color // the name under such a reward
+    val UnheldNameBright: Color
+    val RingTick: Color // the Veil ring's quiet ticks
+    val FillGlow: Color // the XP page's glow while it fills
+    val LevelGlow: Color // the XP page's glow at a level moment
+    val OnGoldFill: Color // text on a gold gradient button
+    val Scrim: Color // behind a dialog or sheet
+}
+
+/** The tinted grounds that were hard-coded greens: a chip, a readout, a quiet or disabled gold button. */
+internal class WellTones(
+    val top: Color, val bottom: Color,
+    val disabledTop: Color, val disabledBottom: Color,
+    val quietTop: Color, val quietBottom: Color,
+    val readout: Color, val flat: Color,
+)
+
+internal object DarkPaper : Paper {
     // Paper tones: warm charcoal, not blue-grey. Ink needs something to sit on.
-    val Abyss = Color(0xFF0C0C0B) // deepest paper
-    val Vault = Color(0xFF171715) // panel paper
-    val VaultHigh = Color(0xFF1E1E1B) // raised paper
-
-    // Colour survives ONLY where it carries information a monochrome UI would
-    // destroy: progression, rarity, earned moments, danger.
-    val Emerald get() = Color(accents.primary) // XP and success
-    val EmeraldBright get() = Color(accents.bright)
-    val EmeraldDeep get() = Color(accents.deep)
-    val SystemGreen get() = Color(accents.muted) // muted green accent
-    val SovereignGold get() = Color(accents.secondary) // earned moments only
-    val DangerRed = Color(0xFFEF5350)
-    // Heavy: a soft recovery flag on a muscle (coverage), never danger and never earned.
-    // Amber, fixed - the accent palette is the lifter's to change, a warning is not.
-    val Caution = Color(0xFFE0B25A)
-
+    override val Abyss = Color(0xFF0C0C0B)
+    override val Vault = Color(0xFF171715)
+    override val VaultHigh = Color(0xFF1E1E1B)
     // Ink itself: the structural palette is monochrome by design.
     // Exactly tools/art.py INK_TINT (232, 232, 228): generated artwork and UI
     // text must be the same ink, or the "one hand" claim is decorative only.
-    val Ink = Color(0xFFE8E8E4)
-    val InkMuted = Color(0xFFA3A099)
-    val Rune = Color(0xFF32302B) // structure lines
-    val Bracket = Color(0xFF4A473F) // brush ticks
+    override val Ink = Color(0xFFE8E8E4)
+    override val InkMuted = Color(0xFFA3A099)
+    override val Rune = Color(0xFF32302B)
+    override val Bracket = Color(0xFF4A473F)
+    override val DangerRed = Color(0xFFEF5350)
+    // Heavy: a soft recovery flag on a muscle (coverage), never danger and never earned.
+    // Amber, fixed - the accent palette is the lifter's to change, a warning is not.
+    override val Caution = Color(0xFFE0B25A)
+    override val Wells = WellTones(
+        top = Color(0xFF151C19), bottom = Color(0xFF0F1412),
+        disabledTop = Color(0xFF1E3026), disabledBottom = Color(0xFF16211B),
+        quietTop = Color(0xFF141C18), quietBottom = Color(0xFF101714),
+        readout = Color(0xFF101614), flat = Color(0xFF16201C),
+    )
+    override val PlateGround = Color(0xFF121211)
+    override val PlateEdge = Color(0xFF232320)
+    override val PlateDeep = Color(0xFF0B0B0D)
+    override val Silhouette = Color(0xFF3A3935)
+    override val SilhouetteGround = Color(0xFF0F0F0E)
+    override val UnheldName = Color(0xFF8A8780)
+    override val UnheldNameBright = Color(0xFFC9C6BE)
+    override val RingTick = Color(0xFF5C5850)
+    override val FillGlow = Color(0xFF1B2A22)
+    override val LevelGlow = Color(0xFF3A2C10)
+    override val OnGoldFill = Color(0xFF1A1405)
+    override val Scrim = Color.Black.copy(alpha = 0.6f)
+}
+
+/** Vellum: warm parchment paper, the approved light theme (2026-10-16). */
+internal object LightPaper : Paper {
+    override val Abyss = Color(0xFFF3EEE3)
+    override val Vault = Color(0xFFFBF8F2)
+    override val VaultHigh = Color(0xFFECE6D8)
+    override val Ink = Color(0xFF1F1C17)
+    override val InkMuted = Color(0xFF5F594D)
+    override val Rune = Color(0xFFD8CFBE)
+    override val Bracket = Color(0xFFA89E8A)
+    override val DangerRed = Color(0xFFC62828)
+    override val Caution = Color(0xFF9C5500)
+    override val Wells = WellTones(
+        top = Color(0xFFF1EBDD), bottom = Color(0xFFE8E1D1),
+        disabledTop = Color(0xFFE6DFCF), disabledBottom = Color(0xFFDDD5C3),
+        quietTop = Color(0xFFF3EEE3), quietBottom = Color(0xFFEDE7D9),
+        readout = Color(0xFFEDE7D9), flat = Color(0xFFEDE7D9),
+    )
+    override val PlateGround = Color(0xFFF8F4EA)
+    override val PlateEdge = Color(0xFFE3DBC9)
+    override val PlateDeep = Color(0xFFF3EEE3)
+    override val Silhouette = Color(0xFFC9BFAA)
+    override val SilhouetteGround = Color(0xFFEFE9DC)
+    override val UnheldName = Color(0xFF6E685B)
+    override val UnheldNameBright = Color(0xFF4A453B)
+    override val RingTick = Color(0xFF9A907C)
+    override val FillGlow = Color(0xFFDCE8DF)
+    override val LevelGlow = Color(0xFFF1E3B8)
+    override val OnGoldFill = Color(0xFFFBF8F2)
+    override val Scrim = Color(0xFF1F1C17).copy(alpha = 0.4f)
+}
+
+object IronvellumColors {
+    // Snapshot state keeps existing drawing callbacks and non-composable
+    // helpers reactive without a second palette at hundreds of call sites.
+    // Each theme keeps its own accent pair; [accents] is the one in force.
+    internal var light by androidx.compose.runtime.mutableStateOf(false)
+    internal var darkAccents by androidx.compose.runtime.mutableStateOf(AccentPalette.Default)
+    internal var lightAccents by androidx.compose.runtime.mutableStateOf(AccentPalette.LightDefault)
+    internal val accents: AccentPalette get() = if (light) lightAccents else darkAccents
+
+    private val paper: Paper get() = if (light) LightPaper else DarkPaper
+    private val lightRoles get() = lightAccents.lightAccent()
+
+    val Abyss get() = paper.Abyss
+    val Vault get() = paper.Vault
+    val VaultHigh get() = paper.VaultHigh
+
+    // Colour survives ONLY where it carries information a monochrome UI would
+    // destroy: progression, rarity, earned moments, danger.
+    // On Vellum the accent is a deep shade: Emerald is the button fill, and the
+    // text-weight roles (Bright, SystemGreen, Deep) are its deeper text shade.
+    val Emerald get() = if (light) Color(lightRoles.fill) else Color(darkAccents.primary) // XP and success
+    val EmeraldBright get() = if (light) Color(lightRoles.text) else Color(darkAccents.bright)
+    val EmeraldDeep get() = if (light) Color(lightRoles.text) else Color(darkAccents.deep)
+    val SystemGreen get() = if (light) Color(lightRoles.text) else Color(darkAccents.muted) // muted green accent
+    val SovereignGold get() = if (light) Color(lightRoles.reward) else Color(darkAccents.secondary) // earned moments only
+    /** Text on an Emerald fill. */
+    val OnEmerald get() = Color(if (light) lightAccentForeground(lightRoles.fill) else accentForeground(darkAccents.primary))
+    /** Text on a SovereignGold fill. */
+    val OnGold get() = Color(if (light) lightAccentForeground(lightRoles.reward) else accentForeground(darkAccents.secondary))
+    /** A wash of the accent: the Today box's ground and edge. */
+    val AccentTint get() = if (light) Color(lightRoles.tint) else Emerald.copy(alpha = 0.10f)
+    val AccentTintBorder get() = if (light) Color(lightRoles.border) else Emerald.copy(alpha = 0.35f)
+    val DangerRed get() = paper.DangerRed
+    val Caution get() = paper.Caution
+
+    val Ink get() = paper.Ink
+    val InkMuted get() = paper.InkMuted
+    val Rune get() = paper.Rune // structure lines
+    val Bracket get() = paper.Bracket // brush ticks
+    internal val Wells get() = paper.Wells
+    internal val PlateGround get() = paper.PlateGround
+    internal val PlateEdge get() = paper.PlateEdge
+    internal val PlateDeep get() = paper.PlateDeep
+    internal val Silhouette get() = paper.Silhouette
+    internal val SilhouetteGround get() = paper.SilhouetteGround
+    internal val UnheldName get() = paper.UnheldName
+    internal val UnheldNameBright get() = paper.UnheldNameBright
+    internal val RingTick get() = paper.RingTick
+    /** The XP page's glow: dark emerald while it fills (the accent's tint on Vellum), gold at a level. */
+    internal val FillGlow get() = if (light) Color(lightRoles.tint) else paper.FillGlow
+    internal val LevelGlow get() = paper.LevelGlow
+    internal val OnGoldFill get() = paper.OnGoldFill
+    internal val Scrim get() = paper.Scrim
+
+    /** A chosen colour as it will draw: on Vellum a custom one is deepened until it reads on the paper. */
+    fun swatch(colour: Int): Color = Color(if (light) deepenForLight(colour) else colour)
 }
 
 /** The three sanctioned letter-spacing values; use these, never ad-hoc sp literals. */
@@ -66,28 +214,54 @@ val ChakraPetch = FontFamily(
     Font(R.font.chakra_petch_bold, FontWeight.Bold),
 )
 
-private fun ironvellumColorScheme(palette: AccentPalette) = darkColorScheme(
-    primary = Color(palette.primary),
-    onPrimary = Color(accentForeground(palette.primary)),
-    primaryContainer = IronvellumColors.VaultHigh,
-    onPrimaryContainer = IronvellumColors.Ink,
-    secondary = Color(palette.muted),
-    onSecondary = Color(accentForeground(palette.muted)),
-    secondaryContainer = IronvellumColors.VaultHigh,
-    onSecondaryContainer = IronvellumColors.Ink,
-    tertiary = Color(palette.secondary),
-    onTertiary = Color(accentForeground(palette.secondary)),
-    background = IronvellumColors.Abyss,
-    onBackground = IronvellumColors.Ink,
-    surface = IronvellumColors.Vault,
-    onSurface = IronvellumColors.Ink,
-    surfaceVariant = IronvellumColors.VaultHigh,
-    onSurfaceVariant = IronvellumColors.InkMuted,
-    outline = IronvellumColors.Rune,
-    outlineVariant = IronvellumColors.Rune,
-    error = IronvellumColors.DangerRed,
-    onError = Color.Black,
-)
+private fun ironvellumColorScheme(light: Boolean) = if (light) {
+    lightColorScheme(
+        primary = IronvellumColors.Emerald,
+        onPrimary = IronvellumColors.OnEmerald,
+        primaryContainer = IronvellumColors.VaultHigh,
+        onPrimaryContainer = IronvellumColors.Ink,
+        secondary = IronvellumColors.SystemGreen,
+        onSecondary = Color(lightAccentForeground(IronvellumColors.SystemGreen.toArgb())),
+        secondaryContainer = IronvellumColors.VaultHigh,
+        onSecondaryContainer = IronvellumColors.Ink,
+        tertiary = IronvellumColors.SovereignGold,
+        onTertiary = IronvellumColors.OnGold,
+        background = IronvellumColors.Abyss,
+        onBackground = IronvellumColors.Ink,
+        surface = IronvellumColors.Vault,
+        onSurface = IronvellumColors.Ink,
+        surfaceVariant = IronvellumColors.VaultHigh,
+        onSurfaceVariant = IronvellumColors.InkMuted,
+        outline = IronvellumColors.Rune,
+        outlineVariant = IronvellumColors.Rune,
+        error = IronvellumColors.DangerRed,
+        onError = IronvellumColors.Vault,
+    )
+} else {
+    val palette = IronvellumColors.darkAccents
+    darkColorScheme(
+        primary = Color(palette.primary),
+        onPrimary = Color(accentForeground(palette.primary)),
+        primaryContainer = IronvellumColors.VaultHigh,
+        onPrimaryContainer = IronvellumColors.Ink,
+        secondary = Color(palette.muted),
+        onSecondary = Color(accentForeground(palette.muted)),
+        secondaryContainer = IronvellumColors.VaultHigh,
+        onSecondaryContainer = IronvellumColors.Ink,
+        tertiary = Color(palette.secondary),
+        onTertiary = Color(accentForeground(palette.secondary)),
+        background = IronvellumColors.Abyss,
+        onBackground = IronvellumColors.Ink,
+        surface = IronvellumColors.Vault,
+        onSurface = IronvellumColors.Ink,
+        surfaceVariant = IronvellumColors.VaultHigh,
+        onSurfaceVariant = IronvellumColors.InkMuted,
+        outline = IronvellumColors.Rune,
+        outlineVariant = IronvellumColors.Rune,
+        error = IronvellumColors.DangerRed,
+        onError = Color.Black,
+    )
+}
 
 private val IronvellumTypography: Typography
     get() {
@@ -171,14 +345,20 @@ fun ironvellumFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     unfocusedTextColor = IronvellumColors.Ink,
 )
 
-/** Ironvellum is always dark — the Ledger never sleeps. Dynamic color is deliberately unused. */
+/**
+ * Ironvellum is dark ("the Ledger never sleeps") or Vellum, a warm parchment light theme; [light] is the resolved
+ * Appearance > Theme choice. Dynamic color is deliberately unused.
+ */
 @Composable
-fun IronvellumTheme(palette: AccentPalette = IronvellumColors.accents, content: @Composable () -> Unit) {
+fun IronvellumTheme(light: Boolean = false, content: @Composable () -> Unit) {
+    // Written before any child reads a token. Every token is a getter over this snapshot state, so a flip
+    // re-draws the whole tree, including dialogs and sheets, which compose in windows of their own.
+    remember(light) { IronvellumColors.light = light; light }
     // The text scale is pinned in MainActivity.attachBaseContext, which every
     // window of the app inherits — including dialogs, which compose in their
     // own window and so ignored a CompositionLocal installed here.
     MaterialTheme(
-        colorScheme = ironvellumColorScheme(palette),
+        colorScheme = ironvellumColorScheme(light),
         typography = IronvellumTypography,
         shapes = IronvellumShapes,
     ) {

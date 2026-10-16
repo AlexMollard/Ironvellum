@@ -60,7 +60,10 @@ import com.ironvellum.app.ui.theme.inkBorder
 internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (LoadUnit) -> Unit) {
     val context = LocalContext.current.applicationContext
     val appearance = (context as IronvellumApp).appearanceStore
-    val palette by appearance.palette.collectAsStateWithLifecycle()
+    val darkPalette by appearance.palette.collectAsStateWithLifecycle()
+    val lightPalette by appearance.lightPalette.collectAsStateWithLifecycle()
+    val palette = if (IronvellumColors.light) lightPalette else darkPalette
+    val presets = AccentPresets.forTheme(IronvellumColors.light)
 
     Column(
         Modifier
@@ -140,7 +143,7 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
                     .selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                AccentPresets.entries.forEach { preset ->
+                presets.forEach { preset ->
                     PaletteSwatch(
                         primary = preset.palette.primary,
                         secondary = preset.palette.secondary,
@@ -152,7 +155,7 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                AccentPresets.entries.firstOrNull { it.palette == palette }?.name ?: "Custom colours",
+                presets.firstOrNull { it.palette == palette }?.name ?: "Custom colours",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -192,8 +195,8 @@ private fun PaletteSwatch(primary: Int, secondary: Int, name: String, selected: 
                 .clip(DotShape),
         ) {
             Row(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f).fillMaxHeight().background(Color(primary)))
-                Box(Modifier.weight(1f).fillMaxHeight().background(Color(secondary)))
+                Box(Modifier.weight(1f).fillMaxHeight().background(IronvellumColors.swatch(primary)))
+                Box(Modifier.weight(1f).fillMaxHeight().background(IronvellumColors.swatch(secondary)))
             }
         }
     }

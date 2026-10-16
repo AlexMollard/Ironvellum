@@ -388,7 +388,7 @@ private fun AttemptLogger(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF101614), readoutShape)
+            .background(IronvellumColors.Wells.readout, readoutShape)
             .inkBorder(IronvellumColors.Rune, readoutShape, 1.dp)
             .padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -544,7 +544,7 @@ private fun QuickChip(
                 if (selected) {
                     Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                 } else {
-                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                    Brush.verticalGradient(listOf(IronvellumColors.Wells.top, IronvellumColors.Wells.bottom))
                 },
                 shape,
             )
@@ -570,7 +570,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
             .heightIn(min = 48.dp)
-            .background(Color(0xFF151C19), shape)
+            .background(IronvellumColors.Wells.top, shape)
             .inkBorder(if (met) emeraldRamp(0.7f) else SolidColor(color), shape, 1.dp)
             .clickable(role = Role.Button, onClickLabel = "Open $name") { onClick() }
             .padding(horizontal = 10.dp),
@@ -600,7 +600,7 @@ private fun StepGlyph(symbol: String, label: String, step: () -> Unit) {
     Box(
         Modifier
             .size(48.dp)
-            .background(Color(0xFF16201C), MaterialTheme.shapes.small)
+            .background(IronvellumColors.Wells.flat, MaterialTheme.shapes.small)
             .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
             .pointerInput(Unit) {
                 detectTapGestures(

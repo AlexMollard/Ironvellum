@@ -10,6 +10,7 @@ import com.ironvellum.app.data.AppearanceStore
 import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.theme.AccentPalette
+import com.ironvellum.app.ui.theme.ThemeMode
 import androidx.compose.runtime.Composable
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
@@ -178,7 +179,10 @@ class SettingsViewModel(
     private val appearanceStore: AppearanceStore,
 ) : ViewModel() {
 
-    val appearance = appearanceStore.palette
+    val themeMode = appearanceStore.mode
+    fun setThemeMode(mode: ThemeMode) = appearanceStore.setMode(mode)
+    val darkAppearance = appearanceStore.palette
+    val lightAppearance = appearanceStore.lightPalette
     fun setAppearance(palette: AccentPalette) = appearanceStore.set(palette)
 
     private val _exporting = MutableStateFlow(false)

@@ -452,8 +452,8 @@ internal fun SetStrip(slots: List<VaultSlot>, justDrawn: String?, description: S
 }
 
 /** A cell not yet held: a dark ground and a quiet edge. */
-internal val UnheldGround = Color(0xFF121211)
-internal val UnheldEdge = Color(0xFF232320)
+internal val UnheldGround get() = IronvellumColors.PlateGround
+internal val UnheldEdge get() = IronvellumColors.PlateEdge
 
 /** The crest page: the drawn crest on a plate in its tier's metal, its name and where it came from. */
 @Composable

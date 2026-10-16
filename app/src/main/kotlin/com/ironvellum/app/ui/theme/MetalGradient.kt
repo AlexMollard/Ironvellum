@@ -38,10 +38,13 @@ const val METAL_WASH = 0.12f
 
 /** One metal ladder rung: its colour stops and whether it is the Masterwork prism. */
 class Metal internal constructor(
-    private val colors: List<Color>,
+    private val darkColors: () -> List<Color>,
+    private val lightColors: () -> List<Color>,
     private val at: FloatArray,
     val prism: Boolean = false,
 ) {
+    /** The ramp in force: the dark one, or its deeper Vellum shades. */
+    private val colors: List<Color> get() = if (IronvellumColors.light) lightColors() else darkColors()
 
     /** Stops as a Brush across the box it is drawn in, corner to corner, at [alpha] of their strength. */
     fun bounds(alpha: Float = 1f): Brush = Brush.linearGradient(colorStops = stops(alpha))
@@ -64,11 +67,13 @@ class Metal internal constructor(
         Array(colors.size) { at[it] to colors[it].let { c -> if (alpha == 1f) c else c.copy(alpha = c.alpha * alpha) } }
 
     companion object {
-        val Common = Metal(listOf(Color(0xFFA9AEB5), RarityTint.Iron, Color(0xFF6F747B)), FlatAt)
-        val Rare = Metal(listOf(Color(0xFFE0A877), RarityTint.Bronze, Color(0xFFA86F44)), FlatAt)
-        val Fabled = Metal(listOf(Color(0xFFE8C672), RarityTint.Gold, Color(0xFFB88A30)), FlatAt)
+        // The Vellum ramps are the same three steps in deeper shades: a lighter tone, the tier's tint, a darker one.
+        val Common = Metal({ listOf(Color(0xFFA9AEB5), RarityTint.Iron, Color(0xFF6F747B)) }, { listOf(Color(0xFF7C838B), RarityTint.Iron, Color(0xFF454A50)) }, FlatAt)
+        val Rare = Metal({ listOf(Color(0xFFE0A877), RarityTint.Bronze, Color(0xFFA86F44)) }, { listOf(Color(0xFFB07A48), RarityTint.Bronze, Color(0xFF6A4118)) }, FlatAt)
+        val Fabled = Metal({ listOf(Color(0xFFE8C672), RarityTint.Gold, Color(0xFFB88A30)) }, { listOf(Color(0xFFA17A12), RarityTint.Gold, Color(0xFF574000)) }, FlatAt)
         val Masterwork = Metal(
-            listOf(RarityTint.Prismatic, Color(0xFF9DD5F0), Color(0xFFF0B6E4), RarityTint.Prismatic),
+            { listOf(RarityTint.Prismatic, Color(0xFF9DD5F0), Color(0xFFF0B6E4), RarityTint.Prismatic) },
+            { listOf(RarityTint.Prismatic, Color(0xFF2F78A0), Color(0xFFA23C86), RarityTint.Prismatic) },
             PrismAt,
             prism = true,
         )
@@ -78,9 +83,9 @@ class Metal internal constructor(
          * a crest is the same colour on the owner's screen and on an ally's. Emerald, Red and Ink are a
          * light, a tint and a deeper tone, flat along the same diagonal as the metals.
          */
-        val Emerald = Metal(listOf(Color(0xFF6EE7B7), Color(0xFF34D399), Color(0xFF25986E)), FlatAt)
-        val Red = Metal(listOf(Color(0xFFF4908D), Color(0xFFEF5350), Color(0xFFB33F3D)), FlatAt)
-        val Ink = Metal(listOf(Color(0xFFE8E8E4), Color(0xFFA3A099), Color(0xFF6B6963)), FlatAt)
+        val Emerald = Metal({ listOf(Color(0xFF6EE7B7), Color(0xFF34D399), Color(0xFF25986E)) }, { listOf(Color(0xFF2F8F68), Color(0xFF1F7A56), Color(0xFF0F4A32)) }, FlatAt)
+        val Red = Metal({ listOf(Color(0xFFF4908D), Color(0xFFEF5350), Color(0xFFB33F3D)) }, { listOf(Color(0xFFD64B48), Color(0xFFC62828), Color(0xFF7A1A1A)) }, FlatAt)
+        val Ink = Metal({ listOf(Color(0xFFE8E8E4), Color(0xFFA3A099), Color(0xFF6B6963)) }, { listOf(Color(0xFF6B6963), Color(0xFF3F3C36), Color(0xFF1F1C17)) }, FlatAt)
 
         /** The ramp a crest tone is drawn in. Exhaustive: a new tone does not compile until it has a ramp. */
         fun of(tone: CrestTone): Metal = when (tone) {

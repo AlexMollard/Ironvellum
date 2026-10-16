@@ -38,6 +38,8 @@ object TestProfile {
     fun ensureSetUp() {
         val app = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as IronvellumApp
+        // The suite is written against the dark theme; a fresh install follows the phone, so pin it.
+        app.appearanceStore.setMode(com.ironvellum.app.ui.theme.ThemeMode.DARK)
         FirstRunPrefs.setWelcomeSeen(app)
         FirstRunPrefs.setVeilIntroSeen(app)
         FirstRunPrefs.setNotificationsAsked(app)

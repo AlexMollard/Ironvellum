@@ -30,18 +30,21 @@ import com.ironvellum.app.widget.loadWidgetState
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.ironvellum.app.ui.theme.IronvellumTheme
+import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.isSystemDark
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The theme resolved before the first frame, so the window background and the bars wear it from the start.
+        val app = application as IronvellumApp
+        val lightNow = app.appearanceStore.mode.value.isLight(isSystemDark(this))
+        setTheme(if (lightNow) R.style.Theme_Ironvellum_Light else R.style.Theme_Ironvellum_Dark)
         super.onCreate(savedInstanceState)
-        // The app is always dark, so its bars are too. The default follows the
-        // system theme and drew dark clock/battery icons on the dark header
-        // whenever the phone was in light mode.
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-        )
+        enableEdgeToEdge(statusBarStyle = barStyle(lightNow), navigationBarStyle = barStyle(lightNow))
         // A rotation or process restore re-delivers the launch intent; only a
         // fresh launch may act on it, or the inbox would reopen on every turn.
         if (savedInstanceState == null) {
@@ -58,12 +61,17 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        val app = application as IronvellumApp
         val sexes = app.repository.observeSex()
         setContent {
             val bodySex by sexes.collectAsState(initial = Sex.MALE)
-            val palette by app.appearanceStore.palette.collectAsState()
-            IronvellumTheme(palette = palette) {
+            val mode by app.appearanceStore.mode.collectAsState()
+            val light = mode.isLight(isSystemInDarkTheme())
+            // The bars follow the theme in force: dark icons on parchment, light icons on charcoal.
+            SideEffect {
+                enableEdgeToEdge(statusBarStyle = barStyle(light), navigationBarStyle = barStyle(light))
+                window.decorView.setBackgroundColor(IronvellumColors.Vault.toArgb())
+            }
+            IronvellumTheme(light = light) {
                 CompositionLocalProvider(LocalBodySex provides bodySex) {
                     IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest, routeRequest = routeRequest)
                 }
@@ -71,6 +79,9 @@ class MainActivity : ComponentActivity() {
         }
         holdLaunchScreen()
     }
+
+    private fun barStyle(light: Boolean) =
+        if (light) SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT) else SystemBarStyle.dark(Color.TRANSPARENT)
 
     /**
      * Cancels the first frames until [StartupGate] opens, so the launch screen (the icon on the

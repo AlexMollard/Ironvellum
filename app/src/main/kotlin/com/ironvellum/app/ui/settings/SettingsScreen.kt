@@ -46,7 +46,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val appearance by viewModel.appearance.collectAsStateWithLifecycle()
+    val appearance = viewModel.currentAppearance()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(context).collectAsStateWithLifecycle()
@@ -111,7 +111,7 @@ fun SettingsScreen(
         }
 
         SettingsGroup("APP", topSpace = 10.dp, rows = true) {
-            SettingsValueRow("Appearance", AccentPresets.entries.firstOrNull { it.palette == appearance }?.name ?: "Custom colours") {
+            SettingsValueRow("Appearance", AccentPresets.forTheme(IronvellumColors.light).firstOrNull { it.palette == appearance }?.name ?: "Custom colours") {
                 onOpenSection(SettingsSection.APPEARANCE)
             }
             SettingsValueRow("Health Connect", SettingsSummaries.health(healthLink, healthDays.size)) {

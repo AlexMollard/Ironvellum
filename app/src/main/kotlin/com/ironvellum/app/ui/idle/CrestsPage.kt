@@ -69,7 +69,7 @@ data class CrestUi(
 )
 
 /** A name the collection draws for something not yet held: legible, but quiet. */
-private val UnheldName = androidx.compose.ui.graphics.Color(0xFFC9C6BE)
+private val UnheldName get() = IronvellumColors.UnheldNameBright
 
 /**
  * The Crests tab: the crest worn, then the 28 grouped Ladder, Deeds, Houses and the Veil, each with its

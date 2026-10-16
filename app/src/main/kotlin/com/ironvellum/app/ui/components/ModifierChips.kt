@@ -92,7 +92,7 @@ private fun ModifierChipCell(chip: ModifierChip, modifier: Modifier, onToggle: (
                 if (on) {
                     Brush.verticalGradient(listOf(lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                 } else {
-                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                    Brush.verticalGradient(listOf(IronvellumColors.Wells.top, IronvellumColors.Wells.bottom))
                 },
                 shape,
             )

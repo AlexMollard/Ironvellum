@@ -57,11 +57,11 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.Metal
 
 /** The page's glow: a dark emerald while it fills, gold for the level moment. */
-private val FillGlow = Color(0xFF1B2A22)
-private val LevelGlow = Color(0xFF3A2C10)
+private val FillGlow get() = IronvellumColors.FillGlow
+private val LevelGlow get() = IronvellumColors.LevelGlow
 
 /** Dark ink on the gold button. */
-private val OnGold = Color(0xFF1A1405)
+private val OnGold get() = IronvellumColors.OnGoldFill
 
 /**
  * The XP a seal paid, on a page of its own, before the summary: a big running

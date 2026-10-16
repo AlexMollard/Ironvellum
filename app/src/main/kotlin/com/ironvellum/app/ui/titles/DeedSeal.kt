@@ -141,7 +141,7 @@ private class SealPaths(val geometry: SealGeometry, category: String?) {
 }
 
 /** The seal's own dark ground, so the tier's tint reads the same over any panel. */
-private val SealGround = Color(0xFF121211)
+private val SealGround get() = IronvellumColors.PlateGround
 
 private const val STAMP_MS = 300
 

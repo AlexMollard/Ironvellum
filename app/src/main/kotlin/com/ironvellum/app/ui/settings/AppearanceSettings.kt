@@ -83,16 +83,51 @@ import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.AccentPalette
 import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.ThemeMode
 import com.ironvellum.app.ui.theme.accentHex
+import com.ironvellum.app.ui.theme.deepenForLight
 import com.ironvellum.app.ui.theme.parseAccentHex
 import kotlin.math.roundToInt
 
+/** The accent pair of the theme in force: the dark pair or the Vellum pair. */
+@Composable
+internal fun SettingsViewModel.currentAppearance(): AccentPalette {
+    val dark by darkAppearance.collectAsStateWithLifecycle()
+    val light by lightAppearance.collectAsStateWithLifecycle()
+    return if (IronvellumColors.light) light else dark
+}
+
 @Composable
 internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
-    val palette by viewModel.appearance.collectAsStateWithLifecycle()
+    val palette = viewModel.currentAppearance()
+    val mode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val light = IronvellumColors.light
+    val presets = AccentPresets.forTheme(light)
     var editingPrimary by rememberSaveable { mutableStateOf<Boolean?>(null) }
     val context = LocalContext.current
     SettingsPage(SettingsSection.APPEARANCE.title, onBack) {
+        SectionHeader("THEME", topPadding = 12.dp)
+        SettingsCaption("System follows your phone's dark mode. Colour pairs are kept separately for each theme.")
+        Spacer(Modifier.height(8.dp))
+        InkRowPanel(Modifier.fillMaxWidth()) {
+            Column(Modifier.selectableGroup()) {
+                listOf(ThemeMode.SYSTEM to "System", ThemeMode.DARK to "Dark", ThemeMode.LIGHT to "Light").forEach { (option, name) ->
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = ListRowHeight)
+                            .selectable(selected = mode == option, role = Role.RadioButton, onClick = { viewModel.setThemeMode(option) })
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Canvas(Modifier.size(16.dp)) {
+                            inkDot(center, 6.dp.toPx(), IronvellumColors.Rune)
+                            if (mode == option) inkDot(center, 3.dp.toPx(), IronvellumColors.Emerald)
+                        }
+                        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
         Spacer(Modifier.height(12.dp))
         SettingsSwitchRow(
             label = "Themed names",
@@ -106,7 +141,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
         Spacer(Modifier.height(8.dp))
         InkRowPanel(Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup()) {
-                AccentPresets.entries.forEach { preset ->
+                presets.forEach { preset ->
                     val selection by animateFloatAsState(
                         targetValue = if (palette == preset.palette) 1f else 0f,
                         animationSpec = tween(180),
@@ -124,7 +159,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
                     ) {
                         Canvas(Modifier.size(16.dp)) {
                             inkDot(center, 6.dp.toPx(), IronvellumColors.Rune)
-                            if (selection > 0f) inkDot(center, 3.dp.toPx() * selection, Color(preset.palette.primary).copy(alpha = selection))
+                            if (selection > 0f) inkDot(center, 3.dp.toPx() * selection, IronvellumColors.swatch(preset.palette.primary).copy(alpha = selection))
                         }
                         Text(preset.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                         AccentSwatch(preset.palette.primary)
@@ -139,7 +174,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
         Spacer(Modifier.height(16.dp))
         AccentPreview(palette)
         Spacer(Modifier.height(12.dp))
-        IronvellumButton("Reset to emerald & gold", { viewModel.setAppearance(AccentPalette.Default) }, quiet = true)
+        IronvellumButton("Reset to ${presets[0].name.lowercase()}", { viewModel.setAppearance(presets[0].palette) }, quiet = true)
     }
     editingPrimary?.let { primary ->
         AccentPickerDialog(
@@ -156,7 +191,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
 
 @Composable
 private fun AccentSwatch(colour: Int) {
-    Box(Modifier.size(20.dp).background(Color(colour), DotShape).inkBorder(IronvellumColors.InkMuted, DotShape, 1.dp))
+    Box(Modifier.size(20.dp).background(IronvellumColors.swatch(colour), DotShape).inkBorder(IronvellumColors.InkMuted, DotShape, 1.dp))
 }
 
 @Composable
@@ -186,13 +221,13 @@ private fun AccentPreview(palette: AccentPalette) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text("Log set", style = MaterialTheme.typography.labelLarge, color = Color(palette.primary))
+            Text("Log set", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Emerald)
         }
         Column(Modifier.weight(1f)) {
             Text("New ${Words.peak.s}", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccentSwatch(palette.secondary)
-                Text("+12 XP", style = MaterialTheme.typography.bodyMedium, color = Color(palette.secondary))
+                Text("+12 XP", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
             }
         }
     }
@@ -264,6 +299,8 @@ private fun AccentPickerDialog(palette: AccentPalette, primary: Boolean, onApply
             }
             if (parsed == null) {
                 Text("Enter a six-digit hex colour", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
+            } else if (IronvellumColors.light) {
+                if (deepenForLight(preview) != preview or 0xFF000000.toInt()) SettingsCaption("Made a little darker so it stays readable on light paper.")
             } else if ((Color(preview).luminance() + 0.05f) / (IronvellumColors.Vault.luminance() + 0.05f) < 3f) {
                 SettingsCaption("This colour may be hard to see on dark backgrounds.")
             }

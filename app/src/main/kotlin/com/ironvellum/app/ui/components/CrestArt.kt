@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.ui.theme.IronvellumColors
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -47,9 +48,9 @@ private val ParsedMarks: Map<String, List<Path>> by lazy {
 }
 
 /** What a crest not yet held is drawn in: a flat muted ring and mark on a darker plate. */
-internal val CrestSilhouette = Color(0xFF3A3935)
-internal val CrestSilhouetteGround = Color(0xFF0F0F0E)
-internal val CrestGround = Color(0xFF121211)
+internal val CrestSilhouette get() = IronvellumColors.Silhouette
+internal val CrestSilhouetteGround get() = IronvellumColors.SilhouetteGround
+internal val CrestGround get() = IronvellumColors.PlateGround
 
 /**
  * Draws the mark of [frameId] in the square of [side] at [topLeft], its strokes and wash in [brush]. The
@@ -66,7 +67,7 @@ internal fun DrawScope.drawCrestMark(frameId: String, topLeft: Offset, side: Flo
     }) {
         shapes.forEachIndexed { i, shape ->
             val path = paths[i]
-            if (shape.darkGround) drawPath(path, Color(0xFF0B0B0D), style = Fill)
+            if (shape.darkGround) drawPath(path, IronvellumColors.PlateDeep, style = Fill)
             if (shape.wash > 0f) drawPath(path, brush, alpha = shape.wash, style = Fill)
             drawPath(
                 path,

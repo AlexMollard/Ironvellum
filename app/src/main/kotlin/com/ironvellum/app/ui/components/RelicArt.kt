@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.ui.theme.IronvellumColors
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -104,10 +105,10 @@ private const val RIM = 46f
 private const val ON_PLATE = 0.62f
 
 /** A relic not yet drawn, as a silhouette: one flat tone, no metal. */
-private val Silhouette = Color(0xFF3A3935)
+private val Silhouette get() = IronvellumColors.Silhouette
 
 /** The plate's own dark ground, so a metal reads the same over any panel (DeedSeal's). */
-private val PlateGround = Color(0xFF121211)
+private val PlateGround get() = IronvellumColors.PlateGround
 
 private fun at(c: Offset, r: Float, deg: Float, u: Float): Offset {
     val a = Math.toRadians(deg.toDouble())

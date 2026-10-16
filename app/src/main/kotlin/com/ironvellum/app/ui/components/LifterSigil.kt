@@ -91,9 +91,9 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
             // surfaces read as the same material.
             .background(
                 Brush.linearGradient(
-                    0f to Color.White.copy(alpha = 0.08f),
+                    0f to Color.White.copy(alpha = if (IronvellumColors.light) 0.35f else 0.08f),
                     0.5f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.20f),
+                    1f to Color.Black.copy(alpha = if (IronvellumColors.light) 0.05f else 0.20f),
                 ),
                 shape,
             )

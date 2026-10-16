@@ -56,7 +56,7 @@ fun IronvellumDialog(
         shape = MaterialTheme.shapes.extraSmall,
         containerColor = IronvellumColors.VaultHigh,
         contentColor = IronvellumColors.Ink,
-        scrimColor = Color.Black.copy(alpha = 0.6f),
+        scrimColor = IronvellumColors.Scrim,
         tonalElevation = 0.dp,
         dragHandle = null,
     ) {

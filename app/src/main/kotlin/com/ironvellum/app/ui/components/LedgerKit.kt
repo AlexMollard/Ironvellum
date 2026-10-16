@@ -65,10 +65,10 @@ object LedgerSpace {
  */
 object LedgerContrast {
     /** Numbers of days that have not happened yet: dimmer than the past, still readable. */
-    val FutureText = IronvellumColors.InkMuted.copy(alpha = 0.8f)
+    val FutureText get() = IronvellumColors.InkMuted.copy(alpha = 0.8f)
 
     /** Bars, bands and chevrons that say something: an empty slot, the lowest band, a disabled arrow. */
-    val Graphic = IronvellumColors.InkMuted.copy(alpha = 0.6f)
+    val Graphic get() = IronvellumColors.InkMuted.copy(alpha = 0.6f)
 }
 
 /**

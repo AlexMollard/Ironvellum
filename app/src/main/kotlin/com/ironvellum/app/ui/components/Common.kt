@@ -312,8 +312,8 @@ private fun GoldButton(
             .clip(shape)
             .background(
                 when {
-                    !enabled -> Brush.linearGradient(listOf(Color(0xFF1E3026), Color(0xFF16211B)))
-                    quiet || danger -> Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714)))
+                    !enabled -> Brush.linearGradient(listOf(IronvellumColors.Wells.disabledTop, IronvellumColors.Wells.disabledBottom))
+                    quiet || danger -> Brush.linearGradient(listOf(IronvellumColors.Wells.quietTop, IronvellumColors.Wells.quietBottom))
                     else -> Brush.linearGradient(colors)
                 },
             )

@@ -98,7 +98,7 @@ private const val ROLL_MS = 500L
 private const val LEVEL_END = XP_START + XP_FILL + XP_HOLD + XP_REFILL + 100
 
 private val RollEasing = CubicBezierEasing(0.3f, 0.9f, 0.3f, 1f)
-internal val Dim = IronvellumColors.InkMuted
+internal val Dim get() = IronvellumColors.InkMuted
 
 /**
  * XP counted so far at [t]: up to the end of the starting level over the fill,

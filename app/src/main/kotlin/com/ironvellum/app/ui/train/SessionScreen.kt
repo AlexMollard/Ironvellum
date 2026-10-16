@@ -3504,7 +3504,7 @@ private fun XpChip(xp: Int) {
         modifier = Modifier
             .padding(end = 8.dp)
             .clip(shape)
-            .background(IronvellumColors.Emerald.copy(alpha = 0.10f))
+            .background(IronvellumColors.AccentTint)
             .inkBorder(IronvellumColors.EmeraldDeep, shape, 1.dp)
             .padding(horizontal = 10.dp, vertical = 5.dp)
             .semantics {
@@ -3964,7 +3964,7 @@ private fun ToggleLine(
                 if (on) {
                     Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                 } else {
-                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                    Brush.verticalGradient(listOf(IronvellumColors.Wells.top, IronvellumColors.Wells.bottom))
                 },
                 shape,
             )

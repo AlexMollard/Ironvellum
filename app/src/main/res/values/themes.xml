@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- The launch theme follows the phone: parchment by day, charcoal by night. MainActivity then applies the
+         theme the lifter chose (Theme.Ironvellum.Dark or .Light) before its first frame. -->
     <style name="Theme.Ironvellum" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/launch_light_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/launch_light_bars</item>
+        <item name="android:windowBackground">@color/launch_background</item>
+    </style>
+
+    <!-- Cold-start background: the app's panel paper (Vault), not a bare
+         dark colour — a blue-black flash before the first frame read as
+         "another app" and flickered against the warm charcoal UI. -->
+    <style name="Theme.Ironvellum.Dark" parent="Theme.Ironvellum">
         <item name="android:windowLightStatusBar">false</item>
-        <!-- Cold-start background: the app's panel paper (Vault), not a bare
-             dark colour â€” a blue-black flash before the first frame read as
-             "another app" and flickered against the warm charcoal UI. -->
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">#171715</item>
+    </style>
+
+    <!-- Vellum, the light theme: parchment paper and dark bar icons. -->
+    <style name="Theme.Ironvellum.Light" parent="Theme.Ironvellum">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">#FBF8F2</item>
     </style>
 </resources>

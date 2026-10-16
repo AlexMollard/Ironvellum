@@ -1099,8 +1099,8 @@ private fun WeekRail(
                     }
                     .size(width = tileWidth, height = 48.dp)
                     .clip(shape)
-                    .background(IronvellumColors.Emerald.copy(alpha = 0.10f))
-                    .inkBorder(IronvellumColors.Emerald.copy(alpha = 0.35f), shape)
+                    .background(IronvellumColors.AccentTint)
+                    .inkBorder(IronvellumColors.AccentTintBorder, shape)
                     .then(if (wrap == 0) Modifier.testTag("today-week-indicator") else Modifier),
             ) {
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(IronvellumColors.Emerald))

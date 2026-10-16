@@ -412,7 +412,7 @@ internal fun XpBar(
 ) {
     val track = IronvellumColors.Rune
     val before = IronvellumColors.Bracket
-    val gap = Color(0xFF121211)
+    val gap = IronvellumColors.PlateGround
     Box(
         modifier
             .fillMaxWidth()

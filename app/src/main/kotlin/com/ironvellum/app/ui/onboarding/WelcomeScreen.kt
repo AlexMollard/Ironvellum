@@ -227,7 +227,8 @@ private fun LauncherMark() {
         Modifier
             .size(136.dp)
             .clip(shape)
-            .background(IronvellumColors.Abyss)
+            // The launcher mark is light line art baked into the icon, so it keeps its dark plate on Vellum too.
+            .background(com.ironvellum.app.ui.theme.DarkPaper.Abyss)
             .inkBorder(IronvellumColors.Rune, shape, 1.dp)
             .semantics { contentDescription = "Ironvellum" },
     ) {

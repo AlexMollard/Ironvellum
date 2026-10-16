@@ -140,7 +140,7 @@ class CollectionViewModel(private val repo: Repository) : ViewModel() {
 }
 
 /** A name the collection draws for something not yet held: legible, but quiet. */
-private val UnheldName = Color(0xFF8A8780)
+private val UnheldName get() = IronvellumColors.UnheldName
 
 /**
  * Everything collected, on one pushed page with two tabs: the sixteen relics by house, and the 28 crests.
