@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -35,8 +37,10 @@ data class HealthSnapshot(
 )
 
 /**
- * Read-only bridge into Health Connect — where Samsung Health already syncs
- * weight, body composition and steps. Ironvellum only reads; nothing is written.
+ * Bridge into Health Connect — where Samsung Health already syncs
+ * weight, body composition and steps. Ironvellum reads those, and writes one
+ * thing: a finished workout as an exercise session, only when the lifter turned
+ * that on (see [HealthWriteBack]).
  */
 class HealthSync(private val context: Context) {
 
@@ -60,6 +64,36 @@ class HealthSync(private val context: Context) {
         runCatching {
             HealthConnectClient.getOrCreate(context).permissionController.getGrantedPermissions()
         }.getOrDefault(emptySet())
+
+    /**
+     * Inserts [spec] as an exercise session. The client id and version make it an upsert: the same id with a
+     * higher version replaces the stored record, so a re-sealed or amended workout never doubles.
+     */
+    suspend fun writeExerciseSession(spec: ExerciseSessionMapping.Spec) {
+        HealthConnectClient.getOrCreate(context).insertRecords(
+            listOf(
+                ExerciseSessionRecord(
+                    startTime = spec.start,
+                    startZoneOffset = spec.startOffset,
+                    endTime = spec.end,
+                    endZoneOffset = spec.endOffset,
+                    metadata = Metadata.manualEntry(spec.clientRecordId, spec.clientRecordVersion),
+                    exerciseType = spec.exerciseType,
+                    title = spec.title,
+                    notes = spec.notes,
+                ),
+            ),
+        )
+    }
+
+    /** Deletes the exercise session this app saved under [clientRecordId]; nothing to delete is not an error. */
+    suspend fun deleteExerciseSession(clientRecordId: String) {
+        HealthConnectClient.getOrCreate(context).deleteRecords(
+            ExerciseSessionRecord::class,
+            recordIdsList = emptyList(),
+            clientRecordIdsList = listOf(clientRecordId),
+        )
+    }
 
     suspend fun readSnapshot(): HealthSnapshot? {
         if (!available()) return null

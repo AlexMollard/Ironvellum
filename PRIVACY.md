@@ -53,9 +53,26 @@ resting heart rate, weight, and body fat. Reads happen:
 - on demand from the Settings screen ("Connect & Sync"), and
 - once per day via a WorkManager job (`HealthSyncWorker.kt`, 14-day window).
 
-The results are aggregated per day and stored locally in `health_days`. Nothing
-read from Health Connect is written back to Health Connect, and none of it is
-uploaded to the cloud.
+The results are aggregated per day and stored locally in `health_days`. None of
+it is uploaded to the cloud.
+
+## What the app writes to Health Connect
+
+One thing, and only if you turn it on: Settings > Health Connect > "Save
+finished workouts to Health Connect" (off by default). Turning it on asks
+Health Connect for one write permission, `WRITE_EXERCISE`
+(`AndroidManifest.xml`). While it is on, each workout you finish is written
+once as an exercise session of the strength training type: its start and end
+time, its name and its public note if you wrote one. Sets, reps, loads,
+private notes, XP and every other figure are not written. Workouts imported
+from other apps are never written.
+
+The entry belongs to this app and carries a stable id, so changing a finished
+workout replaces its entry instead of adding another, and deleting or
+reopening a workout removes it. The write happens on the device, straight into
+Health Connect; nothing about it goes to the cloud. Turning the switch off
+stops new writes and leaves the entries already in Health Connect; you can
+remove them, or the permission, in Health Connect itself.
 
 ## What leaves the device (signed-in users only)
 

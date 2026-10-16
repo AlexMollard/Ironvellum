@@ -154,6 +154,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import android.util.Log
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -196,6 +197,8 @@ class Repository(
     private val highestBand: HighestBandStore? = null,
     /** The lifter's vest and belt (the app reads them from the gear prefs): the increments of loaded bodyweight lifts. */
     private val loadKit: suspend () -> LoadKit = { LoadKit.NONE },
+    /** Told when a finished workout is sealed, changed or removed, after the write has committed. */
+    private val writeBack: SessionWriteBack? = null,
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -1861,6 +1864,21 @@ class Repository(
             inscriptionsBanked = inscriptionsBanked,
             breakdown = breakdown,
         )
+    }.also { writeBackSaved(sessionId) }
+
+    /**
+     * Hands the committed workout to the Health Connect write-back. Runs after the transaction and never throws:
+     * a seal or an edit that landed must not report failure because a copy elsewhere could not be made.
+     */
+    private suspend fun writeBackSaved(sessionId: Long) {
+        val sink = writeBack ?: return
+        try {
+            sessionDao.byId(sessionId)?.let { sink.saved(it.toDomain()) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("Ironvellum", "write-back skipped", e)
+        }
     }
 
     /**
@@ -2116,10 +2134,12 @@ class Repository(
      */
     suspend fun setSessionTitle(sessionId: Long, title: String) {
         sessionDao.setTitle(sessionId, title.trim().take(WireLimits.SESSION_TITLE_MAX))
+        writeBackSaved(sessionId)
     }
 
     suspend fun setSessionNote(sessionId: Long, note: String) {
         sessionDao.setNote(sessionId, note.trim().take(WireLimits.SESSION_NOTE_MAX))
+        writeBackSaved(sessionId)
     }
 
     /** This trial's per-exercise notes, by exercise id. */
@@ -2835,8 +2855,13 @@ class Repository(
      * feeds. The device stays authoritative, per the data-authority rule, and
      * deletes are only ever recorded here, never inferred from the cloud.
      */
-    suspend fun deleteWorkout(sessionId: Long) = db.withTransaction {
-        val session = sessionDao.byId(sessionId) ?: return@withTransaction
+    suspend fun deleteWorkout(sessionId: Long) {
+        val gone = db.withTransaction { deleteWorkoutRows(sessionId) }
+        gone?.let { writeBack?.removed(it.id, it.startedAtMs) }
+    }
+
+    private suspend fun deleteWorkoutRows(sessionId: Long): SessionEntity? {
+        val session = sessionDao.byId(sessionId) ?: return null
         check(session.completedAtMs != null) {
             "${Words.trial.c} $sessionId is still live - abandon it instead"
         }
@@ -2848,6 +2873,7 @@ class Repository(
         sessionDao.deleteSetsFor(sessionId)
         syncStateDao.upsertAll(listOf(SyncStateEntity(sessionId, SyncStateEntity.TOMBSTONE)))
         sessionDao.deleteCompleted(sessionId)
+        return session
     }
 
     /**
@@ -2894,6 +2920,11 @@ class Repository(
             syncStateDao.upsertAll(listOf(SyncStateEntity(sessionId, SyncStateEntity.TOMBSTONE)))
         }
         decision
+    }.also { decision ->
+        // Unsealed, so its Health Connect entry goes; a re-seal writes a fresh one.
+        if (decision is SealedReopen.Decision.Reopen) {
+            sessionDao.byId(sessionId)?.let { writeBack?.removed(it.id, it.startedAtMs) }
+        }
     }
 
     /** What amending a sealed trial did, for the screen that asked. */
@@ -2974,7 +3005,7 @@ class Repository(
             emptyList()
         }
         AmendResult(plan.settlement, plan.strengthScore, newly)
-    }
+    }.also { writeBackSaved(sessionId) }
 
     /**
      * What the raise cap is measured against. `sealedXp` is device-only: a

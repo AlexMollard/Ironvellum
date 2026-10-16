@@ -198,7 +198,7 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
 |---|---|---|
 | Signing keystore | Release builds are unsigned: `app/build.gradle.kts` only wires a signing config when all four `ironvellum.keystore.*` keys (or `IRONVELLUM_KEYSTORE_*` env vars) resolve to a real file, and `local.properties` holds none of them. The build warns and names the keys | A credential the owner must own — never generated here. Env vars were not inspected |
 | Hosted privacy-policy URL | Play requires a URL, not an in-app document. The content exists in `PRIVACY.md`; no URL to it is recorded anywhere, and the app has no in-app link to the policy (the checklist asks for one: `RELEASE_CHECKLIST.md` section 6) | The GitHub URL of `PRIVACY.md` is public and not editable by third parties (`docs/open-source/02-distribution-and-flavours.md`). Same URL in Play Console and in the app |
-| Play health-data declaration | All seven Health Connect permissions need the form; whether it was submitted is unknown from the repo | Mapping in `docs/PLAY_DATA_SAFETY.md` (Q5) |
+| Play health-data declaration | All seven Health Connect read permissions need the form, and so does the 1.8 write permission `WRITE_EXERCISE` (exercise sessions, opt-in); whether any was submitted is unknown from the repo | Mapping in `docs/PLAY_DATA_SAFETY.md` (Q5) |
 | OAuth consent screen out of **Testing** | In Testing, only listed test users can sign in. The docs still say Testing; nothing in the repo proves it moved | Also needs the release keystore SHA-1 on the Android OAuth client |
 | "Confirm email" in Supabase Auth | Unknown whether it was switched off; nothing proves either state | Optional: the sign-up trigger makes the profile either way |
 

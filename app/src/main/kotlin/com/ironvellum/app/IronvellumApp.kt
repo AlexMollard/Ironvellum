@@ -36,9 +36,10 @@ class IronvellumApp : Application() {
 
     val database: IronvellumDatabase by lazy { IronvellumDatabase.create(this) }
     val healthSync: HealthSync by lazy { HealthSync(this) }
+    val healthWriteBack: com.ironvellum.app.data.HealthWriteBack by lazy { com.ironvellum.app.data.HealthWriteBack(this, healthSync) }
     val repository: Repository by lazy {
         Repository(
-            database, healthSync, PrefsHighestBandStore(this),
+            database, healthSync, PrefsHighestBandStore(this), writeBack = healthWriteBack,
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
         )
     }

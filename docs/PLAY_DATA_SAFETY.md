@@ -57,6 +57,15 @@ Code references:
   the **Health apps declaration** and the Health Connect permissions
   declaration in Play Console because the manifest declares the permissions
   (see `docs/RELEASE_CHECKLIST.md`).
+- The app also **writes** one record type, an `ExerciseSessionRecord`
+  (`WRITE_EXERCISE` in `AM`; `HealthWriteBack.kt`, `HS`): start, end, title and
+  public note of a finished workout, strength training type, no segments, no
+  sets. It is **opt-in** (Settings > Health Connect, off by default, requested
+  at the switch), skips imported workouts, upserts by client record id so
+  edits replace and deletes remove it, and goes straight from the device into
+  Health Connect with no server of ours in the path. Same classification:
+  not collected, not shared. It adds one write permission to the Health apps
+  declaration and the Health Connect permissions declaration.
 - Weight/body-fat read from Health Connect feeds local stat tracking only;
   user-entered body measurements (`measurements` table, `RP` "device-only by
   design") also never leave the device (`M1` header comment).
@@ -136,8 +145,9 @@ Code references:
   privacy policy currently says "while the project exists". Confirm or amend.
 - **Q5 — Health Connect permissions declaration:** the Google Health Connect
   API Request form must have been submitted for these seven data types (the
-  history scope needs no separate data type — it widens the steps read)
-  before shipping; whether it has been is unknown from the repo. Open.
+  history scope needs no separate data type — it widens the steps read), plus
+  the 1.8 write type `WRITE_EXERCISE` (exercise sessions), before shipping;
+  whether it has been is unknown from the repo. Open.
 
 ## Policy sources (checked 2026-09-15)
 

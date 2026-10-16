@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <!-- Saves a finished workout as an exercise session; only used when the
+         lifter turns "Save finished workouts" on in Settings > Health Connect. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
     <!-- Lets step reads reach data recorded before the app was installed;
          requested from Settings alongside the data reads. -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
