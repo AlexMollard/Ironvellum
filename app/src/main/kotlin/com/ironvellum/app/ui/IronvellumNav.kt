@@ -94,6 +94,7 @@ import com.ironvellum.app.ui.titles.TitlesScreen
 import androidx.compose.ui.draw.drawBehind
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
 import com.ironvellum.app.ui.train.PresetsScreen
@@ -679,7 +680,7 @@ private fun IronvellumBottomBar(
     currentRoute: String?,
     inboxUnread: Int,
     navController: NavHostController,
-) {
+) = CappedFontScale { // Five labels share one fixed-height bar the layout is built around: it cannot grow.
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().height(BarHeight + TrainRise)) {
             Box(

@@ -65,6 +65,7 @@ import com.ironvellum.app.ui.program.FigureView
 import com.ironvellum.app.ui.program.LocalBodySex
 import com.ironvellum.app.ui.program.drawFigure
 import com.ironvellum.app.ui.program.riteAlpha
+import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -202,9 +203,10 @@ private fun ProgressColumn(
         Spacer(Modifier.height(6.dp))
         InkRail(fraction.coerceIn(0f, 1f), Modifier.testTag(barTag), height = 4.dp, fill = fill)
         Spacer(Modifier.height(6.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Two lines: at a large text size a deed's name ("Hundred-Day Promise") would otherwise be cut to its first word.
+        Text(value, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -260,6 +262,8 @@ internal fun SealedRiteGlyph(
         if (thud) settle.animateTo(1f, tween(500, easing = CubicBezierEasing(0.2f, 1.4f, 0.4f, 1f)))
     }
     val gold = IronvellumColors.SovereignGold
+    // A 58dp stamp of 9sp and 7sp words: it is a seal, not text to read, and cannot grow, so it keeps its design size.
+    CappedFontScale(1f) {
     Column(modifier.width(58.dp).clearAndSetSemantics {}, horizontalAlignment = Alignment.CenterHorizontally) {
         RiteGlyph(sets)
         Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -297,6 +301,7 @@ internal fun SealedRiteGlyph(
             maxLines = 1,
             softWrap = false,
         )
+    }
     }
 }
 
@@ -406,7 +411,8 @@ internal fun RiteHeader(
                     meta,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
-                    maxLines = 2,
+                    // Three lines: "Today's workout · 5 exercises · 18 sets · about 126 min" needs them at 200% text.
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 6.dp),
                 )

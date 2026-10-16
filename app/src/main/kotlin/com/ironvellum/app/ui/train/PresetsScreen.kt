@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.clickable
@@ -283,9 +284,9 @@ fun PresetsScreen(
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.SectionHeader,
-                    modifier = Modifier.semantics { heading() },
+                    // Takes the room the chips leave and wraps, so the chips are never pushed off the screen.
+                    modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                Spacer(Modifier.weight(1f))
                 // Sit with the list they add to and export.
                 InkChip("New", "New ${Words.rite.s}", Icons.Outlined.Add) { showNewChooser = true }
                 InkChip("Share", "Share ${Words.cycle.s}", Icons.Outlined.Share, onClick = share)
@@ -321,7 +322,9 @@ fun PresetsScreen(
                             fontFamily = ChakraPetch,
                             letterSpacing = IronvellumTracking.InlineLabel,
                             color = IronvellumColors.InkMuted,
-                            modifier = Modifier.width(DAY_COLUMN),
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.widthIn(min = DAY_COLUMN),
                         )
                         Text(
                             preset.name,
@@ -485,19 +488,21 @@ private fun TrialRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.width(DAY_TILE), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.widthIn(min = DAY_TILE), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 formatDate(at, "EEE").uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                softWrap = false,
             )
             Text(formatDate(at, "d"), style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = IronvellumColors.Ink)
         }
         Column(Modifier.weight(1f)) {
             Text(trial.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (detail.isNotEmpty()) {
-                Text(detail, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, maxLines = 1)
+                Text(detail, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, maxLines = 2)
             }
         }
         Column(horizontalAlignment = Alignment.End) {

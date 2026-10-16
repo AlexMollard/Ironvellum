@@ -428,7 +428,7 @@ private fun SummaryPage(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .heightIn(min = 48.dp)
                     .clickable(role = Role.Button, onClick = onReopen),
                 contentAlignment = Alignment.Center,
             ) {
@@ -437,6 +437,9 @@ private fun SummaryPage(
                     style = MaterialTheme.typography.labelLarge,
                     color = IronvellumColors.Ink,
                     textDecoration = TextDecoration.Underline,
+                    // Wraps inside the margins at a large text size instead of running edge to edge.
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }

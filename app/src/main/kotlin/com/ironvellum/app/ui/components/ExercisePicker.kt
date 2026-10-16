@@ -605,7 +605,8 @@ private fun PickerRow(
                     exercise.name,
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
-                    maxLines = 1,
+                    // Two lines: at a large text size "Romanian Deadlift" would be cut to "Romanian Dead...".
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -623,7 +624,7 @@ private fun PickerRow(
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             if (lastLine != null) {
@@ -631,7 +632,7 @@ private fun PickerRow(
                     "last $lastLine",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }

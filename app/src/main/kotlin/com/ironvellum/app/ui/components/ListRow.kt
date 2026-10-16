@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.theme.IronvellumColors
+
+/** Above this font scale a row's value stacks under its label instead of sitting beside it. */
+private const val STACK_ABOVE_FONT_SCALE = 1.3f
 
 /** The height of every list row; a row with a subline grows past it. */
 val ListRowHeight: Dp = 52.dp
@@ -53,6 +57,9 @@ fun ListRow(
     contentPadding: PaddingValues = LocalRowPadding.current,
     onClick: (() -> Unit)? = null,
 ) {
+    // At a large text size the value moves under the label, where it has the whole row to wrap in: beside the label
+    // it would get a capped 160dp column and be cut to "Emerald &..." while the label broke mid-word.
+    val stacked = value != null && LocalDensity.current.fontScale > STACK_ABOVE_FONT_SCALE
     Row(
         modifier
             .fillMaxWidth()
@@ -66,8 +73,9 @@ fun ListRow(
         Column(Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             if (subline != null) Text(subline, style = MaterialTheme.typography.bodySmall, color = sublineColor)
+            if (stacked) Text(value!!, style = MaterialTheme.typography.labelMedium, color = valueColor)
         }
-        if (value != null) {
+        if (value != null && !stacked) {
             // Not weighted: two weighted siblings split the room evenly, which left the value
             // floating mid-row with a gap before the chevron. The cap keeps a long value from
             // starving the label.

@@ -234,7 +234,7 @@ private fun DeedsHome(
                             style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.SovereignGold,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
@@ -381,7 +381,7 @@ private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Led
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
             )
@@ -392,7 +392,7 @@ private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Led
             requirement,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
-            maxLines = 1,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(6.dp))

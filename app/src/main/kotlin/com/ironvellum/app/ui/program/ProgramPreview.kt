@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -725,6 +726,8 @@ internal fun GearPicker(
 ) {
     // Null is "not answered yet": no cell lit, so the lifter has to choose.
     val current = equipment ?: Equipment.NOTHING
+    // One column at a large text size: in half the width a name like "Parallettes" breaks inside the word.
+    val columns = if (LocalDensity.current.fontScale > 1.3f) 1 else 2
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             PickCell(
@@ -742,7 +745,7 @@ internal fun GearPicker(
                 onClick = { onChange(Equipment.NOTHING.copy(kit = current.kit)) },
             )
         }
-        Gear.entries.chunked(2).forEach { chunk ->
+        Gear.entries.chunked(columns).forEach { chunk ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 chunk.forEach { gear ->
                     val on = gear in current.gear
@@ -825,26 +828,38 @@ internal fun GearPicker(
 private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
     val kit = current.kit
     val unit = Units.current
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-        val vestOn = kit.vestMaxKg != null
+    val vestOn = kit.vestMaxKg != null
+    val vest: @Composable (Modifier) -> Unit = { cell ->
         PickCell(
             label = "Weighted vest",
             selected = vestOn,
-            modifier = Modifier.weight(1f),
+            modifier = cell,
             description = "Weighted vest, ${if (vestOn) "on" else "off"}",
             role = Role.Checkbox,
             onClick = {
                 onChange(current.copy(kit = kit.copy(vestMaxKg = if (vestOn) null else LoadKit.DEFAULT_VEST_KG)))
             },
         )
+    }
+    val belt: @Composable (Modifier) -> Unit = { cell ->
         PickCell(
             label = "Dip belt",
             selected = kit.dipBelt,
-            modifier = Modifier.weight(1f),
+            modifier = cell,
             description = "Dip belt, ${if (kit.dipBelt) "on" else "off"}",
             role = Role.Checkbox,
             onClick = { onChange(current.copy(kit = kit.copy(dipBelt = !kit.dipBelt))) },
         )
+    }
+    if (LocalDensity.current.fontScale > 1.3f) {
+        // Stacked, like the gear above, so the names have the whole width.
+        vest(Modifier.fillMaxWidth())
+        belt(Modifier.fillMaxWidth())
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            vest(Modifier.weight(1f))
+            belt(Modifier.weight(1f))
+        }
     }
     val maxKg = kit.vestMaxKg ?: return
     KitStepperRow(

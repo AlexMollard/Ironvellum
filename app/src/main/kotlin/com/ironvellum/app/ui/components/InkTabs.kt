@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
@@ -17,6 +19,7 @@ import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -80,6 +83,11 @@ fun InkTabs(
     val tabPad = if (fill) 0.dp else if (labels.size > 3) CrowdedTabPad else TabPad
     val widths = remember(labels.size) { mutableStateListOf(*Array(labels.size) { 0 }) }
     val settled = animateFloatAsState(selectedIndex.toFloat(), label = "inkTabsIndicator")
+    // A strip sized to its labels scrolls when large text makes them wider than the screen, and follows the open tab.
+    val scroll = rememberScrollState()
+    LaunchedEffect(selectedIndex, fill) {
+        if (!fill && widths.all { it > 0 }) scroll.animateScrollTo(widths.take(selectedIndex).sum())
+    }
     Box(modifier.fillMaxWidth().height(LedgerSpace.Target)) {
         Box(
             Modifier
@@ -91,7 +99,7 @@ fun InkTabs(
         )
         Row(
             Modifier
-                .then(if (fill) Modifier.fillMaxWidth() else Modifier)
+                .then(if (fill) Modifier.fillMaxWidth() else Modifier.horizontalScroll(scroll))
                 .offset(x = -tabPad)
                 .drawBehind {
                     if (labels.size < 2 || widths.any { it == 0 }) return@drawBehind

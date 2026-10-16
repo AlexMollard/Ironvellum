@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -147,21 +148,30 @@ internal fun SetsSheet(
         text = {
             // Tall enough to fill the sheet whatever the scheme, so switching schemes never changes its height.
             Column(Modifier.heightIn(min = LocalConfiguration.current.screenHeightDp.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SchemeType.entries.forEach { type ->
-                        SchemeTile(
-                            type = type,
-                            selected = scheme.type == type,
-                            enabled = !(inSuperset && type == SchemeType.DROPS),
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                        ) {
-                            scheme = when (type) {
-                                SchemeType.CUSTOM -> scheme.copy(type = type, custom = scheme.custom.ifEmpty { scheme.kinds(setCount) })
-                                SchemeType.TOP_BACKOFF -> scheme.copy(type = type).fitTo(setCount)
-                                else -> scheme.copy(type = type)
+                val tiles: @Composable (List<SchemeType>) -> Unit = { types ->
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        types.forEach { type ->
+                            SchemeTile(
+                                type = type,
+                                selected = scheme.type == type,
+                                enabled = !(inSuperset && type == SchemeType.DROPS),
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                            ) {
+                                scheme = when (type) {
+                                    SchemeType.CUSTOM -> scheme.copy(type = type, custom = scheme.custom.ifEmpty { scheme.kinds(setCount) })
+                                    SchemeType.TOP_BACKOFF -> scheme.copy(type = type).fitTo(setCount)
+                                    else -> scheme.copy(type = type)
+                                }
                             }
                         }
                     }
+                }
+                // Four tiles share one row until large text makes their names break inside a word: then two rows of two.
+                if (LocalDensity.current.fontScale > 1.3f) {
+                    tiles(SchemeType.entries.take(2))
+                    tiles(SchemeType.entries.drop(2))
+                } else {
+                    tiles(SchemeType.entries)
                 }
                 if (inSuperset) Text("Not inside a superset", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 if (suggestion.type != scheme.type && !(inSuperset && suggestion.type == SchemeType.DROPS)) {

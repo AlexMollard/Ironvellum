@@ -297,7 +297,7 @@ private fun FillingContent(
                     fontSize = 26.sp,
                     color = if (XpReveal.isLift(line)) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
                     textAlign = TextAlign.Center,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 val note = if (XpReveal.isLift(line)) XpReveal.subline(line) else XpReveal.bonusNote(line)
@@ -307,7 +307,7 @@ private fun FillingContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Dim,
                         textAlign = TextAlign.Center,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp),
                     )

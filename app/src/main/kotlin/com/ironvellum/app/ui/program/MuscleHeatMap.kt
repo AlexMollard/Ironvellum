@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
+import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -195,9 +196,12 @@ private fun FigureBlock(
         Box {
             TappableFigure(figure, height, fill, selection.value, { selection.value = it }, lineFor, interactive = interactive, decor = decor)
             // Left-aligned in each half so the word clears the head at the half's centre.
-            Row(Modifier.fillMaxWidth().then(quiet)) {
-                FigureLabel("FRONT", Modifier.weight(1f))
-                FigureLabel("BACK", Modifier.weight(1f))
+            // Capped: the words sit beside the figures' heads in half the phone's width and cannot grow with the text.
+            CappedFontScale {
+                Row(Modifier.fillMaxWidth().then(quiet)) {
+                    FigureLabel("FRONT", Modifier.weight(1f))
+                    FigureLabel("BACK", Modifier.weight(1f))
+                }
             }
         }
         if (interactive && selection.value != null) SelectedMuscleLine(selection.value, lineFor)

@@ -50,6 +50,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.content.ContextCompat
 import android.content.Context
@@ -68,6 +69,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -2158,25 +2160,26 @@ private fun TrialHeader(
                     "${Words.trial.c} in progress",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 // The chip shares the title's line, not the label's: beside the BACK, lock and menu controls it left the
                 // label "Workout in" wide, and a +280 XP chip is wider still.
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // A flow, not a row: at a large text size the chip drops under the title instead of squeezing it to "H...".
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         title,
                         style = MaterialTheme.typography.titleMedium,
                         color = IronvellumColors.Ink,
-                        // One line, cut with an ellipsis: a wide XP chip never pushes it onto a second line.
+                        // One line, cut with an ellipsis, when the title alone is wider than the header.
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (xp > 0) {
-                        // The gap the title keeps from the chip; the chip itself never shrinks.
-                        Spacer(Modifier.width(12.dp))
-                        XpChip(xp)
-                    }
+                    if (xp > 0) XpChip(xp)
                 }
             }
             NavChip(
@@ -2240,7 +2243,7 @@ private fun TrialHeader(
                 color = IronvellumColors.InkMuted,
             )
             // One slot takes all the room the clock leaves, so a long lift name gives way, never the XP.
-            Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f).padding(end = 8.dp)) {
                 if (gain != null) {
                     LiveGainTag(gain, motion, onGainGone)
                 } else if (minutesLeft != null) {
@@ -2826,57 +2829,67 @@ private fun TrialSetRow(
             tone = tone,
             modifier = Modifier.width(24.dp),
         )
-        Text(
-            setFigureText(set, metric, weighted),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = tone,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
-        )
-        if (newPeak) {
-            // A tag, not a control: small gold text, never boxed, never tappable.
-            Icon(
-                Icons.Filled.Bolt,
-                contentDescription = null,
-                tint = IronvellumColors.SovereignGold,
-                modifier = Modifier.size(11.dp),
-            )
-            Spacer(Modifier.width(3.dp))
-            Text(
-                "NEW ${Words.peak.u}",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.SemiBold,
-                color = IronvellumColors.SovereignGold,
-            )
-        }
-        // How hard it was, muted at the right: "RPE 7" or "2 RIR". Shown even with the question off.
-        if (done) {
-            set.rpe?.let {
-                Text(
-                    Effort.value(it, EffortSetting.scale),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = tone,
-                    maxLines = 1,
-                    modifier = Modifier.padding(start = 8.dp),
+        // The tags after the figures: a new peak, how hard it was, what it earned. At a large text size they drop
+        // under the figures instead of squeezing "10 kg x 5" into a column of its own.
+        val tags: @Composable () -> Unit = {
+            if (newPeak) {
+                // A tag, not a control: small gold text, never boxed, never tappable.
+                Icon(
+                    Icons.Filled.Bolt,
+                    contentDescription = null,
+                    tint = IronvellumColors.SovereignGold,
+                    modifier = Modifier.size(11.dp),
                 )
-            }
-            // What this set added to the trial's XP; the header chip carries the running total.
-            if (xpGain != null) {
+                Spacer(Modifier.width(3.dp))
                 Text(
-                    "+$xpGain XP",
+                    "NEW ${Words.peak.u}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
-                    color = IronvellumColors.EmeraldDeep,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .padding(start = 10.dp)
-                        .semantics { contentDescription = "$xpGain XP" },
+                    color = IronvellumColors.SovereignGold,
                 )
             }
+            // How hard it was, muted at the right: "RPE 7" or "2 RIR". Shown even with the question off.
+            if (done) {
+                set.rpe?.let {
+                    Text(
+                        Effort.value(it, EffortSetting.scale),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = tone,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+                // What this set added to the trial's XP; the header chip carries the running total.
+                if (xpGain != null) {
+                    Text(
+                        "+$xpGain XP",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.SemiBold,
+                        color = IronvellumColors.EmeraldDeep,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .padding(start = 10.dp)
+                            .semantics { contentDescription = "$xpGain XP" },
+                    )
+                }
+            }
+        }
+        val stackTags = LocalDensity.current.fontScale > 1.3f
+        Column(Modifier.weight(1f).padding(start = 8.dp)) {
+            Text(
+                setFigureText(set, metric, weighted),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = tone,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (stackTags) Row(verticalAlignment = Alignment.CenterVertically) { tags() }
+        }
+        if (!stackTags) tags()
+        if (done) {
             // The tick closes the row, as it does a folded exercise's.
             Icon(
                 Icons.Filled.Check,
@@ -2902,8 +2915,8 @@ internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modif
             .background(IronvellumColors.Ink.copy(alpha = 0.04f))
             .padding(start = 44.dp, end = 16.dp, bottom = 8.dp),
     ) {
-        Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth().heightIn(min = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             Text(scale.label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, letterSpacing = 2.sp)
         }
         val shape = MaterialTheme.shapes.small
@@ -2913,7 +2926,7 @@ internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modif
                 Box(
                     Modifier
                         .weight(1f)
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                         .selectable(selected = chosen, role = Role.RadioButton, onClick = { onPick(if (chosen) null else value) })
                         .padding(horizontal = 2.dp, vertical = 4.dp)
                         .clip(shape)
@@ -3256,7 +3269,9 @@ private fun RestStrip(
     onRate: (Int?) -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().height(if (effortSet != null) REST_ROW_HEIGHT_WITH_EFFORT else REST_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
+        // A minimum height, not a fixed one: the clock, the label and the three actions grow with the text size.
+        val rowHeight = if (effortSet != null) REST_ROW_HEIGHT_WITH_EFFORT else REST_ROW_HEIGHT
+        Row(Modifier.fillMaxWidth().heightIn(min = rowHeight), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -3274,7 +3289,7 @@ private fun RestStrip(
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         letterSpacing = IronvellumTracking.InlineLabel,
-                        maxLines = 1,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).padding(start = 12.dp),
                     )
@@ -3286,13 +3301,13 @@ private fun RestStrip(
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         lineHeight = 12.sp,
-                        maxLines = 1,
+                        maxLines = 2,
                     )
                 }
             }
-            FooterAction("\u2212${RestTimer.SHORTEN_SECONDS}", IronvellumColors.Ink, onShorten)
-            FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, onExtend)
-            FooterAction("Skip", IronvellumColors.InkMuted, onSkip)
+            FooterAction("\u2212${RestTimer.SHORTEN_SECONDS}", IronvellumColors.Ink, rowHeight, onShorten)
+            FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, rowHeight, onExtend)
+            FooterAction("Skip", IronvellumColors.InkMuted, rowHeight, onSkip)
         }
         if (effortSet != null) RestEffort(effortSet, effortLabel, onRate)
         // The gap above the sweep keeps the soft ceiling's line off the bar.
@@ -3319,14 +3334,14 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
     Box(Modifier.fillMaxWidth().animateContentSize()) {
         if (rpe != null && !reopened) {
             Row(
-                Modifier.fillMaxWidth().height(EFFORT_DONE_HEIGHT),
+                Modifier.fillMaxWidth().heightIn(min = EFFORT_DONE_HEIGHT),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     "$label \u00B7 ${Effort.value(rpe, scale)} \u2713",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
@@ -3344,13 +3359,13 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
                 )
             }
         } else {
-            Column(Modifier.fillMaxWidth().height(EFFORT_BLOCK_HEIGHT)) {
-                Row(Modifier.fillMaxWidth().height(24.dp).padding(end = LOG_BUTTON_SLOT), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.fillMaxWidth().heightIn(min = EFFORT_BLOCK_HEIGHT)) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 24.dp).padding(end = LOG_BUTTON_SLOT), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         if (scale == EffortScale.RIR) "$label: reps left?" else "$label: how hard?",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
@@ -3365,7 +3380,7 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
                         Box(
                             Modifier
                                 .weight(1f)
-                                .height(48.dp)
+                                .heightIn(min = 48.dp)
                                 .selectable(
                                     selected = chosen,
                                     role = Role.RadioButton,
@@ -3500,11 +3515,10 @@ private fun XpChip(xp: Int) {
 }
 
 @Composable
-private fun FooterAction(label: String, color: Color, onClick: () -> Unit) {
+private fun FooterAction(label: String, color: Color, minHeight: Dp, onClick: () -> Unit) {
     Box(
         Modifier
-            .defaultMinSize(minWidth = 48.dp)
-            .fillMaxHeight()
+            .defaultMinSize(minWidth = 48.dp, minHeight = minHeight)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,

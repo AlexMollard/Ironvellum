@@ -120,6 +120,7 @@ import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -698,14 +699,17 @@ internal fun TodayContent(
                 "${ArmyClass.LADDER.first().title} is your level title and rises with your XP. Strength Rank is set by what you lift.",
             )
         }
-        WeekRail(
-            selectedDay = selectedDay,
-            today = today.dayOfWeek.value,
-            scheduled = ui.presets.mapNotNull { it.scheduledDay }.toSet(),
-            done = ui.weekDone.keys,
-            onSelect = swipe.selectDay,
-            dayOffset = swipe.dayOffset,
-        )
+        // Seven one-letter tiles on fixed 12/24dp slots, with the selected-day tile drawn behind them: they cannot grow.
+        CappedFontScale {
+            WeekRail(
+                selectedDay = selectedDay,
+                today = today.dayOfWeek.value,
+                scheduled = ui.presets.mapNotNull { it.scheduledDay }.toSet(),
+                done = ui.weekDone.keys,
+                onSelect = swipe.selectDay,
+                dayOffset = swipe.dayOffset,
+            )
+        }
     }
 
     CompositionLocalProvider(LocalTodayMotion provides motion) {
@@ -1305,7 +1309,7 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
                 peak.label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
@@ -1315,7 +1319,7 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -211,7 +212,12 @@ internal fun TrainingCalendar(
         }
 
         Spacer(Modifier.height(LedgerSpace.Panel))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Wraps between items at a large text size instead of breaking a word inside one.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             LegendItem(Words.sealed.s) { SealedMark() }
             LegendItem("${Words.rite.s} day") { RiteMark() }
             LegendItem("today") {
