@@ -681,7 +681,7 @@ private fun CountButton(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(role = Role.Button) { onClick() }
             .then(if (expanded != null) Modifier.semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" } else Modifier)
@@ -958,7 +958,7 @@ internal fun SocialRefreshLink(onClick: () -> Unit, label: String) {
     Box(
         contentAlignment = Alignment.CenterStart,
         modifier = Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(role = Role.Button) { onClick() }
             .padding(horizontal = 2.dp),

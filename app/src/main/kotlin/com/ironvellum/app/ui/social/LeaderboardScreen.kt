@@ -455,7 +455,7 @@ private fun Board(
     // Retry link only survives in the error state; the banner below carries
     // the message so stale rows are never silently served.
     if (ui.error != null) {
-        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
+        SocialErrorBanner(Lines.standingsStale(ui.error))
         SocialRefreshLink(onClick = onRefresh, label = "Try again")
     }
 
@@ -839,7 +839,7 @@ private fun MusterBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
+                        SocialErrorBanner(Lines.standingsStale(ui.error))
                         Spacer(Modifier.height(10.dp))
                     }
                     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
@@ -974,7 +974,7 @@ private fun LiftsBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
+                        SocialErrorBanner(Lines.standingsStale(ui.error))
                         Spacer(Modifier.height(10.dp))
                     }
                     LiftPicker(

@@ -794,7 +794,7 @@ private fun CommentRow(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable(role = Role.Button, onClickLabel = "Open ${Words.folio.s}") { onOpenLifter() }
                     .wrapContentHeight(),
@@ -889,7 +889,7 @@ internal fun ReportDialog(
                             IronvellumTabPill(
                                 label = option.label(),
                                 selected = option == reason,
-                                modifier = Modifier.heightIn(min = 44.dp),
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 onClick = { reason = option },
                             )
                         }

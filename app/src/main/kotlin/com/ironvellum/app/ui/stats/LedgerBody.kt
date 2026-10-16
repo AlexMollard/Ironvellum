@@ -220,7 +220,7 @@ internal fun BodyTab(
             InkDivider()
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
-                label = "Tape ${Words.reading.pl}",
+                label = Lines.tapeReadings,
                 value = "$logged of ${MeasurementSite.entries.size} logged",
                 supporting = "stays on this device",
                 onClick = onOpenTape,

@@ -121,6 +121,27 @@ object Lines {
         "Could not refresh — this inbox is from your last sync: $error",
     )
 
+    fun standingsStale(error: String?): String = Words.pick(
+        "The ink has faded — these standings are from your last sync: $error",
+        "Could not refresh — these positions are from your last sync: $error",
+    )
+
+    val rosterStale: String
+        get() = Words.pick(
+            "The ink has faded — this roster is from your last sync. Pull down to try again.",
+            "Could not refresh — this list is from your last sync. Pull down to try again.",
+        )
+
+    /** The tape pane's title and the Ledger row that opens it. */
+    val tapeReadings: String
+        get() = Words.pick("Tape readings", "Body measurements")
+
+    val firstReadingPrompt: String
+        get() = Words.pick(
+            "This page is blank. Take the first reading above.",
+            "No measurements yet. Add the first one above.",
+        )
+
     /** The Settings switch's example. The same in both modes: it names both vocabularies. */
     val themedNamesCaption: String
         get() = "Uses the app's fantasy names: Workout becomes Trial, Routine becomes Rite."

@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.MeasurementEntry
@@ -47,7 +48,7 @@ internal fun TapePage(
 ) {
     val latest = Measurements.latest(entries)
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("TAPE ${Words.reading.upl}", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
+        PushedHeader(Lines.tapeReadings.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
         Column(
             Modifier
                 .fillMaxSize()

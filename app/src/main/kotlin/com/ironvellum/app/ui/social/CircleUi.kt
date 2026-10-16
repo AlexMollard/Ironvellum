@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
@@ -563,7 +564,7 @@ private fun CircleRoster(
                 // stale week pass for the current one.
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "The ink has faded — this roster is from your last sync. Pull down to try again.",
+                    Lines.rosterStale,
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,

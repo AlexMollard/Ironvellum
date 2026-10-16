@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
+import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
@@ -210,7 +211,7 @@ fun MeasurementDetailScreen(
 
             if (latest == null) {
                 Text(
-                    "This page is blank. Take the first ${Words.reading.s} above.",
+                    Lines.firstReadingPrompt,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

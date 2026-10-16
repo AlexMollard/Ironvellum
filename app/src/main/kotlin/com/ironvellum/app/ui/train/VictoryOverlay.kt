@@ -289,7 +289,7 @@ private fun SummaryPage(
                 add(Triple("XP", "+${count(result.xpAwarded)}", true))
                 if (result.questBonus) add(Triple("Today's ${Words.trial.s}", "+${Xp.QUEST_BONUS} bonus", true))
             }
-            result.rankUp?.let { add(Triple("Rank up", it, true)) }
+            result.rankUp?.let { add(Triple("Strength Rank up", it, true)) }
             deeds.forEach { add(Triple(Words.deed.c, it.name, false)) }
         }
     }
