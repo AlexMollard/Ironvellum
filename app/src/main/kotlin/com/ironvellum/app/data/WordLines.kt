@@ -64,7 +64,7 @@ object Lines {
         )
 
     val noBodyData: String
-        get() = Words.pick("The Ledger knows nothing of your frame yet.", "No body measurements yet.")
+        get() = Words.pick("The Ledger knows nothing of your frame yet.", "No weigh-ins yet.")
 
     val ledgerTitle: String
         get() = Words.pick("THE LEDGER", "STATS")
