@@ -58,6 +58,8 @@ class HardcodedUiLiteralTest {
         "main/domain/Skills.kt" to "skill names and descriptions: data, deferred with title/skill names (owner, 2026-10-16)",
         "main/domain/TitleEngine.kt" to "title and deed names and descriptions: data, deferred with title/skill names",
         "main/domain/Crests.kt" to "crest names and descriptions: data, deferred with title/skill names",
+        "main/domain/DeedLadders.kt" to "deed category names and blurbs, derived from the title catalogue: data, deferred with title/skill names",
+        "main/domain/RelicHouses.kt" to "relic names and perk text: catalogue data, deferred with title/skill names",
         "main/domain/CrestCatalogue.kt" to "crest names and descriptions: data, deferred with title/skill names",
         "main/data/IronvellumDatabase.kt" to "SQL and migrations",
         "main/data/db/Daos.kt" to "SQL",

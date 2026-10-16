@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 3525 in 181 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 3452 in 179 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/WorkoutSessionService.kt 7
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
@@ -17,7 +17,6 @@ main/data/cloud/CloudSync.kt 11
 main/domain/BodyStats.kt 13
 main/domain/Circles.kt 6
 main/domain/CustomExercises.kt 11
-main/domain/DeedLadders.kt 30
 main/domain/Effort.kt 9
 main/domain/Energy.kt 9
 main/domain/Gacha.kt 10
@@ -32,7 +31,6 @@ main/domain/ProgramTemplates.kt 186
 main/domain/Progression.kt 21
 main/domain/Rank.kt 1
 main/domain/RankPatterns.kt 13
-main/domain/RelicHouses.kt 43
 main/domain/RepMax.kt 1
 main/domain/RestAlert.kt 4
 main/domain/RestRules.kt 14

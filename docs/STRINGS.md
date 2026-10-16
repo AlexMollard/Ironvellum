@@ -6,7 +6,7 @@ screens move over phase by phase, and the guard below keeps new text from landin
 
 Scope: every screen, dialog, notification, widget, setting, error and generated hint. Not in scope (English data,
 a later step): exercise names, the exercise guides (`ExerciseGuides.kt`, `LibraryGuides.kt`), and the title, skill
-and crest catalogues (names and descriptions: `Skills.kt`, `TitleEngine.kt`, `Crests.kt`, `CrestCatalogue.kt`, exempt
+and crest catalogues (names and descriptions: `Skills.kt`, `TitleEngine.kt`, `DeedLadders.kt`, `Crests.kt`, `CrestCatalogue.kt`, `RelicHouses.kt`, exempt
 from the guard below until title/skill names move). User data (a routine called "Full Body A", a typed note) is never a resource: pass it as an argument or
 `UiText.Raw`.
 
@@ -153,3 +153,78 @@ logs and thrown errors. The per-file counts are checked in at `app/src/test/reso
 
 Migrating a screen means: move its literals into `strings.xml` (a pair where a concept word was interpolated), swap the
 call sites, delete any `Lines`/`Words` entry it orphaned, then re-baseline. A screen at zero drops out of the baseline.
+
+## Recipe: a call site that interpolates a concept
+
+`Words.x.form` inside a larger string is the call site to migrate (a concept alone, as a heading or button, already
+resolves through the facade and needs nothing). Steps:
+
+1. Take the whole sentence the user reads, with every concept word in it, in both modes. Mode-specific branches
+   (`Words.pick(...)`, `if (Words.themed)`) are the two halves of the pair.
+2. Write `key` (plain) and `key__t` (themed) as two complete sentences. Numbers and user data become positional
+   placeholders (`%1$s`, `%2$d`); counts become `<plurals>`. Never a `{concept}` placeholder.
+3. Replace the Kotlin string with `UiText.themed(R.string.key, R.string.key__t, args).asString()` (composable) or
+   `Words.text(UiText.themed(...))` / `.asString(context)` outside composition.
+4. Delete the `Words` forms the sentence orphaned only if no other site reads them (WordsFormsTest does not flag
+   unused forms; the strings.xml entry can stay until the last reader goes).
+5. Run GlossaryTest, StringsXmlTest and the ratchet; re-baseline last, after rebasing.
+
+Example 1, `ui/train/PresetsScreen.kt` (a concept plus its article inside a title):
+
+```kotlin
+// before
+"Start from ${Words.pattern.a}"
+// after
+UiText.themed(R.string.presets_new_template_title, R.string.presets_new_template_title__t).asString()
+```
+```xml
+<string name="presets_new_template_title">Start from a template</string>
+<string name="presets_new_template_title__t">Start from a pattern</string>
+```
+Its subtitle on the same line, `"A hand-written ${Words.pick("weekly cycle", "weekly plan")} to adjust."`, is its own pair
+(`...subtitle` / `...subtitle__t`).
+
+Example 2, `ui/social/AccountScreen.kt` (several concepts and a `pick` in one sentence):
+
+```kotlin
+// before
+"Optional: everything else works without an account. Sign in to back up your ${Words.trial.pl}, " +
+    "add ${Words.ally.pl}, join ${Words.circle.a} and ${Words.pick("stand in the Reckoning", "appear on the leaderboard")}."
+// after
+UiText.themed(R.string.account_signin_optional, R.string.account_signin_optional__t).asString()
+```
+```xml
+<string name="account_signin_optional">Optional: everything else works without an account. Sign in to back up your workouts, add friends, join a group and appear on the leaderboard.</string>
+<string name="account_signin_optional__t">Optional: everything else works without an account. Sign in to back up your trials, add allies, join a circle and stand in the Reckoning.</string>
+```
+One sentence is one key even when Kotlin built it from two concatenated halves.
+
+### Catalogue files are data
+
+`DeedLadders.kt` (deed category names and blurbs, derived from the title catalogue) and `RelicHouses.kt` (relic names
+and perk text) are catalogue data like `Skills.kt` and `Crests.kt`: names and descriptions that move with title/skill
+names. Both are exempt from the ratchet with that reason, so their concept calls are not counted below.
+
+### Remaining concept-interpolation sites
+
+Lines containing `Words.<concept>.<form>` under `app/src/main`, outside `Words.kt` and the exempt catalogues:
+844 lines in 110 files (the catalogues add 100 more). Recount with
+`grep -rcE "Words\.[a-zA-Z]+\.(s|c|t|u|pl|cpl|tpl|upl|a|ca|at|cat|themedName)" app/src/main`. Top 15, a split guide:
+
+| File | Lines |
+|---|---|
+| ui/program/ProgramBuilderScreen.kt | 44 |
+| ui/train/SessionScreen.kt | 41 |
+| ui/program/ForgeCycle.kt | 27 |
+| ui/social/CircleUi.kt | 25 |
+| ui/components/TermInfo.kt | 25 |
+| ui/social/LifterScreen.kt | 24 |
+| ui/train/PresetsScreen.kt | 22 |
+| ui/train/WorkoutDetailScreen.kt | 21 |
+| ui/social/AccountSettingsScreen.kt | 21 |
+| ui/social/AccountScreen.kt | 21 |
+| ui/onboarding/OnboardingScreen.kt | 20 |
+| ui/dashboard/DashboardScreen.kt | 20 |
+| ui/social/CommentsScreen.kt | 19 |
+| data/cloud/CloudSync.kt | 19 |
+| data/Repository.kt | 19 |
