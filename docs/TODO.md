@@ -26,6 +26,49 @@ assertions after); older patches migrate warbands and are not re-run there.
 **Never paste `supabase/reset.sql` into the live project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.
 
+## Roadmap checklist
+
+The short view, by version; the detail of each item is in the sections below.
+
+### 1.7 (released)
+- [x] Release prepared and tag `v1.7` pushed; F-Droid builds from the tag
+
+### 1.8: faster, sturdier, easier to reach
+- [x] 1 History at scale: no re-pricing per set tick, indices, targeted queries (7d5c9ccf)
+- [x] XP rescore in one pass over history: 4.1 s to 0.08 s on 450 trials (52351cdd)
+- [x] 2 Scheduled file backup to a chosen folder, newest 5 kept (8680225f)
+- [x] 3 1.7 leftovers and the 24-48dp touch-target audit (53815525, e144686c, bc739d7c)
+- [ ] 4 Measure: release APK size done (foss 14.3 MB); frame stats on the owner's phone owed (needs the phone plugged in)
+- [x] 5 Home-screen widgets "Today" and "Streak & week", 2x1 and 4x2 (8bef739a, f046207e, 9a120550)
+- [x] 6 Honour the system font scale, with a 200% sweep test (131a1e53 to 61106a9b)
+- [ ] 7 Health Connect write-back of finished workouts, opt-in (in progress)
+- [ ] 8 String extraction into resources, with a lint guard against new literals
+- [ ] 9 Light theme: System, Dark, Light
+- [ ] Gate housekeeping: back under 5 minutes (runs took 5m38s to 11m24s) and the lint warnings that rose from 32 to 56
+- [ ] Release: version 1.8, changelog, README and store text and screenshots (widgets, light theme)
+- [ ] Owner: push tag `v1.8`
+
+### 1.9: translations and Play preparation
+- [ ] Invite translators onto the 1.8 string resources (pick the platform, e.g. Weblate)
+- [ ] Owner: Play developer account ($25, identity check)
+- [ ] Owner: release signing keystore
+- [ ] Owner: privacy policy at a public URL, and an in-app link to it
+- [ ] Owner: Play health-data declaration, including the 1.8 write permission
+- [ ] Owner: Google sign-in OAuth consent screen out of Testing
+- [ ] Play store listing
+- [ ] Closed test: 12+ testers opted in for 14 continuous days; recruit spares
+- [ ] Read the test: time to first logged set, week 2 and week 4 retention, where testers get stuck; simplify where they do
+
+### 2.0: Google Play launch
+- [ ] Supabase: spend cap, usage alerts, sign-up rate limit, recheck the free-tier limits
+- [ ] Recheck Google developer verification status (F-Droid build included)
+- [ ] Production release on Play
+- [ ] Launch posts (r/bodyweightfitness, r/fdroid, "free Strong alternative" threads)
+
+### Not planned
+- Wear OS
+- iPhone (revisit if Play shows traction)
+
 ## 1.8 plan (owner agreed 2026-10-16, built in this order, one build at a time)
 
 Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
@@ -67,9 +110,10 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    Left on the full history, because they price or rank every set: Today, Stats,
    the log, the Titles ledger and Strength Rank, `completeSession`, the cloud push
    fingerprints, the XP rescore, the export and `SessionViewModel`'s records. What
-   remains slow is compute, not queries: `SessionXp` costs about 1.2 s to build
-   (its best-so-far fold and peak book over every set) and finishing a workout
-   waits on it once. That is the next thing to profile.
+   remained slow was compute, not queries: `SessionXp` cost about 1.2 s to build on
+   the emulator. Profiled on the JVM (52351cdd): the rescore built one per trial
+   over the whole history, now a `SessionXp.Timeline` folds it once (450 trials:
+   4.1 s to 0.08 s), and one build fell from 13 ms to 7 ms.
 2. **Scheduled file backup.** Done 2026-10-16 (8680225f). Settings > Data:
    pick a folder (Storage Access Framework), weekly archive export through the
    same `exportJson` the manual export uses, keep the newest 5 files it wrote
