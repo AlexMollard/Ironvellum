@@ -70,8 +70,14 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    remains slow is compute, not queries: `SessionXp` costs about 1.2 s to build
    (its best-so-far fold and peak book over every set) and finishing a workout
    waits on it once. That is the next thing to profile.
-2. **Scheduled file backup.** Settings > Data: pick a folder (Storage Access
-   Framework), weekly archive export, keep the newest 5. Off until chosen.
+2. **Scheduled file backup.** Done 2026-10-16 (8680225f). Settings > Data:
+   pick a folder (Storage Access Framework), weekly archive export through the
+   same `exportJson` the manual export uses, keep the newest 5 files it wrote
+   (never any other file). Off until chosen. One WorkManager periodic job, with
+   a 7-day initial delay (without it the job runs at once and doubles the first
+   backup). Last backup, a lost folder permission and a failed write show in
+   red in Data. Run against a real folder on the emulator: 7 backups made, 5
+   kept, a foreign file untouched.
 3. **1.7 leftovers.** Plan builder `EffortStepper` in the Sets sheet style;
    "Rank" vs "Strength Rank"; Today header truncation beside "Add sex in
    Profile"; routine editor Load stepper showing "none"; persist Muscle Coverage
