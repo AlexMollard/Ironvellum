@@ -44,7 +44,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] 7 Health Connect write-back of finished workouts, opt-in (c21654c7)
 - [ ] 8 String extraction into resources, with a lint guard against new literals
 - [x] 9 Light theme: System, Dark, Light (47d97395, 384353ba, fbd34fa7)
-- [ ] Gate housekeeping: back under 5 minutes (runs took 5m38s to 11m24s) and the lint warnings that rose from 32 to 56
+- [x] Gate housekeeping: back under 5 minutes (3m36s to 3m58s after an edit), self-healing emulator lock, lint warnings 58 to 44 (be444d0e, d8bd7153)
 - [ ] Release: version 1.8, changelog, README and store text and screenshots (widgets, light theme)
 - [ ] Owner: push tag `v1.8`
 
