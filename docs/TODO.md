@@ -78,10 +78,18 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    backup). Last backup, a lost folder permission and a failed write show in
    red in Data. Run against a real folder on the emulator: 7 backups made, 5
    kept, a foreign file untouched.
-3. **1.7 leftovers.** Plan builder `EffortStepper` in the Sets sheet style;
-   "Rank" vs "Strength Rank"; Today header truncation beside "Add sex in
-   Profile"; routine editor Load stepper showing "none"; persist Muscle Coverage
-   dismissals per muscle; re-audit the 24-48dp touch targets.
+3. **1.7 leftovers.** Done 2026-10-16 (53815525, e144686c, bc739d7c). Checked
+   on the emulator first: the plan builder's `EffortStepper` already draws the
+   Sets sheet's compact pads (09719818), the Today header already stacks "Add sex
+   in Profile" under the name (8332604c), the rite editor's Load already reads
+   "Add" or "BW" (562889b4), Settings > Appearance already puts "Choose a pair"
+   under Colour pairs, and deed and skill standards already hold on "Add sex in
+   Profile" (a7d7511c); nothing to change there. Changed: Muscle Coverage
+   dismissals are kept per muscle (`DismissedHeavyStore`, appearance prefs); the
+   rank-up row reads "Strength Rank up" so it is not taken for the level title;
+   the tape pane is "Body measurements" in plain mode and the stale roster and
+   standings lines and the empty measurement line follow the vocabulary switch;
+   the 24-48dp audit is in Open decisions, with the controls raised.
 4. **Measure.** Release APK size, and frame stats on the owner's phone.
 5. **Home-screen widget.** Today's routine and streak; tap starts the workout.
 6. **Honour the system font scale.** Drop `FIXED_FONT_SCALE`, fix every screen
