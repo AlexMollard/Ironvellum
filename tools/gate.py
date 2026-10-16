@@ -144,47 +144,6 @@ def revive(serial: str, force: bool = False) -> bool:
     return True
 
 
-def main_checkout() -> str:
-    """The main checkout, also when run from a worktree: every worktree shares one emulator."""
-    common = subprocess.run(
-        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-        cwd=ROOT, capture_output=True, text=True,
-    ).stdout.strip()
-    return os.path.dirname(common) if common else ROOT
-
-
-LOCK = os.path.join(main_checkout(), ".tmp", "emulator.lock")
-
-
-@contextlib.contextmanager
-def emulator_lock(serial: str | None):
-    """Hold the emulator lock that parallel sessions share while the suite runs.
-
-    Several sessions use the one emulator. An install or uninstall from another
-    one mid-suite kills the test process, and the run reports a fraction of its
-    tests. Taking the lock is a mkdir, which is atomic; it is released however
-    the run ends.
-    """
-    if not serial:
-        yield
-        return
-    os.makedirs(os.path.dirname(LOCK), exist_ok=True)
-    waited = False
-    while True:
-        try:
-            os.mkdir(LOCK)
-            break
-        except FileExistsError:
-            if not waited:
-                print(f"-- {LOCK} is held by another session; waiting")
-                waited = True
-            time.sleep(30)
-    try:
-        yield
-    finally:
-        os.rmdir(LOCK)
-
-
 def declared_tests(pattern: str) -> int:
     """How many @Test methods the sources declare: the floor a full run must reach."""
     total = 0
@@ -438,7 +397,7 @@ def main() -> int:
 
     failures = []
     retried = False
-    with emulator_lock(serial):
+    with device.emulator_lock(f"gate.py {args.flavour}") if serial else contextlib.nullcontext():
         ready: dict[str, bool] = {}
         booting = None
         if serial:

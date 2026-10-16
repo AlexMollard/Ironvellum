@@ -13,6 +13,7 @@ so no session has to rebuild the adb incantations by hand.
     python tools/device.py tap "SKILL TREE"    # tap by visible text
     python tools/device.py tap --desc Codex    # tap by content-desc (nav bar)
     python tools/device.py down                # stop the emulator
+    python tools/device.py lock -- <cmd> ...   # run <cmd> holding the shared emulator lock (self-healing)
 
 Screenshots land in .tmp/shots so they stay out of git.
 """
@@ -20,11 +21,18 @@ Screenshots land in .tmp/shots so they stay out of git.
 from __future__ import annotations
 
 import argparse
+import atexit
+import contextlib
+import json
 import os
 import pathlib
 import re
+import shutil
+import signal
+import socket
 import subprocess
 import sys
+import threading
 import time
 
 SDK = pathlib.Path(os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk"))
@@ -211,6 +219,161 @@ def fmt_age(seconds: float) -> str:
         return f"{seconds // 3600}h"
     return f"{seconds // 86400}d"
 
+def main_checkout() -> str:
+    """The main checkout, also when run from a worktree: every worktree shares one emulator."""
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=here, capture_output=True, text=True,
+    ).stdout.strip()
+    return os.path.dirname(common) if common else here
+
+
+# The emulator lock is a directory so that a bare `mkdir` (the old shell idiom) still takes it. A holder that
+# goes through `emulator_lock` or `device.py lock` also writes OWNER, whose mtime is a heartbeat, so a waiter
+# can tell a dead holder from a slow one and take the lock over instead of waiting for a human to clear it.
+LOCK = os.path.join(main_checkout(), ".tmp", "emulator.lock")
+OWNER = "owner.json"
+HEARTBEAT = 30             # seconds between heartbeats from a live holder
+HEARTBEAT_STALE = 10 * 60  # a recorded owner that has not beat for this long is dead (or its machine slept)
+BARE_STALE = 30 * 60       # a bare mkdir lock has no owner to ask; past this age it is taken over
+WAIT_POLL = 15
+
+
+def pid_alive(pid: int) -> bool:
+    out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"],
+                         capture_output=True, text=True).stdout
+    return f'"{pid}"' in out
+
+
+def lock_owner(path: str) -> dict | None:
+    try:
+        with open(os.path.join(path, OWNER), encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return None
+
+
+def lock_stale(path: str) -> str | None:
+    """Why the lock at `path` has no live holder, or None when it is held (or gone)."""
+    now = time.time()
+    owner = lock_owner(path)
+    try:
+        if owner is None:
+            age = now - os.stat(path).st_mtime
+            return f"no owner recorded and {age / 60:.0f} min old" if age > BARE_STALE else None
+        beat = now - os.stat(os.path.join(path, OWNER)).st_mtime
+    except OSError:
+        return None  # released between the checks
+    if owner.get("host") == socket.gethostname() and not pid_alive(int(owner.get("pid", 0))):
+        return f"owner pid {owner.get('pid')} is not running"
+    if beat > HEARTBEAT_STALE:
+        return f"no heartbeat for {beat / 60:.0f} min"
+    return None
+
+
+def lock_take_over(reason: str) -> None:
+    """Remove a dead holder's lock. The rename is atomic, so of several waiters only one gets the directory;
+    it then re-checks what it renamed, and puts the lock back if a live holder slipped in first."""
+    grave = f"{LOCK}.stale-{os.getpid()}"
+    try:
+        os.rename(LOCK, grave)
+    except OSError:
+        return
+    if lock_stale(grave) is None:
+        try:
+            os.rename(grave, LOCK)
+        except OSError:
+            pass
+        return
+    print(f"-- emulator lock was stale ({reason}); taking it over")
+    shutil.rmtree(grave, ignore_errors=True)
+
+
+def lock_acquire(label: str) -> None:
+    os.makedirs(os.path.dirname(LOCK), exist_ok=True)
+    waited = False
+    while True:
+        try:
+            os.mkdir(LOCK)
+            break
+        except FileExistsError:
+            reason = lock_stale(LOCK)
+            if reason:
+                lock_take_over(reason)
+                continue
+            if not waited:
+                owner = lock_owner(LOCK) or {}
+                print(f"-- {LOCK} is held by {owner.get('label', 'another session')}"
+                      f" (pid {owner.get('pid', '?')}); waiting")
+                waited = True
+            time.sleep(WAIT_POLL)
+    record = {"pid": os.getpid(), "host": socket.gethostname(), "label": label, "started": time.time()}
+    with open(os.path.join(LOCK, OWNER), "w", encoding="utf-8") as handle:
+        json.dump(record, handle)
+
+
+def lock_release() -> None:
+    """Drop the lock, but only when it is ours: a taken-over holder must not delete its successor's."""
+    owner = lock_owner(LOCK)
+    if owner and owner.get("pid") == os.getpid() and owner.get("host") == socket.gethostname():
+        shutil.rmtree(LOCK, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def emulator_lock(label: str):
+    """Hold the emulator lock that parallel sessions share.
+
+    An install, `pm clear` or uninstall from one session kills another's suite part way through. The lock is
+    released however this process ends that Python can see: normal exit, an exception, Ctrl-C, Ctrl-Break and
+    SIGTERM (turned into SystemExit so the finally runs). A kill -9 or closed console cannot be caught; those
+    leave a lock whose pid is gone or whose heartbeat stopped, and the next waiter takes it over.
+    """
+    lock_acquire(label)
+    done = threading.Event()
+
+    def beat() -> None:
+        while not done.wait(HEARTBEAT):
+            try:
+                os.utime(os.path.join(LOCK, OWNER))
+            except OSError:
+                pass  # a waiter's rename-and-restore can land mid-beat; the next beat finds it again
+
+    def stop(signum, frame) -> None:
+        raise SystemExit(128 + signum)
+
+    previous = {}
+    if threading.current_thread() is threading.main_thread():
+        for name in ("SIGTERM", "SIGBREAK"):
+            if hasattr(signal, name):
+                previous[getattr(signal, name)] = signal.signal(getattr(signal, name), stop)
+    atexit.register(lock_release)
+    threading.Thread(target=beat, daemon=True).start()
+    try:
+        yield
+    finally:
+        done.set()
+        lock_release()
+        atexit.unregister(lock_release)
+        for signum, handler in previous.items():
+            signal.signal(signum, handler)
+
+
+def run_locked(command: list[str], label: str) -> int:
+    """Run `command` while holding the emulator lock; its exit code is ours."""
+    if command and command[0] == "--":
+        command = command[1:]
+    if not command:
+        sys.exit("lock: no command given (usage: device.py lock [--label NAME] -- <cmd> [args])")
+    with emulator_lock(label):
+        proc = subprocess.Popen(command)
+        while True:
+            try:
+                return proc.wait()
+            except KeyboardInterrupt:
+                pass  # the console sent Ctrl-C to the child as well; let it finish, then release
+
+
 def main() -> None:
     # Labels carry glyphs (◆, →) the Windows console code page cannot print.
     sys.stdout.reconfigure(encoding="utf-8")
@@ -224,6 +387,9 @@ def main() -> None:
     sub.add_parser("labels")
     p_shot = sub.add_parser("shot"); p_shot.add_argument("name")
     p_tap = sub.add_parser("tap"); p_tap.add_argument("needle"); p_tap.add_argument("--desc", action="store_true")
+    p_lock = sub.add_parser("lock", help="run a command while holding the shared emulator lock")
+    p_lock.add_argument("--label", default=f"device.py lock (pid {os.getpid()})")
+    p_lock.add_argument("command", nargs=argparse.REMAINDER)
     args = ap.parse_args()
 
     if args.cmd == "up":
@@ -233,6 +399,9 @@ def main() -> None:
         serial = next((d for d in attached() if d.startswith("emulator-")), None)
         print("stopped" if serial and adb("emu", "kill", serial=serial) is not None else "no emulator running")
         return
+
+    if args.cmd == "lock":
+        sys.exit(run_locked(args.command, args.label))
 
     serial = target()
     if args.cmd == "which":

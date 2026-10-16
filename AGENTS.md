@@ -28,11 +28,17 @@ python3 tools/gate.py --backend    # plus the Supabase schema assertions
 python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
-It finishes in 4 to 4.5 minutes on this machine (4m11s to 4m31s measured after a source edit, with the
-emulator already used for a full run; 3m45s when nothing needed compiling). The budget is 5 minutes and the
+It finishes in 3.5 to 4 minutes on this machine (3m36s and 3m51s measured after a source edit on a warm
+emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is 5 minutes and the
 summary prints the wall clock and flags a miss. It goes red when any test fails, and also when fewer tests
 ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
 which used to read as green.
+
+Phases of a warm run after an edit (379 instrumented, 2040 unit tests): build 10 to 20s, verify 206 to 211s.
+Verify is the instrumented task alone; unit tests, lint and the other flavour's assembles finish inside it, so
+only the instrumented time matters. Before the seeded-template change the same run took 5m19s (verify 299s,
+the suite summing 277s). A cold boot (over 30 minutes up) adds about 34s when it overlaps nothing else, and an
+instrumented retry doubles verify: that, not the suite, is what the 6 to 11 minute runs were.
 
 How it gets there, so nobody undoes it by accident:
 
@@ -40,6 +46,9 @@ How it gets there, so nobody undoes it by accident:
   second runs unit tests, lint, the instrumented suite and the other flavour's assembles together. Gradle
   only runs independent tasks of one project in parallel under `--configuration-cache`, so the gate passes
   it. Gradle output goes to `.tmp/gate-*.log`; the console gets one line per phase.
+- Data tests start from a copy of a once-seeded database (`SeededDb` in `app/src/androidTest`) instead of
+  inserting the 580-exercise catalogue each time: 0.25s per test on 160 tests, about 80s of the suite on the
+  emulator. Tests that check seeding, migration or an empty install still build theirs from nothing.
 - The emulator is cold booted (about 30s) whenever it is not running, has been up over 30 minutes, or
   answers a shell call slowly. It degrades with use: after a few runs on the `host` GPU mode a suite went
   from 70s to 185s, with `graphics.composer3` and `allocator` burning CPU and adb dropping.
@@ -74,14 +83,26 @@ to look at, about 40s of the suite). The captures are now opt-in and the gate sk
 
 Parallel sessions all use `emulator-5554`, and an install, `pm clear` or
 uninstall from one kills another's suite part way through. Take the lock before
-touching it, and release it however the run ends:
+touching it. The lock is the directory `.tmp/emulator.lock` under the **main
+checkout** (every worktree shares it, so a relative `.tmp` inside a worktree is
+not the same lock). Run anything that touches the emulator through the helper,
+which takes the lock, records who holds it, and releases it however the run ends:
 
 ```bash
-until mkdir .tmp/emulator.lock 2>/dev/null; do sleep 30; done
-trap 'rmdir .tmp/emulator.lock' EXIT
+python3 tools/device.py lock -- adb -s emulator-5554 install -r app.apk
+python3 tools/device.py lock --label "my run" -- bash -c 'ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest'
 ```
 
-`tools/gate.py` takes this lock itself while the instrumented suite runs.
+The command's exit code is the helper's. `tools/gate.py` takes the same lock itself while the instrumented
+suite runs.
+
+The lock heals itself, so a killed run no longer blocks everyone until a human clears it. A holder that uses
+the helper (or the gate) writes `owner.json` inside the lock (pid, host, label, start time) and touches it
+every 30s. A waiter takes the lock over, and says so, when the recorded pid is no longer running on this host,
+or when the owner has not beaten for 10 minutes. Released on normal exit, an exception, Ctrl-C, Ctrl-Break and
+SIGTERM; only a hard kill leaves the stale lock behind, and the next waiter clears it. A bare
+`mkdir .tmp/emulator.lock` still takes the lock but cannot record a pid, so it is only taken over once it is 30
+minutes old: prefer the helper. `python3 tools/test_device_lock.py` checks the takeover rules.
 
 ## Instrumented tests never touch the owner's phone
 
