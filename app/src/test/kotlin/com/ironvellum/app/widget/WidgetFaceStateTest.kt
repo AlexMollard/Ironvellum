@@ -39,7 +39,8 @@ class WidgetFaceStateTest {
 
     @Test
     fun `the week strip marks trained days, planned days and free days Monday to Sunday`() {
-        // Monday's Push done; Tuesday's Legs missed; today is Friday's Pull, not yet begun.
+        // Monday's Push done; Tuesday's Legs missed; today is Friday's Pull, not yet begun. Today's own strip
+        // draws the outline for a missed past day as it does for an upcoming one, so the widget does too.
         val s = widgetState(plan, listOf(done(push, friday.minusDays(4))), null, friday, zone)
         assertEquals(
             listOf(DayMark.DONE, DayMark.PLANNED, DayMark.FREE, DayMark.FREE, DayMark.PLANNED, DayMark.FREE, DayMark.FREE),

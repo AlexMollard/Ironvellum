@@ -79,7 +79,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:ellipsize="end"
-        android:fontFamily="@font/chakra_petch_semibold"
+        android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:maxLines="1"
         android:text="Begin an empty workout"
