@@ -184,8 +184,9 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
 - Emulator screenshots are not pixel-comparable with the phone (software
   rasterizer, anti-aliasing differs). Diff within one target, never
   across.
-- The font-scale sweep covers the main screens and sheets at 2.0 only; 1.3 and the
-  later onboarding steps are checked by hand, not by the suite.
+- The font-scale sweep runs the seeded app at 2.0 by default (`-e fontscale 1.3` for
+  another size). The onboarding steps and the Automatic backup panel's on state (it
+  needs the system folder picker) are checked by hand, not by the suite.
 
 ## Not planned
 
