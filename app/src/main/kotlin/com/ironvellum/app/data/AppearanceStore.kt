@@ -2,6 +2,7 @@ package com.ironvellum.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.ironvellum.app.ui.theme.AccentPalette
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ThemeMode
@@ -44,7 +45,7 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
     }
 
     fun setMode(mode: ThemeMode) {
-        prefs.edit().putString("theme", mode.name).apply()
+        prefs.edit { putString("theme", mode.name) }
         currentMode.value = mode
         IronvellumColors.light = mode.isLight(systemDark())
         onChange()
@@ -66,7 +67,10 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
     }
 
     private fun write(primaryKey: String, secondaryKey: String, pair: AccentPalette) {
-        prefs.edit().putString(primaryKey, accentHex(pair.primary)).putString(secondaryKey, accentHex(pair.secondary)).apply()
+        prefs.edit {
+            putString(primaryKey, accentHex(pair.primary))
+            putString(secondaryKey, accentHex(pair.secondary))
+        }
     }
 
     /**
@@ -78,7 +82,7 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
         val saved = runCatching { prefs.getString("theme", null)?.let { ThemeMode.valueOf(it) } }.getOrNull()
         if (saved != null) return saved
         val first = if (existingInstall) ThemeMode.DARK else ThemeMode.SYSTEM
-        prefs.edit().putString("theme", first.name).apply()
+        prefs.edit { putString("theme", first.name) }
         return first
     }
 

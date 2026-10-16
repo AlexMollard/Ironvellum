@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.SeededDb
 import com.ironvellum.app.ui.train.PresetEditorViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -32,7 +33,7 @@ class PresetEditorWarmupTest {
     @Before
     fun setUp() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase(TEST_DB)
+        SeededDb.fresh(context, TEST_DB)
         db = IronvellumDatabase.create(context, TEST_DB)
         repo = Repository(db)
         repo.ensureSeeded()

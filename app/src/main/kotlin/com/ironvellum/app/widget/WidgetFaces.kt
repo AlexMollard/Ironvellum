@@ -1,5 +1,6 @@
 package com.ironvellum.app.widget
 
+import androidx.core.graphics.createBitmap
 import com.ironvellum.app.ui.theme.lightAccent
 import android.app.PendingIntent
 import android.content.Context
@@ -81,7 +82,7 @@ internal object WidgetFaces {
     private fun todayCell(): Bitmap {
         val w = 96
         val h = 92
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(w, h)
         val canvas = Canvas(bitmap)
         fun chamfer(inset: Float, c: Float) = android.graphics.Path().apply {
             moveTo(inset + c, inset); lineTo(w - inset - c, inset); lineTo(w - inset, inset + c); lineTo(w - inset, h - inset - c)
@@ -176,7 +177,7 @@ internal object WidgetFaces {
     /** The 3dp bar of the live trial's sets: drawn as a tiny bitmap so it can wear the lifter's accent. */
     private fun bar(done: Int, total: Int): Bitmap {
         val width = 300
-        val bitmap = Bitmap.createBitmap(width, 3, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(width, 3)
         val canvas = Canvas(bitmap)
         val paint = Paint().apply { color = RUNE }
         canvas.drawRect(0f, 0f, width.toFloat(), 3f, paint)

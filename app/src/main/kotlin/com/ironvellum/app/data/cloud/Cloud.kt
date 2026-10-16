@@ -2,6 +2,7 @@ package com.ironvellum.app.data.cloud
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
@@ -211,7 +212,7 @@ object Cloud {
     var tombstoneOwner: String?
         get() = prefs?.getString(PREF_TOMBSTONE_OWNER, null)
         set(value) {
-            prefs?.edit()?.putString(PREF_TOMBSTONE_OWNER, value)?.apply()
+            prefs?.edit { putString(PREF_TOMBSTONE_OWNER, value) }
         }
 
     private fun readOverride(prefs: SharedPreferences): CloudConfig? {

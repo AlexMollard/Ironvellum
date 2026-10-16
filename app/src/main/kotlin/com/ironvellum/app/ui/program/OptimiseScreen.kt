@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -475,7 +476,7 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
     val ranked = report.gapOptions[muscle]?.options.orEmpty()
     val load = report.loads[muscle]
     val state = report.tally.states[muscle] ?: CoverageState.NOT_TRAINED
-    var chosen by rememberSaveable(muscle.name) { mutableStateOf(0) }
+    var chosen by rememberSaveable(muscle.name) { mutableIntStateOf(0) }
     val input = report.input
     val picked = ranked.getOrNull(chosen.coerceAtMost((ranked.size - 1).coerceAtLeast(0)))
     IronvellumDialog(
@@ -560,8 +561,8 @@ private fun WherePage(
     }
     val base = remember(report, step.muscle, step.option) { gapEntry(input, candidate) }
     val choices = remember(report, step.muscle, step.option) { riteChoices(input, base) }
-    var riteIndex by rememberSaveable(step.encode()) { mutableStateOf(choices.firstOrNull()?.index ?: 0) }
-    var sets by rememberSaveable(step.encode()) { mutableStateOf(base.sets) }
+    var riteIndex by rememberSaveable(step.encode()) { mutableIntStateOf(choices.firstOrNull()?.index ?: 0) }
+    var sets by rememberSaveable(step.encode()) { mutableIntStateOf(base.sets) }
     val entry = base.copy(sets = sets.coerceIn(SET_SANITY))
     val after = remember(report, riteIndex, entry) { withAdded(week, riteIndex, entry) }
     val rite = week.getOrNull(riteIndex)

@@ -11,6 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.SeededDb
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.modifierChips
 import com.ironvellum.app.domain.toggleModifier
@@ -47,7 +48,7 @@ class PresetEditorModifierChipsTest {
     @Before
     fun setUp() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase(TEST_DB)
+        SeededDb.fresh(context, TEST_DB)
         db = IronvellumDatabase.create(context, TEST_DB)
         val repo = Repository(db)
         repo.ensureSeeded()

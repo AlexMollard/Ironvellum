@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.InkDivider
@@ -51,7 +52,7 @@ fun SupportScreen(onBack: () -> Unit) {
     val support = BuildConfig.SUPPORT_LINKS
     // An explicit ACTION_VIEW, so a phone with no browser is a no-op, not a crash.
     val openUrl: (String) -> Unit = { url ->
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
     }
     var showMit by remember { mutableStateOf(false) }
 

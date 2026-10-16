@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.data.Words
@@ -225,7 +226,7 @@ fun PresetsScreen(
     val sessions = ui.history.map { it.first }
     val focus = TrainFocus.resolve(ui.presets, sessions, live, today, todayStart, weekStart)
 
-    var recentRows by remember { mutableStateOf(0) }
+    var recentRows by remember { mutableIntStateOf(0) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val viewport = maxHeight

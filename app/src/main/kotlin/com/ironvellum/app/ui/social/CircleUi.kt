@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.SpanStyle
@@ -897,7 +898,7 @@ private fun GoalEditorDialog(
     onSave: (perMember: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var value by rememberSaveable { mutableStateOf(perMember) }
+    var value by rememberSaveable { mutableIntStateOf(perMember) }
 
     IronvellumDialog(
         onDismissRequest = { if (!busy) onDismiss() },

@@ -61,7 +61,7 @@ class ThreeYearHistoryTimingTest {
     /** Seeded by the test itself, after the opt-in check, so a gate run pays nothing for it. */
     private fun seed() = runBlocking<Unit> {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase(TEST_DB)
+        SeededDb.fresh(context, TEST_DB)
         db = IronvellumDatabase.create(context, TEST_DB)
         repo = Repository(db)
         repo.ensureSeeded()

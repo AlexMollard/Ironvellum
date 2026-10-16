@@ -32,7 +32,7 @@ class RemovalUndoTest {
     @Before
     fun setUp() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase(TEST_DB)
+        SeededDb.fresh(context, TEST_DB)
         db = IronvellumDatabase.create(context, TEST_DB)
         repo = Repository(db)
         repo.ensureSeeded()

@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,7 +78,7 @@ internal fun PlateSheet(
     val rack = remember(setup, unit, exerciseName) { PlateStore.rack(setup, unit, exerciseName) }
     // Everything here is in the unit: the set's load snapped to what the screen shows for it.
     val setLoad = remember { loadKg?.takeIf { it > 0.0 }?.let { Loads.snap(it, unit) } }
-    var target by remember(rack.bar) { mutableStateOf(setLoad ?: rack.bar) }
+    var target by remember(rack.bar) { mutableDoubleStateOf(setLoad ?: rack.bar) }
     var barOpen by remember { mutableStateOf(false) }
     val reading = rack.read(target)
     val name = unit.label

@@ -3,6 +3,8 @@
      changes and at local midnight (widget/TodayWidget.kt), never polled. 4x2 by default, down to
      2x1 and up to any size (the 4x2 layout stretches). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:targetApi="s"
     android:description="@string/widget_today_description"
     android:initialLayout="@layout/widget_a"
     android:minWidth="250dp"
