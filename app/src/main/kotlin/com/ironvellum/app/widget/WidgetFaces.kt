@@ -197,22 +197,25 @@ internal object WidgetFaces {
             DayKind.NO_CYCLE -> "No ${Words.cycle.s}"
             else -> state.title.orEmpty()
         }
-        val sub = when (state.kind) {
-            DayKind.BEGIN -> "${state.streak} · ${sets(state.sets)}"
-            DayKind.LIVE -> "${state.streak} · " + if (state.setsTotal == 0) "no sets yet" else "${state.setsDone}/${state.setsTotal} ${plural(state.setsTotal, "set", "sets")}"
-            DayKind.SEALED -> "${state.streak} · done"
-            DayKind.RESPITE -> "${state.streak} · rest"
+        // A streak of zero is left out, as the 4x2 chip leaves it out.
+        val streaked = state.kind != DayKind.NO_CYCLE && state.streak > 0
+        val after = when (state.kind) {
+            DayKind.BEGIN -> sets(state.sets)
+            DayKind.LIVE -> if (state.setsTotal == 0) "no sets yet" else "${state.setsDone}/${state.setsTotal} ${plural(state.setsTotal, "set", "sets")}"
+            DayKind.SEALED -> "done"
+            DayKind.RESPITE -> "rest"
             else -> "Tap to ${Words.forge.s} one"
         }
+        val sub = if (streaked) "${state.streak} · $after" else after.replaceFirstChar { it.uppercase() }
         v.text(R.id.a_title, title)
         v.text(R.id.a_sub, sub)
-        v.show(R.id.a_streak_icon, state.kind != DayKind.NO_CYCLE)
+        v.show(R.id.a_streak_icon, streaked)
         v.tint(R.id.a_streak_icon, reward)
         square(context, v, state)
         v.setOnClickPendingIntent(android.R.id.background, open(context))
         v.setContentDescription(
             android.R.id.background,
-            describe(title, if (state.kind == DayKind.NO_CYCLE) null else streakChip(state), sub.takeIf { state.kind != DayKind.NO_CYCLE }),
+            describe(title, if (streaked) streakChip(state) else null, sub.takeIf { state.kind != DayKind.NO_CYCLE }),
         )
         return v
     }
