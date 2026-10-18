@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Vellum: the light panel paper (Vault) with its structure line (Rune). -->
+<!-- The card: the panel paper (Vault or Vellum), 18dp corners, no outline (the v4 mockups draw none). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#FBF8F2" />
-    <stroke android:width="1dp" android:color="#D8CFBE" />
-    <corners android:radius="20dp" />
+    <corners android:radius="18dp" />
 </shape>

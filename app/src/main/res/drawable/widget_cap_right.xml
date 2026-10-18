@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The right end of a chamfered button; see widget_cap_left. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="9dp"
-    android:height="44dp"
-    android:viewportWidth="9"
-    android:viewportHeight="44">
+    android:width="6dp"
+    android:height="36dp"
+    android:viewportWidth="6"
+    android:viewportHeight="36">
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M0,0L1,0L9,8L9,36L1,44L0,44z" />
+        android:pathData="M0,0L0,36L6,30L6,6z" />
 </vector>

@@ -621,77 +621,83 @@
     <string name="notification_rest_over_next">On to the next set.</string>
 
     <!-- Home-screen widgets. -->
-    <string name="widget_kicker_live">In progress · %1$d min</string>
     <string name="widget_kicker_done">Done today</string>
-    <string name="widget_kicker_today">Today</string>
-    <!-- %1$s is the weekday, short ("Fri"). -->
-    <string name="widget_kicker_today_day">Today · %1$s</string>
-    <string name="widget_no_plan">No weekly plan yet</string>
-    <string name="widget_no_plan__t">No cycle yet</string>
-    <string name="widget_no_plan_short">No weekly plan</string>
-    <string name="widget_no_plan_short__t">No cycle</string>
+    <string name="widget_no_plan_yet">No plan yet</string>
+    <string name="widget_no_plan_yet__t">No cycle yet</string>
+    <string name="widget_plan_hint">Plan a week and today\'s routine shows here</string>
+    <string name="widget_plan_hint__t">Forge a cycle and today\'s rite shows here</string>
+    <!-- The small filled button that opens the planner. -->
+    <string name="widget_plan_pill">Plan</string>
+    <string name="widget_plan_pill__t">Forge</string>
+    <!-- The outlined button on a rest day: begins a workout of your own. -->
+    <string name="widget_workout_button">Workout</string>
+    <string name="widget_workout_button__t">Trial</string>
+    <string name="widget_empty_workout">Empty workout</string>
+    <string name="widget_empty_workout__t">Open trial</string>
+    <string name="widget_recent_label">Recent · tap to repeat</string>
+    <!-- A recent workout's line: %1$s the weekday, short ("Mon"), %2$s its sets ("16 sets"). -->
+    <string name="widget_recent_when">%1$s · %2$s</string>
     <string name="widget_free_day">A free day</string>
-    <string name="widget_build_hint">Build one and today\'s routine shows here.</string>
-    <string name="widget_build_hint__t">Build one and today\'s rite shows here.</string>
-    <string name="widget_build_in_app">Build one in the app</string>
-    <!-- Today's routine in numbers: %1$s exercises, %2$s sets, %3$d minutes. -->
-    <string name="widget_meta_begin">%1$s · %2$s</string>
-    <string name="widget_meta_begin_estimate">%1$s · %2$s · about %3$d min</string>
-    <string name="widget_meta_sealed">%1$s · %2$d min</string>
+    <!-- Today in numbers: %1$s the weekday ("Fri"), %2$s exercises, %3$s sets, %4$d minutes. -->
+    <string name="widget_meta_day_begin_estimate">%1$s · %2$s · %3$s · ~%4$d min</string>
+    <string name="widget_meta_day_begin">%1$s · %2$s · %3$s</string>
     <string name="widget_live_none">No sets yet</string>
     <!-- %1$d sets done of %2$d; the count agrees with the total. -->
-    <plurals name="widget_live_sets"><item quantity="one">%1$d of %2$d set done</item><item quantity="other">%1$d of %2$d sets done</item></plurals>
+    <plurals name="widget_progress_sets"><item quantity="one">%1$d of %2$d set</item><item quantity="other">%1$d of %2$d sets</item></plurals>
+    <!-- %1$s the progress ("7 of 16 sets"), %2$d minutes since the workout began. -->
+    <string name="widget_meta_live">%1$s · %2$d min</string>
+    <!-- %1$s the progress, %2$s the exercise under way. -->
+    <string name="widget_meta_live_now">%1$s · %2$s</string>
+    <!-- %1$s the sets ("16 sets"), %2$d minutes, %3$s the records ("2 records"). -->
+    <string name="widget_meta_done">Done · %1$s · %2$d min</string>
+    <string name="widget_meta_done_records">Done · %1$s · %2$d min · %3$s</string>
+    <plurals name="widget_records_count"><item quantity="one">%d record</item><item quantity="other">%d records</item></plurals>
+    <!-- %1$s today's weekday, %2$s the next routine, %3$s the weekday it falls on (all full names). -->
+    <string name="widget_meta_rest">%1$s · next up %2$s on %3$s</string>
+    <string name="widget_meta_rest_free">%1$s · a free day</string>
+    <!-- The label over the next routine's lines: weekday, name, sets ("Thu · Legs · 15 sets"). -->
+    <string name="widget_next_label">%1$s · %2$s · %3$s</string>
     <string name="widget_next">Next: %1$s · %2$s</string>
+    <!-- The 2x1 card's second line. -->
+    <string name="widget_s_meta_begin">%1$s · ~%2$d min</string>
+    <string name="widget_s_meta_live">%1$d / %2$s</string>
+    <string name="widget_s_meta_done">Done · %1$d min</string>
+    <!-- An exercise's line: %1$d sets, %2$d reps, %3$s the load. -->
+    <string name="widget_row_plan">%1$d × %2$d · %3$s</string>
+    <!-- A finished exercise's best set: %1$s the load, %2$d reps. -->
+    <string name="widget_row_best">%1$s × %2$d</string>
+    <!-- Load added to the body on a bodyweight lift ("+10 kg"). -->
+    <string name="widget_load_added">+%1$s</string>
     <string name="widget_resume">Resume</string>
     <string name="widget_begin">Begin</string>
     <!-- Button: begin today's routine; %1$s is its name. -->
     <string name="widget_begin_named">Begin %1$s</string>
-    <string name="widget_begin_empty">Begin an empty workout</string>
-    <string name="widget_begin_empty__t">Begin an open trial</string>
-    <string name="widget_tap_begin_empty">Tap to begin an empty workout</string>
-    <string name="widget_tap_begin_empty__t">Tap to begin an open trial</string>
-    <string name="widget_forge">Build a weekly plan</string>
-    <string name="widget_forge__t">Forge a cycle</string>
-    <string name="widget_tap_forge">Tap to build a weekly plan</string>
-    <string name="widget_tap_forge__t">Tap to forge a cycle</string>
     <plurals name="widget_streak_chip"><item quantity="one">%d-day streak</item><item quantity="other">%d-day streak</item></plurals>
     <plurals name="widget_streak_chip__t"><item quantity="one">%d-day oath</item><item quantity="other">%d-day oath</item></plurals>
     <!-- The caption under the streak number on the week widget. -->
     <string name="widget_streak_caption">day streak</string>
     <string name="widget_streak_caption__t">day oath</string>
     <string name="widget_week_today">Today · %1$s</string>
-    <string name="widget_week_live_none">In progress · no sets yet</string>
-    <plurals name="widget_week_live"><item quantity="one">In progress · %1$d of %2$d set</item><item quantity="other">In progress · %1$d of %2$d sets</item></plurals>
-    <string name="widget_week_done">Done today · %1$s</string>
+    <!-- %1$s the sets ("16 sets"), %2$d minutes. -->
+    <string name="widget_week_meta_begin">Today · %1$s · ~%2$d min</string>
+    <plurals name="widget_week_workouts"><item quantity="one">%d workout this week</item><item quantity="other">%d workouts this week</item></plurals>
+    <plurals name="widget_week_workouts__t"><item quantity="one">%d trial this week</item><item quantity="other">%d trials this week</item></plurals>
+    <!-- Under a day of the week strip with no routine. -->
+    <string name="widget_week_rest">Rest</string>
     <string name="widget_week_summary">This week: %1$d done, %2$d still to do</string>
-    <!-- The 2x1 widget's second line. %1$d is the streak, %2$s one of the lines below. -->
-    <string name="widget_compact_streak_after">%1$d · %2$s</string>
-    <string name="widget_compact_live_none">No sets yet</string>
-    <plurals name="widget_compact_live"><item quantity="one">%1$d/%2$d set</item><item quantity="other">%1$d/%2$d sets</item></plurals>
-    <string name="widget_compact_done">Done</string>
-    <string name="widget_compact_rest">Rest</string>
-    <string name="widget_compact_forge">Tap to build one</string>
-    <string name="widget_compact_forge__t">Tap to forge one</string>
+    <!-- The week's totals line: workouts done of planned, sets, time. -->
+    <string name="widget_totals_workouts">%1$d of %2$d workouts</string>
+    <string name="widget_totals_workouts__t">%1$d of %2$d trials</string>
+    <plurals name="widget_totals_workouts_only"><item quantity="one">%d workout</item><item quantity="other">%d workouts</item></plurals>
+    <plurals name="widget_totals_workouts_only__t"><item quantity="one">%d trial</item><item quantity="other">%d trials</item></plurals>
+    <string name="widget_totals_time">%1$s this week</string>
+    <string name="widget_duration_hm">%1$dh %2$dm</string>
+    <string name="widget_duration_m">%1$dm</string>
 
     <!-- Widget picker preview and layout placeholders: shown only as a sample, the app redraws every face. -->
-    <string name="widget_preview_kicker">TODAY · FRI</string>
-    <string name="widget_preview_streak">4-day streak</string>
     <string name="widget_preview_title">PUSH</string>
     <string name="widget_preview_meta">5 exercises · 18 sets · about 45 min</string>
-    <string name="widget_preview_next_tue">Next: Legs · Tue</string>
-    <string name="widget_preview_next_sun">Next: Legs · Sun</string>
-    <string name="widget_preview_open">Open</string>
     <string name="widget_preview_compact_meta">4 · 18 sets</string>
-    <string name="widget_preview_streak_number">4</string>
     <string name="widget_preview_streak_caption">day streak</string>
     <string name="widget_preview_week_meta">Today · 18 sets</string>
-    <string name="widget_preview_begin_named">Begin Push</string>
-    <string name="widget_preview_begin_empty">Begin an empty workout</string>
-    <string name="widget_preview_day_mon">M</string>
-    <string name="widget_preview_day_tue">T</string>
-    <string name="widget_preview_day_wed">W</string>
-    <string name="widget_preview_day_thu">T</string>
-    <string name="widget_preview_day_fri">F</string>
-    <string name="widget_preview_day_sat">S</string>
-    <string name="widget_preview_day_sun">S</string>
 </resources>

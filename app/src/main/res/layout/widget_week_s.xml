@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Streak & week on a 2x1 cell: the streak line over seven day cells. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:background="@drawable/widget_bg"
+    android:padding="10dp"
+    android:clipToPadding="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:clipChildren="false">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:gravity="bottom">
+            <TextView
+                android:id="@+id/k_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="22sp"
+                android:textColor="#F2C14E"
+                android:fontFamily="sans-serif"
+                android:textStyle="bold"
+                android:text="4"
+                android:fontFeatureSettings="tnum"
+                android:layout_marginTop="-2dp"
+                android:layout_marginBottom="-2dp" />
+            <TextView
+                android:id="@+id/k_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="11sp"
+                android:textColor="#A3A099"
+                android:text="@string/widget_preview_streak_caption"
+                android:layout_marginStart="5dp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/cols"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:layout_weight="1"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="-1dp"
+            android:layout_marginEnd="-1dp" />
+    </LinearLayout>
+</FrameLayout>

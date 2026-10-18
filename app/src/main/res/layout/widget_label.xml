@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A small caps label above a list of lines. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@+id/label"
+    android:layout_width="match_parent"
+    android:layout_height="18dp"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:ellipsize="end"
+    android:textSize="11sp"
+    android:textColor="#A3A099"
+    android:fontFamily="sans-serif-medium"
+    android:textAllCaps="true"
+    android:letterSpacing="0.09"
+    android:text="Thu Â· Legs Â· 15 sets"
+    android:gravity="center_vertical" />

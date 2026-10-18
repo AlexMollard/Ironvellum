@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
     private fun beginFromWidget(empty: Boolean) {
         val repo = (application as IronvellumApp).repository
         lifecycleScope.launch {
-            val state = runCatching { loadWidgetState(applicationContext, repo) }.getOrNull()
+            val state = runCatching { loadWidgetState(applicationContext, repo, forTap = true) }.getOrNull()
             val sessionId = runCatching {
                 when {
                     state?.sessionId != null -> state.sessionId

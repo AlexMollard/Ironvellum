@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Today on a 4x1 cell: the header and the set ladder, centred as one group. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:background="@drawable/widget_bg"
+    android:padding="12dp"
+    android:clipToPadding="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:gravity="center_vertical">
+        <include layout="@layout/widget_today_header" />
+        <LinearLayout
+            android:id="@+id/ladder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="-1dp"
+            android:layout_marginEnd="-1dp" />
+    </LinearLayout>
+</FrameLayout>

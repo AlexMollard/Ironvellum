@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The foot line of the finished day. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@+id/next"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:ellipsize="end"
+    android:textSize="12sp"
+    android:textColor="#A3A099"
+    android:text="Next: Pull Â· Mon" />

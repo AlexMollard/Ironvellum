@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One set box of the 4x3 rows: the rep figure, ringed or filled. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:layout_width="wrap_content"
+    android:layout_height="18dp"
+    android:clipChildren="false"
+    android:layout_marginEnd="3dp"
+    android:minWidth="22dp">
+    <ImageView
+        android:id="@+id/box_ring"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill4"
+        android:scaleType="fitXY"
+        android:tint="#32302B" />
+    <ImageView
+        android:id="@+id/box_face"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill3"
+        android:scaleType="fitXY"
+        android:tint="#32302B"
+        android:layout_margin="1dp" />
+    <ImageView
+        android:id="@+id/box_face_now"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill25"
+        android:scaleType="fitXY"
+        android:tint="#32302B"
+        android:layout_margin="1.5dp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/box_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="11sp"
+        android:textColor="#A3A099"
+        android:text="6"
+        android:layout_gravity="center"
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp"
+        android:fontFeatureSettings="tnum" />
+</FrameLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One segment of the 2x1 set ladder (4dp). -->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@+id/seg"
+    android:layout_width="0dp"
+    android:layout_height="4dp"
+    android:importantForAccessibility="no"
+    android:src="@drawable/widget_seg"
+    android:scaleType="fitXY"
+    android:tint="#32302B"
+    android:layout_weight="1"
+    android:layout_marginStart="1dp"
+    android:layout_marginEnd="1dp" />

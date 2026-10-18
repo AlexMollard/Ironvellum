@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One two-line exercise row of the 4x3 Today card: name and load, then the set boxes (44dp). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:clipChildren="false"
+    android:layout_marginStart="-6dp"
+    android:layout_marginEnd="-6dp">
+    <ImageView
+        android:id="@+id/row_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill6"
+        android:scaleType="fitXY"
+        android:tint="#10241C"
+        android:visibility="gone" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
+        <FrameLayout
+            android:layout_width="12dp"
+            android:layout_height="16dp"
+            android:clipChildren="false"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="6dp"
+            android:layout_gravity="top">
+            <ImageView
+                android:id="@+id/row_check"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_check"
+                android:tint="#34D399"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+            <ImageView
+                android:id="@+id/row_play"
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_play"
+                android:tint="#34D399"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+            <ImageView
+                android:id="@+id/row_dot"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_dot"
+                android:tint="#32302B"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:clipChildren="false"
+            android:layout_weight="1">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:clipChildren="false"
+                android:gravity="top">
+                <TextView
+                    android:id="@+id/row_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textSize="13sp"
+                    android:textColor="#E8E8E4"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Bench Press"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:clipChildren="false"
+                    android:gravity="top">
+                    <ImageView
+                        android:id="@+id/row_star"
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/widget_star"
+                        android:tint="#F2C14E"
+                        android:layout_marginEnd="4dp"
+                        android:visibility="gone"
+                        android:layout_marginTop="2dp" />
+                    <TextView
+                        android:id="@+id/row_right"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="12sp"
+                        android:textColor="#A3A099"
+                        android:text="72.5 kg"
+                        android:fontFeatureSettings="tnum" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/row_boxes"
+                android:layout_width="wrap_content"
+                android:layout_height="21dp"
+                android:orientation="horizontal"
+                android:clipChildren="false"
+                android:layout_marginTop="4dp"
+                android:paddingTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The quiet outlined button at the foot of the no-plan card. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:id="@+id/gb"
+    android:layout_width="wrap_content"
+    android:layout_height="34dp"
+    android:clipChildren="false"
+    android:layout_gravity="start">
+    <ImageView
+        android:id="@+id/gb_ring"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill6"
+        android:scaleType="fitXY"
+        android:tint="#32302B" />
+    <ImageView
+        android:id="@+id/gb_face"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill5"
+        android:scaleType="fitXY"
+        android:tint="#32302B"
+        android:layout_margin="1dp" />
+    <TextView
+        android:id="@+id/gb_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="14sp"
+        android:textColor="#34D399"
+        android:fontFamily="sans-serif"
+        android:textFontWeight="600"
+        android:text="Empty workout"
+        android:layout_gravity="center"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp" />
+</FrameLayout>

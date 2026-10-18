@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One day of the week strip, l size. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:layout_weight="1"
+    android:layout_marginStart="1dp"
+    android:layout_marginEnd="1dp">
+    <ImageView
+        android:id="@+id/c_ring"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill8"
+        android:scaleType="fitXY"
+        android:tint="#1F5C46"
+        android:visibility="gone" />
+    <ImageView
+        android:id="@+id/c_fill"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_fill7"
+        android:scaleType="fitXY"
+        android:tint="#10241C"
+        android:layout_margin="1dp"
+        android:visibility="gone" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:gravity="center_horizontal|center_vertical">
+        <TextView
+            android:id="@+id/c_letter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="10sp"
+            android:textColor="#A3A099"
+            android:letterSpacing="0.05"
+            android:text="M" />
+        <TextView
+            android:id="@+id/c_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="15sp"
+            android:textColor="#E8E8E4"
+            android:fontFamily="sans-serif"
+            android:textStyle="bold"
+            android:text="12"
+            android:layout_marginTop="3dp"
+            android:fontFeatureSettings="tnum" />
+        <ImageView
+            android:id="@+id/c_bar"
+            android:layout_width="24dp"
+            android:layout_height="80dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/widget_solid"
+            android:scaleType="fitXY"
+            android:layout_marginTop="3dp" />
+        <ImageView
+            android:id="@+id/c_mark"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/widget_diamond"
+            android:tint="#34D399"
+            android:layout_marginTop="3dp" />
+        <TextView
+            android:id="@+id/c_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="10sp"
+            android:textColor="#A3A099"
+            android:text="Push"
+            android:layout_marginTop="3dp" />
+    </LinearLayout>
+</FrameLayout>

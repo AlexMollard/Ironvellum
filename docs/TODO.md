@@ -151,6 +151,11 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    Checked on the emulator in begin, live, done and rest-day states at 2x1 and 4x2
    (`.tmp/widget-shots/`). Live elapsed minutes only move when something is written, so
    they can lag a minute or more between sets.
+   Redesigned to the v4 mockups: four size buckets (2x1, 4x1, 4x2, 4x3+) chosen through the
+   API 31 size map (options bundle on 29-30), exercise rows with set pips and rep boxes,
+   records starred, rest-day and no-plan faces, Week with date columns and set bars, both
+   themes. Pictures and side-by-side sheets in .tmp/widget-v4-shots/. A Recent row only
+   opens the app: no intent repeats a past workout.
 6. **Honour the system font scale.** Done 2026-10-16 (131a1e53, e57b90b5, a7e09c50).
    `FIXED_FONT_SCALE` is gone, so Compose follows the system scale. Every screen and
    sheet was audited at 1.0, 1.3 and 2.0 on the emulator with seeded data and fixed to

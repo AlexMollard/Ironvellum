@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Today": the day card. No updatePeriodMillis: the widget is pushed when the plan or a workout
      changes and at local midnight (widget/TodayWidget.kt), never polled. 4x2 by default, down to
-     2x1 and up to any size (the 4x2 layout stretches). -->
+     2x1 and up to 4x3 and beyond (v4: a layout per size, WidgetSize in WidgetFaces.kt). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:targetApi="s"
     android:description="@string/widget_today_description"
-    android:initialLayout="@layout/widget_a"
+    android:initialLayout="@layout/widget_today_preview"
     android:minWidth="250dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="40dp"
-    android:previewImage="@drawable/widget_preview"
-    android:previewLayout="@layout/widget_a"
+    android:previewImage="@drawable/widget_preview_today"
+    android:previewLayout="@layout/widget_today_preview"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="2"

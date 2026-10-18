@@ -40,10 +40,6 @@ object TodayWidget {
     /** A minute past, so a run that lands early still reads the new day. */
     private val MIDNIGHT: LocalTime = LocalTime.of(0, 1)
 
-    /** The smallest cell (dp) that gets the 4x2 layout; anything under it gets the one-row 2x1 layout. */
-    internal const val REGULAR_WIDTH_DP = 250f
-    internal const val REGULAR_HEIGHT_DP = 120f
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val providers = listOf(TodayWidgetProvider::class.java, WeekWidgetProvider::class.java)
@@ -74,28 +70,19 @@ object TodayWidget {
     }
 
     /**
-     * The widget a launcher draws: from 31 on both layouts travel together and the launcher picks by the
-     * cell's size, so a resize needs no callback; before that the size the host last reported decides.
+     * The widget a launcher draws: from 31 on every size's layout travels together and the launcher picks by the
+     * cell's size (the largest [WidgetSize] that fits), so a resize needs no callback; before that the size the
+     * host last reported decides.
      */
     internal fun views(context: Context, provider: Class<*>, state: WidgetState, options: Bundle?): RemoteViews {
         val week = provider == WeekWidgetProvider::class.java
-        fun face(compact: Boolean) = when {
-            week && compact -> WidgetFaces.weekCompact(context, state)
-            week -> WidgetFaces.week(context, state)
-            compact -> WidgetFaces.dayCompact(context, state)
-            else -> WidgetFaces.day(context, state)
-        }
+        fun face(size: WidgetSize) = if (week) WidgetFaces.week(context, state, size) else WidgetFaces.today(context, state, size)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return RemoteViews(
-                mapOf(
-                    SizeF(0f, 0f) to face(true),
-                    SizeF(REGULAR_WIDTH_DP, REGULAR_HEIGHT_DP) to face(false),
-                ),
-            )
+            return RemoteViews(WidgetSize.entries.associate { SizeF(it.minWidth, it.minHeight) to face(it) })
         }
         val width = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
         val height = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
-        return face(compact = width < REGULAR_WIDTH_DP || height < REGULAR_HEIGHT_DP)
+        return face(WidgetSize.of(width.toFloat(), height.toFloat()))
     }
 
     /** Books the run that turns the day over; KEEP leaves a queued one alone, REPLACE re-reads the clock. */
