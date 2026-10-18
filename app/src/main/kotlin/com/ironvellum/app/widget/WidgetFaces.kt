@@ -15,7 +15,8 @@ import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.dashboard.DayKind
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -106,24 +107,36 @@ internal object WidgetFaces {
 
     private fun dayShort(day: Int) = DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, Locale.getDefault())
 
-    private fun sets(n: Int) = "$n ${plural(n, "set", "sets")}"
+    // Each helper describes its text; a face turns it into a String as it draws (UiText.asString(context)), so the
+    // words follow the language and the Themed names switch at that moment.
 
-    private fun next(state: WidgetState): String? = state.next?.let { "Next: ${it.name} · ${dayShort(it.day)}" }
+    private fun sets(n: Int) = UiText.plural(R.plurals.common_sets_count, n)
+
+    private fun next(state: WidgetState): UiText? =
+        state.next?.let { UiText.res(R.string.widget_next, it.name, dayShort(it.day)) }
 
     /** An empty workout has no sets to count until the first is added. */
     private fun liveSets(state: WidgetState) =
-        if (state.setsTotal == 0) "No sets yet" else "${state.setsDone} of ${state.setsTotal} ${plural(state.setsTotal, "set", "sets")} done"
+        if (state.setsTotal == 0) UiText.res(R.string.widget_live_none)
+        else UiText.plural(R.plurals.widget_live_sets, state.setsTotal, state.setsDone, state.setsTotal)
 
-    private fun streakChip(state: WidgetState) = "${state.streak}-day ${Words.oath.s}"
+    private fun streakChip(state: WidgetState) =
+        UiText.themedPlural(R.plurals.widget_streak_chip, R.plurals.widget_streak_chip__t, state.streak)
 
-    private fun beginLabel(state: WidgetState) =
-        if (state.kind == DayKind.LIVE) "Resume" else "Begin ${state.title.orEmpty()}".trim()
+    private fun beginLabel(state: WidgetState): UiText {
+        val title = state.title.orEmpty().trim()
+        return when {
+            state.kind == DayKind.LIVE -> UiText.res(R.string.widget_resume)
+            title.isEmpty() -> UiText.res(R.string.widget_begin)
+            else -> UiText.res(R.string.widget_begin_named, title)
+        }
+    }
 
-    private fun noPlan() = "No ${Words.cycle.s} yet"
+    private fun noPlan() = UiText.themed(R.string.widget_no_plan, R.string.widget_no_plan__t)
 
-    private fun emptyLabel() = "Begin ${Words.openTrial.a}"
+    private fun emptyLabel() = UiText.themed(R.string.widget_begin_empty, R.string.widget_begin_empty__t)
 
-    private fun forgeLabel() = "${Words.forge.c} ${Words.cycle.a}"
+    private fun forgeLabel() = UiText.themed(R.string.widget_forge, R.string.widget_forge__t)
 
     // ---- intents ----
 
@@ -195,34 +208,35 @@ internal object WidgetFaces {
     fun day(context: Context, state: WidgetState): RemoteViews {
         skin = skinFor(context)
         val v = RemoteViews(context.packageName, R.layout.widget_a).skinned()
+        fun UiText.str() = asString(context)
         val live = state.kind == DayKind.LIVE
         val kicker = when (state.kind) {
-            DayKind.LIVE -> "In progress · ${state.liveMinutes} min"
-            DayKind.SEALED -> "Done today"
-            DayKind.NO_CYCLE -> "Today"
-            else -> "Today · ${dayShort(state.dayOfWeek)}"
-        }
+            DayKind.LIVE -> UiText.res(R.string.widget_kicker_live, state.liveMinutes)
+            DayKind.SEALED -> UiText.res(R.string.widget_kicker_done)
+            DayKind.NO_CYCLE -> UiText.res(R.string.widget_kicker_today)
+            else -> UiText.res(R.string.widget_kicker_today_day, dayShort(state.dayOfWeek))
+        }.str()
         val title = when (state.kind) {
             DayKind.RESPITE -> Words.respite.c
-            DayKind.NO_CYCLE -> noPlan()
+            DayKind.NO_CYCLE -> noPlan().str()
             else -> state.title.orEmpty()
         }
         val meta = when (state.kind) {
-            DayKind.BEGIN -> listOfNotNull(
-                "${state.exercises} ${plural(state.exercises, "exercise", "exercises")}",
-                sets(state.sets),
-                state.estimateMinutes?.let { "about $it min" },
-            ).joinToString(" · ")
+            DayKind.BEGIN -> {
+                val exercises = UiText.plural(R.plurals.common_exercises_count, state.exercises)
+                state.estimateMinutes?.let { UiText.res(R.string.widget_meta_begin_estimate, exercises, sets(state.sets), it) }
+                    ?: UiText.res(R.string.widget_meta_begin, exercises, sets(state.sets))
+            }
             DayKind.LIVE -> liveSets(state)
-            DayKind.SEALED -> "${sets(state.sealedSets)} · ${state.sealedMinutes} min"
-            DayKind.RESPITE -> next(state) ?: "A free day"
-            else -> "Build one and today's ${Words.rite.s} shows here."
-        }
+            DayKind.SEALED -> UiText.res(R.string.widget_meta_sealed, sets(state.sealedSets), state.sealedMinutes)
+            DayKind.RESPITE -> next(state) ?: UiText.res(R.string.widget_free_day)
+            else -> UiText.themed(R.string.widget_build_hint, R.string.widget_build_hint__t)
+        }.str()
         v.text(R.id.a_kicker, kicker)
         v.setTextColor(R.id.a_kicker, if (live) accentText else MUTED)
         // No streak to show on a first day: the chip would only say "0-day streak".
         v.show(R.id.a_streak_chip, state.kind != DayKind.NO_CYCLE && state.streak > 0)
-        v.text(R.id.a_streak, streakChip(state))
+        v.text(R.id.a_streak, streakChip(state).str())
         v.tint(R.id.a_streak_icon, reward)
         v.text(R.id.a_title, title)
         v.setTextViewTextSize(R.id.a_title, TypedValue.COMPLEX_UNIT_SP, if (state.kind == DayKind.NO_CYCLE) 20f else 22f)
@@ -234,22 +248,22 @@ internal object WidgetFaces {
 
         // The bottom: Begin or Resume filled, the quiet outline for the two faces with nothing to begin, or the footer.
         v.show(R.id.btn_fill, state.canStart)
-        v.fillButton(beginLabel(state), 15f)
+        v.fillButton(beginLabel(state).str(), 15f)
         val outline = state.kind == DayKind.RESPITE || state.kind == DayKind.NO_CYCLE
         v.show(R.id.btn_out, outline)
-        v.text(R.id.btn_out_text, if (state.kind == DayKind.RESPITE) emptyLabel() else forgeLabel())
+        v.text(R.id.btn_out_text, (if (state.kind == DayKind.RESPITE) emptyLabel() else forgeLabel()).str())
         v.setTextColor(R.id.btn_out_text, accentText)
         v.show(R.id.a_footer, state.kind == DayKind.SEALED)
-        v.text(R.id.a_next, next(state).orEmpty())
+        v.text(R.id.a_next, next(state)?.str().orEmpty())
 
         v.setOnClickPendingIntent(android.R.id.background, open(context))
         primary(context, state)?.let { target ->
             v.setOnClickPendingIntent(if (outline) R.id.btn_out else R.id.btn_fill, target)
         }
-        if (state.canStart) v.setContentDescription(R.id.btn_fill, beginLabel(state))
+        if (state.canStart) v.setContentDescription(R.id.btn_fill, beginLabel(state).str())
         v.setContentDescription(
             android.R.id.background,
-            describe(kicker, title, meta, if (state.kind == DayKind.NO_CYCLE) null else streakChip(state)),
+            describe(kicker, title, meta, if (state.kind == DayKind.NO_CYCLE) null else streakChip(state).str()),
         )
         return v
     }
@@ -257,21 +271,24 @@ internal object WidgetFaces {
     fun dayCompact(context: Context, state: WidgetState): RemoteViews {
         skin = skinFor(context)
         val v = RemoteViews(context.packageName, R.layout.widget_a_compact).skinned()
+        fun UiText.str() = asString(context)
         val title = when (state.kind) {
             DayKind.RESPITE -> Words.respite.c
-            DayKind.NO_CYCLE -> "No ${Words.cycle.s}"
+            DayKind.NO_CYCLE -> UiText.themed(R.string.widget_no_plan_short, R.string.widget_no_plan_short__t).str()
             else -> state.title.orEmpty()
         }
         // A streak of zero is left out, as the 4x2 chip leaves it out.
         val streaked = state.kind != DayKind.NO_CYCLE && state.streak > 0
         val after = when (state.kind) {
             DayKind.BEGIN -> sets(state.sets)
-            DayKind.LIVE -> if (state.setsTotal == 0) "no sets yet" else "${state.setsDone}/${state.setsTotal} ${plural(state.setsTotal, "set", "sets")}"
-            DayKind.SEALED -> "done"
-            DayKind.RESPITE -> "rest"
-            else -> "Tap to ${Words.forge.s} one"
+            DayKind.LIVE ->
+                if (state.setsTotal == 0) UiText.res(R.string.widget_compact_live_none)
+                else UiText.plural(R.plurals.widget_compact_live, state.setsTotal, state.setsDone, state.setsTotal)
+            DayKind.SEALED -> UiText.res(R.string.widget_compact_done)
+            DayKind.RESPITE -> UiText.res(R.string.widget_compact_rest)
+            else -> UiText.themed(R.string.widget_compact_forge, R.string.widget_compact_forge__t)
         }
-        val sub = if (streaked) "${state.streak} · $after" else after.replaceFirstChar { it.uppercase() }
+        val sub = (if (streaked) UiText.res(R.string.widget_compact_streak_after, state.streak, after) else after).str()
         v.text(R.id.a_title, title)
         v.text(R.id.a_sub, sub)
         v.show(R.id.a_streak_icon, streaked)
@@ -280,7 +297,7 @@ internal object WidgetFaces {
         v.setOnClickPendingIntent(android.R.id.background, open(context))
         v.setContentDescription(
             android.R.id.background,
-            describe(title, if (streaked) streakChip(state) else null, sub.takeIf { state.kind != DayKind.NO_CYCLE }),
+            describe(title, if (streaked) streakChip(state).str() else null, sub.takeIf { state.kind != DayKind.NO_CYCLE }),
         )
         return v
     }
@@ -297,9 +314,9 @@ internal object WidgetFaces {
         v.tint(R.id.w_square_tick, accent)
         if (button) {
             v.setOnClickPendingIntent(R.id.w_square, begin(context))
-            v.setContentDescription(R.id.w_square, beginLabel(state))
+            v.setContentDescription(R.id.w_square, beginLabel(state).asString(context))
         } else if (done) {
-            v.setContentDescription(R.id.w_square, "Done today")
+            v.setContentDescription(R.id.w_square, context.getString(R.string.widget_kicker_done))
         }
     }
 
@@ -313,28 +330,31 @@ internal object WidgetFaces {
     private val DAY_MARKS = intArrayOf(R.id.b_mark1, R.id.b_mark2, R.id.b_mark3, R.id.b_mark4, R.id.b_mark5, R.id.b_mark6, R.id.b_mark7)
     private val DOTS = intArrayOf(R.id.b_dot1, R.id.b_dot2, R.id.b_dot3, R.id.b_dot4, R.id.b_dot5, R.id.b_dot6, R.id.b_dot7)
 
-    private fun weekTitle(state: WidgetState) = when (state.kind) {
+    private fun weekTitle(context: Context, state: WidgetState) = when (state.kind) {
         DayKind.RESPITE -> Words.respite.c
-        DayKind.NO_CYCLE -> noPlan()
+        DayKind.NO_CYCLE -> noPlan().asString(context)
         else -> state.title.orEmpty()
     }
 
-    private fun weekMeta(state: WidgetState) = when (state.kind) {
-        DayKind.BEGIN -> "Today · ${sets(state.sets)}"
-        DayKind.LIVE -> "In progress · " + if (state.setsTotal == 0) "no sets yet" else "${state.setsDone} of ${state.setsTotal} ${plural(state.setsTotal, "set", "sets")}"
-        DayKind.SEALED -> "Done today · ${sets(state.sealedSets)}"
-        DayKind.RESPITE -> next(state) ?: "A free day"
-        else -> "Build one in the app"
-    }
+    private fun weekMeta(context: Context, state: WidgetState) = when (state.kind) {
+        DayKind.BEGIN -> UiText.res(R.string.widget_week_today, sets(state.sets))
+        DayKind.LIVE ->
+            if (state.setsTotal == 0) UiText.res(R.string.widget_week_live_none)
+            else UiText.plural(R.plurals.widget_week_live, state.setsTotal, state.setsDone, state.setsTotal)
+        DayKind.SEALED -> UiText.res(R.string.widget_week_done, sets(state.sealedSets))
+        DayKind.RESPITE -> next(state) ?: UiText.res(R.string.widget_free_day)
+        else -> UiText.res(R.string.widget_build_in_app)
+    }.asString(context)
 
     fun week(context: Context, state: WidgetState): RemoteViews {
         skin = skinFor(context)
         val v = RemoteViews(context.packageName, R.layout.widget_b).skinned()
-        val title = weekTitle(state)
-        val meta = weekMeta(state)
+        fun UiText.str() = asString(context)
+        val title = weekTitle(context, state)
+        val meta = weekMeta(context, state)
         v.text(R.id.b_number, state.streak.toString())
         v.setTextColor(R.id.b_number, reward)
-        v.text(R.id.b_label, "day ${Words.oath.s}")
+        v.text(R.id.b_label, streakCaption().str())
         v.text(R.id.b_title, title)
         v.text(R.id.b_meta, meta)
 
@@ -364,12 +384,12 @@ internal object WidgetFaces {
 
         // The bottom: Begin or Resume, or one quiet line that says what is next (and, where it can, does it).
         v.show(R.id.btn_fill, state.canStart)
-        v.fillButton(beginLabel(state), 14f)
+        v.fillButton(beginLabel(state).str(), 14f)
         v.show(R.id.b_line, !state.canStart)
         val line = when (state.kind) {
-            DayKind.SEALED -> next(state).orEmpty()
-            DayKind.RESPITE -> "Tap to ${emptyLabel().replaceFirstChar { it.lowercase() }}"
-            else -> "Tap to ${Words.forge.s} ${Words.cycle.a}"
+            DayKind.SEALED -> next(state)?.str().orEmpty()
+            DayKind.RESPITE -> UiText.themed(R.string.widget_tap_begin_empty, R.string.widget_tap_begin_empty__t).str()
+            else -> UiText.themed(R.string.widget_tap_forge, R.string.widget_tap_forge__t).str()
         }
         v.text(R.id.b_line, line)
 
@@ -377,18 +397,20 @@ internal object WidgetFaces {
         primary(context, state)?.let { target ->
             v.setOnClickPendingIntent(if (state.canStart) R.id.btn_fill else R.id.b_line, target)
         }
-        if (state.canStart) v.setContentDescription(R.id.btn_fill, beginLabel(state))
+        if (state.canStart) v.setContentDescription(R.id.btn_fill, beginLabel(state).str())
         v.setContentDescription(
             android.R.id.background,
-            describe("${state.streak} day ${Words.oath.s}", title, meta, weekSummary(state)),
+            describe(streakChip(state).str(), title, meta, weekSummary(context, state)),
         )
         return v
     }
 
-    private fun weekSummary(state: WidgetState): String {
+    private fun streakCaption() = UiText.themed(R.string.widget_streak_caption, R.string.widget_streak_caption__t)
+
+    private fun weekSummary(context: Context, state: WidgetState): String {
         val done = state.week.count { it == DayMark.DONE }
         val planned = state.week.count { it == DayMark.PLANNED }
-        return "This week: $done done, $planned still to do"
+        return context.getString(R.string.widget_week_summary, done, planned)
     }
 
     fun weekCompact(context: Context, state: WidgetState): RemoteViews {
@@ -396,7 +418,7 @@ internal object WidgetFaces {
         val v = RemoteViews(context.packageName, R.layout.widget_b_compact).skinned()
         v.text(R.id.b_number, state.streak.toString())
         v.setTextColor(R.id.b_number, reward)
-        v.text(R.id.b_label, "day ${Words.oath.s}")
+        v.text(R.id.b_label, streakCaption().asString(context))
         for (i in 0 until 7) {
             when (state.week[i]) {
                 DayMark.DONE -> {
@@ -417,7 +439,7 @@ internal object WidgetFaces {
         v.setOnClickPendingIntent(android.R.id.background, open(context))
         v.setContentDescription(
             android.R.id.background,
-            describe("${state.streak} day ${Words.oath.s}", weekTitle(state), weekMeta(state), weekSummary(state)),
+            describe(streakChip(state).asString(context), weekTitle(context, state), weekMeta(context, state), weekSummary(context, state)),
         )
         return v
     }

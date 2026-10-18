@@ -33,7 +33,7 @@
             android:ellipsize="end"
             android:textStyle="bold"
             android:maxLines="1"
-            android:text="4"
+            android:text="@string/widget_preview_streak_number"
             android:textColor="#F2C14E"
             android:textSize="34sp" />
 
@@ -45,7 +45,7 @@
                 android:layout_marginBottom="5dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="day streak"
+            android:text="@string/widget_preview_streak_caption"
             android:textColor="#A3A099"
             android:textSize="12sp" />
             </LinearLayout>
@@ -67,7 +67,7 @@
                 android:gravity="end"
                 android:letterSpacing="0.1"
                 android:textAllCaps="true"
-            android:text="PUSH"
+            android:text="@string/widget_preview_title"
             android:textColor="#E8E8E4"
             android:textSize="15sp" />
 
@@ -79,7 +79,7 @@
             android:ellipsize="end"
             android:maxLines="1"
                 android:gravity="end"
-            android:text="Today · 18 sets"
+            android:text="@string/widget_preview_week_meta"
             android:textColor="#A3A099"
             android:textSize="12sp" />
             </LinearLayout>
@@ -120,7 +120,7 @@
                     android:id="@+id/b_day1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="M"
+                    android:text="@string/widget_preview_day_mon"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -130,7 +130,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="M"
+                    android:text="@string/widget_preview_day_mon"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -172,7 +172,7 @@
                     android:id="@+id/b_day2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="T"
+                    android:text="@string/widget_preview_day_tue"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -182,7 +182,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="T"
+                    android:text="@string/widget_preview_day_tue"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -224,7 +224,7 @@
                     android:id="@+id/b_day3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="W"
+                    android:text="@string/widget_preview_day_wed"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -234,7 +234,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="W"
+                    android:text="@string/widget_preview_day_wed"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -276,7 +276,7 @@
                     android:id="@+id/b_day4"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="T"
+                    android:text="@string/widget_preview_day_thu"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -286,7 +286,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="T"
+                    android:text="@string/widget_preview_day_thu"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -328,7 +328,7 @@
                     android:id="@+id/b_day5"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="F"
+                    android:text="@string/widget_preview_day_fri"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -338,7 +338,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="F"
+                    android:text="@string/widget_preview_day_fri"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -380,7 +380,7 @@
                     android:id="@+id/b_day6"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="S"
+                    android:text="@string/widget_preview_day_sat"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -390,7 +390,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="S"
+                    android:text="@string/widget_preview_day_sat"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -432,7 +432,7 @@
                     android:id="@+id/b_day7"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="S"
+                    android:text="@string/widget_preview_day_sun"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="visible" />
@@ -442,7 +442,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="S"
+                    android:text="@string/widget_preview_day_sun"
                     android:textColor="#E8E8E4"
                     android:textSize="13sp"
                     android:visibility="gone" />
@@ -477,7 +477,7 @@
             android:ellipsize="end"
             android:maxLines="1"
         android:gravity="center"
-            android:text="Next: Legs · Sun"
+            android:text="@string/widget_preview_next_sun"
             android:textColor="#A3A099"
             android:textSize="13sp" />
     </LinearLayout>

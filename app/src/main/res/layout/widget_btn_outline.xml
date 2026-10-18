@@ -88,7 +88,7 @@
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:maxLines="1"
-        android:text="Begin an empty workout"
+        android:text="@string/widget_preview_begin_empty"
         android:textColor="#34D399"
         android:textSize="15sp" />
 </FrameLayout>

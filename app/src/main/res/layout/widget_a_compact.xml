@@ -34,7 +34,7 @@
             android:autoSizeTextType="uniform"
             android:letterSpacing="0.09"
             android:textAllCaps="true"
-            android:text="PUSH"
+            android:text="@string/widget_preview_title"
             android:textColor="#E8E8E4"
             android:textSize="17sp" />
 
@@ -60,7 +60,7 @@
                 android:layout_marginStart="5dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="4 · 18 sets"
+            android:text="@string/widget_preview_compact_meta"
             android:textColor="#A3A099"
             android:textSize="12sp" />
             </LinearLayout>

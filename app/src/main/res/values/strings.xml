@@ -518,4 +518,180 @@
     <plurals name="narration_live_start__t"><item quantity="one">%d set inked. The page begins to fill.</item><item quantity="other">%d sets inked. The page begins to fill.</item></plurals>
     <plurals name="narration_live_half"><item quantity="one">%d set logged. Over halfway.</item><item quantity="other">%d sets logged. Over halfway.</item></plurals>
     <plurals name="narration_live_half__t"><item quantity="one">%d set inked. The page is half written.</item><item quantity="other">%d sets inked. The page is half written.</item></plurals>
+
+    <!-- Counts shown next to a unit. -->
+    <plurals name="common_exercises_count"><item quantity="one">%d exercise</item><item quantity="other">%d exercises</item></plurals>
+    <plurals name="common_sets_count"><item quantity="one">%d set</item><item quantity="other">%d sets</item></plurals>
+    <plurals name="common_days_count"><item quantity="one">%d day</item><item quantity="other">%d days</item></plurals>
+    <plurals name="common_reps_count"><item quantity="one">%d rep</item><item quantity="other">%d reps</item></plurals>
+
+    <!-- Notification channels, as listed in the phone's notification settings. The channel names that are one concept word (the Summons, Allies) come from Words. -->
+    <string name="notification_channel_summons_description">One evening reminder while today\'s workout is still unfinished.</string>
+    <string name="notification_channel_summons_description__t">One evening summons while today\'s trial is still unsealed.</string>
+    <string name="notification_channel_allies_description">Requests, comments and kudos from your friends.</string>
+    <string name="notification_channel_allies_description__t">Requests, remarks and tributes from your allies.</string>
+    <string name="notification_channel_trial_label">Workout in progress</string>
+    <string name="notification_channel_trial_label__t">Trial in progress</string>
+    <string name="notification_channel_trial_description">Live progress of the workout you have open.</string>
+    <string name="notification_channel_trial_description__t">Live progress of the trial you have open.</string>
+    <string name="notification_channel_rest_label">Rest between sets</string>
+    <string name="notification_channel_rest_description">One buzz when the rest between sets is over.</string>
+    <string name="notification_channel_rest_sound_label">Rest between sets, with sound</string>
+    <string name="notification_channel_rest_sound_description">The phone\'s default notification sound and a buzz when the rest between sets is over.</string>
+    <string name="notification_channel_rest_silent_label">Rest between sets, silent</string>
+    <string name="notification_channel_rest_silent_description">A quiet notice when the rest between sets is over: no sound, no buzz.</string>
+
+    <!-- Notification: new activity from friends (one notification, replaced). -->
+    <string name="notification_inbox_title_one">A message</string>
+    <string name="notification_inbox_title_one__t">A missive</string>
+    <plurals name="notification_inbox_title_many"><item quantity="one">%d new message</item><item quantity="other">%d new messages</item></plurals>
+    <plurals name="notification_inbox_title_many__t"><item quantity="one">%d new missive</item><item quantity="other">%d new missives</item></plurals>
+    <!-- The lock-screen version: says only that something arrived. -->
+    <string name="notification_inbox_public_one">New message from a friend</string>
+    <string name="notification_inbox_public_one__t">New missive from an ally</string>
+    <string name="notification_inbox_public_many">New messages from your friends</string>
+    <string name="notification_inbox_public_many__t">New missives from your allies</string>
+    <!-- %1$s is a friend's display name, %2$s what they wrote, %3$s a workout's title, %4$s a reaction's name, %5$s a group's name; see each line. -->
+    <string name="notification_inbox_line_comment">%1$s left a comment: %2$s</string>
+    <string name="notification_inbox_line_comment__t">%1$s left a remark: %2$s</string>
+    <string name="notification_inbox_line_reply">%1$s replied on %2$s: %3$s</string>
+    <string name="notification_inbox_line_reply_untitled">%1$s replied on a workout: %2$s</string>
+    <string name="notification_inbox_line_reply_untitled__t">%1$s replied on a trial: %2$s</string>
+    <!-- %2$s is the reaction's name (Flame...), %3$s the workout's title. -->
+    <string name="notification_inbox_line_reaction">%1$s paid %2$s kudos to %3$s</string>
+    <string name="notification_inbox_line_reaction__t">%1$s paid %2$s tribute to %3$s</string>
+    <string name="notification_inbox_line_reaction_untitled">%1$s paid %2$s kudos to your workout</string>
+    <string name="notification_inbox_line_reaction_untitled__t">%1$s paid %2$s tribute to your trial</string>
+    <string name="notification_inbox_line_friend_request">%1$s wants to be friends with you</string>
+    <string name="notification_inbox_line_friend_request__t">%1$s wants to ally with you</string>
+    <string name="notification_inbox_line_request_accepted">%1$s accepted your request</string>
+    <!-- %2$s is the group's name. -->
+    <string name="notification_inbox_line_circle_joined">%1$s joined your group %2$s</string>
+    <string name="notification_inbox_line_circle_joined__t">%1$s joined your circle %2$s</string>
+    <string name="notification_inbox_line_circle_goal">Your group %1$s met its weekly goal</string>
+    <string name="notification_inbox_line_circle_goal__t">Your circle %1$s met its weekly goal</string>
+    <string name="notification_inbox_line_circle_left">%1$s left your group %2$s</string>
+    <string name="notification_inbox_line_circle_left__t">%1$s left your circle %2$s</string>
+    <string name="notification_inbox_line_circle_keeper">You now keep the group %1$s</string>
+    <string name="notification_inbox_line_circle_keeper__t">You now keep the circle %1$s</string>
+    <string name="notification_inbox_line_circle_removed">You were removed from the group %1$s</string>
+    <string name="notification_inbox_line_circle_removed__t">You were removed from the circle %1$s</string>
+
+    <!-- Notification: the evening reminder. %1$s is the routine's own name, kept in its case. -->
+    <string name="summons_notification_title">REMINDER · %1$s</string>
+    <string name="summons_notification_title__t">THE SUMMONS · %1$s</string>
+    <!-- %1$s is a count of exercises, %2$s a count of sets ("5 exercises", "18 sets"). -->
+    <string name="summons_notification_text">%1$s · %2$s waiting.</string>
+    <string name="summons_notification_text_at_risk">%1$s · %2$s · your streak ends tonight.</string>
+    <string name="summons_notification_text_at_risk__t">%1$s · %2$s · your oath ends tonight.</string>
+    <!-- Expanded text. %1$s routine name, %2$s exercises, %3$s sets, %4$s one of the lines below. -->
+    <string name="summons_notification_big">%1$s: %2$s, %3$s today. %4$s</string>
+    <!-- %1$s is a count of days ("12 days"); %2$s the days to the next deed. -->
+    <string name="summons_notification_streak_at_risk">Your streak of %1$s ends tonight unless you finish a workout.</string>
+    <string name="summons_notification_streak_at_risk__t">Your oath of %1$s ends tonight unless you seal a trial.</string>
+    <string name="summons_notification_streak_zero">Today\'s workout starts the streak.</string>
+    <string name="summons_notification_streak_zero__t">Today\'s Trial starts the oath.</string>
+    <string name="summons_notification_streak_next">Streak · %1$s kept. Next deed at %2$s.</string>
+    <string name="summons_notification_streak_next__t">Oath · %1$s kept. Next deed at %2$s.</string>
+    <string name="summons_notification_streak_kept">Streak · %1$s kept.</string>
+    <string name="summons_notification_streak_kept__t">Oath · %1$s kept.</string>
+
+    <!-- Notification: the workout in progress. -->
+    <string name="notification_trial_opening">Opening the workout…</string>
+    <string name="notification_trial_opening__t">Opening the trial…</string>
+    <string name="notification_trial_all_done">Every set is done. Finish the workout.</string>
+    <string name="notification_trial_all_done__t">Every set is done. Seal the Trial.</string>
+    <!-- %1$s is the next set, for example "Set 3 · 8 reps · 60kg". -->
+    <string name="notification_trial_resting">Rest · then %1$s</string>
+    <!-- The next set: %1$d its number among the working sets, %2$d reps or seconds, %3$s the load ("60kg"). A hold set counts seconds. -->
+    <plurals name="notification_trial_set_reps"><item quantity="one">Set %1$d · %2$d rep</item><item quantity="other">Set %1$d · %2$d reps</item></plurals>
+    <plurals name="notification_trial_set_reps_load"><item quantity="one">Set %1$d · %2$d rep · %3$s</item><item quantity="other">Set %1$d · %2$d reps · %3$s</item></plurals>
+    <string name="notification_trial_set_hold">Set %1$d · %2$ds</string>
+    <string name="notification_trial_set_hold_load">Set %1$d · %2$ds · %3$s</string>
+    <!-- Sub-text of the live notification: %1$d sets done, %2$d in all; the count agrees with the total. -->
+    <plurals name="notification_trial_progress"><item quantity="one">WORKOUT · %1$d / %2$d set</item><item quantity="other">WORKOUT · %1$d / %2$d sets</item></plurals>
+    <plurals name="notification_trial_progress__t"><item quantity="one">TRIAL · %1$d / %2$d set</item><item quantity="other">TRIAL · %1$d / %2$d sets</item></plurals>
+    <string name="notification_trial_action_set_done">Set done</string>
+    <string name="notification_trial_action_skip_rest">Skip rest</string>
+    <!-- Button: add %1$d seconds to the rest. -->
+    <string name="notification_trial_action_extend_rest">+%1$d s</string>
+    <string name="notification_rest_over_title">Rest is over</string>
+    <!-- %1$s the exercise, %2$s its next set ("Set 3 · 8 reps"). -->
+    <string name="notification_rest_over_text">%1$s · %2$s</string>
+    <string name="notification_rest_over_next">On to the next set.</string>
+
+    <!-- Home-screen widgets. -->
+    <string name="widget_kicker_live">In progress · %1$d min</string>
+    <string name="widget_kicker_done">Done today</string>
+    <string name="widget_kicker_today">Today</string>
+    <!-- %1$s is the weekday, short ("Fri"). -->
+    <string name="widget_kicker_today_day">Today · %1$s</string>
+    <string name="widget_no_plan">No weekly plan yet</string>
+    <string name="widget_no_plan__t">No cycle yet</string>
+    <string name="widget_no_plan_short">No weekly plan</string>
+    <string name="widget_no_plan_short__t">No cycle</string>
+    <string name="widget_free_day">A free day</string>
+    <string name="widget_build_hint">Build one and today\'s routine shows here.</string>
+    <string name="widget_build_hint__t">Build one and today\'s rite shows here.</string>
+    <string name="widget_build_in_app">Build one in the app</string>
+    <!-- Today's routine in numbers: %1$s exercises, %2$s sets, %3$d minutes. -->
+    <string name="widget_meta_begin">%1$s · %2$s</string>
+    <string name="widget_meta_begin_estimate">%1$s · %2$s · about %3$d min</string>
+    <string name="widget_meta_sealed">%1$s · %2$d min</string>
+    <string name="widget_live_none">No sets yet</string>
+    <!-- %1$d sets done of %2$d; the count agrees with the total. -->
+    <plurals name="widget_live_sets"><item quantity="one">%1$d of %2$d set done</item><item quantity="other">%1$d of %2$d sets done</item></plurals>
+    <string name="widget_next">Next: %1$s · %2$s</string>
+    <string name="widget_resume">Resume</string>
+    <string name="widget_begin">Begin</string>
+    <!-- Button: begin today's routine; %1$s is its name. -->
+    <string name="widget_begin_named">Begin %1$s</string>
+    <string name="widget_begin_empty">Begin an empty workout</string>
+    <string name="widget_begin_empty__t">Begin an open trial</string>
+    <string name="widget_tap_begin_empty">Tap to begin an empty workout</string>
+    <string name="widget_tap_begin_empty__t">Tap to begin an open trial</string>
+    <string name="widget_forge">Build a weekly plan</string>
+    <string name="widget_forge__t">Forge a cycle</string>
+    <string name="widget_tap_forge">Tap to build a weekly plan</string>
+    <string name="widget_tap_forge__t">Tap to forge a cycle</string>
+    <plurals name="widget_streak_chip"><item quantity="one">%d-day streak</item><item quantity="other">%d-day streak</item></plurals>
+    <plurals name="widget_streak_chip__t"><item quantity="one">%d-day oath</item><item quantity="other">%d-day oath</item></plurals>
+    <!-- The caption under the streak number on the week widget. -->
+    <string name="widget_streak_caption">day streak</string>
+    <string name="widget_streak_caption__t">day oath</string>
+    <string name="widget_week_today">Today · %1$s</string>
+    <string name="widget_week_live_none">In progress · no sets yet</string>
+    <plurals name="widget_week_live"><item quantity="one">In progress · %1$d of %2$d set</item><item quantity="other">In progress · %1$d of %2$d sets</item></plurals>
+    <string name="widget_week_done">Done today · %1$s</string>
+    <string name="widget_week_summary">This week: %1$d done, %2$d still to do</string>
+    <!-- The 2x1 widget's second line. %1$d is the streak, %2$s one of the lines below. -->
+    <string name="widget_compact_streak_after">%1$d · %2$s</string>
+    <string name="widget_compact_live_none">No sets yet</string>
+    <plurals name="widget_compact_live"><item quantity="one">%1$d/%2$d set</item><item quantity="other">%1$d/%2$d sets</item></plurals>
+    <string name="widget_compact_done">Done</string>
+    <string name="widget_compact_rest">Rest</string>
+    <string name="widget_compact_forge">Tap to build one</string>
+    <string name="widget_compact_forge__t">Tap to forge one</string>
+
+    <!-- Widget picker preview and layout placeholders: shown only as a sample, the app redraws every face. -->
+    <string name="widget_preview_kicker">TODAY · FRI</string>
+    <string name="widget_preview_streak">4-day streak</string>
+    <string name="widget_preview_title">PUSH</string>
+    <string name="widget_preview_meta">5 exercises · 18 sets · about 45 min</string>
+    <string name="widget_preview_next_tue">Next: Legs · Tue</string>
+    <string name="widget_preview_next_sun">Next: Legs · Sun</string>
+    <string name="widget_preview_open">Open</string>
+    <string name="widget_preview_compact_meta">4 · 18 sets</string>
+    <string name="widget_preview_streak_number">4</string>
+    <string name="widget_preview_streak_caption">day streak</string>
+    <string name="widget_preview_week_meta">Today · 18 sets</string>
+    <string name="widget_preview_begin_named">Begin Push</string>
+    <string name="widget_preview_begin_empty">Begin an empty workout</string>
+    <string name="widget_preview_day_mon">M</string>
+    <string name="widget_preview_day_tue">T</string>
+    <string name="widget_preview_day_wed">W</string>
+    <string name="widget_preview_day_thu">T</string>
+    <string name="widget_preview_day_fri">F</string>
+    <string name="widget_preview_day_sat">S</string>
+    <string name="widget_preview_day_sun">S</string>
 </resources>

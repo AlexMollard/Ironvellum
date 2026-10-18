@@ -11,7 +11,10 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationManagerCompat
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -92,28 +95,38 @@ object Notifications {
      */
     fun ensureChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        // Resolved now, in the mode and language in force; Words.setThemed registers the channels again to rename them.
+        fun text(plain: Int, themed: Int) = UiText.themed(plain, themed).asString(context)
         manager.createNotificationChannels(
             listOf(
                 NotificationChannel(CHANNEL_SUMMONS, Words.theSummons.c, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "One evening ${Words.summons.s} while today's ${Words.trial.s} is still ${Words.unsealed.s}."
+                    description = text(R.string.notification_channel_summons_description, R.string.notification_channel_summons_description__t)
                 },
                 NotificationChannel(CHANNEL_ALLIES, Words.ally.cpl, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Requests, ${Words.remark.pl} and ${Words.tribute.pl} from your ${Words.ally.pl}."
+                    description = text(R.string.notification_channel_allies_description, R.string.notification_channel_allies_description__t)
                 },
-                NotificationChannel(CHANNEL_TRIAL, "${Words.trial.c} in progress", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Live progress of the ${Words.trial.s} you have open."
+                NotificationChannel(
+                    CHANNEL_TRIAL,
+                    text(R.string.notification_channel_trial_label, R.string.notification_channel_trial_label__t),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = text(R.string.notification_channel_trial_description, R.string.notification_channel_trial_description__t)
                 },
                 // High so it can reach a locked phone on the bench; one short
                 // buzz and no sound, because a gym is loud and a chime is not
                 // what anyone between sets wants from their pocket.
-                NotificationChannel(CHANNEL_REST, "Rest between sets", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "One buzz when the rest between sets is over."
+                NotificationChannel(CHANNEL_REST, context.getString(R.string.notification_channel_rest_label), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = context.getString(R.string.notification_channel_rest_description)
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 350)
                     setSound(null, null)
                 },
-                NotificationChannel(CHANNEL_REST_SOUND, "Rest between sets, with sound", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "The phone's default notification sound and a buzz when the rest between sets is over."
+                NotificationChannel(
+                    CHANNEL_REST_SOUND,
+                    context.getString(R.string.notification_channel_rest_sound_label),
+                    NotificationManager.IMPORTANCE_HIGH,
+                ).apply {
+                    description = context.getString(R.string.notification_channel_rest_sound_description)
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 350)
                     setSound(
@@ -124,8 +137,12 @@ object Notifications {
                             .build(),
                     )
                 },
-                NotificationChannel(CHANNEL_REST_SILENT, "Rest between sets, silent", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "A quiet notice when the rest between sets is over: no sound, no buzz."
+                NotificationChannel(
+                    CHANNEL_REST_SILENT,
+                    context.getString(R.string.notification_channel_rest_silent_label),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = context.getString(R.string.notification_channel_rest_silent_description)
                     enableVibration(false)
                     setSound(null, null)
                 },

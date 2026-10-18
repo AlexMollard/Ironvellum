@@ -53,6 +53,8 @@ object Words {
         themed = on
         // Channel names are words too; registering a channel again with the same id renames it.
         runCatching { Notifications.ensureChannels(context.applicationContext) }
+        // The widgets name concepts too; redraw them in the new vocabulary.
+        com.ironvellum.app.widget.TodayWidget.refresh(context.applicationContext)
     }
 
     @Volatile private var source: StringSource? = null

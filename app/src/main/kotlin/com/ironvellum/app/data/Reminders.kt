@@ -17,6 +17,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.domain.Summons
 import com.ironvellum.app.domain.TrainFocus
+import com.ironvellum.app.ui.asString
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.Instant
 import java.time.LocalDate
@@ -157,9 +158,9 @@ object Reminders {
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_SUMMONS)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
-            .setContentTitle(copy.title)
-            .setContentText(copy.text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(copy.bigText))
+            .setContentTitle(copy.title.asString(context))
+            .setContentText(copy.text.asString(context))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(copy.bigText.asString(context)))
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()

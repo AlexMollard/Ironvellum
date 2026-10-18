@@ -1,6 +1,6 @@
 package com.ironvellum.app.domain
 
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -53,7 +53,8 @@ object Summons {
     fun wanted(riteScheduledToday: Boolean, sealedToday: Boolean, liveToday: Boolean, canPost: Boolean): Boolean =
         canPost && riteScheduledToday && !sealedToday && !liveToday
 
-    data class Copy(val title: String, val text: String, val bigText: String)
+    /** The three texts of the notification, described so they follow the language and the Themed names switch when posted. */
+    data class Copy(val title: UiText, val text: UiText, val bigText: UiText)
 
     /**
      * The words for one scheduled rite. [oathDays] is the oath as it stands,
@@ -69,22 +70,32 @@ object Summons {
         nextDeedDays: Int?,
         oathAtRisk: Boolean,
     ): Copy {
-        val exerciseText = if (exercises == 1) "1 exercise" else "$exercises exercises"
-        val setText = if (sets == 1) "1 set" else "$sets sets"
-        val days = pluralDays(oathDays)
+        val exerciseText = UiText.plural(R.plurals.common_exercises_count, exercises)
+        val setText = UiText.plural(R.plurals.common_sets_count, sets)
+        val days = UiText.plural(R.plurals.common_days_count, oathDays)
         val oathLine = when {
-            oathAtRisk -> "Your ${Words.oath.s} of $days ends tonight unless you ${Words.seal.s} ${Words.trial.a}."
-            oathDays == 0 -> "Today's ${Words.trial.t} starts the ${Words.oath.s}."
-            nextDeedDays != null -> "${Words.oath.c} · $days kept. Next ${Words.deed.s} at ${pluralDays(nextDeedDays)}."
-            else -> "${Words.oath.c} · $days kept."
+            oathAtRisk -> UiText.themed(
+                R.string.summons_notification_streak_at_risk, R.string.summons_notification_streak_at_risk__t, days,
+            )
+            oathDays == 0 -> UiText.themed(R.string.summons_notification_streak_zero, R.string.summons_notification_streak_zero__t)
+            nextDeedDays != null -> UiText.themed(
+                R.string.summons_notification_streak_next, R.string.summons_notification_streak_next__t,
+                days, UiText.plural(R.plurals.common_days_count, nextDeedDays),
+            )
+            else -> UiText.themed(R.string.summons_notification_streak_kept, R.string.summons_notification_streak_kept__t, days)
         }
         return Copy(
             // The rite keeps its own name and case (GLOSSARY: "THE SUMMONS · Heavy Pull").
-            title = "${Words.theSummons.u} · $riteName",
-            text = if (oathAtRisk) "$exerciseText · $setText · your ${Words.oath.s} ends tonight." else "$exerciseText · $setText waiting.",
-            bigText = "$riteName: $exerciseText, $setText today. $oathLine",
+            title = UiText.themed(R.string.summons_notification_title, R.string.summons_notification_title__t, riteName),
+            text = if (oathAtRisk) {
+                UiText.themed(
+                    R.string.summons_notification_text_at_risk, R.string.summons_notification_text_at_risk__t,
+                    exerciseText, setText,
+                )
+            } else {
+                UiText.res(R.string.summons_notification_text, exerciseText, setText)
+            },
+            bigText = UiText.res(R.string.summons_notification_big, riteName, exerciseText, setText, oathLine),
         )
     }
-
-    private fun pluralDays(n: Int) = if (n == 1) "1 day" else "$n days"
 }

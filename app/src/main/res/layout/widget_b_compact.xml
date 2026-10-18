@@ -34,7 +34,7 @@
             android:ellipsize="end"
             android:textStyle="bold"
             android:maxLines="1"
-            android:text="4"
+            android:text="@string/widget_preview_streak_number"
             android:textColor="#F2C14E"
             android:textSize="24sp" />
 
@@ -46,7 +46,7 @@
                 android:layout_marginBottom="3dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="day streak"
+            android:text="@string/widget_preview_streak_caption"
             android:textColor="#A3A099"
             android:textSize="11sp" />
             </LinearLayout>

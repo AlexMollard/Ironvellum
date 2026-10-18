@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.plainText
+import com.ironvellum.app.themedText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -85,16 +87,26 @@ class SummonsTest {
     @Test
     fun `the rite keeps its own case after THE SUMMONS`() {
         val copy = Summons.copy("Heavy Pull", exercises = 5, sets = 18, oathDays = 4, nextDeedDays = 7, oathAtRisk = false)
-        assertEquals("THE SUMMONS · Heavy Pull", copy.title)
-        assertEquals("5 exercises · 18 sets waiting.", copy.text)
-        assertTrue(copy.bigText.endsWith("Oath · 4 days kept. Next deed at 7 days."))
+        assertEquals("THE SUMMONS · Heavy Pull", copy.title.themedText())
+        assertEquals("5 exercises · 18 sets waiting.", copy.text.themedText())
+        assertTrue(copy.bigText.themedText().endsWith("Oath · 4 days kept. Next deed at 7 days."))
+    }
+
+    @Test
+    fun `the plain wording names no themed word`() {
+        val copy = Summons.copy("Heavy Pull", exercises = 5, sets = 18, oathDays = 4, nextDeedDays = 7, oathAtRisk = false)
+        assertEquals("REMINDER · Heavy Pull", copy.title.plainText())
+        assertTrue(copy.bigText.plainText().endsWith("Streak · 4 days kept. Next deed at 7 days."))
+        val risk = Summons.copy("Heavy Pull", exercises = 1, sets = 1, oathDays = 12, nextDeedDays = 14, oathAtRisk = true)
+        assertEquals("1 exercise · 1 set · your streak ends tonight.", risk.text.plainText())
+        assertTrue(risk.bigText.plainText().endsWith("Your streak of 12 days ends tonight unless you finish a workout."))
     }
 
     @Test
     fun `an oath at risk is said in the Summons itself`() {
         val copy = Summons.copy("Heavy Pull", exercises = 1, sets = 1, oathDays = 12, nextDeedDays = 14, oathAtRisk = true)
-        assertEquals("1 exercise · 1 set · your oath ends tonight.", copy.text)
-        assertTrue(copy.bigText.endsWith("Your oath of 12 days ends tonight unless you seal a trial."))
+        assertEquals("1 exercise · 1 set · your oath ends tonight.", copy.text.themedText())
+        assertTrue(copy.bigText.themedText().endsWith("Your oath of 12 days ends tonight unless you seal a trial."))
     }
 
     @Test

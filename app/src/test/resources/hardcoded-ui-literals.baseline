@@ -1,13 +1,10 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 3452 in 179 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
-main/WorkoutSessionService.kt 7
+# Total 3390 in 174 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
 main/data/DbSnapshot.kt 4
 main/data/HealthSync.kt 7
 main/data/HealthWriteBack.kt 4
-main/data/InboxNotifier.kt 12
-main/data/Notifications.kt 10
 main/data/PlateStore.kt 6
 main/data/Repository.kt 33
 main/data/Words.kt 2
@@ -42,7 +39,6 @@ main/domain/SessionXp.kt 1
 main/domain/SetKind.kt 15
 main/domain/SetScheme.kt 14
 main/domain/SexHold.kt 1
-main/domain/Summons.kt 10
 main/domain/TrialHints.kt 6
 main/domain/VeilDraw.kt 6
 main/domain/WarmupStep.kt 6
@@ -177,5 +173,4 @@ main/ui/train/TrialAmendEditor.kt 24
 main/ui/train/VictoryOverlay.kt 16
 main/ui/train/WorkoutDetailScreen.kt 52
 main/ui/train/WorkoutLogScreen.kt 9
-main/widget/WidgetFaces.kt 23
 play/ui/social/GoogleSignIn.kt 2

@@ -16,6 +16,8 @@ import com.ironvellum.app.data.cloud.Inbox
 import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.data.cloud.InboxWorker
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.social.displayName
 
 /**
@@ -134,8 +136,12 @@ object InboxNotifier {
         }
         if (fresh.isEmpty() || !canNotify(context)) return
 
-        val latest = line(fresh.first())
-        val title = if (fresh.size == 1) Words.missive.ca else "${fresh.size} new ${Words.missive.pl}"
+        val latest = line(fresh.first()).asString(context)
+        val title = if (fresh.size == 1) {
+            UiText.themed(R.string.notification_inbox_title_one, R.string.notification_inbox_title_one__t)
+        } else {
+            UiText.themedPlural(R.plurals.notification_inbox_title_many, R.plurals.notification_inbox_title_many__t, fresh.size)
+        }.asString(context)
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -149,7 +155,13 @@ object InboxNotifier {
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
             .setContentTitle(title)
-            .setContentText(if (fresh.size == 1) "New ${Words.missive.s} from ${Words.ally.a}" else "New ${Words.missive.pl} from your ${Words.ally.pl}")
+            .setContentText(
+                if (fresh.size == 1) {
+                    UiText.themed(R.string.notification_inbox_public_one, R.string.notification_inbox_public_one__t)
+                } else {
+                    UiText.themed(R.string.notification_inbox_public_many, R.string.notification_inbox_public_many__t)
+                }.asString(context),
+            )
             .build()
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
@@ -190,25 +202,53 @@ object InboxNotifier {
 
     private fun tributeKey(item: InboxItem.NewReaction) = "${item.sessionId}:${item.actorId}"
 
-    private fun line(item: InboxItem): String = when (item) {
-        is InboxItem.NewComment -> "${item.actorName} left ${Words.remark.a}: ${item.body}"
-        is InboxItem.NewReply -> {
-            val headline = item.sessionHeadline.ifBlank { Words.trial.a }
-            "${item.actorName} replied on $headline: ${item.body}"
-        }
+    private fun line(item: InboxItem): UiText = when (item) {
+        is InboxItem.NewComment ->
+            UiText.themed(R.string.notification_inbox_line_comment, R.string.notification_inbox_line_comment__t, item.actorName, item.body)
+        is InboxItem.NewReply ->
+            if (item.sessionHeadline.isBlank()) {
+                UiText.themed(
+                    R.string.notification_inbox_line_reply_untitled, R.string.notification_inbox_line_reply_untitled__t,
+                    item.actorName, item.body,
+                )
+            } else {
+                UiText.res(R.string.notification_inbox_line_reply, item.actorName, item.sessionHeadline, item.body)
+            }
         is InboxItem.NewReaction -> {
             val reaction = item.reaction.displayName()
-            val headline = item.sessionHeadline.ifBlank { "your ${Words.trial.s}" }
-            "${item.actorName} paid $reaction ${Words.tribute.s} to $headline"
+            if (item.sessionHeadline.isBlank()) {
+                UiText.themed(
+                    R.string.notification_inbox_line_reaction_untitled, R.string.notification_inbox_line_reaction_untitled__t,
+                    item.actorName, reaction,
+                )
+            } else {
+                UiText.themed(
+                    R.string.notification_inbox_line_reaction, R.string.notification_inbox_line_reaction__t,
+                    item.actorName, reaction, item.sessionHeadline,
+                )
+            }
         }
-        is InboxItem.FriendRequest -> "${item.actorName} wants to ${Words.ally.s} with you"
-        is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
-        is InboxItem.NewCircleMember -> "${item.actorName} joined your ${Words.circle.s} ${item.circleName}"
-        is InboxItem.CircleGoalMet -> "Your ${Words.circle.s} ${item.circleName} met its weekly goal"
+        is InboxItem.FriendRequest ->
+            UiText.themed(R.string.notification_inbox_line_friend_request, R.string.notification_inbox_line_friend_request__t, item.actorName)
+        is InboxItem.RequestAccepted -> UiText.res(R.string.notification_inbox_line_request_accepted, item.actorName)
+        is InboxItem.NewCircleMember ->
+            UiText.themed(
+                R.string.notification_inbox_line_circle_joined, R.string.notification_inbox_line_circle_joined__t,
+                item.actorName, item.circleName,
+            )
+        is InboxItem.CircleGoalMet ->
+            UiText.themed(R.string.notification_inbox_line_circle_goal, R.string.notification_inbox_line_circle_goal__t, item.circleName)
         is InboxItem.CircleNotice -> when (item.change) {
-            CircleChange.LEFT -> "${item.actorName} left your ${Words.circle.s} ${item.circleName}"
-            CircleChange.KEEPER -> "You now keep the ${Words.circle.s} ${item.circleName}"
-            CircleChange.REMOVED -> "You were removed from the ${Words.circle.s} ${item.circleName}"
+            CircleChange.LEFT -> UiText.themed(
+                R.string.notification_inbox_line_circle_left, R.string.notification_inbox_line_circle_left__t,
+                item.actorName, item.circleName,
+            )
+            CircleChange.KEEPER -> UiText.themed(
+                R.string.notification_inbox_line_circle_keeper, R.string.notification_inbox_line_circle_keeper__t, item.circleName,
+            )
+            CircleChange.REMOVED -> UiText.themed(
+                R.string.notification_inbox_line_circle_removed, R.string.notification_inbox_line_circle_removed__t, item.circleName,
+            )
         }
     }
 }

@@ -21,8 +21,10 @@ import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.workingNumber
+import com.ironvellum.app.ui.asString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -227,14 +229,17 @@ class WorkoutSessionService : Service() {
         )
 
     /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
-    private fun nextLine(next: SessionSet?, sets: List<SessionSet>): String? = next?.let {
-        buildString {
-            append("Set ${it.workingNumber(sets)}")
-            // A HOLD set carries its figure in seconds; REPS sets count.
-            val figure = if (it.durationSec != null && it.reps == 0)
-                "${it.durationSec}s" else "${it.reps} ${if (it.reps == 1) "rep" else "reps"}"
-            append(" · $figure")
-            it.weightKg?.takeIf { kg -> kg > 0.0 }?.let { kg -> append(" · ${formatLoad(kg)}") }
+    private fun nextLine(next: SessionSet?, sets: List<SessionSet>): UiText? = next?.let {
+        val number = it.workingNumber(sets)
+        val load = it.weightKg?.takeIf { kg -> kg > 0.0 }?.let(::formatLoad)
+        // A HOLD set carries its figure in seconds; REPS sets count.
+        val seconds = it.durationSec
+        if (seconds != null && it.reps == 0) {
+            if (load == null) UiText.res(R.string.notification_trial_set_hold, number, seconds)
+            else UiText.res(R.string.notification_trial_set_hold_load, number, seconds, load)
+        } else {
+            if (load == null) UiText.plural(R.plurals.notification_trial_set_reps, it.reps, number, it.reps)
+            else UiText.plural(R.plurals.notification_trial_set_reps_load, it.reps, number, it.reps, load)
         }
     }
 
@@ -252,18 +257,20 @@ class WorkoutSessionService : Service() {
         val title = (next ?: sets.firstOrNull())?.exerciseName ?: Words.trial.c
         val resting = rest != null && !rest.isOver(SystemClock.elapsedRealtime())
         val body = when {
-            total == 0 -> "Opening the ${Words.trial.s}…"
-            next == null -> "Every set is done. ${Words.seal.c} the ${Words.trial.t}."
-            resting -> "Rest · then ${nextLine(next, sets)}"
-            else -> nextLine(next, sets).orEmpty()
-        }
-        val setWord = if (total == 1) "set" else "sets"
+            total == 0 -> UiText.themed(R.string.notification_trial_opening, R.string.notification_trial_opening__t)
+            next == null -> UiText.themed(R.string.notification_trial_all_done, R.string.notification_trial_all_done__t)
+            resting -> UiText.res(R.string.notification_trial_resting, nextLine(next, sets)!!)
+            else -> nextLine(next, sets)!!
+        }.asString(this)
         val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
             .setContentTitle(title)
             .setContentText(body)
-            .setSubText("${Words.trial.u} · $done / $total $setWord")
+            .setSubText(
+                UiText.themedPlural(R.plurals.notification_trial_progress, R.plurals.notification_trial_progress__t, total, done, total)
+                    .asString(this),
+            )
             .setProgress(total.coerceAtLeast(1), done, total == 0)
             // Public on the lock screen, so the set in hand and the buttons below show
             // there. It carries only the movement, the set and its figures: never a note.
@@ -291,13 +298,13 @@ class WorkoutSessionService : Service() {
         // on offer. Set done, Skip rest and +15 s are broadcasts: they run from the
         // lock screen, and do what the trial screen's buttons do (TrialActionReceiver).
         if (next != null) {
-            builder.addAction(0, "Set done", broadcast(TrialActionReceiver.ACTION_SET_DONE, sessionId, next.id, Notifications.REQUEST_SET_DONE))
+            builder.addAction(0, getString(R.string.notification_trial_action_set_done), broadcast(TrialActionReceiver.ACTION_SET_DONE, sessionId, next.id, Notifications.REQUEST_SET_DONE))
         }
         if (resting) {
-            builder.addAction(0, "Skip rest", broadcast(TrialActionReceiver.ACTION_SKIP_REST, sessionId, -1L, Notifications.REQUEST_SKIP_REST))
+            builder.addAction(0, getString(R.string.notification_trial_action_skip_rest), broadcast(TrialActionReceiver.ACTION_SKIP_REST, sessionId, -1L, Notifications.REQUEST_SKIP_REST))
             builder.addAction(
                 0,
-                "+${RestTimer.EXTEND_SECONDS} s",
+                getString(R.string.notification_trial_action_extend_rest, RestTimer.EXTEND_SECONDS),
                 broadcast(TrialActionReceiver.ACTION_EXTEND_REST, sessionId, -1L, Notifications.REQUEST_EXTEND_REST),
             )
         } else if (done > 0) {
@@ -312,8 +319,11 @@ class WorkoutSessionService : Service() {
         return NotificationCompat.Builder(this, Notifications.restChannel(TrialPrefs(this).restAlert))
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
-            .setContentTitle("Rest is over")
-            .setContentText(next?.let { "${it.exerciseName} · ${nextLine(it, sets)}" } ?: "On to the next set.")
+            .setContentTitle(getString(R.string.notification_rest_over_title))
+            .setContentText(
+                next?.let { UiText.res(R.string.notification_rest_over_text, it.exerciseName, nextLine(it, sets)!!).asString(this) }
+                    ?: getString(R.string.notification_rest_over_next),
+            )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(trialIntent(sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER))
             .setAutoCancel(true)

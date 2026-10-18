@@ -30,7 +30,7 @@
             android:maxLines="1"
             android:letterSpacing="0.15"
             android:textAllCaps="true"
-            android:text="TODAY · FRI"
+            android:text="@string/widget_preview_kicker"
             android:textColor="#A3A099"
             android:textSize="11sp" />
 
@@ -56,7 +56,7 @@
                 android:layout_marginStart="5dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="4-day streak"
+            android:text="@string/widget_preview_streak"
             android:textColor="#E8E8E4"
             android:textSize="13sp" />
             </LinearLayout>
@@ -88,7 +88,7 @@
             android:maxLines="1"
             android:letterSpacing="0.09"
             android:textAllCaps="true"
-            android:text="PUSH"
+            android:text="@string/widget_preview_title"
             android:textColor="#E8E8E4"
             android:textSize="22sp" />
         </LinearLayout>
@@ -109,7 +109,7 @@
         android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="5 exercises · 18 sets · about 45 min"
+            android:text="@string/widget_preview_meta"
             android:textColor="#A3A099"
             android:textSize="12sp" />
 
@@ -158,7 +158,7 @@
                 android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Next: Legs · Tue"
+            android:text="@string/widget_preview_next_tue"
             android:textColor="#A3A099"
             android:textSize="13sp" />
 
@@ -168,7 +168,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Open"
+            android:text="@string/widget_preview_open"
             android:textColor="#A3A099"
             android:textSize="13sp" />
             </LinearLayout>

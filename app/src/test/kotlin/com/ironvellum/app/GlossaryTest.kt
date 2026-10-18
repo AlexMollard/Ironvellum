@@ -148,6 +148,7 @@ class GlossaryTest {
         "line_veil_board_note" to "the Veil is the reward layer, themed in both modes",
         "line_no_veil_echoes" to "the Veil is the reward layer, themed in both modes",
         "line_welcome_tagline" to "the Veil is the reward layer, themed in both modes",
+        "summons_notification_streak_next" to "a deed is the reward layer, themed in both modes",
     )
 
     /**
