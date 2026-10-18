@@ -189,6 +189,7 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    widgets, small screens, train and program screens, domain-generated copy, then
    Weblate prep with an en-XA pseudolocale sweep.
    Phase 1 done (a3cf4ea3): `UiText`, `DiskStrings`, `StringsXmlTest`, `HardcodedUiLiteralTest` (baseline 4,539 literals in 187 files, `docs/STRINGS.md`), Settings > Reminder migrated.
+   Phase 3 done (cbd17a7f): notifications (channels, inbox, Summons, live workout and rest) and widget text moved to resources.
 9. **Light theme.** Appearance: System, Dark, Light. Check the art on light.
    Built before item 8 (owner, 2026-10-16); palette mocked up and approved first.
    Done: Vellum tokens, per-theme accents, themed widgets (47d97395, 384353ba, fbd34fa7).
