@@ -171,7 +171,7 @@ fun ExerciseExplorerScreen(
             val skill = Skills.forName(selectedExercise.name)
             Text(
                 listOfNotNull(
-                    selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() },
+                    selectedExercise.muscleGroup.displayName,
                     stringResource(if (selectedExercise.isWeighted) R.string.explorer_weighted else R.string.explorer_bodyweight),
                     if (selectedExercise.custom) Words.yours.s else null,
                     skill?.let {
@@ -227,7 +227,7 @@ private fun holdSet(seconds: Int, load: String?): String = Words.text(
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
 internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
     if (hold) holdSet(reps, weightKg?.let { Units.format(it) })
-    else (weightKg?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
+    else (weightKg?.takeIf { it > 0.0 }?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
 
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a

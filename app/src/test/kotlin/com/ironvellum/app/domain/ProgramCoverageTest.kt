@@ -136,20 +136,6 @@ class ProgramCoverageTest {
     // -------------------------------------------------------------- prescription
 
     @Test
-    fun `prescription line for a compound and an isolation`() {
-        val compound = PlannedEntry(
-            "Bench Press", 3, 8, null,
-            setsMin = 2, setsMax = 4, effort = EffortCue.RIR_0_2, repLow = 6, repHigh = 10,
-        )
-        assertEquals("2-4 sets x 6-10 reps, 0-2 reps in reserve", Prescription.line(compound))
-        val isolation = PlannedEntry(
-            "Lateral Raise", 3, 12, null,
-            setsMin = 3, setsMax = 3, effort = EffortCue.TO_FAILURE, repLow = 10, repHigh = 15,
-        )
-        assertEquals("3 sets x 10-15 reps, last set to failure", Prescription.line(isolation))
-    }
-
-    @Test
     fun `a plain entry keeps its sets and reps and defaults to 0-2 reps in reserve`() {
         val plain = PlannedEntry("Bench Press", 3, 8, null)
         assertEquals(3, plain.setsMin)
@@ -157,7 +143,6 @@ class ProgramCoverageTest {
         assertEquals(8, plain.repLow)
         assertEquals(8, plain.repHigh)
         assertEquals(EffortCue.RIR_0_2, plain.effort)
-        assertEquals("3 sets x 8 reps, 0-2 reps in reserve", Prescription.line(plain))
     }
 
     @Test

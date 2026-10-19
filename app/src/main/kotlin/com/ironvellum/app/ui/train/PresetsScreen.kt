@@ -190,11 +190,8 @@ internal fun weekOrder(presets: List<WorkoutPreset>): List<WorkoutPreset> =
 /** "MON": the weekday's short name in capitals, blank for a number that is no weekday. */
 internal fun dayLabel(day: Int): String = DayNames.short(day)?.uppercase().orEmpty()
 
-internal fun formatKg(kg: Double?): String =
-    when {
-        kg == null -> "BW"
-        else -> Units.format(kg) + Units.name
-    }
+/** "82.5 kg", or "BW" for no load (null or 0): the shared load formatter, so every caller spaces and words it alike. */
+internal fun formatKg(kg: Double?): String = Units.label(kg)
 
 @Composable
 fun PresetsScreen(

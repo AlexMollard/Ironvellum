@@ -618,16 +618,3 @@ object ProgramRules {
         )
     }
 }
-
-/** The plain default way a prescription reads; the UI owns its final copy. */
-object Prescription {
-    fun line(entry: PlannedEntry): String {
-        val sets = if (entry.setsMin == entry.setsMax) "${entry.sets} sets" else "${entry.setsMin}-${entry.setsMax} sets"
-        val reps = if (entry.repLow == entry.repHigh) "${entry.repLow} reps" else "${entry.repLow}-${entry.repHigh} reps"
-        val effort = when (entry.effort) {
-            EffortCue.RIR_0_2 -> "0-2 reps in reserve"
-            EffortCue.TO_FAILURE -> "last set to failure"
-        }
-        return "$sets x $reps, $effort"
-    }
-}
