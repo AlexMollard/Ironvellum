@@ -133,3 +133,10 @@ internal fun mixAccent(a: Int, b: Int, amount: Double): Int {
     fun channel(shift: Int): Int = ((((a ushr shift) and 255) * (1 - amount) + ((b ushr shift) and 255) * amount).roundToInt()) shl shift
     return 0xFF000000.toInt() or channel(16) or channel(8) or channel(0)
 }
+
+/**
+ * The accent a notification tints its icon with, resolved from the stored [mode] and the phone's dark state as it is
+ * now, not from the process-global theme flag, which stays stale when the phone flips with no activity open.
+ */
+fun notificationAccent(mode: ThemeMode, systemDark: Boolean, dark: AccentPalette, light: AccentPalette): Int =
+    if (mode.isLight(systemDark)) light.lightAccent().fill else dark.primary

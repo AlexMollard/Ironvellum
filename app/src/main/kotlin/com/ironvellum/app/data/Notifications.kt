@@ -9,13 +9,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationManagerCompat
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.RestAlert
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
-import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
  * Every notification id, channel id, PendingIntent request code and tap extra
@@ -84,8 +82,8 @@ object Notifications {
         RestAlert.SILENT -> CHANNEL_REST_SILENT
     }
 
-    /** The accent the shade tints the small icon and actions with: the theme's own emerald. */
-    val ACCENT: Int get() = IronvellumColors.Emerald.toArgb()
+    /** The accent the shade tints the small icon and actions with: the theme's own emerald, as the phone's mode is now. */
+    fun accent(context: Context): Int = (context.applicationContext as com.ironvellum.app.IronvellumApp).appearanceStore.accent()
 
     /**
      * Idempotent; called from Application.onCreate so every channel exists

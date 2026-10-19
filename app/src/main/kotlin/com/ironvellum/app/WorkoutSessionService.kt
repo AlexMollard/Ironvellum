@@ -264,7 +264,7 @@ class WorkoutSessionService : Service() {
         }.asString(this)
         val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
+            .setColor(Notifications.accent(this))
             .setContentTitle(title)
             .setContentText(body)
             .setSubText(
@@ -318,7 +318,7 @@ class WorkoutSessionService : Service() {
         // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
         return NotificationCompat.Builder(this, Notifications.restChannel(TrialPrefs(this).restAlert))
             .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
+            .setColor(Notifications.accent(this))
             .setContentTitle(getString(R.string.notification_rest_over_title))
             .setContentText(
                 next?.let { UiText.res(R.string.notification_rest_over_text, it.exerciseName, nextLine(it, sets)!!).asString(this) }

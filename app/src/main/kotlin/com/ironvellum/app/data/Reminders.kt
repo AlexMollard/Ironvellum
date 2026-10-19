@@ -157,7 +157,7 @@ object Reminders {
         )
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_SUMMONS)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
+            .setColor(Notifications.accent(context))
             .setContentTitle(copy.title.asString(context))
             .setContentText(copy.text.asString(context))
             .setStyle(NotificationCompat.BigTextStyle().bigText(copy.bigText.asString(context)))

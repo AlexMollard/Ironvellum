@@ -8,6 +8,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ThemeMode
 import com.ironvellum.app.ui.theme.accentHex
 import com.ironvellum.app.ui.theme.isSystemDark
+import com.ironvellum.app.ui.theme.notificationAccent
 import com.ironvellum.app.ui.theme.parseAccentHex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +45,9 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
         IronvellumColors.light = currentMode.value.isLight(systemDark())
     }
 
+    /** The notification accent for the theme in force right now (the stored mode against the phone's dark state). */
+    fun accent(): Int = notificationAccent(currentMode.value, systemDark(), current.value, currentLight.value)
+
     fun setMode(mode: ThemeMode) {
         prefs.edit { putString("theme", mode.name) }
         currentMode.value = mode
@@ -54,7 +58,7 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
     /** Saves the pair for the theme in force, leaving the other theme's pair as it was. */
     fun set(palette: AccentPalette) {
         val opaque = AccentPalette(palette.primary or 0xFF000000.toInt(), palette.secondary or 0xFF000000.toInt())
-        if (IronvellumColors.light) {
+        if (currentMode.value.isLight(systemDark())) {
             write("light_primary", "light_secondary", opaque)
             IronvellumColors.lightAccents = opaque
             currentLight.value = opaque

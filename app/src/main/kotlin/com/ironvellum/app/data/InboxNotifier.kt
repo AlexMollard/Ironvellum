@@ -153,7 +153,7 @@ object InboxNotifier {
         // phone; it gets only that something arrived.
         val public = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
+            .setColor(Notifications.accent(context))
             .setContentTitle(title)
             .setContentText(
                 if (fresh.size == 1) {
@@ -165,7 +165,7 @@ object InboxNotifier {
             .build()
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
+            .setColor(Notifications.accent(context))
             .setContentTitle(title)
             .setContentText(latest)
             .setStyle(NotificationCompat.BigTextStyle().bigText(latest))

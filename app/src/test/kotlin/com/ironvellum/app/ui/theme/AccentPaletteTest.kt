@@ -39,4 +39,14 @@ class AccentPaletteTest {
         assertEquals(0xFF1E252C.toInt(), sapphire.panelTint)
         assertEquals(0xFF314965.toInt(), sapphire.panelTintBorder)
     }
+    @Test fun `the notification accent follows the stored mode and the phone as it is now`() {
+        val dark = AccentPresets.entries[1].palette
+        val light = AccentPalette.LightDefault
+        val forest = light.lightAccent().fill
+        assertEquals(dark.primary, notificationAccent(ThemeMode.DARK, systemDark = false, dark, light))
+        assertEquals(forest, notificationAccent(ThemeMode.LIGHT, systemDark = true, dark, light))
+        // System: the phone flipping to dark while no activity lives moves the accent with it.
+        assertEquals(forest, notificationAccent(ThemeMode.SYSTEM, systemDark = false, dark, light))
+        assertEquals(dark.primary, notificationAccent(ThemeMode.SYSTEM, systemDark = true, dark, light))
+    }
 }
