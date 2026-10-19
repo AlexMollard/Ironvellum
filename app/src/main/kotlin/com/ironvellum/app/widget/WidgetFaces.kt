@@ -646,7 +646,7 @@ internal object WidgetFaces {
         val workouts = if (state.kind == DayKind.NO_CYCLE) {
             UiText.themedPlural(R.plurals.widget_totals_workouts_only, R.plurals.widget_totals_workouts_only__t, state.weekDone).str()
         } else {
-            UiText.themed(R.string.widget_totals_workouts, R.string.widget_totals_workouts__t, state.weekDone, state.weekPlanned).str()
+            UiText.themedPlural(R.plurals.widget_totals_workouts, R.plurals.widget_totals_workouts__t, state.weekPlanned, state.weekDone, state.weekPlanned).str()
         }
         text(R.id.t_workouts, bold(workouts, state.weekDone.toString()))
         text(R.id.t_sets, bold(sets(state.weekSets).str(), state.weekSets.toString()))

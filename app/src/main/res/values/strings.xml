@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Ironvellum</string>
     <string name="widget_today_label">Today</string>
     <string name="widget_today_description">Today\'s routine and a button to start it.</string>
@@ -476,8 +476,8 @@
     <string name="line_claim_help_cleared__t">You\'ve cleared this: claim it when you\'re ready. Claim only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
     <string name="line_claim_help_open">Marking as mastered is self-declared: the app never does it for you. Do it only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
     <string name="line_claim_help_open__t">Claiming is self-declared: the app never claims for you. Claim only once you can hit %1$s on demand. It awards %2$d XP and can be undone.</string>
-    <string name="line_master_all">Master all %1$d skills.</string>
-    <string name="line_master_all__t">Master all %1$d techniques. Every path is yours.</string>
+    <string tools:ignore="PluralsCandidate" name="line_master_all">Master all %1$d skills.</string>
+    <string tools:ignore="PluralsCandidate" name="line_master_all__t">Master all %1$d techniques. Every path is yours.</string>
     <string name="line_practise_skills">Practise skills on the Skills tab and log attempts in the practice log.</string>
     <string name="line_practise_skills__t">Practise techniques on Paths and log attempts in the Journal.</string>
     <string name="line_feed_stale">Could not refresh — this feed is from your last sync: %1$s</string>
@@ -684,10 +684,10 @@
     <plurals name="widget_week_workouts__t"><item quantity="one">%d trial this week</item><item quantity="other">%d trials this week</item></plurals>
     <!-- Under a day of the week strip with no routine. -->
     <string name="widget_week_rest">Rest</string>
-    <string name="widget_week_summary">This week: %1$d done, %2$d still to do</string>
+    <string tools:ignore="PluralsCandidate" name="widget_week_summary">This week: %1$d done, %2$d still to do</string>
     <!-- The week's totals line: workouts done of planned, sets, time. -->
-    <string name="widget_totals_workouts">%1$d of %2$d workouts</string>
-    <string name="widget_totals_workouts__t">%1$d of %2$d trials</string>
+    <plurals name="widget_totals_workouts"><item quantity="one">%1$d of %2$d workout</item><item quantity="other">%1$d of %2$d workouts</item></plurals>
+    <plurals name="widget_totals_workouts__t"><item quantity="one">%1$d of %2$d trial</item><item quantity="other">%1$d of %2$d trials</item></plurals>
     <plurals name="widget_totals_workouts_only"><item quantity="one">%d workout</item><item quantity="other">%d workouts</item></plurals>
     <plurals name="widget_totals_workouts_only__t"><item quantity="one">%d trial</item><item quantity="other">%d trials</item></plurals>
     <string name="widget_totals_time">%1$s this week</string>
@@ -774,8 +774,8 @@
     <plurals name="settings_import_csv_sessions"><item quantity="one">Imported %d workout</item><item quantity="other">Imported %d workouts</item></plurals>
     <plurals name="settings_import_csv_sessions__t"><item quantity="one">Imported %d trial</item><item quantity="other">Imported %d trials</item></plurals>
     <string name="settings_import_csv_xp">+%d XP</string>
-    <string name="settings_import_csv_skipped">%d already in your history</string>
-    <string name="settings_import_csv_skipped__t">%d already in your Chronicle</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_csv_skipped">%d already in your history</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_csv_skipped__t">%d already in your Chronicle</string>
     <!-- Restore result, joined with " · " in code: each phrase is whole. %d is a count. -->
     <plurals name="settings_archive_restored_routines"><item quantity="one">restored %d routine</item><item quantity="other">restored %d routines</item></plurals>
     <plurals name="settings_archive_restored_routines__t"><item quantity="one">restored %d rite</item><item quantity="other">restored %d rites</item></plurals>
@@ -866,7 +866,7 @@
     <string name="settings_appearance_pad_less_brightness">Decrease brightness</string>
     <string name="settings_appearance_hue_label">Hue</string>
     <!-- Accessibility state of the hue slider. %1$d is an angle in degrees. -->
-    <string name="settings_appearance_hue_state">%1$d degrees</string>
+    <string tools:ignore="PluralsCandidate" name="settings_appearance_hue_state">%1$d degrees</string>
     <!-- Settings > Data, automatic backup, Health Connect (phase 4) -->
     <string name="settings_backup_title">Automatic backup</string>
     <string name="settings_backup_weekly">Weekly</string>
@@ -1028,7 +1028,7 @@
     <string name="settings_import_unreadable">the file could not be read</string>
     <string name="settings_import_empty">That file was empty or could not be read. Nothing was changed.</string>
     <!-- %1$s is the first problem found in the archive, %2$d how many more there are. -->
-    <string name="settings_import_more_problems">%1$s (+%2$d more)</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_more_problems">%1$s (+%2$d more)</string>
     <string name="settings_import_not_archive">Import failed — the file may not be an Ironvellum archive</string>
     <!-- %1$s is the reason the sync failed. -->
     <string name="settings_health_sync_failed">Health Connect sync failed: %1$s</string>
@@ -1203,7 +1203,7 @@
     <string name="session_top_set_refused">This lift cannot take a top set.</string>
     <string name="session_drop_refused">A drop cannot be added here.</string>
     <!-- Undo bar after an action. %1$s is an exercise name (user data). -->
-    <string name="session_undo_set_logged">Set %1$d logged</string>
+    <string tools:ignore="PluralsCandidate" name="session_undo_set_logged">Set %1$d logged</string>
     <string name="session_undo_set_removed">Set removed</string>
     <string name="session_undo_exercise_removed">%1$s removed</string>
     <string name="session_undo_exercise_added">%1$s added at the end</string>
@@ -1549,7 +1549,7 @@
     <string name="victory_row_xp">XP</string>
     <string name="victory_row_quest">Today\'s workout</string>
     <string name="victory_row_quest__t">Today\'s trial</string>
-    <string name="victory_row_quest_bonus">+%1$d bonus</string>
+    <string tools:ignore="PluralsCandidate" name="victory_row_quest_bonus">+%1$d bonus</string>
     <string name="victory_row_rank_up">Strength Rank up</string>
     <!-- Caption on the XP page. %1$s is the workout title. -->
     <string name="victory_xp_caption">%1$s · finished</string>
@@ -1577,7 +1577,7 @@
     <string name="victory_peak_description">New %1$s PR, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s</string>
     <string name="victory_peak_description__t">New %1$s peak, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s</string>
     <string name="victory_peak_description_count">New %1$s PR, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s, %8$d PRs</string>
-    <string name="victory_peak_description_count__t">New %1$s peak, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s, %8$d peaks</string>
+    <string tools:ignore="PluralsCandidate" name="victory_peak_description_count__t">New %1$s peak, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s, %8$d peaks</string>
     <string name="victory_peak_no_xp">no XP</string>
     <plurals name="victory_peak_gain_reps"><item quantity="one">+%d rep</item><item quantity="other">+%d reps</item></plurals>
     <!-- Plates sheet: title of the plate calculator dialog. -->
@@ -1729,9 +1729,9 @@
     <string name="workoutdetail_figure_xp">XP</string>
     <string name="workoutdetail_figure_strength">STR</string>
     <!-- Calories readout under the header. %1$d is kilocalories. -->
-    <string name="workoutdetail_kcal_measured">%1$d kcal measured</string>
-    <string name="workoutdetail_kcal_estimated">about %1$d kcal</string>
-    <string name="workoutdetail_kcal_coarse">roughly %1$d kcal</string>
+    <string tools:ignore="PluralsCandidate" name="workoutdetail_kcal_measured">%1$d kcal measured</string>
+    <string tools:ignore="PluralsCandidate" name="workoutdetail_kcal_estimated">about %1$d kcal</string>
+    <string tools:ignore="PluralsCandidate" name="workoutdetail_kcal_coarse">roughly %1$d kcal</string>
     <string name="workoutdetail_kcal_basis_label">Show how this was worked out</string>
     <!-- %1$s is a body measurement the estimate lacks, e.g. "weight". -->
     <string name="workoutdetail_energy_missing">Add a %1$s measurement for a sharper estimate.</string>
@@ -1849,7 +1849,7 @@
     <string name="setssheet_line_reps_any">Stop with any number of reps left</string>
     <string name="setssheet_line_reps_or_more">Stop with %1$d or more reps left</string>
     <plurals name="setssheet_line_reps_left"><item quantity="one">Stop with %d rep left</item><item quantity="other">Stop with %d reps left</item></plurals>
-    <string name="setssheet_line_reps_range">Stop with %1$d–%2$d reps left</string>
+    <string tools:ignore="PluralsCandidate" name="setssheet_line_reps_range">Stop with %1$d–%2$d reps left</string>
     <string name="setssheet_line_rpe_any">Stop at any RPE</string>
     <string name="setssheet_line_rpe_or_lower">Stop around RPE %1$d or lower</string>
     <string name="setssheet_line_rpe_one">Stop around RPE %1$d</string>
@@ -1867,7 +1867,7 @@
     <string name="setssheet_repsup_higher_description">Higher %1$s range top</string>
     <!-- Custom scheme rows. %1$d is the set's place; %2$s the set type's name. -->
     <string name="setssheet_custom_row_description">Set %1$d, %2$s</string>
-    <string name="setssheet_custom_change_description">Change set %1$d type</string>
+    <string tools:ignore="PluralsCandidate" name="setssheet_custom_change_description">Change set %1$d type</string>
     <string name="setssheet_custom_set">Set %1$d</string>
     <string name="setssheet_custom_add_button">Add a set</string>
     <string name="setssheet_custom_remove_button">Remove last set</string>
@@ -2192,14 +2192,14 @@
     <string name="forge_rite_length_label">Routine length</string>
     <string name="forge_rite_length_label__t">Rite length</string>
     <!-- Kit step, More options row value. %1$s is the starting-sets level (Low, Standard, High), %2$d the most exercises in one routine. -->
-    <string name="forge_more_value">%1$s sets · %2$d per routine</string>
-    <string name="forge_more_value__t">%1$s sets · %2$d per rite</string>
-    <string name="forge_more_value_compound">Compound · %1$s sets · %2$d per routine</string>
-    <string name="forge_more_value_compound__t">Compound · %1$s sets · %2$d per rite</string>
+    <string tools:ignore="PluralsCandidate" name="forge_more_value">%1$s sets · %2$d per routine</string>
+    <string tools:ignore="PluralsCandidate" name="forge_more_value__t">%1$s sets · %2$d per rite</string>
+    <string tools:ignore="PluralsCandidate" name="forge_more_value_compound">Compound · %1$s sets · %2$d per routine</string>
+    <string tools:ignore="PluralsCandidate" name="forge_more_value_compound__t">Compound · %1$s sets · %2$d per rite</string>
     <string name="forge_more_description">More options: starting sets, compound only, exercises per routine</string>
     <string name="forge_more_description__t">More options: starting sets, compound only, exercises per rite</string>
     <!-- Focus step. %d is how many muscle areas are picked. -->
-    <string name="forge_priorities_label">Priorities · up to 3 · %d picked</string>
+    <string tools:ignore="PluralsCandidate" name="forge_priorities_label">Priorities · up to 3 · %d picked</string>
     <string name="forge_priorities_caption">Priorities get an extra hard set or two each week. Skip this and every muscle is treated the same.</string>
     <string name="forge_starting_sets_label">Starting sets</string>
     <string name="forge_compound_label">Compound &amp; skill only</string>
@@ -2346,10 +2346,10 @@
     <string name="builder_goal_strength_caption">Low reps, heavy load. Bigger numbers on the main exercises.</string>
     <string name="builder_goal_muscle_caption">Higher volume, moderate load. Size comes before bragging rights.</string>
     <!-- More options row value on the builder page. %1$d is the minutes, %2$d the most exercises in one routine. -->
-    <string name="builder_more_value">%1$d min · %2$d per routine</string>
-    <string name="builder_more_value__t">%1$d min · %2$d per rite</string>
-    <string name="builder_more_value_compound">Compound · %1$d min · %2$d per routine</string>
-    <string name="builder_more_value_compound__t">Compound · %1$d min · %2$d per rite</string>
+    <string tools:ignore="PluralsCandidate" name="builder_more_value">%1$d min · %2$d per routine</string>
+    <string tools:ignore="PluralsCandidate" name="builder_more_value__t">%1$d min · %2$d per rite</string>
+    <string tools:ignore="PluralsCandidate" name="builder_more_value_compound">Compound · %1$d min · %2$d per routine</string>
+    <string tools:ignore="PluralsCandidate" name="builder_more_value_compound__t">Compound · %1$d min · %2$d per rite</string>
     <string name="builder_more_description">Routine length, compound only and exercises per routine</string>
     <string name="builder_more_description__t">Rite length, compound only and exercises per rite</string>
     <string name="builder_priorities_label">Priorities · up to 3</string>
@@ -2544,12 +2544,12 @@
     <!-- Effort words: the rep window of a movement. %d is the rep count when the window is a single number. -->
     <plurals name="effort_rep_guide_single"><item quantity="one">~%d rep</item><item quantity="other">~%d reps</item></plurals>
     <!-- Effort words: the rep window of a movement. %1$d is the low end, %2$d the high end. -->
-    <string name="effort_rep_guide_range">~%1$d–%2$d reps</string>
+    <string tools:ignore="PluralsCandidate" name="effort_rep_guide_range">~%1$d–%2$d reps</string>
     <!-- Effort editor: under the set stepper. %1$s is the suggested sets, one number or a range ("2" or "2-3"). -->
     <string name="effort_suggested_sets">Suggested %1$s. Set it to whatever you will do.</string>
     <!-- Effort editor: shown when a movement sits at the heaviest dumbbell. %1$s is that weight with its unit, %2$d the top of the rep window. -->
-    <string name="effort_dumbbell_note">%1$s is the heaviest dumbbell in your equipment. When %2$d reps get easy, add reps or a set instead.</string>
-    <string name="effort_dumbbell_note__t">%1$s is the heaviest dumbbell in your armoury. When %2$d reps get easy, add reps or a set instead.</string>
+    <string tools:ignore="PluralsCandidate" name="effort_dumbbell_note">%1$s is the heaviest dumbbell in your equipment. When %2$d reps get easy, add reps or a set instead.</string>
+    <string tools:ignore="PluralsCandidate" name="effort_dumbbell_note__t">%1$s is the heaviest dumbbell in your armoury. When %2$d reps get easy, add reps or a set instead.</string>
     <!-- Starting-sets question caption. %1$s is the set range for big lifts, %2$s for single-joint work ("2-3" or "2"). -->
     <string name="effort_starting_sets_low">Big lifts start at %1$s hard sets, single-joint work at %2$s. Enough for a first year.</string>
     <string name="effort_starting_sets_standard">Big lifts start at %1$s hard sets, single-joint work at %2$s. After a year or so of training.</string>
@@ -2619,7 +2619,7 @@
     <string name="optimise_overlap_remove_option">Remove %1$s</string>
     <string name="optimise_overlap_remove_reason">The other one covers the work</string>
     <!-- Optimise: two hard days of one muscle too close together. %1$s is the muscle, %2$s and %3$s are short weekday names, %4$d the hours between, %5$d the hours that lets it recover. -->
-    <string name="optimise_tight_line">%1$s is hit hard on %2$s and %3$s, %4$d hours apart. %5$d hours or more lets it recover.</string>
+    <string tools:ignore="PluralsCandidate" name="optimise_tight_line">%1$s is hit hard on %2$s and %3$s, %4$d hours apart. %5$d hours or more lets it recover.</string>
     <string name="optimise_spread_option">Spread the days</string>
     <string name="optimise_spread_reason">Spaces your days for recovery</string>
     <!-- Optimise: a routine a new movement could go into. %1$s is how many movements it holds ("5 movements"), %2$d its length in minutes. -->
@@ -2775,7 +2775,7 @@
     <!-- Applied page. -->
     <string name="optimise_applied_status">Applied</string>
     <plurals name="optimise_applied_count"><item quantity="one">%d change applied</item><item quantity="other">%d changes applied</item></plurals>
-    <string name="optimise_applied_skipped">%1$d skipped, left as it was.</string>
+    <string tools:ignore="PluralsCandidate" name="optimise_applied_skipped">%1$d skipped, left as it was.</string>
     <!-- %1$s is the routine's name. -->
     <string name="optimise_applied_undo_named">Undo, put %1$s back</string>
     <string name="optimise_applied_undo_all">Undo, put the routines back</string>
@@ -2846,12 +2846,12 @@
     <string name="coverage_exercise_hide_hint">Hide muscles for %1$s</string>
     <string name="coverage_exercise_show_hint">Show muscles for %1$s</string>
     <!-- Muscle coverage: the one-line summary, parts joined by a middle dot. %d is a count of muscles. -->
-    <string name="coverage_headline_heavy">%d heavy</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_headline_heavy">%d heavy</string>
     <plurals name="coverage_headline_gaps">
         <item quantity="one">%d muscle needs more sets</item>
         <item quantity="other">%d muscles need more sets</item>
     </plurals>
-    <string name="coverage_reason">About %d hard sets a week per muscle is a sound floor.</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_reason">About %d hard sets a week per muscle is a sound floor.</string>
     <!-- Muscle coverage: a muscle's weekly hard sets. %1$s is the number as written ("1", "3.5"); the count only picks one or other. -->
     <plurals name="coverage_hard_sets">
         <item quantity="one">%1$s hard set</item>
@@ -2864,9 +2864,9 @@
     <!-- Two facts joined by a middle dot, e.g. "Hamstrings · 6 hard sets this week". -->
     <string name="muscles_joined_pair">%1$s · %2$s</string>
     <!-- Muscle coverage, heavy muscle note. %d is the weekly (first) or per-routine (second) set threshold. -->
-    <string name="coverage_heavy_reason_week">Past about %d sets a week, each extra set adds less. A hint about recovery, not a limit.</string>
-    <string name="coverage_heavy_reason_session">More than %d hard sets in one routine is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
-    <string name="coverage_heavy_reason_session__t">More than %d hard sets in one rite is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_heavy_reason_week">Past about %d sets a week, each extra set adds less. A hint about recovery, not a limit.</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_heavy_reason_session">More than %d hard sets in one routine is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_heavy_reason_session__t">More than %d hard sets in one rite is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
     <!-- Muscle coverage legend: the range under a state. %d is the weekly hard-set floor. -->
     <string name="coverage_legend_under">under %d</string>
     <!-- Muscle coverage legend: spoken form. %1$s is a state, %2$s a range such as "under 4" or "20+". -->
@@ -2892,7 +2892,7 @@
     <string name="coverage_explainer_more_lead">More sets help a bit.</string>
     <string name="coverage_explainer_more_rest">Each extra set adds less than the one before.</string>
     <!-- Muscle coverage explainer, third point: a bold lead, then the rest on the next line. %d is the weekly hard-set floor. -->
-    <string name="coverage_explainer_floor_lead">About %d hard sets a week</string>
+    <string tools:ignore="PluralsCandidate" name="coverage_explainer_floor_lead">About %d hard sets a week</string>
     <string name="coverage_explainer_floor_rest">per muscle is a sound floor. Do more if you like.</string>
     <string name="coverage_explainer_hint">Below minimum is a hint, never a block. Save any weekly plan you want.</string>
     <string name="coverage_explainer_hint__t">Below minimum is a hint, never a block. Save any cycle you want.</string>
@@ -2936,5 +2936,5 @@
     <string name="bodymap_summary_heavy">%1$s heavy</string>
     <string name="bodymap_summary_not_trained">%1$s not trained</string>
     <string name="bodymap_summary_below">%1$s below minimum</string>
-    <string name="bodymap_summary_covered">%d covered</string>
+    <string tools:ignore="PluralsCandidate" name="bodymap_summary_covered">%d covered</string>
 </resources>
