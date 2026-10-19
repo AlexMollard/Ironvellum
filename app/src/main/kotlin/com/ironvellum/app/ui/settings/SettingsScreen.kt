@@ -17,17 +17,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.R
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsValueRow
-import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -75,70 +80,84 @@ fun SettingsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(8.dp))
-        PushedHeader("SETTINGS", onBack)
+        PushedHeader(stringResource(R.string.settings_hub_title), onBack)
 
-        SettingsGroup("YOU", topSpace = 4.dp, rows = true) {
+        SettingsGroup(stringResource(R.string.settings_hub_group_you), topSpace = 4.dp, rows = true) {
             SettingsValueRow(
-                "Profile",
+                stringResource(R.string.settings_hub_profile_label),
                 // A name or height refused on leaving Profile must not pass silently.
                 if (renameError != null) {
-                    "Name not saved"
+                    stringResource(R.string.settings_hub_profile_name_not_saved)
                 } else if (heightStatus.error != null) {
-                    "Height not saved"
+                    stringResource(R.string.settings_hub_profile_height_not_saved)
                 } else {
                     SettingsSummaries.profile(profile?.name, bodyProfile.first, bodyProfile.second.takeUnless { sexUnset })
                 },
             ) { onOpenSection(SettingsSection.PROFILE) }
-            SettingsValueRow("Account", if (signedIn) "Signed in" else "Not signed in") {
+            SettingsValueRow(
+                stringResource(R.string.settings_hub_account_label),
+                stringResource(if (signedIn) R.string.settings_hub_account_signed_in else R.string.settings_hub_account_signed_out),
+            ) {
                 // Signed out there is no account screen yet: sign-in lives on Allies.
                 if (signedIn) onOpenAccount() else onOpenSignIn()
             }
         }
 
-        SettingsGroup("TRAINING", topSpace = 10.dp, rows = true) {
-            SettingsValueRow("Training mode", (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
+        SettingsGroup(stringResource(R.string.settings_hub_group_training), topSpace = 10.dp, rows = true) {
+            SettingsValueRow(stringResource(R.string.settings_hub_training_mode_label), (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
             }
-            SettingsValueRow("During ${Words.trial.a}", SettingsSummaries.trial(trialPrefs.restOff, trialPrefs.restAlert)) {
+            SettingsValueRow(
+                UiText.themed(R.string.settings_hub_during_trial_label, R.string.settings_hub_during_trial_label__t).asString(),
+                SettingsSummaries.trial(trialPrefs.restOff, trialPrefs.restAlert),
+            ) {
                 onOpenSection(SettingsSection.DURING_TRIAL)
             }
             SettingsValueRow(Words.armoury.c, SettingsSummaries.armoury(savedGear)) {
                 onOpenSection(SettingsSection.ARMOURY)
             }
-            SettingsValueRow(Words.theSummons.c, if (summonsOn) "On" else "Off") {
+            SettingsValueRow(Words.theSummons.c, stringResource(if (summonsOn) R.string.common_on else R.string.common_off)) {
                 onOpenSection(SettingsSection.SUMMONS)
             }
         }
 
-        SettingsGroup("APP", topSpace = 10.dp, rows = true) {
-            SettingsValueRow("Appearance", AccentPresets.forTheme(IronvellumColors.light).firstOrNull { it.palette == appearance }?.name ?: "Custom colours") {
+        SettingsGroup(stringResource(R.string.settings_hub_group_app), topSpace = 10.dp, rows = true) {
+            SettingsValueRow(
+                stringResource(R.string.settings_hub_appearance_label),
+                AccentPresets.forTheme(IronvellumColors.light).firstOrNull { it.palette == appearance }?.name
+                    ?: stringResource(R.string.settings_hub_appearance_custom),
+            ) {
                 onOpenSection(SettingsSection.APPEARANCE)
             }
-            SettingsValueRow("Health Connect", SettingsSummaries.health(healthLink, healthDays.size)) {
+            SettingsValueRow(stringResource(R.string.settings_hub_health_connect_label), SettingsSummaries.health(healthLink, healthDays.size)) {
                 onOpenSection(SettingsSection.HEALTH_CONNECT)
             }
-            SettingsValueRow("Data", "Export, import") { onOpenSection(SettingsSection.DATA) }
+            SettingsValueRow(stringResource(R.string.settings_hub_data_label), stringResource(R.string.settings_hub_data_summary)) { onOpenSection(SettingsSection.DATA) }
         }
 
-        SettingsGroup("About", topSpace = 10.dp, rows = true) {
+        SettingsGroup(stringResource(R.string.settings_hub_group_about), topSpace = 10.dp, rows = true) {
             SettingsValueRow(
-                "Advanced",
+                stringResource(R.string.settings_hub_advanced_label),
                 if (crashCount > 0) {
-                    "$crashCount ${if (crashCount == 1) "crash" else "crashes"} logged"
+                    pluralStringResource(R.plurals.settings_hub_advanced_crashes, crashCount, crashCount)
                 } else {
                     when (cloudConfig?.isDefault) {
-                        null -> "No cloud"
-                        true -> "Shared cloud"
-                        false -> "Own backend"
+                        null -> stringResource(R.string.settings_hub_cloud_none)
+                        true -> stringResource(R.string.settings_hub_cloud_shared)
+                        false -> stringResource(R.string.settings_hub_cloud_own)
                     }
                 },
             ) { onOpenSection(SettingsSection.ADVANCED) }
-            SettingsValueRow(if (BuildConfig.SUPPORT_LINKS) "Support Ironvellum" else "About Ironvellum", null, onOpenSupport)
+            SettingsValueRow(
+                stringResource(if (BuildConfig.SUPPORT_LINKS) R.string.settings_hub_support_label else R.string.settings_hub_about_label),
+                null,
+                onOpenSupport,
+            )
         }
 
         Spacer(Modifier.height(10.dp))
         Text(
-            "Your ${Words.reading.pl} stay on this device.",
+            UiText.themed(R.string.settings_hub_privacy_note, R.string.settings_hub_privacy_note__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),

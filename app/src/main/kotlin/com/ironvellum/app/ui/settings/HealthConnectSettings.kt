@@ -15,14 +15,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.HealthWriteBack
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SettingsCaption
@@ -32,7 +37,6 @@ import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.domain.fmt
 import kotlinx.coroutines.launch
 
 /**
@@ -72,13 +76,13 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
 
     SettingsPage(SettingsSection.HEALTH_CONNECT.title, onBack) {
         SettingsGroup(null, topSpace = 12.dp) {
-            SettingsCaption("Reads body, activity and sleep data. Writes only what you turn on below.")
+            SettingsCaption(stringResource(R.string.settings_health_intro))
             Spacer(Modifier.height(10.dp))
             if (sync.syncing) {
                 InkSpinner()
             } else {
                 IronvellumButton(
-                    label = "Connect & Sync",
+                    label = stringResource(R.string.settings_health_connect_button),
                     onClick = {
                         if (sync.available) {
                             permissionLauncher.launch(healthPermissionRequest(context))
@@ -93,21 +97,35 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
                 Spacer(Modifier.height(8.dp))
                 Reading(
                     buildString {
-                        append("${snapshot.stepsToday} steps today")
                         // Samsung Health batches its pushes: without the "as of"
                         // the count just looks wrong against the phone's tally.
-                        snapshot.stepsAsOfMs?.let { append(" (as of ${formatDate(it, "HH:mm")})") }
-                        snapshot.weightKg?.let { append(" · ${formatBodyValue(it)} kg") }
-                        snapshot.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
+                        val steps = snapshot.stepsToday.toInt()
+                        val asOf = snapshot.stepsAsOfMs
+                        append(
+                            if (asOf == null) {
+                                pluralStringResource(R.plurals.settings_health_steps_today, steps, snapshot.stepsToday)
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.settings_health_steps_today_as_of,
+                                    steps,
+                                    snapshot.stepsToday,
+                                    formatDate(asOf, "HH:mm"),
+                                )
+                            },
+                        )
+                        snapshot.weightKg?.let { append(" · " + stringResource(R.string.settings_health_weight, formatBodyValue(it))) }
+                        snapshot.bodyFatPct?.let { append(" · " + stringResource(R.string.settings_health_body_fat, formatBodyValue(it))) }
                     },
                 )
             }
             if (healthDays.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Reading(
-                    "${healthDays.size} days synced · " +
-                        "${"%,d".fmt(healthDays.sumOf { it.steps })} steps · " +
-                        "${"%.0f".fmt(healthDays.sumOf { it.distanceKm })} km",
+                    listOf(
+                        pluralStringResource(R.plurals.settings_health_days_synced, healthDays.size, healthDays.size),
+                        stringResource(R.string.settings_health_steps_total, "%,d".fmt(healthDays.sumOf { it.steps })),
+                        stringResource(R.string.settings_health_distance_total, "%.0f".fmt(healthDays.sumOf { it.distanceKm })),
+                    ).joinToString(" · "),
                 )
             }
             sync.message?.let {
@@ -121,9 +139,8 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
         }
         SettingsGroup(null, topSpace = 10.dp) {
             SettingsSwitchRow(
-                label = "Save ${Words.sealed.s} ${Words.trial.pl} to Health Connect",
-                caption = "${Words.sealed.c} ${Words.trial.pl} are written once, as strength training: start, end, " +
-                    "name and public note. Imported ones never are. Turning this off keeps what is already there.",
+                label = UiText.themed(R.string.settings_health_save_label, R.string.settings_health_save_label__t).asString(),
+                caption = UiText.themed(R.string.settings_health_save_caption, R.string.settings_health_save_caption__t).asString(),
                 checked = status == WriteStatus.ON,
                 onCheckedChange = { on ->
                     refused = false
@@ -138,30 +155,30 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
             )
             if (missing) {
                 Spacer(Modifier.height(4.dp))
-                SettingsCaption("Health Connect is not available on this device.", IronvellumColors.Caution)
+                SettingsCaption(stringResource(R.string.settings_health_unavailable), IronvellumColors.Caution)
             }
             if (refused) {
                 Spacer(Modifier.height(4.dp))
                 SettingsCaption(
-                    "Health Connect did not allow saving. You can allow it in Health Connect under App permissions.",
+                    stringResource(R.string.settings_health_refused),
                     IronvellumColors.Caution,
                 )
             }
             if (status == WriteStatus.REVOKED) {
                 Spacer(Modifier.height(4.dp))
                 SettingsCaption(
-                    "Health Connect's permission to save was removed, so nothing is being saved. Turn this on to allow it again.",
+                    stringResource(R.string.settings_health_revoked),
                     IronvellumColors.Caution,
                 )
             }
             if (status != WriteStatus.OFF) {
                 write.lastError?.let {
                     Spacer(Modifier.height(4.dp))
-                    SettingsCaption("Last save failed: $it", IronvellumColors.Caution)
+                    SettingsCaption(stringResource(R.string.settings_health_last_failed, it), IronvellumColors.Caution)
                 }
                 if (write.lastError == null) write.lastOkMs?.let {
                     Spacer(Modifier.height(4.dp))
-                    SettingsCaption("Last saved ${formatDate(it, "d MMM, HH:mm")}")
+                    SettingsCaption(stringResource(R.string.settings_health_last_saved, formatDate(it, "d MMM, HH:mm")))
                 }
             }
         }

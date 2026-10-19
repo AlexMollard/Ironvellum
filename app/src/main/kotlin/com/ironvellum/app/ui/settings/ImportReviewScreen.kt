@@ -1,15 +1,6 @@
 package com.ironvellum.app.ui.settings
 
 import androidx.activity.compose.BackHandler
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.PushedHeader
-import com.ironvellum.app.ui.components.DockedActionBar
-import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkRowPanel
-import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.TapRow
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,12 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.heightIn
-import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.ui.components.ExercisePickerSheet
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,13 +23,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.CsvWorkoutReader
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.DockedActionBar
+import com.ironvellum.app.ui.components.ExercisePickerSheet
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkSpinner
+import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -105,19 +108,22 @@ fun ImportReviewOverlay(
                 .verticalScroll(rememberScrollState()),
         ) {
             Spacer(Modifier.height(8.dp))
-            PushedHeader("Import from another app", onBack = onDismiss)
+            PushedHeader(stringResource(R.string.settings_data_import_label), onBack = onDismiss)
             Spacer(Modifier.height(4.dp))
 
             val range = ui.parsed.dateRange
             Text(
-                buildString {
-                    append("$trials ${plural(trials, Words.trial.s, Words.trial.pl)}")
-                    append(" · ${ui.parsed.totalSets} ${plural(ui.parsed.totalSets, "set", "sets")}")
-                    if (range != null) {
-                        append(" · from ${formatDate(range.second, "d MMM yyyy")}")
-                        append(" to ${formatDate(range.first, "d MMM yyyy")}")
-                    }
-                },
+                listOfNotNull(
+                    UiText.themedPlural(R.plurals.settings_import_review_sessions, R.plurals.settings_import_review_sessions__t, trials).asString(),
+                    pluralStringResource(R.plurals.common_sets_count, ui.parsed.totalSets, ui.parsed.totalSets),
+                    range?.let {
+                        stringResource(
+                            R.string.settings_import_review_range,
+                            formatDate(it.second, "d MMM yyyy"),
+                            formatDate(it.first, "d MMM yyyy"),
+                        )
+                    },
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -131,7 +137,7 @@ fun ImportReviewOverlay(
             // as an estimate — never a silent guess.
             if (ui.source == CsvWorkoutReader.Source.STRONG) {
                 Spacer(Modifier.height(18.dp))
-                Text("Weight unit", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.settings_import_review_unit_label), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 Spacer(Modifier.height(6.dp))
                 InkSegmented<CsvWorkoutReader.WeightUnit>(
                     options = listOf(
@@ -144,19 +150,19 @@ fun ImportReviewOverlay(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     if (ui.unitGuessed) {
-                        "Estimated ${ui.selectedUnit?.name?.lowercase()} from your barbell numbers. Check a familiar exercise before importing."
+                        stringResource(R.string.settings_import_review_unit_estimated, ui.selectedUnit?.name?.lowercase().orEmpty())
                     } else {
-                        "Strong exports carry no unit column, so choose."
+                        stringResource(R.string.settings_import_review_unit_choose)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
 
-            SectionHeader("Exercises we could not match", topPadding = 22.dp)
+            SectionHeader(stringResource(R.string.settings_import_review_unmatched_title), topPadding = 22.dp)
             if (ui.unmatched.isEmpty()) {
                 Text(
-                    "Every exercise matched the catalogue.",
+                    stringResource(R.string.settings_import_review_all_matched),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -180,8 +186,7 @@ fun ImportReviewOverlay(
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                "Nothing here replaces your ${Words.chronicle.t}. ${Words.trial.cpl} already in the app are skipped; " +
-                    "imported ${Words.trial.pl} stay on this device and out of the ${Words.tidings.t}.",
+                UiText.themed(R.string.settings_import_review_note, R.string.settings_import_review_note__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -193,9 +198,9 @@ fun ImportReviewOverlay(
         }
         DockedActionBar(
             primary = when {
-                ui.importing -> "Importing"
-                ui.result != null -> "Done"
-                else -> "Import $trials ${plural(trials, Words.trial.s, Words.trial.pl)}"
+                ui.importing -> stringResource(R.string.settings_import_review_importing)
+                ui.result != null -> stringResource(R.string.common_done)
+                else -> UiText.themedPlural(R.plurals.settings_import_review_button, R.plurals.settings_import_review_button__t, trials).asString()
             },
             onPrimary = if (ui.result == null) onImport else onDismiss,
             primaryEnabled = !ui.importing && (ui.result != null || trials > 0),
@@ -212,8 +217,12 @@ private fun UnmatchedRow(
     onPick: (String, String?) -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
-    val action = if (chosen == null) "Choose" else "Change"
-    TapRow(onClickLabel = "$action match for ${name.rawName}", onClick = { picking = true }) {
+    val action = stringResource(if (chosen == null) R.string.settings_import_review_choose else R.string.settings_import_review_change)
+    val actionLabel = stringResource(
+        if (chosen == null) R.string.settings_import_review_choose_label else R.string.settings_import_review_change_label,
+        name.rawName,
+    )
+    TapRow(onClickLabel = actionLabel, onClick = { picking = true }) {
         Column(Modifier.weight(1f)) {
             Text(
                 name.rawName,
@@ -223,7 +232,11 @@ private fun UnmatchedRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                if (chosen == null) "keep as new exercise · measured in ${name.inferredMetric.lowercase()}" else "maps to $chosen",
+                if (chosen == null) {
+                    stringResource(R.string.settings_import_review_keep_new_measured, name.inferredMetric.lowercase())
+                } else {
+                    stringResource(R.string.settings_import_review_maps_to, chosen)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -238,7 +251,7 @@ private fun UnmatchedRow(
     if (picking) {
         ExercisePickerSheet(
             exercises = exercises,
-            title = "Match exercise",
+            title = stringResource(R.string.settings_import_review_match_title),
             // Old history is often gym work the saved gear cannot do; the
             // chip is still there, but the mapping starts unfiltered.
             defaultMyGear = false,
@@ -261,12 +274,12 @@ private fun UnmatchedRow(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            "Keep as new exercise",
+                            stringResource(R.string.settings_import_review_keep_new),
                             style = MaterialTheme.typography.bodyMedium,
                             color = IronvellumColors.SystemGreen,
                         )
                         Text(
-                            "measured in ${name.inferredMetric.lowercase()}",
+                            stringResource(R.string.settings_import_review_measured_in, name.inferredMetric.lowercase()),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )

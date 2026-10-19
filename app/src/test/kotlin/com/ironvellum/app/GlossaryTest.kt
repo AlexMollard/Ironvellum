@@ -149,6 +149,8 @@ class GlossaryTest {
         "line_no_veil_echoes" to "the Veil is the reward layer, themed in both modes",
         "line_welcome_tagline" to "the Veil is the reward layer, themed in both modes",
         "summons_notification_streak_next" to "a deed is the reward layer, themed in both modes",
+        "settings_archive_restored_deeds" to "a deed is the reward layer, themed in both modes",
+        "settings_data_restore_confirm_text" to "names the deeds a restore replaces; a deed is the reward layer, themed in both modes",
     )
 
     /**

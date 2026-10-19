@@ -8,18 +8,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,10 +33,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,7 +45,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.ListRow
@@ -153,7 +155,7 @@ internal fun WelcomeScreen(
             ) {
                 LauncherMark()
                 Text(
-                    "Ironvellum",
+                    stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = IronvellumColors.Ink,
@@ -168,7 +170,7 @@ internal fun WelcomeScreen(
                     modifier = Modifier.padding(top = 10.dp).widthIn(max = 300.dp),
                 )
                 Text(
-                    "Three short steps: who you are, how you train, and the ${Words.cycle.s} built for you.",
+                    UiText.themed(R.string.onboarding_welcome_steps, R.string.onboarding_welcome_steps__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -179,23 +181,23 @@ internal fun WelcomeScreen(
             // The two ways in that are not a fresh start.
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 40.dp, bottom = 12.dp)) {
             Text(
-                "Already train somewhere?",
+                stringResource(R.string.onboarding_welcome_already_title),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 2.dp, bottom = 4.dp),
             )
             InkDivider()
             ListRow(
-                "I have a backup",
-                subline = "Restore an Ironvellum archive from a file",
-                onClickLabel = "Restore a backup from a file",
+                stringResource(R.string.onboarding_welcome_backup_label),
+                subline = stringResource(R.string.onboarding_welcome_backup_caption),
+                onClickLabel = stringResource(R.string.onboarding_welcome_backup_action),
                 onClick = { archivePicker.launch(ARCHIVE_MIME_TYPES) },
             )
             InkDivider()
             ListRow(
-                "Import from Strong, Hevy or FitNotes",
-                subline = "Adds your ${Words.trial.pl} from a CSV export. You still set up next.",
-                onClickLabel = "Import ${Words.trial.pl} from a CSV file",
+                stringResource(R.string.onboarding_welcome_import_label),
+                subline = UiText.themed(R.string.onboarding_welcome_import_caption, R.string.onboarding_welcome_import_caption__t).asString(),
+                onClickLabel = UiText.themed(R.string.onboarding_welcome_import_action, R.string.onboarding_welcome_import_action__t).asString(),
                 onClick = { csvPicker.launch(CSV_MIME_TYPES) },
             )
             InkDivider()
@@ -212,7 +214,7 @@ internal fun WelcomeScreen(
             }
         }
 
-        DockedActionBar(primary = "Begin", onPrimary = onBegin, reserveLink = false)
+        DockedActionBar(primary = stringResource(R.string.onboarding_welcome_begin_button), onPrimary = onBegin, reserveLink = false)
     }
 }
 
@@ -223,6 +225,7 @@ internal fun WelcomeScreen(
 @Composable
 private fun LauncherMark() {
     val shape = MaterialTheme.shapes.large
+    val appName = stringResource(R.string.app_name)
     Box(
         Modifier
             .size(136.dp)
@@ -230,7 +233,7 @@ private fun LauncherMark() {
             // The launcher mark is light line art baked into the icon, so it keeps its dark plate on Vellum too.
             .background(com.ironvellum.app.ui.theme.DarkPaper.Abyss)
             .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-            .semantics { contentDescription = "Ironvellum" },
+            .semantics { contentDescription = appName },
     ) {
         Image(
             painter = painterResource(R.mipmap.ic_launcher_foreground),

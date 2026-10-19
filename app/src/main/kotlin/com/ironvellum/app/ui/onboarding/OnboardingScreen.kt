@@ -1,7 +1,10 @@
 package com.ironvellum.app.ui.onboarding
 
+import androidx.annotation.StringRes
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,104 +28,107 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
+import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Seed
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.BodyLimits
+import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.Effort
+import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FirstRun
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
-import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRequest
 import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
-import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.decimalKeyboard
+import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.program.CoverageChip
 import com.ironvellum.app.ui.program.CoveragePreviewScreen
-import com.ironvellum.app.ui.program.coverageTally
-import com.ironvellum.app.ui.program.startingSetsCaption
-import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
+import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.PickCell
 import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.program.SourcesPanel
-import com.ironvellum.app.ui.program.planTexts
-import com.ironvellum.app.ui.program.planNotes
 import com.ironvellum.app.ui.program.SplitPicker
 import com.ironvellum.app.ui.program.alignProgressionMode
+import com.ironvellum.app.ui.program.coverageTally
+import com.ironvellum.app.ui.program.planNotes
+import com.ironvellum.app.ui.program.planTexts
+import com.ironvellum.app.ui.program.splitCaption
+import com.ironvellum.app.ui.program.startingSetsCaption
 import com.ironvellum.app.ui.program.withEntryEdited
 import com.ironvellum.app.ui.program.withEntryRemoved
 import com.ironvellum.app.ui.program.withRepsDelta
 import com.ironvellum.app.ui.program.withSetsDelta
-import com.ironvellum.app.ui.program.splitCaption
 import com.ironvellum.app.ui.settings.SettingsConfirmDialog
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import android.content.Context
-import androidx.core.content.edit
-import com.ironvellum.app.data.EffortSetting
-import com.ironvellum.app.data.Units
-import com.ironvellum.app.domain.Effort
-import com.ironvellum.app.domain.EffortScale
-import com.ironvellum.app.domain.Loads
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -296,7 +301,8 @@ class OnboardingViewModel(
                     // The step advances only on this: on a refusal she stays, with the reason on screen.
                     onSuccess = { _profileSaved.value = true },
                     onFailure = {
-                        _applyError.value = "Could not save your details" + (it.message?.let { m -> ": $m" } ?: "")
+                        _applyError.value = it.message?.let { m -> say(R.string.onboarding_save_failed_with, m) }
+                            ?: say(R.string.onboarding_save_failed)
                     },
                 )
             } finally {
@@ -366,7 +372,7 @@ class OnboardingViewModel(
                     planKey = null
                     _plan.value = null
                     _isStarter.value = false
-                    _applyError.value = "${Words.theForge.c} failed: ${it.message}"
+                    _applyError.value = sayThemed(R.string.onboarding_plan_failed, R.string.onboarding_plan_failed__t, it.message.orEmpty())
                 },
             )
         }
@@ -416,7 +422,7 @@ class OnboardingViewModel(
     ) {
         val plan = _plan.value ?: return
         if (!plan.isTakeable()) {
-            _applyError.value = "This ${Words.cycle.s} has no exercises. Rebuild it from your answers first. Nothing was written."
+            _applyError.value = sayThemed(R.string.onboarding_plan_empty, R.string.onboarding_plan_empty__t)
             return
         }
         // One accept at a time: a second tap would replace the cycle the first one just wrote.
@@ -430,8 +436,9 @@ class OnboardingViewModel(
                     if (starter) repo.applyStarterTemplate() else repo.applyRoutine(plan)
                 }
                 if (written.isFailure) {
-                    _applyError.value = "Could not save the ${Words.cycle.s}" +
-                        (written.exceptionOrNull()?.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
+                    _applyError.value = written.exceptionOrNull()?.message?.let { m ->
+                        sayThemed(R.string.onboarding_cycle_save_failed_with, R.string.onboarding_cycle_save_failed_with__t, m)
+                    } ?: sayThemed(R.string.onboarding_cycle_save_failed, R.string.onboarding_cycle_save_failed__t)
                     return@launch
                 }
                 // The cycle is in. What follows is bookkeeping; if it fails the cycle still stands, and the
@@ -447,8 +454,8 @@ class OnboardingViewModel(
                     }
                 }
                 _applyError.value = bookkeeping.exceptionOrNull()?.let {
-                    "Your ${Words.cycle.s} was saved, but your goal could not be remembered" +
-                        (it.message?.let { m -> ": $m" } ?: "")
+                    it.message?.let { m -> sayThemed(R.string.onboarding_goal_not_saved_with, R.string.onboarding_goal_not_saved_with__t, m) }
+                        ?: sayThemed(R.string.onboarding_goal_not_saved, R.string.onboarding_goal_not_saved__t)
                 }
                 _dismissed.value = true
                 prefs.edit { putBoolean(KEY_DISMISSED, true) }
@@ -475,7 +482,11 @@ class OnboardingViewModel(
 private fun joinHuman(items: List<String>): String = when (items.size) {
     0 -> ""
     1 -> items[0]
-    else -> items.dropLast(1).joinToString(", ") + " and " + items.last()
+    else -> say(
+        R.string.onboarding_list_last,
+        items.dropLast(1).reduce { head, next -> say(R.string.onboarding_list_join, head, next) },
+        items.last(),
+    )
 }
 
 /**
@@ -484,10 +495,10 @@ private fun joinHuman(items: List<String>): String = when (items.size) {
  */
 internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weight: BodyLimits.Reading, sexMissing: Boolean = false): String? {
     val missing = buildList {
-        if (nameMissing) add("a name")
-        if (height == BodyLimits.Reading.EMPTY) add("height")
-        if (weight == BodyLimits.Reading.EMPTY) add("weight")
-        if (sexMissing) add("sex")
+        if (nameMissing) add(say(R.string.onboarding_missing_name))
+        if (height == BodyLimits.Reading.EMPTY) add(say(R.string.onboarding_missing_height))
+        if (weight == BodyLimits.Reading.EMPTY) add(say(R.string.onboarding_missing_weight))
+        if (sexMissing) add(say(R.string.onboarding_missing_sex))
     }
     val outOfRange = buildList {
         if (height == BodyLimits.Reading.OUT_OF_RANGE) add(heightRangeLine())
@@ -495,15 +506,15 @@ internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weigh
     }
     return when {
         missing.isEmpty() && outOfRange.isEmpty() -> null
-        outOfRange.isEmpty() -> "Add ${joinHuman(missing)} to continue."
+        outOfRange.isEmpty() -> say(R.string.onboarding_profile_hint_add, joinHuman(missing))
         missing.isEmpty() -> outOfRange.joinToString(" ")
-        else -> "Add ${joinHuman(missing)}. ${outOfRange.joinToString(" ")}"
+        else -> say(R.string.onboarding_profile_hint_add_then, joinHuman(missing), outOfRange.joinToString(" "))
     }
 }
 
-private fun heightRangeLine() = "Height must be ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm."
+private fun heightRangeLine() = say(R.string.onboarding_height_range, BodyLimits.say(BodyLimits.HEIGHT_CM))
 
-private fun weightRangeLine() = "Weight must be ${BodyLimits.weightRangeText(Units.current)} ${Units.name}."
+private fun weightRangeLine() = say(R.string.onboarding_weight_range, BodyLimits.weightRangeText(Units.current), Units.name)
 
 /**
  * First-run setup, walked in three windows: who you are, how you train, and a
@@ -596,11 +607,14 @@ fun OnboardingScreen(
     }
     if (confirmReplace) {
         SettingsConfirmDialog(
-            title = "Replace your ${Words.rite.pl}?",
-            text = "Taking this ${Words.cycle.s} replaces your $existingRites existing " +
-                "${if (existingRites == 1) Words.rite.s else Words.rite.pl}. Your ${Words.chronicle.t} is kept. This cannot be undone.",
-            confirmLabel = "Replace",
-            dismissLabel = "Keep my ${Words.rite.pl}",
+            title = UiText.themed(R.string.onboarding_replace_title, R.string.onboarding_replace_title__t).asString(),
+            text = UiText.themedPlural(
+                R.plurals.onboarding_replace_text,
+                R.plurals.onboarding_replace_text__t,
+                existingRites,
+            ).asString(),
+            confirmLabel = stringResource(R.string.onboarding_replace_button),
+            dismissLabel = UiText.themed(R.string.onboarding_replace_keep, R.string.onboarding_replace_keep__t).asString(),
             danger = true,
             onConfirm = {
                 confirmReplace = false
@@ -754,7 +768,7 @@ fun OnboardingScreen(
         // every other screen's: gold is for what was earned, not for accepting.
         when (step) {
             0 -> DockedActionBar(
-                primary = "Continue",
+                primary = stringResource(R.string.common_continue),
                 onPrimary = {
                     // Only reachable when profileValid, so the !! is safe -
                     // the same bounds the repository enforces, checked first.
@@ -769,7 +783,7 @@ fun OnboardingScreen(
                 reserveLink = false,
             )
             1 -> DockedActionBar(
-                primary = "Continue",
+                primary = stringResource(R.string.common_continue),
                 onPrimary = {
                     EffortSetting.setScale(appContext.applicationContext, effortScale)
                     step = 2
@@ -778,7 +792,7 @@ fun OnboardingScreen(
                 reserveLink = false,
             )
             else -> DockedActionBar(
-                primary = "Take this ${Words.cycle.s}",
+                primary = UiText.themed(R.string.onboarding_take_button, R.string.onboarding_take_button__t).asString(),
                 onPrimary = {
                     // Taking a cycle replaces every existing rite: never silently.
                     if (existingRites > 0) confirmReplace = true else takeCycle()
@@ -791,17 +805,16 @@ fun OnboardingScreen(
 }
 
 /** What skipping costs, said before it is done. */
-private val SKIP_COST: String get() =
-    "Skipping leaves your scores blank and builds no ${Words.cycle.s}. Add your body in Settings and build ${Words.cycle.a} in Train any time."
+private val SKIP_COST: String get() = sayThemed(R.string.onboarding_skip_cost, R.string.onboarding_skip_cost__t)
 
 /** The question the cycle step's Skip setup link asks first. */
 @Composable
 internal fun SkipSetupDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     SettingsConfirmDialog(
-        title = "Skip setup?",
+        title = stringResource(R.string.onboarding_skip_title),
         text = SKIP_COST,
-        confirmLabel = "Skip setup",
-        dismissLabel = "Keep going",
+        confirmLabel = stringResource(R.string.onboarding_skip_button),
+        dismissLabel = stringResource(R.string.onboarding_skip_keep_button),
         danger = false,
         onConfirm = onConfirm,
         onDismiss = onDismiss,
@@ -809,19 +822,20 @@ internal fun SkipSetupDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 /** Why Continue is off on the training step until the armoury is answered. */
-private val ARMOURY_REQUIRED_CAPTION: String get() = "Pick your ${Words.armoury.s} to continue. Nothing means bodyweight only."
+private val ARMOURY_REQUIRED_CAPTION: String get() =
+    sayThemed(R.string.onboarding_armoury_required, R.string.onboarding_armoury_required__t)
 
 /** Per-step title and one line of prose. "Welcome, lifter" on every step was a bug, not a header. */
 private fun stepTitle(step: Int): String = when (step) {
-    0 -> "Who you are"
-    1 -> "How you train"
-    else -> "Your ${Words.cycle.s}"
+    0 -> say(R.string.onboarding_step_profile_title)
+    1 -> say(R.string.onboarding_step_training_title)
+    else -> sayThemed(R.string.onboarding_step_plan_title, R.string.onboarding_step_plan_title__t)
 }
 
 private fun stepProse(step: Int): String = when (step) {
-    0 -> "Your sex, height and weight scale every number Ironvellum shows you."
-    1 -> "Answer five things and get ${Words.cycle.a} built for you."
-    else -> "Built from your answers. Tap a day to open it, an exercise to adjust it."
+    0 -> say(R.string.onboarding_step_profile_prose)
+    1 -> sayThemed(R.string.onboarding_step_training_prose, R.string.onboarding_step_training_prose__t)
+    else -> say(R.string.onboarding_step_plan_prose)
 }
 
 /**
@@ -840,15 +854,21 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         InkChip(
-            label = "BACK",
-            description = if (step > 0) "Back to ${stepTitle(step - 1).lowercase()}" else "Back to your preferences",
+            label = stringResource(R.string.onboarding_back_chip),
+            description = stringResource(
+                when (step) {
+                    0 -> R.string.onboarding_back_to_preferences
+                    1 -> R.string.onboarding_back_to_profile
+                    else -> R.string.onboarding_back_to_training
+                },
+            ),
             onClick = onBack,
         )
         Spacer(Modifier.weight(1f))
         if (onSkip != null) {
             InkChip(
-                label = "SKIP",
-                description = "Skip setup. Set your details and ${Words.cycle.s} later in Settings or the ${Words.ledger.c}",
+                label = stringResource(R.string.onboarding_skip_chip),
+                description = UiText.themed(R.string.onboarding_skip_description, R.string.onboarding_skip_description__t).asString(),
                 onClick = onSkip,
             )
         }
@@ -861,6 +881,7 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
  */
 @Composable
 private fun StepHeader(step: Int) {
+    val stepLabel = stringResource(R.string.onboarding_step_progress, step + 1, 3)
     Column(Modifier.fillMaxWidth()) {
         // Sighted people get the cost of skipping too, not only TalkBack. The cycle step asks at its Skip link.
         if (step < 2) {
@@ -875,7 +896,7 @@ private fun StepHeader(step: Int) {
             Modifier
                 .fillMaxWidth()
                 .clearAndSetSemantics {
-                    contentDescription = "Step ${step + 1} of 3"
+                    contentDescription = stepLabel
                     progressBarRangeInfo = ProgressBarRangeInfo(step + 1f, 1f..3f, 1)
                 },
             horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -890,7 +911,7 @@ private fun StepHeader(step: Int) {
             }
         }
         Text(
-            "Step ${step + 1} of 3",
+            stepLabel,
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 8.dp),
@@ -932,7 +953,11 @@ private fun StepNotes(
         step == 0 -> profileHint
         step == 1 && !armouryPicked -> ARMOURY_REQUIRED_CAPTION
         step >= 2 && !planReady ->
-            if (planEmpty) "Add exercises back or rebuild to take ${Words.cycle.a}." else "Still consulting the catalogue…"
+            if (planEmpty) {
+                UiText.themed(R.string.onboarding_plan_hint_empty, R.string.onboarding_plan_hint_empty__t).asString()
+            } else {
+                stringResource(R.string.onboarding_plan_hint_loading)
+            }
         else -> null
     }
     if (applyError == null && hint == null) return
@@ -984,7 +1009,7 @@ private fun ProfileStep(
             colors = ironvellumFieldColors(),
             value = name,
             onValueChange = { onName(it.take(24)) },
-            label = { Text("Your name") },
+            label = { Text(stringResource(R.string.onboarding_profile_name_label)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
@@ -999,7 +1024,7 @@ private fun ProfileStep(
                 colors = ironvellumFieldColors(),
                 value = heightInput,
                 onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                label = { Text("Height (cm)") },
+                label = { Text(stringResource(R.string.onboarding_profile_height_label)) },
                 singleLine = true,
                 isError = heightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Next),
@@ -1010,7 +1035,7 @@ private fun ProfileStep(
                 colors = ironvellumFieldColors(),
                 value = weightInput,
                 onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                label = { Text("Weight (${Units.name})") },
+                label = { Text(stringResource(R.string.onboarding_profile_weight_label, Units.name)) },
                 singleLine = true,
                 isError = weightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Done),
@@ -1024,7 +1049,12 @@ private fun ProfileStep(
         )
         Text(
             if (ranges.isEmpty()) {
-                "Height ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm. Weight ${BodyLimits.weightRangeText(Units.current)} ${Units.name}."
+                stringResource(
+                    R.string.onboarding_profile_range_hint,
+                    BodyLimits.say(BodyLimits.HEIGHT_CM),
+                    BodyLimits.weightRangeText(Units.current),
+                    Units.name,
+                )
             } else {
                 ranges.joinToString(" ")
             },
@@ -1033,7 +1063,7 @@ private fun ProfileStep(
             modifier = Modifier.padding(top = 6.dp),
         )
         Spacer(Modifier.height(14.dp))
-        FieldLabel("Sex")
+        FieldLabel(stringResource(R.string.onboarding_profile_sex_label))
         // The same boxed cells as the setup's other single choices, with nothing lit until one is picked.
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             Sex.entries.forEach { option ->
@@ -1079,12 +1109,12 @@ private fun TrainingStep(
     onEffortScale: (EffortScale) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
-        FieldLabel("How you divide the week")
+        FieldLabel(stringResource(R.string.onboarding_training_split_label))
         SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
         FieldCaption(splitCaption(split, daysPerWeek))
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("Starting sets")
+        FieldLabel(stringResource(R.string.onboarding_training_sets_label))
         InkSegmented(
             options = VolumeLevel.entries.map { it to it.label },
             selected = tier,
@@ -1093,15 +1123,15 @@ private fun TrainingStep(
         FieldCaption(startingSetsCaption(tier))
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("What you are chasing")
+        FieldLabel(stringResource(R.string.onboarding_training_focus_label))
         InkSegmented(
             options = listOf(
-                TrainingFocus.STRENGTH to "Power",
-                TrainingFocus.MUSCLE to "Muscle",
+                TrainingFocus.STRENGTH to stringResource(R.string.onboarding_focus_power),
+                TrainingFocus.MUSCLE to stringResource(R.string.onboarding_focus_muscle),
                 TrainingFocus.SKILL to Words.technique.cpl,
                 // "All-round" clipped to "All-roun" at 360dp: four equal
                 // segments leave ~72dp each. Keep every label short.
-                TrainingFocus.GENERAL to "Mixed",
+                TrainingFocus.GENERAL to stringResource(R.string.onboarding_focus_mixed),
             ),
             selected = focus,
             onPick = onFocus,
@@ -1109,20 +1139,23 @@ private fun TrainingStep(
         FieldCaption(
             when (focus) {
                 TrainingFocus.STRENGTH ->
-                    "Low reps, heavy load. Bigger numbers on the main exercises."
+                    stringResource(R.string.onboarding_focus_power_caption)
                 TrainingFocus.MUSCLE ->
-                    "Higher volume, moderate load. Size comes before bragging rights."
+                    stringResource(R.string.onboarding_focus_muscle_caption)
                 TrainingFocus.SKILL ->
-                    "Handstands, levers, the planche. Practice over pump."
+                    stringResource(R.string.onboarding_focus_skill_caption)
                 TrainingFocus.GENERAL ->
-                    "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
+                    stringResource(R.string.onboarding_focus_mixed_caption)
             },
         )
 
         Spacer(Modifier.height(12.dp))
-        FieldLabel("How you rate effort")
+        FieldLabel(stringResource(R.string.onboarding_training_effort_label))
         InkSegmented(
-            options = listOf(EffortScale.RIR to "RIR (reps left)", EffortScale.RPE to "RPE (how hard)"),
+            options = listOf(
+                EffortScale.RIR to stringResource(R.string.onboarding_effort_rir),
+                EffortScale.RPE to stringResource(R.string.onboarding_effort_rpe),
+            ),
             selected = effortScale,
             onPick = onEffortScale,
         )
@@ -1130,7 +1163,7 @@ private fun TrainingStep(
 
         // Last: it is the longest question and the one Continue waits for.
         Spacer(Modifier.height(12.dp))
-        FieldLabel("Your ${Words.armoury.s}")
+        FieldLabel(UiText.themed(R.string.onboarding_training_armoury_label, R.string.onboarding_training_armoury_label__t).asString())
         GearPicker(equipment = equipment, onChange = onEquipment)
     }
 }
@@ -1202,7 +1235,7 @@ private fun ProposalStep(
         if (current == null) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
-                    "Consulting the catalogue…",
+                    stringResource(R.string.onboarding_plan_loading),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1230,13 +1263,13 @@ private fun ProposalStep(
             }
             if (current.presets.isEmpty()) {
                 Text(
-                    "Nothing left. Rebuild from your answers, or take the starter ${Words.cycle.s} instead.",
+                    UiText.themed(R.string.onboarding_plan_nothing_left, R.string.onboarding_plan_nothing_left__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 if (!isStarter) {
                     IronvellumButton(
-                        label = "Rebuild from my answers",
+                        label = stringResource(R.string.onboarding_plan_rebuild_button),
                         onClick = {
                             if (catalogue.isNotEmpty()) {
                                 viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)
@@ -1249,9 +1282,9 @@ private fun ProposalStep(
             // The rest guidance and any shortfall, said once for the routine
             // rather than under every day, with the progression rule the goal
             // picked beside it.
-            val notes = planNotes(current) + "A hard set ends 0\u20132 reps short of failure. Change any number." + when (focus) {
-                TrainingFocus.STRENGTH -> listOf("Strength goal: load goes up when you hit your reps.")
-                TrainingFocus.MUSCLE -> listOf("Muscle goal: reps go up first, then load.")
+            val notes = planNotes(current) + stringResource(R.string.onboarding_plan_note_hard_set) + when (focus) {
+                TrainingFocus.STRENGTH -> listOf(stringResource(R.string.onboarding_plan_note_strength))
+                TrainingFocus.MUSCLE -> listOf(stringResource(R.string.onboarding_plan_note_muscle))
                 else -> emptyList()
             }
             notes.forEach { line ->
@@ -1267,14 +1300,14 @@ private fun ProposalStep(
         Spacer(Modifier.height(4.dp))
         if (!isStarter) {
             IronvellumButton(
-                label = "Use the starter ${Words.cycle.s}",
+                label = UiText.themed(R.string.onboarding_plan_starter_button, R.string.onboarding_plan_starter_button__t).asString(),
                 onClick = viewModel::previewStarter,
                 quiet = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
             IronvellumButton(
-                label = "${Words.forge.c} from my answers",
+                label = UiText.themed(R.string.onboarding_plan_forge_button, R.string.onboarding_plan_forge_button__t).asString(),
                 onClick = {
                     if (catalogue.isNotEmpty()) {
                         viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)
@@ -1287,7 +1320,7 @@ private fun ProposalStep(
         current?.let { SourcesPanel(planTexts(it.presets, it.note)) }
         // Last, small and behind a question: leaving setup is allowed, never an accident.
         IronvellumButton(
-            label = "Skip setup\u2026",
+            label = stringResource(R.string.onboarding_plan_skip_button),
             onClick = onSkip,
             quiet = true,
             modifier = Modifier.fillMaxWidth(),
@@ -1295,3 +1328,9 @@ private fun ProposalStep(
         Spacer(Modifier.height(2.dp))
     }
 }
+
+/** Text for a message held in state or built outside composition: it follows the language and the Themed names switch as of now. */
+private fun say(@StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+
+private fun sayThemed(@StringRes plain: Int, @StringRes themed: Int, vararg args: Any): String =
+    Words.text(UiText.themed(plain, themed, *args))

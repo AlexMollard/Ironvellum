@@ -1,13 +1,5 @@
 package com.ironvellum.app.ui.settings
 
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.rackFooter
-import com.ironvellum.app.ui.components.PairRow
-import com.ironvellum.app.ui.components.BarChooser
-import com.ironvellum.app.domain.PlateSizes
-import com.ironvellum.app.domain.Gear
-import com.ironvellum.app.data.Units
-import com.ironvellum.app.data.PlateStore
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -15,11 +7,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
+import com.ironvellum.app.data.PlateStore
 import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.PlateSizes
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.BarChooser
+import com.ironvellum.app.ui.components.PairRow
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.components.rackFooter
 import com.ironvellum.app.ui.program.GearPicker
 
 /**
@@ -35,9 +38,9 @@ internal fun ArmourySettings(onBack: () -> Unit) {
         SettingsGroup(null, topSpace = 12.dp) {
             SettingsCaption(
                 if (savedGear == null) {
-                    "Not set: ${Words.theForge.t} and MY ${Words.armoury.u} offer everything."
+                    UiText.themed(R.string.settings_armoury_unset_caption, R.string.settings_armoury_unset_caption__t).asString()
                 } else {
-                    "${Words.theForge.c} and the MY ${Words.armoury.u} filter use only this."
+                    UiText.themed(R.string.settings_armoury_set_caption, R.string.settings_armoury_set_caption__t).asString()
                 },
             )
             Spacer(Modifier.height(10.dp))
@@ -61,11 +64,11 @@ private fun BarAndPlates() {
     LaunchedEffect(Unit) { PlateStore.load(context.applicationContext) }
     val setup = setups.getValue(unit)
     val rack = PlateStore.rack(setup, unit)
-    SettingsGroup("Bar") {
+    SettingsGroup(stringResource(R.string.settings_armoury_bar_title)) {
         BarChooser(unit, setup.bar) { PlateStore.setBar(context.applicationContext, unit, it) }
     }
-    SettingsGroup("Plates you own") {
-        SettingsCaption("Pairs of each. The plate calculator builds loads from these.")
+    SettingsGroup(stringResource(R.string.settings_armoury_plates_title)) {
+        SettingsCaption(stringResource(R.string.settings_armoury_plates_caption))
         PlateSizes.sizes(unit).forEach { size ->
             PairRow(size, unit, setup.pairs[size] ?: 0) { PlateStore.setPairs(context.applicationContext, unit, size, it) }
         }

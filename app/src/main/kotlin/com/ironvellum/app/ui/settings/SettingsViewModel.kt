@@ -3,15 +3,9 @@ package com.ironvellum.app.ui.settings
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.platform.LocalContext
-import com.ironvellum.app.BuildConfig
-import com.ironvellum.app.IronvellumApp
-import com.ironvellum.app.data.AppearanceStore
-import com.ironvellum.app.data.AutoBackup
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.theme.AccentPalette
-import com.ironvellum.app.ui.theme.ThemeMode
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.permission.HealthPermission
@@ -28,10 +22,16 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
+import com.ironvellum.app.data.AppearanceStore
+import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.HealthSnapshot
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudConfig
@@ -40,14 +40,15 @@ import com.ironvellum.app.data.cloud.ProbeResult
 import com.ironvellum.app.data.cloud.trueNameProblem
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.CsvWorkoutReader
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.XpRescore
-import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.ironvellumAccount
@@ -55,6 +56,10 @@ import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumHealthSync
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
+import com.ironvellum.app.ui.theme.AccentPalette
+import com.ironvellum.app.ui.theme.ThemeMode
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,8 +70,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.time.ZoneId
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -296,7 +299,11 @@ class SettingsViewModel(
         val cm = DecimalInput.parse(trimmed)
         if (!BodyLimits.validHeight(cm)) {
             _heightStatus.value = FieldStatus(
-                error = "Height must be ${BodyLimits.HEIGHT_CM.start.toInt()}–${BodyLimits.HEIGHT_CM.endInclusive.toInt()} cm",
+                error = say(
+                    R.string.settings_profile_height_error,
+                    BodyLimits.HEIGHT_CM.start.toInt(),
+                    BodyLimits.HEIGHT_CM.endInclusive.toInt(),
+                ),
             )
             return
         }
@@ -323,7 +330,7 @@ class SettingsViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "export failed: ${e.message}")
-                _exportError.value = "Could not export: ${e.message ?: "the archive could not be built"}"
+                _exportError.value = say(R.string.settings_export_error, e.message ?: say(R.string.settings_export_archive_failed))
                 null
             } finally {
                 _exporting.value = false
@@ -340,12 +347,12 @@ class SettingsViewModel(
             val today = LocalDate.now()
             val csv = try {
                 repo.exportCsv(period, today, ZoneId.systemDefault())
-                    .also { if (it == null) _exportError.value = "No ${Words.trial.pl} logged this ${period.noun}." }
+                    .also { if (it == null) _exportError.value = noTrialsMessage(period) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "csv export failed: ${e.message}")
-                _exportError.value = "Could not export: ${e.message ?: "the CSV could not be built"}"
+                _exportError.value = say(R.string.settings_export_error, e.message ?: say(R.string.settings_export_csv_failed))
                 null
             } finally {
                 _exporting.value = false
@@ -440,7 +447,7 @@ class SettingsViewModel(
                     { r ->
 SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     },
-                    { "Import failed: ${it.message ?: "the file could not be read"}" },
+                    { say(R.string.settings_import_failed, it.message ?: say(R.string.settings_import_unreadable)) },
                 ),
             )
         }
@@ -524,7 +531,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
 
     /** A picked file that was empty or unreadable: said aloud instead of doing nothing. */
     fun reportEmptyImport() {
-        _import.value = ImportUi(summary = "That file was empty or could not be read. Nothing was changed.")
+        _import.value = ImportUi(summary = say(R.string.settings_import_empty))
     }
 
     fun importArchive(json: String) {
@@ -539,11 +546,11 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                         ),
                         // surface the first problem plus how many more, not silence
                         problems = r.problems.takeIf { it.isNotEmpty() }?.let {
-                            if (it.size == 1) it.first() else "${it.first()} (+${it.size - 1} more)"
+                            if (it.size == 1) it.first() else say(R.string.settings_import_more_problems, it.first(), it.size - 1)
                         },
                     )
                 },
-                { e -> ImportUi(summary = e.message ?: "Import failed — the file may not be an Ironvellum archive") },
+                { e -> ImportUi(summary = e.message ?: say(R.string.settings_import_not_archive)) },
             )
         }
     }
@@ -573,7 +580,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     accountRepo.account.value?.let { repo.rename(it.displayName) }
                     _nameSaved.value = true
                 }
-                .onFailure { _renameError.value = it.message ?: "Could not change your name" }
+                .onFailure { _renameError.value = it.message ?: say(R.string.settings_profile_rename_failed) }
             _renaming.value = false
         }
     }
@@ -657,7 +664,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "health sync failed: ${e.message}")
-                _sync.value = _sync.value.copy(message = "Health Connect sync failed: ${e.message ?: e.javaClass.simpleName}")
+                _sync.value = _sync.value.copy(message = say(R.string.settings_health_sync_failed, e.message ?: e.javaClass.simpleName))
             } finally {
                 _sync.value = _sync.value.copy(syncing = false)
             }
@@ -673,14 +680,14 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             HealthSync.Status.UNSUPPORTED -> {
                 _sync.value = _sync.value.copy(
                     available = false,
-                    message = "Health Connect isn't available on this device.",
+                    message = say(R.string.settings_health_unsupported),
                 )
                 return false
             }
             HealthSync.Status.UPDATE_REQUIRED -> {
                 _sync.value = _sync.value.copy(
                     available = false,
-                    message = "Update Health Connect, then retry.",
+                    message = say(R.string.settings_health_update_required),
                 )
                 return false
             }
@@ -690,7 +697,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         if (healthSync.grantedPermissions().none { it in HEALTH_PERMISSIONS }) {
             _sync.value = _sync.value.copy(
                 available = true,
-                message = "Permission not granted yet — allow Weight, Body fat and Steps in Health Connect, then retry.",
+                message = say(R.string.settings_health_no_permission),
             )
             return false
         }
@@ -701,8 +708,11 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             _sync.value = _sync.value.copy(
                 available = true,
                 message = read.exceptionOrNull()
-                    ?.let { "Health Connect read failed${it.message?.let { m -> ": $m" } ?: ""}" }
-                    ?: "Health Connect returned no data.",
+                    ?.let { error ->
+                        error.message?.let { say(R.string.settings_health_read_failed_with, it) }
+                            ?: say(R.string.settings_health_read_failed)
+                    }
+                    ?: say(R.string.settings_health_no_data),
             )
             return true
         }
@@ -714,8 +724,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             // rather than report it.
             _sync.value = _sync.value.copy(
                 available = true,
-                message = "Health Connect returned an implausible weight " +
-                    "(${formatBodyValue(snapshot.weightKg)} kg); not imported.",
+                message = say(R.string.settings_health_implausible_weight, formatBodyValue(snapshot.weightKg)),
             )
             return true
         }
@@ -728,18 +737,23 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             if (stored.isFailure) {
                 _sync.value = _sync.value.copy(
                     available = true,
-                    message = "Could not store the imported ${Words.reading.s}: " +
-                        (stored.exceptionOrNull()?.message ?: "unknown reason"),
+                    message = Words.text(
+                        UiText.themed(
+                            R.string.settings_health_store_failed,
+                            R.string.settings_health_store_failed__t,
+                            stored.exceptionOrNull()?.message ?: say(R.string.settings_health_unknown_reason),
+                        ),
+                    ),
                 )
                 return true
             }
             message = if (bodyProfile.value.first == null) {
-                "Imported into your ${Words.ledger.t}. Set your height in Profile to unlock BMI."
+                Words.text(UiText.themed(R.string.settings_health_imported_no_height, R.string.settings_health_imported_no_height__t))
             } else {
-                "Imported into your ${Words.ledger.t}."
+                Words.text(UiText.themed(R.string.settings_health_imported, R.string.settings_health_imported__t))
             }
         } else {
-            message = "No weight found in Health Connect yet."
+            message = say(R.string.settings_health_no_weight)
         }
         _sync.value = _sync.value.copy(available = true, result = snapshot, message = message)
         return true
@@ -754,25 +768,35 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     read.coverage.entries.joinToString(" · ") { (metric, days) -> "$metric $days" },
                 )
                 read.newestStepAtMs?.let {
-                    append("\nnewest step record ")
-                    append(formatDate(it, "EEE HH:mm"))
-                    append(" from ")
+                    append("\n")
                     append(
-                        read.stepSources
-                            .map { pkg -> pkg.substringAfterLast('.') }
-                            .joinToString(", ")
-                            .ifBlank { "unknown app" },
+                        say(
+                            R.string.settings_health_newest_step,
+                            formatDate(it, "EEE HH:mm"),
+                            read.stepSources
+                                .map { pkg -> pkg.substringAfterLast('.') }
+                                .joinToString(", ")
+                                .ifBlank { say(R.string.settings_health_unknown_app) },
+                        ),
                     )
                 }
             }.takeIf { it.isNotBlank() },
             historyMessage = when {
                 read.days.isNotEmpty() || read.bodyReadings.isNotEmpty() ->
-                    "Activity history updated — ${read.days.size} days, " +
-                        "${read.bodyReadings.size} ${Words.reading.pl}." +
-                        read.problems.firstOrNull()?.let { " Partial: $it" }.orEmpty()
+                    say(
+                        R.string.settings_health_history_updated,
+                        Words.text(UiText.plural(R.plurals.common_days_count, read.days.size)),
+                        Words.text(
+                            UiText.themedPlural(
+                                R.plurals.settings_health_history_readings,
+                                R.plurals.settings_health_history_readings__t,
+                                read.bodyReadings.size,
+                            ),
+                        ),
+                    ) + read.problems.firstOrNull()?.let { " " + say(R.string.settings_health_history_partial, it) }.orEmpty()
                 // never claim success on an empty write again
-                read.problems.isNotEmpty() -> "Nothing synced — ${read.problems.first()}"
-                else -> "Nothing synced — Health Connect holds no activity for this window."
+                read.problems.isNotEmpty() -> say(R.string.settings_health_nothing_synced, read.problems.first())
+                else -> say(R.string.settings_health_nothing_synced_empty)
             },
         )
     }
@@ -824,3 +848,15 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         return crashSummary()
     }
 }
+
+/** Text for a message held in view-model state: the string follows the language and the Themed names switch as of now. */
+private fun say(@StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+
+/** The refusal for an export with nothing in its period. */
+private fun noTrialsMessage(period: WorkoutCsvWriter.Period): String = Words.text(
+    when (period) {
+        WorkoutCsvWriter.Period.WEEK -> UiText.themed(R.string.settings_export_none_week, R.string.settings_export_none_week__t)
+        WorkoutCsvWriter.Period.MONTH -> UiText.themed(R.string.settings_export_none_month, R.string.settings_export_none_month__t)
+        WorkoutCsvWriter.Period.YEAR -> UiText.themed(R.string.settings_export_none_year, R.string.settings_export_none_year__t)
+    },
+)

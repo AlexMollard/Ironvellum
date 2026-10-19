@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -37,9 +38,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
@@ -86,7 +90,7 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
         ) {
             Spacer(Modifier.height(24.dp))
             Text(
-                "Make it yours",
+                stringResource(R.string.onboarding_prefs_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -95,36 +99,36 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Choose how your ${Words.trial.pl} and ${Words.rite.pl} are named, the weight unit and the colours.",
+                UiText.themed(R.string.onboarding_prefs_intro, R.string.onboarding_prefs_intro__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
 
             // A language without its themed strings has only the plain words to show, so there is nothing to choose.
             if (rememberThemedStringsComplete()) {
-                SectionHeader("Names", topPadding = 24.dp)
+                SectionHeader(stringResource(R.string.onboarding_prefs_names_title), topPadding = 24.dp)
                 InkSegmented(
-                    options = listOf(false to "Plain", true to "Themed"),
+                    options = listOf(false to stringResource(R.string.onboarding_prefs_names_plain), true to stringResource(R.string.onboarding_prefs_names_themed)),
                     selected = Words.themed,
                     onPick = { Words.setThemed(context, it) },
                 )
                 Spacer(Modifier.height(10.dp))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
                     Text(
-                        "Begin ${Words.trial.s}  ·  Your ${Words.rite.pl}  ·  ${Words.peak.cpl}",
+                        UiText.themed(R.string.onboarding_prefs_names_sample, R.string.onboarding_prefs_names_sample__t).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                     )
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    if (Words.themed) "The app's own fantasy names." else "Everyday gym words.",
+                    UiText.themed(R.string.onboarding_prefs_names_caption, R.string.onboarding_prefs_names_caption__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
 
-            SectionHeader("Weight unit", topPadding = 24.dp)
+            SectionHeader(stringResource(R.string.onboarding_prefs_unit_title), topPadding = 24.dp)
             InkSegmented(
                 options = LoadUnit.entries.map { it to it.label },
                 selected = Units.current,
@@ -135,12 +139,12 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Loads, plates and your body weight. Height stays in cm.",
+                stringResource(R.string.onboarding_prefs_unit_caption),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
 
-            SectionHeader("Accent colour", topPadding = 24.dp)
+            SectionHeader(stringResource(R.string.onboarding_prefs_accent_title), topPadding = 24.dp)
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -159,13 +163,13 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                presets.firstOrNull { it.palette == palette }?.name ?: "Custom colours",
+                presets.firstOrNull { it.palette == palette }?.name ?: stringResource(R.string.settings_hub_appearance_custom),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                "You can change these later in Settings.",
+                stringResource(R.string.onboarding_prefs_later),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -174,7 +178,7 @@ internal fun FirstRunPreferencesScreen(onContinue: () -> Unit, onUnitPicked: (Lo
         }
 
         DockedActionBar(
-            primary = "Continue",
+            primary = stringResource(R.string.common_continue),
             onPrimary = onContinue,
             reserveLink = false,
         )

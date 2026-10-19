@@ -9,10 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.TrialPrefs
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
@@ -34,9 +37,8 @@ internal fun TrialSettings(onBack: () -> Unit) {
     SettingsPage(SettingsSection.DURING_TRIAL.title, onBack) {
         SettingsGroup(null, topSpace = 12.dp) {
             SettingsSwitchRow(
-                label = "Rest timer",
-                caption = "Counts the rest down after each set. Off, a ticked set starts no rest. " +
-                    "One movement can opt out from its ${Words.rite.s} or its menu in the ${Words.trial.s}.",
+                label = stringResource(R.string.settings_trial_rest_label),
+                caption = UiText.themed(R.string.settings_trial_rest_caption, R.string.settings_trial_rest_caption__t).asString(),
                 checked = restOn,
                 onCheckedChange = {
                     restOn = it
@@ -44,7 +46,7 @@ internal fun TrialSettings(onBack: () -> Unit) {
                 },
             )
         }
-        SettingsGroup("WHEN A REST ENDS", topSpace = 10.dp) {
+        SettingsGroup(stringResource(R.string.settings_trial_alert_title), topSpace = 10.dp) {
             InkSegmented(
                 options = RestAlert.entries.map { it to it.label },
                 selected = alert,
@@ -54,12 +56,12 @@ internal fun TrialSettings(onBack: () -> Unit) {
                 },
             )
             Spacer(Modifier.height(8.dp))
-            SettingsCaption(alert.caption + " It also cues the last 3 seconds of a timed set.")
+            SettingsCaption(stringResource(R.string.settings_trial_alert_caption, alert.caption))
         }
         SettingsGroup(null, topSpace = 10.dp) {
             SettingsSwitchRow(
-                label = "Keep the screen on",
-                caption = "Stops the screen sleeping while ${Words.trial.a} is open. The pocket lock on the ${Words.trial.s} dims it.",
+                label = stringResource(R.string.settings_trial_awake_label),
+                caption = UiText.themed(R.string.settings_trial_awake_caption, R.string.settings_trial_awake_caption__t).asString(),
                 checked = awake,
                 onCheckedChange = {
                     awake = it

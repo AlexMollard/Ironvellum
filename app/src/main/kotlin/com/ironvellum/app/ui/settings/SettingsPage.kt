@@ -10,33 +10,40 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.PushedHeader
 
 /** The Settings sub-screens, each its own `settings/{section}` route under the hub. */
 enum class SettingsSection(val key: String, private val titleText: () -> String) {
-    PROFILE("profile", { "PROFILE" }),
-    APPEARANCE("appearance", { "APPEARANCE" }),
-    TRAINING_MODE("training_mode", { "TRAINING MODE" }),
-    DURING_TRIAL("during_trial", { "DURING A ${Words.trial.u}" }),
+    PROFILE("profile", { title(R.string.settings_section_profile_title) }),
+    APPEARANCE("appearance", { title(R.string.settings_section_appearance_title) }),
+    TRAINING_MODE("training_mode", { title(R.string.settings_section_training_mode_title) }),
+    DURING_TRIAL(
+        "during_trial",
+        { Words.text(UiText.themed(R.string.settings_section_during_trial_title, R.string.settings_section_during_trial_title__t)) },
+    ),
     ARMOURY("armoury", { Words.armoury.u }),
     SUMMONS("summons", { Words.theSummons.u }),
-    HEALTH_CONNECT("health_connect", { "HEALTH CONNECT" }),
-    DATA("data", { "DATA" }),
-    ADVANCED("advanced", { "ADVANCED" }),
+    HEALTH_CONNECT("health_connect", { title(R.string.settings_section_health_connect_title) }),
+    DATA("data", { title(R.string.settings_section_data_title) }),
+    ADVANCED("advanced", { title(R.string.settings_section_advanced_title) }),
     ;
 
     val title: String get() = titleText()
 
     companion object {
+        private fun title(id: Int): String = Words.text(UiText.res(id))
+
         fun fromKey(key: String?): SettingsSection? = entries.firstOrNull { it.key == key }
     }
 }

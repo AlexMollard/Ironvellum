@@ -1,8 +1,5 @@
 package com.ironvellum.app.ui.settings
 
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.domain.LoadUnit
-import com.ironvellum.app.data.Units
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,10 +16,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutCsvWriter
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSpinner
@@ -47,13 +51,14 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val exportArchiveTitle = stringResource(R.string.settings_data_export_archive_title)
     // The file is always kg, which its reader assumes; say so when the screen is in lb.
-    val csvUnitNote = if (Units.current == LoadUnit.LB) "Weights export in kg" else null
+    val csvUnitNote = if (Units.current == LoadUnit.LB) stringResource(R.string.settings_data_csv_unit_note) else null
     // The archive picked and read, held until the lifter confirms the restore.
     var pendingArchive by remember { mutableStateOf<String?>(null) }
     val exportTrials: (WorkoutCsvWriter.Period) -> Unit = { period ->
         viewModel.exportCsv(period) { fileName, csv ->
-            scope.launch { shareExport(context, "Export ${Words.trial.pl}", fileName, csv, "text/csv") }
+            scope.launch { shareExport(context, Words.text(UiText.themed(R.string.settings_data_export_trials_title, R.string.settings_data_export_trials_title__t)), fileName, csv, "text/csv") }
         }
     }
 
@@ -97,25 +102,25 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 InkSpinner(Modifier.padding(16.dp))
             } else {
                 ListRow(
-                    "Export archive",
-                    subline = "A full JSON archive of everything on this device.",
+                    stringResource(R.string.settings_data_export_archive_label),
+                    subline = stringResource(R.string.settings_data_export_archive_caption),
                     onClick = {
                         viewModel.exportJson { json ->
-                            scope.launch { shareExport(context, "Export Ironvellum data", "ironvellum_export.json", json) }
+                            scope.launch { shareExport(context, exportArchiveTitle, "ironvellum_export.json", json) }
                         }
                     },
                 )
                 InkDivider()
-                ListRow("Export ${Words.trial.pl} this week", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
+                ListRow(UiText.themed(R.string.settings_data_export_week_label, R.string.settings_data_export_week_label__t).asString(), subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
                 InkDivider()
-                ListRow("Export ${Words.trial.pl} this month", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
+                ListRow(UiText.themed(R.string.settings_data_export_month_label, R.string.settings_data_export_month_label__t).asString(), subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
                 InkDivider()
-                ListRow("Export ${Words.trial.pl} this year", subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
+                ListRow(UiText.themed(R.string.settings_data_export_year_label, R.string.settings_data_export_year_label__t).asString(), subline = csvUnitNote, onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
             }
             InkDivider()
             ListRow(
-                "Import from another app",
-                subline = "Adds ${Words.trial.pl} from a Strong, Hevy or FitNotes CSV export.",
+                stringResource(R.string.settings_data_import_label),
+                subline = UiText.themed(R.string.settings_data_import_caption, R.string.settings_data_import_caption__t).asString(),
                 onClick = {
                     csvLauncher.launch(CSV_MIME_TYPES)
                 },
@@ -126,8 +131,8 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             } else {
                 // Restore is the one destructive row: last, red, and behind its confirm.
                 ListRow(
-                    "Restore from a file",
-                    subline = "Replaces all data on this device with an archive.",
+                    stringResource(R.string.settings_data_restore_label),
+                    subline = stringResource(R.string.settings_data_restore_caption),
                     sublineColor = IronvellumColors.DangerRed,
                     onClick = if (exporting) null else ({ importLauncher.launch(ARCHIVE_MIME_TYPES) }),
                 )
@@ -185,10 +190,10 @@ internal suspend fun readPickedText(context: Context, uri: android.net.Uri): Str
 @Composable
 internal fun RestoreConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     SettingsConfirmDialog(
-        title = "Restore this archive?",
-        text = "Replaces your ${Words.rite.pl} and ${Words.cycle.s}, ${Words.chronicle.t}, ${Words.reading.pl}, ${Words.deed.pl} and ${Words.journal.t} on this device. This cannot be undone.",
-        confirmLabel = "Restore",
-        dismissLabel = "Keep local data",
+        title = stringResource(R.string.settings_data_restore_confirm_title),
+        text = UiText.themed(R.string.settings_data_restore_confirm_text, R.string.settings_data_restore_confirm_text__t).asString(),
+        confirmLabel = stringResource(R.string.settings_data_restore_confirm_button),
+        dismissLabel = stringResource(R.string.settings_data_restore_keep_button),
         danger = true,
         onConfirm = onConfirm,
         onDismiss = onDismiss,

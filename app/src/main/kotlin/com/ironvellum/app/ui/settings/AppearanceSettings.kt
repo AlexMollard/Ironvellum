@@ -1,14 +1,14 @@
 package com.ironvellum.app.ui.settings
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,63 +30,67 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.error
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.setProgress
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.rememberThemedStringsComplete
-import com.ironvellum.app.ui.theme.DotShape
-import com.ironvellum.app.ui.theme.inkDot
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.AccentPalette
 import com.ironvellum.app.ui.theme.AccentPresets
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ThemeMode
 import com.ironvellum.app.ui.theme.accentHex
 import com.ironvellum.app.ui.theme.deepenForLight
+import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.parseAccentHex
 import kotlin.math.roundToInt
 
@@ -107,12 +111,16 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
     var editingPrimary by rememberSaveable { mutableStateOf<Boolean?>(null) }
     val context = LocalContext.current
     SettingsPage(SettingsSection.APPEARANCE.title, onBack) {
-        SectionHeader("THEME", topPadding = 12.dp)
-        SettingsCaption("System follows your phone's dark mode. Colour pairs are kept separately for each theme.")
+        SectionHeader(stringResource(R.string.settings_appearance_theme_title), topPadding = 12.dp)
+        SettingsCaption(stringResource(R.string.settings_appearance_theme_caption))
         Spacer(Modifier.height(8.dp))
         InkRowPanel(Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup()) {
-                listOf(ThemeMode.SYSTEM to "System", ThemeMode.DARK to "Dark", ThemeMode.LIGHT to "Light").forEach { (option, name) ->
+                listOf(
+                    ThemeMode.SYSTEM to stringResource(R.string.settings_appearance_theme_system),
+                    ThemeMode.DARK to stringResource(R.string.settings_appearance_theme_dark),
+                    ThemeMode.LIGHT to stringResource(R.string.settings_appearance_theme_light),
+                ).forEach { (option, name) ->
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = ListRowHeight)
                             .selectable(selected = mode == option, role = Role.RadioButton, onClick = { viewModel.setThemeMode(option) })
@@ -133,15 +141,15 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
         // A language without its themed strings has only the plain words to show, so there is nothing to switch.
         if (rememberThemedStringsComplete()) {
             SettingsSwitchRow(
-                label = "Themed names",
+                label = stringResource(R.string.settings_appearance_themed_names_label),
                 caption = Lines.themedNamesCaption,
                 checked = Words.themed,
                 onCheckedChange = { Words.setThemed(context.applicationContext, it) },
             )
         }
-        SectionHeader("COLOUR PAIRS", topPadding = 16.dp)
+        SectionHeader(stringResource(R.string.settings_appearance_pairs_title), topPadding = 16.dp)
         // With the pairs it describes, not under the Themed names row above.
-        SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
+        SettingsCaption(stringResource(R.string.settings_appearance_pairs_caption))
         Spacer(Modifier.height(8.dp))
         InkRowPanel(Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup()) {
@@ -172,13 +180,13 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
                 }
             }
             InkDivider()
-            AccentRow("Primary accent", "Actions and progress", palette.primary) { editingPrimary = true }
-            AccentRow("Reward accent", "${Words.peak.cpl} and earned moments", palette.secondary) { editingPrimary = false }
+            AccentRow(stringResource(R.string.settings_appearance_primary_label), stringResource(R.string.settings_appearance_primary_caption), palette.primary) { editingPrimary = true }
+            AccentRow(stringResource(R.string.settings_appearance_reward_label), UiText.themed(R.string.settings_appearance_reward_caption, R.string.settings_appearance_reward_caption__t).asString(), palette.secondary) { editingPrimary = false }
         }
         Spacer(Modifier.height(16.dp))
         AccentPreview(palette)
         Spacer(Modifier.height(12.dp))
-        IronvellumButton("Reset to ${presets[0].name.lowercase()}", { viewModel.setAppearance(presets[0].palette) }, quiet = true)
+        IronvellumButton(stringResource(R.string.settings_appearance_reset_button, presets[0].name.lowercase()), { viewModel.setAppearance(presets[0].palette) }, quiet = true)
     }
     editingPrimary?.let { primary ->
         AccentPickerDialog(
@@ -225,13 +233,13 @@ private fun AccentPreview(palette: AccentPalette) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text("Log set", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Emerald)
+            Text(stringResource(R.string.settings_appearance_preview_action), style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Emerald)
         }
         Column(Modifier.weight(1f)) {
-            Text("New ${Words.peak.s}", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
+            Text(UiText.themed(R.string.settings_appearance_preview_record, R.string.settings_appearance_preview_record__t).asString(), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccentSwatch(palette.secondary)
-                Text("+12 XP", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
+                Text(stringResource(R.string.settings_appearance_preview_xp), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
             }
         }
     }
@@ -257,9 +265,11 @@ private fun AccentPickerDialog(palette: AccentPalette, primary: Boolean, onApply
         }
         hex = accentHex(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness)))
     }
+    val hexLabel = stringResource(R.string.settings_appearance_picker_hex_label)
+    val hexError = stringResource(R.string.settings_appearance_picker_hex_error)
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (primary) "Primary accent" else "Reward accent", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink, modifier = Modifier.semantics { heading() }) },
+        title = { Text(stringResource(if (primary) R.string.settings_appearance_primary_label else R.string.settings_appearance_reward_label), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink, modifier = Modifier.semantics { heading() }) },
         text = {
             ColourPad(hue, saturation, brightness) { nextSaturation, nextBrightness ->
                 saturation = nextSaturation
@@ -270,14 +280,14 @@ private fun AccentPickerDialog(palette: AccentPalette, primary: Boolean, onApply
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AccentSwatch(initial)
-                    Text("Current", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.settings_appearance_picker_current), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AccentSwatch(preview)
-                    Text("New", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.settings_appearance_picker_new), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Hex colour", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.settings_appearance_picker_hex_label), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     BasicTextField(
                         value = hex,
                         onValueChange = { value ->
@@ -294,23 +304,23 @@ private fun AccentPickerDialog(palette: AccentPalette, primary: Boolean, onApply
                         keyboardActions = KeyboardActions(onDone = { parsed?.let(onApply) }),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("accent-hex")
                             .semantics {
-                                contentDescription = "Hex colour"
-                                if (parsed == null) error("Enter a six-digit hex colour")
+                                contentDescription = hexLabel
+                                if (parsed == null) error(hexError)
                             },
                     )
                     Box(Modifier.fillMaxWidth().height(1.dp).background(if (parsed == null) IronvellumColors.DangerRed else IronvellumColors.Rune))
                 }
             }
             if (parsed == null) {
-                Text("Enter a six-digit hex colour", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
+                Text(hexError, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
             } else if (IronvellumColors.light) {
-                if (deepenForLight(preview) != preview or 0xFF000000.toInt()) SettingsCaption("Made a little darker so it stays readable on light paper.")
+                if (deepenForLight(preview) != preview or 0xFF000000.toInt()) SettingsCaption(stringResource(R.string.settings_appearance_picker_darkened))
             } else if ((Color(preview).luminance() + 0.05f) / (IronvellumColors.Vault.luminance() + 0.05f) < 3f) {
-                SettingsCaption("This colour may be hard to see on dark backgrounds.")
+                SettingsCaption(stringResource(R.string.settings_appearance_picker_low_contrast))
             }
         },
-        dismissButton = { IronvellumButton("Cancel", onDismiss, quiet = true) },
-        confirmButton = { IronvellumButton("Apply", { parsed?.let(onApply) }, enabled = parsed != null) },
+        dismissButton = { IronvellumButton(stringResource(R.string.common_cancel), onDismiss, quiet = true) },
+        confirmButton = { IronvellumButton(stringResource(R.string.common_apply), { parsed?.let(onApply) }, enabled = parsed != null) },
     )
 }
 /** Two colour dimensions share one surface; its actions also work without dragging. */
@@ -324,6 +334,16 @@ private fun ColourPad(hue: Float, saturation: Float, brightness: Float, onPick: 
         onPick(saturation, (brightness + delta).coerceIn(0f, 1f))
         return true
     }
+    val padLabel = stringResource(R.string.settings_appearance_pad_label)
+    val padState = stringResource(
+        R.string.settings_appearance_pad_state,
+        (saturation * 100).roundToInt(),
+        (brightness * 100).roundToInt(),
+    )
+    val moreSaturation = stringResource(R.string.settings_appearance_pad_more_saturation)
+    val lessSaturation = stringResource(R.string.settings_appearance_pad_less_saturation)
+    val moreBrightness = stringResource(R.string.settings_appearance_pad_more_brightness)
+    val lessBrightness = stringResource(R.string.settings_appearance_pad_less_brightness)
     val hueColour = Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, 1f, 1f)))
     val selectedColour = Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness)))
     Canvas(
@@ -340,13 +360,13 @@ private fun ColourPad(hue: Float, saturation: Float, brightness: Float, onPick: 
             }
             .focusable()
             .semantics {
-                contentDescription = "Saturation and brightness"
-                stateDescription = "Saturation ${(saturation * 100).roundToInt()}%, brightness ${(brightness * 100).roundToInt()}%"
+                contentDescription = padLabel
+                stateDescription = padState
                 customActions = listOf(
-                    CustomAccessibilityAction("Increase saturation") { adjustSaturation(0.05f) },
-                    CustomAccessibilityAction("Decrease saturation") { adjustSaturation(-0.05f) },
-                    CustomAccessibilityAction("Increase brightness") { adjustBrightness(0.05f) },
-                    CustomAccessibilityAction("Decrease brightness") { adjustBrightness(-0.05f) },
+                    CustomAccessibilityAction(moreSaturation) { adjustSaturation(0.05f) },
+                    CustomAccessibilityAction(lessSaturation) { adjustSaturation(-0.05f) },
+                    CustomAccessibilityAction(moreBrightness) { adjustBrightness(0.05f) },
+                    CustomAccessibilityAction(lessBrightness) { adjustBrightness(-0.05f) },
                 )
             },
     ) {
@@ -367,6 +387,8 @@ private fun ColourPad(hue: Float, saturation: Float, brightness: Float, onPick: 
 /** The colour rail is slim, while its touch target remains 44dp high. */
 @Composable
 private fun HueStrip(hue: Float, onPick: (Float) -> Unit) {
+    val hueLabel = stringResource(R.string.settings_appearance_hue_label)
+    val hueState = stringResource(R.string.settings_appearance_hue_state, hue.roundToInt())
     Canvas(
         Modifier.fillMaxWidth().height(44.dp)
             .colourGesture { x, _ -> onPick(x * 359f) }
@@ -379,8 +401,8 @@ private fun HueStrip(hue: Float, onPick: (Float) -> Unit) {
             }
             .focusable()
             .semantics {
-                contentDescription = "Hue"
-                stateDescription = "${hue.roundToInt()} degrees"
+                contentDescription = hueLabel
+                stateDescription = hueState
                 progressBarRangeInfo = ProgressBarRangeInfo(hue, 0f..359f)
                 setProgress { value -> onPick(value.coerceIn(0f, 359f)); true }
             },

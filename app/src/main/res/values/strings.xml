@@ -700,4 +700,497 @@
     <string name="widget_preview_compact_meta">4 · 18 sets</string>
     <string name="widget_preview_streak_caption">day streak</string>
     <string name="widget_preview_week_meta">Today · 18 sets</string>
+    <!-- Notification access notice and the first-use ask (phase 4) -->
+    <string name="notification_blocked_settings_button">Open notification settings</string>
+    <string name="notification_blocked_turn_on">Turn on</string>
+    <string name="notification_ask_title">Hear it when a rest ends</string>
+    <string name="notification_ask_intro">Ironvellum needs your say-so to send notifications while you train.</string>
+    <string name="notification_ask_rest_title">Rest is over</string>
+    <string name="notification_ask_rest_body">One buzz when the rest between sets is over.</string>
+    <string name="notification_ask_live_title">Workout in progress</string>
+    <string name="notification_ask_live_title__t">Trial in progress</string>
+    <string name="notification_ask_live_body">Live progress of the workout you have open, with a Finish button.</string>
+    <string name="notification_ask_live_body__t">Live progress of the trial you have open, with a Seal button.</string>
+    <plurals name="notification_ask_again"><item quantity="one">Not now asks again on your next workout, up to %d time in all. You can also allow it later in Settings.</item><item quantity="other">Not now asks again on your next workout, up to %d times in all. You can also allow it later in Settings.</item></plurals>
+    <plurals name="notification_ask_again__t"><item quantity="one">Not now asks again on your next trial, up to %d time in all. You can also allow it later in Settings.</item><item quantity="other">Not now asks again on your next trial, up to %d times in all. You can also allow it later in Settings.</item></plurals>
+    <string name="notification_ask_allow_button">Allow notifications</string>
+    <string name="notification_ask_not_now_button">Not now</string>
+    <!-- Settings hub, section titles and one-line summaries (phase 4) -->
+    <string name="common_on">On</string>
+    <string name="common_off">Off</string>
+    <string name="settings_section_profile_title">PROFILE</string>
+    <string name="settings_section_appearance_title">APPEARANCE</string>
+    <string name="settings_section_training_mode_title">TRAINING MODE</string>
+    <string name="settings_section_during_trial_title">DURING A WORKOUT</string>
+    <string name="settings_section_during_trial_title__t">DURING A TRIAL</string>
+    <string name="settings_section_health_connect_title">HEALTH CONNECT</string>
+    <string name="settings_section_data_title">DATA</string>
+    <string name="settings_section_advanced_title">ADVANCED</string>
+    <string name="settings_hub_title">SETTINGS</string>
+    <string name="settings_hub_group_you">YOU</string>
+    <string name="settings_hub_group_training">TRAINING</string>
+    <string name="settings_hub_group_app">APP</string>
+    <string name="settings_hub_group_about">About</string>
+    <string name="settings_hub_profile_label">Profile</string>
+    <string name="settings_hub_profile_name_not_saved">Name not saved</string>
+    <string name="settings_hub_profile_height_not_saved">Height not saved</string>
+    <string name="settings_hub_account_label">Account</string>
+    <string name="settings_hub_account_signed_in">Signed in</string>
+    <string name="settings_hub_account_signed_out">Not signed in</string>
+    <string name="settings_hub_training_mode_label">Training mode</string>
+    <string name="settings_hub_during_trial_label">During a workout</string>
+    <string name="settings_hub_during_trial_label__t">During a trial</string>
+    <string name="settings_hub_appearance_label">Appearance</string>
+    <string name="settings_hub_appearance_custom">Custom colours</string>
+    <string name="settings_hub_health_connect_label">Health Connect</string>
+    <string name="settings_hub_data_label">Data</string>
+    <string name="settings_hub_data_summary">Export, import</string>
+    <string name="settings_hub_advanced_label">Advanced</string>
+    <plurals name="settings_hub_advanced_crashes"><item quantity="one">%d crash logged</item><item quantity="other">%d crashes logged</item></plurals>
+    <string name="settings_hub_cloud_none">No cloud</string>
+    <string name="settings_hub_cloud_shared">Shared cloud</string>
+    <string name="settings_hub_cloud_own">Own backend</string>
+    <string name="settings_hub_support_label">Support Ironvellum</string>
+    <string name="settings_hub_about_label">About Ironvellum</string>
+    <string name="settings_hub_privacy_note">Your measurements stay on this device.</string>
+    <string name="settings_hub_privacy_note__t">Your readings stay on this device.</string>
+    <string name="settings_summary_not_set">Not set</string>
+    <string name="settings_summary_full_gym">Full gym</string>
+    <string name="settings_summary_nothing">Nothing</string>
+    <string name="settings_summary_weighted_vest">Weighted vest</string>
+    <string name="settings_summary_dip_belt">Dip belt</string>
+    <string name="settings_summary_rest_off">Rest off</string>
+    <!-- Settings hub: the rest timer alert, e.g. "Rest · buzz". %1$s is the alert's name in lower case. -->
+    <string name="settings_summary_rest_alert">Rest · %1$s</string>
+    <!-- Settings hub, Profile row: %1$s is the height in cm, e.g. 180. -->
+    <string name="settings_summary_height_cm">%1$s cm</string>
+    <string name="settings_summary_height_not_set">height not set</string>
+    <string name="settings_summary_health_unavailable">Not on this device</string>
+    <string name="settings_summary_health_update">Update needed</string>
+    <string name="settings_summary_health_not_connected">Not connected</string>
+    <string name="settings_summary_health_connected">Connected</string>
+    <plurals name="settings_summary_health_connected_days"><item quantity="one">Connected · %d day</item><item quantity="other">Connected · %d days</item></plurals>
+    <!-- Import result, joined to the next phrases with " · " in code: each phrase is whole. %d is a count. -->
+    <plurals name="settings_import_csv_sessions"><item quantity="one">Imported %d workout</item><item quantity="other">Imported %d workouts</item></plurals>
+    <plurals name="settings_import_csv_sessions__t"><item quantity="one">Imported %d trial</item><item quantity="other">Imported %d trials</item></plurals>
+    <string name="settings_import_csv_xp">+%d XP</string>
+    <string name="settings_import_csv_skipped">%d already in your history</string>
+    <string name="settings_import_csv_skipped__t">%d already in your Chronicle</string>
+    <!-- Restore result, joined with " · " in code: each phrase is whole. %d is a count. -->
+    <plurals name="settings_archive_restored_routines"><item quantity="one">restored %d routine</item><item quantity="other">restored %d routines</item></plurals>
+    <plurals name="settings_archive_restored_routines__t"><item quantity="one">restored %d rite</item><item quantity="other">restored %d rites</item></plurals>
+    <plurals name="settings_archive_restored_sessions"><item quantity="one">%d finished workout</item><item quantity="other">%d finished workouts</item></plurals>
+    <plurals name="settings_archive_restored_sessions__t"><item quantity="one">%d sealed trial</item><item quantity="other">%d sealed trials</item></plurals>
+    <plurals name="settings_archive_restored_stats"><item quantity="one">%d measurement</item><item quantity="other">%d measurements</item></plurals>
+    <plurals name="settings_archive_restored_stats__t"><item quantity="one">%d reading</item><item quantity="other">%d readings</item></plurals>
+    <plurals name="settings_archive_restored_deeds"><item quantity="one">%d deed</item><item quantity="other">%d deeds</item></plurals>
+    <plurals name="settings_archive_restored_skills"><item quantity="one">%d practice log attempt</item><item quantity="other">%d practice log attempts</item></plurals>
+    <plurals name="settings_archive_restored_skills__t"><item quantity="one">%d Journal attempt</item><item quantity="other">%d Journal attempts</item></plurals>
+    <plurals name="settings_archive_restored_health_days"><item quantity="one">%d health day</item><item quantity="other">%d health days</item></plurals>
+    <!-- Settings: Armoury, Profile, During a workout, Training mode (phase 4) -->
+    <string name="settings_saved_confirmation">✓ Saved</string>
+    <string name="settings_armoury_unset_caption">Not set: the plan builder and MY EQUIPMENT offer everything.</string>
+    <string name="settings_armoury_unset_caption__t">Not set: the Forge and MY ARMOURY offer everything.</string>
+    <string name="settings_armoury_set_caption">The plan builder and the MY EQUIPMENT filter use only this.</string>
+    <string name="settings_armoury_set_caption__t">The Forge and the MY ARMOURY filter use only this.</string>
+    <string name="settings_armoury_bar_title">Bar</string>
+    <string name="settings_armoury_plates_title">Plates you own</string>
+    <string name="settings_armoury_plates_caption">Pairs of each. The plate calculator builds loads from these.</string>
+    <string name="settings_profile_name_label">Your name</string>
+    <string name="settings_profile_name_caption_signed_in">Shown on Today and on the leaderboard.</string>
+    <string name="settings_profile_name_caption_signed_in__t">Shown on Today and in the Reckoning.</string>
+    <string name="settings_profile_name_caption_signed_out">Shown on Today. Sign in to join the leaderboard.</string>
+    <string name="settings_profile_name_caption_signed_out__t">Shown on Today. Sign in to join the Reckoning.</string>
+    <string name="settings_profile_height_label">Height (cm)</string>
+    <string name="settings_profile_height_caption">Used for BMI, FFMI and step length.</string>
+    <string name="settings_profile_weight_label">Weight</string>
+    <string name="settings_profile_weight_empty">Not logged yet</string>
+    <string name="settings_profile_weight_caption">Your latest weigh-in. Log a new one on the Stats tab.</string>
+    <string name="settings_profile_weight_caption__t">Your latest weigh-in. Log a new one on the Ledger tab.</string>
+    <string name="settings_profile_sex_caption">Sets the body-fat formula and strength scaling.</string>
+    <string name="settings_trial_rest_label">Rest timer</string>
+    <string name="settings_trial_rest_caption">Counts the rest down after each set. Off, a ticked set starts no rest. One movement can opt out from its routine or its menu in the workout.</string>
+    <string name="settings_trial_rest_caption__t">Counts the rest down after each set. Off, a ticked set starts no rest. One movement can opt out from its rite or its menu in the trial.</string>
+    <string name="settings_trial_alert_title">WHEN A REST ENDS</string>
+    <!-- Settings > During a workout: %1$s is the chosen alert's description, a sentence ending in a full stop. -->
+    <string name="settings_trial_alert_caption">%1$s It also cues the last 3 seconds of a timed set.</string>
+    <string name="settings_trial_awake_label">Keep the screen on</string>
+    <string name="settings_trial_awake_caption">Stops the screen sleeping while a workout is open. The pocket lock on the workout dims it.</string>
+    <string name="settings_trial_awake_caption__t">Stops the screen sleeping while a trial is open. The pocket lock on the trial dims it.</string>
+    <string name="settings_training_strength_caption">Clear all sets and load rises. Three stalls: deload.</string>
+    <string name="settings_training_hypertrophy_caption">Reps climb, then load. Three stalls: deload.</string>
+    <string name="settings_training_warmup_label">Warm-up reminder</string>
+    <string name="settings_training_warmup_caption">Before your first set, a reminder for 5 minutes of easy cardio and mobility for the workout\'s muscles.</string>
+    <string name="settings_training_warmup_caption__t">Before your first set, a reminder for 5 minutes of easy cardio and mobility for the trial\'s muscles.</string>
+    <string name="settings_training_units_title">Units</string>
+    <string name="settings_training_units_caption">Loads and plates. Your history keeps its exact weights; only what you see changes.</string>
+    <string name="settings_training_effort_title">Effort per set</string>
+    <string name="settings_training_effort_label">Log effort</string>
+    <string name="settings_training_effort_caption">After a set, rate how hard it was. Optional, one tap.</string>
+    <!-- Settings > Training mode: %1$s is the one-line hint for the RPE scale. -->
+    <string name="settings_training_effort_rir_hint">%1$s RIR counts those reps instead.</string>
+    <!-- Settings > Appearance (phase 4) -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_apply">Apply</string>
+    <string name="settings_appearance_theme_title">THEME</string>
+    <string name="settings_appearance_theme_caption">System follows your phone\'s dark mode. Colour pairs are kept separately for each theme.</string>
+    <string name="settings_appearance_theme_system">System</string>
+    <string name="settings_appearance_theme_dark">Dark</string>
+    <string name="settings_appearance_theme_light">Light</string>
+    <string name="settings_appearance_themed_names_label">Themed names</string>
+    <string name="settings_appearance_pairs_title">COLOUR PAIRS</string>
+    <string name="settings_appearance_pairs_caption">Choose a pair, or make it yours. Changes apply across the app.</string>
+    <string name="settings_appearance_primary_label">Primary accent</string>
+    <string name="settings_appearance_primary_caption">Actions and progress</string>
+    <string name="settings_appearance_reward_label">Reward accent</string>
+    <string name="settings_appearance_reward_caption">PRs and earned moments</string>
+    <string name="settings_appearance_reward_caption__t">Peaks and earned moments</string>
+    <!-- Settings > Appearance: %1$s is the first colour pair's name in lower case. -->
+    <string name="settings_appearance_reset_button">Reset to %1$s</string>
+    <string name="settings_appearance_preview_action">Log set</string>
+    <string name="settings_appearance_preview_record">New PR</string>
+    <string name="settings_appearance_preview_record__t">New peak</string>
+    <string name="settings_appearance_preview_xp">+12 XP</string>
+    <string name="settings_appearance_picker_current">Current</string>
+    <string name="settings_appearance_picker_new">New</string>
+    <string name="settings_appearance_picker_hex_label">Hex colour</string>
+    <string name="settings_appearance_picker_hex_error">Enter a six-digit hex colour</string>
+    <string name="settings_appearance_picker_darkened">Made a little darker so it stays readable on light paper.</string>
+    <string name="settings_appearance_picker_low_contrast">This colour may be hard to see on dark backgrounds.</string>
+    <string name="settings_appearance_pad_label">Saturation and brightness</string>
+    <!-- Accessibility state of the colour pad. %1$d and %2$d are percentages. -->
+    <string name="settings_appearance_pad_state">Saturation %1$d%%, brightness %2$d%%</string>
+    <string name="settings_appearance_pad_more_saturation">Increase saturation</string>
+    <string name="settings_appearance_pad_less_saturation">Decrease saturation</string>
+    <string name="settings_appearance_pad_more_brightness">Increase brightness</string>
+    <string name="settings_appearance_pad_less_brightness">Decrease brightness</string>
+    <string name="settings_appearance_hue_label">Hue</string>
+    <!-- Accessibility state of the hue slider. %1$d is an angle in degrees. -->
+    <string name="settings_appearance_hue_state">%1$d degrees</string>
+    <!-- Settings > Data, automatic backup, Health Connect (phase 4) -->
+    <string name="settings_backup_title">Automatic backup</string>
+    <string name="settings_backup_weekly">Weekly</string>
+    <string name="settings_backup_off_caption">Saves a full archive to a folder you choose, every week.</string>
+    <!-- Settings > Data > Automatic backup. %1$s is the folder's name, %2$d how many of the newest backups are kept. -->
+    <plurals name="settings_backup_folder_caption"><item quantity="one">Folder: %1$s. Keeps the newest %2$d.</item><item quantity="other">Folder: %1$s. Keeps the newest %2$d.</item></plurals>
+    <string name="settings_backup_last_label">Last backup</string>
+    <string name="settings_backup_last_failed">Failed</string>
+    <string name="settings_backup_last_never">Not yet</string>
+    <string name="settings_backup_now_button">Back up now</string>
+    <string name="settings_backup_change_folder_button">Change backup folder</string>
+    <string name="settings_backup_stop_button">Turn off automatic backup</string>
+    <string name="settings_backup_stop_caption">Files already saved stay in the folder.</string>
+    <string name="settings_data_csv_unit_note">Weights export in kg</string>
+    <string name="settings_data_export_archive_label">Export archive</string>
+    <string name="settings_data_export_archive_caption">A full JSON archive of everything on this device.</string>
+    <!-- Title of Android's share sheet when exporting the archive. -->
+    <string name="settings_data_export_archive_title">Export Ironvellum data</string>
+    <!-- Title of Android's share sheet when exporting the CSV. -->
+    <string name="settings_data_export_trials_title">Export workouts</string>
+    <string name="settings_data_export_trials_title__t">Export trials</string>
+    <string name="settings_data_export_week_label">Export workouts this week</string>
+    <string name="settings_data_export_week_label__t">Export trials this week</string>
+    <string name="settings_data_export_month_label">Export workouts this month</string>
+    <string name="settings_data_export_month_label__t">Export trials this month</string>
+    <string name="settings_data_export_year_label">Export workouts this year</string>
+    <string name="settings_data_export_year_label__t">Export trials this year</string>
+    <string name="settings_data_import_label">Import from another app</string>
+    <string name="settings_data_import_caption">Adds workouts from a Strong, Hevy or FitNotes CSV export.</string>
+    <string name="settings_data_import_caption__t">Adds trials from a Strong, Hevy or FitNotes CSV export.</string>
+    <string name="settings_data_restore_label">Restore from a file</string>
+    <string name="settings_data_restore_caption">Replaces all data on this device with an archive.</string>
+    <string name="settings_data_restore_confirm_title">Restore this archive?</string>
+    <string name="settings_data_restore_confirm_text">Replaces your routines and weekly plan, history, measurements, deeds and practice log on this device. This cannot be undone.</string>
+    <string name="settings_data_restore_confirm_text__t">Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.</string>
+    <string name="settings_data_restore_confirm_button">Restore</string>
+    <string name="settings_data_restore_keep_button">Keep local data</string>
+    <string name="settings_health_intro">Reads body, activity and sleep data. Writes only what you turn on below.</string>
+    <string name="settings_health_connect_button">Connect &amp; Sync</string>
+    <!-- Health Connect reading: %1$d is today's steps, %2$s the time Health Connect last updated them (e.g. 14:05). -->
+    <plurals name="settings_health_steps_today"><item quantity="one">%1$d step today</item><item quantity="other">%1$d steps today</item></plurals>
+    <plurals name="settings_health_steps_today_as_of"><item quantity="one">%1$d step today (as of %2$s)</item><item quantity="other">%1$d steps today (as of %2$s)</item></plurals>
+    <string name="settings_health_weight">%1$s kg</string>
+    <string name="settings_health_body_fat">%1$s%% bf</string>
+    <plurals name="settings_health_days_synced"><item quantity="one">%d day synced</item><item quantity="other">%d days synced</item></plurals>
+    <string name="settings_health_steps_total">%1$s steps</string>
+    <string name="settings_health_distance_total">%1$s km</string>
+    <string name="settings_health_save_label">Save finished workouts to Health Connect</string>
+    <string name="settings_health_save_label__t">Save sealed trials to Health Connect</string>
+    <string name="settings_health_save_caption">Finished workouts are written once, as strength training: start, end, name and public note. Imported ones never are. Turning this off keeps what is already there.</string>
+    <string name="settings_health_save_caption__t">Sealed trials are written once, as strength training: start, end, name and public note. Imported ones never are. Turning this off keeps what is already there.</string>
+    <string name="settings_health_unavailable">Health Connect is not available on this device.</string>
+    <string name="settings_health_refused">Health Connect did not allow saving. You can allow it in Health Connect under App permissions.</string>
+    <string name="settings_health_revoked">Health Connect\'s permission to save was removed, so nothing is being saved. Turn this on to allow it again.</string>
+    <!-- %1$s is the reason the last save failed. -->
+    <string name="settings_health_last_failed">Last save failed: %1$s</string>
+    <!-- %1$s is the date and time of the last save, e.g. 3 Oct, 14:05. -->
+    <string name="settings_health_last_saved">Last saved %1$s</string>
+    <!-- Settings > Import review and Support (phase 4) -->
+    <string name="common_done">Done</string>
+    <plurals name="settings_import_review_sessions"><item quantity="one">%d workout</item><item quantity="other">%d workouts</item></plurals>
+    <plurals name="settings_import_review_sessions__t"><item quantity="one">%d trial</item><item quantity="other">%d trials</item></plurals>
+    <!-- Import review: %1$s and %2$s are dates, e.g. 3 Oct 2024, from the file's newest and oldest workout. -->
+    <string name="settings_import_review_range">from %1$s to %2$s</string>
+    <string name="settings_import_review_unit_label">Weight unit</string>
+    <!-- %1$s is the unit, "kg" or "lb". -->
+    <string name="settings_import_review_unit_estimated">Estimated %1$s from your barbell numbers. Check a familiar exercise before importing.</string>
+    <string name="settings_import_review_unit_choose">Strong exports carry no unit column, so choose.</string>
+    <string name="settings_import_review_unmatched_title">Exercises we could not match</string>
+    <string name="settings_import_review_all_matched">Every exercise matched the catalogue.</string>
+    <string name="settings_import_review_note">Nothing here replaces your history. Workouts already in the app are skipped; imported workouts stay on this device and out of the feed.</string>
+    <string name="settings_import_review_note__t">Nothing here replaces your Chronicle. Trials already in the app are skipped; imported trials stay on this device and out of the Tidings.</string>
+    <string name="settings_import_review_importing">Importing</string>
+    <plurals name="settings_import_review_button"><item quantity="one">Import %d workout</item><item quantity="other">Import %d workouts</item></plurals>
+    <plurals name="settings_import_review_button__t"><item quantity="one">Import %d trial</item><item quantity="other">Import %d trials</item></plurals>
+    <string name="settings_import_review_choose">Choose</string>
+    <string name="settings_import_review_change">Change</string>
+    <!-- Spoken label of an unmatched exercise row. %1$s is the exercise name from the file. -->
+    <string name="settings_import_review_choose_label">Choose match for %1$s</string>
+    <string name="settings_import_review_change_label">Change match for %1$s</string>
+    <!-- %1$s is a measurement kind such as "weight and reps". -->
+    <string name="settings_import_review_keep_new_measured">keep as new exercise · measured in %1$s</string>
+    <!-- %1$s is the exercise this name maps to. -->
+    <string name="settings_import_review_maps_to">maps to %1$s</string>
+    <string name="settings_import_review_match_title">Match exercise</string>
+    <string name="settings_import_review_keep_new">Keep as new exercise</string>
+    <string name="settings_import_review_measured_in">measured in %1$s</string>
+    <string name="settings_support_title">SUPPORT IRONVELLUM</string>
+    <string name="settings_support_title_about">ABOUT</string>
+    <string name="settings_support_intro">Ironvellum is free and open source. It has no ads, no trackers and no paid tier.</string>
+    <string name="settings_support_costs">The shared cloud the feed and the backups live on costs real money every month — about $25 for hosting. Every cost is public: every invoice in, every coin out.</string>
+    <string name="settings_support_costs__t">The shared cloud the Tidings and the backups live on costs real money every month — about $25 for hosting. Every cost is public: every invoice in, every coin out.</string>
+    <string name="settings_support_ask">If Ironvellum has earned it, you can help carry the cloud. There is no premium and there never will be — a donation buys nothing but the next month of backups for everyone.</string>
+    <string name="settings_support_costs_row">View the costs</string>
+    <string name="settings_support_sponsor_row">Sponsor on GitHub</string>
+    <string name="settings_support_liberapay_row">Donate on Liberapay</string>
+    <string name="settings_support_source_row">Source code</string>
+    <string name="settings_support_licence_row">Licence</string>
+    <!-- A licence identifier, not translated. -->
+    <string name="settings_support_licence_value">GPL-3.0-or-later</string>
+    <string name="settings_support_credits">Chakra Petch font, SIL Open Font License 1.1. Apart from the exercise drawings credited below, artwork is original or generated for Ironvellum, released under the same licence.</string>
+    <string name="settings_support_licence_hide">Hide the licence text</string>
+    <string name="settings_support_licence_show">Show the licence text</string>
+    <!-- %1$s is the app version, e.g. 1.8.0. -->
+    <string name="settings_support_version">Ironvellum %1$s</string>
+    <!-- Settings > Advanced (phase 4) -->
+    <string name="common_clear">Clear</string>
+    <string name="common_save">Save</string>
+    <string name="common_share">Share</string>
+    <string name="settings_advanced_cloud_none">No cloud on this build</string>
+    <string name="settings_advanced_cloud_shared">Ironvellum shared cloud</string>
+    <!-- %1$s is the host of the lifter's own backend, e.g. abc.supabase.co. -->
+    <string name="settings_advanced_cloud_own">Your own backend · %1$s</string>
+    <string name="settings_advanced_switch_title">Use this backend?</string>
+    <string name="settings_advanced_switch_text">You\'ll be signed out. Your training stays on this phone and uploads to the new backend when you sign in there.</string>
+    <string name="settings_advanced_switch_button">Switch</string>
+    <string name="settings_advanced_stay_button">Stay</string>
+    <string name="settings_advanced_return_title">Return to the shared cloud?</string>
+    <string name="settings_advanced_return_text">You\'ll be signed out. Your training stays on this phone and uploads to the Ironvellum shared cloud when you sign in there.</string>
+    <string name="settings_advanced_clear_title">Clear the crash log?</string>
+    <string name="settings_advanced_clear_text">Deletes the stored crash reports. Share them first if you meant to send them.</string>
+    <string name="settings_advanced_keep_button">Keep</string>
+    <string name="settings_advanced_use_shared_row">Use shared cloud</string>
+    <string name="settings_advanced_use_own_row">Use my own backend</string>
+    <string name="settings_advanced_url_label">Project URL (https://…supabase.co)</string>
+    <string name="settings_advanced_key_label">Publishable (anon) key</string>
+    <!-- %1$d is the backend's schema version. -->
+    <string name="settings_advanced_probe_ready">Backend ready — schema v%1$d. Save to move your cloud here.</string>
+    <!-- %1$d is the schema version the backend has, %2$d the one the app needs. -->
+    <string name="settings_advanced_probe_outdated">The backend is live but its schema is v%1$d; apply the migrations up to v%2$d.</string>
+    <string name="settings_advanced_probe_no_schema">Reached the project, but its database migrations have not been applied.</string>
+    <string name="settings_advanced_probe_bad_key">The key was refused — copy the publishable (anon) key, not the secret one.</string>
+    <string name="settings_advanced_probe_unreachable">Could not reach the backend — check the URL, your connection, or resume the paused project.</string>
+    <string name="settings_advanced_test_button">Test</string>
+    <string name="settings_advanced_crash_label">Crash log</string>
+    <string name="settings_advanced_crash_empty">The crash log is blank.</string>
+    <!-- %1$d is how many crash records are stored, %2$s when the latest happened. -->
+    <plurals name="settings_advanced_crash_summary"><item quantity="one">%1$d crash record · latest %2$s</item><item quantity="other">%1$d crash records · latest %2$s</item></plurals>
+    <!-- Title of Android's share sheet when sharing the crash log. -->
+    <string name="settings_advanced_crash_share_title">Share Ironvellum crash log</string>
+    <string name="settings_advanced_coverage_label">Health Connect coverage</string>
+    <string name="settings_advanced_coverage_empty">Days filled per metric; appears after Connect &amp; Sync.</string>
+    <!-- Settings messages shown from the view model (phase 4) -->
+    <!-- Settings > Profile: %1$d and %2$d are the lowest and highest height in cm. -->
+    <string name="settings_profile_height_error">Height must be %1$d–%2$d cm</string>
+    <string name="settings_profile_rename_failed">Could not change your name</string>
+    <!-- %1$s is the reason the export failed. -->
+    <string name="settings_export_error">Could not export: %1$s</string>
+    <string name="settings_export_archive_failed">the archive could not be built</string>
+    <string name="settings_export_csv_failed">the CSV could not be built</string>
+    <string name="settings_export_none_week">No workouts logged this week.</string>
+    <string name="settings_export_none_week__t">No trials logged this week.</string>
+    <string name="settings_export_none_month">No workouts logged this month.</string>
+    <string name="settings_export_none_month__t">No trials logged this month.</string>
+    <string name="settings_export_none_year">No workouts logged this year.</string>
+    <string name="settings_export_none_year__t">No trials logged this year.</string>
+    <!-- %1$s is the reason the import failed. -->
+    <string name="settings_import_failed">Import failed: %1$s</string>
+    <string name="settings_import_unreadable">the file could not be read</string>
+    <string name="settings_import_empty">That file was empty or could not be read. Nothing was changed.</string>
+    <!-- %1$s is the first problem found in the archive, %2$d how many more there are. -->
+    <string name="settings_import_more_problems">%1$s (+%2$d more)</string>
+    <string name="settings_import_not_archive">Import failed — the file may not be an Ironvellum archive</string>
+    <!-- %1$s is the reason the sync failed. -->
+    <string name="settings_health_sync_failed">Health Connect sync failed: %1$s</string>
+    <string name="settings_health_unsupported">Health Connect isn\'t available on this device.</string>
+    <string name="settings_health_update_required">Update Health Connect, then retry.</string>
+    <string name="settings_health_no_permission">Permission not granted yet — allow Weight, Body fat and Steps in Health Connect, then retry.</string>
+    <!-- %1$s is the reason the read failed. -->
+    <string name="settings_health_read_failed_with">Health Connect read failed: %1$s</string>
+    <string name="settings_health_read_failed">Health Connect read failed</string>
+    <string name="settings_health_no_data">Health Connect returned no data.</string>
+    <!-- %1$s is the weight in kg that Health Connect returned. -->
+    <string name="settings_health_implausible_weight">Health Connect returned an implausible weight (%1$s kg); not imported.</string>
+    <!-- %1$s is the reason the imported measurement could not be stored. -->
+    <string name="settings_health_store_failed">Could not store the imported measurement: %1$s</string>
+    <string name="settings_health_store_failed__t">Could not store the imported reading: %1$s</string>
+    <string name="settings_health_unknown_reason">unknown reason</string>
+    <string name="settings_health_imported_no_height">Imported into your stats. Set your height in Profile to unlock BMI.</string>
+    <string name="settings_health_imported_no_height__t">Imported into your Ledger. Set your height in Profile to unlock BMI.</string>
+    <string name="settings_health_imported">Imported into your stats.</string>
+    <string name="settings_health_imported__t">Imported into your Ledger.</string>
+    <string name="settings_health_no_weight">No weight found in Health Connect yet.</string>
+    <!-- Settings > Advanced > coverage. %1$s is a time like "Tue 14:05", %2$s the app that wrote the step record. -->
+    <string name="settings_health_newest_step">newest step record %1$s from %2$s</string>
+    <string name="settings_health_unknown_app">unknown app</string>
+    <!-- %1$s is a count of days ("3 days"), %2$s a count of measurements ("2 measurements"). -->
+    <string name="settings_health_history_updated">Activity history updated — %1$s, %2$s.</string>
+    <plurals name="settings_health_history_readings"><item quantity="one">%d measurement</item><item quantity="other">%d measurements</item></plurals>
+    <plurals name="settings_health_history_readings__t"><item quantity="one">%d reading</item><item quantity="other">%d readings</item></plurals>
+    <!-- %1$s is the first problem Health Connect reported. -->
+    <string name="settings_health_history_partial">Partial: %1$s</string>
+    <string name="settings_health_nothing_synced">Nothing synced — %1$s</string>
+    <string name="settings_health_nothing_synced_empty">Nothing synced — Health Connect holds no activity for this window.</string>
+    <!-- Onboarding: welcome, first-run preferences and setup steps (phase 4) -->
+    <string name="common_continue">Continue</string>
+    <string name="onboarding_welcome_steps">Three short steps: who you are, how you train, and the weekly plan built for you.</string>
+    <string name="onboarding_welcome_steps__t">Three short steps: who you are, how you train, and the cycle built for you.</string>
+    <string name="onboarding_welcome_already_title">Already train somewhere?</string>
+    <string name="onboarding_welcome_backup_label">I have a backup</string>
+    <string name="onboarding_welcome_backup_caption">Restore an Ironvellum archive from a file</string>
+    <!-- Spoken label of the backup row on the welcome screen. -->
+    <string name="onboarding_welcome_backup_action">Restore a backup from a file</string>
+    <string name="onboarding_welcome_import_label">Import from Strong, Hevy or FitNotes</string>
+    <string name="onboarding_welcome_import_caption">Adds your workouts from a CSV export. You still set up next.</string>
+    <string name="onboarding_welcome_import_caption__t">Adds your trials from a CSV export. You still set up next.</string>
+    <string name="onboarding_welcome_import_action">Import workouts from a CSV file</string>
+    <string name="onboarding_welcome_import_action__t">Import trials from a CSV file</string>
+    <string name="onboarding_welcome_begin_button">Begin</string>
+    <string name="onboarding_prefs_title">Make it yours</string>
+    <string name="onboarding_prefs_intro">Choose how your workouts and routines are named, the weight unit and the colours.</string>
+    <string name="onboarding_prefs_intro__t">Choose how your trials and rites are named, the weight unit and the colours.</string>
+    <string name="onboarding_prefs_names_title">Names</string>
+    <string name="onboarding_prefs_names_plain">Plain</string>
+    <string name="onboarding_prefs_names_themed">Themed</string>
+    <!-- A sample of the names in the mode that is showing: workout, routines and the personal-record word. -->
+    <string name="onboarding_prefs_names_sample">Begin workout  ·  Your routines  ·  PRs</string>
+    <string name="onboarding_prefs_names_sample__t">Begin trial  ·  Your rites  ·  Peaks</string>
+    <string name="onboarding_prefs_names_caption">Everyday gym words.</string>
+    <string name="onboarding_prefs_names_caption__t">The app\'s own fantasy names.</string>
+    <string name="onboarding_prefs_unit_title">Weight unit</string>
+    <string name="onboarding_prefs_unit_caption">Loads, plates and your body weight. Height stays in cm.</string>
+    <string name="onboarding_prefs_accent_title">Accent colour</string>
+    <string name="onboarding_prefs_later">You can change these later in Settings.</string>
+    <!-- Setup errors. %1$s is the reason, when there is one. -->
+    <string name="onboarding_save_failed">Could not save your details</string>
+    <string name="onboarding_save_failed_with">Could not save your details: %1$s</string>
+    <string name="onboarding_plan_failed">Plan builder failed: %1$s</string>
+    <string name="onboarding_plan_failed__t">The Forge failed: %1$s</string>
+    <string name="onboarding_plan_empty">This weekly plan has no exercises. Rebuild it from your answers first. Nothing was written.</string>
+    <string name="onboarding_plan_empty__t">This cycle has no exercises. Rebuild it from your answers first. Nothing was written.</string>
+    <string name="onboarding_cycle_save_failed">Could not save the weekly plan. Nothing was written.</string>
+    <string name="onboarding_cycle_save_failed__t">Could not save the cycle. Nothing was written.</string>
+    <string name="onboarding_cycle_save_failed_with">Could not save the weekly plan: %1$s. Nothing was written.</string>
+    <string name="onboarding_cycle_save_failed_with__t">Could not save the cycle: %1$s. Nothing was written.</string>
+    <string name="onboarding_goal_not_saved">Your weekly plan was saved, but your goal could not be remembered</string>
+    <string name="onboarding_goal_not_saved__t">Your cycle was saved, but your goal could not be remembered</string>
+    <string name="onboarding_goal_not_saved_with">Your weekly plan was saved, but your goal could not be remembered: %1$s</string>
+    <string name="onboarding_goal_not_saved_with__t">Your cycle was saved, but your goal could not be remembered: %1$s</string>
+    <!-- Joins a list of what is missing, e.g. "a name, height and weight": %1$s is the earlier items, %2$s the last. -->
+    <string name="onboarding_list_last">%1$s and %2$s</string>
+    <!-- Joins the earlier items of that list. -->
+    <string name="onboarding_list_join">%1$s, %2$s</string>
+    <string name="onboarding_missing_name">a name</string>
+    <string name="onboarding_missing_height">height</string>
+    <string name="onboarding_missing_weight">weight</string>
+    <string name="onboarding_missing_sex">sex</string>
+    <!-- %1$s is the list of what is missing, e.g. "a name and height". -->
+    <string name="onboarding_profile_hint_add">Add %1$s to continue.</string>
+    <!-- %1$s is the list of what is missing, %2$s the ranges that were refused. -->
+    <string name="onboarding_profile_hint_add_then">Add %1$s. %2$s</string>
+    <!-- %1$s is a range of centimetres, e.g. "50 to 272". -->
+    <string name="onboarding_height_range">Height must be %1$s cm.</string>
+    <!-- %1$s is a range of weights, %2$s the unit. -->
+    <string name="onboarding_weight_range">Weight must be %1$s %2$s.</string>
+    <string name="onboarding_profile_range_hint">Height %1$s cm. Weight %2$s %3$s.</string>
+    <string name="onboarding_replace_title">Replace your routines?</string>
+    <string name="onboarding_replace_title__t">Replace your rites?</string>
+    <!-- %d is how many routines the lifter already has. -->
+    <plurals name="onboarding_replace_text"><item quantity="one">Taking this weekly plan replaces your %d existing routine. Your history is kept. This cannot be undone.</item><item quantity="other">Taking this weekly plan replaces your %d existing routines. Your history is kept. This cannot be undone.</item></plurals>
+    <plurals name="onboarding_replace_text__t"><item quantity="one">Taking this cycle replaces your %d existing rite. Your Chronicle is kept. This cannot be undone.</item><item quantity="other">Taking this cycle replaces your %d existing rites. Your Chronicle is kept. This cannot be undone.</item></plurals>
+    <string name="onboarding_replace_button">Replace</string>
+    <string name="onboarding_replace_keep">Keep my routines</string>
+    <string name="onboarding_replace_keep__t">Keep my rites</string>
+    <string name="onboarding_take_button">Take this weekly plan</string>
+    <string name="onboarding_take_button__t">Take this cycle</string>
+    <string name="onboarding_skip_cost">Skipping leaves your scores blank and builds no weekly plan. Add your body in Settings and build a weekly plan in Train any time.</string>
+    <string name="onboarding_skip_cost__t">Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time.</string>
+    <string name="onboarding_skip_title">Skip setup?</string>
+    <string name="onboarding_skip_button">Skip setup</string>
+    <string name="onboarding_skip_keep_button">Keep going</string>
+    <string name="onboarding_armoury_required">Pick your equipment to continue. Nothing means bodyweight only.</string>
+    <string name="onboarding_armoury_required__t">Pick your armoury to continue. Nothing means bodyweight only.</string>
+    <string name="onboarding_step_profile_title">Who you are</string>
+    <string name="onboarding_step_training_title">How you train</string>
+    <string name="onboarding_step_plan_title">Your weekly plan</string>
+    <string name="onboarding_step_plan_title__t">Your cycle</string>
+    <string name="onboarding_step_profile_prose">Your sex, height and weight scale every number Ironvellum shows you.</string>
+    <string name="onboarding_step_training_prose">Answer five things and get a weekly plan built for you.</string>
+    <string name="onboarding_step_training_prose__t">Answer five things and get a cycle built for you.</string>
+    <string name="onboarding_step_plan_prose">Built from your answers. Tap a day to open it, an exercise to adjust it.</string>
+    <string name="onboarding_back_chip">BACK</string>
+    <string name="onboarding_back_to_preferences">Back to your preferences</string>
+    <string name="onboarding_back_to_profile">Back to who you are</string>
+    <string name="onboarding_back_to_training">Back to how you train</string>
+    <string name="onboarding_skip_chip">SKIP</string>
+    <string name="onboarding_skip_description">Skip setup. Set your details and weekly plan later in Settings or the Stats tab</string>
+    <string name="onboarding_skip_description__t">Skip setup. Set your details and cycle later in Settings or the Ledger</string>
+    <!-- Setup progress, e.g. "Step 2 of 3": %1$d is the current step, %2$d how many there are. -->
+    <string name="onboarding_step_progress">Step %1$d of %2$d</string>
+    <string name="onboarding_plan_hint_empty">Add exercises back or rebuild to take a weekly plan.</string>
+    <string name="onboarding_plan_hint_empty__t">Add exercises back or rebuild to take a cycle.</string>
+    <string name="onboarding_plan_hint_loading">Still consulting the catalogue…</string>
+    <string name="onboarding_profile_name_label">Your name</string>
+    <string name="onboarding_profile_height_label">Height (cm)</string>
+    <!-- %1$s is the weight unit, "kg" or "lb". -->
+    <string name="onboarding_profile_weight_label">Weight (%1$s)</string>
+    <string name="onboarding_profile_sex_label">Sex</string>
+    <string name="onboarding_training_split_label">How you divide the week</string>
+    <string name="onboarding_training_sets_label">Starting sets</string>
+    <string name="onboarding_training_focus_label">What you are chasing</string>
+    <!-- Goal chips: keep each label short, four share one row at 360dp. -->
+    <string name="onboarding_focus_power">Power</string>
+    <string name="onboarding_focus_muscle">Muscle</string>
+    <string name="onboarding_focus_mixed">Mixed</string>
+    <string name="onboarding_focus_power_caption">Low reps, heavy load. Bigger numbers on the main exercises.</string>
+    <string name="onboarding_focus_muscle_caption">Higher volume, moderate load. Size comes before bragging rights.</string>
+    <string name="onboarding_focus_skill_caption">Handstands, levers, the planche. Practice over pump.</string>
+    <string name="onboarding_focus_mixed_caption">A balanced mix: a bit stronger, a bit bigger, nothing neglected.</string>
+    <string name="onboarding_training_effort_label">How you rate effort</string>
+    <string name="onboarding_effort_rir">RIR (reps left)</string>
+    <string name="onboarding_effort_rpe">RPE (how hard)</string>
+    <string name="onboarding_training_armoury_label">Your equipment</string>
+    <string name="onboarding_training_armoury_label__t">Your armoury</string>
+    <string name="onboarding_plan_loading">Consulting the catalogue…</string>
+    <string name="onboarding_plan_nothing_left">Nothing left. Rebuild from your answers, or take the starter weekly plan instead.</string>
+    <string name="onboarding_plan_nothing_left__t">Nothing left. Rebuild from your answers, or take the starter cycle instead.</string>
+    <string name="onboarding_plan_rebuild_button">Rebuild from my answers</string>
+    <string name="onboarding_plan_note_hard_set">A hard set ends 0–2 reps short of failure. Change any number.</string>
+    <string name="onboarding_plan_note_strength">Strength goal: load goes up when you hit your reps.</string>
+    <string name="onboarding_plan_note_muscle">Muscle goal: reps go up first, then load.</string>
+    <string name="onboarding_plan_starter_button">Use the starter weekly plan</string>
+    <string name="onboarding_plan_starter_button__t">Use the starter cycle</string>
+    <string name="onboarding_plan_forge_button">Build from my answers</string>
+    <string name="onboarding_plan_forge_button__t">Forge from my answers</string>
+    <string name="onboarding_plan_skip_button">Skip setup…</string>
 </resources>

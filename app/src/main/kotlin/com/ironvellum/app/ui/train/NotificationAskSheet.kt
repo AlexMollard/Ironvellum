@@ -15,9 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.FirstRun
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
@@ -33,29 +36,41 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun NotificationAskSheet(onAllow: () -> Unit, onNotNow: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onNotNow,
-        title = { Text("Hear it when a rest ends") },
+        title = { Text(stringResource(R.string.notification_ask_title)) },
         text = {
             Column {
                 Text(
-                    "Ironvellum needs your say-so to send notifications while you train.",
+                    stringResource(R.string.notification_ask_intro),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
                 Column(Modifier.padding(top = 8.dp)) {
-                    AskRow(Icons.Outlined.Timer, "Rest is over", "One buzz when the rest between sets is over.")
+                    AskRow(
+                        Icons.Outlined.Timer,
+                        stringResource(R.string.notification_ask_rest_title),
+                        stringResource(R.string.notification_ask_rest_body),
+                    )
                     InkDivider()
-                    AskRow(Icons.Outlined.Notifications, "${Words.trial.c} in progress", "Live progress of the ${Words.trial.s} you have open, with ${Words.seal.t}.")
+                    AskRow(
+                        Icons.Outlined.Notifications,
+                        UiText.themed(R.string.notification_ask_live_title, R.string.notification_ask_live_title__t).asString(),
+                        UiText.themed(R.string.notification_ask_live_body, R.string.notification_ask_live_body__t).asString(),
+                    )
                 }
                 Text(
-                    "Not now asks again on your next ${Words.trial.s}, up to ${FirstRun.MAX_NOTIFICATION_ASKS} times in all. You can also allow it later in Settings.",
+                    UiText.themedPlural(
+                        R.plurals.notification_ask_again,
+                        R.plurals.notification_ask_again__t,
+                        FirstRun.MAX_NOTIFICATION_ASKS,
+                    ).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 10.dp),
                 )
             }
         },
-        confirmButton = { IronvellumButton(label = "Allow notifications", onClick = onAllow) },
-        dismissButton = { IronvellumButton(label = "Not now", onClick = onNotNow, quiet = true) },
+        confirmButton = { IronvellumButton(label = stringResource(R.string.notification_ask_allow_button), onClick = onAllow) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.notification_ask_not_now_button), onClick = onNotNow, quiet = true) },
     )
 }
 

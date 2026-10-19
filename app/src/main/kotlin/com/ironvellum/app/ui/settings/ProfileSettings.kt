@@ -15,19 +15,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
-import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
@@ -86,7 +90,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     name = it.take(24)
                     viewModel.clearRenameError()
                 },
-                label = { Text("Your name") },
+                label = { Text(stringResource(R.string.settings_profile_name_label)) },
                 isError = renameError != null,
                 enabled = !renaming,
                 singleLine = true,
@@ -100,7 +104,11 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             FieldResult(saved = nameSaved, error = renameError)
             SettingsCaption(
-                if (signedIn) "Shown on Today and in ${Words.theReckoning.t}." else "Shown on Today. Sign in to join ${Words.theReckoning.t}.",
+                if (signedIn) {
+                    UiText.themed(R.string.settings_profile_name_caption_signed_in, R.string.settings_profile_name_caption_signed_in__t).asString()
+                } else {
+                    UiText.themed(R.string.settings_profile_name_caption_signed_out, R.string.settings_profile_name_caption_signed_out__t).asString()
+                },
             )
             Spacer(Modifier.height(20.dp))
             OutlinedTextField(
@@ -111,7 +119,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     heightInput = DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)
                     viewModel.clearHeightStatus()
                 },
-                label = { Text("Height (cm)") },
+                label = { Text(stringResource(R.string.settings_profile_height_label)) },
                 isError = heightStatus.error != null,
                 singleLine = true,
                 keyboardOptions = decimalKeyboard(),
@@ -123,19 +131,19 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             )
             Spacer(Modifier.height(6.dp))
             FieldResult(saved = heightStatus.saved, error = heightStatus.error)
-            SettingsCaption("Used for BMI, FFMI and step length.")
+            SettingsCaption(stringResource(R.string.settings_profile_height_caption))
             Spacer(Modifier.height(14.dp))
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 colors = ironvellumFieldColors(),
-                value = latestWeightKg?.let { Units.withUnit(it) } ?: "Not logged yet",
+                value = latestWeightKg?.let { Units.withUnit(it) } ?: stringResource(R.string.settings_profile_weight_empty),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Weight") },
+                label = { Text(stringResource(R.string.settings_profile_weight_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            SettingsCaption("Your latest weigh-in. Log a new one on the ${Words.ledger.c} tab.")
+            SettingsCaption(UiText.themed(R.string.settings_profile_weight_caption, R.string.settings_profile_weight_caption__t).asString())
             Spacer(Modifier.height(14.dp))
             InkSegmented<Sex?>(
                 options = Sex.entries.map { it to sexLabel(it) },
@@ -147,7 +155,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 },
             )
             Spacer(Modifier.height(8.dp))
-            SettingsCaption("Sets the body-fat formula and strength scaling.")
+            SettingsCaption(stringResource(R.string.settings_profile_sex_caption))
         }
     }
 }
@@ -166,7 +174,7 @@ private fun FieldResult(saved: Boolean, error: String?) {
             Spacer(Modifier.height(4.dp))
         }
         saved -> {
-            SettingsCaption("✓ Saved", color = IronvellumColors.InkMuted)
+            SettingsCaption(stringResource(R.string.settings_saved_confirmation), color = IronvellumColors.InkMuted)
             Spacer(Modifier.height(4.dp))
         }
     }

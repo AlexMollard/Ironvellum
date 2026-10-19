@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,20 +24,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.R
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.ProbeResult
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.IronvellumDialog
-import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
@@ -48,9 +52,9 @@ import kotlinx.coroutines.withContext
 
 /** "Ironvellum shared cloud", or the lifter's own project named by its host. */
 internal fun backendLabel(backend: CloudConfig?): String = when {
-    backend == null -> "No cloud on this build"
-    backend.isDefault -> "Ironvellum shared cloud"
-    else -> "Your own backend · " + backend.url.removePrefix("https://").removeSuffix("/")
+    backend == null -> Words.text(UiText.res(R.string.settings_advanced_cloud_none))
+    backend.isDefault -> Words.text(UiText.res(R.string.settings_advanced_cloud_shared))
+    else -> Words.text(UiText.res(R.string.settings_advanced_cloud_own, backend.url.removePrefix("https://").removeSuffix("/")))
 }
 
 /** What most people never need: the cloud backend override, the crash log, and sync coverage. */
@@ -58,6 +62,7 @@ internal fun backendLabel(backend: CloudConfig?): String = when {
 internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val crashShareTitle = stringResource(R.string.settings_advanced_crash_share_title)
     val sync by viewModel.sync.collectAsStateWithLifecycle()
     // Inputs are saveable across rotation; the probe result lives in the
     // ViewModel so a TEST survives the same.
@@ -84,10 +89,10 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
 
     if (confirmCloudSwitch) {
         SettingsConfirmDialog(
-            title = "Use this backend?",
-            text = "You'll be signed out. Your training stays on this phone and uploads to the new backend when you sign in there.",
-            confirmLabel = "Switch",
-            dismissLabel = "Stay",
+            title = stringResource(R.string.settings_advanced_switch_title),
+            text = stringResource(R.string.settings_advanced_switch_text),
+            confirmLabel = stringResource(R.string.settings_advanced_switch_button),
+            dismissLabel = stringResource(R.string.settings_advanced_stay_button),
             onConfirm = {
                 confirmCloudSwitch = false
                 viewModel.switchBackend(cloudUrl, cloudKey)
@@ -100,10 +105,10 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
     }
     if (confirmSharedSwitch) {
         SettingsConfirmDialog(
-            title = "Return to the shared cloud?",
-            text = "You'll be signed out. Your training stays on this phone and uploads to the Ironvellum shared cloud when you sign in there.",
-            confirmLabel = "Switch",
-            dismissLabel = "Stay",
+            title = stringResource(R.string.settings_advanced_return_title),
+            text = stringResource(R.string.settings_advanced_return_text),
+            confirmLabel = stringResource(R.string.settings_advanced_switch_button),
+            dismissLabel = stringResource(R.string.settings_advanced_stay_button),
             onConfirm = {
                 confirmSharedSwitch = false
                 viewModel.useSharedCloud()
@@ -113,10 +118,10 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
     }
     if (confirmClearCrashes) {
         SettingsConfirmDialog(
-            title = "Clear the crash log?",
-            text = "Deletes the stored crash reports. Share them first if you meant to send them.",
-            confirmLabel = "Clear",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.settings_advanced_clear_title),
+            text = stringResource(R.string.settings_advanced_clear_text),
+            confirmLabel = stringResource(R.string.common_clear),
+            dismissLabel = stringResource(R.string.settings_advanced_keep_button),
             danger = true,
             onConfirm = {
                 confirmClearCrashes = false
@@ -151,10 +156,10 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                 InkSpinner(Modifier.padding(16.dp))
             } else {
                 if (cloudConfig?.isDefault == false) {
-                    ListRow("Use shared cloud", onClick = { confirmSharedSwitch = true })
+                    ListRow(stringResource(R.string.settings_advanced_use_shared_row), onClick = { confirmSharedSwitch = true })
                     InkDivider()
                 }
-                ListRow("Use my own backend", onClick = { cloudFieldsShown = !cloudFieldsShown })
+                ListRow(stringResource(R.string.settings_advanced_use_own_row), onClick = { cloudFieldsShown = !cloudFieldsShown })
                 if (cloudFieldsShown) {
                     InkDivider()
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -163,7 +168,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                             colors = ironvellumFieldColors(),
                             value = cloudUrl,
                             onValueChange = { cloudUrl = it },
-                            label = { Text("Project URL (https://…supabase.co)") },
+                            label = { Text(stringResource(R.string.settings_advanced_url_label)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -173,7 +178,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                             colors = ironvellumFieldColors(),
                             value = cloudKey,
                             onValueChange = { cloudKey = it },
-                            label = { Text("Publishable (anon) key") },
+                            label = { Text(stringResource(R.string.settings_advanced_key_label)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -182,15 +187,15 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                             Text(
                                 when (result) {
                                     is ProbeResult.Ready ->
-                                        "Backend ready — schema v${result.version}. Save to move your cloud here."
+                                        stringResource(R.string.settings_advanced_probe_ready, result.version)
                                     is ProbeResult.Outdated ->
-                                        "The backend is live but its schema is v${result.have}; apply the migrations up to v${result.need}."
+                                        stringResource(R.string.settings_advanced_probe_outdated, result.have, result.need)
                                     ProbeResult.NoSchema ->
-                                        "Reached the project, but its database migrations have not been applied."
+                                        stringResource(R.string.settings_advanced_probe_no_schema)
                                     ProbeResult.BadKey ->
-                                        "The key was refused — copy the publishable (anon) key, not the secret one."
+                                        stringResource(R.string.settings_advanced_probe_bad_key)
                                     ProbeResult.Unreachable ->
-                                        "Could not reach the backend — check the URL, your connection, or resume the paused project."
+                                        stringResource(R.string.settings_advanced_probe_unreachable)
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (result is ProbeResult.Ready) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
@@ -202,7 +207,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                                 InkSpinner(Modifier.weight(1f))
                             } else {
                                 IronvellumButton(
-                                    label = "Test",
+                                    label = stringResource(R.string.settings_advanced_test_button),
                                     onClick = { viewModel.testBackend(cloudUrl, cloudKey) },
                                     enabled = cloudInputValid,
                                     quiet = true,
@@ -210,7 +215,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                                 )
                             }
                             IronvellumButton(
-                                label = "Save",
+                                label = stringResource(R.string.common_save),
                                 onClick = { confirmCloudSwitch = true },
                                 // Saving an unprobed backend would strand the lifter on
                                 // a project that cannot hold their data — TEST first.
@@ -223,11 +228,11 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
             }
             InkDivider()
             ListRow(
-                "Crash log",
+                stringResource(R.string.settings_advanced_crash_label),
                 subline = if (crashCount == 0) {
-                    "The crash log is blank."
+                    stringResource(R.string.settings_advanced_crash_empty)
                 } else {
-                    "$crashCount crash record${if (crashCount == 1) "" else "s"} · latest $latestCrash"
+                    pluralStringResource(R.plurals.settings_advanced_crash_summary, crashCount, crashCount, latestCrash)
                 },
             )
             if (crashCount > 0) {
@@ -235,7 +240,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                 // Share is a quiet link; Clear is red and sits at the far edge, well apart from it.
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     IronvellumButton(
-                        label = "Share",
+                        label = stringResource(R.string.common_share),
                         onClick = {
                             scope.launch {
                                 val text = withContext(Dispatchers.IO) {
@@ -244,13 +249,13 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                                 // Same file route as the export: twenty stack traces
                                 // is not 0.9 MB, but there is no reason for two
                                 // sharing paths with different failure modes.
-                                shareExport(context, "Share Ironvellum crash log", "ironvellum_crash_log.txt", text, "text/plain")
+                                shareExport(context, crashShareTitle, "ironvellum_crash_log.txt", text, "text/plain")
                             }
                         },
                         quiet = true,
                     )
                     IronvellumButton(
-                        label = "Clear",
+                        label = stringResource(R.string.common_clear),
                         onClick = { confirmClearCrashes = true },
                         danger = true,
                     )
@@ -258,8 +263,8 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
             }
             InkDivider()
             ListRow(
-                "Health Connect coverage",
-                subline = sync.coverage ?: "Days filled per metric; appears after Connect & Sync.",
+                stringResource(R.string.settings_advanced_coverage_label),
+                subline = sync.coverage ?: stringResource(R.string.settings_advanced_coverage_empty),
             )
         }
         // Debug builds only: BuildConfig.DEBUG is a constant, so a release build has no trace of this group.
