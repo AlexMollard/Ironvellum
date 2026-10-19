@@ -114,7 +114,6 @@ class HardcodedUiLiteralTest {
         "main/ui/settings/SettingsViewModel.kt" to "export file-name template and the exercise-name keyed typical-load table for the kg/lb guess",
         "main/ui/social/CommentsScreen.kt" to "lazy-list item keys, a unit symbol format and set-marker glyphs: no words",
         "main/ui/social/FeedScreen.kt" to "unit symbol format",
-        "main/ui/social/LeaderboardScreen.kt" to "developer match against a server message",
         "main/ui/stats/LedgerBody.kt" to "date pattern and first-use key",
         "main/ui/stats/MeasurementDetailScreen.kt" to "number and date format patterns",
         "main/ui/theme/MetalGradient.kt" to "animation labels",

@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 496 in 55 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 495 in 54 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/data/CrashJournal.kt 4
 main/data/DbSnapshot.kt 4
 main/data/HealthWriteBack.kt 1
@@ -44,7 +44,6 @@ main/ui/settings/HealthConnectSettings.kt 3
 main/ui/settings/SettingsViewModel.kt 6
 main/ui/social/CommentsScreen.kt 4
 main/ui/social/FeedScreen.kt 1
-main/ui/social/LeaderboardScreen.kt 1
 main/ui/stats/LedgerBody.kt 2
 main/ui/stats/MeasurementDetailScreen.kt 3
 main/ui/theme/MetalGradient.kt 2
