@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.ui.DemoHistory
+import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -29,6 +30,11 @@ class WidgetStateSeedTest {
         val repo = app.repository
         InstrumentationRegistry.getArguments().getString("widgetTheme")?.let { theme ->
             app.appearanceStore.setMode(if (theme == "light") ThemeMode.LIGHT else ThemeMode.DARK)
+        }
+        // `-e widgetAccent <index>`: the saved pair of the theme in force becomes that preset (dark or Vellum list).
+        InstrumentationRegistry.getArguments().getString("widgetAccent")?.toIntOrNull()?.let { index ->
+            val presets = AccentPresets.forTheme(app.appearanceStore.mode.value.isLight(false))
+            app.appearanceStore.set(presets[index].palette)
         }
         // Ten weeks of finished workouts (the newest yesterday), then the plan and today's trial on top.
         DemoHistory.seed()
