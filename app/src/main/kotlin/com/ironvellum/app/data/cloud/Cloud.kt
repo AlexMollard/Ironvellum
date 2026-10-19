@@ -267,6 +267,18 @@ object Cloud {
         }
     }
 
+    /** PostgREST codes for "that table, column or function is not there" (see [explain]). */
+    private val NOT_SET_UP_CODES = setOf("42703", "42P01", "PGRST202", "PGRST204", "PGRST205")
+
+    /**
+     * True when the cloud answered that a table, column or function is missing (an unapplied migration), looking
+     * through the causes [explain]'s failures keep. Callers use this instead of matching the message text.
+     */
+    fun isNotSetUp(error: Throwable): Boolean =
+        generateSequence(error) { it.cause }.any { it is PostgrestRestException && isNotSetUpCode(it.code) }
+
+    internal fun isNotSetUpCode(code: String?): Boolean = code in NOT_SET_UP_CODES
+
     /**
      * Translate the supabase-kt exception zoo into a sentence a player can act on. Unresolved: it becomes words
      * when the screen shows it (a [MessageException] carries it), so it follows the language and the Themed switch.
@@ -309,8 +321,7 @@ object Cloud {
             // A half-applied baseline once left push_aggregates missing, so
             // PGRST202 made it report "try again" and the lifter retried
             // forever while their level sat frozen on the board.
-            "42703", "42P01", "PGRST202", "PGRST204", "PGRST205" ->
-                UiText.res(R.string.cloud_error_not_set_up)
+            in NOT_SET_UP_CODES -> UiText.res(R.string.cloud_error_not_set_up)
             else -> UiText.res(R.string.cloud_error_refused)
         }
         is HttpRequestException -> UiText.res(R.string.cloud_error_offline)

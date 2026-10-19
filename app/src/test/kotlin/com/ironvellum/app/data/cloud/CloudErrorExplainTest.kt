@@ -5,6 +5,7 @@ import io.github.jan.supabase.exceptions.HttpRequestException
 import io.ktor.client.request.HttpRequestBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -23,6 +24,15 @@ class CloudErrorExplainTest {
             "Wrong email or password",
             Words.text(Cloud.explain(IllegalStateException("Wrong email or password"))),
         )
+    }
+
+    @Test
+    fun `the codes for a missing table, column or function mean the cloud is not set up`() {
+        for (code in listOf("42703", "42P01", "PGRST202", "PGRST204", "PGRST205")) assertTrue(code, Cloud.isNotSetUpCode(code))
+        assertFalse(Cloud.isNotSetUpCode("23505"))
+        assertFalse(Cloud.isNotSetUpCode(null))
+        // The wording of a message is not a signal: only the code is.
+        assertFalse(Cloud.isNotSetUp(IllegalStateException("The shadow board is not live yet")))
     }
 
     @Test

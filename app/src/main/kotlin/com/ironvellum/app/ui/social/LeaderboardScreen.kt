@@ -215,7 +215,7 @@ class LeaderboardViewModel(
                         // Distinguish "the cloud has no such board" from a
                         // transient network failure: only the former retires
                         // the picker, a dropped connection must stay retryable.
-                        available = !Words.text(error.reason()).contains("not live yet"),
+                        available = !Cloud.isNotSetUp(error),
                     )
                 }
             _muster.value = _muster.value.copy(loading = false)
