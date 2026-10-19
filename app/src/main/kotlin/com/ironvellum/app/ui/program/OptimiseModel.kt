@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Candidate
 import com.ironvellum.app.domain.ChangeOp
@@ -21,6 +22,7 @@ import com.ironvellum.app.domain.ReasonTag
 import com.ironvellum.app.domain.Recovery
 import com.ironvellum.app.domain.Slot
 import com.ironvellum.app.domain.StrengthProfile
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WeekEdit
 import com.ironvellum.app.domain.WeekEdits
 import com.ironvellum.app.domain.WorkoutPreset
@@ -131,21 +133,28 @@ internal fun buildReport(input: OptimiseInput): OptimiseReport {
 
 private fun reasonOf(tag: ReasonTag): String {
     val muscle = tag.muscle?.label?.lowercase()
-    return when (tag.reason) {
-        Reason.DIRECT_MUSCLE -> if (muscle != null) "trains $muscle directly" else "trains it directly"
-        Reason.FILLS_SHORT_MUSCLE -> if (muscle != null) "gets $muscle to the minimum" else "fills a short muscle"
-        Reason.FITS_GEAR -> "fits your ${Words.armoury.s}"
-        Reason.YOU_LOG_THIS -> "you already log it"
-        Reason.LOW_OVERLAP -> if (tag.other != null) "loads different muscles from ${tag.other}" else "loads the muscles differently"
-        Reason.SAME_PATTERN_AS_MAIN -> "same pattern as your main lift"
-        Reason.STRETCH_BIASED -> "trains it stretched"
-        Reason.COMPOUND_FIRST -> "a compound lift first"
-        Reason.RECOVERY_SPACED -> "spaces your days for recovery"
-        Reason.FITS_DAY_LENGTH -> "fits the day"
-        Reason.STAND_IN_FOR -> if (tag.other != null) "stands in for ${tag.other}" else "stands in for it"
-        Reason.USED_RECENTLY -> "used recently"
-        Reason.OFTEN_SKIPPED -> "you often skip it"
-    }
+    val other = tag.other
+    return Words.text(
+        when (tag.reason) {
+            Reason.DIRECT_MUSCLE ->
+                if (muscle != null) UiText.res(R.string.optimise_reason_direct_muscle, muscle) else UiText.res(R.string.optimise_reason_direct)
+            Reason.FILLS_SHORT_MUSCLE ->
+                if (muscle != null) UiText.res(R.string.optimise_reason_fills_muscle, muscle) else UiText.res(R.string.optimise_reason_fills)
+            Reason.FITS_GEAR -> UiText.themed(R.string.optimise_reason_fits_gear, R.string.optimise_reason_fits_gear__t)
+            Reason.YOU_LOG_THIS -> UiText.res(R.string.optimise_reason_logged)
+            Reason.LOW_OVERLAP ->
+                if (other != null) UiText.res(R.string.optimise_reason_low_overlap_other, other) else UiText.res(R.string.optimise_reason_low_overlap)
+            Reason.SAME_PATTERN_AS_MAIN -> UiText.res(R.string.optimise_reason_same_pattern)
+            Reason.STRETCH_BIASED -> UiText.res(R.string.optimise_reason_stretch)
+            Reason.COMPOUND_FIRST -> UiText.res(R.string.optimise_reason_compound_first)
+            Reason.RECOVERY_SPACED -> UiText.res(R.string.optimise_reason_recovery_spaced)
+            Reason.FITS_DAY_LENGTH -> UiText.res(R.string.optimise_reason_fits_day)
+            Reason.STAND_IN_FOR ->
+                if (other != null) UiText.res(R.string.optimise_reason_stand_in_other, other) else UiText.res(R.string.optimise_reason_stand_in)
+            Reason.USED_RECENTLY -> UiText.res(R.string.optimise_reason_used_recently)
+            Reason.OFTEN_SKIPPED -> UiText.res(R.string.optimise_reason_often_skipped)
+        },
+    )
 }
 
 /** "Trains rear delts directly · fits your armoury": at most two reasons, said in words. */
@@ -168,11 +177,13 @@ internal data class ImpactRow(
 ) {
     /** "Below minimum, 2 → Covered, 5 hard sets", or "Stays covered, 8 → 5 hard sets". */
     val text: String
-        get() = if (beforeState == afterState) {
-            "Stays ${afterState.label.lowercase()}, ${trimSets(before)} → ${trimSets(after)} hard sets"
-        } else {
-            "${beforeState.label}, ${trimSets(before)} → ${afterState.label}, ${trimSets(after)} hard sets"
-        }
+        get() = Words.text(
+            if (beforeState == afterState) {
+                UiText.res(R.string.optimise_impact_stays, afterState.label.lowercase(), trimSets(before), trimSets(after))
+            } else {
+                UiText.res(R.string.optimise_impact_moves, beforeState.label, trimSets(before), afterState.label, trimSets(after))
+            },
+        )
 
     /** The row read aloud: the muscle, then its text. */
     val spoken: String get() = "${muscle.label}: $text"
@@ -218,17 +229,20 @@ private fun easingChange(option: EasingOption, muscle: Muscle, input: OptimiseIn
     val week = input.week
     val index = WeekEdits.indexOf(week, option.presetName)
     val saves = (option.coverageDelta[muscle] ?: 0.0).let { if (it < 0) -it else 0.0 }
-    val savesText = if (saves > 0.0) " Saves ${trimSets(saves)}." else ""
+    val savesText = if (saves > 0.0) " " + Words.text(UiText.res(R.string.optimise_saves, trimSets(saves))) else ""
     return when (val op = option.op) {
         is ChangeOp.SetSets -> {
             val was = week.getOrNull(index)?.entries?.firstOrNull { it.exerciseName.equals(op.exerciseName, true) }?.sets
             OptChange(
                 id = option.id,
                 kind = OptKind.TRIM,
-                title = "Drop 1 set from ${op.exerciseName}",
-                detail = (if (was != null) "${hardSetsText(was)} to ${hardSetsText(op.sets)}." else "Down to ${hardSetsText(op.sets)}.") + savesText,
+                title = Words.text(UiText.res(R.string.optimise_trim_title, op.exerciseName)),
+                detail = Words.text(
+                    if (was != null) UiText.res(R.string.optimise_trim_detail, hardSetsText(was), hardSetsText(op.sets))
+                    else UiText.res(R.string.optimise_trim_detail_down, hardSetsText(op.sets)),
+                ) + savesText,
                 rite = option.presetName,
-                options = listOf(OptOption("Drop 1 set", reasonLine(option.tags), listOf(WeekEdit(index, op)))),
+                options = listOf(OptOption(Words.text(UiText.res(R.string.optimise_trim_option)), reasonLine(option.tags), listOf(WeekEdit(index, op)))),
             )
         }
 
@@ -248,7 +262,7 @@ private fun easingChange(option: EasingOption, muscle: Muscle, input: OptimiseIn
                 id = option.id,
                 kind = OptKind.SWAP,
                 title = "$from → ${options.first().label}",
-                detail = "Loads ${muscle.label.lowercase()} less for the same work.$savesText",
+                detail = Words.text(UiText.res(R.string.optimise_swap_detail, muscle.label.lowercase())) + savesText,
                 rite = option.presetName,
                 options = options,
             )
@@ -260,9 +274,9 @@ private fun easingChange(option: EasingOption, muscle: Muscle, input: OptimiseIn
                 id = option.id,
                 kind = OptKind.MOVE,
                 title = "${op.exerciseName}, ${dayName(fromDay)} → ${dayName(op.toDay)}",
-                detail = "Splits ${muscle.label.lowercase()} over two days. Same weekly total.",
+                detail = Words.text(UiText.res(R.string.optimise_move_detail, muscle.label.lowercase())),
                 rite = option.presetName,
-                options = listOf(OptOption("Move it", reasonLine(option.tags), listOf(WeekEdit(index, op)))),
+                options = listOf(OptOption(Words.text(UiText.res(R.string.optimise_move_option)), reasonLine(option.tags), listOf(WeekEdit(index, op)))),
             )
         }
 
@@ -276,13 +290,21 @@ private fun overlapChange(index: Int, preset: PlannedPreset, finding: OverlapFin
         val entry = Easing.entryFor(replaced, candidate.exercise, input.request, input.strength)
         OptOption(candidate.exercise.name, reasonLine(candidate.tags), listOf(WeekEdit(index, ChangeOp.SwapEntry(replaced.exerciseName, entry))))
     }.ifEmpty {
-        listOf(OptOption("Remove ${replaced.exerciseName}", "The other one covers the work", listOf(WeekEdit(index, ChangeOp.RemoveEntry(replaced.exerciseName)))))
+        listOf(
+            OptOption(
+                Words.text(UiText.res(R.string.optimise_overlap_remove_option, replaced.exerciseName)),
+                Words.text(UiText.res(R.string.optimise_overlap_remove_reason)),
+                listOf(WeekEdit(index, ChangeOp.RemoveEntry(replaced.exerciseName))),
+            ),
+        )
     }
     return OptChange(
         id = "overlap:${preset.name}:${replaced.exerciseName}:${kept.exerciseName}",
         kind = OptKind.SWAP,
         title = "${replaced.exerciseName} → ${options.first().label}",
-        detail = "${finding.a.exerciseName} and ${finding.b.exerciseName} do one job. Either alone covers ${finding.muscle.label.lowercase()}.",
+        detail = Words.text(
+            UiText.res(R.string.optimise_overlap_detail, finding.a.exerciseName, finding.b.exerciseName, finding.muscle.label.lowercase()),
+        ),
         rite = preset.name,
         options = options,
         movements = listOf(finding.a, finding.b).map { entry ->
@@ -296,9 +318,12 @@ private fun overlapChange(index: Int, preset: PlannedPreset, finding: OverlapFin
 // ------------------------------------------------------------------------------------------------ spread
 
 /** "Chest is hit hard on Mon and Tue, 24 hours apart. 48 hours or more lets it recover." */
-internal fun tightLine(pair: Recovery.TightPair): String =
-    "${pair.muscle.label} is hit hard on ${dayShort(pair.dayA)} and ${dayShort(pair.dayB)}, ${pair.hours} hours apart. " +
-        "${Recovery.MIN_GAP_HOURS} hours or more lets it recover."
+internal fun tightLine(pair: Recovery.TightPair): String = Words.text(
+    UiText.res(
+        R.string.optimise_tight_line,
+        pair.muscle.label, dayShort(pair.dayA), dayShort(pair.dayB), pair.hours, Recovery.MIN_GAP_HOURS,
+    ),
+)
 
 private fun spreadChange(input: OptimiseInput): OptChange? {
     val week = input.week
@@ -319,7 +344,13 @@ private fun spreadChange(input: OptimiseInput): OptChange? {
         title = moves.joinToString(", ") { "${it.rite} ${dayShort(it.from)} → ${dayShort(it.to)}" },
         detail = tightLine(tight.first()),
         rite = null,
-        options = listOf(OptOption("Spread the days", "Spaces your days for recovery", dayMoves = moves)),
+        options = listOf(
+            OptOption(
+                Words.text(UiText.res(R.string.optimise_spread_option)),
+                Words.text(UiText.res(R.string.optimise_spread_reason)),
+                dayMoves = moves,
+            ),
+        ),
     )
 }
 
@@ -351,7 +382,7 @@ internal data class RiteChoice(
 internal fun RiteChoice.title(): String = if (day != null) "${dayName(day)} · $name" else name
 
 /** "5 movements · ~55 min". */
-internal fun RiteChoice.line(): String = "${movementsText(movements)} · ~$minutes min"
+internal fun RiteChoice.line(): String = Words.text(UiText.res(R.string.optimise_rite_line, movementsText(movements), minutes))
 
 /**
  * Every counted rite as a place for [entry], the best fit first. The first is the best the recovery model
@@ -376,7 +407,12 @@ internal fun riteChoices(input: OptimiseInput, entry: PlannedEntry): List<RiteCh
             movements = rite.entries.size,
             minutes = ProgramRules.dayMinutes(rite, focus),
             best = rank == 0,
-            note = if (rank == 0 && tags.isNotEmpty()) "Best fit: " + reasonLine(tags).replaceFirstChar { it.lowercase() } else if (rank == 0) "Best fit" else null,
+            note = when {
+                rank == 0 && tags.isNotEmpty() ->
+                    Words.text(UiText.res(R.string.optimise_rite_best_fit_because, reasonLine(tags).replaceFirstChar { it.lowercase() }))
+                rank == 0 -> Words.text(UiText.res(R.string.optimise_rite_best_fit))
+                else -> null
+            },
         )
     }
 }

@@ -1,13 +1,14 @@
 package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.plainText
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AmendXpLineTest {
 
     private fun line(xpAwarded: Int, old: Int, new: Int, lateMs: Long = 0) =
-        amendXpLine(SealedEdit.settle(xpAwarded, xpAwarded, old, new, 10_000, 0, lateMs))
+        amendXpLine(SealedEdit.settle(xpAwarded, xpAwarded, old, new, 10_000, 0, lateMs)).plainText()
 
     @Test
     fun `the confirmation says what the amendment does to xp`() {

@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -37,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.TrialCues
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.RestAlert
@@ -106,6 +108,12 @@ internal fun TimedSetControl(
     }
     val seconds = clock?.displaySeconds(now) ?: 0
     val target = SetClock.face(targetSec)
+    val clockDescription = when {
+        phase == SetClock.Phase.GET_READY -> stringResource(R.string.timedset_get_ready_description, readySeconds)
+        !countdown -> stringResource(R.string.timedset_elapsed_description, SetClock.face(seconds))
+        reached -> stringResource(R.string.timedset_target_reached_description, SetClock.face(seconds), target)
+        else -> stringResource(R.string.timedset_target_description, SetClock.face(seconds), target)
+    }
     Column(modifier.fillMaxWidth()) {
         if (phase == SetClock.Phase.ADJUST && clock != null) {
             AdjustStep(
@@ -144,22 +152,17 @@ internal fun TimedSetControl(
                 },
                 maxLines = 1,
                 modifier = Modifier.alignByBaseline().semantics {
-                    contentDescription = when {
-                        getReady -> "Get ready, $readySeconds"
-                        !countdown -> "${SetClock.face(seconds)} elapsed"
-                        reached -> "${SetClock.face(seconds)} elapsed, target $target reached"
-                        else -> "${SetClock.face(seconds)} elapsed, target $target"
-                    }
+                    contentDescription = clockDescription
                     // The get-ready is announced as it counts down; the count itself never is.
                     if (getReady) liveRegion = LiveRegionMode.Polite
                 },
             )
             Text(
                 when {
-                    getReady -> "GET READY"
-                    reached -> "TARGET REACHED \u2713"
-                    countdown -> "TARGET $target"
-                    else -> "ELAPSED"
+                    getReady -> stringResource(R.string.timedset_get_ready_label)
+                    reached -> stringResource(R.string.timedset_target_reached_label)
+                    countdown -> stringResource(R.string.timedset_target_label, target)
+                    else -> stringResource(R.string.timedset_elapsed_label)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
@@ -174,13 +177,16 @@ internal fun TimedSetControl(
             }
             when {
                 phase == SetClock.Phase.IDLE || clock == null ->
-                    RowAction(if (countdown) "Start" else "Start stopwatch", IronvellumColors.Ink) {
+                    RowAction(
+                        stringResource(if (countdown) R.string.timedset_start_button else R.string.timedset_start_stopwatch_button),
+                        IronvellumColors.Ink,
+                    ) {
                         onClock((if (countdown) SetClock.countdown(targetSec) else SetClock.stopwatch()).start(nowMs()))
                     }
                 // A hold: Stop in the get-ready drops it; while counting it opens the adjust step.
-                countdown -> RowAction("Stop", IronvellumColors.Ink) { onClock(clock.stop(nowMs())) }
+                countdown -> RowAction(stringResource(R.string.timedset_stop_button), IronvellumColors.Ink) { onClock(clock.stop(nowMs())) }
                 // A stopwatch: Stop fills the time and clears it; the lifter still ticks the set.
-                else -> RowAction("Stop", IronvellumColors.Ink) {
+                else -> RowAction(stringResource(R.string.timedset_stop_button), IronvellumColors.Ink) {
                     val filled = clock.stopwatchSeconds(nowMs())
                     onClock(null)
                     onFill(filled)
@@ -193,6 +199,7 @@ internal fun TimedSetControl(
 /** The stopped time with -1 s and +1 s (hold to repeat), and Log or Discard. */
 @Composable
 private fun AdjustStep(seconds: Int, onStep: (Int) -> Unit, onLog: () -> Unit, onDiscard: () -> Unit) {
+    val stoppedDescription = stringResource(R.string.timedset_stopped_description, SetClock.face(seconds))
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -206,22 +213,30 @@ private fun AdjustStep(seconds: Int, onStep: (Int) -> Unit, onLog: () -> Unit, o
                 fontSize = 22.sp,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
-                modifier = Modifier.alignByBaseline().semantics { contentDescription = "Stopped at ${SetClock.face(seconds)}" },
+                modifier = Modifier.alignByBaseline().semantics { contentDescription = stoppedDescription },
             )
             Text(
-                "STOPPED",
+                stringResource(R.string.timedset_stopped_label),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.weight(1f).alignByBaseline(),
             )
-            RepeatAction("−1s", "Take a second off", IronvellumColors.Ink) { onStep(-1) }
-            RepeatAction("+1s", "Add a second", IronvellumColors.Ink) { onStep(+1) }
+            RepeatAction(
+                stringResource(R.string.timedset_minus_second_button),
+                stringResource(R.string.timedset_minus_second_description),
+                IronvellumColors.Ink,
+            ) { onStep(-1) }
+            RepeatAction(
+                stringResource(R.string.timedset_plus_second_button),
+                stringResource(R.string.timedset_plus_second_description),
+                IronvellumColors.Ink,
+            ) { onStep(+1) }
         }
         // Pulled back by the actions' own 12dp padding so "Log" starts at the timer's left edge.
         Row(Modifier.fillMaxWidth().offset(x = (-12).dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            RowAction("Log ${SetClock.face(seconds)}", IronvellumColors.Emerald, onLog)
-            RowAction("Discard", IronvellumColors.InkMuted, onDiscard)
+            RowAction(stringResource(R.string.timedset_log_button, SetClock.face(seconds)), IronvellumColors.Emerald, onLog)
+            RowAction(stringResource(R.string.timedset_discard_button), IronvellumColors.InkMuted, onDiscard)
         }
     }
 }

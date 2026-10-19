@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,14 +38,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -52,7 +56,6 @@ import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.metricTotals
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.time.Instant
@@ -105,14 +108,14 @@ fun WorkoutLogScreen(
                 Icon(Icons.Outlined.Book, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "${Words.theChronicle.c} is blank.",
+                    UiText.themed(R.string.workoutlog_empty_title, R.string.workoutlog_empty_title__t).asString(),
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "${Words.seal.c} ${Words.trial.a} and it is written here.",
+                    UiText.themed(R.string.workoutlog_empty_body, R.string.workoutlog_empty_body__t).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -173,6 +176,7 @@ internal fun monthLabel(month: YearMonth): String =
  * paid all count what was done. Seconds held, attempts, kilometres and minutes are totalled over
  * sets that share their unit and appear only when the history logged them.
  */
+@Composable
 private fun totalsLine(
     history: List<Pair<WorkoutSession, List<SessionSet>>>,
     exercises: Map<Long, Exercise>,
@@ -181,23 +185,23 @@ private fun totalsLine(
     val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
     val trials = history.size
     return buildList {
-        add("$trials ${plural(trials, Words.trial.s, Words.trial.pl)}")
-        add("${doneSets.size} ${plural(doneSets.size, "set", "sets")}")
-        add("%,d".fmt(totals.reps) + " " + plural(totals.reps, "rep", "reps"))
-        if (totals.heldSeconds > 0) add("%,d".fmt(totals.heldSeconds) + "s held")
-        if (totals.attempts > 0) add("%,d".fmt(totals.attempts) + " " + plural(totals.attempts, "attempt", "attempts"))
-        if (totals.km > 0) add(formatBodyValue(totals.km) + " km")
-        if (totals.secondsWorked > 0) add("${(totals.secondsWorked + 59) / 60} min")
+        add(UiText.themedPlural(R.plurals.workoutlog_totals_trials, R.plurals.workoutlog_totals_trials__t, trials).asString())
+        add(UiText.plural(R.plurals.common_sets_count, doneSets.size).asString())
+        add(UiText.plural(R.plurals.workoutlog_totals_reps, totals.reps, "%,d".fmt(totals.reps)).asString())
+        if (totals.heldSeconds > 0) add(UiText.res(R.string.workoutlog_totals_held, "%,d".fmt(totals.heldSeconds)).asString())
+        if (totals.attempts > 0) add(UiText.plural(R.plurals.workoutlog_totals_attempts, totals.attempts, "%,d".fmt(totals.attempts)).asString())
+        if (totals.km > 0) add(UiText.res(R.string.workoutlog_totals_km, formatBodyValue(totals.km)).asString())
+        if (totals.secondsWorked > 0) add(UiText.res(R.string.workoutlog_minutes, (totals.secondsWorked + 59) / 60).asString())
     }.joinToString(" · ")
 }
 
 /** "52 min", or "1 h 5 min"; null while a trial is unsealed. */
-internal fun trialDuration(session: WorkoutSession): String? {
+internal fun trialDuration(session: WorkoutSession): UiText? {
     val minutes = session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).coerceAtLeast(0) } ?: return null
     return when {
-        minutes < 1L -> "<1 min"
-        minutes < 60L -> "$minutes min"
-        else -> "${minutes / 60} h ${minutes % 60} min"
+        minutes < 1L -> UiText.res(R.string.workoutlog_duration_under_minute)
+        minutes < 60L -> UiText.res(R.string.workoutlog_minutes, minutes)
+        else -> UiText.res(R.string.workoutlog_duration_hours_minutes, minutes / 60, minutes % 60)
     }
 }
 
@@ -226,11 +230,11 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
             )
             Text(
                 listOfNotNull(
-                    formatDate(session.completedAtMs ?: session.startedAtMs, "EEE d MMM"),
-                    trialDuration(session),
-                    "$doneCount ${plural(doneCount, "set", "sets")}",
+                    formatDate(session.completedAtMs ?: session.startedAtMs, stringResource(R.string.workoutlog_date_pattern)),
+                    trialDuration(session)?.asString(),
+                    UiText.plural(R.plurals.common_sets_count, doneCount).asString(),
                     // A zero strength score is no score (no bodyweight logged, or an activity-only trial).
-                    session.strengthScore.takeIf { it > 0 }?.let { "%,d".fmt(it) + " STR" },
+                    session.strengthScore.takeIf { it > 0 }?.let { UiText.res(R.string.workoutlog_strength_score, "%,d".fmt(it)).asString() },
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -242,7 +246,7 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
         if (session.note.isNotBlank()) {
             Icon(
                 Icons.Outlined.Description,
-                contentDescription = "Has a shared note",
+                contentDescription = stringResource(R.string.workoutlog_shared_note_description),
                 tint = IronvellumColors.InkMuted,
                 modifier = Modifier.size(14.dp),
             )
@@ -250,14 +254,14 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
         if (session.privateNote.isNotBlank()) {
             Icon(
                 Icons.Filled.Lock,
-                contentDescription = "Has a private note",
+                contentDescription = stringResource(R.string.workoutlog_private_note_description),
                 tint = IronvellumColors.InkMuted,
                 modifier = Modifier.size(14.dp),
             )
         }
         // The one earned figure on the row: XP gained.
         Text(
-            "+${session.xpAwarded} XP",
+            UiText.res(R.string.workoutlog_xp_gain, session.xpAwarded).asString(),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.SovereignGold,

@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -51,15 +52,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.DeedsPage
 import com.ironvellum.app.ui.components.Dim
@@ -69,7 +73,6 @@ import com.ironvellum.app.ui.components.XpRevealPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LevelUp
 import com.ironvellum.app.ui.components.LevelUpPage
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.components.count
 import com.ironvellum.app.ui.components.phase
@@ -137,7 +140,7 @@ internal object CelebrationFlow {
  * ([Repository.CompletionResult.inscriptionsBanked]). Null when none were, so no line is drawn.
  */
 internal fun inscriptionNote(banked: Int): String? =
-    banked.takeIf { it > 0 }?.let { "+$it ${plural(it, "inscription", "inscriptions")} waiting in ${Words.theVeil.t}" }
+    banked.takeIf { it > 0 }?.let { Words.text(UiText.plural(R.plurals.always_victory_inscription_note, it)) }
 
 /** The level-up page's view of a sealed trial. */
 private fun Repository.CompletionResult.toLevelUp() =
@@ -192,7 +195,7 @@ internal fun TrialCelebration(
                     levelAfter = result.levelAfter,
                     tierAfter = result.classAfter.takeIf { it != result.classBefore },
                     inscriptionsBanked = result.inscriptionsBanked,
-                    caption = "$title · ${Words.sealed.s}",
+                    caption = UiText.themed(R.string.victory_xp_caption, R.string.victory_xp_caption__t, title).asString(),
                     onContinue = onContinue,
                     onSkip = onSkipToSummary,
                     motion = motion,
@@ -283,14 +286,22 @@ private fun SummaryPage(
             val tier = result.classAfter.takeIf { it != result.classBefore }?.let { " · $it" }.orEmpty()
             // With the XP page the level-up was told once, there; here it is only where the lifter stands.
             val crossed = result.levelAfter > result.levelBefore && segments == 0
-            add(Triple("Level", if (crossed) "${result.levelBefore} → ${result.levelAfter}$tier" else "${result.levelAfter}$tier", false))
+            add(Triple(UiText.res(R.string.victory_row_level), if (crossed) "${result.levelBefore} → ${result.levelAfter}$tier" else "${result.levelAfter}$tier", false))
             // With a breakdown the reveal panel says what earned the XP, quest bonus included.
             if (result.breakdown.lines.isEmpty()) {
-                add(Triple("XP", "+${count(result.xpAwarded)}", true))
-                if (result.questBonus) add(Triple("Today's ${Words.trial.s}", "+${Xp.QUEST_BONUS} bonus", true))
+                add(Triple(UiText.res(R.string.victory_row_xp), "+${count(result.xpAwarded)}", true))
+                if (result.questBonus) {
+                    add(
+                        Triple(
+                            UiText.themed(R.string.victory_row_quest, R.string.victory_row_quest__t),
+                            Words.text(UiText.res(R.string.victory_row_quest_bonus, Xp.QUEST_BONUS)),
+                            true,
+                        ),
+                    )
+                }
             }
-            result.rankUp?.let { add(Triple("Strength Rank up", it, true)) }
-            deeds.forEach { add(Triple(Words.deed.c, it.name, false)) }
+            result.rankUp?.let { add(Triple(UiText.res(R.string.victory_row_rank_up), it, true)) }
+            deeds.forEach { add(Triple(UiText.res(R.string.always_deed_c), it.name, false)) }
         }
     }
 
@@ -351,7 +362,13 @@ private fun SummaryPage(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "${Words.sealed.c} · ${result.durationMinutes} min · ${totals.sets} ${if (totals.sets == 1) "set" else "sets"}",
+                    UiText.themedPlural(
+                        R.plurals.victory_summary,
+                        R.plurals.victory_summary__t,
+                        totals.sets,
+                        result.durationMinutes,
+                        totals.sets,
+                    ).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = Dim,
                     modifier = Modifier.padding(top = 3.dp),
@@ -387,7 +404,7 @@ private fun SummaryPage(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(label, style = MaterialTheme.typography.bodyMedium, color = Dim)
+                            Text(label.asString(), style = MaterialTheme.typography.bodyMedium, color = Dim)
                             Text(
                                 value,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -433,7 +450,7 @@ private fun SummaryPage(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "${Words.sealed.c} too soon? Keep going",
+                    UiText.themed(R.string.victory_reopen_offer, R.string.victory_reopen_offer__t).asString(),
                     style = MaterialTheme.typography.labelLarge,
                     color = IronvellumColors.Ink,
                     textDecoration = TextDecoration.Underline,
@@ -443,16 +460,23 @@ private fun SummaryPage(
                 )
             }
         }
-        CelebrationDock(primary = "Done", onPrimary = onDone, link = "Share ${Words.trial.s}", onLink = onShare)
+        CelebrationDock(
+            primary = stringResource(R.string.common_done),
+            onPrimary = onDone,
+            link = UiText.themed(R.string.victory_share_button, R.string.victory_share_button__t).asString(),
+            onLink = onShare,
+        )
     }
 }
 
 /** "18 sets · 142 reps · 3,420 kg moved", leaving out what the trial did not do. */
 private fun totalsLine(totals: WorkoutShare.Totals): String = buildList {
-    add("${count(totals.sets)} ${if (totals.sets == 1) "set" else "sets"}")
-    if (totals.reps > 0) add("${count(totals.reps)} reps")
-    if (totals.heldSeconds > 0) add("${count(totals.heldSeconds)} s held")
-    if (totals.movedKg > 0) add("${count(Units.whole(totals.movedKg.toDouble()).toInt())} ${Units.name} moved")
+    add(Words.text(UiText.plural(R.plurals.victory_totals_sets, totals.sets, count(totals.sets))))
+    if (totals.reps > 0) add(Words.text(UiText.plural(R.plurals.victory_totals_reps, totals.reps, count(totals.reps))))
+    if (totals.heldSeconds > 0) add(Words.text(UiText.res(R.string.victory_totals_held, count(totals.heldSeconds))))
+    if (totals.movedKg > 0) {
+        add(Words.text(UiText.res(R.string.victory_totals_moved, count(Units.whole(totals.movedKg.toDouble()).toInt()), Units.name)))
+    }
 }.joinToString(" · ")
 
 /** The best peak as the hero, and any others as quiet rows under it. */
@@ -461,7 +485,11 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
     // The best peak is the one earned thing here, so the card wears the gold plate.
     InkPanel(modifier.fillMaxWidth(), metal = Metal.Fabled) {
         Text(
-            if (total == 1) "New ${Words.peak.s}" else "New ${Words.peak.pl} · $total",
+            if (total == 1) {
+                UiText.themed(R.string.victory_peaks_title, R.string.victory_peaks_title__t).asString()
+            } else {
+                UiText.themed(R.string.victory_peaks_many, R.string.victory_peaks_many__t, total).asString()
+            },
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
@@ -506,7 +534,13 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
             )
         }
         Text(
-            "Set ${best.setIndex + 1} · ${best.kind.label} · was ${peakFigure(best.was.figure, best.was.weightKg, best.isHold)} · ${peakPay(best)}",
+            UiText.res(
+                R.string.victory_peak_detail,
+                best.setIndex + 1,
+                best.kind.label,
+                peakFigure(best.was.figure, best.was.weightKg, best.isHold),
+                peakPay(best),
+            ).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = Dim,
             modifier = Modifier.padding(top = 4.dp),
@@ -547,13 +581,28 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
     }
 }
 
-private fun peakDescription(peak: SessionPeaks.Peak): String =
-    "New ${peak.kind.label} ${Words.peak.s}, ${peak.label}, set ${peak.setIndex + 1}, " +
-        "${peakFigure(peak.figure, peak.weightKg, peak.isHold)}, was ${peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold)}, " +
-        "up ${peakGain(peak)}, ${peakPay(peak)}" + if (peak.count > 1) ", ${peak.count} ${Words.peak.pl}" else ""
+private fun peakDescription(peak: SessionPeaks.Peak): String {
+    val args = arrayOf<Any>(
+        peak.kind.label,
+        peak.label,
+        peak.setIndex + 1,
+        peakFigure(peak.figure, peak.weightKg, peak.isHold),
+        peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold),
+        peakGain(peak),
+        peakPay(peak),
+    )
+    return Words.text(
+        if (peak.count > 1) {
+            UiText.themed(R.string.victory_peak_description_count, R.string.victory_peak_description_count__t, *args, peak.count)
+        } else {
+            UiText.themed(R.string.victory_peak_description, R.string.victory_peak_description__t, *args)
+        },
+    )
+}
 
 /** What the lift's peak pays, said honestly: a jump too small to matter pays nothing but is still a peak. */
-internal fun peakPay(peak: SessionPeaks.Peak): String = if (peak.xp > 0) "+${peak.xp} XP" else "no XP"
+internal fun peakPay(peak: SessionPeaks.Peak): String =
+    Words.text(if (peak.xp > 0) UiText.res(R.string.session_xp_gain, peak.xp) else UiText.res(R.string.victory_peak_no_xp))
 
 /**
  * How far past the earlier best the headline set went, in the unit the lifter reads: kg for a heavier
@@ -564,7 +613,7 @@ internal fun peakGain(peak: SessionPeaks.Peak): String {
     return when {
         peak.kind == RepMax.Kind.HEAVIER && load > 0.001 -> "+" + Units.withUnit(load)
         peak.isHold && peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure}s"
-        peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure} reps"
+        peak.figure > peak.was.figure -> Words.text(UiText.plural(R.plurals.victory_peak_gain_reps, peak.figure - peak.was.figure))
         else -> "+" + Units.withUnit(load.coerceAtLeast(0.0))
     }
 }

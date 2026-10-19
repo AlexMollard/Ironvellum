@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -44,9 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.LiftLoading
@@ -64,7 +65,9 @@ import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WarmupRamp
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.RangeStepperRow
@@ -139,12 +142,20 @@ internal fun SetsSheet(
         workingReps = repsUp?.takeIf { it > repsFrom }?.let { repsFrom..it },
     )
     val noFixedYet = scheme.type == SchemeType.TOP_BACKOFF && fixedMode && effective.backoffFixedKg == null
-    val loadLabel = if (lift.bodyweightLift) "Added load" else "Load"
+    val loadLabel = stringResource(if (lift.bodyweightLift) R.string.setssheet_load_added_label else R.string.setssheet_load_label)
     val loadEmpty = LoadTargetStepperPlaceholder(lift.bodyweightLift)
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Sets for ${entry.exerciseName.ifBlank { "this lift" }}") },
+        title = {
+            Text(
+                if (entry.exerciseName.isBlank()) {
+                    stringResource(R.string.setssheet_title_blank)
+                } else {
+                    UiText.res(R.string.setssheet_title, entry.exerciseName).asString()
+                },
+            )
+        },
         text = {
             // Tall enough to fill the sheet whatever the scheme, so switching schemes never changes its height.
             Column(Modifier.heightIn(min = LocalConfiguration.current.screenHeightDp.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -173,10 +184,10 @@ internal fun SetsSheet(
                 } else {
                     tiles(SchemeType.entries)
                 }
-                if (inSuperset) Text("Not inside a superset", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                if (inSuperset) Text(stringResource(R.string.setssheet_not_in_superset), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 if (suggestion.type != scheme.type && !(inSuperset && suggestion.type == SchemeType.DROPS)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                        Text("SUGGESTED", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = IronvellumColors.SystemGreen)
+                        Text(stringResource(R.string.setssheet_suggested).uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = IronvellumColors.SystemGreen)
                         Text(suggestion.reason, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
                     }
                 }
@@ -200,26 +211,26 @@ internal fun SetsSheet(
                     )
                     else -> {
                         RoleCard(
-                            if (scheme.type == SchemeType.DROPS) "WORKING SETS" else "EVERY SET",
-                            if (scheme.type == SchemeType.CUSTOM) null else "$setCount sets",
+                            stringResource(if (scheme.type == SchemeType.DROPS) R.string.setssheet_role_working else R.string.setssheet_role_every),
+                            if (scheme.type == SchemeType.CUSTOM) null else UiText.plural(R.plurals.common_sets_count, setCount).asString(),
                             SetKind.WORKING.barColor(),
                         ) {
-                            if (scheme.type != SchemeType.CUSTOM) WholeStepper("Sets", sets, "sets", false, 2, 30) { sets = it }
+                            if (scheme.type != SchemeType.CUSTOM) WholeStepper(stringResource(R.string.setssheet_sets_label), sets, stringResource(R.string.setssheet_noun_sets), false, 2, 30) { sets = it }
                             LoadTargetStepper(weight, loadGridLb(entry.exerciseName), false, worn, label = loadLabel, emptyText = loadEmpty) { weight = it }
                             if (scheme.type == SchemeType.CUSTOM) {
-                                WholeStepper("Reps", reps, "reps", false, 3, 500) { reps = it }
+                                WholeStepper(stringResource(R.string.setssheet_reps_label), reps, stringResource(R.string.setssheet_noun_reps), false, 3, 500) { reps = it }
                             } else {
                                 val fromPart = StepperPart(
-                                    reps, "Fewer reps", "More reps",
+                                    reps, stringResource(R.string.setssheet_reps_fewer_description), stringResource(R.string.setssheet_reps_more_description),
                                     onLess = { reps = stepWhole(reps, -1, 500) }, onMore = { reps = stepWhole(reps, 1, 500) },
                                     onValue = { reps = it }, maxDigits = 3,
                                 )
                                 if (repsUp != null && repsUp!! > repsFrom) {
                                     RangeStepperRow(
-                                        "Reps",
+                                        stringResource(R.string.setssheet_reps_label),
                                         from = fromPart,
                                         to = StepperPart(
-                                            repsUp.toString(), "Lower reps range top", "Higher reps range top",
+                                            repsUp.toString(), stringResource(R.string.setssheet_reps_top_lower_description), stringResource(R.string.setssheet_reps_top_higher_description),
                                             onLess = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, -1) },
                                             onMore = { repsUp = SetScheme.stepRepsUp(repsFrom, repsUp, 1) },
                                         ),
@@ -227,24 +238,33 @@ internal fun SetsSheet(
                                 } else {
                                     // One figure until the lifter asks for a range; the range's top steps down to this again.
                                     Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
-                                        RowLabel("Reps", null, Modifier.weight(1f))
+                                        RowLabel(stringResource(R.string.setssheet_reps_label), null, Modifier.weight(1f))
                                         Box(
-                                            Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = "Add a reps range") {
+                                            Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = stringResource(R.string.setssheet_reps_range_add_description)) {
                                                 repsUp = SetScheme.stepRepsUp(repsFrom, null, 2)
                                             }.padding(horizontal = 8.dp),
                                             contentAlignment = Alignment.Center,
-                                        ) { Text("Add range", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen) }
-                                        StepperGroup("Reps", fromPart)
+                                        ) { Text(stringResource(R.string.setssheet_reps_range_add_button), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen) }
+                                        StepperGroup(stringResource(R.string.setssheet_reps_label), fromPart)
                                     }
                                 }
                             }
                         }
                         if (scheme.type == SchemeType.DROPS) {
-                            RoleCard("DROPS", dropsHeader(scheme), SetKind.DROP.tint()) {
-                                IntStepper("Last sets that drop", scheme.dropSets, "drop sets", 1, setCount) { scheme = scheme.copy(dropSets = it) }
-                                IntStepper("Drops after each", scheme.dropCount, "drops", 1, SetScheme.MAX_DROPS) { scheme = scheme.copy(dropCount = it) }
+                            RoleCard(stringResource(R.string.setssheet_role_drops), dropsHeader(scheme).asString(), SetKind.DROP.tint()) {
                                 IntStepper(
-                                    "Each drop is lighter by", scheme.dropPercent, "drop percent",
+                                    stringResource(R.string.setssheet_dropsets_label), scheme.dropSets,
+                                    stringResource(R.string.setssheet_dropsets_fewer_description), stringResource(R.string.setssheet_dropsets_more_description),
+                                    1, setCount,
+                                ) { scheme = scheme.copy(dropSets = it) }
+                                IntStepper(
+                                    stringResource(R.string.setssheet_dropcount_label), scheme.dropCount,
+                                    stringResource(R.string.setssheet_dropcount_fewer_description), stringResource(R.string.setssheet_dropcount_more_description),
+                                    1, SetScheme.MAX_DROPS,
+                                ) { scheme = scheme.copy(dropCount = it) }
+                                IntStepper(
+                                    stringResource(R.string.setssheet_droppercent_label), scheme.dropPercent,
+                                    stringResource(R.string.setssheet_droppercent_fewer_description), stringResource(R.string.setssheet_droppercent_more_description),
                                     SetScheme.PERCENT_RANGE.first, SetScheme.PERCENT_RANGE.last, step = 5, unit = "%",
                                 ) { scheme = scheme.copy(dropPercent = it) }
                             }
@@ -252,21 +272,22 @@ internal fun SetsSheet(
                         if (scheme.type == SchemeType.CUSTOM) CustomSets(scheme, inSuperset) { scheme = scheme.copy(custom = it) }
                     }
                 }
-                MoreLink(if (scheme.type == SchemeType.TOP_BACKOFF) "Rest, warm-up ramp" else "Warm-up ramp", more) { more = !more }
+                MoreLink(stringResource(if (scheme.type == SchemeType.TOP_BACKOFF) R.string.setssheet_rest_ramp_label else R.string.setssheet_ramp_label), more) { more = !more }
                 if (more) {
-                    RoleCard(if (scheme.type == SchemeType.TOP_BACKOFF) "REST, WARM-UP RAMP" else "WARM-UP RAMP", null, IronvellumColors.Bracket) {
+                    RoleCard(stringResource(if (scheme.type == SchemeType.TOP_BACKOFF) R.string.setssheet_rest_ramp_label else R.string.setssheet_ramp_label), null, IronvellumColors.Bracket) {
                         if (scheme.type == SchemeType.TOP_BACKOFF) {
                             IntStepper(
-                                "Rest after the top set", scheme.restAfterTopSec, "top set rest",
+                                stringResource(R.string.setssheet_toprest_label), scheme.restAfterTopSec,
+                                stringResource(R.string.setssheet_toprest_fewer_description), stringResource(R.string.setssheet_toprest_more_description),
                                 SetScheme.REST_RANGE_SEC.first, SetScheme.REST_RANGE_SEC.last, step = 15, text = RestTimer.clock(scheme.restAfterTopSec),
                             ) { scheme = scheme.copy(restAfterTopSec = it) }
                         }
                         SettingsSwitchRow(
-                            label = "Warm-up ramp",
+                            label = stringResource(R.string.setssheet_ramp_label),
                             caption = when {
-                                (DecimalInput.parse(weight) ?: 0.0) > 0.0 -> "Start the ${Words.trial.s} with lighter warm-up sets for this lift."
-                                WarmupRamp.isBarbell(entry.exerciseName) -> "No load is set yet, so the ramp is the empty bar. Set a load for the full ramp."
-                                else -> "No load is set yet, so there is nothing to ramp up to. Set a load above."
+                                (DecimalInput.parse(weight) ?: 0.0) > 0.0 -> UiText.themed(R.string.setssheet_ramp_caption, R.string.setssheet_ramp_caption__t).asString()
+                                WarmupRamp.isBarbell(entry.exerciseName) -> stringResource(R.string.setssheet_ramp_caption_bar)
+                                else -> stringResource(R.string.setssheet_ramp_caption_none)
                             },
                             checked = scheme.warmupRamp,
                             onCheckedChange = { scheme = scheme.copy(warmupRamp = it) },
@@ -277,7 +298,7 @@ internal fun SetsSheet(
         },
         confirmButton = {
             IronvellumButton(
-                label = "Done",
+                label = stringResource(R.string.common_done),
                 enabled = !noFixedYet,
                 onClick = {
                     val chosen = effective.normalised().let { it.fitTo(it.workingSets(setCount)) }
@@ -292,7 +313,7 @@ internal fun SetsSheet(
                 },
             )
         },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, quiet = true) },
     )
 }
 
@@ -307,12 +328,15 @@ private fun glyph(type: SchemeType): List<SchemeBar> = when (type) {
     )
 }
 
-private fun SchemeType.tileLabel() = when (this) {
-    SchemeType.STRAIGHT -> "Straight"
-    SchemeType.TOP_BACKOFF -> "Top + back-offs"
-    SchemeType.DROPS -> "Drops"
-    SchemeType.CUSTOM -> "Custom"
-}
+@Composable
+private fun SchemeType.tileLabel() = stringResource(
+    when (this) {
+        SchemeType.STRAIGHT -> R.string.setssheet_tile_straight
+        SchemeType.TOP_BACKOFF -> R.string.setssheet_tile_top_backoff
+        SchemeType.DROPS -> R.string.setssheet_tile_drops
+        SchemeType.CUSTOM -> R.string.setssheet_tile_custom
+    },
+)
 
 /** One of the four scheme tiles: the scheme's shape over its name, outlined in the accent when it is the chosen one. */
 @Composable
@@ -340,10 +364,12 @@ private fun SchemeTile(type: SchemeType, selected: Boolean, enabled: Boolean, mo
 }
 
 /** "1 drop after the last set", "2 drops after each of the last 3 sets". */
-internal fun dropsHeader(scheme: SetScheme): String {
-    val drops = if (scheme.dropCount == 1) "1 drop" else "${scheme.dropCount} drops"
-    return drops + if (scheme.dropSets == 1) " after the last set" else " after each of the last ${scheme.dropSets} sets"
-}
+internal fun dropsHeader(scheme: SetScheme): UiText =
+    if (scheme.dropSets == 1) {
+        UiText.plural(R.plurals.setssheet_drops_after_last, scheme.dropCount)
+    } else {
+        UiText.plural(R.plurals.setssheet_drops_after_each, scheme.dropCount, scheme.dropCount, scheme.dropSets)
+    }
 
 /** A group of settings for one role of set: a 3dp left edge in the role's colour, its name and count on the first line. */
 @Composable
@@ -359,7 +385,7 @@ private fun RoleCard(title: String, count: String?, color: Color, content: @Comp
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(
-                title,
+                title.uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = IronvellumTracking.InlineLabel,
@@ -382,7 +408,7 @@ private fun MoreLink(label: String, open: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = if (open) "Hide $label" else "Show $label", onClick = onClick),
+            .clickable(role = Role.Button, onClickLabel = UiText.res(if (open) R.string.setssheet_more_hide_description else R.string.setssheet_more_show_description, label).asString(), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen)
@@ -412,49 +438,62 @@ private fun TopBackoffCards(
 ) {
     val max = SetScheme.REPS_RANGE.last
     val bodyweight = lift.bodyweightLift
-    RoleCard("TOP SET", "1 set", SetKind.TOP.tint()) {
+    RoleCard(stringResource(R.string.setssheet_role_top), UiText.plural(R.plurals.common_sets_count, 1).asString(), SetKind.TOP.tint()) {
         LoadTargetStepper(
             weight, loadGridLb(exerciseName), false, worn,
-            label = if (bodyweight) "Added load" else "Load", emptyText = LoadTargetStepperPlaceholder(bodyweight), onKgText = onWeight,
+            label = stringResource(if (bodyweight) R.string.setssheet_load_added_label else R.string.setssheet_load_label), emptyText = LoadTargetStepperPlaceholder(bodyweight), onKgText = onWeight,
         )
-        IntRangeStepper("Reps", "top reps", scheme.topReps, 1, max) { onScheme(scheme.copy(topReps = it)) }
+        IntRangeStepper(
+            stringResource(R.string.setssheet_reps_label), scheme.topReps, 1, max,
+            stringResource(R.string.setssheet_topreps_fewer_description), stringResource(R.string.setssheet_topreps_more_description),
+            stringResource(R.string.setssheet_topreps_top_fewer_description), stringResource(R.string.setssheet_topreps_top_more_description),
+        ) { onScheme(scheme.copy(topReps = it)) }
         EffortChips(scheme.topRir) { onScheme(scheme.copy(topRir = it)) }
     }
-    RoleCard("BACK-OFFS", "${scheme.backoffSets} ${if (scheme.backoffSets == 1) "set" else "sets"}", SetKind.BACKOFF.tint()) {
-        IntStepper("Sets", scheme.backoffSets, "back-off sets", 1, SetScheme.MAX_BACKOFF_SETS) { onScheme(scheme.copy(backoffSets = it)) }
-        val resolved = if (fixedMode) null else backoffCaption(DecimalInput.parse(weight), effective, lift)
+    RoleCard(stringResource(R.string.setssheet_role_backoffs), UiText.plural(R.plurals.common_sets_count, scheme.backoffSets).asString(), SetKind.BACKOFF.tint()) {
+        IntStepper(
+            stringResource(R.string.setssheet_sets_label), scheme.backoffSets,
+            stringResource(R.string.setssheet_backoffsets_fewer_description), stringResource(R.string.setssheet_backoffsets_more_description),
+            1, SetScheme.MAX_BACKOFF_SETS,
+        ) { onScheme(scheme.copy(backoffSets = it)) }
+        val resolved = if (fixedMode) null else backoffCaption(DecimalInput.parse(weight), effective, lift).asString()
         Row(Modifier.fillMaxWidth().heightIn(min = 46.dp), verticalAlignment = Alignment.CenterVertically) {
-            RowLabel("Load", resolved, Modifier.weight(1f))
-            Segment("${scheme.backoffPercent}% lighter", !fixedMode) { onFixedMode(false) }
-            Segment("Fixed", fixedMode) { onFixedMode(true) }
+            RowLabel(stringResource(R.string.setssheet_load_label), resolved, Modifier.weight(1f))
+            Segment(UiText.res(R.string.setssheet_backoff_lighter, scheme.backoffPercent).asString(), !fixedMode) { onFixedMode(false) }
+            Segment(stringResource(R.string.setssheet_backoff_fixed), fixedMode) { onFixedMode(true) }
         }
         if (fixedMode) {
-            LoadTargetStepper(fixedText, loadGridLb(exerciseName), fixedText.isBlank(), worn, label = "Back-off load", onKgText = onFixedText)
+            LoadTargetStepper(fixedText, loadGridLb(exerciseName), fixedText.isBlank(), worn, label = stringResource(R.string.setssheet_backoff_load_label), onKgText = onFixedText)
         } else {
             IntStepper(
-                "Lighter than the top by", scheme.backoffPercent, "back-off percent",
+                stringResource(R.string.setssheet_backoffpercent_label), scheme.backoffPercent,
+                stringResource(R.string.setssheet_backoffpercent_fewer_description), stringResource(R.string.setssheet_backoffpercent_more_description),
                 SetScheme.PERCENT_RANGE.first, SetScheme.PERCENT_RANGE.last, step = 5, unit = "%",
             ) { onScheme(scheme.copy(backoffPercent = it)) }
         }
-        IntRangeStepper("Reps", "back-off reps", scheme.backoffReps, 1, max) { onScheme(scheme.copy(backoffReps = it)) }
+        IntRangeStepper(
+            stringResource(R.string.setssheet_reps_label), scheme.backoffReps, 1, max,
+            stringResource(R.string.setssheet_backoffreps_fewer_description), stringResource(R.string.setssheet_backoffreps_more_description),
+            stringResource(R.string.setssheet_backoffreps_top_fewer_description), stringResource(R.string.setssheet_backoffreps_top_more_description),
+        ) { onScheme(scheme.copy(backoffReps = it)) }
     }
 }
 
 /** What the back-offs' load works out to right now: "90 kg, rounded to your plates". */
-private fun backoffCaption(topKg: Double?, scheme: SetScheme, lift: LiftLoading): String {
+private fun backoffCaption(topKg: Double?, scheme: SetScheme, lift: LiftLoading): UiText {
     val planned = SchemePlan.backoff(topKg, scheme.topReps.first, scheme, lift)
     val kg = planned.weightKg
     return when {
         kg != null -> {
-            val where = when (planned.rounding) {
-                Rounding.VEST_BLOCKS -> "your vest blocks"
-                Rounding.BELT_PLATES -> "your belt plates"
-                null -> if (lift.bodyweightLift) null else "your plates"
+            val figure = (if (lift.bodyweightLift) "+" else "") + Units.withUnit(kg)
+            when (planned.rounding) {
+                Rounding.VEST_BLOCKS -> UiText.res(R.string.setssheet_backoff_rounded_vest, figure)
+                Rounding.BELT_PLATES -> UiText.res(R.string.setssheet_backoff_rounded_belt, figure)
+                null -> if (lift.bodyweightLift) UiText.Raw(figure) else UiText.res(R.string.setssheet_backoff_rounded_plates, figure)
             }
-            (if (lift.bodyweightLift) "+" else "") + Units.withUnit(kg) + (where?.let { ", rounded to $it" } ?: "")
         }
-        lift.bodyweightLift -> "bodyweight, two reps fewer than the top set"
-        else -> "set the top load first"
+        lift.bodyweightLift -> UiText.res(R.string.setssheet_backoff_bodyweight)
+        else -> UiText.res(R.string.setssheet_backoff_need_top)
     }
 }
 
@@ -490,14 +529,20 @@ private fun Segment(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun EffortChips(range: IntRange, onRange: (IntRange) -> Unit) {
     val rpe = EffortSetting.enabled && EffortSetting.scale == EffortScale.RPE
     val faces = if (rpe) listOf("10", "9", "8", "7", "≤6") else listOf("0", "1", "2", "3", "4+")
-    val label = if (rpe) "RPE" else "Reps left"
+    val label = stringResource(if (rpe) R.string.setssheet_effort_rpe_label else R.string.setssheet_effort_reps_left_label)
+    val description = UiText.res(
+        if (rpe) R.string.setssheet_effort_rpe_description else R.string.setssheet_effort_reps_left_description,
+        rirRangeSpoken(range, rpe),
+    ).asString()
+    val inRange = stringResource(R.string.setssheet_effort_in_range)
+    val outOfRange = stringResource(R.string.setssheet_effort_out_of_range)
     val from = minOf(range.first, 4)
     val to = minOf(range.last, 4)
     val base = MaterialTheme.shapes.extraSmall
     Column(
         Modifier
             .fillMaxWidth()
-            .semantics { contentDescription = "$label, ${rirRangeSpoken(range, rpe)}" },
+            .semantics { contentDescription = description },
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             RowLabel(label, null, Modifier.weight(1f))
@@ -513,12 +558,12 @@ private fun EffortChips(range: IntRange, onRange: (IntRange) -> Unit) {
                     Modifier
                         .width(34.dp)
                         .height(48.dp)
-                        .clickable(role = Role.Button, onClickLabel = "Stop with ${rirRangeSpoken(i..(if (i == 4) 10 else i), rpe)}") {
+                        .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.setssheet_effort_stop_description, rirRangeSpoken(i..(if (i == 4) 10 else i), rpe)).asString()) {
                             onRange(nextRirRange(range, i))
                         }
                         .semantics {
                             this.selected = on
-                            stateDescription = if (on) "In the range" else "Not in the range"
+                            stateDescription = if (on) inRange else outOfRange
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -541,7 +586,7 @@ private fun EffortChips(range: IntRange, onRange: (IntRange) -> Unit) {
                 }
             }
         }
-        Text(rirRangeLine(range, rpe), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        Text(rirRangeLine(range, rpe).asString(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
     }
 }
 
@@ -564,58 +609,68 @@ internal fun nextRirRange(range: IntRange, i: Int): IntRange {
 private fun rpeOf(rir: Int) = 10 - minOf(rir, 4)
 
 /** The line under the chips: "Stop with 0–1 reps left", "Stop around RPE 9–10". */
-internal fun rirRangeLine(range: IntRange, rpe: Boolean): String {
+internal fun rirRangeLine(range: IntRange, rpe: Boolean): UiText {
     val lo = minOf(range.first, 4)
     val open = range.last >= 4
     return if (!rpe) {
         when {
-            lo == 0 && open -> "Stop with any number of reps left"
-            open -> "Stop with $lo or more reps left"
-            lo == range.last -> "Stop with $lo ${if (lo == 1) "rep" else "reps"} left"
-            else -> "Stop with $lo–${range.last} reps left"
+            lo == 0 && open -> UiText.res(R.string.setssheet_line_reps_any)
+            open -> UiText.res(R.string.setssheet_line_reps_or_more, lo)
+            lo == range.last -> UiText.plural(R.plurals.setssheet_line_reps_left, lo)
+            else -> UiText.res(R.string.setssheet_line_reps_range, lo, range.last)
         }
     } else {
         when {
-            lo == 0 && open -> "Stop at any RPE"
-            open -> "Stop around RPE ${rpeOf(lo)} or lower"
-            lo == range.last -> "Stop around RPE ${rpeOf(lo)}"
-            else -> "Stop around RPE ${rpeOf(range.last)}–${rpeOf(lo)}"
+            lo == 0 && open -> UiText.res(R.string.setssheet_line_rpe_any)
+            open -> UiText.res(R.string.setssheet_line_rpe_or_lower, rpeOf(lo))
+            lo == range.last -> UiText.res(R.string.setssheet_line_rpe_one, rpeOf(lo))
+            else -> UiText.res(R.string.setssheet_line_rpe_range, rpeOf(range.last), rpeOf(lo))
         }
     }
 }
 
 /** The range as a screen reader says it: "0 to 1", "2", "4 or more" (RPE: "RPE 9 to 10", "RPE 6 or lower"). */
-internal fun rirRangeSpoken(range: IntRange, rpe: Boolean): String {
+internal fun rirRangeSpoken(range: IntRange, rpe: Boolean): UiText {
     val lo = minOf(range.first, 4)
     val open = range.last >= 4
     return if (!rpe) {
         when {
-            lo == 0 && open -> "any number"
-            open -> "$lo or more"
-            lo == range.last -> "$lo"
-            else -> "$lo to ${range.last}"
+            lo == 0 && open -> UiText.res(R.string.setssheet_spoken_reps_any)
+            open -> UiText.res(R.string.setssheet_spoken_reps_or_more, lo)
+            lo == range.last -> UiText.Raw(lo.toString())
+            else -> UiText.res(R.string.setssheet_spoken_reps_range, lo, range.last)
         }
     } else {
         when {
-            lo == 0 && open -> "any RPE"
-            open -> "RPE ${rpeOf(lo)} or lower"
-            lo == range.last -> "RPE ${rpeOf(lo)}"
-            else -> "RPE ${rpeOf(range.last)} to ${rpeOf(lo)}"
+            lo == 0 && open -> UiText.res(R.string.setssheet_spoken_rpe_any)
+            open -> UiText.res(R.string.setssheet_spoken_rpe_or_lower, rpeOf(lo))
+            lo == range.last -> UiText.res(R.string.setssheet_spoken_rpe_one, rpeOf(lo))
+            else -> UiText.res(R.string.setssheet_spoken_rpe_range, rpeOf(range.last), rpeOf(lo))
         }
     }
 }
 
 /** A whole-number range as two compact steppers. */
 @Composable
-private fun IntRangeStepper(label: String, noun: String, range: IntRange, min: Int, max: Int, onRange: (IntRange) -> Unit) = RangeStepperRow(
+private fun IntRangeStepper(
+    label: String,
+    range: IntRange,
+    min: Int,
+    max: Int,
+    fromLess: String,
+    fromMore: String,
+    toLess: String,
+    toMore: String,
+    onRange: (IntRange) -> Unit,
+) = RangeStepperRow(
     label,
     from = StepperPart(
-        range.first.toString(), "Fewer $noun", "More $noun",
+        range.first.toString(), fromLess, fromMore,
         onLess = { onRange((range.first - 1).coerceAtLeast(min)..range.last) },
         onMore = { (range.first + 1).coerceAtMost(max).let { onRange(it..maxOf(it, range.last)) } },
     ),
     to = StepperPart(
-        range.last.toString(), "Fewer $noun at the top of the range", "More $noun at the top of the range",
+        range.last.toString(), toLess, toMore,
         onLess = { onRange(range.first..(range.last - 1).coerceAtLeast(range.first)) },
         onMore = { onRange(range.first..(range.last + 1).coerceAtMost(max)) },
     ),
@@ -626,7 +681,8 @@ private fun IntRangeStepper(label: String, noun: String, range: IntRange, min: I
 private fun IntStepper(
     label: String,
     value: Int,
-    noun: String,
+    less: String,
+    more: String,
     min: Int,
     max: Int,
     step: Int = 1,
@@ -637,8 +693,8 @@ private fun IntStepper(
     label = label,
     value = text,
     unit = unit,
-    less = "Fewer $noun",
-    more = "More $noun",
+    less = less,
+    more = more,
     error = false,
     decimal = false,
     maxDigits = 0,
@@ -656,8 +712,8 @@ internal fun RepsUpStepper(label: String, noun: String, up: Int?, floor: Int, on
     label = label,
     value = up?.takeIf { it > floor }?.toString() ?: "–",
     unit = null,
-    less = "Lower $noun range top",
-    more = "Higher $noun range top",
+    less = UiText.res(R.string.setssheet_repsup_lower_description, noun).asString(),
+    more = UiText.res(R.string.setssheet_repsup_higher_description, noun).asString(),
     error = false,
     decimal = false,
     maxDigits = 0,
@@ -670,31 +726,32 @@ internal fun RepsUpStepper(label: String, noun: String, up: Int?, floor: Int, on
 @Composable
 private fun CustomSets(scheme: SetScheme, inSuperset: Boolean, onKinds: (List<SetKind>) -> Unit) {
     val options = listOf(SetKind.WORKING, SetKind.TOP, SetKind.BACKOFF, SetKind.DROP).filter { !(inSuperset && it == SetKind.DROP) }
-    RoleCard("SET TYPES", "${scheme.custom.size} ${if (scheme.custom.size == 1) "set" else "sets"}", SetKind.TOP.tint()) {
+    RoleCard(stringResource(R.string.setssheet_role_types), UiText.plural(R.plurals.common_sets_count, scheme.custom.size).asString(), SetKind.TOP.tint()) {
         scheme.custom.forEachIndexed { index, kind ->
             // A drop follows a set, so the first set cannot be one.
             val allowed = options.filter { index > 0 || it != SetKind.DROP }
+            val rowDescription = UiText.res(R.string.setssheet_custom_row_description, index + 1, kind.label).asString()
             Row(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = 46.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Change set ${index + 1} type") {
+                    .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.setssheet_custom_change_description, index + 1).asString()) {
                         val next = allowed[(allowed.indexOf(kind) + 1) % allowed.size]
                         onKinds(scheme.custom.mapIndexed { i, k -> if (i == index) next else k })
                     }
-                    .semantics { contentDescription = "Set ${index + 1}, ${kind.label}" },
+                    .semantics { contentDescription = rowDescription },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Set ${index + 1}", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
+                Text(UiText.res(R.string.setssheet_custom_set, index + 1).asString(), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
                 Text(kind.label + "  ▾", style = MaterialTheme.typography.bodyMedium, color = kind.tint())
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (scheme.custom.size < SetScheme.MAX_CUSTOM_SETS) {
-                TextAction("Add a set", { onKinds(scheme.custom + SetKind.WORKING) })
+                TextAction(stringResource(R.string.setssheet_custom_add_button), { onKinds(scheme.custom + SetKind.WORKING) })
             }
             if (scheme.custom.size > 1) {
-                TextAction("Remove last set", { onKinds(scheme.custom.dropLast(1)) })
+                TextAction(stringResource(R.string.setssheet_custom_remove_button), { onKinds(scheme.custom.dropLast(1)) })
             }
         }
     }
@@ -707,11 +764,12 @@ private fun SetKind.previewColor() = when (this) {
 }
 
 /** The short word over a bar in the "You'll do" drawing. */
+@Composable
 private fun SetKind.roleWord() = when (this) {
-    SetKind.TOP -> "TOP"
-    SetKind.BACKOFF -> "BACK"
-    SetKind.WORKING -> "SET"
-    SetKind.DROP -> "DROP"
+    SetKind.TOP -> stringResource(R.string.setssheet_word_top).uppercase()
+    SetKind.BACKOFF -> stringResource(R.string.setssheet_word_back).uppercase()
+    SetKind.WORKING -> stringResource(R.string.setssheet_word_set).uppercase()
+    SetKind.DROP -> stringResource(R.string.setssheet_word_drop).uppercase()
     else -> label.uppercase()
 }
 
@@ -760,13 +818,13 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                "You'll do".uppercase() + if (kg != null && kg > 0.0) " · ${Units.name}" else "",
+                stringResource(R.string.setssheet_youll_do).uppercase() + if (kg != null && kg > 0.0) " · ${Units.name}" else "",
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )
-            Text("~${SessionClock.minutes(seconds)} min", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            Text(UiText.res(R.string.setssheet_youll_minutes, SessionClock.minutes(seconds)).asString(), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
         }
-        if (scheme.warmupRamp) Text("Warm-up ramp first", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        if (scheme.warmupRamp) Text(stringResource(R.string.setssheet_youll_ramp_first), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
         if (planned.size <= DRAWN_SETS_MAX) {
             val narrow = planned.size > 3
             Row(Modifier.fillMaxWidth().height(BAR_AREA + if (narrow) 66.dp else 46.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
@@ -800,7 +858,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
                 val count = end - i + 1
                 Row(Modifier.fillMaxWidth()) {
                     Text(
-                        set.kind.label + if (count > 1) ", $count sets" else "",
+                        if (count > 1) UiText.plural(R.plurals.setssheet_run_label, count, set.kind.label, count).asString() else set.kind.label,
                         style = MaterialTheme.typography.bodySmall,
                         color = set.kind.tint(),
                         modifier = Modifier.weight(1f),

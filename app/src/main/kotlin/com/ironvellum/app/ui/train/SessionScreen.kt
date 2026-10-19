@@ -1,6 +1,10 @@
 package com.ironvellum.app.ui.train
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
@@ -204,7 +208,6 @@ import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.ironvellumRepository
@@ -845,7 +848,11 @@ fun SessionScreen(
     if (session == null) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Opening the ${Words.trial.s}…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text(
+                UiText.themed(R.string.session_opening, R.string.session_opening__t).asString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
         }
         return
     }
@@ -856,7 +863,11 @@ fun SessionScreen(
     if (session.completedAtMs != null && completion == null && !claiming) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("${Words.trial.c} already ${Words.sealed.s}.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text(
+                UiText.themed(R.string.session_already_sealed, R.string.session_already_sealed__t).asString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
         }
         LaunchedEffect(session.id) { onSealed() }
         return
@@ -1010,7 +1021,7 @@ fun SessionScreen(
         }
     }
 
-    fun offerRemovedUndo(message: String, removed: Repository.RemovedSets) {
+    fun offerRemovedUndo(message: UiText, removed: Repository.RemovedSets) {
         undoSerial++
         undo = UndoPrompt.Removed(undoSerial, message, removed)
     }
@@ -1077,7 +1088,7 @@ fun SessionScreen(
                 NotificationBlockedNotice(
                     channelId = Notifications.restChannel(trialPrefs.restAlert),
                     access = restAccess,
-                    blockedText = "Notifications are off, so the rest timer will not alert you when a rest ends.",
+                    blockedText = stringResource(R.string.session_notifications_off_caption),
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                     compact = true,
                 )
@@ -1192,16 +1203,16 @@ fun SessionScreen(
                                 // one-off added by mistake can be taken back out.
                                 onRemoveSet = { set ->
                                     if (block.sets.size > 1) {
-                                        viewModel.removeSet(set.id) { offerRemovedUndo("Set removed", it) }
+                                        viewModel.removeSet(set.id) { offerRemovedUndo(UiText.res(R.string.session_undo_set_removed), it) }
                                     } else {
-                                        viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
+                                        viewModel.removeExercise(block.id) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
                                     }
                                 },
                                 onRemoveExercise = {
                                     if (block.sets.any { it.done && !it.warmup }) {
                                         confirmRemoveExercise = block.id
                                     } else {
-                                        viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
+                                        viewModel.removeExercise(block.id) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
                                     }
                                 },
                                 onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
@@ -1234,13 +1245,13 @@ fun SessionScreen(
                                 onMakeTopSet = run {
                                     val working = block.sets.filter { !it.warmup }
                                     if (metric == ExerciseMetric.REPS && first.supersetGroup == null && working.size >= 2 && working.none { it.kind == SetKind.TOP }) {
-                                        { viewModel.makeTopSet(block.id) { Toast.makeText(screenContext, "This lift cannot take a top set.", Toast.LENGTH_SHORT).show() } }
+                                        { viewModel.makeTopSet(block.id) { Toast.makeText(screenContext, resText(R.string.session_top_set_refused), Toast.LENGTH_SHORT).show() } }
                                     } else {
                                         null
                                     }
                                 },
                                 onAddDrop = block.sets.lastOrNull { !it.warmup }?.takeIf { metric == ExerciseMetric.REPS && first.supersetGroup == null }?.let { last ->
-                                    { viewModel.addDropAfter(last.id) { Toast.makeText(screenContext, "A drop cannot be added here.", Toast.LENGTH_SHORT).show() } }
+                                    { viewModel.addDropAfter(last.id) { Toast.makeText(screenContext, resText(R.string.session_drop_refused), Toast.LENGTH_SHORT).show() } }
                                 },
                                 onEndDrops = viewModel::endDropsAfter,
                                 xpBySet = tally.gains,
@@ -1266,7 +1277,9 @@ fun SessionScreen(
                             if (previousFolded) FolderRule()
                             FoldedExerciseRow(
                                 name = first.exerciseName,
-                                subline = supersetNumbers[blockIdx]?.let { "Superset $it · " }.orEmpty() + foldedSubline(block, metric, weighted),
+                                subline = foldedSubline(block, metric, weighted).let { progress ->
+                                    supersetNumbers[blockIdx]?.let { stringResource(R.string.session_folded_superset, it, progress) } ?: progress
+                                },
                                 done = block.sets.count { it.done },
                                 total = block.sets.count { !it.warmup },
                                 hasNote = exerciseNotes[block.id] != null,
@@ -1277,7 +1290,7 @@ fun SessionScreen(
                             // about the set just logged sits under that set's own exercise, never on another card.
                             if (underRowEffort != null && underRowEffort.exerciseId == block.id) {
                                 EffortStrip(
-                                    title = "How hard was set ${underRowEffort.workingNumber(ui.sets)}?",
+                                    setLabel = underRowEffort.workingNumber(ui.sets).toString(),
                                     rpe = underRowEffort.rpe,
                                     onPick = { viewModel.setRpe(underRowEffort.id, it) },
                                     modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
@@ -1292,7 +1305,7 @@ fun SessionScreen(
                 Spacer(Modifier.height(16.dp))
                 TrialEndRows(
                     nameValue = session.title.ifBlank { null }
-                        ?: "Defaults to ${session.label} · ${formatDate(session.startedAtMs, "d MMM")}",
+                        ?: stringResource(R.string.session_name_default, session.label, formatDate(session.startedAtMs, "d MMM")),
                     nameSet = session.title.isNotBlank(),
                     noteValue = session.note.lineSequence().firstOrNull { it.isNotBlank() }
                         ?: session.privateNote.lineSequence().firstOrNull { it.isNotBlank() },
@@ -1305,9 +1318,9 @@ fun SessionScreen(
                     Spacer(Modifier.height(32.dp))
                     SlideToSeal(
                         label = if (anyDone) {
-                            "$unlogged ${plural(unlogged, "set", "sets")} left · slide to ${Words.seal.s}"
+                            UiText.themedPlural(R.plurals.session_slide_left, R.plurals.session_slide_left__t, unlogged).asString()
                         } else {
-                            "Log a set to ${Words.seal.s} the ${Words.trial.s}"
+                            UiText.themed(R.string.session_slide_log_first, R.string.session_slide_log_first__t).asString()
                         },
                         enabled = anyDone && !claiming,
                         onSealed = ::requestSeal,
@@ -1324,9 +1337,13 @@ fun SessionScreen(
                 nextSetNumber = activeSet?.workingNumber(ui.sets),
                 nextLine = activeSet?.let { set ->
                     val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                    val number = set.workingNumber(ui.sets)
                     // Named only when it is not the card on screen.
-                    val where = if (set.exerciseId != openBlock?.id) " · ${set.exerciseName}" else ""
-                    "Set ${set.workingNumber(ui.sets)}$where · $figure"
+                    if (set.exerciseId != openBlock?.id) {
+                        stringResource(R.string.session_next_line_named, number, set.exerciseName, figure)
+                    } else {
+                        stringResource(R.string.session_next_line, number, figure)
+                    }
                 },
                 noRestYet = activeSet?.let { Supersets.midRound(ui.sets, it) } == true,
                 onLog = ::logActive,
@@ -1337,13 +1354,19 @@ fun SessionScreen(
                 slideReset = slideReset,
                 effortSet = effortSet.takeIf { restChipsOn },
                 // Names the exercise: in a superset the question is about the set just done, not the card now open.
-                effortLabel = effortSet?.let { it.exerciseName + if (it.kind == SetKind.TOP) " top set" else " set ${it.workingNumber(ui.sets)}" }.orEmpty(),
+                effortLabel = effortSet?.let {
+                    if (it.kind == SetKind.TOP) {
+                        stringResource(R.string.session_effort_label_top, it.exerciseName)
+                    } else {
+                        stringResource(R.string.session_effort_label_set, it.exerciseName, it.workingNumber(ui.sets))
+                    }
+                }.orEmpty(),
                 onRate = { rpe -> effortSet?.let { viewModel.setRpe(it.id, rpe) } },
             )
         }
         undo?.let { prompt ->
             UndoBar(
-                message = prompt.message,
+                message = prompt.message.asString(),
                 onUndo = {
                     when (prompt) {
                         is UndoPrompt.Logged -> undoLog(prompt)
@@ -1372,8 +1395,12 @@ fun SessionScreen(
             PocketLockOverlay(
                 rest = rest,
                 nextLine = activeSet?.let { set ->
-                    "Set ${set.workingNumber(ui.sets)} · ${set.exerciseName} · " +
-                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                    stringResource(
+                        R.string.session_next_line_named,
+                        set.workingNumber(ui.sets),
+                        set.exerciseName,
+                        setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false),
+                    )
                 },
                 onUnlock = { locked = false },
             )
@@ -1383,13 +1410,13 @@ fun SessionScreen(
     if (confirmAbandon) {
         IronvellumDialog(
             onDismissRequest = { confirmAbandon = false },
-            title = { Text("Abandon this ${Words.trial.s}?") },
-            text = { Text("${Words.unsealed.c} ${Words.trial.pl} grant no XP and are erased from ${Words.theChronicle.t}.") },
+            title = { Text(UiText.themed(R.string.session_abandon_title, R.string.session_abandon_title__t).asString()) },
+            text = { Text(UiText.themed(R.string.session_abandon_text, R.string.session_abandon_text__t).asString()) },
             // Staying is the filled action; abandoning wears the danger style, so a
             // reflex tap on the bright button never erases the trial.
             confirmButton = {
                 IronvellumButton(
-                    "Abandon",
+                    stringResource(R.string.session_abandon_button),
                     danger = true,
                     onClick = {
                         confirmAbandon = false
@@ -1398,7 +1425,7 @@ fun SessionScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton("Keep going", onClick = { confirmAbandon = false })
+                IronvellumButton(stringResource(R.string.session_keep_going_button), onClick = { confirmAbandon = false })
             },
         )
     }
@@ -1412,17 +1439,17 @@ fun SessionScreen(
             val logged = rows.count { it.done && !it.warmup }
             IronvellumDialog(
                 onDismissRequest = { confirmRemoveExercise = null },
-                title = { Text("Remove $name?") },
-                text = { Text("${if (logged == 1) "Its 1 logged set goes" else "Its $logged logged sets go"} with it. Undo stays on screen for a few seconds.") },
+                title = { Text(stringResource(R.string.session_remove_title, name)) },
+                text = { Text(UiText.plural(R.plurals.session_remove_text, logged).asString()) },
                 // Keeping it is the filled action: a reflex tap removes nothing.
-                confirmButton = { IronvellumButton("Keep it", onClick = { confirmRemoveExercise = null }) },
+                confirmButton = { IronvellumButton(stringResource(R.string.session_keep_it_button), onClick = { confirmRemoveExercise = null }) },
                 dismissButton = {
                     IronvellumButton(
-                        "Remove",
+                        stringResource(R.string.session_remove_button),
                         danger = true,
                         onClick = {
                             confirmRemoveExercise = null
-                            viewModel.removeExercise(exerciseId) { offerRemovedUndo("$name removed", it) }
+                            viewModel.removeExercise(exerciseId) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, name), it) }
                         },
                     )
                 },
@@ -1440,18 +1467,18 @@ fun SessionScreen(
             title = {
                 Text(
                     if (unlogged == 0) {
-                        "${Words.seal.c} the ${Words.trial.s}?"
+                        UiText.themed(R.string.session_seal_title, R.string.session_seal_title__t).asString()
                     } else {
-                        "${Words.seal.c} with $unlogged ${plural(unlogged, "set", "sets")} unlogged?"
+                        UiText.themedPlural(R.plurals.session_seal_unlogged_title, R.plurals.session_seal_unlogged_title__t, unlogged).asString()
                     },
                 )
             },
             text = {
                 Text(
                     if (unlogged == 0) {
-                        "Every set is logged. ${Words.seal.c} it now?"
+                        UiText.themed(R.string.session_seal_confirm_text, R.string.session_seal_confirm_text__t).asString()
                     } else {
-                        "${plural(unlogged, "It", "They")} won't count."
+                        UiText.plural(R.plurals.session_seal_unlogged_text, unlogged).asString()
                     },
                 )
             },
@@ -1459,7 +1486,7 @@ fun SessionScreen(
             // slot; KEEP GOING is the safe default.
             confirmButton = {
                 IronvellumButton(
-                    if (unlogged == 0) Words.seal.c else "${Words.seal.c} anyway",
+                    if (unlogged == 0) Words.seal.c else UiText.themed(R.string.session_seal_anyway_button, R.string.session_seal_anyway_button__t).asString(),
                     onClick = {
                         confirmClaim = false
                         viewModel.complete()
@@ -1467,7 +1494,7 @@ fun SessionScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton("Keep going", quiet = true, onClick = declined)
+                IronvellumButton(stringResource(R.string.session_keep_going_button), quiet = true, onClick = declined)
             },
         )
     }
@@ -1478,7 +1505,7 @@ fun SessionScreen(
         if (set != null) {
             PlateSheet(
                 exerciseName = set.exerciseName,
-                setLabel = "set ${set.workingNumber(ui.sets)}",
+                setLabel = stringResource(R.string.session_plate_set_label, set.workingNumber(ui.sets)),
                 loadKg = set.weightKg,
                 onUse = { kg ->
                     commit(set.copy(weightKg = kg))
@@ -1524,7 +1551,7 @@ fun SessionScreen(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "SET ${target.workingNumber(ui.sets)}",
+                        stringResource(R.string.session_load_dialog_set, target.workingNumber(ui.sets)),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -1538,11 +1565,11 @@ fun SessionScreen(
                     value = field,
                     onValueChange = { field = cleanLoadInput(it) },
                     singleLine = true,
-                    label = { Text("Load (${Units.name})") },
-                    placeholder = { Text("Leave blank for bodyweight") },
+                    label = { Text(stringResource(R.string.session_load_field_label, Units.name)) },
+                    placeholder = { Text(stringResource(R.string.session_load_placeholder)) },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
-                        { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
+                        { Text(stringResource(R.string.session_load_error, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name)) }
                     } else {
                         null
                     },
@@ -1555,14 +1582,14 @@ fun SessionScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val many = following.size > 1
                     IronvellumButton(
-                        "This set",
+                        stringResource(R.string.session_load_this_set),
                         quiet = many,
                         enabled = parsed.isSuccess,
                         onClick = { apply(listOf(target)) },
                     )
                     if (many) {
                         IronvellumButton(
-                            "All ${following.size} sets",
+                            UiText.plural(R.plurals.session_load_all_sets, following.size).asString(),
                             enabled = parsed.isSuccess,
                             onClick = { apply(following) },
                         )
@@ -1591,7 +1618,7 @@ fun SessionScreen(
         TrialNameDialog(
             current = session.title,
             signedIn = signedIn,
-            hint = "Defaults to ${session.label} · ${formatDate(session.startedAtMs, "d MMM")}",
+            hint = stringResource(R.string.session_name_default, session.label, formatDate(session.startedAtMs, "d MMM")),
             onSave = { name ->
                 viewModel.setSessionTitle(name)
                 showName = false
@@ -1645,7 +1672,7 @@ fun SessionScreen(
     editModifiersFor?.let { exerciseId ->
         val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
         ModifierPickerDialog(
-            exerciseName = current?.exerciseName ?: "Exercise",
+            exerciseName = current?.exerciseName ?: stringResource(R.string.session_exercise_fallback),
             applicable = exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
             current = current?.modifiers.orEmpty(),
             onConfirm = { picked ->
@@ -1767,15 +1794,18 @@ fun SessionScreen(
     if (confirmReopen) {
         IronvellumDialog(
             onDismissRequest = { confirmReopen = false },
-            title = { Text("Reopen this ${Words.trial.s}?") },
-            text = { Text("The XP it paid is taken back until you ${Words.seal.s} again.") },
+            title = { Text(UiText.themed(R.string.session_reopen_title, R.string.session_reopen_title__t).asString()) },
+            text = { Text(UiText.themed(R.string.session_reopen_text, R.string.session_reopen_text__t).asString()) },
             // Keeping it sealed is the filled action: a reflex tap changes nothing.
             confirmButton = {
-                IronvellumButton("Keep it ${Words.sealed.s}", onClick = { confirmReopen = false })
+                IronvellumButton(
+                    UiText.themed(R.string.session_reopen_keep_button, R.string.session_reopen_keep_button__t).asString(),
+                    onClick = { confirmReopen = false },
+                )
             },
             dismissButton = {
                 IronvellumButton(
-                    "Reopen",
+                    stringResource(R.string.session_reopen_button),
                     quiet = true,
                     onClick = {
                         confirmReopen = false
@@ -1792,9 +1822,9 @@ fun SessionScreen(
     reopenRefusal?.let { reason ->
         IronvellumDialog(
             onDismissRequest = { reopenRefusal = null },
-            title = { Text("This ${Words.trial.s} stays ${Words.sealed.s}") },
-            text = { Text(reopenRefusalText(reason)) },
-            confirmButton = { IronvellumButton("OK", onClick = { reopenRefusal = null }) },
+            title = { Text(UiText.themed(R.string.session_reopen_refused_title, R.string.session_reopen_refused_title__t).asString()) },
+            text = { Text(reopenRefusalText(reason).asString()) },
+            confirmButton = { IronvellumButton(stringResource(R.string.session_ok_button), onClick = { reopenRefusal = null }) },
         )
     }
 
@@ -1809,12 +1839,12 @@ fun SessionScreen(
 }
 
 /** Why a trial cannot be reopened, in the words the dialog shows. */
-private fun reopenRefusalText(reason: SealedReopen.Refusal): String = when (reason) {
-    SealedReopen.Refusal.NOT_SEALED -> "This ${Words.trial.s} is already open."
-    SealedReopen.Refusal.WINDOW_CLOSED -> "Ten minutes have passed. Amend it from ${Words.theChronicle.t} instead."
-    SealedReopen.Refusal.ANOTHER_LIVE -> "Another ${Words.trial.s} is open. ${Words.seal.c} or abandon it first."
-    SealedReopen.Refusal.AMENDED -> "It was amended after ${Words.sealing.s}, so it cannot be taken back."
-    SealedReopen.Refusal.LEDGER_SHORT -> "The XP it paid has been spent, so it cannot be taken back."
+private fun reopenRefusalText(reason: SealedReopen.Refusal): UiText = when (reason) {
+    SealedReopen.Refusal.NOT_SEALED -> UiText.themed(R.string.session_reopen_refused_open, R.string.session_reopen_refused_open__t)
+    SealedReopen.Refusal.WINDOW_CLOSED -> UiText.themed(R.string.session_reopen_refused_window, R.string.session_reopen_refused_window__t)
+    SealedReopen.Refusal.ANOTHER_LIVE -> UiText.themed(R.string.session_reopen_refused_another, R.string.session_reopen_refused_another__t)
+    SealedReopen.Refusal.AMENDED -> UiText.themed(R.string.session_reopen_refused_amended, R.string.session_reopen_refused_amended__t)
+    SealedReopen.Refusal.LEDGER_SHORT -> UiText.res(R.string.session_reopen_refused_spent)
 }
 
 /** The ± buttons walk the plate grid, so 15.2 kg steps to 17.5 or 15, never 17.7 or 12.7. */
@@ -1883,22 +1913,22 @@ internal class TrialBlock(val id: Long, val position: Int, val sets: List<Sessio
  */
 private sealed interface UndoPrompt {
     val serial: Int
-    val message: String
+    val message: UiText
 
     data class Logged(override val serial: Int, val setId: Long, val setNumber: Int) : UndoPrompt {
-        override val message: String get() = "Set $setNumber logged"
+        override val message: UiText get() = UiText.res(R.string.session_undo_set_logged, setNumber)
     }
 
-    data class Removed(override val serial: Int, override val message: String, val removed: Repository.RemovedSets) : UndoPrompt
+    data class Removed(override val serial: Int, override val message: UiText, val removed: Repository.RemovedSets) : UndoPrompt
 
     /** "Plank added at the end": an exercise added mid-trial lands last, and Undo takes it back out. */
     data class Added(override val serial: Int, val exerciseId: Long, val name: String) : UndoPrompt {
-        override val message: String get() = "$name added at the end"
+        override val message: UiText get() = UiText.res(R.string.session_undo_exercise_added, name)
     }
 
     /** "Warm-up added": Undo takes the ramp's sets back out. */
     data class Ramp(override val serial: Int, val setIds: List<Long>) : UndoPrompt {
-        override val message: String get() = "Warm-up added"
+        override val message: UiText get() = UiText.res(R.string.session_undo_warmup_added)
     }
 }
 
@@ -1910,8 +1940,6 @@ private class Figure(
     val kind: FigureKind,
     val value: String,
     val unit: String,
-    /** For the ± announcements: "Decrease load". */
-    val what: String,
     val minus: SessionSet,
     val plus: SessionSet,
 )
@@ -1948,6 +1976,9 @@ private val EFFORT_DONE_HEIGHT = 44.dp
 /** The room the log button takes at the end of the footer: the rest bar's chips stop short of it so a tap there can never rate a set. */
 private val LOG_BUTTON_SLOT = 60.dp
 
+/** A plain-only string for a helper that is not composable; the composables read `stringResource` directly. */
+private fun resText(id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+
 private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
     val worn = WornLoad.forLift(ProgramAnswersStore.kit, set.exerciseName, weighted, metric)
     fun load(): Figure {
@@ -1955,10 +1986,9 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
-            value = kg?.let { Units.format(it) } ?: if (weighted) "0" else "BW",
+            value = kg?.let { Units.format(it) } ?: if (weighted) "0" else resText(R.string.session_figure_bodyweight),
             // A loaded lift with nothing on it says so, where the unit would sit.
-            unit = if (kg != null) Units.name else if (weighted) "set load" else "",
-            what = "load",
+            unit = if (kg != null) Units.name else if (weighted) resText(R.string.session_unit_set_load) else "",
             minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
             plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
         )
@@ -1966,7 +1996,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
     fun minutes(): Figure {
         val minutes = (set.durationSec ?: 0) / 60
         return Figure(
-            FigureKind.MINUTES, minutes.toString(), "min", "minutes",
+            FigureKind.MINUTES, minutes.toString(), resText(R.string.session_unit_minutes),
             set.copy(durationSec = (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60),
             set.copy(durationSec = (minutes + DURATION_STEP_MINUTES) * 60),
         )
@@ -1975,7 +2005,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         ExerciseMetric.REPS -> listOf(
             load(),
             Figure(
-                FigureKind.REPS, set.reps.toString(), "reps", "reps",
+                FigureKind.REPS, set.reps.toString(), resText(R.string.session_unit_reps),
                 set.copy(reps = (set.reps - 1).coerceAtLeast(0)),
                 set.copy(reps = set.reps + 1),
             ),
@@ -1987,7 +2017,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
             listOf(
                 load(),
                 Figure(
-                    FigureKind.SECONDS, seconds.toString(), "sec", "seconds",
+                    FigureKind.SECONDS, seconds.toString(), resText(R.string.session_unit_seconds),
                     set.copy(durationSec = (seconds - HOLD_STEP_SECONDS).coerceAtLeast(0)),
                     set.copy(durationSec = seconds + HOLD_STEP_SECONDS),
                 ),
@@ -2001,7 +2031,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
             val km = (set.distanceM ?: 0.0) / 1000.0
             listOf(
                 Figure(
-                    FigureKind.KM, formatBodyValue(km), "km", "distance",
+                    FigureKind.KM, formatBodyValue(km), resText(R.string.session_unit_km),
                     set.copy(distanceM = (km - DISTANCE_STEP_KM).coerceAtLeast(0.0) * 1000.0),
                     set.copy(distanceM = (km + DISTANCE_STEP_KM) * 1000.0),
                 ),
@@ -2012,7 +2042,7 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         // the grade is typed in its own field beside it.
         ExerciseMetric.ATTEMPTS_GRADE -> listOf(
             Figure(
-                FigureKind.ATTEMPTS, set.reps.toString(), "attempts", "attempts",
+                FigureKind.ATTEMPTS, set.reps.toString(), resText(R.string.session_unit_attempts),
                 set.copy(reps = (set.reps - 1).coerceAtLeast(0)),
                 set.copy(reps = set.reps + 1),
             ),
@@ -2036,6 +2066,16 @@ internal fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = 
 
 private fun FigureKind.typable(): Boolean = this != FigureKind.KM
 
+/** The spoken labels of a figure's minus button, plus button and typed entry. */
+private fun FigureKind.stepperRes(): Triple<Int, Int, Int> = when (this) {
+    FigureKind.LOAD -> Triple(R.string.session_stepper_load_decrease, R.string.session_stepper_load_increase, R.string.session_stepper_load_type)
+    FigureKind.REPS -> Triple(R.string.session_stepper_reps_decrease, R.string.session_stepper_reps_increase, R.string.session_stepper_reps_type)
+    FigureKind.SECONDS -> Triple(R.string.session_stepper_seconds_decrease, R.string.session_stepper_seconds_increase, R.string.session_stepper_seconds_type)
+    FigureKind.MINUTES -> Triple(R.string.session_stepper_minutes_decrease, R.string.session_stepper_minutes_increase, R.string.session_stepper_minutes_type)
+    FigureKind.KM -> Triple(R.string.session_stepper_distance_decrease, R.string.session_stepper_distance_increase, R.string.session_stepper_distance_type)
+    FigureKind.ATTEMPTS -> Triple(R.string.session_stepper_attempts_decrease, R.string.session_stepper_attempts_increase, R.string.session_stepper_attempts_type)
+}
+
 /** "10 kg", or "BW" for a bodyweight set. */
 internal fun kgLabel(kg: Double?, weighted: Boolean = false): String = Units.label(kg, weighted)
 
@@ -2044,12 +2084,12 @@ internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Bo
     ExerciseMetric.REPS -> "${kgLabel(set.weightKg, weighted)} × ${set.reps}"
     ExerciseMetric.HOLD -> "${kgLabel(set.weightKg, weighted)} × ${set.durationSec ?: 0}s"
     ExerciseMetric.DURATION ->
-        "${(set.durationSec ?: 0) / 60} min" +
+        resText(R.string.session_figure_minutes, (set.durationSec ?: 0) / 60) +
             if (weighted && (set.weightKg ?: 0.0) > 0.0) " · ${kgLabel(set.weightKg)}" else ""
     ExerciseMetric.DISTANCE_TIME ->
-        "${formatBodyValue((set.distanceM ?: 0.0) / 1000.0)} km · ${(set.durationSec ?: 0) / 60} min"
+        resText(R.string.session_figure_km_minutes, formatBodyValue((set.distanceM ?: 0.0) / 1000.0), (set.durationSec ?: 0) / 60)
     ExerciseMetric.ATTEMPTS_GRADE ->
-        "${set.reps} ${plural(set.reps, "attempt", "attempts")}" +
+        Words.text(UiText.plural(R.plurals.session_figure_attempts, set.reps)) +
             (set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "")
 }
 
@@ -2077,7 +2117,7 @@ private fun referenceLine(
     val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold, exercise?.isWeighted == true) }
     if (lastText == null && peakText == null) return null
     return buildAnnotatedString {
-        if (lastText != null) append("Last $lastText")
+        if (lastText != null) append(resText(R.string.session_reference_last, lastText))
         if (lastText != null && peakText != null) append(" · ")
         if (peakText != null) {
             append("${Words.peak.c} ")
@@ -2115,14 +2155,15 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
             } else {
                 done.maxBy { (it.durationSec ?: 0) + it.reps }
             }
-            "$total/$total · best ${setFigureText(best, metric, weighted)}" + (best.rpe?.let { " · ${Effort.value(it, EffortSetting.scale)}" } ?: "")
+            resText(R.string.session_folded_best, total, total, setFigureText(best, metric, weighted)) + (best.rpe?.let { " · ${Effort.value(it, EffortSetting.scale)}" } ?: "")
         }
-        done.isNotEmpty() -> "${done.size}/$total ${plural(total, "set", "sets")}"
+        done.isNotEmpty() -> Words.text(UiText.plural(R.plurals.session_folded_progress, total, done.size, total))
         else -> when (metric) {
-            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: if (weighted) " · set a load" else "")
+            ExerciseMetric.REPS -> first.weightKg?.takeIf { it > 0.0 }?.let { "$total × ${first.reps} · ${Units.withUnit(it)}" }
+                ?: if (weighted) resText(R.string.session_folded_set_a_load, total, first.reps) else "$total × ${first.reps}"
             ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
-            ExerciseMetric.DURATION -> "$total × ${(first.durationSec ?: 0) / 60} min"
-            ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> "$total ${plural(total, "set", "sets")}"
+            ExerciseMetric.DURATION -> resText(R.string.session_folded_minutes, total, (first.durationSec ?: 0) / 60)
+            ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> Words.text(UiText.plural(R.plurals.common_sets_count, total))
         }
     }
 }
@@ -2153,11 +2194,12 @@ private fun TrialHeader(
     onLock: () -> Unit,
     onAbandon: () -> Unit,
 ) {
+    val backAction = UiText.themed(R.string.session_back_action, R.string.session_back_action__t).asString()
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${Words.trial.c} in progress",
+                    UiText.themed(R.string.session_header_label, R.string.session_header_label__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 2,
@@ -2183,18 +2225,18 @@ private fun TrialHeader(
                 }
             }
             NavChip(
-                "BACK",
+                stringResource(R.string.session_back_label),
                 Icons.AutoMirrored.Filled.ArrowBack,
                 onClick = onBack,
-                modifier = Modifier.semantics { onClick(label = "Leave, the ${Words.trial.s} keeps running", action = null) },
+                modifier = Modifier.semantics { onClick(label = backAction, action = null) },
             )
             InkIconButton(onClick = onLock, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.Outlined.Lock, contentDescription = "Lock the screen", tint = IronvellumColors.InkMuted)
+                Icon(Icons.Outlined.Lock, contentDescription = stringResource(R.string.session_lock_description), tint = IronvellumColors.InkMuted)
             }
             var menuOpen by remember { mutableStateOf(false) }
             Box {
                 InkIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "More options", tint = IronvellumColors.InkMuted)
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.session_more_description), tint = IronvellumColors.InkMuted)
                 }
                 DropdownMenu(
                     expanded = menuOpen,
@@ -2203,14 +2245,14 @@ private fun TrialHeader(
                     containerColor = IronvellumColors.VaultHigh,
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Muscles worked", color = IronvellumColors.Ink) },
+                        text = { Text(stringResource(R.string.session_muscles_item), color = IronvellumColors.Ink) },
                         onClick = {
                             menuOpen = false
                             onMuscles()
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text("Abandon ${Words.trial.s}", color = IronvellumColors.DangerRed) },
+                        text = { Text(UiText.themed(R.string.session_abandon_item, R.string.session_abandon_item__t).asString(), color = IronvellumColors.DangerRed) },
                         onClick = {
                             menuOpen = false
                             onAbandon()
@@ -2238,7 +2280,7 @@ private fun TrialHeader(
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "$done / $total ${plural(total, "set", "sets")}",
+                UiText.plural(R.plurals.session_progress, total, done, total).asString(),
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )
@@ -2248,7 +2290,7 @@ private fun TrialHeader(
                     LiveGainTag(gain, motion, onGainGone)
                 } else if (minutesLeft != null) {
                     Text(
-                        " · ~$minutesLeft min left",
+                        " · " + stringResource(R.string.session_minutes_left, minutesLeft),
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -2348,7 +2390,7 @@ internal fun OpenExerciseCard(
             // The name and a small (i) are one 44dp target opening the
             // exercise's info. The glyph sits inline, not in a 48dp
             // IconButton, so the name keeps its width at 360dp.
-            val infoLabel = "About ${first.exerciseName}"
+            val infoLabel = stringResource(R.string.session_info_description, first.exerciseName)
             Row(
                 Modifier
                     .weight(1f)
@@ -2376,11 +2418,22 @@ internal fun OpenExerciseCard(
                 )
             }
             onChangeExercise?.let { change ->
-                InkChip("Change", clickLabel = "Change exercise", icon = Icons.Filled.SwapHoriz, onClick = change)
+                InkChip(
+                    stringResource(R.string.session_change_chip),
+                    clickLabel = stringResource(R.string.session_change_exercise_description),
+                    icon = Icons.Filled.SwapHoriz,
+                    onClick = change,
+                )
             }
             // In the header, not on a row of its own: with no last-time line beside it, a lone chip left a
             // card-wide empty row above the sets.
-            onPlates?.let { InkChip("Plates", clickLabel = "Open the plate calculator", onClick = it) }
+            onPlates?.let {
+                InkChip(
+                    stringResource(R.string.session_plates_chip),
+                    clickLabel = stringResource(R.string.session_plates_description),
+                    onClick = it,
+                )
+            }
             ExerciseMenu(
                 name = first.exerciseName,
                 onMoveUp = if (canMoveUp) ({ onMove(true) }) else null,
@@ -2414,7 +2467,7 @@ internal fun OpenExerciseCard(
             // What the last trial that left a note on this exercise said.
             if (lastNote != null) {
                 Text(
-                    "Last time: $lastNote",
+                    stringResource(R.string.session_last_note, lastNote),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 2,
@@ -2467,7 +2520,7 @@ internal fun OpenExerciseCard(
                     weighted = weighted,
                     state = state,
                     // Warm-ups read W and the working sets count from 1 after them, as in the amend editor.
-                    label = if (set.warmup) "W" else "${set.workingNumber(block.sets)}",
+                    label = if (set.warmup) stringResource(R.string.session_warmup_letter) else "${set.workingNumber(block.sets)}",
                     newPeak = set.id in newPeaks,
                     onEdit = onEdit,
                     onTypeLoad = { onTypeLoad(set) },
@@ -2496,7 +2549,7 @@ internal fun OpenExerciseCard(
                 }
                 if (set.id == effortSetId && state == RowState.DONE) {
                     EffortStrip(
-                        title = "How hard was set ${set.workingNumber(block.sets)}?",
+                        setLabel = set.workingNumber(block.sets).toString(),
                         rpe = set.rpe,
                         onPick = { onRpe(set, it) },
                     )
@@ -2518,17 +2571,19 @@ internal fun OpenExerciseCard(
 /** The folded warm-ups of a lift whose working sets are under way: one ticked line, opening the sets on a tap. */
 @Composable
 private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
-    val text = "Warm-up · $count ${plural(count, "set", "sets")}"
+    val text = UiText.plural(R.plurals.session_warmup_fold, count).asString()
+    val showLabel = stringResource(R.string.session_warmup_show_label)
+    val doneDescription = stringResource(R.string.session_warmup_fold_description, text)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clickable(onClickLabel = "Show the warm-up sets", role = Role.Button, onClick = onOpen)
-            .semantics { contentDescription = "$text, done" }
+            .clickable(onClickLabel = showLabel, role = Role.Button, onClick = onOpen)
+            .semantics { contentDescription = doneDescription }
             .padding(start = 12.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("W", style = MaterialTheme.typography.bodySmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.width(24.dp))
+        Text(stringResource(R.string.session_warmup_letter), style = MaterialTheme.typography.bodySmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.width(24.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f).padding(start = 8.dp))
         Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Emerald, modifier = Modifier.padding(end = 10.dp).size(16.dp))
         Text("▾", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
@@ -2540,7 +2595,7 @@ private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
 private fun DropStrip(name: String, onEnd: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "Drops follow straight on, no rest",
+            stringResource(R.string.session_drops_note),
             style = MaterialTheme.typography.labelSmall,
             color = SetKind.DROP.tint(),
             modifier = Modifier.weight(1f),
@@ -2548,11 +2603,11 @@ private fun DropStrip(name: String, onEnd: () -> Unit) {
         Box(
             Modifier
                 .heightIn(min = 48.dp)
-                .clickable(onClickLabel = "End the drops for $name", role = Role.Button, onClick = onEnd)
+                .clickable(onClickLabel = stringResource(R.string.session_drops_end_label, name), role = Role.Button, onClick = onEnd)
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("End drops", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            Text(stringResource(R.string.session_drops_end_button), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
         }
     }
 }
@@ -2560,7 +2615,7 @@ private fun DropStrip(name: String, onEnd: () -> Unit) {
 /** This exercise's own note for the trial: one muted line, or a quiet invitation to write one. */
 @Composable
 private fun ExerciseNoteRow(name: String, note: String?, onClick: () -> Unit) {
-    val label = if (note == null) "Add a note for $name" else "Edit note for $name"
+    val label = stringResource(if (note == null) R.string.session_note_add_description else R.string.session_note_edit_description, name)
     Row(
         Modifier
             .fillMaxWidth()
@@ -2577,7 +2632,7 @@ private fun ExerciseNoteRow(name: String, note: String?, onClick: () -> Unit) {
     ) {
         Icon(Icons.Outlined.EditNote, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(16.dp))
         Text(
-            note ?: "Add a note",
+            note ?: stringResource(R.string.session_add_note),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             maxLines = 2,
@@ -2600,7 +2655,8 @@ private fun SupersetStrip(line: SupersetLine, name: String, onUnlink: () -> Unit
     ) {
         Icon(Icons.Filled.Link, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
         Text(
-            "Superset ${line.number}" + (line.next?.let { " · $it next" } ?: ""),
+            line.next?.let { stringResource(R.string.session_superset_strip_next, line.number, it) }
+                ?: stringResource(R.string.session_superset_strip, line.number),
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             maxLines = 1,
@@ -2610,11 +2666,11 @@ private fun SupersetStrip(line: SupersetLine, name: String, onUnlink: () -> Unit
         Box(
             Modifier
                 .heightIn(min = 36.dp)
-                .clickable(onClickLabel = "Unlink $name from its superset", role = Role.Button, onClick = onUnlink)
+                .clickable(onClickLabel = stringResource(R.string.session_unlink_description, name), role = Role.Button, onClick = onUnlink)
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Unlink", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            Text(stringResource(R.string.session_unlink_button), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
         }
     }
 }
@@ -2644,7 +2700,7 @@ private fun ExerciseMenu(
     var open by remember { mutableStateOf(false) }
     Box {
         InkIconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "More for $name", tint = IronvellumColors.InkMuted)
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.session_menu_description, name), tint = IronvellumColors.InkMuted)
         }
         DropdownMenu(
             expanded = open,
@@ -2671,23 +2727,27 @@ private fun ExerciseMenu(
                 content()
             }
             if (listOf(onAddSet, onRemoveLastSet, onWarmup, onMakeTopSet, onAddDrop).any { it != null }) group {
-                onAddSet?.let { item("Add set", action = it) }
-                onRemoveLastSet?.let { item("Remove last set", action = it) }
-                onWarmup?.let { item("Warm up", action = it) }
-                onMakeTopSet?.let { item("Make set 1 a top set (today)", action = it) }
-                onAddDrop?.let { item("Add a drop to the last set (today)", action = it) }
+                onAddSet?.let { item(stringResource(R.string.session_menu_add_set), action = it) }
+                onRemoveLastSet?.let { item(stringResource(R.string.session_menu_remove_last_set), action = it) }
+                onWarmup?.let { item(stringResource(R.string.session_menu_warmup), action = it) }
+                onMakeTopSet?.let { item(stringResource(R.string.session_menu_make_top_set), action = it) }
+                onAddDrop?.let { item(stringResource(R.string.session_menu_add_drop), action = it) }
             }
             if (listOf(onEditLoad, onModifiers, restOff).any { it != null }) group {
-                onEditLoad?.let { item("Edit load", action = it) }
-                onModifiers?.let { item("Edit modifiers", action = it) }
-                restOff?.let { off -> item(if (off) "Turn rest timer on" else "Turn rest timer off") { onRestOff(!off) } }
+                onEditLoad?.let { item(stringResource(R.string.session_menu_edit_load), action = it) }
+                onModifiers?.let { item(stringResource(R.string.session_menu_edit_modifiers), action = it) }
+                restOff?.let { off ->
+                    item(stringResource(if (off) R.string.session_menu_rest_on else R.string.session_menu_rest_off)) { onRestOff(!off) }
+                }
             }
             if (onMoveUp != null || onMoveDown != null || (supersetWith != null && onSuperset != null)) group {
-                onMoveUp?.let { item("Move up", action = it) }
-                onMoveDown?.let { item("Move down", action = it) }
-                if (supersetWith != null && onSuperset != null) item("Superset with $supersetWith", action = onSuperset)
+                onMoveUp?.let { item(stringResource(R.string.session_menu_move_up), action = it) }
+                onMoveDown?.let { item(stringResource(R.string.session_menu_move_down), action = it) }
+                if (supersetWith != null && onSuperset != null) {
+                    item(stringResource(R.string.session_menu_superset_with, supersetWith), action = onSuperset)
+                }
             }
-            group { item("Remove exercise", IronvellumColors.DangerRed, onRemoveExercise) }
+            group { item(stringResource(R.string.session_menu_remove_exercise), IronvellumColors.DangerRed, onRemoveExercise) }
         }
     }
 }
@@ -2782,22 +2842,26 @@ private fun TrialSetRow(
                     // A warm-up was never logged, so there is nothing to un-log.
                     // An amendment can also open a set that was never logged.
                     if (!set.warmup) {
-                        if (set.done) RowAction("Un-log", IronvellumColors.Ink, onUnlog) else RowAction("Log set", IronvellumColors.Ink, onLog)
+                        if (set.done) {
+                            RowAction(stringResource(R.string.session_set_unlog_button), IronvellumColors.Ink, onUnlog)
+                        } else {
+                            RowAction(stringResource(R.string.session_set_log_button), IronvellumColors.Ink, onLog)
+                        }
                     }
-                    RowAction("Remove", IronvellumColors.DangerRed, onRemove)
+                    RowAction(stringResource(R.string.session_remove_button), IronvellumColors.DangerRed, onRemove)
                     Spacer(Modifier.weight(1f))
-                    RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
+                    RowAction(stringResource(R.string.session_close_button), IronvellumColors.InkMuted, onToggleEdit)
                 }
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                     RowAction(
-                        if (set.warmup) "Count as a working set" else "Mark as warm-up",
+                        stringResource(if (set.warmup) R.string.session_set_count_as_working else R.string.session_set_mark_warmup),
                         IronvellumColors.Ink,
                     ) { onSetKind(if (set.warmup) SetKind.WORKING else SetKind.WARMUP) }
                 }
                 // A logged set can be rated, or re-rated, here: a rep set always (the rest bar asks those
                 // by default), anything else while Settings asks for effort or the set already has one.
                 if (set.done && !set.warmup && (metric == ExerciseMetric.REPS || EffortSetting.enabled || set.rpe != null)) {
-                    EffortStrip(title = "How hard was set $label?", rpe = set.rpe, onPick = onRpe)
+                    EffortStrip(setLabel = label, rpe = set.rpe, onPick = onRpe)
                 }
             }
         }
@@ -2812,7 +2876,14 @@ private fun TrialSetRow(
             .fillMaxWidth()
             .then(
                 if (editable) {
-                    Modifier.clickable(onClickLabel = if (set.warmup) "Edit warm-up" else "Edit set $label", onClick = onToggleEdit)
+                    Modifier.clickable(
+                        onClickLabel = if (set.warmup) {
+                            stringResource(R.string.session_edit_warmup_label)
+                        } else {
+                            stringResource(R.string.session_edit_set_label, label)
+                        },
+                        onClick = onToggleEdit,
+                    )
                 } else {
                     Modifier
                 },
@@ -2842,7 +2913,7 @@ private fun TrialSetRow(
                 )
                 Spacer(Modifier.width(3.dp))
                 Text(
-                    "NEW ${Words.peak.u}",
+                    UiText.themed(R.string.session_new_peak_tag, R.string.session_new_peak_tag__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
@@ -2862,8 +2933,9 @@ private fun TrialSetRow(
                 }
                 // What this set added to the trial's XP; the header chip carries the running total.
                 if (xpGain != null) {
+                    val xpDescription = stringResource(R.string.session_xp_description, xpGain)
                     Text(
-                        "+$xpGain XP",
+                        stringResource(R.string.session_xp_gain, xpGain),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.SemiBold,
@@ -2871,7 +2943,7 @@ private fun TrialSetRow(
                         maxLines = 1,
                         modifier = Modifier
                             .padding(start = 10.dp)
-                            .semantics { contentDescription = "$xpGain XP" },
+                            .semantics { contentDescription = xpDescription },
                     )
                 }
             }
@@ -2893,7 +2965,7 @@ private fun TrialSetRow(
             // The tick closes the row, as it does a folded exercise's.
             Icon(
                 Icons.Filled.Check,
-                contentDescription = "Logged",
+                contentDescription = stringResource(R.string.session_logged_description),
                 tint = IronvellumColors.Emerald,
                 modifier = Modifier.padding(start = 10.dp).size(16.dp),
             )
@@ -2907,8 +2979,10 @@ private fun TrialSetRow(
  * it. The line beneath reads the chosen chip ("RPE 8: about two reps left"), or what the scale means.
  */
 @Composable
-internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modifier: Modifier = Modifier) {
+internal fun EffortStrip(setLabel: String, rpe: Int?, onPick: (Int?) -> Unit, modifier: Modifier = Modifier) {
     val scale = EffortSetting.scale
+    val title = stringResource(R.string.session_effort_title, setLabel)
+    val scaleDescription = stringResource(R.string.session_effort_scale_description, scale.label, setLabel)
     Column(
         modifier
             .fillMaxWidth()
@@ -2920,7 +2994,7 @@ internal fun EffortStrip(title: String, rpe: Int?, onPick: (Int?) -> Unit, modif
             Text(scale.label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, letterSpacing = 2.sp)
         }
         val shape = MaterialTheme.shapes.small
-        Row(Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = "${scale.label} for ${title.removePrefix("How hard was ").removeSuffix("?")}" }) {
+        Row(Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = scaleDescription }) {
             Effort.CHIPS.forEach { value ->
                 val chosen = rpe == value
                 Box(
@@ -2963,13 +3037,14 @@ private fun FigureStepper(
 ) {
     // The glyphs hug the figure, and the group sits centred in its half: spread
     // to the edges, one figure's + read as the next figure's −.
+    val (decrease, increase, type) = figure.kind.stepperRes()
     Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        StepButton("−", "Decrease ${figure.what}") { onEdit(figure.minus) }
+        StepButton("−", stringResource(decrease)) { onEdit(figure.minus) }
         Column(
             Modifier
                 .widthIn(min = FIGURE_WIDTH)
                 .heightIn(min = 48.dp)
-                .then(if (onType != null) Modifier.clickable(onClickLabel = "Type ${figure.what}", role = Role.Button, onClick = onType) else Modifier),
+                .then(if (onType != null) Modifier.clickable(onClickLabel = stringResource(type), role = Role.Button, onClick = onType) else Modifier),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -2994,7 +3069,7 @@ private fun FigureStepper(
                 Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 2.dp))
             }
         }
-        StepButton("+", "Increase ${figure.what}") { onEdit(figure.plus) }
+        StepButton("+", stringResource(increase)) { onEdit(figure.plus) }
     }
 }
 
@@ -3029,6 +3104,7 @@ private fun StepButton(symbol: String, description: String, onClick: () -> Unit)
 /** A bouldering grade is typed text, not a count; it sits on a single rule, not in a box. */
 @Composable
 private fun GradeField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val gradeDescription = stringResource(R.string.session_grade_description)
     Column(modifier.padding(horizontal = 8.dp)) {
         BasicTextField(
             value = value,
@@ -3040,11 +3116,11 @@ private fun GradeField(value: String, onChange: (String) -> Unit, modifier: Modi
                 color = IronvellumColors.Ink,
             ),
             cursorBrush = SolidColor(IronvellumColors.Ink),
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Grade" },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = gradeDescription },
             decorationBox = { field ->
                 Box(Modifier.heightIn(min = 46.dp), contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
-                        Text("V5", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                        Text(stringResource(R.string.session_grade_hint), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     }
                     field()
                 }
@@ -3086,7 +3162,13 @@ internal fun FoldedExerciseRow(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 60.dp)
-            .clickable(onClickLabel = if (hasNote) "Open $name. Has a note." else "Open $name", onClick = onOpen)
+            .clickable(
+                onClickLabel = stringResource(
+                    if (hasNote) R.string.session_folded_open_note_description else R.string.session_folded_open_description,
+                    name,
+                ),
+                onClick = onOpen,
+            )
             // Starts where an open card's title does (the card's own 16dp inside the screen's), not further in.
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -3122,7 +3204,7 @@ internal fun FoldedExerciseRow(
         if (hasNote) {
             Icon(
                 Icons.Outlined.EditNote,
-                contentDescription = "Has a note",
+                contentDescription = stringResource(R.string.session_folded_note_description),
                 tint = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(end = 10.dp).size(14.dp),
             )
@@ -3130,7 +3212,7 @@ internal fun FoldedExerciseRow(
         if (complete) {
             Icon(
                 Icons.Filled.Check,
-                contentDescription = "Done",
+                contentDescription = stringResource(R.string.common_done),
                 tint = IronvellumColors.Emerald,
                 modifier = Modifier.padding(end = 6.dp).size(16.dp),
             )
@@ -3168,11 +3250,23 @@ private fun TrialEndRows(
 ) {
     Column(Modifier.fillMaxWidth()) {
         FolderRuleFull()
-        EndRow(Icons.Filled.Add, "Add exercise", null, false, onAddExercise)
+        EndRow(Icons.Filled.Add, stringResource(R.string.session_end_add_exercise), null, false, onAddExercise)
         FolderRuleFull()
-        EndRow(Icons.Outlined.Edit, "Name this ${Words.trial.s}", nameValue, nameSet, onName)
+        EndRow(
+            Icons.Outlined.Edit,
+            UiText.themed(R.string.session_end_name_title, R.string.session_end_name_title__t).asString(),
+            nameValue,
+            nameSet,
+            onName,
+        )
         FolderRuleFull()
-        EndRow(Icons.Outlined.EditNote, "Add a note", noteValue ?: "Share it, or keep it private", noteValue != null, onNote)
+        EndRow(
+            Icons.Outlined.EditNote,
+            stringResource(R.string.session_add_note),
+            noteValue ?: stringResource(R.string.session_end_note_hint),
+            noteValue != null,
+            onNote,
+        )
         FolderRuleFull()
     }
 }
@@ -3246,11 +3340,19 @@ private fun TrialFooter(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            allLogged -> SlideToSeal(label = "Slide to ${Words.seal.s}", onSealed = onSealed, resetKey = slideReset)
+            allLogged -> SlideToSeal(
+                label = UiText.themed(R.string.session_slide_to_seal, R.string.session_slide_to_seal__t).asString(),
+                onSealed = onSealed,
+                resetKey = slideReset,
+            )
             rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip, effortSet, effortLabel, onRate)
             nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, noRestYet, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
-            else -> SlideToSeal(label = "Log a set to ${Words.seal.s} the ${Words.trial.s}", onSealed = onSealed, enabled = false)
+            else -> SlideToSeal(
+                label = UiText.themed(R.string.session_slide_log_first, R.string.session_slide_log_first__t).asString(),
+                onSealed = onSealed,
+                enabled = false,
+            )
         }
     }
 }
@@ -3284,7 +3386,11 @@ private fun RestStrip(
                         maxLines = 1,
                     )
                     Text(
-                        if (nextSetNumber != null) "REST · SET $nextSetNumber NEXT" else "REST",
+                        if (nextSetNumber != null) {
+                            stringResource(R.string.session_rest_next_label, nextSetNumber)
+                        } else {
+                            stringResource(R.string.session_rest_label)
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -3297,7 +3403,7 @@ private fun RestStrip(
                 // The soft ceiling: past it more rest adds nothing; +15 still extends.
                 if (timer.maxSeconds > 0) {
                     Text(
-                        "Max suggested ${RestTimer.clock(timer.maxSeconds)}",
+                        stringResource(R.string.session_rest_max, RestTimer.clock(timer.maxSeconds)),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         lineHeight = 12.sp,
@@ -3305,9 +3411,9 @@ private fun RestStrip(
                     )
                 }
             }
-            FooterAction("\u2212${RestTimer.SHORTEN_SECONDS}", IronvellumColors.Ink, rowHeight, onShorten)
-            FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, rowHeight, onExtend)
-            FooterAction("Skip", IronvellumColors.InkMuted, rowHeight, onSkip)
+            FooterAction(stringResource(R.string.session_rest_shorten_button, RestTimer.SHORTEN_SECONDS), IronvellumColors.Ink, rowHeight, onShorten)
+            FooterAction(stringResource(R.string.session_rest_extend_button, RestTimer.EXTEND_SECONDS), IronvellumColors.Ink, rowHeight, onExtend)
+            FooterAction(stringResource(R.string.session_skip_button), IronvellumColors.InkMuted, rowHeight, onSkip)
         }
         if (effortSet != null) RestEffort(effortSet, effortLabel, onRate)
         // The gap above the sweep keeps the soft ceiling's line off the bar.
@@ -3333,27 +3439,28 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
     // Grows and shrinks in place between the question and the quiet "rated" line: no empty band left behind.
     Box(Modifier.fillMaxWidth().animateContentSize()) {
         if (rpe != null && !reopened) {
+            val ratedDescription = stringResource(R.string.session_effort_rated_description, label, Effort.caption(rpe, scale))
             Row(
                 Modifier.fillMaxWidth().heightIn(min = EFFORT_DONE_HEIGHT),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "$label \u00B7 ${Effort.value(rpe, scale)} \u2713",
+                    stringResource(R.string.session_effort_rated, label, Effort.value(rpe, scale)),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
-                        .semantics { contentDescription = "$label rated ${Effort.caption(rpe, scale)}" },
+                        .semantics { contentDescription = ratedDescription },
                 )
                 Text(
-                    "Change",
+                    stringResource(R.string.session_effort_change_button),
                     style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier
                         .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                        .clickable(onClickLabel = "Change the rating", role = Role.Button) { reopened = true }
+                        .clickable(onClickLabel = stringResource(R.string.session_effort_change_description), role = Role.Button) { reopened = true }
                         .padding(horizontal = 8.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
                 )
@@ -3362,7 +3469,10 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
             Column(Modifier.fillMaxWidth().heightIn(min = EFFORT_BLOCK_HEIGHT)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 24.dp).padding(end = LOG_BUTTON_SLOT), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (scale == EffortScale.RIR) "$label: reps left?" else "$label: how hard?",
+                        stringResource(
+                            if (scale == EffortScale.RIR) R.string.session_effort_ask_reps else R.string.session_effort_ask_hard,
+                            label,
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
                         maxLines = 2,
@@ -3441,8 +3551,11 @@ internal fun effortAsk(restRunning: Boolean, allLogged: Boolean, reps: Boolean, 
 }
 
 private fun restEffortSpoken(rpe: Int, scale: EffortScale): String = when (scale) {
-    EffortScale.RIR -> if (rpe <= Effort.MIN) "5 or more reps in reserve" else "${Effort.rir(rpe)} reps in reserve"
-    EffortScale.RPE -> if (rpe <= Effort.MIN) "RPE 5 or less" else "RPE $rpe"
+    EffortScale.RIR ->
+        if (rpe <= Effort.MIN) resText(R.string.session_effort_reserve_many)
+        else Words.text(UiText.plural(R.plurals.session_effort_reserve, Effort.rir(rpe)))
+    EffortScale.RPE ->
+        if (rpe <= Effort.MIN) resText(R.string.session_effort_rpe_low) else resText(R.string.session_effort_rpe, rpe)
 }
 
 /** What a tick just earned, floating briefly: the lift and its XP. */
@@ -3479,7 +3592,7 @@ private fun LiveGainTag(gain: LiveGain, motion: Boolean, onGone: (serial: Int) -
             modifier = Modifier.weight(1f, fill = false),
         )
         Text(
-            " +${gain.amount} XP",
+            " " + stringResource(R.string.session_xp_gain, gain.amount),
             style = style,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
@@ -3494,8 +3607,9 @@ private fun LiveGainTag(gain: LiveGain, motion: Boolean, onGone: (serial: Int) -
 @Composable
 private fun XpChip(xp: Int) {
     val shape = MaterialTheme.shapes.small
+    val earnedDescription = stringResource(R.string.session_xp_earned_description, xp)
     Text(
-        "+$xp XP",
+        stringResource(R.string.session_xp_gain, xp),
         style = MaterialTheme.typography.labelLarge,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.SemiBold,
@@ -3508,7 +3622,7 @@ private fun XpChip(xp: Int) {
             .inkBorder(IronvellumColors.EmeraldDeep, shape, 1.dp)
             .padding(horizontal = 10.dp, vertical = 5.dp)
             .semantics {
-                contentDescription = "$xp XP earned so far"
+                contentDescription = earnedDescription
                 liveRegion = LiveRegionMode.Polite
             },
     )
@@ -3530,10 +3644,11 @@ private fun FooterAction(label: String, color: Color, minHeight: Dp, onClick: ()
 /** What is next, and the one emerald control: tick the set. Reads as a row you tick, not a slab. */
 @Composable
 private fun NextSetStrip(setNumber: Int, line: String, noRestYet: Boolean, onLog: () -> Unit) {
+    val logDescription = stringResource(R.string.session_log_set_description, setNumber)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
-                if (noRestYet) "NEXT · NO REST YET" else "NEXT",
+                stringResource(if (noRestYet) R.string.session_next_no_rest_label else R.string.session_next_label),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -3553,7 +3668,7 @@ private fun NextSetStrip(setNumber: Int, line: String, noRestYet: Boolean, onLog
                 .clip(MaterialTheme.shapes.medium)
                 .background(IronvellumColors.Emerald)
                 .clickable(role = Role.Button, onClick = onLog)
-                .semantics { contentDescription = "Log set $setNumber" },
+                .semantics { contentDescription = logDescription },
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
@@ -3600,7 +3715,7 @@ internal fun FigureEntryDialog(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Set $number",
+                    stringResource(R.string.session_figure_dialog_set, number),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -3615,10 +3730,10 @@ internal fun FigureEntryDialog(
                 label = {
                     Text(
                         when (kind) {
-                            FigureKind.SECONDS -> "Seconds"
-                            FigureKind.MINUTES -> "Minutes"
-                            FigureKind.ATTEMPTS -> "Attempts"
-                            else -> "Reps"
+                            FigureKind.SECONDS -> stringResource(R.string.session_figure_label_seconds)
+                            FigureKind.MINUTES -> stringResource(R.string.session_figure_label_minutes)
+                            FigureKind.ATTEMPTS -> stringResource(R.string.session_figure_label_attempts)
+                            else -> stringResource(R.string.session_figure_label_reps)
                         },
                     )
                 },
@@ -3629,7 +3744,7 @@ internal fun FigureEntryDialog(
             )
         },
         confirmButton = {
-            IronvellumButton("Save", enabled = parsed != null, onClick = { parsed?.let(onApply) })
+            IronvellumButton(stringResource(R.string.common_save), enabled = parsed != null, onClick = { parsed?.let(onApply) })
         },
     )
 }
@@ -3649,7 +3764,7 @@ private fun TrialNameDialog(
     var draft by rememberSaveable { mutableStateOf(current) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Name this ${Words.trial.s}") },
+        title = { Text(UiText.themed(R.string.session_end_name_title, R.string.session_end_name_title__t).asString()) },
         text = {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
@@ -3659,7 +3774,11 @@ private fun TrialNameDialog(
                 label = {
                     FieldLabel(
                         icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
-                        text = if (signedIn) "Name · optional, shown in ${Words.tidings.t}" else "Name · optional",
+                        text = if (signedIn) {
+                            UiText.themed(R.string.session_name_field_feed, R.string.session_name_field_feed__t).asString()
+                        } else {
+                            stringResource(R.string.session_name_field)
+                        },
                         color = IronvellumColors.InkMuted,
                     )
                 },
@@ -3669,8 +3788,8 @@ private fun TrialNameDialog(
                 modifier = Modifier.fillMaxWidth(),
             )
         },
-        confirmButton = { IronvellumButton("Save", onClick = { onSave(draft.trim()) }) },
-        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.common_save), onClick = { onSave(draft.trim()) }) },
+        dismissButton = { IronvellumButton(stringResource(R.string.common_cancel), quiet = true, onClick = onDismiss) },
     )
 }
 
@@ -3690,12 +3809,17 @@ private fun ExerciseNoteDialog(
     var draft by rememberSaveable { mutableStateOf(current) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    val noteDescription = stringResource(R.string.session_exercise_note_description, name)
     IronvellumDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {
                 Text(name)
-                Text("Note for this ${Words.trial.s}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(
+                    UiText.themed(R.string.session_exercise_note_subtitle, R.string.session_exercise_note_subtitle__t).asString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
             }
         },
         text = {
@@ -3710,15 +3834,15 @@ private fun ExerciseNoteDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focus)
-                        .semantics { contentDescription = "Note for $name" },
+                        .semantics { contentDescription = noteDescription },
                 )
                 if (lastNote != null) {
-                    Text("Last time: $lastNote", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.session_last_note, lastNote), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 }
             }
         },
-        confirmButton = { IronvellumButton("Save", onClick = { onSave(draft.trim()) }) },
-        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.common_save), onClick = { onSave(draft.trim()) }) },
+        dismissButton = { IronvellumButton(stringResource(R.string.common_cancel), quiet = true, onClick = onDismiss) },
     )
 }
 
@@ -3738,7 +3862,7 @@ private fun TrialNoteDialog(
     var priv by rememberSaveable { mutableStateOf(privateNote) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add a note") },
+        title = { Text(stringResource(R.string.session_add_note)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -3749,11 +3873,21 @@ private fun TrialNoteDialog(
                     label = {
                         FieldLabel(
                             icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
-                            text = if (signedIn) "Public note · every ${Words.lifter.t} in ${Words.tidings.t} can read this" else "Note · shared with ${Words.ally.pl} once you sign in",
+                            text = if (signedIn) {
+                                UiText.themed(R.string.session_note_public_signed_in, R.string.session_note_public_signed_in__t).asString()
+                            } else {
+                                UiText.themed(R.string.session_note_public_signed_out, R.string.session_note_public_signed_out__t).asString()
+                            },
                             color = IronvellumColors.SystemGreen,
                         )
                     },
-                    placeholder = { Text("How did the ${Words.trial.s} go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                    placeholder = {
+                        Text(
+                            UiText.themed(R.string.session_note_public_hint, R.string.session_note_public_hint__t).asString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    },
                     trailingIcon = { CharCounter(pub.length, PUBLIC_NOTE_CAP, IronvellumColors.SystemGreen) },
                     colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
                     modifier = Modifier.fillMaxWidth(),
@@ -3767,18 +3901,18 @@ private fun TrialNoteDialog(
                     label = {
                         FieldLabel(
                             icon = { Icon(Icons.Outlined.Lock, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
-                            text = "Private note · never leaves this device",
+                            text = stringResource(R.string.session_note_private_label),
                             color = IronvellumColors.InkMuted,
                         )
                     },
-                    placeholder = { Text("For your eyes only…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                    placeholder = { Text(stringResource(R.string.session_note_private_hint), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
                     colors = fieldColors(accent = IronvellumColors.InkMuted, focusedBorder = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
-        confirmButton = { IronvellumButton("Save", onClick = { onSave(pub.trim(), priv) }) },
-        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.common_save), onClick = { onSave(pub.trim(), priv) }) },
+        dismissButton = { IronvellumButton(stringResource(R.string.common_cancel), quiet = true, onClick = onDismiss) },
     )
 }
 
@@ -3890,7 +4024,7 @@ private fun ModifierPickerDialog(
         title = {
             Column {
                 Text(
-                    "MODIFIERS",
+                    stringResource(R.string.session_modifiers_heading),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -3902,13 +4036,13 @@ private fun ModifierPickerDialog(
         text = {
             Column {
                 Text(
-                    "Applies to every set of this exercise.",
+                    stringResource(R.string.session_modifiers_applies),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 if (weighted) {
                     Text(
-                        "weighted · set by load",
+                        stringResource(R.string.session_modifiers_weighted),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.SystemGreen,
                         modifier = Modifier.padding(top = 6.dp),
@@ -3921,8 +4055,8 @@ private fun ModifierPickerDialog(
                 )
             }
         },
-        confirmButton = { IronvellumButton("Save", onClick = { onConfirm(picked) }) },
-        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.common_save), onClick = { onConfirm(picked) }) },
+        dismissButton = { IronvellumButton(stringResource(R.string.common_cancel), quiet = true, onClick = onDismiss) },
     )
 }
 
@@ -3931,15 +4065,16 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field, 
     val (before, after) = change
     val unit = if (change.isHold) "s" else ""
     return when (field) {
-        RoutineUpdate.Field.SETS -> "Sets" to "${before.targetSets} → ${after.targetSets}"
+        RoutineUpdate.Field.SETS -> resText(R.string.session_field_sets) to "${before.targetSets} → ${after.targetSets}"
         RoutineUpdate.Field.REPS ->
-            (if (change.isHold) "Hold" else "Reps") to "${before.targetReps}$unit → ${after.targetReps}$unit"
+            resText(if (change.isHold) R.string.session_field_hold else R.string.session_figure_label_reps) to "${before.targetReps}$unit → ${after.targetReps}$unit"
         // "60 kg", spaced like every other load on the screen (formatKg's "60kg" is the compact rite-row form).
-        RoutineUpdate.Field.LOAD -> "Load" to "${Units.label(before.targetWeightKg, weighted)} → ${Units.label(after.targetWeightKg, weighted)}"
+        RoutineUpdate.Field.LOAD -> resText(R.string.session_field_load) to "${Units.label(before.targetWeightKg, weighted)} → ${Units.label(after.targetWeightKg, weighted)}"
         RoutineUpdate.Field.MODIFIERS ->
-            "Modifiers" to "${before.modifiers.ifBlank { "None" }} → ${after.modifiers.ifBlank { "None" }}"
+            resText(R.string.session_field_modifiers) to
+                "${before.modifiers.ifBlank { resText(R.string.session_field_none) }} → ${after.modifiers.ifBlank { resText(R.string.session_field_none) }}"
         RoutineUpdate.Field.SCHEME ->
-            "Sets" to "${SchemeText.clause(before.scheme, before.targetSets)} → ${SchemeText.clause(after.scheme, after.targetSets)}"
+            resText(R.string.session_field_sets) to "${SchemeText.clause(before.scheme, before.targetSets)} → ${SchemeText.clause(after.scheme, after.targetSets)}"
     }
 }
 
@@ -3992,7 +4127,7 @@ private fun ToggleLine(
         ) {
             if (on) {
                 Text(
-                    "\u2713",
+                    "✓",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SystemGreen,
@@ -4037,12 +4172,12 @@ private fun WarmupRow(
 ) {
     if (state != WarmupStep.State.OPEN) {
         Text(
-            if (state == WarmupStep.State.DONE) "Warmed up" else "Warm-up skipped",
+            stringResource(if (state == WarmupStep.State.DONE) R.string.session_warmup_done else R.string.session_warmup_skipped),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier
                 .padding(top = 12.dp)
-                .clickable(role = Role.Button, onClickLabel = "Open the warm-up again") { onAnswer(WarmupStep.State.OPEN) }
+                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.session_warmup_reopen_label)) { onAnswer(WarmupStep.State.OPEN) }
                 .padding(vertical = 8.dp),
         )
         return
@@ -4056,7 +4191,7 @@ private fun WarmupRow(
             .padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Text(
-            "WARM UP",
+            stringResource(R.string.session_warmup_heading),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             letterSpacing = 1.sp,
@@ -4089,8 +4224,8 @@ private fun WarmupRow(
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IronvellumButton("Done", onClick = { onAnswer(WarmupStep.State.DONE) }, modifier = Modifier.weight(1f))
-            IronvellumButton("Skip", quiet = true, onClick = { onAnswer(WarmupStep.State.SKIPPED) }, modifier = Modifier.weight(1f))
+            IronvellumButton(stringResource(R.string.common_done), onClick = { onAnswer(WarmupStep.State.DONE) }, modifier = Modifier.weight(1f))
+            IronvellumButton(stringResource(R.string.session_skip_button), quiet = true, onClick = { onAnswer(WarmupStep.State.SKIPPED) }, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -4132,11 +4267,15 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (offer.changes.isEmpty()) {
-                        if (offer.swaps.isNotEmpty()) "Keep today's swaps in your ${Words.rite.s}?" else "Keep today's changes in your ${Words.rite.s}?"
+                        if (offer.swaps.isNotEmpty()) {
+                            UiText.themed(R.string.session_update_swaps_title, R.string.session_update_swaps_title__t).asString()
+                        } else {
+                            UiText.themed(R.string.session_update_changes_title, R.string.session_update_changes_title__t).asString()
+                        }
                     } else if (shortDay) {
-                        "Unticked sets don't lower the set count. Tick the changes to keep."
+                        stringResource(R.string.session_update_short_day)
                     } else {
-                        "Bring your ${Words.rite.s} in line with today's ${Words.trial.s}?"
+                        UiText.themed(R.string.session_update_bring_title, R.string.session_update_bring_title__t).asString()
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -4168,7 +4307,11 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Keep in ${Words.rite.s}" else "Just this once",
+                        label = if (on) {
+                            UiText.themed(R.string.session_update_keep_toggle, R.string.session_update_keep_toggle__t).asString()
+                        } else {
+                            stringResource(R.string.session_update_once_toggle)
+                        },
                         figures = swap.line,
                         labelWidth = 104.dp,
                     ) { kept = if (on) kept - swap.entry.id else kept + swap.entry.id }
@@ -4178,7 +4321,11 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Add to ${Words.rite.s}" else "Just this once",
+                        label = if (on) {
+                            UiText.themed(R.string.session_update_add_toggle, R.string.session_update_add_toggle__t).asString()
+                        } else {
+                            stringResource(R.string.session_update_once_toggle)
+                        },
                         figures = "${add.line} · " + SchemeText.figure(
                             add.entry.scheme, add.entry.targetSets, add.entry.targetReps, add.entry.targetWeightKg,
                             load = { Units.label(it, true) }, hold = add.isHold,
@@ -4194,8 +4341,15 @@ private fun RoutineUpdateDialog(
                     Spacer(Modifier.height(6.dp))
                     ToggleLine(
                         on = on,
-                        label = if (on) "Link in ${Words.rite.s}" else "Just this once",
-                        figures = "Superset: ${link.line}" + if (ready) "" else " (needs the added lift)",
+                        label = if (on) {
+                            UiText.themed(R.string.session_update_link_toggle, R.string.session_update_link_toggle__t).asString()
+                        } else {
+                            stringResource(R.string.session_update_once_toggle)
+                        },
+                        figures = stringResource(
+                            if (ready) R.string.session_update_superset_line else R.string.session_update_superset_needs,
+                            link.line,
+                        ),
                         labelWidth = 104.dp,
                     ) { if (ready) linksKept = if (on) linksKept - link else linksKept + link }
                 }
@@ -4215,12 +4369,17 @@ private fun RoutineUpdateDialog(
                     }
                 }
                 IronvellumButton(
-                    "Update ${Words.rite.s}",
+                    UiText.themed(R.string.session_update_button, R.string.session_update_button__t).asString(),
                     enabled = narrowed.isNotEmpty() || keptSwaps.isNotEmpty() || keptAdditions.isNotEmpty() || keptLinks.isNotEmpty(),
                     onClick = { onUpdate(narrowed, keptSwaps, keptAdditions, keptLinks) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                IronvellumButton("Keep ${Words.rite.s}", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
+                IronvellumButton(
+                    UiText.themed(R.string.session_update_keep_button, R.string.session_update_keep_button__t).asString(),
+                    quiet = true,
+                    onClick = onKeep,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
     )

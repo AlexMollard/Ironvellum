@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.LoadKit
@@ -16,6 +18,7 @@ import com.ironvellum.app.ui.train.MAX_LOAD_KG
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.UiText
 
 /*
  * What the Forge and first-run setup both do to a proposed week. One copy, so the two screens cannot
@@ -190,12 +193,12 @@ internal data class PlanEdits(
 
     /** "2 movements swapped", "3 set counts changed", "1 movement removed": one line per kind of edit. */
     fun lines(): List<String> = buildList {
-        fun movements(n: Int) = "$n ${if (n == 1) "movement" else "movements"}"
-        if (swapped > 0) add("${movements(swapped)} swapped")
-        if (setsChanged > 0) add("$setsChanged set ${if (setsChanged == 1) "count" else "counts"} changed")
-        if (loadsChanged > 0) add("$loadsChanged ${if (loadsChanged == 1) "load" else "loads"} changed")
-        if (removed > 0) add("${movements(removed)} removed")
-        if (added > 0) add("${movements(added)} added")
+        fun line(plural: Int, n: Int) = Words.text(UiText.plural(plural, n))
+        if (swapped > 0) add(line(R.plurals.forge_edits_swapped, swapped))
+        if (setsChanged > 0) add(line(R.plurals.forge_edits_sets, setsChanged))
+        if (loadsChanged > 0) add(line(R.plurals.forge_edits_loads, loadsChanged))
+        if (removed > 0) add(line(R.plurals.forge_edits_removed, removed))
+        if (added > 0) add(line(R.plurals.forge_edits_added, added))
     }
 }
 

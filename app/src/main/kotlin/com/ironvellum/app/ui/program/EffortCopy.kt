@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.EffortCue
 import com.ironvellum.app.domain.Equipment
@@ -7,6 +8,7 @@ import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
 
 /*
@@ -18,26 +20,36 @@ import com.ironvellum.app.domain.VolumeLevel
 private const val EN_DASH = "–"
 
 /** "1 hard set", "3 hard sets". */
-internal fun hardSetsText(n: Int): String = "$n hard ${if (n == 1) "set" else "sets"}"
+internal fun hardSetsText(n: Int): String = Words.text(UiText.plural(R.plurals.effort_hard_sets, n))
 
 /** "4 movements". */
-internal fun movementsText(n: Int): String = "$n ${if (n == 1) "movement" else "movements"}"
+internal fun movementsText(n: Int): String = Words.text(UiText.plural(R.plurals.effort_movements, n))
 
 /** How close to failure the sets are taken, as a phrase that follows the set count. */
-internal fun effortCue(effort: EffortCue): String = when (effort) {
-    EffortCue.RIR_0_2 -> "stop 0${EN_DASH}2 reps short of failure"
-    EffortCue.TO_FAILURE -> "to failure"
-}
+internal fun effortCue(effort: EffortCue): String = Words.text(
+    UiText.res(
+        when (effort) {
+            EffortCue.RIR_0_2 -> R.string.effort_cue_rir
+            EffortCue.TO_FAILURE -> R.string.effort_cue_failure
+        },
+    ),
+)
 
 /** The same cue as a sentence of its own, with the reminder that reps only steer the load. */
-internal fun effortSentence(effort: EffortCue): String = when (effort) {
-    EffortCue.RIR_0_2 -> "Stop 0${EN_DASH}2 reps short of failure. Reps are a guide to load."
-    EffortCue.TO_FAILURE -> "Take the last set to failure. Reps are a guide to load."
-}
+internal fun effortSentence(effort: EffortCue): String = Words.text(
+    UiText.res(
+        when (effort) {
+            EffortCue.RIR_0_2 -> R.string.effort_sentence_rir
+            EffortCue.TO_FAILURE -> R.string.effort_sentence_failure
+        },
+    ),
+)
 
 /** "~6–10 reps", or "~8 reps" when the window is one number. */
-internal fun repGuide(entry: PlannedEntry): String =
-    if (entry.repLow == entry.repHigh) "~${entry.repLow} reps" else "~${entry.repLow}$EN_DASH${entry.repHigh} reps"
+internal fun repGuide(entry: PlannedEntry): String = Words.text(
+    if (entry.repLow == entry.repHigh) UiText.plural(R.plurals.effort_rep_guide_single, entry.repLow)
+    else UiText.res(R.string.effort_rep_guide_range, entry.repLow, entry.repHigh),
+)
 
 /** The movement row's first line under its name: "3 hard sets · stop 0–2 reps short of failure". */
 internal fun movementLine(entry: PlannedEntry): String = "${hardSetsText(entry.sets)} · ${effortCue(entry.effort)}"
@@ -49,7 +61,7 @@ internal fun movementDetail(entry: PlannedEntry, load: String?): String =
 /** What the generator suggested, said under the set stepper so the lifter knows what they are changing. */
 internal fun suggestedSets(entry: PlannedEntry): String {
     val range = if (entry.setsMin == entry.setsMax) "${entry.setsMin}" else "${entry.setsMin}$EN_DASH${entry.setsMax}"
-    return "Suggested $range. Set it to whatever you will do."
+    return Words.text(UiText.res(R.string.effort_suggested_sets, range))
 }
 
 internal fun dayHardSets(preset: PlannedPreset): Int = preset.entries.sumOf { it.sets }
@@ -66,8 +78,7 @@ internal fun dumbbellNote(entry: PlannedEntry, equipment: Equipment?, capLabel: 
     val load = entry.targetWeightKg ?: return null
     val cap = equipment?.let { ProgramGenerator.dumbbellCapKg(entry.exerciseName, it) } ?: return null
     if (load < cap - 1e-9) return null
-    return "$capLabel is the heaviest dumbbell in your ${Words.armoury.s}. " +
-        "When ${entry.repHigh} reps get easy, add reps or a set instead."
+    return Words.text(UiText.themed(R.string.effort_dumbbell_note, R.string.effort_dumbbell_note__t, capLabel, entry.repHigh))
 }
 
 /**
@@ -79,10 +90,10 @@ internal fun startingSetsCaption(volume: VolumeLevel): String {
     fun window(r: IntRange) = if (r.first == r.last) "${r.first}" else "${r.first}$EN_DASH${r.last}"
     val compound = window(ProgramRules.setRange(volume, compound = true))
     val single = window(ProgramRules.setRange(volume, compound = false))
-    val who = when (volume) {
-        VolumeLevel.LOW -> "Enough for a first year."
-        VolumeLevel.STANDARD -> "After a year or so of training."
-        VolumeLevel.HIGH -> "For years of training."
+    val caption = when (volume) {
+        VolumeLevel.LOW -> R.string.effort_starting_sets_low
+        VolumeLevel.STANDARD -> R.string.effort_starting_sets_standard
+        VolumeLevel.HIGH -> R.string.effort_starting_sets_high
     }
-    return "Big lifts start at $compound hard sets, single-joint work at $single. $who"
+    return Words.text(UiText.res(caption, compound, single))
 }

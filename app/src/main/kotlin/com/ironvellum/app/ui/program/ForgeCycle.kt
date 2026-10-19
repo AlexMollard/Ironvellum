@@ -26,11 +26,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
@@ -41,7 +43,9 @@ import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -63,7 +67,8 @@ private const val PICK_NONE = 0
 private const val PICK_SWAP = 1
 private const val PICK_ADD = 2
 
-internal val ARMOURY_REQUIRED: String get() = "Pick your ${Words.armoury.s} to continue. Nothing means bodyweight only."
+internal val ARMOURY_REQUIRED: String
+    @Composable get() = UiText.themed(R.string.forge_armoury_required, R.string.forge_armoury_required__t).asString()
 
 private val STEP_LABELS = listOf("Goal", "Kit", "Focus")
 
@@ -228,7 +233,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
     if (picker != PICK_NONE) {
         ExercisePickerSheet(
             exercises = catalogue,
-            title = if (picker == PICK_SWAP) "Swap movement" else "Add movement",
+            title = stringResource(if (picker == PICK_SWAP) R.string.forge_swap_movement else R.string.forge_add_movement),
             onPick = { exercise ->
                 if (picker == PICK_SWAP) vm.swapEntry(dayIndex, pickEntry, exercise) else vm.addEntry(dayIndex, exercise)
                 openEntry = null
@@ -243,14 +248,14 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
             onDismissRequest = { armouryOpen = false },
             title = { Text(Words.armoury.c) },
             text = { GearPicker(equipment = equipment, onChange = { vm.equipment.value = it }) },
-            confirmButton = { IronvellumButton(label = "Done", onClick = { armouryOpen = false }) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = { armouryOpen = false }) },
         )
     }
 
     if (moreOpen) {
         IronvellumDialog(
             onDismissRequest = { moreOpen = false },
-            title = { Text("More options") },
+            title = { Text(stringResource(R.string.forge_more_options)) },
             text = {
                 MoreOptionsBody(
                     tier = tier,
@@ -264,7 +269,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
                     onSessionMinutes = {},
                 )
             },
-            confirmButton = { IronvellumButton(label = "Done", onClick = { moreOpen = false }) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = { moreOpen = false }) },
         )
     }
 
@@ -306,17 +311,16 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
     if (confirmReplace) {
         IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace your ${Words.cycle.s}?") },
+            title = { Text(UiText.themed(R.string.forge_replace_title, R.string.forge_replace_title__t).asString()) },
             text = {
                 Text(
-                    "Your ${presets.size} current ${if (presets.size == 1) Words.rite.s else Words.rite.pl} will be deleted " +
-                        "and the ${Words.forged.s} ${Words.cycle.s} takes their place. Your ${Words.chronicle.t} is untouched." +
+                    UiText.themedPlural(R.plurals.forge_replace_body, R.plurals.forge_replace_body__t, presets.size).asString() +
                         if (vm.switchesProgression()) " " + vm.progressionLine() else "",
                 )
             },
             confirmButton = {
                 IronvellumButton(
-                    label = "Replace",
+                    label = stringResource(R.string.forge_replace_button),
                     onClick = {
                         confirmReplace = false
                         vm.replacePresets(onDone)
@@ -325,7 +329,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep mine", onClick = { confirmReplace = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.forge_replace_keep), onClick = { confirmReplace = false }, quiet = true)
             },
         )
     }
@@ -379,28 +383,31 @@ private fun ForgeFormPage(
         val ready = step == 0 || equipment != null
         ForgeDock(
             primary = when (step) {
-                0 -> "Next: kit"
-                1 -> "Next: focus"
+                0 -> stringResource(R.string.forge_next_kit)
+                1 -> stringResource(R.string.forge_next_focus)
                 else -> "${Words.forge.c} ${Words.cycle.s}"
             },
             onPrimary = onNext,
             enabled = ready,
             note = when {
                 !ready -> ARMOURY_REQUIRED
-                step == 0 -> "Step 1 of 3"
-                step == 1 -> "Step 2 of 3"
-                else -> "You can change every number on the next screen."
+                step == 0 -> UiText.res(R.string.forge_step_of, 1, STEP_LABELS.size).asString()
+                step == 1 -> UiText.res(R.string.forge_step_of, 2, STEP_LABELS.size).asString()
+                else -> stringResource(R.string.forge_change_numbers_note)
             },
         )
     }
 }
 
-private fun goalCaption(focus: TrainingFocus): String = when (focus) {
-    TrainingFocus.STRENGTH -> "Heavier loads on the main lifts. Hard sets are the dose; reps just guide the weight."
-    TrainingFocus.MUSCLE -> "Higher volume, moderate load. Hard sets are the dose; reps just guide the weight."
-    TrainingFocus.SKILL -> "Handstands, levers, the planche. Practice over pump."
-    TrainingFocus.GENERAL -> "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
-}
+@Composable
+private fun goalCaption(focus: TrainingFocus): String = stringResource(
+    when (focus) {
+        TrainingFocus.STRENGTH -> R.string.forge_goal_strength_caption
+        TrainingFocus.MUSCLE -> R.string.forge_goal_muscle_caption
+        TrainingFocus.SKILL -> R.string.forge_goal_skill_caption
+        TrainingFocus.GENERAL -> R.string.forge_goal_general_caption
+    },
+)
 
 @Composable
 private fun ForgeGoalStep(
@@ -411,9 +418,9 @@ private fun ForgeGoalStep(
     onSplit: (TrainingSplit) -> Unit,
     onDays: (Int) -> Unit,
 ) {
-    ForgeLabel("What you are chasing")
+    ForgeLabel(stringResource(R.string.forge_goal_heading))
     ForgeRadioRow(
-        label = "Goal",
+        label = stringResource(R.string.forge_goal_label),
         options = listOf(
             TrainingFocus.STRENGTH to "Power",
             TrainingFocus.MUSCLE to "Muscle",
@@ -424,17 +431,17 @@ private fun ForgeGoalStep(
         onPick = onFocus,
     )
     ForgeCaption(goalCaption(focus))
-    ForgeLabel("How you divide the week")
+    ForgeLabel(stringResource(R.string.forge_split_heading))
     ForgeRadioRow(
-        label = "Week split",
+        label = stringResource(R.string.forge_split_label),
         options = FORGE_SPLITS.map { it to it.pickerLabel },
         selected = split,
         onPick = onSplit,
     )
     ForgeCaption(splitCaption(split, days))
-    ForgeLabel("Days per week")
+    ForgeLabel(stringResource(R.string.forge_days_label))
     ForgeRadioRow(
-        label = "Days per week",
+        label = stringResource(R.string.forge_days_label),
         options = FORGE_DAYS.map { it to it.toString() },
         selected = days,
         onPick = onDays,
@@ -452,18 +459,18 @@ private fun ForgeKitStep(
     maxExercises: Int,
     onMore: () -> Unit,
 ) {
-    ForgeLabel("Your ${Words.armoury.s}")
+    ForgeLabel(UiText.themed(R.string.forge_armoury_heading, R.string.forge_armoury_heading__t).asString())
     InkDivider()
     ListRow(
         label = Words.armoury.c,
         value = SettingsSummaries.armoury(equipment),
-        onClickLabel = "Choose your ${Words.armoury.s}",
+        onClickLabel = UiText.themed(R.string.forge_armoury_choose, R.string.forge_armoury_choose__t).asString(),
         onClick = onArmoury,
     )
     InkDivider()
-    ForgeLabel("${Words.rite.c} length")
+    ForgeLabel(UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString())
     ForgeRadioRow(
-        label = "${Words.rite.c} length",
+        label = UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString(),
         options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
         selected = sessionMinutes,
         onPick = onSessionMinutes,
@@ -472,9 +479,13 @@ private fun ForgeKitStep(
     Spacer(Modifier.height(10.dp))
     InkDivider()
     ListRow(
-        label = "More options",
-        value = (if (compoundOnly) "Compound · " else "") + "${tier.label} sets · $maxExercises per ${Words.rite.s}",
-        onClickLabel = "More options: starting sets, compound only, exercises per ${Words.rite.s}",
+        label = stringResource(R.string.forge_more_options),
+        value = if (compoundOnly) {
+            UiText.themed(R.string.forge_more_value_compound, R.string.forge_more_value_compound__t, tier.label, maxExercises).asString()
+        } else {
+            UiText.themed(R.string.forge_more_value, R.string.forge_more_value__t, tier.label, maxExercises).asString()
+        },
+        onClickLabel = UiText.themed(R.string.forge_more_description, R.string.forge_more_description__t).asString(),
         onClick = onMore,
     )
     InkDivider()
@@ -482,7 +493,7 @@ private fun ForgeKitStep(
 
 @Composable
 private fun ForgeFocusStep(priorities: Set<MuscleArea>, onPriority: (MuscleArea) -> Unit) {
-    ForgeLabel("Priorities · up to 3 · ${priorities.size} picked")
+    ForgeLabel(UiText.res(R.string.forge_priorities_label, priorities.size).asString())
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -498,7 +509,7 @@ private fun ForgeFocusStep(priorities: Set<MuscleArea>, onPriority: (MuscleArea)
             )
         }
     }
-    ForgeCaption("Priorities get an extra hard set or two each week. Skip this and every muscle is treated the same.")
+    ForgeCaption(stringResource(R.string.forge_priorities_caption))
 }
 
 /**
@@ -519,10 +530,10 @@ internal fun MoreOptionsBody(
 ) {
     Column {
         if (showTier) {
-            Text("Starting sets", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            Text(stringResource(R.string.forge_starting_sets_label), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
             Spacer(Modifier.height(6.dp))
             ForgeRadioRow(
-                label = "Starting sets",
+                label = stringResource(R.string.forge_starting_sets_label),
                 options = VolumeLevel.entries.map { it to it.label },
                 selected = tier,
                 onPick = onTier,
@@ -531,10 +542,10 @@ internal fun MoreOptionsBody(
             Spacer(Modifier.height(12.dp))
         }
         if (sessionMinutes != null) {
-            Text("${Words.rite.c} length", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            Text(UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString(), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
             Spacer(Modifier.height(6.dp))
             ForgeRadioRow(
-                label = "${Words.rite.c} length",
+                label = UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString(),
                 options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
                 selected = sessionMinutes,
                 onPick = onSessionMinutes,
@@ -543,14 +554,18 @@ internal fun MoreOptionsBody(
         }
         // The same drawn toggle cell as the gear items.
         PickCell(
-            label = "Compound & ${Words.technique.s} only",
+            label = UiText.themed(R.string.forge_compound_label, R.string.forge_compound_label__t).asString(),
             selected = compoundOnly,
             modifier = Modifier.fillMaxWidth(),
-            description = "Compound & ${Words.technique.s} only, ${if (compoundOnly) "on" else "off"}",
+            description = if (compoundOnly) {
+                UiText.themed(R.string.forge_compound_on_description, R.string.forge_compound_on_description__t).asString()
+            } else {
+                UiText.themed(R.string.forge_compound_off_description, R.string.forge_compound_off_description__t).asString()
+            },
             role = Role.Checkbox,
             onClick = { onCompound(!compoundOnly) },
         )
-        ForgeCaption("No curls, raises, calf, bridge or machine isolation work.")
+        ForgeCaption(stringResource(R.string.forge_compound_caption))
         Spacer(Modifier.height(12.dp))
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -558,14 +573,14 @@ internal fun MoreOptionsBody(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                "Max exercises per ${Words.rite.s}",
+                UiText.themed(R.string.forge_max_exercises_label, R.string.forge_max_exercises_label__t).asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 modifier = Modifier.weight(1f),
             )
             TapPad(
                 label = "−",
-                description = "Fewer exercises per ${Words.rite.s}, currently $maxExercises",
+                description = UiText.themed(R.string.forge_max_fewer_description, R.string.forge_max_fewer_description__t, maxExercises).asString(),
                 onClick = { onMaxExercises((maxExercises - 1).coerceAtLeast(ProgramRules.MAX_EXERCISES_RANGE.first)) },
             )
             Text(
@@ -576,7 +591,7 @@ internal fun MoreOptionsBody(
             )
             TapPad(
                 label = "+",
-                description = "More exercises per ${Words.rite.s}, currently $maxExercises",
+                description = UiText.themed(R.string.forge_max_more_description, R.string.forge_max_more_description__t, maxExercises).asString(),
                 onClick = { onMaxExercises((maxExercises + 1).coerceAtMost(ProgramRules.MAX_EXERCISES_RANGE.last)) },
             )
         }
@@ -618,7 +633,7 @@ internal fun ForgePlanPage(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             ForgeHeader(
-                "Proposed ${Words.cycle.s}",
+                UiText.themed(R.string.forge_proposed_title, R.string.forge_proposed_title__t).asString(),
                 onBack,
                 subtitle = subtitle.takeIf { hasPlan },
                 status = when {
@@ -637,11 +652,11 @@ internal fun ForgePlanPage(
             when {
                 hasPlan -> {
                     val current = plan!!
-                    ForgeCaption("Sets are a starting point. Each is a hard set, taken near failure. Change any number.")
+                    ForgeCaption(stringResource(R.string.forge_plan_intro))
                     Spacer(Modifier.height(8.dp))
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = onCoverage)
                     if (savedRites > 0) {
-                        ForgeCaption("Coverage includes your $savedRites existing ${if (savedRites == 1) Words.rite.s else Words.rite.pl}.")
+                        ForgeCaption(UiText.themedPlural(R.plurals.forge_coverage_includes, R.plurals.forge_coverage_includes__t, savedRites).asString())
                     }
                     Spacer(Modifier.height(8.dp))
                     current.presets.forEachIndexed { presetIndex, preset ->
@@ -673,13 +688,13 @@ internal fun ForgePlanPage(
                         ForgePreviousProposal(it)
                         Spacer(Modifier.height(12.dp))
                     }
-                    ForgeFailedCard(error!!.removePrefix("${Words.theForge.c} failed: ").let { if (it.endsWith(".")) it else "$it." }, onTryAgain)
+                    ForgeFailedCard(error!!.removePrefix(UiText.themed(R.string.forge_failed_title, R.string.forge_failed_title__t).asString() + ": ").let { if (it.endsWith(".")) it else "$it." }, onTryAgain)
                 }
                 else -> ForgeCaption(
                     when {
                         equipment == null -> ARMOURY_REQUIRED
-                        !catalogueLoaded -> "Consulting the catalogue…"
-                        else -> "Nothing to show yet."
+                        !catalogueLoaded -> stringResource(R.string.forge_consulting)
+                        else -> stringResource(R.string.forge_nothing_yet)
                     },
                     Modifier.padding(top = 12.dp),
                 )
@@ -687,19 +702,19 @@ internal fun ForgePlanPage(
             Spacer(Modifier.height(24.dp))
         }
         ForgeDock(
-            primary = "Apply",
+            primary = stringResource(R.string.common_apply),
             onPrimary = onApply,
             enabled = hasPlan && equipment != null,
             busy = saving,
-            note = if (hasPlan && !saving) "A hint on coverage never blocks this." else null,
-            link = if (savedRites > 0 && hasPlan) "Replace my ${Words.cycle.s}" else null,
+            note = if (hasPlan && !saving) stringResource(R.string.forge_apply_note) else null,
+            link = if (savedRites > 0 && hasPlan) UiText.themed(R.string.forge_replace_link, R.string.forge_replace_link__t).asString() else null,
             linkDanger = true,
             onLink = onReplace,
             above = {
                 if (saving) {
                     val count = plan?.presets?.size ?: 0
                     Text(
-                        "Writing $count ${if (count == 1) Words.rite.s else Words.rite.pl} to your ${Words.cycle.s}. Edits are paused until this finishes.",
+                        UiText.themedPlural(R.plurals.forge_writing, R.plurals.forge_writing__t, count).asString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
@@ -748,7 +763,7 @@ private fun ForgeDayPage(
                 .verticalScroll(scroll)
                 .padding(horizontal = 16.dp),
         ) {
-            ForgeLabel("Movements")
+            ForgeLabel(stringResource(R.string.forge_movements_heading))
             preset.entries.forEachIndexed { entryIndex, entry ->
                 val key = entryKey(entry)
                 ProposedEntryRow(
@@ -769,15 +784,15 @@ private fun ForgeDayPage(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = 52.dp)
-                    .clickable(enabled = !saving, role = Role.Button, onClickLabel = "Add a movement to $day", onClick = onAdd),
+                    .clickable(enabled = !saving, role = Role.Button, onClickLabel = UiText.res(R.string.forge_add_movement_to, day).asString(), onClick = onAdd),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("+", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.SystemGreen)
-                Text("Add movement", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
+                Text(stringResource(R.string.forge_add_movement), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
             }
             Spacer(Modifier.height(16.dp))
         }
-        ForgeDock(primary = "Done", onPrimary = onDone)
+        ForgeDock(primary = stringResource(R.string.common_done), onPrimary = onDone)
     }
 }

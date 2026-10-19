@@ -53,7 +53,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -101,6 +104,7 @@ internal fun SlideToSeal(
     val motion = animatorsOn(LocalContext.current)
     val scope = rememberCoroutineScope()
     val sealedNow by rememberUpdatedState(onSealed)
+    val sealDescription = UiText.themed(R.string.seal_slide_description, R.string.seal_slide_description__t).asString()
     val capPx = with(density) { CAP_WIDTH.toPx() }
     val inset = with(density) { 1.dp.toPx() }
     var trackPx by remember { mutableFloatStateOf(0f) }
@@ -168,8 +172,8 @@ internal fun SlideToSeal(
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 if (enabled) {
-                    contentDescription = "${Words.seal.c} the ${Words.trial.s}"
-                    onClick(label = "${Words.seal.c} the ${Words.trial.s}") {
+                    contentDescription = sealDescription
+                    onClick(label = sealDescription) {
                         if (!sealed) scope.launch { seal() }
                         true
                     }

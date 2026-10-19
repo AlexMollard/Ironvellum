@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -10,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,34 +40,40 @@ import com.ironvellum.app.ui.theme.ironvellumFieldColors
  */
 internal fun shareRoutineCode(context: Context, code: String) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
-    clipboard?.setPrimaryClip(ClipData.newPlainText("Ironvellum ${Words.cycle.s}", code))
-    Toast.makeText(context, "${Words.cycle.c} code copied", Toast.LENGTH_SHORT).show()
+    clipboard?.setPrimaryClip(
+        ClipData.newPlainText(UiText.themed(R.string.routineshare_clip_label, R.string.routineshare_clip_label__t).asString(context), code),
+    )
+    Toast.makeText(context, UiText.themed(R.string.routineshare_copied, R.string.routineshare_copied__t).asString(context), Toast.LENGTH_SHORT).show()
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(
             Intent.EXTRA_TEXT,
-            "Ironvellum ${Words.cycle.s} \u2014 paste into Train \u203A New ${Words.rite.t} \u203A Import code\n$code",
+            UiText.themed(R.string.routineshare_message, R.string.routineshare_message__t, code).asString(context),
         )
     }
-    context.startActivity(Intent.createChooser(intent, "Share ${Words.cycle.s}"))
+    context.startActivity(Intent.createChooser(intent, UiText.themed(R.string.routineshare_share_title, R.string.routineshare_share_title__t).asString(context)))
 }
 
 /** The one-line outcome shown under the Workouts header after an import. */
-internal fun importSummary(result: Repository.ImportedRoutine, replaced: Boolean): String {
+internal fun importSummary(context: Context, result: Repository.ImportedRoutine, replaced: Boolean): String {
     val skipped = result.skippedExercises
-    val skippedText = if (skipped.isEmpty()) "" else " Skipped, not in your exercise list: ${skipped.joinToString(", ")}."
+    val skippedText = if (skipped.isEmpty()) "" else " " + UiText.res(R.string.routineshare_skipped, skipped.joinToString(", ")).asString(context)
     if (result.added == 0) {
-        return "Nothing imported \u2014 none of those exercises are in your exercise list.$skippedText"
+        return UiText.res(R.string.routineshare_nothing_imported).asString(context) + skippedText
     }
-    val count = if (result.added == 1) "1 ${Words.rite.s}" else "${result.added} ${Words.rite.pl}"
-    val head = if (replaced) "${Words.cycle.c} replaced with $count." else "Added $count."
+    val head = if (replaced) {
+        UiText.themedPlural(R.plurals.routineshare_replaced, R.plurals.routineshare_replaced__t, result.added).asString(context)
+    } else {
+        UiText.themedPlural(R.plurals.routineshare_added, R.plurals.routineshare_added__t, result.added).asString(context)
+    }
     return head + skippedText
 }
 
 /** "Pull day · 5 exercises", the one-line preview of a decoded workout. */
+@Composable
 internal fun previewLine(workout: RoutineCode.SharedWorkout): String {
     val n = workout.entries.size
-    return "${workout.name} \u00B7 $n ${if (n == 1) "exercise" else "exercises"}"
+    return UiText.plural(R.plurals.routineshare_preview_line, n, workout.name, n).asString()
 }
 
 /**
@@ -101,7 +110,7 @@ internal fun ImportRoutineDialog(
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Import code") },
+        title = { Text(stringResource(R.string.routineshare_import_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -109,7 +118,7 @@ internal fun ImportRoutineDialog(
                     colors = ironvellumFieldColors(),
                     value = text,
                     onValueChange = { text = it.take(RoutineCode.MAX_DECODED_BYTES) },
-                    label = { Text("${Words.cycle.c} code") },
+                    label = { Text(UiText.themed(R.string.routineshare_code_label, R.string.routineshare_code_label__t).asString()) },
                     minLines = 3,
                     maxLines = 5,
                     modifier = Modifier.fillMaxWidth(),
@@ -131,7 +140,7 @@ internal fun ImportRoutineDialog(
                 if (workouts != null) {
                     Spacer(Modifier.height(4.dp))
                     IronvellumButton(
-                        label = "Add as extra ${Words.rite.pl}",
+                        label = UiText.themed(R.string.routineshare_add_button, R.string.routineshare_add_button__t).asString(),
                         onClick = { onImport(workouts, false) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -142,7 +151,7 @@ internal fun ImportRoutineDialog(
                         // slip of the thumb does not land on the destructive one.
                         Spacer(Modifier.height(8.dp))
                         IronvellumButton(
-                            label = "Replace my ${Words.cycle.s}",
+                            label = UiText.themed(R.string.routineshare_replace_my_button, R.string.routineshare_replace_my_button__t).asString(),
                             onClick = { confirmReplace = true },
                             modifier = Modifier.fillMaxWidth(),
                             danger = true,
@@ -153,31 +162,32 @@ internal fun ImportRoutineDialog(
         },
         confirmButton = {},
         dismissButton = {
-            IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true)
+            IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, quiet = true)
         },
     )
 
     if (confirmReplace && workouts != null) {
         IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace my ${Words.cycle.s}?") },
+            title = { Text(UiText.themed(R.string.routineshare_replace_title, R.string.routineshare_replace_title__t).asString()) },
             text = {
-                val now = if (currentWorkouts == 1) "your 1 ${Words.rite.s}" else "all $currentWorkouts of your ${Words.rite.pl}"
                 Text(
-                    "This deletes $now and your ${Words.cycle.s}, then adds the ${workouts.size} from this code. " +
-                        "${Words.sealed.c} ${Words.trial.pl} stay in ${Words.theChronicle.t}.",
+                    UiText.themedPlural(
+                        R.plurals.routineshare_replace_body, R.plurals.routineshare_replace_body__t,
+                        currentWorkouts, currentWorkouts, workouts.size,
+                    ).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },
             confirmButton = {
                 IronvellumButton(
-                    label = "Replace",
+                    label = stringResource(R.string.routineshare_replace_button),
                     onClick = { confirmReplace = false; onImport(workouts, true) },
                     danger = true,
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Cancel", onClick = { confirmReplace = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { confirmReplace = false }, quiet = true)
             },
         )
     }

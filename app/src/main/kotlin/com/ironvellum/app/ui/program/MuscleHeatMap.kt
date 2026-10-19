@@ -29,14 +29,18 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -130,7 +134,7 @@ fun ExerciseMuscleMap(
     val lineFor = { muscle: Muscle -> exerciseMuscleLine(muscle, shares[muscle], exerciseName) }
     // The muscle nodes speak for the figure; the labels and legend only repeat what the caller's summary says.
     FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
-        listOf(1.0 to "MAIN", 0.5 to "ASSIST", null to "NOT WORKED").forEach { (share, label) ->
+        listOf(1.0 to "MAIN", 0.5 to "ASSIST", null to stringResource(R.string.bodymap_key_not_worked)).forEach { (share, label) ->
             LegendKey(shareFill(share), label)
         }
     }
@@ -167,9 +171,9 @@ fun RiteMuscleMap(
     }
     val lineFor = { muscle: Muscle -> riteMuscleLine(muscle, sets[muscle] ?: 0.0, riteName) }
     FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
-        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
-        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
-        LegendKey(IronvellumColors.Rune, "NONE")
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), stringResource(R.string.bodymap_key_fewer))
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), stringResource(R.string.bodymap_key_more))
+        LegendKey(IronvellumColors.Rune, stringResource(R.string.bodymap_key_none))
     }
 }
 
@@ -199,8 +203,8 @@ private fun FigureBlock(
             // Capped: the words sit beside the figures' heads in half the phone's width and cannot grow with the text.
             CappedFontScale {
                 Row(Modifier.fillMaxWidth().then(quiet)) {
-                    FigureLabel("FRONT", Modifier.weight(1f))
-                    FigureLabel("BACK", Modifier.weight(1f))
+                    FigureLabel(stringResource(R.string.bodymap_label_front), Modifier.weight(1f))
+                    FigureLabel(stringResource(R.string.bodymap_label_back), Modifier.weight(1f))
                 }
             }
         }
@@ -320,12 +324,12 @@ private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: F
 private fun coverageSummary(tally: CoverageTally): String {
     fun names(muscles: List<Muscle>) = muscles.joinToString { it.label.lowercase() }
     val parts = buildList {
-        if (tally.heavy.isNotEmpty()) add("${names(tally.heavy)} heavy")
-        if (tally.notTrained.isNotEmpty()) add("${names(tally.notTrained)} not trained")
-        if (tally.below.isNotEmpty()) add("${names(tally.below)} below minimum")
-        add("${tally.covered.size} covered")
+        if (tally.heavy.isNotEmpty()) add(Words.text(UiText.res(R.string.bodymap_summary_heavy, names(tally.heavy))))
+        if (tally.notTrained.isNotEmpty()) add(Words.text(UiText.res(R.string.bodymap_summary_not_trained, names(tally.notTrained))))
+        if (tally.below.isNotEmpty()) add(Words.text(UiText.res(R.string.bodymap_summary_below, names(tally.below))))
+        add(Words.text(UiText.res(R.string.bodymap_summary_covered, tally.covered.size)))
     }
-    return "Muscle coverage: " + parts.joinToString("; ")
+    return Words.text(UiText.res(R.string.bodymap_summary, parts.joinToString("; ")))
 }
 
 @Composable

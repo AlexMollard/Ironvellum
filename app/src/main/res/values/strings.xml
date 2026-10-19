@@ -1193,4 +1193,1748 @@
     <string name="onboarding_plan_forge_button">Build from my answers</string>
     <string name="onboarding_plan_forge_button__t">Forge from my answers</string>
     <string name="onboarding_plan_skip_button">Skip setup…</string>
+    <!-- Live workout (SessionScreen.kt). Plain wording first, then its themed twin. -->
+    <string name="session_opening">Opening the workout…</string>
+    <string name="session_opening__t">Opening the trial…</string>
+    <string name="session_already_sealed">Workout already finished.</string>
+    <string name="session_already_sealed__t">Trial already sealed.</string>
+    <string name="session_notifications_off_caption">Notifications are off, so the rest timer will not alert you when a rest ends.</string>
+    <!-- Toasts when a today-only set change is not possible for this lift. -->
+    <string name="session_top_set_refused">This lift cannot take a top set.</string>
+    <string name="session_drop_refused">A drop cannot be added here.</string>
+    <!-- Undo bar after an action. %1$s is an exercise name (user data). -->
+    <string name="session_undo_set_logged">Set %1$d logged</string>
+    <string name="session_undo_set_removed">Set removed</string>
+    <string name="session_undo_exercise_removed">%1$s removed</string>
+    <string name="session_undo_exercise_added">%1$s added at the end</string>
+    <string name="session_undo_warmup_added">Warm-up added</string>
+    <!-- Shared button and action words on the live workout. -->
+    <string name="session_keep_going_button">Keep going</string>
+    <string name="session_keep_it_button">Keep it</string>
+    <string name="session_remove_button">Remove</string>
+    <string name="session_close_button">Close</string>
+    <string name="session_skip_button">Skip</string>
+    <string name="session_ok_button">OK</string>
+    <string name="session_add_note">Add a note</string>
+
+    <!-- A folded exercise. %1$d is the superset number, %2$s the progress line that follows it. -->
+    <string name="session_folded_superset">Superset %1$d · %2$s</string>
+    <!-- All sets logged: %1$d of %2$d, %3$s is the best set (for example "10 kg × 6"). -->
+    <string name="session_folded_best">%1$d/%2$d · best %3$s</string>
+    <!-- Some sets logged: %1$d logged of %2$d (the plural follows the total). -->
+    <plurals name="session_folded_progress"><item quantity="one">%1$d/%2$d set</item><item quantity="other">%1$d/%2$d sets</item></plurals>
+    <!-- Not started: %1$d sets of %2$d reps, with no load set yet on a loaded lift. -->
+    <string name="session_folded_set_a_load">%1$d × %2$d · set a load</string>
+    <!-- Not started, timed: %1$d sets of %2$d minutes. -->
+    <string name="session_folded_minutes">%1$d × %2$d min</string>
+    <string name="session_figure_minutes">%1$d min</string>
+    <!-- A distance set: %1$s is the distance figure, %2$d the minutes. -->
+    <string name="session_figure_km_minutes">%1$s km · %2$d min</string>
+    <plurals name="session_figure_attempts"><item quantity="one">%d attempt</item><item quantity="other">%d attempts</item></plurals>
+    <!-- Last-time line above a set: %1$s is the last figure (for example "6 × 7.5 kg"). -->
+    <string name="session_reference_last">Last %1$s</string>
+    <string name="session_last_note">Last time: %1$s</string>
+
+    <!-- "How hard was set 2?" strip. %1$s is the set number or label. -->
+    <string name="session_effort_title">How hard was set %1$s?</string>
+    <!-- Spoken for the row of chips. %1$s is the scale (RPE or RIR), %2$s the set number or label. -->
+    <string name="session_effort_scale_description">%1$s for set %2$s</string>
+    <!-- Names the set the rest bar asks about. %1$s is the exercise name, %2$d the set number. -->
+    <string name="session_effort_label_top">%1$s top set</string>
+    <string name="session_effort_label_set">%1$s set %2$d</string>
+    <!-- Quiet line after a rating. %1$s is the label above, %2$s the rating (for example "RIR 2"). -->
+    <string name="session_effort_rated">%1$s · %2$s ✓</string>
+    <string name="session_effort_rated_description">%1$s rated %2$s</string>
+    <string name="session_effort_change_button">Change</string>
+    <string name="session_effort_change_description">Change the rating</string>
+    <string name="session_effort_ask_reps">%1$s: reps left?</string>
+    <string name="session_effort_ask_hard">%1$s: how hard?</string>
+    <string name="session_effort_reserve_many">5 or more reps in reserve</string>
+    <plurals name="session_effort_reserve"><item quantity="one">%d rep in reserve</item><item quantity="other">%d reps in reserve</item></plurals>
+    <string name="session_effort_rpe_low">RPE 5 or less</string>
+    <string name="session_effort_rpe">RPE %1$d</string>
+
+    <!-- Header of the live workout. -->
+    <string name="session_header_label">Workout in progress</string>
+    <string name="session_header_label__t">Trial in progress</string>
+    <string name="session_back_label">BACK</string>
+    <string name="session_back_action">Leave, the workout keeps running</string>
+    <string name="session_back_action__t">Leave, the trial keeps running</string>
+    <string name="session_lock_description">Lock the screen</string>
+    <string name="session_more_description">More options</string>
+    <string name="session_muscles_item">Muscles worked</string>
+    <string name="session_abandon_item">Abandon workout</string>
+    <string name="session_abandon_item__t">Abandon trial</string>
+    <!-- Sets logged so far: %1$d of %2$d (the plural follows the total). -->
+    <plurals name="session_progress"><item quantity="one">%1$d / %2$d set</item><item quantity="other">%1$d / %2$d sets</item></plurals>
+    <!-- Stats line, after a separator: minutes left. -->
+    <string name="session_minutes_left">~%1$d min left</string>
+    <!-- XP just earned by a set or the workout. %1$d is the amount. -->
+    <string name="session_xp_gain">+%1$d XP</string>
+    <string name="session_xp_description">%1$d XP</string>
+    <string name="session_xp_earned_description">%1$d XP earned so far</string>
+
+    <!-- The open exercise card. -->
+    <string name="session_info_description">About %1$s</string>
+    <string name="session_change_chip">Change</string>
+    <string name="session_change_exercise_description">Change exercise</string>
+    <string name="session_plates_chip">Plates</string>
+    <string name="session_plates_description">Open the plate calculator</string>
+    <string name="session_plate_set_label">set %1$d</string>
+    <!-- Single letter that marks a warm-up set in the set number column. -->
+    <string name="session_warmup_letter">W</string>
+    <!-- Folded warm-ups line. %1$d is the number of warm-up sets. -->
+    <plurals name="session_warmup_fold"><item quantity="one">Warm-up · %d set</item><item quantity="other">Warm-up · %d sets</item></plurals>
+    <string name="session_warmup_fold_description">%1$s, done</string>
+    <string name="session_warmup_show_label">Show the warm-up sets</string>
+    <string name="session_drops_note">Drops follow straight on, no rest</string>
+    <string name="session_drops_end_label">End the drops for %1$s</string>
+    <string name="session_drops_end_button">End drops</string>
+    <string name="session_note_add_description">Add a note for %1$s</string>
+    <string name="session_note_edit_description">Edit note for %1$s</string>
+    <!-- Under an exercise name in a superset. %1$d is the superset number, %2$s the exercise whose turn follows. -->
+    <string name="session_superset_strip">Superset %1$d</string>
+    <string name="session_superset_strip_next">Superset %1$d · %2$s next</string>
+    <string name="session_unlink_description">Unlink %1$s from its superset</string>
+    <string name="session_unlink_button">Unlink</string>
+    <string name="session_menu_description">More for %1$s</string>
+    <string name="session_menu_add_set">Add set</string>
+    <string name="session_menu_remove_last_set">Remove last set</string>
+    <string name="session_menu_warmup">Warm up</string>
+    <string name="session_menu_make_top_set">Make set 1 a top set (today)</string>
+    <string name="session_menu_add_drop">Add a drop to the last set (today)</string>
+    <string name="session_menu_edit_load">Edit load</string>
+    <string name="session_menu_edit_modifiers">Edit modifiers</string>
+    <string name="session_menu_rest_on">Turn rest timer on</string>
+    <string name="session_menu_rest_off">Turn rest timer off</string>
+    <string name="session_menu_move_up">Move up</string>
+    <string name="session_menu_move_down">Move down</string>
+    <string name="session_menu_superset_with">Superset with %1$s</string>
+    <string name="session_menu_remove_exercise">Remove exercise</string>
+
+    <!-- A set row. -->
+    <string name="session_new_peak_tag">NEW PR</string>
+    <string name="session_new_peak_tag__t">NEW PEAK</string>
+    <string name="session_logged_description">Logged</string>
+    <string name="session_edit_warmup_label">Edit warm-up</string>
+    <string name="session_edit_set_label">Edit set %1$s</string>
+    <string name="session_set_unlog_button">Un-log</string>
+    <string name="session_set_log_button">Log set</string>
+    <string name="session_set_count_as_working">Count as a working set</string>
+    <string name="session_set_mark_warmup">Mark as warm-up</string>
+    <!-- Bodyweight, shown in place of a load. -->
+    <string name="session_figure_bodyweight">BW</string>
+    <!-- Under the load figure of a loaded lift with nothing on the bar yet. -->
+    <string name="session_unit_set_load">set load</string>
+    <string name="session_unit_reps">reps</string>
+    <string name="session_unit_seconds">sec</string>
+    <string name="session_unit_minutes">min</string>
+    <string name="session_unit_km">km</string>
+    <string name="session_unit_attempts">attempts</string>
+    <!-- Spoken labels of the minus and plus buttons and the typed figure, one for each kind of figure. -->
+    <string name="session_stepper_load_decrease">Decrease load</string>
+    <string name="session_stepper_load_increase">Increase load</string>
+    <string name="session_stepper_load_type">Type load</string>
+    <string name="session_stepper_reps_decrease">Decrease reps</string>
+    <string name="session_stepper_reps_increase">Increase reps</string>
+    <string name="session_stepper_reps_type">Type reps</string>
+    <string name="session_stepper_seconds_decrease">Decrease seconds</string>
+    <string name="session_stepper_seconds_increase">Increase seconds</string>
+    <string name="session_stepper_seconds_type">Type seconds</string>
+    <string name="session_stepper_minutes_decrease">Decrease minutes</string>
+    <string name="session_stepper_minutes_increase">Increase minutes</string>
+    <string name="session_stepper_minutes_type">Type minutes</string>
+    <string name="session_stepper_distance_decrease">Decrease distance</string>
+    <string name="session_stepper_distance_increase">Increase distance</string>
+    <string name="session_stepper_distance_type">Type distance</string>
+    <string name="session_stepper_attempts_decrease">Decrease attempts</string>
+    <string name="session_stepper_attempts_increase">Increase attempts</string>
+    <string name="session_stepper_attempts_type">Type attempts</string>
+    <string name="session_grade_description">Grade</string>
+    <!-- Example of a bouldering grade, shown faintly in the empty grade field. -->
+    <string name="session_grade_hint">V5</string>
+
+    <!-- Folded exercise row. %1$s is the exercise name. -->
+    <string name="session_folded_open_description">Open %1$s</string>
+    <string name="session_folded_open_note_description">Open %1$s. Has a note.</string>
+    <string name="session_folded_note_description">Has a note</string>
+
+    <!-- Rows under the exercise list. -->
+    <string name="session_end_add_exercise">Add exercise</string>
+    <string name="session_end_name_title">Name this workout</string>
+    <string name="session_end_name_title__t">Name this trial</string>
+    <string name="session_end_note_hint">Share it, or keep it private</string>
+    <!-- Hint for the workout name. %1$s is the routine name, %2$s the date (for example "3 Oct"). -->
+    <string name="session_name_default">Defaults to %1$s · %2$s</string>
+
+    <!-- Footer: slide to finish, rest bar, next set. -->
+    <string name="session_slide_to_seal">Slide to finish</string>
+    <string name="session_slide_to_seal__t">Slide to seal</string>
+    <string name="session_slide_log_first">Log a set to finish the workout</string>
+    <string name="session_slide_log_first__t">Log a set to seal the trial</string>
+    <plurals name="session_slide_left"><item quantity="one">%d set left · slide to finish</item><item quantity="other">%d sets left · slide to finish</item></plurals>
+    <plurals name="session_slide_left__t"><item quantity="one">%d set left · slide to seal</item><item quantity="other">%d sets left · slide to seal</item></plurals>
+    <string name="session_rest_label">REST</string>
+    <!-- Rest bar label. %1$d is the number of the set that follows. -->
+    <string name="session_rest_next_label">REST · SET %1$d NEXT</string>
+    <!-- %1$s is a clock (for example "3:00"). -->
+    <string name="session_rest_max">Max suggested %1$s</string>
+    <!-- Buttons on the rest bar. %1$d is a number of seconds. -->
+    <string name="session_rest_shorten_button">−%1$d</string>
+    <string name="session_rest_extend_button">+%1$d</string>
+    <string name="session_next_label">NEXT</string>
+    <string name="session_next_no_rest_label">NEXT · NO REST YET</string>
+    <string name="session_log_set_description">Log set %1$d</string>
+    <!-- The set in hand. %1$d is the set number, %2$s its figure; the second form also names the exercise (%2$s), with the figure in %3$s. -->
+    <string name="session_next_line">Set %1$d · %2$s</string>
+    <string name="session_next_line_named">Set %1$d · %2$s · %3$s</string>
+
+    <!-- Dialogs. -->
+    <string name="session_abandon_title">Abandon this workout?</string>
+    <string name="session_abandon_title__t">Abandon this trial?</string>
+    <string name="session_abandon_text">Unfinished workouts grant no XP and are erased from your history.</string>
+    <string name="session_abandon_text__t">Unsealed trials grant no XP and are erased from the Chronicle.</string>
+    <string name="session_abandon_button">Abandon</string>
+    <!-- %1$s is an exercise name. -->
+    <string name="session_remove_title">Remove %1$s?</string>
+    <!-- %d is the number of logged sets that go with the exercise. -->
+    <plurals name="session_remove_text"><item quantity="one">Its %d logged set goes with it. Undo stays on screen for a few seconds.</item><item quantity="other">Its %d logged sets go with it. Undo stays on screen for a few seconds.</item></plurals>
+    <string name="session_seal_title">Finish the workout?</string>
+    <string name="session_seal_title__t">Seal the trial?</string>
+    <plurals name="session_seal_unlogged_title"><item quantity="one">Finish with %d set unlogged?</item><item quantity="other">Finish with %d sets unlogged?</item></plurals>
+    <plurals name="session_seal_unlogged_title__t"><item quantity="one">Seal with %d set unlogged?</item><item quantity="other">Seal with %d sets unlogged?</item></plurals>
+    <string name="session_seal_confirm_text">Every set is logged. Finish it now?</string>
+    <string name="session_seal_confirm_text__t">Every set is logged. Seal it now?</string>
+    <plurals name="session_seal_unlogged_text"><item quantity="one">It won\'t count.</item><item quantity="other">They won\'t count.</item></plurals>
+    <string name="session_seal_anyway_button">Finish anyway</string>
+    <string name="session_seal_anyway_button__t">Seal anyway</string>
+    <string name="session_reopen_title">Reopen this workout?</string>
+    <string name="session_reopen_title__t">Reopen this trial?</string>
+    <string name="session_reopen_text">The XP it paid is taken back until you finish again.</string>
+    <string name="session_reopen_text__t">The XP it paid is taken back until you seal again.</string>
+    <string name="session_reopen_keep_button">Keep it finished</string>
+    <string name="session_reopen_keep_button__t">Keep it sealed</string>
+    <string name="session_reopen_button">Reopen</string>
+    <string name="session_reopen_refused_title">This workout stays finished</string>
+    <string name="session_reopen_refused_title__t">This trial stays sealed</string>
+    <string name="session_reopen_refused_open">This workout is already open.</string>
+    <string name="session_reopen_refused_open__t">This trial is already open.</string>
+    <string name="session_reopen_refused_window">Ten minutes have passed. Amend it from your history instead.</string>
+    <string name="session_reopen_refused_window__t">Ten minutes have passed. Amend it from the Chronicle instead.</string>
+    <string name="session_reopen_refused_another">Another workout is open. Finish or abandon it first.</string>
+    <string name="session_reopen_refused_another__t">Another trial is open. Seal or abandon it first.</string>
+    <string name="session_reopen_refused_amended">It was amended after finishing, so it cannot be taken back.</string>
+    <string name="session_reopen_refused_amended__t">It was amended after sealing, so it cannot be taken back.</string>
+    <string name="session_reopen_refused_spent">The XP it paid has been spent, so it cannot be taken back.</string>
+
+    <!-- Load dialog. %1$d is a set number; %1$s a unit (kg or lb). -->
+    <string name="session_load_dialog_set">SET %1$d</string>
+    <string name="session_load_field_label">Load (%1$s)</string>
+    <string name="session_load_placeholder">Leave blank for bodyweight</string>
+    <!-- %1$s is the highest load allowed, %2$s the unit. -->
+    <string name="session_load_error">Enter 0 to %1$s %2$s.</string>
+    <string name="session_load_this_set">This set</string>
+    <plurals name="session_load_all_sets"><item quantity="one">All %d set</item><item quantity="other">All %d sets</item></plurals>
+    <!-- Dialog title when the exercise cannot be found. -->
+    <string name="session_exercise_fallback">Exercise</string>
+
+    <!-- Figure entry dialog. -->
+    <string name="session_figure_dialog_set">Set %1$d</string>
+    <string name="session_figure_label_seconds">Seconds</string>
+    <string name="session_figure_label_minutes">Minutes</string>
+    <string name="session_figure_label_attempts">Attempts</string>
+    <string name="session_figure_label_reps">Reps</string>
+
+    <!-- Name and note dialogs. -->
+    <string name="session_name_field_feed">Name · optional, shown in the feed</string>
+    <string name="session_name_field_feed__t">Name · optional, shown in Tidings</string>
+    <string name="session_name_field">Name · optional</string>
+    <string name="session_exercise_note_subtitle">Note for this workout</string>
+    <string name="session_exercise_note_subtitle__t">Note for this trial</string>
+    <string name="session_exercise_note_description">Note for %1$s</string>
+    <string name="session_note_public_signed_in">Public note · every lifter in the feed can read this</string>
+    <string name="session_note_public_signed_in__t">Public note · every Ironbound in Tidings can read this</string>
+    <string name="session_note_public_signed_out">Note · shared with friends once you sign in</string>
+    <string name="session_note_public_signed_out__t">Note · shared with allies once you sign in</string>
+    <string name="session_note_public_hint">How did the workout go? Share it…</string>
+    <string name="session_note_public_hint__t">How did the trial go? Share it…</string>
+    <string name="session_note_private_label">Private note · never leaves this device</string>
+    <string name="session_note_private_hint">For your eyes only…</string>
+
+    <!-- Modifiers dialog. -->
+    <string name="session_modifiers_heading">MODIFIERS</string>
+    <string name="session_modifiers_applies">Applies to every set of this exercise.</string>
+    <string name="session_modifiers_weighted">weighted · set by load</string>
+
+    <!-- Warm-up reminder before the first set. -->
+    <string name="session_warmup_done">Warmed up</string>
+    <string name="session_warmup_skipped">Warm-up skipped</string>
+    <string name="session_warmup_reopen_label">Open the warm-up again</string>
+    <string name="session_warmup_heading">WARM UP</string>
+
+    <!-- Offer to update the routine after finishing. -->
+    <string name="session_update_swaps_title">Keep today\'s swaps in your routine?</string>
+    <string name="session_update_swaps_title__t">Keep today\'s swaps in your rite?</string>
+    <string name="session_update_changes_title">Keep today\'s changes in your routine?</string>
+    <string name="session_update_changes_title__t">Keep today\'s changes in your rite?</string>
+    <string name="session_update_short_day">Unticked sets don\'t lower the set count. Tick the changes to keep.</string>
+    <string name="session_update_bring_title">Bring your routine in line with today\'s workout?</string>
+    <string name="session_update_bring_title__t">Bring your rite in line with today\'s trial?</string>
+    <string name="session_update_keep_toggle">Keep in routine</string>
+    <string name="session_update_keep_toggle__t">Keep in rite</string>
+    <string name="session_update_add_toggle">Add to routine</string>
+    <string name="session_update_add_toggle__t">Add to rite</string>
+    <string name="session_update_link_toggle">Link in routine</string>
+    <string name="session_update_link_toggle__t">Link in rite</string>
+    <string name="session_update_once_toggle">Just this once</string>
+    <!-- %1$s is the superset's exercise names. -->
+    <string name="session_update_superset_line">Superset: %1$s</string>
+    <string name="session_update_superset_needs">Superset: %1$s (needs the added lift)</string>
+    <string name="session_update_button">Update routine</string>
+    <string name="session_update_button__t">Update rite</string>
+    <string name="session_update_keep_button">Keep routine</string>
+    <string name="session_update_keep_button__t">Keep rite</string>
+    <!-- Left column of a changed figure in that offer. -->
+    <string name="session_field_sets">Sets</string>
+    <string name="session_field_hold">Hold</string>
+    <string name="session_field_load">Load</string>
+    <string name="session_field_modifiers">Modifiers</string>
+    <string name="session_field_none">None</string>
+
+    <!-- Slide to finish control (SlideToSeal.kt), read by a screen reader. -->
+    <string name="seal_slide_description">Finish the workout</string>
+    <string name="seal_slide_description__t">Seal the trial</string>
+
+    <!-- Pocket lock (PocketLockOverlay.kt). %1$s is the cover's summary line, or the hold hint when there is none. -->
+    <string name="pocketlock_description">Workout locked. %1$s</string>
+    <string name="pocketlock_description__t">Trial locked. %1$s</string>
+    <string name="pocketlock_hold_description">Hold to unlock.</string>
+    <string name="pocketlock_hold_label">Hold to unlock</string>
+    <string name="pocketlock_unlock_action">Unlock the workout</string>
+    <string name="pocketlock_unlock_action__t">Unlock the trial</string>
+    <!-- %1$s is the set in hand (for example "Set 2 · Squat · 100 kg × 5"). -->
+    <string name="pocketlock_next_line">Next · %1$s</string>
+
+    <!-- Set type cell (SetKindUi.kt). %1$s is the set label, %2$s the set type. -->
+    <string name="setkind_change_label">Change set type</string>
+    <string name="setkind_cell_description">Set %1$s, %2$s</string>
+    <string name="setkind_explain_item">What are set types?</string>
+    <!-- Tag under the number of the top set. -->
+    <string name="setkind_top_tag">Top</string>
+
+    <!-- Timed set control (TimedSetControl.kt). %1$s is a clock face (for example "0:45"). -->
+    <string name="timedset_get_ready_description">Get ready, %1$d</string>
+    <string name="timedset_elapsed_description">%1$s elapsed</string>
+    <string name="timedset_target_reached_description">%1$s elapsed, target %2$s reached</string>
+    <string name="timedset_target_description">%1$s elapsed, target %2$s</string>
+    <string name="timedset_get_ready_label">GET READY</string>
+    <string name="timedset_target_reached_label">TARGET REACHED ✓</string>
+    <string name="timedset_target_label">TARGET %1$s</string>
+    <string name="timedset_elapsed_label">ELAPSED</string>
+    <string name="timedset_start_button">Start</string>
+    <string name="timedset_start_stopwatch_button">Start stopwatch</string>
+    <string name="timedset_stop_button">Stop</string>
+    <string name="timedset_stopped_description">Stopped at %1$s</string>
+    <string name="timedset_stopped_label">STOPPED</string>
+    <string name="timedset_minus_second_button">−1s</string>
+    <string name="timedset_minus_second_description">Take a second off</string>
+    <string name="timedset_plus_second_button">+1s</string>
+    <string name="timedset_plus_second_description">Add a second</string>
+    <string name="timedset_log_button">Log %1$s</string>
+    <string name="timedset_discard_button">Discard</string>
+
+    <!-- Victory screen (VictoryOverlay.kt). The Veil is themed in both modes, so this one has no twin. -->
+    <plurals name="always_victory_inscription_note"><item quantity="one">+%d inscription waiting in the Veil</item><item quantity="other">+%d inscriptions waiting in the Veil</item></plurals>
+    <string name="victory_row_level">Level</string>
+    <string name="victory_row_xp">XP</string>
+    <string name="victory_row_quest">Today\'s workout</string>
+    <string name="victory_row_quest__t">Today\'s trial</string>
+    <string name="victory_row_quest_bonus">+%1$d bonus</string>
+    <string name="victory_row_rank_up">Strength Rank up</string>
+    <!-- Caption on the XP page. %1$s is the workout title. -->
+    <string name="victory_xp_caption">%1$s · finished</string>
+    <string name="victory_xp_caption__t">%1$s · sealed</string>
+    <!-- Summary line: %1$d minutes, %2$d sets (the plural follows the sets). -->
+    <plurals name="victory_summary"><item quantity="one">Finished · %1$d min · %2$d set</item><item quantity="other">Finished · %1$d min · %2$d sets</item></plurals>
+    <plurals name="victory_summary__t"><item quantity="one">Sealed · %1$d min · %2$d set</item><item quantity="other">Sealed · %1$d min · %2$d sets</item></plurals>
+    <string name="victory_reopen_offer">Finished too soon? Keep going</string>
+    <string name="victory_reopen_offer__t">Sealed too soon? Keep going</string>
+    <string name="victory_share_button">Share workout</string>
+    <string name="victory_share_button__t">Share trial</string>
+    <!-- Totals line: %1$s is a figure with thousands separators. -->
+    <plurals name="victory_totals_sets"><item quantity="one">%1$s set</item><item quantity="other">%1$s sets</item></plurals>
+    <plurals name="victory_totals_reps"><item quantity="one">%1$s rep</item><item quantity="other">%1$s reps</item></plurals>
+    <string name="victory_totals_held">%1$s s held</string>
+    <!-- %1$s is the total load, %2$s its unit (kg or lb). -->
+    <string name="victory_totals_moved">%1$s %2$s moved</string>
+    <string name="victory_peaks_title">New PR</string>
+    <string name="victory_peaks_title__t">New peak</string>
+    <string name="victory_peaks_many">New PRs · %1$d</string>
+    <string name="victory_peaks_many__t">New peaks · %1$d</string>
+    <!-- Peak card detail. %1$d is the set number, %2$s the kind of peak, %3$s the earlier figure, %4$s what it paid. -->
+    <string name="victory_peak_detail">Set %1$d · %2$s · was %3$s · %4$s</string>
+    <!-- Spoken peak. %1$s kind, %2$s lift, %3$d set, %4$s figure, %5$s earlier figure, %6$s gain, %7$s pay; the second form ends with %8$d, how many peaks the lift has. -->
+    <string name="victory_peak_description">New %1$s PR, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s</string>
+    <string name="victory_peak_description__t">New %1$s peak, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s</string>
+    <string name="victory_peak_description_count">New %1$s PR, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s, %8$d PRs</string>
+    <string name="victory_peak_description_count__t">New %1$s peak, %2$s, set %3$d, %4$s, was %5$s, up %6$s, %7$s, %8$d peaks</string>
+    <string name="victory_peak_no_xp">no XP</string>
+    <plurals name="victory_peak_gain_reps"><item quantity="one">+%d rep</item><item quantity="other">+%d reps</item></plurals>
+    <!-- Plates sheet: title of the plate calculator dialog. -->
+    <string name="plates_title">Plates</string>
+    <string name="plates_load_label">Load</string>
+    <string name="plates_load_down_description">Previous load the plates can make</string>
+    <string name="plates_load_up_description">Next load the plates can make</string>
+    <string name="plates_bar_change_label">Change the bar</string>
+    <string name="plates_bar_label">Bar</string>
+    <!-- Shown in capitals above the barbell. %1$s is a load with its unit, e.g. "100 kg". -->
+    <string name="plates_reading_exact">Loaded · %1$s</string>
+    <string name="plates_reading_between">Closest below · %1$s</string>
+    <string name="plates_reading_under_bar">Bar only · %1$s</string>
+    <string name="plates_reading_over">Heaviest you can load · %1$s</string>
+    <!-- Label on the drawn bar. %1$s is the bar weight with its unit, e.g. "20 kg". -->
+    <string name="plates_bar_named">%1$s bar</string>
+    <!-- Shown in capitals beside the plates on one side of the bar. -->
+    <string name="plates_each_side">Each side</string>
+    <string name="plates_bar_only">Bar only</string>
+    <!-- %1$s one side's plates, %2$s all the plates, %3$s the bar; each with its unit. -->
+    <string name="plates_summary">%1$s a side, %2$s of plates, %3$s bar</string>
+    <!-- Button: set the load to %1$s (a load with its unit). -->
+    <string name="plates_use">Use %1$s</string>
+    <!-- %1$s is the wanted load with its unit. -->
+    <string name="plates_between_headline">%1$s falls between plates</string>
+    <!-- %1$s the smallest plate, %2$s the step between loads; both with the unit. -->
+    <string name="plates_between_detail">Your smallest plate is %1$s, so loads step by %2$s.</string>
+    <string name="plates_between_detail_none">No plates are set, so only the bar can be loaded.</string>
+    <string name="plates_under_bar_headline">%1$s is lighter than the bar</string>
+    <string name="plates_under_bar_detail">The bar alone is %1$s.</string>
+    <string name="plates_over_headline">%1$s is more than your plates make</string>
+    <string name="plates_over_detail">The heaviest you can load is %1$s.</string>
+    <string name="plates_barbell_empty_description">Barbell with no plates</string>
+    <!-- %1$s the plate sizes joined with "and", e.g. "25 and 10"; %2$s the unit, e.g. "kg". -->
+    <string name="plates_barbell_description">Barbell with %1$s %2$s plates on each side</string>
+    <!-- Amend a sealed workout: title of the exercise picker when swapping an exercise. -->
+    <string name="amend_change_exercise_title">Change exercise</string>
+    <string name="amend_set_warmup">Warm-up</string>
+    <!-- Heading of the load dialog. %1$d is the set's place among the working sets. -->
+    <string name="amend_set_numbered">Set %1$d</string>
+    <string name="amend_add_set_button">Add set</string>
+    <string name="amend_save_button">Save changes</string>
+    <!-- Docked save button with the XP the edit adds. %1$d is the XP. -->
+    <string name="amend_save_button_xp_gain">Save changes · +%1$d XP</string>
+    <!-- Docked save button with the XP the edit removes. %1$d is the XP as a positive number. -->
+    <string name="amend_save_button_xp_loss">Save changes · −%1$d XP</string>
+    <string name="amend_save_empty">Tick at least one set to save. A workout with nothing done is deleted, not amended.</string>
+    <string name="amend_save_empty__t">Tick at least one set to save. A trial with nothing done is deleted, not amended.</string>
+    <!-- %1$s is the unit name, e.g. "kg". -->
+    <string name="amend_load_label">Load (%1$s)</string>
+    <string name="amend_load_hint">Leave blank for bodyweight</string>
+    <!-- %1$s is the largest load that can be typed, %2$s the unit name. -->
+    <string name="amend_load_error">Enter 0 to %1$s %2$s.</string>
+    <string name="amend_load_button">Set load</string>
+    <!-- Amend confirmation: the XP line. %1$d is the XP as a positive number. -->
+    <string name="amend_xp_gain_capped">+%1$d XP (capped at double what it first paid)</string>
+    <string name="amend_xp_gain">+%1$d XP</string>
+    <string name="amend_xp_loss">−%1$d XP</string>
+    <string name="amend_xp_unchanged_late">XP unchanged — edits after 48 h can\'t raise it</string>
+    <string name="amend_xp_unchanged">XP unchanged</string>
+    <string name="amend_confirm_title">Amend this workout?</string>
+    <string name="amend_confirm_title__t">Amend this trial?</string>
+    <string name="amend_confirm_marked">Friends see it marked amended.</string>
+    <string name="amend_confirm_marked__t">Allies see it marked amended.</string>
+    <!-- Shown the same in both modes: a deed is the reward layer. Follows amend_confirm_marked in one paragraph. -->
+    <string name="always_amend_confirm_deeds">Deeds already earned stay earned, and no inscriptions are paid.</string>
+    <string name="amend_confirm_window">Within 48 h of finishing, a change can raise XP to at most double what the workout first paid. After that it can only lower it.</string>
+    <string name="amend_confirm_window__t">Within 48 h of sealing, a change can raise XP to at most double what the trial first paid. After that it can only lower it.</string>
+    <string name="amend_keep_editing_button">Keep editing</string>
+    <!-- History screen, empty: the heading. -->
+    <string name="workoutlog_empty_title">Your history is blank.</string>
+    <string name="workoutlog_empty_title__t">The Chronicle is blank.</string>
+    <string name="workoutlog_empty_body">Finish a workout and it is written here.</string>
+    <string name="workoutlog_empty_body__t">Seal a trial and it is written here.</string>
+    <!-- History screen: one line of totals, "42 workouts · 610 sets · 4,900 reps". %d is the count. -->
+    <plurals name="workoutlog_totals_trials"><item quantity="one">%d workout</item><item quantity="other">%d workouts</item></plurals>
+    <plurals name="workoutlog_totals_trials__t"><item quantity="one">%d trial</item><item quantity="other">%d trials</item></plurals>
+    <!-- %1$s is the already grouped count, e.g. "4,900". -->
+    <plurals name="workoutlog_totals_reps"><item quantity="one">%1$s rep</item><item quantity="other">%1$s reps</item></plurals>
+    <plurals name="workoutlog_totals_attempts"><item quantity="one">%1$s attempt</item><item quantity="other">%1$s attempts</item></plurals>
+    <!-- Seconds held across all hold sets; %1$s is the grouped number of seconds. -->
+    <string name="workoutlog_totals_held">%1$ss held</string>
+    <!-- %1$s is the distance, e.g. "12.5". -->
+    <string name="workoutlog_totals_km">%1$s km</string>
+    <!-- Minutes; %1$d is the number of minutes. -->
+    <string name="workoutlog_minutes">%1$d min</string>
+    <string name="workoutlog_duration_under_minute">&lt;1 min</string>
+    <!-- A workout's length: %1$d hours, %2$d minutes. -->
+    <string name="workoutlog_duration_hours_minutes">%1$d h %2$d min</string>
+    <!-- java.time pattern for a workout's date on its row and detail header: weekday, day, month. -->
+    <string name="workoutlog_date_pattern">EEE d MMM</string>
+    <!-- Strength score on a history row; %1$s is the grouped score. -->
+    <string name="workoutlog_strength_score">%1$s STR</string>
+    <string name="workoutlog_shared_note_description">Has a shared note</string>
+    <string name="workoutlog_private_note_description">Has a private note</string>
+    <!-- XP gained, shown on a history row. %1$d is the XP. -->
+    <string name="workoutlog_xp_gain">+%1$d XP</string>
+    <!-- Workout detail: header title while amending. The themed twin says "trial". -->
+    <string name="workoutdetail_amend_title">Amend workout</string>
+    <string name="workoutdetail_amend_title__t">Amend trial</string>
+    <string name="workoutdetail_amend_button">Amend</string>
+    <!-- Accessibility description of the Amend chip. -->
+    <string name="workoutdetail_amend_description">Amend this workout</string>
+    <string name="workoutdetail_amend_description__t">Amend this trial</string>
+    <!-- Accessibility description of the Share chip. -->
+    <string name="workoutdetail_share_description">Share this workout</string>
+    <string name="workoutdetail_share_description__t">Share this trial</string>
+    <string name="workoutdetail_amend_repeat_error">This workout lists one movement twice with different modifiers, so it cannot be amended.</string>
+    <string name="workoutdetail_amend_repeat_error__t">This trial lists one movement twice with different modifiers, so it cannot be amended.</string>
+    <string name="workoutdetail_amend_failed">The workout could not be amended</string>
+    <string name="workoutdetail_amend_failed__t">The trial could not be amended</string>
+    <string name="workoutdetail_not_amended_title">Not amended</string>
+    <string name="workoutdetail_missing_title">Workout not found</string>
+    <string name="workoutdetail_missing_title__t">Trial not found</string>
+    <string name="workoutdetail_missing_body">This workout may have been deleted.</string>
+    <string name="workoutdetail_missing_body__t">This trial may have been deleted.</string>
+    <string name="workoutdetail_audience_label">Who sees this</string>
+    <string name="workoutdetail_audience_title">Who sees this workout</string>
+    <string name="workoutdetail_audience_title__t">Who sees this trial</string>
+    <string name="workoutdetail_audience_private">Only me</string>
+    <!-- Caption under the audience choice. The first names the profile setting this follows and the Friends tab. -->
+    <string name="workoutdetail_audience_profile">Follows your profile\'s visibility on the FRIENDS tab.</string>
+    <string name="workoutdetail_audience_profile__t">Follows your folio\'s visibility on the ALLIES tab.</string>
+    <string name="workoutdetail_audience_friends">Only friends see it, even on a public profile.</string>
+    <string name="workoutdetail_audience_friends__t">Only allies see it, even on a public folio.</string>
+    <string name="workoutdetail_audience_private_note">Only you see it.</string>
+    <string name="workoutdetail_delete_title">Delete this workout?</string>
+    <string name="workoutdetail_delete_title__t">Delete this trial?</string>
+    <string name="workoutdetail_delete_button">Delete</string>
+    <string name="workoutdetail_keep_button">Keep</string>
+    <string name="workoutdetail_delete_row">Delete workout</string>
+    <string name="workoutdetail_delete_row__t">Delete trial</string>
+    <!-- Delete confirmation: what is taken back. %1$d is the XP; %2$s the grouped strength score. -->
+    <string name="workoutdetail_delete_return_both">+%1$d XP and %2$s strength will be taken back.</string>
+    <string name="workoutdetail_delete_return_xp">+%1$d XP will be taken back.</string>
+    <string name="workoutdetail_delete_return_strength">%1$s strength will be taken back.</string>
+    <string name="workoutdetail_delete_return_none">This workout will be removed from your history.</string>
+    <string name="workoutdetail_delete_return_none__t">This trial will be removed from the Chronicle.</string>
+    <string name="workoutdetail_discard_title">Discard your changes?</string>
+    <string name="workoutdetail_discard_body">Unsaved edits to this workout will be lost.</string>
+    <string name="workoutdetail_discard_body__t">Unsaved edits to this trial will be lost.</string>
+    <string name="workoutdetail_discard_button">Discard</string>
+    <string name="workoutdetail_note_shared">Shared note · friends see it</string>
+    <string name="workoutdetail_note_shared__t">Shared note · allies see it</string>
+    <string name="workoutdetail_note_private">Private note · only you see it</string>
+    <!-- %1$s is the date the workout was amended. -->
+    <string name="workoutdetail_amended_on">Amended %1$s</string>
+    <!-- Units beside the big XP and strength figures. -->
+    <string name="workoutdetail_figure_xp">XP</string>
+    <string name="workoutdetail_figure_strength">STR</string>
+    <!-- Calories readout under the header. %1$d is kilocalories. -->
+    <string name="workoutdetail_kcal_measured">%1$d kcal measured</string>
+    <string name="workoutdetail_kcal_estimated">about %1$d kcal</string>
+    <string name="workoutdetail_kcal_coarse">roughly %1$d kcal</string>
+    <string name="workoutdetail_kcal_basis_label">Show how this was worked out</string>
+    <!-- %1$s is a body measurement the estimate lacks, e.g. "weight". -->
+    <string name="workoutdetail_energy_missing">Add a %1$s measurement for a sharper estimate.</string>
+    <string name="workoutdetail_energy_missing__t">Add a %1$s reading for a sharper estimate.</string>
+    <string name="workoutdetail_basis_measured">Measured by Health Connect — not an estimate.</string>
+    <!-- %1$s is a short description of how the estimate was made. -->
+    <string name="workoutdetail_basis_estimated">Estimated: %1$s. MET values come from the Compendium of Physical Activities.</string>
+    <string name="workoutdetail_basis_coarse">Rough estimate: %1$s. Sets carry no minutes, so working time is inferred from set count.</string>
+    <string name="workoutdetail_work_header">The work</string>
+    <!-- Summary of an exercise: its best set. %1$s is the set, e.g. "90 kg × 5". -->
+    <string name="workoutdetail_best">best %1$s</string>
+    <plurals name="workoutdetail_attempts_count"><item quantity="one">%d attempt</item><item quantity="other">%d attempts</item></plurals>
+    <!-- %1$d is the superset's number. -->
+    <string name="workoutdetail_superset">Superset %1$d</string>
+    <!-- A set row. %1$s is the set's figure, e.g. "90 kg × 5". -->
+    <string name="workoutdetail_set_warmup">Warm-up · %1$s</string>
+    <string name="workoutdetail_set_not_done">%1$s · not done</string>
+    <string name="workoutdetail_sets_fold">Fold the sets</string>
+    <string name="workoutdetail_sets_show">Show the sets</string>
+    <string name="workoutdetail_sets_all_done">All sets done</string>
+    <!-- Sets sheet (the "Sets for <lift>" dialog opened from a routine editor row). %1$s is the exercise name. -->
+    <string name="setssheet_title">Sets for %1$s</string>
+    <string name="setssheet_title_blank">Sets for this lift</string>
+    <string name="setssheet_load_label">Load</string>
+    <!-- Load label for a bodyweight lift: the weight added to the body. -->
+    <string name="setssheet_load_added_label">Added load</string>
+    <string name="setssheet_not_in_superset">Not inside a superset</string>
+    <!-- Shown in capitals before the suggested scheme's reason. -->
+    <string name="setssheet_suggested">Suggested</string>
+    <!-- The four scheme tiles. -->
+    <string name="setssheet_tile_straight">Straight</string>
+    <string name="setssheet_tile_top_backoff">Top + back-offs</string>
+    <string name="setssheet_tile_drops">Drops</string>
+    <string name="setssheet_tile_custom">Custom</string>
+    <!-- Card headings; shown in capitals. -->
+    <string name="setssheet_role_working">Working sets</string>
+    <string name="setssheet_role_every">Every set</string>
+    <string name="setssheet_role_drops">Drops</string>
+    <string name="setssheet_role_top">Top set</string>
+    <string name="setssheet_role_backoffs">Back-offs</string>
+    <string name="setssheet_role_types">Set types</string>
+    <string name="setssheet_sets_label">Sets</string>
+    <!-- Noun used in the stepper pads' accessibility text ("Fewer sets"). -->
+    <string name="setssheet_noun_sets">sets</string>
+    <string name="setssheet_reps_label">Reps</string>
+    <string name="setssheet_noun_reps">reps</string>
+    <string name="setssheet_reps_fewer_description">Fewer reps</string>
+    <string name="setssheet_reps_more_description">More reps</string>
+    <string name="setssheet_reps_top_lower_description">Lower reps range top</string>
+    <string name="setssheet_reps_top_higher_description">Higher reps range top</string>
+    <string name="setssheet_reps_range_add_description">Add a reps range</string>
+    <string name="setssheet_reps_range_add_button">Add range</string>
+    <!-- Drops card. -->
+    <string name="setssheet_dropsets_label">Last sets that drop</string>
+    <string name="setssheet_dropsets_fewer_description">Fewer drop sets</string>
+    <string name="setssheet_dropsets_more_description">More drop sets</string>
+    <string name="setssheet_dropcount_label">Drops after each</string>
+    <string name="setssheet_dropcount_fewer_description">Fewer drops</string>
+    <string name="setssheet_dropcount_more_description">More drops</string>
+    <string name="setssheet_droppercent_label">Each drop is lighter by</string>
+    <string name="setssheet_droppercent_fewer_description">Fewer drop percent</string>
+    <string name="setssheet_droppercent_more_description">More drop percent</string>
+    <!-- Card summary: how many drops follow how many sets. %1$d the drops, %2$d the sets. -->
+    <plurals name="setssheet_drops_after_last"><item quantity="one">%d drop after the last set</item><item quantity="other">%d drops after the last set</item></plurals>
+    <plurals name="setssheet_drops_after_each"><item quantity="one">%1$d drop after each of the last %2$d sets</item><item quantity="other">%1$d drops after each of the last %2$d sets</item></plurals>
+    <!-- Rest and warm-up ramp. The ramp label is also the switch name; the card heading is shown in capitals. -->
+    <string name="setssheet_rest_ramp_label">Rest, warm-up ramp</string>
+    <string name="setssheet_ramp_label">Warm-up ramp</string>
+    <!-- %1$s is the link's own label. -->
+    <string name="setssheet_more_hide_description">Hide %1$s</string>
+    <string name="setssheet_more_show_description">Show %1$s</string>
+    <string name="setssheet_toprest_label">Rest after the top set</string>
+    <string name="setssheet_toprest_fewer_description">Fewer top set rest</string>
+    <string name="setssheet_toprest_more_description">More top set rest</string>
+    <string name="setssheet_ramp_caption">Start the workout with lighter warm-up sets for this lift.</string>
+    <string name="setssheet_ramp_caption__t">Start the trial with lighter warm-up sets for this lift.</string>
+    <string name="setssheet_ramp_caption_bar">No load is set yet, so the ramp is the empty bar. Set a load for the full ramp.</string>
+    <string name="setssheet_ramp_caption_none">No load is set yet, so there is nothing to ramp up to. Set a load above.</string>
+    <!-- Top set card. -->
+    <string name="setssheet_topreps_fewer_description">Fewer top reps</string>
+    <string name="setssheet_topreps_more_description">More top reps</string>
+    <string name="setssheet_topreps_top_fewer_description">Fewer top reps at the top of the range</string>
+    <string name="setssheet_topreps_top_more_description">More top reps at the top of the range</string>
+    <!-- Back-off card. -->
+    <string name="setssheet_backoffsets_fewer_description">Fewer back-off sets</string>
+    <string name="setssheet_backoffsets_more_description">More back-off sets</string>
+    <!-- %1$d is the percentage the back-offs are lighter than the top set. -->
+    <string name="setssheet_backoff_lighter">%1$d%% lighter</string>
+    <string name="setssheet_backoff_fixed">Fixed</string>
+    <string name="setssheet_backoff_load_label">Back-off load</string>
+    <string name="setssheet_backoffpercent_label">Lighter than the top by</string>
+    <string name="setssheet_backoffpercent_fewer_description">Fewer back-off percent</string>
+    <string name="setssheet_backoffpercent_more_description">More back-off percent</string>
+    <string name="setssheet_backoffreps_fewer_description">Fewer back-off reps</string>
+    <string name="setssheet_backoffreps_more_description">More back-off reps</string>
+    <string name="setssheet_backoffreps_top_fewer_description">Fewer back-off reps at the top of the range</string>
+    <string name="setssheet_backoffreps_top_more_description">More back-off reps at the top of the range</string>
+    <!-- What the back-offs' load works out to. %1$s is a load with its unit, e.g. "90 kg". -->
+    <string name="setssheet_backoff_rounded_vest">%1$s, rounded to your vest blocks</string>
+    <string name="setssheet_backoff_rounded_belt">%1$s, rounded to your belt plates</string>
+    <string name="setssheet_backoff_rounded_plates">%1$s, rounded to your plates</string>
+    <string name="setssheet_backoff_bodyweight">bodyweight, two reps fewer than the top set</string>
+    <string name="setssheet_backoff_need_top">set the top load first</string>
+    <!-- Reps-left chips (reps in reserve) and the RPE reading of them. -->
+    <string name="setssheet_effort_reps_left_label">Reps left</string>
+    <string name="setssheet_effort_rpe_label">RPE</string>
+    <!-- Accessibility text of the chip row. %1$s is the range as spoken, e.g. "0 to 1". -->
+    <string name="setssheet_effort_reps_left_description">Reps left, %1$s</string>
+    <string name="setssheet_effort_rpe_description">RPE, %1$s</string>
+    <string name="setssheet_effort_in_range">In the range</string>
+    <string name="setssheet_effort_out_of_range">Not in the range</string>
+    <!-- %1$s is the range a tap would choose, as spoken, e.g. "4 or more". -->
+    <string name="setssheet_effort_stop_description">Stop with %1$s</string>
+    <!-- The line under the chips. -->
+    <string name="setssheet_line_reps_any">Stop with any number of reps left</string>
+    <string name="setssheet_line_reps_or_more">Stop with %1$d or more reps left</string>
+    <plurals name="setssheet_line_reps_left"><item quantity="one">Stop with %d rep left</item><item quantity="other">Stop with %d reps left</item></plurals>
+    <string name="setssheet_line_reps_range">Stop with %1$d–%2$d reps left</string>
+    <string name="setssheet_line_rpe_any">Stop at any RPE</string>
+    <string name="setssheet_line_rpe_or_lower">Stop around RPE %1$d or lower</string>
+    <string name="setssheet_line_rpe_one">Stop around RPE %1$d</string>
+    <string name="setssheet_line_rpe_range">Stop around RPE %1$d–%2$d</string>
+    <!-- The range as a screen reader says it. -->
+    <string name="setssheet_spoken_reps_any">any number</string>
+    <string name="setssheet_spoken_reps_or_more">%1$d or more</string>
+    <string name="setssheet_spoken_reps_range">%1$d to %2$d</string>
+    <string name="setssheet_spoken_rpe_any">any RPE</string>
+    <string name="setssheet_spoken_rpe_or_lower">RPE %1$d or lower</string>
+    <string name="setssheet_spoken_rpe_one">RPE %1$d</string>
+    <string name="setssheet_spoken_rpe_range">RPE %1$d to %2$d</string>
+    <!-- Range-top stepper pads in the routine editor's timed rows. %1$s is the unit noun, e.g. "seconds". -->
+    <string name="setssheet_repsup_lower_description">Lower %1$s range top</string>
+    <string name="setssheet_repsup_higher_description">Higher %1$s range top</string>
+    <!-- Custom scheme rows. %1$d is the set's place; %2$s the set type's name. -->
+    <string name="setssheet_custom_row_description">Set %1$d, %2$s</string>
+    <string name="setssheet_custom_change_description">Change set %1$d type</string>
+    <string name="setssheet_custom_set">Set %1$d</string>
+    <string name="setssheet_custom_add_button">Add a set</string>
+    <string name="setssheet_custom_remove_button">Remove last set</string>
+    <!-- "You'll do" drawing. Role words over the bars; shown in capitals. -->
+    <string name="setssheet_word_top">Top</string>
+    <string name="setssheet_word_back">Back</string>
+    <string name="setssheet_word_set">Set</string>
+    <string name="setssheet_word_drop">Drop</string>
+    <!-- Heading of the drawing; shown in capitals. -->
+    <string name="setssheet_youll_do">You\'ll do</string>
+    <!-- Estimated clock time. %1$d is minutes. -->
+    <string name="setssheet_youll_minutes">~%1$d min</string>
+    <string name="setssheet_youll_ramp_first">Warm-up ramp first</string>
+    <!-- One line per run of alike sets: %1$s the set type's name, %2$d the number of sets in the run. -->
+    <plurals name="setssheet_run_label"><item quantity="one">%1$s, %2$d set</item><item quantity="other">%1$s, %2$d sets</item></plurals>
+    <!-- Rite detail: the chip that opens the editor. -->
+    <string name="ritedetail_edit_button">Edit</string>
+    <!-- Rite detail: accessibility label of the Edit chip. %1$s is the routine's name. -->
+    <string name="ritedetail_edit_description">Edit %1$s</string>
+    <string name="ritedetail_warmup_header">WARM-UP</string>
+    <string name="ritedetail_movements_header">MOVEMENTS</string>
+    <string name="ritedetail_lands_header">WHERE IT LANDS</string>
+    <!-- Rite detail: chip opening the sets-per-muscle sheet. -->
+    <string name="ritedetail_lands_button">Sets</string>
+    <string name="ritedetail_lands_description">Sets per muscle</string>
+    <!-- Rite detail: pinned button resuming a session already under way. %1$s is the routine's name. -->
+    <string name="ritedetail_continue_button">Continue %1$s</string>
+    <!-- Rite detail: pinned button starting a session. %1$s is the routine's name. -->
+    <string name="ritedetail_begin_button">Begin %1$s</string>
+    <!-- Share routine code: label of the clipboard item (not shown in the app). -->
+    <string name="routineshare_clip_label">Ironvellum weekly plan</string>
+    <string name="routineshare_clip_label__t">Ironvellum cycle</string>
+    <!-- Share routine code: toast after the code is copied. -->
+    <string name="routineshare_copied">Weekly plan code copied</string>
+    <string name="routineshare_copied__t">Cycle code copied</string>
+    <!-- Share routine code: text sent to another app. %1$s is the code itself and goes on its own line; the path names Train, New, Import code. -->
+    <string name="routineshare_message">Ironvellum weekly plan — paste into Train › New routine › Import code\n%1$s</string>
+    <string name="routineshare_message__t">Ironvellum cycle — paste into Train › New Rite › Import code\n%1$s</string>
+    <!-- Share routine code: title of the system share chooser. -->
+    <string name="routineshare_share_title">Share weekly plan</string>
+    <string name="routineshare_share_title__t">Share cycle</string>
+    <!-- Import summary under the routines header. %1$s lists exercise names, comma separated. -->
+    <string name="routineshare_skipped">Skipped, not in your exercise list: %1$s.</string>
+    <string name="routineshare_nothing_imported">Nothing imported — none of those exercises are in your exercise list.</string>
+    <plurals name="routineshare_replaced"><item quantity="one">Weekly plan replaced with %d routine.</item><item quantity="other">Weekly plan replaced with %d routines.</item></plurals>
+    <plurals name="routineshare_replaced__t"><item quantity="one">Cycle replaced with %d rite.</item><item quantity="other">Cycle replaced with %d rites.</item></plurals>
+    <plurals name="routineshare_added"><item quantity="one">Added %d routine.</item><item quantity="other">Added %d routines.</item></plurals>
+    <plurals name="routineshare_added__t"><item quantity="one">Added %d rite.</item><item quantity="other">Added %d rites.</item></plurals>
+    <!-- Import dialog: one-line preview of a decoded routine. %1$s is its name, %2$d the number of exercises. -->
+    <plurals name="routineshare_preview_line"><item quantity="one">%1$s · %2$d exercise</item><item quantity="other">%1$s · %2$d exercises</item></plurals>
+    <string name="routineshare_import_title">Import code</string>
+    <string name="routineshare_code_label">Weekly plan code</string>
+    <string name="routineshare_code_label__t">Cycle code</string>
+    <string name="routineshare_add_button">Add as extra routines</string>
+    <string name="routineshare_add_button__t">Add as extra rites</string>
+    <string name="routineshare_replace_my_button">Replace my weekly plan</string>
+    <string name="routineshare_replace_my_button__t">Replace my cycle</string>
+    <string name="routineshare_replace_title">Replace my weekly plan?</string>
+    <string name="routineshare_replace_title__t">Replace my cycle?</string>
+    <!-- Replace confirm. %1$d is how many routines are deleted, %2$d how many the code adds. -->
+    <plurals name="routineshare_replace_body"><item quantity="one">This deletes your %1$d routine and your weekly plan, then adds the %2$d from this code. Finished workouts stay in your history.</item><item quantity="other">This deletes all %1$d of your routines and your weekly plan, then adds the %2$d from this code. Finished workouts stay in your history.</item></plurals>
+    <plurals name="routineshare_replace_body__t"><item quantity="one">This deletes your %1$d rite and your cycle, then adds the %2$d from this code. Sealed trials stay in the Chronicle.</item><item quantity="other">This deletes all %1$d of your rites and your cycle, then adds the %2$d from this code. Sealed trials stay in the Chronicle.</item></plurals>
+    <string name="routineshare_replace_button">Replace</string>
+    <!-- Exercise explorer -->
+    <string name="explorer_title">EXERCISES</string>
+    <string name="explorer_switch_button">Switch</string>
+    <string name="explorer_weighted">weighted</string>
+    <string name="explorer_bodyweight">bodyweight</string>
+    <!-- Exercise explorer: one part of the caption under the name (muscle group, weighted, custom, skill tier). %1$s is the tier, such as a Roman numeral or a rank name. -->
+    <string name="explorer_skill_tier">skill tier %1$s</string>
+    <string name="explorer_skill_tier__t">technique tier %1$s</string>
+    <string name="explorer_empty">Your history holds no sets for this yet. Finish a workout with it and they appear.</string>
+    <string name="explorer_empty__t">The Chronicle holds no sets for this yet. Seal a trial with it and they appear.</string>
+    <string name="explorer_recent_title">Recent sets</string>
+    <!-- Exercise explorer: the variation chip when the movement was logged without a variation. -->
+    <string name="explorer_variation_plain">Plain</string>
+    <!-- Exercise explorer: the selected variation chip. %1$s is the variation. -->
+    <string name="explorer_variation_selected">● %1$s</string>
+    <!-- Accessibility: action label of a variation chip. %1$s is the variation. -->
+    <string name="explorer_variation_show">Show %1$s</string>
+    <!-- Accessibility: state of the selected variation chip. %1$s is the variation. -->
+    <string name="explorer_variation_shown">%1$s, shown</string>
+    <!-- Exercise explorer: label over the best set. %1$s is the variation in capitals. -->
+    <string name="explorer_peak_variation">PR · %1$s</string>
+    <string name="explorer_peak_variation__t">PEAK · %1$s</string>
+    <!-- Exercise explorer: next to the best set. %1$s is the estimated one-rep max, a number. -->
+    <string name="explorer_peak_e1rm">est. 1RM %1$s</string>
+    <!-- Exercise explorer: next to the best set. %1$s is the score, a number. -->
+    <string name="explorer_peak_score">score %1$s</string>
+    <string name="explorer_heaviest_label">Heaviest</string>
+    <string name="explorer_time_held_label">Time held</string>
+    <!-- Exercise explorer: total time held. %1$s is a number of seconds. -->
+    <string name="explorer_seconds_value">%1$s s</string>
+    <string name="explorer_volume_label">Volume</string>
+    <string name="explorer_volume_all_time">All time</string>
+    <string name="explorer_frequency_label">Frequency</string>
+    <!-- Exercise explorer: how often the movement is trained. %1$s is a number with one decimal. -->
+    <string name="explorer_frequency_value">%1$s a week</string>
+    <string name="explorer_chart_title">Strength per workout</string>
+    <string name="explorer_chart_title__t">Strength per trial</string>
+    <string name="explorer_chart_e1rm">Estimated 1RM</string>
+    <string name="explorer_chart_best_score">Best set score</string>
+    <plurals name="explorer_chart_e1rm_count"><item quantity="one">Estimated 1RM, %d workout</item><item quantity="other">Estimated 1RM, %d workouts</item></plurals>
+    <plurals name="explorer_chart_e1rm_count__t"><item quantity="one">Estimated 1RM, %d trial</item><item quantity="other">Estimated 1RM, %d trials</item></plurals>
+    <plurals name="explorer_chart_score_count"><item quantity="one">Best set score, %d workout</item><item quantity="other">Best set score, %d workouts</item></plurals>
+    <plurals name="explorer_chart_score_count__t"><item quantity="one">Best set score, %d trial</item><item quantity="other">Best set score, %d trials</item></plurals>
+    <string name="explorer_chart_one">One workout written — a trend needs at least two.</string>
+    <string name="explorer_chart_one__t">One trial written — a trend needs at least two.</string>
+    <!-- Exercise explorer: chart tooltip. %1$s is a score with one decimal. -->
+    <string name="explorer_chart_score_value">%1$s score</string>
+    <string name="explorer_setrecords_title">PRs by set</string>
+    <string name="explorer_setrecords_title__t">Peaks by set</string>
+    <string name="explorer_setrecords_hold">Best hold for each set number</string>
+    <string name="explorer_setrecords_weight">Best weight × reps for each set number</string>
+    <!-- Exercise explorer: a set position. %1$d is the number, starting at 1. -->
+    <string name="explorer_setrecords_row">Set %1$d</string>
+    <string name="explorer_full_history">Full history</string>
+    <string name="explorer_full_history__t">Full chronicle</string>
+    <!-- Date patterns (java.time DateTimeFormatter letters, not text): day and short month; with year; with short weekday. -->
+    <string name="explorer_date_day_month" translatable="false">d MMM</string>
+    <string name="explorer_date_day_month_year" translatable="false">d MMM yyyy</string>
+    <string name="explorer_date_weekday_day_month" translatable="false">EEE d MMM</string>
+    <!-- Train tab -->
+    <string name="presets_title">TRAIN</string>
+    <string name="presets_import_failed">Import failed — nothing was changed.</string>
+    <!-- Accessibility: Begin chip next to the Train title. -->
+    <string name="presets_begin_open_description">Begin an empty workout</string>
+    <string name="presets_begin_open_description__t">Begin an open trial</string>
+    <string name="presets_cycle_header">YOUR WEEKLY PLAN</string>
+    <string name="presets_cycle_header__t">YOUR CYCLE</string>
+    <string name="presets_new_button">New</string>
+    <!-- Accessibility: the New chip beside the weekly plan header. -->
+    <string name="presets_new_description">New routine</string>
+    <string name="presets_new_description__t">New rite</string>
+    <!-- Accessibility: action label of a routine row, or of a finished workout row. %1$s is its name. -->
+    <string name="presets_open_description">Open %1$s</string>
+    <!-- A check mark on a routine finished this week. -->
+    <string name="presets_sealed_mark" translatable="false">✓</string>
+    <string name="presets_row_under_way">Under way</string>
+    <string name="presets_row_today">Today</string>
+    <string name="presets_coverage_label">Weekly coverage</string>
+    <string name="presets_no_cycle_title">No weekly plan yet</string>
+    <string name="presets_no_cycle_title__t">No cycle yet</string>
+    <string name="presets_exercises_label">Exercises</string>
+    <string name="presets_recent_header">RECENT WORKOUTS</string>
+    <string name="presets_recent_header__t">RECENT TRIALS</string>
+    <!-- The All chip beside the recent workouts header; the next string is its accessibility action label. -->
+    <string name="presets_recent_all_button">All</string>
+    <string name="presets_recent_open_action">Open</string>
+    <!-- New chooser dialog: each option is a title and one plain line under it. -->
+    <string name="presets_new_week_title">Build a weekly plan</string>
+    <string name="presets_new_week_title__t">Forge a Cycle</string>
+    <string name="presets_new_week_subtitle">A full week built from your answers.</string>
+    <string name="presets_new_session_title">Build a routine</string>
+    <string name="presets_new_session_title__t">Forge a Rite</string>
+    <string name="presets_new_session_subtitle">One routine, built for today.</string>
+    <string name="presets_new_session_subtitle__t">One rite, built for today.</string>
+    <string name="presets_new_template_title">Start from a template</string>
+    <string name="presets_new_template_title__t">Start from a pattern</string>
+    <string name="presets_new_template_subtitle">A hand-written weekly plan to adjust.</string>
+    <string name="presets_new_template_subtitle__t">A hand-written weekly cycle to adjust.</string>
+    <string name="presets_new_improve_title">Improve a routine</string>
+    <string name="presets_new_improve_title__t">Temper a Rite</string>
+    <string name="presets_new_improve_subtitle">Improve one you already have.</string>
+    <string name="presets_new_blank_title">Blank routine</string>
+    <string name="presets_new_blank_title__t">Blank Rite</string>
+    <string name="presets_new_blank_subtitle">Pick every exercise yourself.</string>
+    <string name="presets_new_import_subtitle">Paste a weekly plan someone shared with you.</string>
+    <string name="presets_new_import_subtitle__t">Paste a cycle someone shared with you.</string>
+    <!-- Date patterns (java.time DateTimeFormatter letters, not text): short weekday; day of the month. -->
+    <string name="presets_date_weekday" translatable="false">EEE</string>
+    <string name="presets_date_day" translatable="false">d</string>
+    <!-- Recent workout row: experience points gained. %1$d is a number. -->
+    <string name="presets_trial_xp">+%1$d XP</string>
+    <!-- Recent workout row: strength score. %1$d is a number. -->
+    <string name="presets_trial_strength">STR %1$d</string>
+    <string name="presets_live_header">WORKOUT IN PROGRESS</string>
+    <string name="presets_live_header__t">TRIAL IN PROGRESS</string>
+    <string name="presets_no_cycle_body">Build a week, start from a template, or import one.</string>
+    <string name="presets_no_cycle_body__t">Forge a week, start from a pattern, or import one.</string>
+    <string name="presets_no_cycle_button">Build a weekly plan</string>
+    <string name="presets_no_cycle_button__t">Forge a cycle</string>
+    <!-- Routine editor -->
+    <string name="preseteditor_no_day">No day</string>
+    <string name="preseteditor_day_label">Day</string>
+    <string name="preseteditor_load_label">Load</string>
+    <!-- Accessibility: stepper buttons that lower or raise a load. -->
+    <string name="preseteditor_load_less">Lighter load</string>
+    <string name="preseteditor_load_more">Heavier load</string>
+    <string name="preseteditor_new_title">New routine</string>
+    <string name="preseteditor_new_title__t">New rite</string>
+    <string name="preseteditor_edit_title">Edit routine</string>
+    <string name="preseteditor_edit_title__t">Edit rite</string>
+    <string name="preseteditor_name_label">Routine name</string>
+    <string name="preseteditor_name_label__t">Rite name</string>
+    <string name="preseteditor_note_label">Note</string>
+    <string name="preseteditor_exercises_header">Exercises</string>
+    <string name="preseteditor_add_exercise">Add exercise</string>
+    <string name="preseteditor_warmups_only_hint">Add an exercise that is not a warm-up: a routine of warm-ups alone has nothing to log.</string>
+    <string name="preseteditor_warmups_only_hint__t">Add an exercise that is not a warm-up: a rite of warm-ups alone has nothing to log.</string>
+    <!-- Routine editor: why Save is off. %1$s is the heaviest load allowed, a number; %2$s is the unit (kg or lb). -->
+    <string name="preseteditor_fill_hint">Fill in the marked targets to save. Loads top out at %1$s %2$s.</string>
+    <string name="preseteditor_delete_button">Delete routine</string>
+    <string name="preseteditor_delete_button__t">Delete rite</string>
+    <!-- Routine editor: undo bar after removing an exercise. %1$s is the exercise name. -->
+    <string name="preseteditor_removed_message">%1$s removed</string>
+    <!-- Routine editor: name shown for an exercise that has none yet. -->
+    <string name="preseteditor_exercise_fallback">Exercise</string>
+    <!-- Routine editor: name given to an unnamed exercise in the superset list. %1$d is its position, starting at 1. -->
+    <string name="preseteditor_exercise_numbered">Exercise %1$d</string>
+    <string name="preseteditor_save_button">Save routine</string>
+    <string name="preseteditor_save_button__t">Save rite</string>
+    <string name="preseteditor_superset_with_title">Superset with</string>
+    <string name="preseteditor_superset_none">None</string>
+    <string name="preseteditor_superset_add_hint">Add another exercise to link it.</string>
+    <string name="preseteditor_close_button">Close</string>
+    <string name="preseteditor_discard_title">Discard your changes?</string>
+    <string name="preseteditor_discard_body">Unsaved edits to this routine will be lost.</string>
+    <string name="preseteditor_discard_body__t">Unsaved edits to this rite will be lost.</string>
+    <string name="preseteditor_discard_button">Discard</string>
+    <string name="preseteditor_keep_editing_button">Keep editing</string>
+    <string name="preseteditor_delete_title">Delete routine?</string>
+    <string name="preseteditor_delete_title__t">Delete rite?</string>
+    <!-- Routine editor: delete confirm. %1$s is the routine's name. -->
+    <string name="preseteditor_delete_body">%1$s and its exercises will be removed. Workouts you have already finished stay in your history.</string>
+    <string name="preseteditor_delete_body__t">%1$s and its exercises will be removed. Trials you have already sealed stay in your history.</string>
+    <!-- Routine editor: delete confirm for a routine with no name yet. -->
+    <string name="preseteditor_delete_body_unnamed">This routine and its exercises will be removed. Workouts you have already finished stay in your history.</string>
+    <string name="preseteditor_delete_body_unnamed__t">This rite and its exercises will be removed. Trials you have already sealed stay in your history.</string>
+    <string name="preseteditor_keep_button">Keep routine</string>
+    <string name="preseteditor_keep_button__t">Keep rite</string>
+    <!-- Routine editor: name shown for an exercise that has none yet. -->
+    <string name="preseteditor_pick_exercise">Pick exercise</string>
+    <!-- Accessibility: description of the bars that draw an exercise's set shape. -->
+    <string name="preseteditor_set_shape_description">Set shape</string>
+    <!-- Accessibility: action label of a folded exercise row. %1$s is the exercise name. -->
+    <string name="preseteditor_entry_edit_description">Edit %1$s</string>
+    <string name="preseteditor_warmup_label">Warm-up</string>
+    <!-- Routine editor: folded row, marks an exercise in a superset. %1$d is the superset's number. -->
+    <string name="preseteditor_superset_number">Superset %1$d</string>
+    <!-- Accessibility: action label that opens the sets sheet. %1$s is the exercise name. -->
+    <string name="preseteditor_sets_for_description">Sets for %1$s</string>
+    <!-- Accessibility: action label that folds an open exercise card. %1$s is the exercise name. -->
+    <string name="preseteditor_fold_description">Fold %1$s</string>
+    <string name="preseteditor_change_exercise">Change exercise</string>
+    <string name="preseteditor_remove_exercise">Remove exercise</string>
+    <string name="preseteditor_set_scheme_label">Set scheme</string>
+    <string name="preseteditor_set_scheme_straight">Straight</string>
+    <string name="preseteditor_sets_label">Sets</string>
+    <!-- Routine editor: unit written after a stepper's number. -->
+    <string name="preseteditor_unit_sets">sets</string>
+    <string name="preseteditor_reps_label">Reps</string>
+    <string name="preseteditor_unit_reps">reps</string>
+    <string name="preseteditor_seconds_from_label">Seconds, from</string>
+    <string name="preseteditor_seconds_to_label">Seconds, up to</string>
+    <string name="preseteditor_unit_seconds">seconds</string>
+    <string name="preseteditor_minutes_label">Minutes</string>
+    <string name="preseteditor_unit_minutes">minutes</string>
+    <string name="preseteditor_attempts_label">Attempts</string>
+    <string name="preseteditor_unit_attempts">attempts</string>
+    <string name="preseteditor_distance_label">Distance</string>
+    <string name="preseteditor_unit_km">km</string>
+    <!-- Accessibility: stepper buttons that shorten or lengthen a distance. -->
+    <string name="preseteditor_distance_less">Shorter distance</string>
+    <string name="preseteditor_distance_more">Longer distance</string>
+    <string name="preseteditor_norest_label">No rest timer</string>
+    <!-- Routine editor: %1$s is the exercise name, or "this movement" when it has none. -->
+    <string name="preseteditor_norest_caption">Ticking a set of %1$s starts no rest, in any routine.</string>
+    <string name="preseteditor_norest_caption__t">Ticking a set of %1$s starts no rest, in any rite.</string>
+    <string name="preseteditor_this_movement">this movement</string>
+    <string name="preseteditor_modifiers_label">Modifiers</string>
+    <string name="preseteditor_weighted_by_load">weighted · set by load</string>
+    <string name="preseteditor_warmup_caption">Done before the first working set and ticked off in the workout. It earns no XP and counts toward nothing.</string>
+    <string name="preseteditor_warmup_caption__t">Done before the first working set and ticked off in the trial. It earns no XP and counts toward nothing.</string>
+    <string name="preseteditor_superset_label">Superset</string>
+    <!-- Accessibility: action label of the superset row. %1$s is the exercise name. -->
+    <string name="preseteditor_superset_choose_description">Choose what %1$s is a superset with</string>
+    <!-- Accessibility: reorder grip. %1$s is the exercise name. -->
+    <string name="preseteditor_drag_description">Drag to reorder %1$s</string>
+    <string name="preseteditor_move_up">Move up</string>
+    <string name="preseteditor_move_down">Move down</string>
+    <!-- Forge a cycle and the program builder: shared wording. -->
+    <string name="forge_armoury_required">Pick your equipment to continue. Nothing means bodyweight only.</string>
+    <string name="forge_armoury_required__t">Pick your armoury to continue. Nothing means bodyweight only.</string>
+    <string name="forge_swap_movement">Swap movement</string>
+    <string name="forge_add_movement">Add movement</string>
+    <string name="forge_more_options">More options</string>
+    <string name="forge_replace_title">Replace your weekly plan?</string>
+    <string name="forge_replace_title__t">Replace your cycle?</string>
+    <!-- Replace dialog body. %d is how many saved routines are deleted. -->
+    <plurals name="forge_replace_body">
+        <item quantity="one">Your %d current routine will be deleted and the built weekly plan takes its place. Your history is untouched.</item>
+        <item quantity="other">Your %d current routines will be deleted and the built weekly plan takes their place. Your history is untouched.</item>
+    </plurals>
+    <plurals name="forge_replace_body__t">
+        <item quantity="one">Your %d current rite will be deleted and the forged cycle takes its place. Your Chronicle is untouched.</item>
+        <item quantity="other">Your %d current rites will be deleted and the forged cycle takes their place. Your Chronicle is untouched.</item>
+    </plurals>
+    <string name="forge_replace_button">Replace</string>
+    <string name="forge_replace_keep">Keep mine</string>
+    <string name="forge_replace_link">Replace my weekly plan</string>
+    <string name="forge_replace_link__t">Replace my cycle</string>
+    <string name="forge_next_kit">Next: kit</string>
+    <string name="forge_next_focus">Next: focus</string>
+    <!-- Dock note and tab description: %1$d is the step, %2$d the number of steps. -->
+    <string name="forge_step_of">Step %1$d of %2$d</string>
+    <string name="forge_step_of_done">Step %1$d of %2$d, done</string>
+    <string name="forge_change_numbers_note">You can change every number on the next screen.</string>
+    <string name="forge_goal_strength_caption">Heavier loads on the main lifts. Hard sets are the dose; reps just guide the weight.</string>
+    <string name="forge_goal_muscle_caption">Higher volume, moderate load. Hard sets are the dose; reps just guide the weight.</string>
+    <string name="forge_goal_skill_caption">Handstands, levers, the planche. Practice over pump.</string>
+    <string name="forge_goal_general_caption">A balanced mix: a bit stronger, a bit bigger, nothing neglected.</string>
+    <string name="forge_goal_heading">What you are chasing</string>
+    <string name="forge_goal_label">Goal</string>
+    <string name="forge_split_heading">How you divide the week</string>
+    <string name="forge_split_label">Week split</string>
+    <string name="forge_days_label">Days per week</string>
+    <string name="forge_armoury_heading">Your equipment</string>
+    <string name="forge_armoury_heading__t">Your armoury</string>
+    <string name="forge_armoury_choose">Choose your equipment</string>
+    <string name="forge_armoury_choose__t">Choose your armoury</string>
+    <string name="forge_rite_length_label">Routine length</string>
+    <string name="forge_rite_length_label__t">Rite length</string>
+    <!-- Kit step, More options row value. %1$s is the starting-sets level (Low, Standard, High), %2$d the most exercises in one routine. -->
+    <string name="forge_more_value">%1$s sets · %2$d per routine</string>
+    <string name="forge_more_value__t">%1$s sets · %2$d per rite</string>
+    <string name="forge_more_value_compound">Compound · %1$s sets · %2$d per routine</string>
+    <string name="forge_more_value_compound__t">Compound · %1$s sets · %2$d per rite</string>
+    <string name="forge_more_description">More options: starting sets, compound only, exercises per routine</string>
+    <string name="forge_more_description__t">More options: starting sets, compound only, exercises per rite</string>
+    <!-- Focus step. %d is how many muscle areas are picked. -->
+    <string name="forge_priorities_label">Priorities · up to 3 · %d picked</string>
+    <string name="forge_priorities_caption">Priorities get an extra hard set or two each week. Skip this and every muscle is treated the same.</string>
+    <string name="forge_starting_sets_label">Starting sets</string>
+    <string name="forge_compound_label">Compound &amp; skill only</string>
+    <string name="forge_compound_label__t">Compound &amp; technique only</string>
+    <string name="forge_compound_on_description">Compound &amp; skill only, on</string>
+    <string name="forge_compound_on_description__t">Compound &amp; technique only, on</string>
+    <string name="forge_compound_off_description">Compound &amp; skill only, off</string>
+    <string name="forge_compound_off_description__t">Compound &amp; technique only, off</string>
+    <string name="forge_compound_caption">No curls, raises, calf, bridge or machine isolation work.</string>
+    <string name="forge_max_exercises_label">Max exercises per routine</string>
+    <string name="forge_max_exercises_label__t">Max exercises per rite</string>
+    <!-- Stepper pad descriptions. %d is the current maximum. -->
+    <string name="forge_max_fewer_description">Fewer exercises per routine, currently %d</string>
+    <string name="forge_max_fewer_description__t">Fewer exercises per rite, currently %d</string>
+    <string name="forge_max_more_description">More exercises per routine, currently %d</string>
+    <string name="forge_max_more_description__t">More exercises per rite, currently %d</string>
+    <string name="forge_proposed_title">Proposed weekly plan</string>
+    <string name="forge_proposed_title__t">Proposed cycle</string>
+    <string name="forge_plan_intro">Sets are a starting point. Each is a hard set, taken near failure. Change any number.</string>
+    <!-- %d is how many saved routines the coverage counts. -->
+    <plurals name="forge_coverage_includes">
+        <item quantity="one">Coverage includes your %d existing routine.</item>
+        <item quantity="other">Coverage includes your %d existing routines.</item>
+    </plurals>
+    <plurals name="forge_coverage_includes__t">
+        <item quantity="one">Coverage includes your %d existing rite.</item>
+        <item quantity="other">Coverage includes your %d existing rites.</item>
+    </plurals>
+    <string name="forge_failed_title">Plan builder failed</string>
+    <string name="forge_failed_title__t">The Forge failed</string>
+    <!-- Error line kept in the view model. %1$s is the failed title, %2$s the reason. -->
+    <string name="forge_failed_message">%1$s: %2$s</string>
+    <string name="forge_consulting">Consulting the catalogue…</string>
+    <string name="forge_nothing_yet">Nothing to show yet.</string>
+    <string name="forge_apply_note">A hint on coverage never blocks this.</string>
+    <!-- Shown while the plan is being saved. %d is how many routines are written. -->
+    <plurals name="forge_writing">
+        <item quantity="one">Writing %d routine to your weekly plan. Edits are paused until this finishes.</item>
+        <item quantity="other">Writing %d routines to your weekly plan. Edits are paused until this finishes.</item>
+    </plurals>
+    <plurals name="forge_writing__t">
+        <item quantity="one">Writing %d rite to your cycle. Edits are paused until this finishes.</item>
+        <item quantity="other">Writing %d rites to your cycle. Edits are paused until this finishes.</item>
+    </plurals>
+    <string name="forge_movements_heading">Movements</string>
+    <!-- Accessibility label of the add row. %1$s is the weekday. -->
+    <string name="forge_add_movement_to">Add a movement to %1$s</string>
+    <string name="forge_back_button">BACK</string>
+    <!-- %1$s is the reason the plan builder gave. -->
+    <string name="forge_failed_body">%1$s The old proposal was cleared so you cannot apply it by mistake. Nothing was written.</string>
+    <string name="forge_try_again">Try again</string>
+    <string name="forge_previous_description">Previous proposal, cleared</string>
+    <string name="forge_previous_caption">Cleared. Previous proposal, greyed out:</string>
+    <string name="forge_conflict_title">Days already taken</string>
+    <!-- %1$s is a list of weekdays, such as "Mon, Wed and Fri". -->
+    <string name="forge_conflict_taken">Your weekly plan already has routines on %1$s.</string>
+    <string name="forge_conflict_taken__t">Your cycle already has rites on %1$s.</string>
+    <!-- %1$s is the count as a word: One, Two, Three... -->
+    <plurals name="forge_conflict_clash">
+        <item quantity="one">%1$s of the new days clashes.</item>
+        <item quantity="other">%1$s of the new days clash.</item>
+    </plurals>
+    <!-- One row of the sheet. %1$s is the saved routine that holds the day, %2$s the weekday it would move to. -->
+    <string name="forge_conflict_taken_by">Taken by %1$s</string>
+    <string name="forge_conflict_taken_moved">Taken by %1$s → %2$s</string>
+    <string name="forge_conflict_fit_note">Fit around my days moves the clashing days to the next free one. Nothing is deleted.</string>
+    <string name="forge_conflict_nofit">Your weekly plan leaves too few free days for this week, so it cannot fit around them.</string>
+    <string name="forge_conflict_nofit__t">Your cycle leaves too few free days for this week, so it cannot fit around them.</string>
+    <!-- %d is how many saved routines the replacement deletes. -->
+    <plurals name="forge_conflict_delete">
+        <item quantity="one">Deletes your %d current routine. Your history is kept.</item>
+        <item quantity="other">Deletes your %d current routines. Your history is kept.</item>
+    </plurals>
+    <plurals name="forge_conflict_delete__t">
+        <item quantity="one">Deletes your %d current rite. Your Chronicle is kept.</item>
+        <item quantity="other">Deletes your %d current rites. Your Chronicle is kept.</item>
+    </plurals>
+    <string name="forge_conflict_fit_button">Fit around my days</string>
+    <string name="forge_discard_title">Discard your changes?</string>
+    <string name="forge_discard_body">Your answers and any edits to the proposal will be lost.</string>
+    <string name="forge_discard_answers">Your answers will go back to how they were</string>
+    <string name="forge_discard_button">Discard</string>
+    <string name="forge_discard_keep">Keep editing</string>
+    <!-- Header subtitle. %1$d is the days per week, %2$s the split name. -->
+    <plurals name="forge_cycle_subtitle">
+        <item quantity="one">%1$d day a week · %2$s</item>
+        <item quantity="other">%1$d days a week · %2$s</item>
+    </plurals>
+    <!-- Discard sheet: one line per kind of edit. %d is the count. -->
+    <plurals name="forge_edits_swapped">
+        <item quantity="one">%d movement swapped</item>
+        <item quantity="other">%d movements swapped</item>
+    </plurals>
+    <plurals name="forge_edits_sets">
+        <item quantity="one">%d set count changed</item>
+        <item quantity="other">%d set counts changed</item>
+    </plurals>
+    <plurals name="forge_edits_loads">
+        <item quantity="one">%d load changed</item>
+        <item quantity="other">%d loads changed</item>
+    </plurals>
+    <plurals name="forge_edits_removed">
+        <item quantity="one">%d movement removed</item>
+        <item quantity="other">%d movements removed</item>
+    </plurals>
+    <plurals name="forge_edits_added">
+        <item quantity="one">%d movement added</item>
+        <item quantity="other">%d movements added</item>
+    </plurals>
+
+    <!-- Program builder (single routine, template and improve pages). -->
+    <!-- Error line. %1$s is the reason. -->
+    <string name="builder_error_history">Could not read your history: %1$s</string>
+    <string name="builder_error_history__t">Could not read your Chronicle: %1$s</string>
+    <string name="builder_error_isolation_only">Only isolation work would fill the gaps. Turn off Compound &amp; skill only, under More options, to add it.</string>
+    <string name="builder_error_isolation_only__t">Only isolation work would fill the gaps. Turn off Compound &amp; technique only, under More options, to add it.</string>
+    <string name="builder_error_week_covered">Your weekly plan already reaches the target on every muscle. Pick Full body, Upper or Lower for an extra routine.</string>
+    <string name="builder_error_week_covered__t">Your cycle already reaches the target on every muscle. Pick Full body, Upper or Lower for an extra rite.</string>
+    <string name="builder_error_cannot_fill">The catalogue cannot fill this routine with your equipment.</string>
+    <string name="builder_error_cannot_fill__t">The catalogue cannot fill this rite with your armoury.</string>
+    <string name="builder_progression_strength">Strength goal: load goes up when you hit your reps.</string>
+    <string name="builder_progression_muscle">Muscle goal: reps go up first, then load.</string>
+    <!-- Save failed. %1$s is what could not be done (for example "Could not replace the weekly plan"), %2$s the reason. -->
+    <string name="builder_save_failed">%1$s: %2$s. Nothing was written.</string>
+    <string name="builder_saved_not_remembered">Saved, but your answers could not be remembered: %1$s</string>
+    <!-- %1$d is the free days left in the saved plan, %2$d the days the new week needs. -->
+    <plurals name="builder_no_room">
+        <item quantity="one">Your weekly plan leaves %1$d free day and this week needs %2$d. Free some days, or replace your weekly plan instead.</item>
+        <item quantity="other">Your weekly plan leaves %1$d free days and this week needs %2$d. Free some days, or replace your weekly plan instead.</item>
+    </plurals>
+    <plurals name="builder_no_room__t">
+        <item quantity="one">Your cycle leaves %1$d free day and this week needs %2$d. Free some days, or replace your cycle instead.</item>
+        <item quantity="other">Your cycle leaves %1$d free days and this week needs %2$d. Free some days, or replace your cycle instead.</item>
+    </plurals>
+    <string name="builder_fail_add">Could not add the routines</string>
+    <string name="builder_fail_add__t">Could not add the rites</string>
+    <string name="builder_fail_replace">Could not replace the weekly plan</string>
+    <string name="builder_fail_replace__t">Could not replace the cycle</string>
+    <string name="builder_fail_save">Could not save the routine</string>
+    <string name="builder_fail_save__t">Could not save the rite</string>
+    <string name="builder_preview_stale">That preview was for another routine. Wait for this one to load.</string>
+    <string name="builder_preview_stale__t">That preview was for another rite. Wait for this one to load.</string>
+    <string name="builder_fail_apply">Could not apply the changes</string>
+    <string name="builder_goal_strength_caption">Low reps, heavy load. Bigger numbers on the main exercises.</string>
+    <string name="builder_goal_muscle_caption">Higher volume, moderate load. Size comes before bragging rights.</string>
+    <!-- More options row value on the builder page. %1$d is the minutes, %2$d the most exercises in one routine. -->
+    <string name="builder_more_value">%1$d min · %2$d per routine</string>
+    <string name="builder_more_value__t">%1$d min · %2$d per rite</string>
+    <string name="builder_more_value_compound">Compound · %1$d min · %2$d per routine</string>
+    <string name="builder_more_value_compound__t">Compound · %1$d min · %2$d per rite</string>
+    <string name="builder_more_description">Routine length, compound only and exercises per routine</string>
+    <string name="builder_more_description__t">Rite length, compound only and exercises per rite</string>
+    <string name="builder_priorities_label">Priorities · up to 3</string>
+    <string name="builder_kind_label">What kind of routine</string>
+    <string name="builder_kind_label__t">What kind of rite</string>
+    <string name="builder_kind_caption">\"What my week is missing\" reads the rest of your weekly plan and fills the gap.</string>
+    <string name="builder_kind_caption__t">\"What my week is missing\" reads the rest of your cycle and fills the gap.</string>
+    <string name="builder_template_none">No hand-written template for this goal — build a weekly plan instead.</string>
+    <string name="builder_template_none__t">No hand-written pattern for this goal — forge a cycle instead.</string>
+    <!-- Template row. %1$s is the split name, %2$d the training days. -->
+    <plurals name="builder_template_subline">
+        <item quantity="one">%1$s · %2$d day</item>
+        <item quantity="other">%1$s · %2$d days</item>
+    </plurals>
+    <string name="builder_template_adapted">Adapted to your equipment and weekly volume.</string>
+    <string name="builder_template_adapted__t">Adapted to your armoury and weekly volume.</string>
+    <string name="builder_which_title">Which routine</string>
+    <string name="builder_which_title__t">Which rite</string>
+    <string name="builder_improve_none">You have no routines to improve yet. Build a weekly plan or a routine first.</string>
+    <string name="builder_improve_none__t">You have no rites to temper yet. Forge a cycle or a rite first.</string>
+    <string name="builder_improve_loading">Loading your routine against the evidence…</string>
+    <string name="builder_improve_loading__t">Reading your rite against the evidence…</string>
+    <!-- %d is how many other saved routines feed the volume. -->
+    <plurals name="builder_volume_others">
+        <item quantity="one">Weekly volume includes your %d other routine.</item>
+        <item quantity="other">Weekly volume includes your %d other routines.</item>
+    </plurals>
+    <plurals name="builder_volume_others__t">
+        <item quantity="one">Weekly volume includes your %d other rite.</item>
+        <item quantity="other">Weekly volume includes your %d other rites.</item>
+    </plurals>
+    <plurals name="builder_volume_existing">
+        <item quantity="one">Weekly volume includes your %d existing routine.</item>
+        <item quantity="other">Weekly volume includes your %d existing routines.</item>
+    </plurals>
+    <plurals name="builder_volume_existing__t">
+        <item quantity="one">Weekly volume includes your %d existing rite.</item>
+        <item quantity="other">Weekly volume includes your %d existing rites.</item>
+    </plurals>
+    <string name="builder_take_cycle">Take this weekly plan</string>
+    <string name="builder_take_cycle__t">Take this cycle</string>
+    <string name="builder_add_to_cycle">Add to my weekly plan</string>
+    <string name="builder_add_to_cycle__t">Add to my cycle</string>
+    <string name="builder_add_rite">Add this routine</string>
+    <string name="builder_add_rite__t">Add this rite</string>
+    <string name="builder_apply_changes">Apply changes</string>
+    <string name="builder_keep_original">Keep original</string>
+    <string name="builder_history_blank">Your history is blank: pick what you can recover from.</string>
+    <string name="builder_history_blank__t">The Chronicle is blank: pick what you can recover from.</string>
+    <!-- %1$s is how long the lifter has trained, such as "3 weeks". -->
+    <string name="builder_history_suggested">Suggested from %1$s of training.</string>
+    <plurals name="builder_span_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="builder_span_weeks">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+    <plurals name="builder_span_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <!-- %1$s is the number of years with at most one decimal, such as "1.4". -->
+    <plurals name="builder_span_years">
+        <item quantity="one">%1$s year</item>
+        <item quantity="other">%1$s years</item>
+    </plurals>
+    <string name="builder_armoury_preview">Pick your equipment to see a preview. Nothing means bodyweight only.</string>
+    <string name="builder_armoury_preview__t">Pick your armoury to see a preview. Nothing means bodyweight only.</string>
+
+    <!-- Proposal preview furniture. -->
+    <!-- Accessibility labels of a day row. %1$s is the weekday, %2$s the routine name. -->
+    <string name="programpreview_day_fold">Fold %1$s, %2$s</string>
+    <string name="programpreview_day_open">Open %1$s, %2$s</string>
+    <string name="programpreview_change_added">Added</string>
+    <string name="programpreview_change_removed">Removed</string>
+    <string name="programpreview_change_swapped">Swapped</string>
+    <string name="programpreview_change_adjusted">Adjusted</string>
+    <string name="programpreview_change_load_set">Load set</string>
+    <string name="programpreview_no_changes_title">NO CHANGES NEEDED</string>
+    <string name="programpreview_no_changes_fits">Already fits your goal. Nothing changed.</string>
+    <!-- %1$s is a list of muscles, such as "Chest and triceps". -->
+    <string name="programpreview_no_changes_short">Already fits your goal. %1$s stay short — another day would cover them.</string>
+    <string name="programpreview_before_label">BEFORE</string>
+    <string name="programpreview_after_label">AFTER</string>
+    <string name="programpreview_changed_label">WHAT CHANGED, AND WHY</string>
+    <!-- Sets by reps, such as "3×8". -->
+    <string name="programpreview_sets_reps">%1$d×%2$d</string>
+    <string name="programpreview_sets_reps_added">%1$d×%2$d · added</string>
+    <string name="programpreview_sets_reps_swapped">%1$d×%2$d · swapped in</string>
+    <string name="programpreview_sets_reps_adjusted">%1$d×%2$d · adjusted</string>
+    <!-- Sources header. %1$d is how many papers; the sign at the end shows whether the list is open. -->
+    <string name="programpreview_sources_open">SOURCES (%1$d) -</string>
+    <string name="programpreview_sources_closed">SOURCES (%1$d) +</string>
+    <string name="programpreview_sources_hide">Hide sources</string>
+    <string name="programpreview_sources_show">Show sources</string>
+    <!-- %1$s is the citation, %2$s the DOI. -->
+    <string name="programpreview_source_citation">%1$s doi:%2$s</string>
+    <string name="programpreview_split_full_body">Every muscle, every routine. Fewest days, longest routines.</string>
+    <string name="programpreview_split_full_body__t">Every muscle, every rite. Fewest days, longest rites.</string>
+    <string name="programpreview_split_upper_lower">Upper, then lower, twice each. Every muscle twice a week.</string>
+    <string name="programpreview_split_ppl3">PPL is push / pull / legs. Each muscle once a week: fine for growth, less practice per exercise.</string>
+    <string name="programpreview_split_ppl6">PPL is push / pull / legs, twice over. Short routines, every muscle twice a week.</string>
+    <string name="programpreview_split_ppl6__t">PPL is push / pull / legs, twice over. Short rites, every muscle twice a week.</string>
+    <string name="programpreview_split_hybrid">Hybrid: push / pull / legs, then upper and lower. Every muscle twice in five days.</string>
+    <string name="programpreview_gear_full_gym">Full gym</string>
+    <string name="programpreview_gear_full_gym_description">Full gym: every machine and cable</string>
+    <string name="programpreview_gear_nothing">Nothing</string>
+    <string name="programpreview_gear_nothing_description">Nothing: floor work only</string>
+    <string name="programpreview_gear_one">One</string>
+    <string name="programpreview_gear_one_description">One dumbbell</string>
+    <string name="programpreview_gear_pair">Pair</string>
+    <string name="programpreview_gear_pair_description">A pair of dumbbells</string>
+    <!-- Dumbbell stepper. %1$d is the current maximum in kilograms. -->
+    <string name="programpreview_dumbbell_lower_description">Lower dumbbell max, currently up to %1$d kg</string>
+    <string name="programpreview_dumbbell_raise_description">Raise dumbbell max, currently up to %1$d kg</string>
+    <string name="programpreview_dumbbell_max">Up to %1$d kg</string>
+    <!-- Gear toggle description. %1$s is the gear name. -->
+    <string name="programpreview_gear_on_description">%1$s, on</string>
+    <string name="programpreview_gear_off_description">%1$s, off</string>
+    <string name="programpreview_vest_label">Weighted vest</string>
+    <string name="programpreview_vest_on_description">Weighted vest, on</string>
+    <string name="programpreview_vest_off_description">Weighted vest, off</string>
+    <string name="programpreview_belt_label">Dip belt</string>
+    <string name="programpreview_belt_on_description">Dip belt, on</string>
+    <string name="programpreview_belt_off_description">Dip belt, off</string>
+    <string name="programpreview_vest_top_label">Vest top load</string>
+    <string name="programpreview_vest_block_label">Vest block</string>
+    <!-- %1$s is a load with its unit, such as "40 kg". -->
+    <string name="programpreview_vest_top_value">Up to %1$s</string>
+    <!-- Stepper pad descriptions. %1$s is the lower-case label, %2$s the current value. -->
+    <string name="programpreview_kit_lower_description">Lower %1$s, currently %2$s</string>
+    <string name="programpreview_kit_raise_description">Raise %1$s, currently %2$s</string>
+    <!-- Gear caption under the picker. %1$s is the gear list, %2$d the dumbbell maximum in kilograms. -->
+    <string name="programpreview_gear_caption_full">Barbells, machines and cables.</string>
+    <string name="programpreview_gear_caption_floor">Floor work only.</string>
+    <string name="programpreview_gear_caption_plus">Floor work plus %1$s.</string>
+    <string name="programpreview_gear_caption_plus_pair">Floor work plus %1$s (pair, up to %2$d kg).</string>
+    <string name="programpreview_gear_caption_plus_one">Floor work plus %1$s (one, up to %2$d kg).</string>
+    <!-- Worn kit, appended to the gear caption. %1$s is a load with its unit. -->
+    <string name="programpreview_kit_caption_vest">Plus weighted vest up to %1$s.</string>
+    <string name="programpreview_kit_caption_belt">Plus dip belt.</string>
+    <string name="programpreview_kit_caption_both">Plus weighted vest up to %1$s and dip belt.</string>
+
+    <!-- Which day a single routine goes on. -->
+    <string name="riteday_no_day">No day</string>
+    <string name="riteday_note_no_day">A routine with no day is not counted in Weekly coverage.</string>
+    <string name="riteday_note_no_day__t">A rite with no day is not counted in Weekly coverage.</string>
+    <!-- %1$s is a weekday. -->
+    <string name="riteday_note_free">%1$s is free.</string>
+    <!-- %1$s is the routines already on the day, joined with "and"; %2$s is the weekday. -->
+    <plurals name="riteday_note_taken">
+        <item quantity="one">%1$s is already on %2$s. The two would share it.</item>
+        <item quantity="other">%1$s are already on %2$s. The two would share it.</item>
+    </plurals>
+    <!-- %1$s is the routine name. -->
+    <string name="riteday_title">Which day is %1$s on?</string>
+    <string name="riteday_title_blank">Which day is this routine on?</string>
+    <string name="riteday_title_blank__t">Which day is this rite on?</string>
+    <!-- Day cell description. %1$s is the weekday, %2$s the routines on it. -->
+    <string name="riteday_free_description">%1$s, free</string>
+    <string name="riteday_taken_description">%1$s, taken by %2$s</string>
+    <!-- %1$s is the list of taken days with their routines. -->
+    <string name="riteday_already_on">Already on: %1$s</string>
+
+    <!-- The muscles a single routine works. -->
+    <string name="ritemuscles_title_empty">Muscles this routine works</string>
+    <string name="ritemuscles_title_empty__t">Muscles this rite works</string>
+    <!-- %1$d is the muscle count, %2$s the set count with its unit, such as "12 sets". -->
+    <plurals name="ritemuscles_summary">
+        <item quantity="one">%1$d muscle · %2$s</item>
+        <item quantity="other">%1$d muscles · %2$s</item>
+    </plurals>
+    <string name="ritemuscles_empty">No muscle data for this routine yet.</string>
+    <string name="ritemuscles_empty__t">No muscle data for this rite yet.</string>
+    <string name="ritemuscles_sets_heading">SETS PER MUSCLE</string>
+    <!-- %1$s is a number that may carry one decimal, such as "3.8". -->
+    <plurals name="ritemuscles_sets">
+        <item quantity="one">%1$s set</item>
+        <item quantity="other">%1$s sets</item>
+    </plurals>
+    <!-- Effort words: a set taken near failure. Counts: how many hard sets / movements. -->
+    <plurals name="effort_hard_sets"><item quantity="one">%d hard set</item><item quantity="other">%d hard sets</item></plurals>
+    <plurals name="effort_movements"><item quantity="one">%d movement</item><item quantity="other">%d movements</item></plurals>
+    <!-- Effort words: how close to failure the sets are taken; follows the set count ("3 hard sets · stop 0-2 reps short of failure"). -->
+    <string name="effort_cue_rir">stop 0–2 reps short of failure</string>
+    <string name="effort_cue_failure">to failure</string>
+    <!-- Effort words: the same cue as a sentence of its own, under a movement. -->
+    <string name="effort_sentence_rir">Stop 0–2 reps short of failure. Reps are a guide to load.</string>
+    <string name="effort_sentence_failure">Take the last set to failure. Reps are a guide to load.</string>
+    <!-- Effort words: the rep window of a movement. %d is the rep count when the window is a single number. -->
+    <plurals name="effort_rep_guide_single"><item quantity="one">~%d rep</item><item quantity="other">~%d reps</item></plurals>
+    <!-- Effort words: the rep window of a movement. %1$d is the low end, %2$d the high end. -->
+    <string name="effort_rep_guide_range">~%1$d–%2$d reps</string>
+    <!-- Effort editor: under the set stepper. %1$s is the suggested sets, one number or a range ("2" or "2-3"). -->
+    <string name="effort_suggested_sets">Suggested %1$s. Set it to whatever you will do.</string>
+    <!-- Effort editor: shown when a movement sits at the heaviest dumbbell. %1$s is that weight with its unit, %2$d the top of the rep window. -->
+    <string name="effort_dumbbell_note">%1$s is the heaviest dumbbell in your equipment. When %2$d reps get easy, add reps or a set instead.</string>
+    <string name="effort_dumbbell_note__t">%1$s is the heaviest dumbbell in your armoury. When %2$d reps get easy, add reps or a set instead.</string>
+    <!-- Starting-sets question caption. %1$s is the set range for big lifts, %2$s for single-joint work ("2-3" or "2"). -->
+    <string name="effort_starting_sets_low">Big lifts start at %1$s hard sets, single-joint work at %2$s. Enough for a first year.</string>
+    <string name="effort_starting_sets_standard">Big lifts start at %1$s hard sets, single-joint work at %2$s. After a year or so of training.</string>
+    <string name="effort_starting_sets_high">Big lifts start at %1$s hard sets, single-joint work at %2$s. For years of training.</string>
+
+    <!-- Effort editor: accessibility label of the control that folds an open movement. %1$s is the movement's name. -->
+    <string name="effort_editor_close_description">Close %1$s</string>
+    <string name="effort_editor_swap_button">Swap movement</string>
+    <!-- Effort editor: accessibility label of the Swap button. %1$s is the movement's name. -->
+    <string name="effort_editor_swap_description">Swap %1$s</string>
+    <string name="effort_editor_remove_button">Remove</string>
+    <!-- Effort editor: accessibility label of the Remove button. %1$s is the movement's name, %2$s the day it is on. -->
+    <string name="effort_editor_remove_description">Remove %1$s from %2$s</string>
+    <string name="effort_editor_sets_label">Hard sets</string>
+    <!-- Hard-set stepper buttons. %1$s is the movement's name. -->
+    <string name="effort_editor_sets_less_description">Fewer hard sets for %1$s</string>
+    <string name="effort_editor_sets_more_description">More hard sets for %1$s</string>
+    <string name="effort_editor_rep_guide_label">Rep guide</string>
+    <string name="effort_editor_load_label">Load</string>
+    <!-- Load stepper buttons. %1$s is the movement's name. -->
+    <string name="effort_editor_load_less_description">Less load for %1$s</string>
+    <string name="effort_editor_load_more_description">More load for %1$s</string>
+
+    <!-- Optimise: why a movement is suggested; up to two of these are joined with a dot under the movement. %1$s is a muscle, lower case. -->
+    <string name="optimise_reason_direct_muscle">trains %1$s directly</string>
+    <string name="optimise_reason_direct">trains it directly</string>
+    <string name="optimise_reason_fills_muscle">gets %1$s to the minimum</string>
+    <string name="optimise_reason_fills">fills a short muscle</string>
+    <string name="optimise_reason_fits_gear">fits your equipment</string>
+    <string name="optimise_reason_fits_gear__t">fits your armoury</string>
+    <string name="optimise_reason_logged">you already log it</string>
+    <!-- %1$s is the name of a movement. -->
+    <string name="optimise_reason_low_overlap_other">loads different muscles from %1$s</string>
+    <string name="optimise_reason_low_overlap">loads the muscles differently</string>
+    <string name="optimise_reason_same_pattern">same pattern as your main lift</string>
+    <string name="optimise_reason_stretch">trains it stretched</string>
+    <string name="optimise_reason_compound_first">a compound lift first</string>
+    <string name="optimise_reason_recovery_spaced">spaces your days for recovery</string>
+    <string name="optimise_reason_fits_day">fits the day</string>
+    <!-- %1$s is the name of a movement. -->
+    <string name="optimise_reason_stand_in_other">stands in for %1$s</string>
+    <string name="optimise_reason_stand_in">stands in for it</string>
+    <string name="optimise_reason_used_recently">used recently</string>
+    <string name="optimise_reason_often_skipped">you often skip it</string>
+
+    <!-- Optimise: what a change does to one muscle. %1$s is a coverage state in lower case (covered, heavy), %2$s and %3$s are weekly hard sets before and after. -->
+    <string name="optimise_impact_stays">Stays %1$s, %2$s → %3$s hard sets</string>
+    <!-- %1$s is the coverage state before, %2$s the weekly hard sets before, %3$s the state after, %4$s the hard sets after. -->
+    <string name="optimise_impact_moves">%1$s, %2$s → %3$s, %4$s hard sets</string>
+    <!-- Optimise: a change that eases a heavy muscle. %1$s is a movement's name. -->
+    <string name="optimise_trim_title">Drop 1 set from %1$s</string>
+    <string name="optimise_trim_option">Drop 1 set</string>
+    <!-- %1$s and %2$s are hard-set counts ("4 hard sets"). -->
+    <string name="optimise_trim_detail">%1$s to %2$s.</string>
+    <!-- %1$s is a hard-set count ("3 hard sets"). -->
+    <string name="optimise_trim_detail_down">Down to %1$s.</string>
+    <!-- Added to a change's detail line when it frees up sets. %1$s is the number of weekly hard sets saved. -->
+    <string name="optimise_saves">Saves %1$s.</string>
+    <!-- %1$s is a muscle, lower case. -->
+    <string name="optimise_swap_detail">Loads %1$s less for the same work.</string>
+    <string name="optimise_move_option">Move it</string>
+    <!-- %1$s is a muscle, lower case. -->
+    <string name="optimise_move_detail">Splits %1$s over two days. Same weekly total.</string>
+    <!-- Optimise: two movements doing one job. %1$s and %2$s are movement names, %3$s a muscle in lower case. -->
+    <string name="optimise_overlap_detail">%1$s and %2$s do one job. Either alone covers %3$s.</string>
+    <!-- %1$s is a movement's name. -->
+    <string name="optimise_overlap_remove_option">Remove %1$s</string>
+    <string name="optimise_overlap_remove_reason">The other one covers the work</string>
+    <!-- Optimise: two hard days of one muscle too close together. %1$s is the muscle, %2$s and %3$s are short weekday names, %4$d the hours between, %5$d the hours that lets it recover. -->
+    <string name="optimise_tight_line">%1$s is hit hard on %2$s and %3$s, %4$d hours apart. %5$d hours or more lets it recover.</string>
+    <string name="optimise_spread_option">Spread the days</string>
+    <string name="optimise_spread_reason">Spaces your days for recovery</string>
+    <!-- Optimise: a routine a new movement could go into. %1$s is how many movements it holds ("5 movements"), %2$d its length in minutes. -->
+    <string name="optimise_rite_line">%1$s · ~%2$d min</string>
+    <!-- %1$s is why it is the best fit, starting lower case. -->
+    <string name="optimise_rite_best_fit_because">Best fit: %1$s</string>
+    <string name="optimise_rite_best_fit">Best fit</string>
+
+    <!-- Optimise: shared small words. -->
+    <string name="optimise_tag_best_match">Best match</string>
+    <!-- %1$d is the option's rank. -->
+    <string name="optimise_tag_option">Option %1$d</string>
+    <string name="optimise_tag_skipped">Skipped</string>
+    <string name="optimise_option_chosen">Chosen</string>
+    <string name="optimise_option_not_chosen">Not chosen</string>
+    <string name="optimise_keep_button">Keep</string>
+    <string name="optimise_skip_button">Skip</string>
+    <string name="optimise_keep_description">Keep this change</string>
+    <string name="optimise_skip_description">Skip this change</string>
+    <!-- Accessibility label of a ranked movement. %1$d is its rank, %2$d how many there are, %3$s the movement's name. -->
+    <string name="optimise_option_description">Option %1$d of %2$d: %3$s</string>
+    <string name="optimise_option_description_best">Option %1$d of %2$d: %3$s, best match</string>
+    <!-- Accessibility label of the Keep / Skip group. %1$d is the change's number on the page. -->
+    <string name="optimise_keepskip_description">Change %1$d: keep or skip</string>
+    <string name="optimise_keep_change_description">Keep change %1$d</string>
+    <string name="optimise_skip_change_description">Skip change %1$d</string>
+    <!-- Change card. %1$d is the change's number on the page. -->
+    <string name="optimise_card_open_label">Open change %1$d</string>
+    <!-- %1$d is the change's number, %2$s its kind (Trim, Swap, Move, Spread), %3$s its title. -->
+    <string name="optimise_card_open_description">Open change %1$d: %2$s, %3$s</string>
+    <!-- Accessibility label of the "more options" row. Count first (%1$d options), then %2$d the change's number. -->
+    <plurals name="optimise_card_more_label"><item quantity="one">Show %1$d more option for change %2$d</item><item quantity="other">Show %1$d more options for change %2$d</item></plurals>
+    <plurals name="optimise_card_more_options"><item quantity="one">%d more option</item><item quantity="other">%d more options</item></plurals>
+    <string name="optimise_card_ranked_one">Ranked 2</string>
+    <string name="optimise_card_ranked_two">Ranked 2 and 3</string>
+    <!-- %1$d is how many options the change has. -->
+    <string name="optimise_card_ranked_many">Ranked 2 to %1$d</string>
+    <string name="optimise_impact_empty">No muscle changes coverage.</string>
+
+    <!-- Optimise: the title of the screen and its hub. -->
+    <string name="optimise_title">Optimise routines</string>
+    <string name="optimise_title__t">Optimise rites</string>
+    <string name="optimise_empty_no_rites">No routines to optimise yet. Build a weekly plan first, then come back and tighten it.</string>
+    <string name="optimise_empty_no_rites__t">No rites to optimise yet. Forge a cycle first, then come back and tighten it.</string>
+    <string name="optimise_empty_needs_armoury">Optimise ranks movements against your equipment. Choose it in the plan builder, then come back.</string>
+    <string name="optimise_empty_needs_armoury__t">Optimise ranks movements against your armoury. Choose it in the Forge, then come back.</string>
+    <string name="optimise_loading">Loading your routines…</string>
+    <string name="optimise_loading__t">Reading your rites…</string>
+    <!-- Button that opens the plan builder from the empty states. -->
+    <string name="optimise_forge_button">Build a weekly plan</string>
+    <string name="optimise_forge_button__t">Forge a cycle</string>
+    <string name="optimise_hub_nothing">Nothing to change</string>
+    <plurals name="optimise_hub_findings"><item quantity="one">%d thing to look at</item><item quantity="other">%d things to look at</item></plurals>
+    <string name="optimise_hub_note">Suggestions change the routines you already have. Nothing is written until you apply it.</string>
+    <string name="optimise_hub_note__t">Suggestions change the rites you already have. Nothing is written until you apply it.</string>
+    <string name="optimise_nothing_note">Your routines cover every muscle without running any heavy, and no two movements do one job.</string>
+    <string name="optimise_nothing_note__t">Your rites cover every muscle without running any heavy, and no two movements do one job.</string>
+    <string name="optimise_gaps_label">Gaps</string>
+    <string name="optimise_heavy_label">Heavy</string>
+    <string name="optimise_overlap_label">Overlap</string>
+    <!-- Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
+    <string name="optimise_heavy_per_week">%1$s a week</string>
+    <string name="optimise_heavy_per_session">%1$s in one routine</string>
+    <string name="optimise_heavy_per_session__t">%1$s in one rite</string>
+    <!-- Hub row under a heavy muscle. %1$s is the hard sets ("24 hard sets a week"), %2$s the state (Heavy), %3$s how many changes help. -->
+    <string name="optimise_heavy_subline">%1$s · %2$s · %3$s</string>
+    <!-- %1$s is a muscle, lower case. -->
+    <string name="optimise_heavy_open_label">Ease %1$s</string>
+    <!-- %1$s is a muscle, %2$s the hard sets, %3$s the state, %4$s how many changes help. -->
+    <string name="optimise_heavy_description">Ease %1$s: %2$s, %3$s, %4$s</string>
+    <!-- Hub row under a heavy muscle: how many changes help. Zero is its own string. -->
+    <string name="optimise_changes_none">no safe change</string>
+    <plurals name="optimise_changes_count"><item quantity="one">%d change</item><item quantity="other">%d changes</item></plurals>
+    <string name="optimise_heavy_empty">No change eases this without leaving another muscle short. The flag is a hint, so leaving it is fine.</string>
+    <string name="optimise_heavy_leave_button">Leave it, I want the volume</string>
+    <string name="optimise_spread_title">Spread your days</string>
+    <string name="optimise_spread_subtitle">Recovery of 48 hours or more</string>
+    <!-- Heading of the page that opens a spread-days change when it is applied. -->
+    <string name="optimise_spread_applied_title">Days</string>
+    <!-- Hub row of a short muscle. %1$s is a muscle, lower case. -->
+    <string name="optimise_gap_open_label">Add a movement for %1$s</string>
+    <!-- %1$s is a muscle, %2$s the hard sets ("2 hard sets"), %3$s the state (Not trained). -->
+    <string name="optimise_gap_description">Add a movement for %1$s: %2$s, %3$s</string>
+    <!-- Hub row of an overlap. %1$s is how many overlaps were found. -->
+    <string name="optimise_overlap_subline">Two movements doing one job · %1$s</string>
+    <plurals name="optimise_overlaps_found"><item quantity="one">%d overlap found</item><item quantity="other">%d overlaps found</item></plurals>
+    <!-- %1$s is the routine's name. -->
+    <string name="optimise_overlap_open_label">Open the overlaps in %1$s</string>
+    <!-- %1$s is the routine's name, %2$s how many overlaps were found. -->
+    <string name="optimise_overlap_description">%1$s: two movements doing one job, %2$s</string>
+    <string name="optimise_spread_open_label">Open the day spacing</string>
+    <!-- %1$s is the change's title, %2$s the sentence naming the tight days. -->
+    <string name="optimise_spread_description">Spread your days: %1$s. %2$s</string>
+
+    <!-- Gap sheet. %1$s is a muscle in lower case, %2$s the state, %3$s the weekly hard sets. -->
+    <string name="optimise_gap_sheet_description">Add a movement for %1$s. %2$s, %3$s</string>
+    <!-- %1$s is a muscle in lower case, %2$d the weekly minimum of hard sets. -->
+    <string name="optimise_gap_none_caption">Nothing in your weekly plan trains %1$s directly. %2$d or more hard sets a week gets it covered.</string>
+    <string name="optimise_gap_none_caption__t">Nothing in your cycle trains %1$s directly. %2$d or more hard sets a week gets it covered.</string>
+    <!-- %1$d is the weekly minimum of hard sets, %2$s a muscle in lower case. -->
+    <string name="optimise_gap_short_caption">%1$d or more hard sets a week gets %2$s covered.</string>
+    <string name="optimise_gap_no_options">Nothing in your equipment trains it. Different equipment, or a routine built for it, would.</string>
+    <string name="optimise_gap_no_options__t">Nothing in your armoury trains it. Another armoury, or a rite forged for it, would.</string>
+    <string name="optimise_gap_ranked_heading">Fits your equipment · ranked best first</string>
+    <string name="optimise_gap_ranked_heading__t">Fits your armoury · ranked best first</string>
+    <!-- %1$s is a muscle in lower case. -->
+    <string name="optimise_gap_ranked_description">Movement to add for %1$s, ranked best to worst</string>
+    <string name="optimise_add_button">Add</string>
+    <!-- %1$s is a movement's name. -->
+    <string name="optimise_add_named">Add %1$s</string>
+
+    <!-- Where page. %1$s is a muscle, %2$s the suggested hard sets ("3 hard sets"). -->
+    <string name="optimise_where_subtitle">%1$s · %2$s suggested</string>
+    <string name="optimise_where_label">Put it on</string>
+    <!-- %1$s is a movement's name. -->
+    <string name="optimise_where_description">Put %1$s on</string>
+    <string name="optimise_effect_label">Effect on your week</string>
+    <!-- %1$s is the routine or day it goes into, %2$s its new movement count ("5 movements"), %3$d its length in minutes. -->
+    <string name="optimise_where_becomes">%1$s becomes %2$s · ~%3$d min.</string>
+    <!-- %1$s is the routine or day the movement goes into. -->
+    <string name="optimise_where_add_button">Add to %1$s</string>
+    <!-- Heading of the page shown after adding. %1$s is a movement's name, %2$s the routine's name. -->
+    <string name="optimise_where_added_title">Added %1$s to %2$s</string>
+    <string name="optimise_where_note">A suggestion only. Move or remove it later.</string>
+
+    <!-- Changes page. -->
+    <string name="optimise_fixes_label">What it fixes</string>
+    <string name="optimise_fixes_empty">Keep a change to see what it does.</string>
+    <string name="optimise_changes_label">Changes</string>
+    <plurals name="optimise_apply_changes"><item quantity="one">Apply %d change</item><item quantity="other">Apply %d changes</item></plurals>
+    <string name="optimise_apply_note">Nothing is written until you apply. Skipped changes stay as they are.</string>
+    <string name="optimise_apply_note_short">Nothing is written until you apply.</string>
+
+    <!-- Detail page. %1$d is this change's number, %2$d how many changes the page holds. -->
+    <string name="optimise_detail_position">change %1$d of %2$d</string>
+    <string name="optimise_leaves_label">Leaves</string>
+    <string name="optimise_comes_in_label">Comes in · ranked best first</string>
+    <string name="optimise_what_changes_label">What changes</string>
+    <!-- %1$s is the name of the movement that leaves. -->
+    <string name="optimise_replacement_description">Replacement for %1$s, ranked best to worst</string>
+    <string name="optimise_replacement_it_description">Replacement for it, ranked best to worst</string>
+
+    <!-- Overlap page. %1$s is the routine's name. -->
+    <string name="optimise_overlap_title">Optimise %1$s</string>
+    <string name="optimise_overlap_pair_label">Two movements, one job</string>
+    <!-- %1$s is the name of the movement that goes. -->
+    <string name="optimise_swap_label">Swap %1$s for · ranked best first</string>
+    <string name="optimise_overlap_no_pair">Nothing in your equipment makes a better pair, so the change removes %1$s.</string>
+    <string name="optimise_overlap_no_pair__t">Nothing in your armoury makes a better pair, so the change removes %1$s.</string>
+    <!-- %1$s is the chosen replacement's name. -->
+    <string name="optimise_effect_with_label">Effect with %1$s</string>
+
+    <!-- Applied page. -->
+    <string name="optimise_applied_status">Applied</string>
+    <plurals name="optimise_applied_count"><item quantity="one">%d change applied</item><item quantity="other">%d changes applied</item></plurals>
+    <string name="optimise_applied_skipped">%1$d skipped, left as it was.</string>
+    <!-- %1$s is the routine's name. -->
+    <string name="optimise_applied_undo_named">Undo, put %1$s back</string>
+    <string name="optimise_applied_undo_all">Undo, put the routines back</string>
+    <string name="optimise_applied_undo_all__t">Undo, put the rites back</string>
+    <!-- Errors under the page title. %1$s is the system's reason. -->
+    <string name="optimise_apply_error">Could not apply the changes: %1$s. Nothing was written.</string>
+    <string name="optimise_undo_error">Could not undo: %1$s. Nothing was changed.</string>
+    <!-- Muscle coverage: the four states, as words. Shown beside a mark, on rows, tiles, the legend and the figure. -->
+    <string name="coverage_state_not_trained">Not trained</string>
+    <string name="coverage_state_below_minimum">Below minimum</string>
+    <string name="coverage_state_covered">Covered</string>
+    <string name="coverage_state_heavy">Heavy</string>
+    <!-- Muscle coverage: the two pages of the screen, as tab labels. The second is also the name of the pooled week. -->
+    <string name="coverage_view_planned">Planned</string>
+    <string name="coverage_view_last7">Last 7 days</string>
+    <string name="coverage_screen_title">Weekly coverage</string>
+    <string name="coverage_preview_title">Coverage of this weekly plan</string>
+    <string name="coverage_preview_title__t">Coverage of this cycle</string>
+    <string name="coverage_hint_caption">A hint only. Saving is never blocked.</string>
+    <string name="coverage_dock_optimise_button">Optimise routines</string>
+    <string name="coverage_dock_optimise_button__t">Optimise rites</string>
+    <string name="coverage_dock_forge_button">Build a routine</string>
+    <string name="coverage_dock_forge_button__t">Forge a rite</string>
+    <string name="coverage_empty_cycle">No routines are written yet. Build a weekly plan and it will be mapped here.</string>
+    <string name="coverage_empty_cycle__t">No rites are written yet. Forge a cycle and it will be mapped here.</string>
+    <string name="coverage_empty_logged">Your history is blank for the last 7 days. Finish a workout and it is mapped here.</string>
+    <string name="coverage_empty_logged__t">The Chronicle is blank for the last 7 days. Seal a trial and it is mapped here.</string>
+    <!-- Muscle coverage: honesty note under the figure. %d is the number of sets whose exercise has no muscle profile. -->
+    <plurals name="coverage_unattributed_sets">
+        <item quantity="one">%d set not counted: no muscle data for that exercise.</item>
+        <item quantity="other">%d sets not counted: no muscle data for those exercises.</item>
+    </plurals>
+    <!-- Muscle coverage: quiet line for routines that have no day. %d is how many. -->
+    <plurals name="coverage_uncounted_rites">
+        <item quantity="one">%d routine has no day, so it isn\'t counted</item>
+        <item quantity="other">%d routines have no day, so they aren\'t counted</item>
+    </plurals>
+    <plurals name="coverage_uncounted_rites__t">
+        <item quantity="one">%d rite has no day, so it isn\'t counted</item>
+        <item quantity="other">%d rites have no day, so they aren\'t counted</item>
+    </plurals>
+    <!-- Muscle coverage: spoken hint of the uncounted-routines link. The count is how many routines. -->
+    <plurals name="coverage_uncounted_open_hint">
+        <item quantity="one">Open that routine to give it a day</item>
+        <item quantity="other">Open your routines to give them days</item>
+    </plurals>
+    <plurals name="coverage_uncounted_open_hint__t">
+        <item quantity="one">Open that rite to give it a day</item>
+        <item quantity="other">Open your rites to give them days</item>
+    </plurals>
+    <string name="coverage_covered_empty">Every muscle covered</string>
+    <!-- Muscle coverage: the folded row of covered muscles. %d is how many. -->
+    <plurals name="coverage_covered_count">
+        <item quantity="one">%d muscle covered</item>
+        <item quantity="other">%d muscles covered</item>
+    </plurals>
+    <string name="coverage_covered_hide_hint">Hide the covered muscles</string>
+    <string name="coverage_covered_show_hint">Show the covered muscles</string>
+    <string name="coverage_by_exercise_label">By exercise</string>
+    <string name="coverage_by_exercise_hide_value">Hide</string>
+    <string name="coverage_by_exercise_hide_hint">Hide the exercises</string>
+    <string name="coverage_by_exercise_show_hint">Show the muscles each exercise works</string>
+    <string name="coverage_why_title">Why effort, not set counts</string>
+    <!-- Muscle coverage: header over the narrowed list. %1$s is a muscle name. -->
+    <string name="coverage_filter_title">Trains %1$s</string>
+    <string name="coverage_filter_empty">Nothing in this view trains it.</string>
+    <!-- Muscle coverage: spoken hints on an exercise row. %1$s is an exercise name. -->
+    <string name="coverage_exercise_hide_hint">Hide muscles for %1$s</string>
+    <string name="coverage_exercise_show_hint">Show muscles for %1$s</string>
+    <!-- Muscle coverage: the one-line summary, parts joined by a middle dot. %d is a count of muscles. -->
+    <string name="coverage_headline_heavy">%d heavy</string>
+    <plurals name="coverage_headline_gaps">
+        <item quantity="one">%d muscle needs more sets</item>
+        <item quantity="other">%d muscles need more sets</item>
+    </plurals>
+    <string name="coverage_reason">About %d hard sets a week per muscle is a sound floor.</string>
+    <!-- Muscle coverage: a muscle's weekly hard sets. %1$s is the number as written ("1", "3.5"); the count only picks one or other. -->
+    <plurals name="coverage_hard_sets">
+        <item quantity="one">%1$s hard set</item>
+        <item quantity="other">%1$s hard sets</item>
+    </plurals>
+    <plurals name="coverage_hard_sets_week">
+        <item quantity="one">%1$s hard set this week</item>
+        <item quantity="other">%1$s hard sets this week</item>
+    </plurals>
+    <!-- Two facts joined by a middle dot, e.g. "Hamstrings · 6 hard sets this week". -->
+    <string name="muscles_joined_pair">%1$s · %2$s</string>
+    <!-- Muscle coverage, heavy muscle note. %d is the weekly (first) or per-routine (second) set threshold. -->
+    <string name="coverage_heavy_reason_week">Past about %d sets a week, each extra set adds less. A hint about recovery, not a limit.</string>
+    <string name="coverage_heavy_reason_session">More than %d hard sets in one routine is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
+    <string name="coverage_heavy_reason_session__t">More than %d hard sets in one rite is a lot to recover from. Spreading them over more days helps. A hint, not a limit.</string>
+    <!-- Muscle coverage legend: the range under a state. %d is the weekly hard-set floor. -->
+    <string name="coverage_legend_under">under %d</string>
+    <!-- Muscle coverage legend: spoken form. %1$s is a state, %2$s a range such as "under 4" or "20+". -->
+    <string name="coverage_legend_description">%1$s: %2$s hard sets a week</string>
+    <!-- Muscle coverage rows: %1$s is a muscle name, %2$s its hard sets, %3$s its state. -->
+    <string name="coverage_row_click_hint">Show what trains %1$s</string>
+    <string name="coverage_row_description">Show what trains %1$s: %2$s, %3$s</string>
+    <string name="coverage_chip_hint">Open coverage of this weekly plan</string>
+    <string name="coverage_chip_hint__t">Open coverage of this cycle</string>
+    <!-- Muscle coverage chip: spoken form. %1$s is the one-line summary. -->
+    <string name="coverage_chip_description">Coverage: %1$s</string>
+    <string name="coverage_chip_link">Coverage ›</string>
+    <!-- Muscle coverage tiles: spoken form. %1$d is a count of muscles, %2$s the state. -->
+    <plurals name="coverage_tile_description">
+        <item quantity="one">%1$d muscle: %2$s</item>
+        <item quantity="other">%1$d muscles: %2$s</item>
+    </plurals>
+    <!-- Disclosure row hints. %1$s is the row's title. -->
+    <string name="coverage_disclosure_hide_hint">Hide %1$s</string>
+    <string name="coverage_disclosure_show_hint">Show %1$s</string>
+    <string name="coverage_explainer_effort_lead">Effort drives growth.</string>
+    <string name="coverage_explainer_effort_rest">A set taken close to failure is the one that counts.</string>
+    <string name="coverage_explainer_more_lead">More sets help a bit.</string>
+    <string name="coverage_explainer_more_rest">Each extra set adds less than the one before.</string>
+    <!-- Muscle coverage explainer, third point: a bold lead, then the rest on the next line. %d is the weekly hard-set floor. -->
+    <string name="coverage_explainer_floor_lead">About %d hard sets a week</string>
+    <string name="coverage_explainer_floor_rest">per muscle is a sound floor. Do more if you like.</string>
+    <string name="coverage_explainer_hint">Below minimum is a hint, never a block. Save any weekly plan you want.</string>
+    <string name="coverage_explainer_hint__t">Below minimum is a hint, never a block. Save any cycle you want.</string>
+    <string name="coverage_explainer_see_muscles">See the muscles that need sets ›</string>
+    <string name="coverage_explainer_done_button">Got it</string>
+    <!-- Muscle coverage, heavy muscle note: %1$s is a muscle name, %2$s its hard sets this week. -->
+    <string name="coverage_heavy_note_title">%1$s runs heavy: %2$s</string>
+    <string name="coverage_heavy_dismiss_button">Dismiss for %1$s</string>
+    <!-- Muscle figure: spoken node for a muscle drawn on both views. %1$s is the muscle's line. -->
+    <string name="muscles_figure_node_front">%1$s, front view</string>
+    <string name="muscles_figure_node_back">%1$s, back view</string>
+    <!-- Muscle figure: spoken action on a muscle. %1$s is a muscle name. -->
+    <string name="muscles_figure_clear_hint">Clear %1$s</string>
+    <string name="muscles_figure_select_hint">Select %1$s</string>
+    <!-- Exercise and routine figures: the fact under a lit muscle. %1$s is an exercise or routine name. -->
+    <string name="muscles_fact_not_worked">not worked in %1$s</string>
+    <string name="muscles_fact_main">main in %1$s</string>
+    <string name="muscles_fact_assist">assist in %1$s</string>
+    <!-- Routine figure: %1$s is a sets label such as "4.5 sets", %2$s the routine name. -->
+    <string name="muscles_fact_sets_in">%1$s in %2$s</string>
+    <!-- Muscle selector: spoken line per muscle. %1$s is a muscle name, %2$s one of off, main, assist. -->
+    <string name="muscles_selector_line">%1$s, %2$s. Tap to change.</string>
+    <string name="muscles_level_off">off</string>
+    <string name="muscles_level_main">main</string>
+    <string name="muscles_level_assist">assist</string>
+    <string name="muscles_selector_hint">Tap a muscle: assist, main, off.</string>
+    <string name="muscles_exercise_none">No muscle data for this exercise.</string>
+    <!-- Exercise figure: spoken summary. %1$s is a comma-separated list of muscle names. -->
+    <string name="muscles_summary_main">Main: %1$s.</string>
+    <string name="muscles_summary_assist">Assists: %1$s.</string>
+    <!-- Body map legends and labels. These sit over the figure in capitals. -->
+    <string name="bodymap_key_not_worked">NOT WORKED</string>
+    <string name="bodymap_key_fewer">FEWER</string>
+    <string name="bodymap_key_more">MORE</string>
+    <string name="bodymap_key_none">NONE</string>
+    <string name="bodymap_label_front">FRONT</string>
+    <string name="bodymap_label_back">BACK</string>
+    <!-- Body map: spoken summary of coverage. %1$s is the parts joined by semicolons. -->
+    <string name="bodymap_summary">Muscle coverage: %1$s</string>
+    <!-- Body map summary parts. %1$s is a list of lower-case muscle names; %d is a count. -->
+    <string name="bodymap_summary_heavy">%1$s heavy</string>
+    <string name="bodymap_summary_not_trained">%1$s not trained</string>
+    <string name="bodymap_summary_below">%1$s below minimum</string>
+    <string name="bodymap_summary_covered">%d covered</string>
 </resources>

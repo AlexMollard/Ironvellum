@@ -3,13 +3,16 @@ package com.ironvellum.app.ui.program
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ironvellum.app.R
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRequest
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -104,7 +107,7 @@ internal class OptimiseViewModel(
                     _error.value = null
                     _applied.value = applied
                 }
-                .onFailure { _error.value = "Could not apply the changes: ${it.message}. Nothing was written." }
+                .onFailure { _error.value = Words.text(UiText.res(R.string.optimise_apply_error, it.message.toString())) }
             _saving.value = false
         }
     }
@@ -119,7 +122,7 @@ internal class OptimiseViewModel(
                     _error.value = null
                     _applied.value = null
                 }
-                .onFailure { _error.value = "Could not undo: ${it.message}. Nothing was changed." }
+                .onFailure { _error.value = Words.text(UiText.res(R.string.optimise_undo_error, it.message.toString())) }
             _saving.value = false
         }
     }

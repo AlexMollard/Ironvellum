@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.outlined.FitnessCenter
@@ -109,7 +113,7 @@ data class TrainUi(
 
 class PresetsViewModel(
     private val repo: Repository,
-    appContext: android.content.Context,
+    private val appContext: android.content.Context,
 ) : ViewModel() {
 
     /** What she last told the generator; when present it outranks the
@@ -168,8 +172,8 @@ class PresetsViewModel(
     /** The write is one transaction, so a failure leaves the routine as it was. */
     fun importRoutine(workouts: List<RoutineCode.SharedWorkout>, replace: Boolean, onDone: (String) -> Unit) {
         viewModelScope.launch {
-            val summary = runCatching { importSummary(repo.importSharedRoutine(workouts, replace), replace) }
-                .getOrElse { "Import failed \u2014 nothing was changed." }
+            val summary = runCatching { importSummary(appContext, repo.importSharedRoutine(workouts, replace), replace) }
+                .getOrElse { UiText.res(R.string.presets_import_failed).asString(appContext) }
             onDone(summary)
         }
     }
@@ -258,9 +262,9 @@ fun PresetsScreen(
                 viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
             }
             // The title's row is a fixed height: the chip leaves (a trial is under way) and the title stays put.
-            TabTitle("TRAIN") {
+            TabTitle(stringResource(R.string.presets_title)) {
                 // No second trial while one is under way.
-                if (focus !is TrainFocus.Live) InkChip(Words.openTrial.s.replaceFirstChar { it.uppercase() }, "Begin ${Words.openTrial.a}", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
+                if (focus !is TrainFocus.Live) InkChip(Words.openTrial.s.replaceFirstChar { it.uppercase() }, UiText.themed(R.string.presets_begin_open_description, R.string.presets_begin_open_description__t).asString(), Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = GROUP_GAP))
@@ -280,7 +284,7 @@ fun PresetsScreen(
             val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "YOUR ${Words.cycle.u}",
+                    UiText.themed(R.string.presets_cycle_header, R.string.presets_cycle_header__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -289,8 +293,8 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 // Sit with the list they add to and export.
-                InkChip("New", "New ${Words.rite.s}", Icons.Outlined.Add) { showNewChooser = true }
-                InkChip("Share", "Share ${Words.cycle.s}", Icons.Outlined.Share, onClick = share)
+                InkChip(stringResource(R.string.presets_new_button), UiText.themed(R.string.presets_new_description, R.string.presets_new_description__t).asString(), Icons.Outlined.Add) { showNewChooser = true }
+                InkChip(stringResource(R.string.common_share), UiText.themed(R.string.routineshare_share_title, R.string.routineshare_share_title__t).asString(), Icons.Outlined.Share, onClick = share)
             }
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -304,7 +308,7 @@ fun PresetsScreen(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable(onClickLabel = "Open ${preset.name}") { onOpenRite(preset.id) }
+                            .clickable(onClickLabel = stringResource(R.string.presets_open_description, preset.name)) { onOpenRite(preset.id) }
                             .heightIn(min = ROW_HEIGHT)
                             .padding(end = 16.dp, top = 8.dp, bottom = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -336,13 +340,13 @@ fun PresetsScreen(
                             modifier = Modifier.weight(1f),
                         )
                         if (sealed) {
-                            Text("\u2713", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Emerald)
+                            Text(stringResource(R.string.presets_sealed_mark), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Emerald)
                         }
                         Text(
                             when {
                                 sealed -> Words.sealed.c
-                                isToday && focus is TrainFocus.Live -> "Under way"
-                                isToday -> "Today"
+                                isToday && focus is TrainFocus.Live -> stringResource(R.string.presets_row_under_way)
+                                isToday -> stringResource(R.string.presets_row_today)
                                 // "~54 min": the tail of the rite's plan line.
                                 else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
                                     .substringAfterLast(" · ").lowercase()
@@ -376,20 +380,20 @@ fun PresetsScreen(
             InkRowPanel(Modifier.fillMaxWidth()) {
                 WayOutRow(
                     icon = Icons.Outlined.AccessibilityNew,
-                    label = "Weekly coverage",
+                    label = stringResource(R.string.presets_coverage_label),
                     detail = when {
-                        ui.plannedPresets.isEmpty() -> "No ${Words.cycle.s} yet"
+                        ui.plannedPresets.isEmpty() -> UiText.themed(R.string.presets_no_cycle_title, R.string.presets_no_cycle_title__t).asString()
                         else -> coverageLine
                     },
                     onClick = onOpenCoverage,
                 )
                 InkDivider()
-                WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "Exercises", onClick = onOpenExercises)
+                WayOutRow(icon = Icons.Outlined.FitnessCenter, label = stringResource(R.string.presets_exercises_label), onClick = onOpenExercises)
                 // The recent trials card links the same chronicle from its header,
                 // so the row only stands when that card does not.
                 if (trials.isEmpty()) {
                     InkDivider()
-                    WayOutRow(icon = Icons.Outlined.History, label = "Full ${Words.chronicle.s}", onClick = onOpenLog)
+                    WayOutRow(icon = Icons.Outlined.History, label = UiText.themed(R.string.explorer_full_history, R.string.explorer_full_history__t).asString(), onClick = onOpenLog)
                 }
             }
 
@@ -397,7 +401,7 @@ fun PresetsScreen(
                 Spacer(Modifier.height(SECTION_GAP))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "RECENT ${Words.trial.upl}",
+                        UiText.themed(R.string.presets_recent_header, R.string.presets_recent_header__t).asString(),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -405,7 +409,12 @@ fun PresetsScreen(
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     // Named for where it goes: "All" alone says nothing to a screen reader.
-                    InkChip("All", "Open", description = "Full ${Words.chronicle.s}", onClick = onOpenLog)
+                    InkChip(
+                        stringResource(R.string.presets_recent_all_button),
+                        stringResource(R.string.presets_recent_open_action),
+                        description = UiText.themed(R.string.explorer_full_history, R.string.explorer_full_history__t).asString(),
+                        onClick = onOpenLog,
+                    )
                 }
                 InkRowPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
@@ -421,22 +430,22 @@ fun PresetsScreen(
     if (showNewChooser) {
         IronvellumDialog(
             onDismissRequest = { showNewChooser = false },
-            title = { Text("New") },
+            title = { Text(stringResource(R.string.presets_new_button)) },
             text = {
                 Column {
                     // Easiest first, each with one plain line, so someone new
                     // can tell the Forge from a blank page without trying both.
                     val options = buildList {
-                        add(Triple("${Words.forge.c} a ${Words.cycle.t}", "A full week built from your answers.") { showNewChooser = false; onGenerate("week", null) })
-                        add(Triple("${Words.forge.c} a ${Words.rite.t}", "One ${Words.rite.s}, built for today.") { showNewChooser = false; onGenerate("session", null) })
-                        add(Triple("Start from ${Words.pattern.a}", "A hand-written ${Words.pick("weekly cycle", "weekly plan")} to adjust.") { showNewChooser = false; onGenerate("template", null) })
+                        add(Triple(UiText.themed(R.string.presets_new_week_title, R.string.presets_new_week_title__t).asString(), stringResource(R.string.presets_new_week_subtitle)) { showNewChooser = false; onGenerate("week", null) })
+                        add(Triple(UiText.themed(R.string.presets_new_session_title, R.string.presets_new_session_title__t).asString(), UiText.themed(R.string.presets_new_session_subtitle, R.string.presets_new_session_subtitle__t).asString()) { showNewChooser = false; onGenerate("session", null) })
+                        add(Triple(UiText.themed(R.string.presets_new_template_title, R.string.presets_new_template_title__t).asString(), UiText.themed(R.string.presets_new_template_subtitle, R.string.presets_new_template_subtitle__t).asString()) { showNewChooser = false; onGenerate("template", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {
-                            add(Triple("${Words.temper.c} a ${Words.rite.t}", "Improve one you already have.") { showNewChooser = false; onGenerate("improve", null) })
+                            add(Triple(UiText.themed(R.string.presets_new_improve_title, R.string.presets_new_improve_title__t).asString(), stringResource(R.string.presets_new_improve_subtitle)) { showNewChooser = false; onGenerate("improve", null) })
                         }
-                        add(Triple("Blank ${Words.rite.t}", "Pick every exercise yourself.") { showNewChooser = false; onNew() })
-                        add(Triple("Import code", "Paste ${Words.cycle.a} someone shared with you.") { showNewChooser = false; showImport = true })
+                        add(Triple(UiText.themed(R.string.presets_new_blank_title, R.string.presets_new_blank_title__t).asString(), stringResource(R.string.presets_new_blank_subtitle)) { showNewChooser = false; onNew() })
+                        add(Triple(stringResource(R.string.routineshare_import_title), UiText.themed(R.string.presets_new_import_subtitle, R.string.presets_new_import_subtitle__t).asString()) { showNewChooser = false; showImport = true })
                     }
                     options.forEachIndexed { index, (label, detail, action) ->
                         if (index > 0) InkDivider()
@@ -446,7 +455,7 @@ fun PresetsScreen(
             },
             confirmButton = {},
             dismissButton = {
-                IronvellumButton(label = "Cancel", onClick = { showNewChooser = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { showNewChooser = false }, quiet = true)
             },
         )
     }
@@ -474,7 +483,7 @@ private fun TrialRow(
     val volumeKg = done.sumOf { (it.weightKg ?: 0.0) * it.reps }
     val detail = listOfNotNull(
         trialLength(trial),
-        done.size.takeIf { it > 0 }?.let { if (it == 1) "1 set" else "$it sets" },
+        done.size.takeIf { it > 0 }?.let { UiText.plural(R.plurals.common_sets_count, it).asString() },
         volumeKg.takeIf { it > 0.0 }?.let {
             if (Units.current == com.ironvellum.app.domain.LoadUnit.LB) Units.volume(it)
             else if (it < 1000) "${it.toInt()} kg" else "${"%.1f".format(java.util.Locale.US, it / 1000)} t"
@@ -483,7 +492,7 @@ private fun TrialRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Open ${trial.label}", onClick = onOpen)
+            .clickable(onClickLabel = stringResource(R.string.presets_open_description, trial.label), onClick = onOpen)
             .heightIn(min = TRIAL_ROW_HEIGHT)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -491,14 +500,14 @@ private fun TrialRow(
     ) {
         Column(Modifier.widthIn(min = DAY_TILE), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                formatDate(at, "EEE").uppercase(),
+                formatDate(at, stringResource(R.string.presets_date_weekday)).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 maxLines = 1,
                 softWrap = false,
             )
-            Text(formatDate(at, "d"), style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = IronvellumColors.Ink)
+            Text(formatDate(at, stringResource(R.string.presets_date_day)), style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = IronvellumColors.Ink)
         }
         Column(Modifier.weight(1f)) {
             Text(trial.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -507,8 +516,8 @@ private fun TrialRow(
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text("+${trial.xpAwarded} XP", style = MaterialTheme.typography.labelMedium, fontFamily = ChakraPetch, color = IronvellumColors.SovereignGold)
-            Text("STR ${trial.strengthScore}", style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted)
+            Text(stringResource(R.string.presets_trial_xp, trial.xpAwarded), style = MaterialTheme.typography.labelMedium, fontFamily = ChakraPetch, color = IronvellumColors.SovereignGold)
+            Text(stringResource(R.string.presets_trial_strength, trial.strengthScore), style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted)
         }
     }
 }
@@ -527,24 +536,24 @@ private fun TrainLeadCard(
         when (focus) {
             is TrainFocus.Live -> {
                 Text(
-                    "${Words.trial.u} IN PROGRESS",
+                    UiText.themed(R.string.presets_live_header, R.string.presets_live_header__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.SectionHeader,
                     maxLines = 1,
                 )
-                LeadButton("Continue ${focus.preset?.name ?: focus.session.label}") { onContinue(focus.session.id) }
+                LeadButton(stringResource(R.string.ritedetail_continue_button, focus.preset?.name ?: focus.session.label)) { onContinue(focus.session.id) }
             }
             else -> {
-                Text("No ${Words.cycle.s} yet", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                Text(UiText.themed(R.string.presets_no_cycle_title, R.string.presets_no_cycle_title__t).asString(), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
                 Text(
-                    "${Words.forge.c} a week, start from ${Words.pattern.a}, or import one.",
+                    UiText.themed(R.string.presets_no_cycle_body, R.string.presets_no_cycle_body__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                LeadButton("${Words.forge.c} ${Words.cycle.a}") { onForge() }
+                LeadButton(UiText.themed(R.string.presets_no_cycle_button, R.string.presets_no_cycle_button__t).asString()) { onForge() }
             }
         }
     }

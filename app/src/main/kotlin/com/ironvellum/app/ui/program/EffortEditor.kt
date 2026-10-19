@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -24,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Seed
 import com.ironvellum.app.domain.Equipment
@@ -130,12 +132,21 @@ internal fun EffortEntryEditor(
     val capLabel = equipment?.dumbbellMaxKg?.let { Units.withUnit(it) } ?: cap?.let { Units.withUnit(it) }.orEmpty()
     EntryCard(
         name = name,
-        foldLabel = "Close $name",
+        foldLabel = stringResource(R.string.effort_editor_close_description, name),
         onFold = onFold,
         actions = {
-            if (onSwap != null) QuietAction("Swap movement", "Swap $name", onClick = { if (enabled) onSwap() })
+            if (onSwap != null) QuietAction(
+                stringResource(R.string.effort_editor_swap_button),
+                stringResource(R.string.effort_editor_swap_description, name),
+                onClick = { if (enabled) onSwap() },
+            )
             else Spacer(Modifier)
-            QuietAction("Remove", "Remove $name from $dayName", danger = true, onClick = { if (enabled) onRemove() })
+            QuietAction(
+                stringResource(R.string.effort_editor_remove_button),
+                stringResource(R.string.effort_editor_remove_description, name, dayName),
+                danger = true,
+                onClick = { if (enabled) onRemove() },
+            )
         },
     ) {
         Text(
@@ -145,11 +156,11 @@ internal fun EffortEntryEditor(
             modifier = Modifier.padding(vertical = 4.dp),
         )
         EffortStepper(
-            label = "Hard sets",
+            label = stringResource(R.string.effort_editor_sets_label),
             value = entry.sets.toString(),
             unit = null,
-            less = "Fewer hard sets for $name",
-            more = "More hard sets for $name",
+            less = stringResource(R.string.effort_editor_sets_less_description, name),
+            more = stringResource(R.string.effort_editor_sets_more_description, name),
             onLess = { if (enabled) onSets(-1) },
             onMore = { if (enabled) onSets(1) },
             lessEnabled = enabled && entry.sets > SET_SANITY.first,
@@ -165,17 +176,17 @@ internal fun EffortEntryEditor(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Rep guide", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text(stringResource(R.string.effort_editor_rep_guide_label), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             Text(repGuide(entry), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
         }
         val load = entry.targetWeightKg
         if (onLoad != null && load != null) {
             EffortStepper(
-                label = "Load",
+                label = stringResource(R.string.effort_editor_load_label),
                 value = Units.format(load),
                 unit = Units.name,
-                less = "Less load for $name",
-                more = "More load for $name",
+                less = stringResource(R.string.effort_editor_load_less_description, name),
+                more = stringResource(R.string.effort_editor_load_more_description, name),
                 onLess = { if (enabled) onLoad(-1) },
                 onMore = { if (enabled) onLoad(1) },
                 moreEnabled = enabled && (cap == null || load < cap - 1e-9) &&

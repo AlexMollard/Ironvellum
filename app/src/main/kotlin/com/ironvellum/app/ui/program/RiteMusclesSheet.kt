@@ -2,11 +2,15 @@ package com.ironvellum.app.ui.program
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlin.math.roundToInt
@@ -27,15 +31,26 @@ internal fun RiteMusclesSheet(
         ProgramRules.weeklyVolume(listOf(PlannedPreset(title, "", null, entries)))
     }
     val worked = remember(sets) { riteMuscleRows(sets) }
+    val emptyText = UiText.themed(R.string.ritemuscles_empty, R.string.ritemuscles_empty__t).asString()
+    val setsHeading = stringResource(R.string.ritemuscles_sets_heading)
     InfoSheet(
         title = title,
-        subtitle = if (worked.isEmpty()) "Muscles this ${Words.rite.s} works" else "${worked.size} muscles · ${entries.sumOf { it.sets }} sets",
+        subtitle = if (worked.isEmpty()) {
+            UiText.themed(R.string.ritemuscles_title_empty, R.string.ritemuscles_title_empty__t).asString()
+        } else {
+            UiText.plural(
+                R.plurals.ritemuscles_summary,
+                worked.size,
+                worked.size,
+                UiText.plural(R.plurals.common_sets_count, entries.sumOf { it.sets }),
+            ).asString()
+        },
         onDismiss = onDismiss,
     ) {
         if (worked.isEmpty()) {
-            text(null, "No muscle data for this ${Words.rite.s} yet.", IronvellumColors.InkMuted)
+            text(null, emptyText, IronvellumColors.InkMuted)
         } else {
-            rows("SETS PER MUSCLE", worked.map { (muscle, count) -> muscle.label to riteSetsLabel(count) }, collapseAfter = 6)
+            rows(setsHeading, worked.map { (muscle, count) -> muscle.label to riteSetsLabel(count) }, collapseAfter = 6)
         }
     }
 }
@@ -54,5 +69,5 @@ internal fun riteMuscleRows(sets: Map<Muscle, Double>): List<Pair<Muscle, Double
 internal fun riteSetsLabel(sets: Double): String {
     val tenths = maxOf(1, (sets * 10).roundToInt())
     val number = if (tenths % 10 == 0) "${tenths / 10}" else "${tenths / 10}.${tenths % 10}"
-    return if (tenths == 10) "$number set" else "$number sets"
+    return Words.text(UiText.plural(R.plurals.ritemuscles_sets, if (tenths == 10) 1 else 2, number))
 }

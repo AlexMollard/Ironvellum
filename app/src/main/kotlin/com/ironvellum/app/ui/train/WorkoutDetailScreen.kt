@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
@@ -45,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -78,9 +80,11 @@ import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.TrialDraft
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.CelebrationPage
 import com.ironvellum.app.ui.components.InfoNotice
@@ -98,7 +102,6 @@ import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.deedPages
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.metricTotals
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.setFigure
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -209,8 +212,8 @@ class WorkoutDetailViewModel(
     private val _pendingSave = MutableStateFlow<SealedEdit.Settlement?>(null)
     val pendingSave: StateFlow<SealedEdit.Settlement?> = _pendingSave.asStateFlow()
 
-    private val _amendError = MutableStateFlow<String?>(null)
-    val amendError: StateFlow<String?> = _amendError.asStateFlow()
+    private val _amendError = MutableStateFlow<UiText?>(null)
+    val amendError: StateFlow<UiText?> = _amendError.asStateFlow()
 
     /** Deeds an in-window amendment newly earned, as the page that announces them once. */
     private val _earnedDeeds = MutableStateFlow<List<CelebrationPage>>(emptyList())
@@ -225,7 +228,7 @@ class WorkoutDetailViewModel(
         if (ui.value.session?.completedAtMs == null || sets.isEmpty()) return
         val opened = TrialDraft.of(sets)
         if (opened.hasRepeatedMovement) {
-            _amendError.value = "This ${Words.trial.s} lists one movement twice with different modifiers, so it cannot be amended."
+            _amendError.value = UiText.themed(R.string.workoutdetail_amend_repeat_error, R.string.workoutdetail_amend_repeat_error__t)
         } else {
             _draft.value = opened
         }
@@ -245,7 +248,7 @@ class WorkoutDetailViewModel(
         viewModelScope.launch {
             runCatching { repo.previewSealedEdit(sessionId, draft) }
                 .onSuccess { _pendingSave.value = it }
-                .onFailure { _amendError.value = it.message ?: "The ${Words.trial.s} could not be amended" }
+                .onFailure { _amendError.value = it.message?.let { m -> UiText.Raw(m) } ?: UiText.themed(R.string.workoutdetail_amend_failed, R.string.workoutdetail_amend_failed__t) }
         }
     }
 
@@ -264,7 +267,7 @@ class WorkoutDetailViewModel(
                     _earnedDeeds.value = deedPages(result.newTitles, repo.observeSex().first())
                     CloudSyncWorker.pushNow(appContext)
                 }
-                .onFailure { _amendError.value = it.message ?: "The ${Words.trial.s} could not be amended" }
+                .onFailure { _amendError.value = it.message?.let { m -> UiText.Raw(m) } ?: UiText.themed(R.string.workoutdetail_amend_failed, R.string.workoutdetail_amend_failed__t) }
         }
     }
 
@@ -335,17 +338,22 @@ fun WorkoutDetailScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            if (draft != null) "Amend ${Words.trial.s}" else ui.session?.let { it.title.ifBlank { it.label } } ?: Words.trial.c,
+            if (draft != null) UiText.themed(R.string.workoutdetail_amend_title, R.string.workoutdetail_amend_title__t).asString() else ui.session?.let { it.title.ifBlank { it.label } } ?: Words.trial.c,
             onBack = { if (draft != null) leaveAmend() else onBack() },
             actions = {
                 ui.session?.takeIf { draft == null }?.let { session ->
                     if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
-                        InkChip("Amend", icon = Icons.Outlined.Edit, description = "Amend this ${Words.trial.s}", onClick = viewModel::startAmend)
+                        InkChip(
+                            stringResource(R.string.workoutdetail_amend_button),
+                            icon = Icons.Outlined.Edit,
+                            description = UiText.themed(R.string.workoutdetail_amend_description, R.string.workoutdetail_amend_description__t).asString(),
+                            onClick = viewModel::startAmend,
+                        )
                     }
                     InkChip(
-                        "Share",
+                        stringResource(R.string.common_share),
                         icon = Icons.Outlined.IosShare,
-                        description = "Share this ${Words.trial.s}",
+                        description = UiText.themed(R.string.workoutdetail_share_description, R.string.workoutdetail_share_description__t).asString(),
                         onClick = { sharing = true },
                     )
                 }
@@ -363,13 +371,13 @@ fun WorkoutDetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "${Words.trial.c} not found",
+                    UiText.themed(R.string.workoutdetail_missing_title, R.string.workoutdetail_missing_title__t).asString(),
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "This ${Words.trial.s} may have been deleted.",
+                    UiText.themed(R.string.workoutdetail_missing_body, R.string.workoutdetail_missing_body__t).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
@@ -394,7 +402,7 @@ fun WorkoutDetailScreen(
                 Spacer(Modifier.height(12.dp))
                 InkDivider()
                 ListRow(
-                    label = "Who sees this",
+                    label = stringResource(R.string.workoutdetail_audience_label),
                     value = audienceLabel(session.audience),
                     icon = Icons.Outlined.Visibility,
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
@@ -453,17 +461,17 @@ fun WorkoutDetailScreen(
         ui.session?.let { session ->
             IronvellumDialog(
                 onDismissRequest = { confirmDelete = false },
-                title = { Text("Delete this ${Words.trial.s}?") },
+                title = { Text(UiText.themed(R.string.workoutdetail_delete_title, R.string.workoutdetail_delete_title__t).asString()) },
                 text = {
                     Text(
-                        deleteReturnLine(session),
+                        deleteReturnLine(session).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
                 },
                 confirmButton = {
                     IronvellumButton(
-                        label = "Delete",
+                        label = stringResource(R.string.workoutdetail_delete_button),
                         onClick = {
                             confirmDelete = false
                             viewModel.delete(onDone = onBack)
@@ -472,7 +480,7 @@ fun WorkoutDetailScreen(
                     )
                 },
                 dismissButton = {
-                    IronvellumButton(label = "Keep", onClick = { confirmDelete = false }, quiet = true)
+                    IronvellumButton(label = stringResource(R.string.workoutdetail_keep_button), onClick = { confirmDelete = false }, quiet = true)
                 },
             )
         }
@@ -480,11 +488,11 @@ fun WorkoutDetailScreen(
     if (confirmDiscard) {
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard your changes?") },
-            text = { Text("Unsaved edits to this ${Words.trial.s} will be lost.") },
+            title = { Text(stringResource(R.string.workoutdetail_discard_title)) },
+            text = { Text(UiText.themed(R.string.workoutdetail_discard_body, R.string.workoutdetail_discard_body__t).asString()) },
             confirmButton = {
                 IronvellumButton(
-                    label = "Discard",
+                    label = stringResource(R.string.workoutdetail_discard_button),
                     onClick = {
                         confirmDiscard = false
                         viewModel.cancelAmend()
@@ -493,29 +501,30 @@ fun WorkoutDetailScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep editing", onClick = { confirmDiscard = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.amend_keep_editing_button), onClick = { confirmDiscard = false }, quiet = true)
             },
         )
     }
     amendError?.let { message ->
-        InfoNotice("Not amended", message, onDismiss = viewModel::dismissAmendError)
+        InfoNotice(stringResource(R.string.workoutdetail_not_amended_title), message.asString(), onDismiss = viewModel::dismissAmendError)
     }
     AchievementOverlay(pages = earnedDeeds, onDone = viewModel::dismissEarnedDeeds)
 }
 
 /** What deleting pays back, said plainly: the ledger loses exactly these two figures. */
-private fun deleteReturnLine(session: WorkoutSession): String = when {
+private fun deleteReturnLine(session: WorkoutSession): UiText = when {
     session.xpAwarded > 0 && session.strengthScore > 0 ->
-        "+${session.xpAwarded} XP and ${"%,d".fmt(session.strengthScore)} strength will be taken back."
-    session.xpAwarded > 0 -> "+${session.xpAwarded} XP will be taken back."
-    session.strengthScore > 0 -> "${"%,d".fmt(session.strengthScore)} strength will be taken back."
-    else -> "This ${Words.trial.s} will be removed from ${Words.theChronicle.t}."
+        UiText.res(R.string.workoutdetail_delete_return_both, session.xpAwarded, "%,d".fmt(session.strengthScore))
+    session.xpAwarded > 0 -> UiText.res(R.string.workoutdetail_delete_return_xp, session.xpAwarded)
+    session.strengthScore > 0 -> UiText.res(R.string.workoutdetail_delete_return_strength, "%,d".fmt(session.strengthScore))
+    else -> UiText.themed(R.string.workoutdetail_delete_return_none, R.string.workoutdetail_delete_return_none__t)
 }
 
+@Composable
 private fun audienceLabel(audience: SessionAudience): String = when (audience) {
     SessionAudience.PROFILE -> Words.folio.c
     SessionAudience.FRIENDS -> Words.ally.cpl
-    SessionAudience.PRIVATE -> "Only me"
+    SessionAudience.PRIVATE -> stringResource(R.string.workoutdetail_audience_private)
 }
 
 /**
@@ -526,14 +535,14 @@ private fun audienceLabel(audience: SessionAudience): String = when (audience) {
 private fun AudienceSheet(audience: SessionAudience, onPick: (SessionAudience) -> Unit, onDone: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onDone,
-        title = { Text("Who sees this ${Words.trial.s}") },
+        title = { Text(UiText.themed(R.string.workoutdetail_audience_title, R.string.workoutdetail_audience_title__t).asString()) },
         text = {
             Column {
                 InkSegmented(
                     options = listOf(
                         SessionAudience.PROFILE to Words.folio.c,
                         SessionAudience.FRIENDS to Words.ally.cpl,
-                        SessionAudience.PRIVATE to "Only me",
+                        SessionAudience.PRIVATE to stringResource(R.string.workoutdetail_audience_private),
                     ),
                     selected = audience,
                     onPick = onPick,
@@ -541,16 +550,16 @@ private fun AudienceSheet(audience: SessionAudience, onPick: (SessionAudience) -
                 Spacer(Modifier.height(10.dp))
                 Text(
                     when (audience) {
-                        SessionAudience.PROFILE -> "Follows your ${Words.folio.s}'s visibility on the ${Words.ally.upl} tab."
-                        SessionAudience.FRIENDS -> "Only ${Words.ally.pl} see it, even on a public ${Words.folio.s}."
-                        SessionAudience.PRIVATE -> "Only you see it."
+                        SessionAudience.PROFILE -> UiText.themed(R.string.workoutdetail_audience_profile, R.string.workoutdetail_audience_profile__t).asString()
+                        SessionAudience.FRIENDS -> UiText.themed(R.string.workoutdetail_audience_friends, R.string.workoutdetail_audience_friends__t).asString()
+                        SessionAudience.PRIVATE -> stringResource(R.string.workoutdetail_audience_private_note)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
         },
-        confirmButton = { IronvellumButton(label = "Done", onClick = onDone) },
+        confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = onDone) },
     )
 }
 
@@ -566,7 +575,7 @@ private fun DeleteRow(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
-        Text("Delete ${Words.trial.s}", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+        Text(UiText.themed(R.string.workoutdetail_delete_row, R.string.workoutdetail_delete_row__t).asString(), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
     }
 }
 
@@ -579,13 +588,13 @@ private fun NotesCard(session: WorkoutSession) {
         if (session.note.isNotBlank()) {
             Text(session.note, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Spacer(Modifier.height(6.dp))
-            NoteCaption(Icons.Outlined.IosShare, "Shared note · ${Words.ally.pl} see it")
+            NoteCaption(Icons.Outlined.IosShare, UiText.themed(R.string.workoutdetail_note_shared, R.string.workoutdetail_note_shared__t).asString())
         }
         if (session.note.isNotBlank() && session.privateNote.isNotBlank()) Spacer(Modifier.height(16.dp))
         if (session.privateNote.isNotBlank()) {
             Text(session.privateNote, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Spacer(Modifier.height(6.dp))
-            NoteCaption(Icons.Filled.Lock, "Private note · only you see it")
+            NoteCaption(Icons.Filled.Lock, stringResource(R.string.workoutdetail_note_private))
         }
     }
 }
@@ -606,7 +615,7 @@ private fun DetailHeader(
     onToggleBasis: () -> Unit,
 ) {
     Text(
-        listOfNotNull(formatDate(session.completedAtMs ?: session.startedAtMs, "EEE d MMM"), trialDuration(session))
+        listOfNotNull(formatDate(session.completedAtMs ?: session.startedAtMs, stringResource(R.string.workoutlog_date_pattern)), trialDuration(session)?.asString())
             .joinToString(" · "),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
@@ -614,7 +623,7 @@ private fun DetailHeader(
     )
     session.editedAtMs?.let { amended ->
         Text(
-            "Amended ${formatDate(amended)}",
+            UiText.res(R.string.workoutdetail_amended_on, formatDate(amended)).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(start = 2.dp),
@@ -626,21 +635,24 @@ private fun DetailHeader(
         horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         // XP is the one earned figure, so it alone is gold; strength is a plain figure.
-        Figure("+${session.xpAwarded}", "XP", IronvellumColors.SovereignGold)
-        if (session.strengthScore > 0) Figure("%,d".fmt(session.strengthScore), "STR", IronvellumColors.Ink)
+        Figure("+${session.xpAwarded}", stringResource(R.string.workoutdetail_figure_xp), IronvellumColors.SovereignGold)
+        if (session.strengthScore > 0) {
+            val strength = "%,d".fmt(session.strengthScore)
+            Figure(strength, stringResource(R.string.workoutdetail_figure_strength), IronvellumColors.Ink)
+        }
         Spacer(Modifier.weight(1f))
         if (energy != null) {
             Text(
                 when (energy.confidence) {
-                    EnergyConfidence.MEASURED -> "${energy.kcal} kcal measured"
-                    EnergyConfidence.ESTIMATED -> "about ${energy.kcal} kcal"
-                    EnergyConfidence.COARSE -> "roughly ${energy.kcal} kcal"
+                    EnergyConfidence.MEASURED -> UiText.res(R.string.workoutdetail_kcal_measured, energy.kcal).asString()
+                    EnergyConfidence.ESTIMATED -> UiText.res(R.string.workoutdetail_kcal_estimated, energy.kcal).asString()
+                    EnergyConfidence.COARSE -> UiText.res(R.string.workoutdetail_kcal_coarse, energy.kcal).asString()
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier
-                    .clickable(role = Role.Button, onClickLabel = "Show how this was worked out", onClick = onToggleBasis)
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.workoutdetail_kcal_basis_label), onClick = onToggleBasis)
                     .heightIn(min = 48.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
             )
@@ -648,7 +660,7 @@ private fun DetailHeader(
     }
     if (showBasis && energy != null) {
         Text(
-            energyBasisCopy(energy),
+            energyBasisCopy(energy).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(start = 2.dp),
@@ -656,7 +668,7 @@ private fun DetailHeader(
         energy.missing.forEach { name ->
             Spacer(Modifier.height(4.dp))
             Text(
-                "Add a $name ${Words.reading.s} for a sharper estimate.",
+                UiText.themed(R.string.workoutdetail_energy_missing, R.string.workoutdetail_energy_missing__t, name).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 2.dp),
@@ -679,16 +691,16 @@ private fun Figure(value: String, unit: String, color: Color) {
     )
 }
 
-private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confidence) {
-    EnergyConfidence.MEASURED -> "Measured by Health Connect — not an estimate."
-    EnergyConfidence.ESTIMATED -> "Estimated: ${energy.basis}. MET values come from the Compendium of Physical Activities."
+private fun energyBasisCopy(energy: EnergyEstimate): UiText = when (energy.confidence) {
+    EnergyConfidence.MEASURED -> UiText.res(R.string.workoutdetail_basis_measured)
+    EnergyConfidence.ESTIMATED -> UiText.res(R.string.workoutdetail_basis_estimated, energy.basis)
     // Lifting logs reps, not minutes, so working time is inferred from set count.
-    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Sets carry no minutes, so working time is inferred from set count."
+    EnergyConfidence.COARSE -> UiText.res(R.string.workoutdetail_basis_coarse, energy.basis)
 }
 
 @Composable
 private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) {
-    SectionHeader("The work")
+    SectionHeader(stringResource(R.string.workoutdetail_work_header))
     // Per-exercise groups in position order, sets in set order within each.
     val groups = sets
         .groupBy { it.exercisePosition }
@@ -712,19 +724,19 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         val summary = when {
             doneWorking.isEmpty() -> null
             metric == ExerciseMetric.REPS ->
-                "best " + setText(doneWorking.maxWith(compareBy({ it.weightKg ?: 0.0 }, { it.reps })), metric, hold, weighted)
+                UiText.res(R.string.workoutdetail_best, setText(doneWorking.maxWith(compareBy({ it.weightKg ?: 0.0 }, { it.reps })), metric, hold, weighted)).asString()
             metric == ExerciseMetric.HOLD ->
-                "best " + setText(doneWorking.maxBy { it.durationSec ?: it.reps }, metric, hold, weighted)
+                UiText.res(R.string.workoutdetail_best, setText(doneWorking.maxBy { it.durationSec ?: it.reps }, metric, hold, weighted)).asString()
             metric == ExerciseMetric.ATTEMPTS_GRADE ->
                 // Grades are free text with no ordering, so show the last one entered.
-                "${totals.attempts} ${plural(totals.attempts, "attempt", "attempts")}" +
+                UiText.plural(R.plurals.workoutdetail_attempts_count, totals.attempts).asString() +
                     (groupSets.lastOrNull { !it.grade.isNullOrBlank() }?.grade?.let { " · $it" } ?: "")
             metric == ExerciseMetric.DISTANCE_TIME ->
                 setFigure(metric, 0, totals.secondsWorked, totals.km * 1000.0).figure
             else -> setFigure(metric, 0, totals.secondsWorked, null).figure
         }
         val subline = listOfNotNull(
-            supersetNumber[groupIndex]?.let { "Superset $it" },
+            supersetNumber[groupIndex]?.let { UiText.res(R.string.workoutdetail_superset, it).asString() },
             "${doneWorking.size}/${working.size}",
             summary,
         ).joinToString(" · ")
@@ -741,11 +753,11 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                         set.rpe?.takeIf { set.done }?.let { " · ${Effort.value(it, EffortSetting.scale)}" }.orEmpty() +
                         set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     when {
-                        set.warmup -> SetLine("", "Warm-up · $figure", muted = true)
+                        set.warmup -> SetLine("", UiText.res(R.string.workoutdetail_set_warmup, figure).asString(), muted = true)
                         else -> {
                             // Drop, Failure and Rest-pause count as working sets and say how they were done.
                             val shown = if (set.kind == SetKind.WORKING) figure else "${set.kind.label} · $figure"
-                            SetLine((++number).toString(), if (set.done) shown else "$shown · not done", muted = !set.done)
+                            SetLine((++number).toString(), if (set.done) shown else UiText.res(R.string.workoutdetail_set_not_done, shown).asString(), muted = !set.done)
                         }
                     }
                 }
@@ -771,14 +783,14 @@ private fun ExerciseRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClickLabel = if (expanded) "Fold the sets" else "Show the sets", onClick = onToggle)
+            .clickable(role = Role.Button, onClickLabel = stringResource(if (expanded) R.string.workoutdetail_sets_fold else R.string.workoutdetail_sets_show), onClick = onToggle)
             .heightIn(min = 56.dp)
             .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(Modifier.size(18.dp)) {
-            if (allDone) Icon(Icons.Filled.Check, contentDescription = "All sets done", tint = IronvellumColors.Emerald, modifier = Modifier.fillMaxSize())
+            if (allDone) Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.workoutdetail_sets_all_done), tint = IronvellumColors.Emerald, modifier = Modifier.fillMaxSize())
         }
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
@@ -817,18 +829,19 @@ private fun SetLine(label: String, text: String, muted: Boolean) {
 }
 
 /** One set's figure in its own unit: "90 kg × 5", "45s", "12 reps", a climb's attempts. */
+@Composable
 private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean): String {
     val kg = set.weightKg ?: 0.0
     return when {
         hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${Units.withUnit(kg)}" else ""
         metric == ExerciseMetric.ATTEMPTS_GRADE ->
             // The grade is the climb's identity; the weight slot is not (a boulder problem carries no load).
-            "${set.reps} ${plural(set.reps, "attempt", "attempts")}" + set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+            UiText.plural(R.plurals.workoutdetail_attempts_count, set.reps).asString() + set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
         metric == ExerciseMetric.DISTANCE_TIME -> setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
         metric == ExerciseMetric.DURATION -> setFigure(metric, set.reps, set.durationSec, null).figure
         // A barbell lift with no load is unset, not bodyweight.
-        weighted && kg <= 0.0 -> "${set.reps} reps"
+        weighted && kg <= 0.0 -> UiText.plural(R.plurals.common_reps_count, set.reps).asString()
         kg > 0.0 -> "${Units.withUnit(kg)} × ${set.reps}"
-        else -> "${set.reps} reps"
+        else -> UiText.plural(R.plurals.common_reps_count, set.reps).asString()
     }
 }

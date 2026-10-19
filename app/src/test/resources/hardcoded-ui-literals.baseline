@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 3045 in 158 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 1971 in 128 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
 main/data/DbSnapshot.kt 4
@@ -86,27 +86,10 @@ main/ui/idle/IdleScreen.kt 44
 main/ui/idle/RateScreen.kt 31
 main/ui/idle/VeilBuySheet.kt 16
 main/ui/program/BodyFigures.kt 2
-main/ui/program/CoverageParts.kt 18
-main/ui/program/CoverageState.kt 12
-main/ui/program/EffortCopy.kt 13
-main/ui/program/EffortEditor.kt 12
-main/ui/program/ExerciseMuscles.kt 1
-main/ui/program/ForgeCycle.kt 60
-main/ui/program/ForgeParts.kt 25
-main/ui/program/MuscleCoverageScreen.kt 26
-main/ui/program/MuscleFigure.kt 3
-main/ui/program/MuscleHeatMap.kt 9
-main/ui/program/MuscleSelection.kt 4
-main/ui/program/MuscleSelector.kt 2
-main/ui/program/OptimiseModel.kt 37
-main/ui/program/OptimiseParts.kt 16
-main/ui/program/OptimiseScreen.kt 91
-main/ui/program/OptimiseViewModel.kt 2
-main/ui/program/ProgramBuilderScreen.kt 65
-main/ui/program/ProgramEditing.kt 1
-main/ui/program/ProgramPreview.kt 52
-main/ui/program/RiteDaySheet.kt 11
-main/ui/program/RiteMusclesSheet.kt 4
+main/ui/program/OptimiseModel.kt 1
+main/ui/program/OptimiseScreen.kt 1
+main/ui/program/ProgramBuilderScreen.kt 2
+main/ui/program/ProgramPreview.kt 1
 main/ui/settings/AdvancedSettings.kt 19
 main/ui/settings/AppearanceSettings.kt 1
 main/ui/settings/HealthConnectSettings.kt 3
@@ -141,20 +124,7 @@ main/ui/titles/SkillJournal.kt 15
 main/ui/titles/SkillTree.kt 4
 main/ui/titles/SkillTreeLayout.kt 3
 main/ui/titles/TitlesScreen.kt 14
-main/ui/train/ExerciseExplorerScreen.kt 31
-main/ui/train/PlateSheet.kt 28
-main/ui/train/PocketLockOverlay.kt 6
-main/ui/train/PresetEditorScreen.kt 77
-main/ui/train/PresetsScreen.kt 37
-main/ui/train/RiteDetailScreen.kt 10
-main/ui/train/RoutineShareDialogs.kt 18
-main/ui/train/SessionScreen.kt 206
-main/ui/train/SetKindUi.kt 3
-main/ui/train/SetsSheet.kt 99
-main/ui/train/SlideToSeal.kt 2
-main/ui/train/TimedSetControl.kt 17
-main/ui/train/TrialAmendEditor.kt 24
-main/ui/train/VictoryOverlay.kt 16
-main/ui/train/WorkoutDetailScreen.kt 52
-main/ui/train/WorkoutLogScreen.kt 9
+main/ui/train/ExerciseExplorerScreen.kt 2
+main/ui/train/PresetEditorScreen.kt 3
+main/ui/train/SessionScreen.kt 15
 play/ui/social/GoogleSignIn.kt 2

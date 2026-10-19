@@ -1,7 +1,10 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.ProgramAnswersStore
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.WornLoad
@@ -398,7 +401,8 @@ internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
 private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
 /** The cycle day as the Day row shows it. */
-private fun dayName(day: Int?): String = day?.let { DAY_NAMES.getOrNull(it - 1) } ?: "No day"
+@Composable
+private fun dayName(day: Int?): String = day?.let { DAY_NAMES.getOrNull(it - 1) } ?: stringResource(R.string.preseteditor_no_day)
 
 /** Sets cap at 30 and reps at 500 when saved, so two and three digits. */
 private const val SETS_DIGITS = 2
@@ -423,7 +427,7 @@ internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean) = if (bodyweight)
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = "Load", emptyText: String = LOAD_EMPTY, caption: String? = null, onKgText: (String) -> Unit) {
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = stringResource(R.string.preseteditor_load_label), emptyText: String = LOAD_EMPTY, caption: String? = null, onKgText: (String) -> Unit) {
     val unit = Units.current
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
@@ -431,7 +435,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
         fun shown(v: Double) = Loads.fieldText(v, unit)
         StepperRow(
             label = label, value = if (unit == LoadUnit.KG || kgText.isBlank()) kgText else shown(kg), unit = unit.label,
-            less = "Lighter load", more = "Heavier load", error = error, decimal = true, maxDigits = 0,
+            less = stringResource(R.string.preseteditor_load_less), more = stringResource(R.string.preseteditor_load_more), error = error, decimal = true, maxDigits = 0,
             onValue = { typed ->
                 when {
                     unit == LoadUnit.KG || typed.isBlank() -> onKgText(typed)
@@ -445,7 +449,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
         return
     }
     if (unit == LoadUnit.KG) {
-        DecimalStepper(label, kgText, "kg", "Lighter load", "Heavier load", Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, onValue = onKgText)
+        DecimalStepper(label, kgText, LoadUnit.KG.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, onValue = onKgText)
         return
     }
     fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
@@ -457,7 +461,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
     val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
     val shown = if (inSync) typed else lbText(kgText)
     DecimalStepper(
-        label, shown, "lb", "Lighter load", "Heavier load", gridLb, error,
+        label, shown, LoadUnit.LB.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), gridLb, error,
         max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = emptyText, caption = caption,
     ) { lb ->
         typed = lb
@@ -539,7 +543,7 @@ fun PresetEditorScreen(
     Column(Modifier.fillMaxSize().imePadding()) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            if (ui.presetId == null) "New ${Words.rite.s}" else "Edit ${Words.rite.s}",
+            if (ui.presetId == null) UiText.themed(R.string.preseteditor_new_title, R.string.preseteditor_new_title__t).asString() else UiText.themed(R.string.preseteditor_edit_title, R.string.preseteditor_edit_title__t).asString(),
             onBack = { if (editorChanged(baseline, ui)) confirmDiscard = true else onDone() },
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -550,19 +554,19 @@ fun PresetEditorScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
             ) {
-                UnderlineField("${Words.rite.c} name", ui.name, viewModel::setName)
+                UnderlineField(UiText.themed(R.string.preseteditor_name_label, R.string.preseteditor_name_label__t).asString(), ui.name, viewModel::setName)
                 // Wraps over up to four lines: one hard-clipped line cut a note off mid-word.
-                UnderlineField("Note", ui.note, viewModel::setNote, singleLine = false, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default))
+                UnderlineField(stringResource(R.string.preseteditor_note_label), ui.note, viewModel::setNote, singleLine = false, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default))
                 Spacer(Modifier.height(6.dp))
                 ListRow(
-                    label = "Day",
+                    label = stringResource(R.string.preseteditor_day_label),
                     value = dayName(ui.scheduledDay),
                     icon = Icons.Outlined.CalendarMonth,
                     onClick = { pickingDay = true },
                 )
                 InkDivider()
 
-                SectionHeader("Exercises", topPadding = 14.dp)
+                SectionHeader(stringResource(R.string.preseteditor_exercises_header), topPadding = 14.dp)
                 val groups = ui.entries.map { it.supersetGroup }
                 val runs = Supersets.runs(groups)
                 val numbers = Supersets.numbers(groups)
@@ -606,7 +610,7 @@ fun PresetEditorScreen(
                 // Opens the picker: appending the catalogue's first row put an
                 // Assault Bike in the workout, a machine most lifters do not have.
                 ListRow(
-                    label = "Add exercise",
+                    label = stringResource(R.string.preseteditor_add_exercise),
                     icon = Icons.Outlined.Add,
                     onClick = if (ui.exercises.isNotEmpty()) ({ adding = true }) else null,
                 )
@@ -616,9 +620,9 @@ fun PresetEditorScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         if (ui.entries.all { it.warmup }) {
-                            "Add an exercise that is not a warm-up: ${Words.rite.a} of warm-ups alone has nothing to log."
+                            UiText.themed(R.string.preseteditor_warmups_only_hint, R.string.preseteditor_warmups_only_hint__t).asString()
                         } else {
-                            "Fill in the marked targets to save. Loads top out at ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}."
+                            stringResource(R.string.preseteditor_fill_hint, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name)
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
@@ -637,7 +641,7 @@ fun PresetEditorScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
-                        Text("Delete ${Words.rite.s}", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+                        Text(UiText.themed(R.string.preseteditor_delete_button, R.string.preseteditor_delete_button__t).asString(), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
                     }
                 }
                 Spacer(Modifier.height(24.dp))
@@ -645,7 +649,7 @@ fun PresetEditorScreen(
             val pending = removed
             pending?.let { (index, gone) ->
                 UndoBar(
-                    message = "${gone.exerciseName.ifBlank { "Exercise" }} removed",
+                    message = stringResource(R.string.preseteditor_removed_message, gone.exerciseName.ifBlank { stringResource(R.string.preseteditor_exercise_fallback) }),
                     onUndo = {
                         viewModel.insertEntry(index, gone)
                         open = open?.let { if (it >= index) it + 1 else it }
@@ -658,7 +662,7 @@ fun PresetEditorScreen(
             }
         }
         DockedActionBar(
-            primary = "Save ${Words.rite.s}",
+            primary = UiText.themed(R.string.preseteditor_save_button, R.string.preseteditor_save_button__t).asString(),
             onPrimary = { viewModel.save(onDone) },
             primaryEnabled = ui.canSave(),
             reserveLink = false,
@@ -732,11 +736,11 @@ fun PresetEditorScreen(
             val together = Supersets.runAt(groups, index)
             IronvellumDialog(
                 onDismissRequest = { linking = null },
-                title = { Text("Superset with") },
+                title = { Text(stringResource(R.string.preseteditor_superset_with_title)) },
                 text = {
                     Column {
-                        val choices: List<Pair<Int?, String>> = listOf<Pair<Int?, String>>(null to "None") +
-                            ui.entries.indices.filter { it != index }.map { it to ui.entries[it].exerciseName.ifBlank { "Exercise ${it + 1}" } }
+                        val choices: List<Pair<Int?, String>> = listOf<Pair<Int?, String>>(null to stringResource(R.string.preseteditor_superset_none)) +
+                            ui.entries.indices.filter { it != index }.map { it to ui.entries[it].exerciseName.ifBlank { stringResource(R.string.preseteditor_exercise_numbered, it + 1) } }
                         choices.forEach { (partner, label) ->
                             val selected = if (partner == null) together == null else together != null && partner in together
                             // A partner is on offer while the group stays within three; one already linked just shows its tick.
@@ -773,14 +777,14 @@ fun PresetEditorScreen(
                         }
                         if (ui.entries.size < 2) {
                             Text(
-                                "Add another exercise to link it.",
+                                stringResource(R.string.preseteditor_superset_add_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = IronvellumColors.InkMuted,
                             )
                         }
                     }
                 },
-                confirmButton = { IronvellumButton(label = "Close", onClick = { linking = null }, quiet = true) },
+                confirmButton = { IronvellumButton(label = stringResource(R.string.preseteditor_close_button), onClick = { linking = null }, quiet = true) },
             )
         }
     }
@@ -788,10 +792,10 @@ fun PresetEditorScreen(
     if (pickingDay) {
         IronvellumDialog(
             onDismissRequest = { pickingDay = false },
-            title = { Text("Day") },
+            title = { Text(stringResource(R.string.preseteditor_day_label)) },
             text = {
                 Column {
-                    (1..7).map { it to DAY_NAMES[it - 1] }.plus(null to "No day").forEach { (day, label) ->
+                    (1..7).map { it to DAY_NAMES[it - 1] }.plus(null to stringResource(R.string.preseteditor_no_day)).forEach { (day, label) ->
                         val selected = ui.scheduledDay == day
                         Row(
                             Modifier
@@ -818,18 +822,18 @@ fun PresetEditorScreen(
                     }
                 }
             },
-            confirmButton = { IronvellumButton(label = "Close", onClick = { pickingDay = false }, quiet = true) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.preseteditor_close_button), onClick = { pickingDay = false }, quiet = true) },
         )
     }
 
     if (confirmDiscard) {
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard your changes?") },
-            text = { Text("Unsaved edits to this ${Words.rite.s} will be lost.") },
+            title = { Text(stringResource(R.string.preseteditor_discard_title)) },
+            text = { Text(UiText.themed(R.string.preseteditor_discard_body, R.string.preseteditor_discard_body__t).asString()) },
             confirmButton = {
                 IronvellumButton(
-                    label = "Discard",
+                    label = stringResource(R.string.preseteditor_discard_button),
                     onClick = {
                         confirmDiscard = false
                         onDone()
@@ -838,7 +842,7 @@ fun PresetEditorScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep editing", onClick = { confirmDiscard = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.preseteditor_keep_editing_button), onClick = { confirmDiscard = false }, quiet = true)
             },
         )
     }
@@ -846,11 +850,19 @@ fun PresetEditorScreen(
     if (confirmDelete) {
         IronvellumDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete ${Words.rite.s}?") },
-            text = { Text("${ui.name.ifBlank { "This ${Words.rite.s}" }} and its exercises will be removed. ${Words.trial.cpl} you have already ${Words.sealed.s} stay in your history.") },
+            title = { Text(UiText.themed(R.string.preseteditor_delete_title, R.string.preseteditor_delete_title__t).asString()) },
+            text = {
+                Text(
+                    if (ui.name.isBlank()) {
+                        UiText.themed(R.string.preseteditor_delete_body_unnamed, R.string.preseteditor_delete_body_unnamed__t).asString()
+                    } else {
+                        UiText.themed(R.string.preseteditor_delete_body, R.string.preseteditor_delete_body__t, ui.name).asString()
+                    },
+                )
+            },
             confirmButton = {
                 IronvellumButton(
-                    label = "Delete ${Words.rite.s}",
+                    label = UiText.themed(R.string.preseteditor_delete_button, R.string.preseteditor_delete_button__t).asString(),
                     onClick = {
                         confirmDelete = false
                         viewModel.delete(onDone)
@@ -859,7 +871,7 @@ fun PresetEditorScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep ${Words.rite.s}", onClick = { confirmDelete = false }, quiet = true)
+                IronvellumButton(label = UiText.themed(R.string.preseteditor_keep_button, R.string.preseteditor_keep_button__t).asString(), onClick = { confirmDelete = false }, quiet = true)
             },
         )
     }
@@ -903,7 +915,8 @@ private fun EntryItem(
     onDragStart: () -> Unit,
     onDragStep: (Int) -> Unit,
 ) {
-    val name = entry.exerciseName.ifBlank { "Pick exercise" }
+    val name = entry.exerciseName.ifBlank { stringResource(R.string.preseteditor_pick_exercise) }
+    val setShape = stringResource(R.string.preseteditor_set_shape_description)
     val bad = missingTargets(entry, metric)
     val context = LocalContext.current
     if (!open) {
@@ -911,7 +924,7 @@ private fun EntryItem(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
-                .clickable(onClickLabel = "Edit $name", role = Role.Button, onClick = onToggle),
+                .clickable(onClickLabel = stringResource(R.string.preseteditor_entry_edit_description, name), role = Role.Button, onClick = onToggle),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ReorderHandle(name, onDragStart, onDragStep, onMove)
@@ -924,8 +937,11 @@ private fun EntryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val summary = (if (entry.warmup) "Warm-up · " else "") +
-                    supersetNumber?.let { "Superset $it · " }.orEmpty() + entrySummary(entry, metric)
+                val summary = listOfNotNull(
+                    if (entry.warmup) stringResource(R.string.preseteditor_warmup_label) else null,
+                    supersetNumber?.let { stringResource(R.string.preseteditor_superset_number, it) },
+                    entrySummary(entry, metric),
+                ).joinToString(" · ")
                 val tone = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed
                 if (onSets == null) {
                     Text(summary, style = MaterialTheme.typography.bodySmall, color = tone)
@@ -935,7 +951,7 @@ private fun EntryItem(
                         Modifier
                             .fillMaxWidth()
                             .heightIn(min = 36.dp)
-                            .clickable(onClickLabel = "Sets for $name", role = Role.Button, onClick = onSets),
+                            .clickable(onClickLabel = stringResource(R.string.preseteditor_sets_for_description, name), role = Role.Button, onClick = onSets),
                         // Top-aligned: the 36dp target used to centre the line in a tall box, far under the name.
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -943,7 +959,7 @@ private fun EntryItem(
                         Text(summary, style = MaterialTheme.typography.bodySmall, color = tone, modifier = Modifier.weight(1f, fill = false))
                         SchemeBars(
                             schemeBars(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1),
-                            Modifier.padding(top = 1.dp).semantics { contentDescription = "Set shape" },
+                            Modifier.padding(top = 1.dp).semantics { contentDescription = setShape },
                             height = 16.dp,
                         )
                     }
@@ -956,19 +972,19 @@ private fun EntryItem(
     }
     EntryCard(
         name = name,
-        foldLabel = "Fold $name",
+        foldLabel = stringResource(R.string.preseteditor_fold_description, name),
         onFold = onToggle,
         leading = { ReorderHandle(name, onDragStart, onDragStep, onMove) },
         actions = {
-            TextAction("Change exercise", onChange)
-            TextAction("Remove exercise", onRemove)
+            TextAction(stringResource(R.string.preseteditor_change_exercise), onChange)
+            TextAction(stringResource(R.string.preseteditor_remove_exercise), onRemove)
         },
     ) {
         if (onSets != null) {
             ListRow(
-                label = "Set scheme",
-                value = SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1) ?: "Straight",
-                onClickLabel = "Sets for $name",
+                label = stringResource(R.string.preseteditor_set_scheme_label),
+                value = SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1) ?: stringResource(R.string.preseteditor_set_scheme_straight),
+                onClickLabel = stringResource(R.string.preseteditor_sets_for_description, name),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onSets,
             )
@@ -976,32 +992,32 @@ private fun EntryItem(
         // A scheme owns the set count and the reps; they are changed in its sheet.
         val planned = !entry.scheme.isStraight
         if (!planned) {
-            WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
+            WholeStepper(stringResource(R.string.preseteditor_sets_label), entry.sets, stringResource(R.string.preseteditor_unit_sets), TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
         }
         when (metric) {
             ExerciseMetric.REPS -> if (!planned) {
-                WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
+                WholeStepper(stringResource(R.string.preseteditor_reps_label), entry.reps, stringResource(R.string.preseteditor_unit_reps), TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
             }
             ExerciseMetric.HOLD -> {
-                WholeStepper("Seconds, from", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
+                WholeStepper(stringResource(R.string.preseteditor_seconds_from_label), entry.reps, stringResource(R.string.preseteditor_unit_seconds), TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.withReps(it)) }
                 val floor = DecimalInput.parseWhole(entry.reps)
                 if (floor != null) {
-                    RepsUpStepper("Seconds, up to", "seconds", entry.scheme.workingReps?.last, floor) { up ->
+                    RepsUpStepper(stringResource(R.string.preseteditor_seconds_to_label), stringResource(R.string.preseteditor_unit_seconds), entry.scheme.workingReps?.last, floor) { up ->
                         onEntry(entry.copy(scheme = entry.scheme.copy(workingReps = up?.let { floor..it })))
                     }
                 }
             }
             ExerciseMetric.DURATION ->
-                WholeStepper("Minutes", entry.reps, "minutes", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                WholeStepper(stringResource(R.string.preseteditor_minutes_label), entry.reps, stringResource(R.string.preseteditor_unit_minutes), TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
             ExerciseMetric.ATTEMPTS_GRADE ->
-                WholeStepper("Attempts", entry.reps, "attempts", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                WholeStepper(stringResource(R.string.preseteditor_attempts_label), entry.reps, stringResource(R.string.preseteditor_unit_attempts), TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
             ExerciseMetric.DISTANCE_TIME -> Unit
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
                 LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn, emptyText = LoadTargetStepperPlaceholder(bodyweightLift)) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
-                DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                DecimalStepper(stringResource(R.string.preseteditor_distance_label), entry.weight, stringResource(R.string.preseteditor_unit_km), stringResource(R.string.preseteditor_distance_less), stringResource(R.string.preseteditor_distance_more), 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit
         }
         // Activities have no rest between sets, so only the lifting movements are asked; a warm-up has no rest to time.
@@ -1009,8 +1025,8 @@ private fun EntryItem(
             val prefs = remember { TrialPrefs(context) }
             var restOff by remember(entry.exerciseName) { mutableStateOf(prefs.restOffFor(entry.exerciseName)) }
             SettingsSwitchRow(
-                label = "No rest timer",
-                caption = "Ticking a set of ${entry.exerciseName.ifBlank { "this movement" }} starts no rest, in any ${Words.rite.s}.",
+                label = stringResource(R.string.preseteditor_norest_label),
+                caption = UiText.themed(R.string.preseteditor_norest_caption, R.string.preseteditor_norest_caption__t, entry.exerciseName.ifBlank { stringResource(R.string.preseteditor_this_movement) }).asString(),
                 checked = restOff,
                 onCheckedChange = {
                     restOff = it
@@ -1024,7 +1040,7 @@ private fun EntryItem(
         val weightedByLoad = modifierTokens(entry.modifiers).any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
         if (chips.isNotEmpty()) {
             Text(
-                "Modifiers",
+                stringResource(R.string.preseteditor_modifiers_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
@@ -1033,24 +1049,24 @@ private fun EntryItem(
         }
         if (weightedByLoad) {
             Text(
-                "weighted \u00B7 set by load",
+                stringResource(R.string.preseteditor_weighted_by_load),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
         }
         SettingsSwitchRow(
-            label = "Warm-up",
-            caption = "Done before the first working set and ticked off in the ${Words.trial.s}. It earns no XP and counts toward nothing.",
+            label = stringResource(R.string.preseteditor_warmup_label),
+            caption = UiText.themed(R.string.preseteditor_warmup_caption, R.string.preseteditor_warmup_caption__t).asString(),
             checked = entry.warmup,
             onCheckedChange = onWarmup,
         )
         if (!entry.warmup) {
             ListRow(
-                label = "Superset",
-                value = partners ?: "None",
+                label = stringResource(R.string.preseteditor_superset_label),
+                value = partners ?: stringResource(R.string.preseteditor_superset_none),
                 valueColor = if (partners != null) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                onClickLabel = "Choose what ${name} is a superset with",
+                onClickLabel = stringResource(R.string.preseteditor_superset_choose_description, name),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onSuperset,
             )
@@ -1072,6 +1088,9 @@ private fun ReorderHandle(
     val start by rememberUpdatedState(onDragStart)
     val step by rememberUpdatedState(onDragStep)
     val stepPx = with(LocalDensity.current) { DRAG_STEP.toPx() }
+    val dragDescription = stringResource(R.string.preseteditor_drag_description, name)
+    val moveUp = stringResource(R.string.preseteditor_move_up)
+    val moveDown = stringResource(R.string.preseteditor_move_down)
     Box(
         Modifier
             .size(48.dp)
@@ -1097,11 +1116,11 @@ private fun ReorderHandle(
                 )
             }
             .semantics {
-                contentDescription = "Drag to reorder $name"
+                contentDescription = dragDescription
                 role = Role.Button
                 customActions = listOf(
-                    CustomAccessibilityAction("Move up") { onMove(-1); true },
-                    CustomAccessibilityAction("Move down") { onMove(1); true },
+                    CustomAccessibilityAction(moveUp) { onMove(-1); true },
+                    CustomAccessibilityAction(moveDown) { onMove(1); true },
                 )
             },
         contentAlignment = Alignment.Center,

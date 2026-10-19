@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermDialog
@@ -64,12 +66,14 @@ internal fun SetNumberCell(
     var open by remember { mutableStateOf(false) }
     var explain by remember { mutableStateOf(false) }
     // The top set says its word, gold: it is the one set of the lift the rest are planned around.
-    val tag = (if (kind == SetKind.TOP) "Top" else kind.tag).takeIf { it.isNotEmpty() && it != label }
+    val tag = (if (kind == SetKind.TOP) stringResource(R.string.setkind_top_tag) else kind.tag).takeIf { it.isNotEmpty() && it != label }
+    val changeLabel = stringResource(R.string.setkind_change_label)
+    val cellDescription = stringResource(R.string.setkind_cell_description, label, kind.label)
     Box(
         modifier
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Change set type") { open = true }
-            .semantics { contentDescription = "Set $label, ${kind.label}" },
+            .clickable(role = Role.Button, onClickLabel = changeLabel) { open = true }
+            .semantics { contentDescription = cellDescription },
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -113,7 +117,7 @@ internal fun SetNumberCell(
             }
             HorizontalDivider(color = IronvellumColors.Rune)
             DropdownMenuItem(
-                text = { Text("What are set types?", color = IronvellumColors.InkMuted) },
+                text = { Text(stringResource(R.string.setkind_explain_item), color = IronvellumColors.InkMuted) },
                 onClick = {
                     open = false
                     explain = true

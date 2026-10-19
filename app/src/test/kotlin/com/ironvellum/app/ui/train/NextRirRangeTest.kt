@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.plainText
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -35,29 +36,29 @@ class NextRirRangeTest {
 
     @Test
     fun theLineUnderTheChipsStatesTheRange() {
-        assertEquals("Stop with 0–1 reps left", rirRangeLine(0..1, false))
-        assertEquals("Stop with 2 reps left", rirRangeLine(2..2, false))
-        assertEquals("Stop with 1 rep left", rirRangeLine(1..1, false))
-        assertEquals("Stop with 4 or more reps left", rirRangeLine(4..10, false))
-        assertEquals("Stop with 2 or more reps left", rirRangeLine(2..10, false))
-        assertEquals("Stop around RPE 9–10", rirRangeLine(0..1, true))
-        assertEquals("Stop around RPE 8", rirRangeLine(2..2, true))
-        assertEquals("Stop around RPE 6 or lower", rirRangeLine(4..10, true))
+        assertEquals("Stop with 0–1 reps left", rirRangeLine(0..1, false).plainText())
+        assertEquals("Stop with 2 reps left", rirRangeLine(2..2, false).plainText())
+        assertEquals("Stop with 1 rep left", rirRangeLine(1..1, false).plainText())
+        assertEquals("Stop with 4 or more reps left", rirRangeLine(4..10, false).plainText())
+        assertEquals("Stop with 2 or more reps left", rirRangeLine(2..10, false).plainText())
+        assertEquals("Stop around RPE 9–10", rirRangeLine(0..1, true).plainText())
+        assertEquals("Stop around RPE 8", rirRangeLine(2..2, true).plainText())
+        assertEquals("Stop around RPE 6 or lower", rirRangeLine(4..10, true).plainText())
     }
 
     @Test
     fun theSpokenRangeNamesTheWholeState() {
-        assertEquals("0 to 1", rirRangeSpoken(0..1, false))
-        assertEquals("4 or more", rirRangeSpoken(4..10, false))
-        assertEquals("RPE 9 to 10", rirRangeSpoken(0..1, true))
+        assertEquals("0 to 1", rirRangeSpoken(0..1, false).plainText())
+        assertEquals("4 or more", rirRangeSpoken(4..10, false).plainText())
+        assertEquals("RPE 9 to 10", rirRangeSpoken(0..1, true).plainText())
     }
 
     @Test
     fun theDropsHeaderSaysWhereTheDropsFall() {
-        assertEquals("1 drop after the last set", dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 1, dropCount = 1)))
+        assertEquals("1 drop after the last set", dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 1, dropCount = 1)).plainText())
         assertEquals(
             "2 drops after each of the last 3 sets",
-            dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 3, dropCount = 2)),
+            dropsHeader(com.ironvellum.app.domain.SetScheme(dropSets = 3, dropCount = 2)).plainText(),
         )
     }
 }

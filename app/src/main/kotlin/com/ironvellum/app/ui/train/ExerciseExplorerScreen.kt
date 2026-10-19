@@ -1,5 +1,10 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.Units
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,7 +55,6 @@ import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -149,7 +153,7 @@ fun ExerciseExplorerScreen(
         Spacer(Modifier.height(20.dp))
 
         if (selectedExercise == null) {
-            PushedHeader("EXERCISES", onBack)
+            PushedHeader(stringResource(R.string.explorer_title), onBack)
             Spacer(Modifier.height(12.dp))
             // The screen's own header names it and BACK leaves it, so this is
             // the bare list. No panel around it: its rows are already cards.
@@ -161,17 +165,18 @@ fun ExerciseExplorerScreen(
         } else {
             // The movement names the screen; Switch returns to the list.
             PushedHeader(selectedExercise.name, onBack) {
-                InkChip("Switch", onClick = viewModel::clear)
+                InkChip(stringResource(R.string.explorer_switch_button), onClick = viewModel::clear)
             }
             val skill = Skills.forName(selectedExercise.name)
             Text(
-                buildString {
-                    append(selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() })
-                    append(" · ")
-                    append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
-                    if (selectedExercise.custom) append(" · ${Words.yours.s}")
-                    if (skill != null) append(" · ${Words.technique.s} tier ${Skills.tierLabel(skill.tier)}")
-                },
+                listOfNotNull(
+                    selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() },
+                    stringResource(if (selectedExercise.isWeighted) R.string.explorer_weighted else R.string.explorer_bodyweight),
+                    if (selectedExercise.custom) Words.yours.s else null,
+                    skill?.let {
+                        UiText.themed(R.string.explorer_skill_tier, R.string.explorer_skill_tier__t, Skills.tierLabel(it.tier)).asString()
+                    },
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -180,7 +185,7 @@ fun ExerciseExplorerScreen(
             val history = ui.history
             if (history == null || history.isEmpty) {
                 Text(
-                    "${Words.theChronicle.c} holds no sets for this yet. ${Words.seal.c} ${Words.trial.a} with it and they appear.",
+                    UiText.themed(R.string.explorer_empty, R.string.explorer_empty__t).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
@@ -197,7 +202,7 @@ fun ExerciseExplorerScreen(
                     SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
                 }
                 Spacer(Modifier.height(14.dp))
-                Text("Recent sets", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                Text(stringResource(R.string.explorer_recent_title), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
                 Spacer(Modifier.height(8.dp))
                 RecentSets(history, onOpenChronicle)
             }
@@ -239,11 +244,11 @@ private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
 private fun VariationChips(variations: List<String>, shown: String, onPick: (String) -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
         variations.forEach { key ->
-            val label = if (key.isEmpty()) "Plain" else key.replace(",", ", ")
+            val label = if (key.isEmpty()) stringResource(R.string.explorer_variation_plain) else key.replace(",", ", ")
             InkChip(
-                label = if (key == shown) "\u25CF $label" else label,
-                clickLabel = "Show $label",
-                description = if (key == shown) "$label, shown" else null,
+                label = if (key == shown) stringResource(R.string.explorer_variation_selected, label) else label,
+                clickLabel = stringResource(R.string.explorer_variation_show, label),
+                description = if (key == shown) stringResource(R.string.explorer_variation_shown, label) else null,
                 onClick = { onPick(key) },
             )
         }
@@ -259,7 +264,11 @@ private fun PeakCard(history: ExerciseHistory) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
             Text(
-                if (history.variation.isEmpty()) Words.peak.u else "${Words.peak.u} \u00B7 ${history.variation.replace(",", ", ").uppercase()}",
+                if (history.variation.isEmpty()) {
+                    Words.peak.u
+                } else {
+                    UiText.themed(R.string.explorer_peak_variation, R.string.explorer_peak_variation__t, history.variation.replace(",", ", ").uppercase()).asString()
+                },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -279,7 +288,7 @@ private fun PeakCard(history: ExerciseHistory) {
                 )
                 if (peak != null) {
                     Text(
-                        if (history.peakIsE1rm) "est. 1RM ${Units.fixed(peak.e1rmKg ?: 0.0, 1)}" else "score ${formatScore(peak.score)}",
+                        if (history.peakIsE1rm) stringResource(R.string.explorer_peak_e1rm, Units.fixed(peak.e1rmKg ?: 0.0, 1)) else stringResource(R.string.explorer_peak_score, formatScore(peak.score)),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         maxLines = 1,
@@ -294,20 +303,20 @@ private fun PeakCard(history: ExerciseHistory) {
             (peak == null || heavyKg != peak.weightKg || history.heaviestReps != peak.reps)
         ) {
             InkDivider()
-            ListRow("Heaviest", value = setText(history.heaviestReps, heavyKg, hold))
+            ListRow(stringResource(R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold))
         }
         if (hold) {
             InkDivider()
-            ListRow("Time held", value = "${"%,d".fmt(history.totalReps)} s")
+            ListRow(stringResource(R.string.explorer_time_held_label), value = stringResource(R.string.explorer_seconds_value, "%,d".fmt(history.totalReps)))
         } else {
             history.totalVolumeKg?.let { volume ->
                 InkDivider()
-                ListRow("Volume", subline = "All time", value = Units.volume(volume))
+                ListRow(stringResource(R.string.explorer_volume_label), subline = stringResource(R.string.explorer_volume_all_time), value = Units.volume(volume))
             }
         }
         frequency?.let {
             InkDivider()
-            ListRow("Frequency", value = String.format(Locale.US, "%.1f a week", it))
+            ListRow(stringResource(R.string.explorer_frequency_label), value = stringResource(R.string.explorer_frequency_value, String.format(Locale.US, "%.1f", it)))
         }
         InkDivider()
         ListRow(Words.trial.cpl, value = history.sessions.toString())
@@ -323,11 +332,19 @@ private fun ScoreChart(history: ExerciseHistory) {
     val points = history.series.filter { it.peakValue > 0.0 }
     val values = points.map { it.peakValue }
     val e1rm = history.peakIsE1rm
+    val context = LocalContext.current
+    val dayMonth = stringResource(R.string.explorer_date_day_month)
     InkPanel(Modifier.fillMaxWidth()) {
-        Text("Strength per ${Words.trial.s}", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         Text(
-            (if (e1rm) "Estimated 1RM" else "Best set score").let { what ->
-                if (values.size < 2) what else "$what, ${values.size} ${plural(values.size, Words.trial.s, Words.trial.pl)}"
+            UiText.themed(R.string.explorer_chart_title, R.string.explorer_chart_title__t).asString(),
+            style = MaterialTheme.typography.titleSmall,
+            color = IronvellumColors.Ink,
+        )
+        Text(
+            when {
+                values.size < 2 -> stringResource(if (e1rm) R.string.explorer_chart_e1rm else R.string.explorer_chart_best_score)
+                e1rm -> UiText.themedPlural(R.plurals.explorer_chart_e1rm_count, R.plurals.explorer_chart_e1rm_count__t, values.size).asString()
+                else -> UiText.themedPlural(R.plurals.explorer_chart_score_count, R.plurals.explorer_chart_score_count__t, values.size).asString()
             },
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
@@ -335,7 +352,7 @@ private fun ScoreChart(history: ExerciseHistory) {
         if (values.size < 2) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "One ${Words.trial.s} written — a trend needs at least two.",
+                UiText.themed(R.string.explorer_chart_one, R.string.explorer_chart_one__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -345,10 +362,10 @@ private fun ScoreChart(history: ExerciseHistory) {
                 values,
                 fromZero = false,
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
-                startLabel = formatDate(points.first().atMs, "d MMM"),
-                endLabel = formatDate(points.last().atMs, "d MMM"),
-                valueText = { if (e1rm) Units.fixed(it, 1) else "%.1f score".fmt(it) },
-                dateText = { formatDate(points[it].atMs, "d MMM") },
+                startLabel = formatDate(points.first().atMs, dayMonth),
+                endLabel = formatDate(points.last().atMs, dayMonth),
+                valueText = { if (e1rm) Units.fixed(it, 1) else UiText.res(R.string.explorer_chart_score_value, "%.1f".fmt(it)).asString(context) },
+                dateText = { formatDate(points[it].atMs, dayMonth) },
             )
         }
     }
@@ -358,10 +375,11 @@ private fun ScoreChart(history: ExerciseHistory) {
 @Composable
 private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean) {
     var open by rememberSaveable { mutableStateOf(false) }
+    val dayMonthYear = stringResource(R.string.explorer_date_day_month_year)
     InkRowPanel(Modifier.fillMaxWidth()) {
         ListRow(
-            "${Words.peak.cpl} by set",
-            subline = if (isHold) "Best hold for each set number" else "Best weight × reps for each set number",
+            UiText.themed(R.string.explorer_setrecords_title, R.string.explorer_setrecords_title__t).asString(),
+            subline = stringResource(if (isHold) R.string.explorer_setrecords_hold else R.string.explorer_setrecords_weight),
             onClick = { open = !open },
         )
         if (open) {
@@ -369,8 +387,8 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
                 val record = records[setIndex] ?: return@forEach
                 InkDivider()
                 ListRow(
-                    "Set ${setIndex + 1}",
-                    subline = formatDate(record.achievedAtMs, "d MMM yyyy"),
+                    stringResource(R.string.explorer_setrecords_row, setIndex + 1),
+                    subline = formatDate(record.achievedAtMs, dayMonthYear),
                     value = setText(record.reps, record.weightKg, isHold),
                 )
             }
@@ -382,10 +400,11 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
 @Composable
 private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
+    val weekdayDayMonth = stringResource(R.string.explorer_date_weekday_day_month)
     val days = history.entries
         .filter { it.done }
         .sortedWith(compareByDescending<ExerciseSetEntry> { it.atMs }.thenBy { it.setIndex })
-        .groupBy { formatDate(it.atMs, "EEE d MMM") }
+        .groupBy { formatDate(it.atMs, weekdayDayMonth) }
         .entries.take(RECENT_DAYS)
     InkRowPanel(Modifier.fillMaxWidth()) {
         days.forEach { (day, sets) ->
@@ -399,7 +418,7 @@ private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
             }
         }
         InkDivider()
-        ListRow("Full ${Words.chronicle.s}", onClick = onOpenChronicle)
+        ListRow(UiText.themed(R.string.explorer_full_history, R.string.explorer_full_history__t).asString(), onClick = onOpenChronicle)
     }
 }
 

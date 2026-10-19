@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.ui.platform.LocalDensity
@@ -105,14 +109,14 @@ fun RiteDetailScreen(
                 PushedHeader(
                     preset?.name ?: Words.rite.c,
                     onBack,
-                    actions = { if (preset != null) InkChip("Edit", "Edit ${preset.name}") { onEdit(preset.id) } },
+                    actions = { if (preset != null) InkChip(stringResource(R.string.ritedetail_edit_button), stringResource(R.string.ritedetail_edit_description, preset.name)) { onEdit(preset.id) } },
                 )
                 if (preset == null) return@Column
                 // "Wed · 6 exercises · ~54 min": the day folded into the plan line, no chip.
                 val plan = listOfNotNull(
                     preset.scheduledDay?.let { dayLabel(it).lowercase().replaceFirstChar { c -> c.uppercase() } },
                     // A warm-up exercise is not one of the rite's exercises: it is listed apart, under its own heading.
-                    preset.working.size.let { n -> if (n == 1) "1 exercise" else "$n exercises" },
+                    UiText.plural(R.plurals.common_exercises_count, preset.working.size).asString(),
                     SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
                         .substringAfterLast(" · ").lowercase(),
                 ).joinToString(" · ")
@@ -133,11 +137,11 @@ fun RiteDetailScreen(
                 }
                 Spacer(Modifier.height(SECTION_GAP))
                 if (preset.warmups.isNotEmpty()) {
-                    SectionHeader("WARM-UP")
+                    SectionHeader(stringResource(R.string.ritedetail_warmup_header))
                     EntryRows(preset.warmups)
                     Spacer(Modifier.height(SECTION_GAP))
                 }
-                SectionHeader("MOVEMENTS")
+                SectionHeader(stringResource(R.string.ritedetail_movements_header))
                 EntryRows(preset.working)
                 // Where the rite lands, drawn on the page rather than behind a
                 // button; each muscle's exact set count is one tap further.
@@ -146,7 +150,11 @@ fun RiteDetailScreen(
                 }
                 if (sets.values.any { it > 0.0 }) {
                     Spacer(Modifier.height(SECTION_GAP))
-                    SectionHeader("WHERE IT LANDS", "Sets", "Sets per muscle") { showMuscles = true }
+                    SectionHeader(
+                        stringResource(R.string.ritedetail_lands_header),
+                        stringResource(R.string.ritedetail_lands_button),
+                        stringResource(R.string.ritedetail_lands_description),
+                    ) { showMuscles = true }
                     InkPanel(Modifier.fillMaxWidth()) {
                         RiteMuscleMap(sets, preset.name, Modifier.fillMaxWidth(), figureHeight = figureHeight)
                     }
@@ -159,7 +167,7 @@ fun RiteDetailScreen(
         if (preset != null) {
             val resume = live?.takeIf { it.presetId == preset.id }
             IronvellumButton(
-                label = if (resume != null) "Continue ${preset.name}" else "Begin ${preset.name}",
+                label = stringResource(if (resume != null) R.string.ritedetail_continue_button else R.string.ritedetail_begin_button, preset.name),
                 onClick = { if (resume != null) onStartSession(resume.id) else viewModel.begin(preset.id, onStartSession) },
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = GROUP_GAP, bottom = SECTION_GAP),
             )

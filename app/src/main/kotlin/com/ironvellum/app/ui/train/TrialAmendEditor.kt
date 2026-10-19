@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.data.Units
 import androidx.compose.foundation.clickable
@@ -34,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -207,7 +210,7 @@ internal fun TrialAmendEditor(
                     swapFor = null
                 },
                 onDismiss = { swapFor = null },
-                title = "Change exercise",
+                title = stringResource(R.string.amend_change_exercise_title),
             )
         }
     }
@@ -218,7 +221,11 @@ internal fun TrialAmendEditor(
         if (block != null && set != null) {
             AmendLoadDialog(
                 exerciseName = block.exerciseName,
-                setLabel = if (set.warmup) "Warm-up" else "Set ${block.sets.take(setIdx + 1).count { !it.warmup }}",
+                setLabel = if (set.warmup) {
+                    stringResource(R.string.amend_set_warmup)
+                } else {
+                    UiText.res(R.string.amend_set_numbered, block.sets.take(setIdx + 1).count { !it.warmup }).asString()
+                },
                 initialKg = set.weightKg,
                 onConfirm = { kg ->
                     onChange { d -> d.updateSet(blockIdx, setIdx) { it.copy(weightKg = kg.takeIf { v -> v > 0.0 }) } }
@@ -311,7 +318,7 @@ private fun AmendAddSetRow(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(Icons.Filled.Add, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(18.dp))
-        Text("Add set", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
+        Text(stringResource(R.string.amend_add_set_button), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
     }
 }
 
@@ -323,29 +330,29 @@ private fun AmendAddSetRow(onClick: () -> Unit) {
 @Composable
 internal fun AmendSaveBar(canSave: Boolean, xpDelta: Int?, onSave: () -> Unit, onCancel: () -> Unit) {
     if (canSave) {
-        val xp = when {
-            xpDelta == null || xpDelta == 0 -> ""
-            xpDelta > 0 -> " · +$xpDelta XP"
-            else -> " · −${-xpDelta} XP"
+        val primary = when {
+            xpDelta == null || xpDelta == 0 -> stringResource(R.string.amend_save_button)
+            xpDelta > 0 -> UiText.res(R.string.amend_save_button_xp_gain, xpDelta).asString()
+            else -> UiText.res(R.string.amend_save_button_xp_loss, -xpDelta).asString()
         }
         DockedActionBar(
-            primary = "Save changes$xp",
+            primary = primary,
             onPrimary = onSave,
-            link = "Cancel",
+            link = stringResource(R.string.common_cancel),
             linkColor = IronvellumColors.InkMuted,
             onLink = onCancel,
         )
     } else {
         Column(Modifier.fillMaxWidth().background(IronvellumColors.VaultHigh).padding(16.dp)) {
             Text(
-                "Tick at least one set to save. ${Words.trial.ca} with nothing done is deleted, not amended.",
+                UiText.themed(R.string.amend_save_empty, R.string.amend_save_empty__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                IronvellumButton("Cancel", quiet = true, onClick = onCancel)
+                IronvellumButton(stringResource(R.string.common_cancel), quiet = true, onClick = onCancel)
             }
         }
     }
@@ -390,11 +397,11 @@ private fun AmendLoadDialog(
                 value = field,
                 onValueChange = { field = cleanLoadInput(it) },
                 singleLine = true,
-                label = { Text("Load (${Units.name})") },
-                placeholder = { Text("Leave blank for bodyweight") },
+                label = { Text(UiText.res(R.string.amend_load_label, Units.name).asString()) },
+                placeholder = { Text(stringResource(R.string.amend_load_hint)) },
                 isError = parsed.isFailure,
                 supportingText = if (parsed.isFailure) {
-                    { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
+                    { Text(UiText.res(R.string.amend_load_error, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name).asString()) }
                 } else {
                     null
                 },
@@ -404,7 +411,7 @@ private fun AmendLoadDialog(
             )
         },
         confirmButton = {
-            IronvellumButton("Set load", enabled = parsed.isSuccess, onClick = { parsed.getOrNull()?.let(onConfirm) })
+            IronvellumButton(stringResource(R.string.amend_load_button), enabled = parsed.isSuccess, onClick = { parsed.getOrNull()?.let(onConfirm) })
         },
     )
 }
@@ -413,12 +420,12 @@ private fun AmendLoadDialog(
  * The confirmation before an amendment is written: the XP change it will
  * make, said plainly, including the cases where the sets moved but XP cannot.
  */
-internal fun amendXpLine(settlement: SealedEdit.Settlement): String = when {
-    settlement.applied > 0 && settlement.raiseCapped -> "+${settlement.applied} XP (capped at double what it first paid)"
-    settlement.applied > 0 -> "+${settlement.applied} XP"
-    settlement.applied < 0 -> "−${-settlement.applied} XP"
-    settlement.raiseRefused -> "XP unchanged — edits after 48 h can't raise it"
-    else -> "XP unchanged"
+internal fun amendXpLine(settlement: SealedEdit.Settlement): UiText = when {
+    settlement.applied > 0 && settlement.raiseCapped -> UiText.res(R.string.amend_xp_gain_capped, settlement.applied)
+    settlement.applied > 0 -> UiText.res(R.string.amend_xp_gain, settlement.applied)
+    settlement.applied < 0 -> UiText.res(R.string.amend_xp_loss, -settlement.applied)
+    settlement.raiseRefused -> UiText.res(R.string.amend_xp_unchanged_late)
+    else -> UiText.res(R.string.amend_xp_unchanged)
 }
 
 @Composable
@@ -429,29 +436,30 @@ internal fun AmendConfirmDialog(
 ) {
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Amend this ${Words.trial.s}?", color = IronvellumColors.Ink) },
+        title = { Text(UiText.themed(R.string.amend_confirm_title, R.string.amend_confirm_title__t).asString(), color = IronvellumColors.Ink) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    amendXpLine(settlement),
+                    amendXpLine(settlement).asString(),
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     // Gold is for XP gained; a cut or a standstill reads in plain ink.
                     color = if (settlement.applied > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink,
                 )
                 Text(
-                    "${Words.ally.cpl} see it marked amended. ${Words.deed.cpl} already earned stay earned, and no inscriptions are paid.",
+                    UiText.themed(R.string.amend_confirm_marked, R.string.amend_confirm_marked__t).asString() + " " +
+                        stringResource(R.string.always_amend_confirm_deeds),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
                 Text(
-                    "Within 48 h of ${Words.sealing.s}, a change can raise XP to at most double what the ${Words.trial.s} first paid. After that it can only lower it.",
+                    UiText.themed(R.string.amend_confirm_window, R.string.amend_confirm_window__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
         },
-        confirmButton = { IronvellumButton("Save changes", onClick = onConfirm) },
-        dismissButton = { IronvellumButton("Keep editing", quiet = true, onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.amend_save_button), onClick = onConfirm) },
+        dismissButton = { IronvellumButton(stringResource(R.string.amend_keep_editing_button), quiet = true, onClick = onDismiss) },
     )
 }

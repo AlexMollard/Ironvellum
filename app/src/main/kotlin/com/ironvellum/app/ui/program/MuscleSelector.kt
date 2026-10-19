@@ -13,9 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CustomExercises
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -34,7 +38,7 @@ fun MuscleSelector(
     modifier: Modifier = Modifier,
 ) {
     val figure = BodyFigures.of(LocalBodySex.current)
-    val lineFor = { muscle: Muscle -> "${muscle.label}, ${levelWord(shares[muscle])}. Tap to change." }
+    val lineFor = { muscle: Muscle -> Words.text(UiText.res(R.string.muscles_selector_line, muscle.label, levelWord(shares[muscle]))) }
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         TappableFigure(
             figure = figure,
@@ -52,7 +56,7 @@ fun MuscleSelector(
             MuscleLine(ShareLevel.ASSIST, assist)
             Spacer(Modifier.height(6.dp))
             Text(
-                "Tap a muscle: assist, main, off.",
+                stringResource(R.string.muscles_selector_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
@@ -61,11 +65,15 @@ fun MuscleSelector(
     }
 }
 
-private fun levelWord(share: Double?): String = when {
-    share == null || share <= 0.0 -> "off"
-    share >= CustomExercises.MAIN_SHARE -> "main"
-    else -> "assist"
-}
+private fun levelWord(share: Double?): String = Words.text(
+    UiText.res(
+        when {
+            share == null || share <= 0.0 -> R.string.muscles_level_off
+            share >= CustomExercises.MAIN_SHARE -> R.string.muscles_level_main
+            else -> R.string.muscles_level_assist
+        },
+    ),
+)
 
 /**
  * [shares] after a tap on [muscle]: off becomes assist, assist becomes main (keeping its place), main becomes

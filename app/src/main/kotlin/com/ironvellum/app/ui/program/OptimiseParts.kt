@@ -31,6 +31,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -45,6 +46,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -104,11 +108,13 @@ internal fun RankedOptionRow(
     line: String? = null,
 ) {
     val best = rank == 1
-    val spoken = buildString {
-        append("Option $rank of $count: $name")
-        if (best) append(", best match")
-        if (reason.isNotBlank()) append(". $reason")
-    }
+    val head = stringResource(
+        if (best) R.string.optimise_option_description_best else R.string.optimise_option_description,
+        rank, count, name,
+    )
+    val spoken = if (reason.isNotBlank()) "$head. $reason" else head
+    val chosenText = stringResource(if (selected) R.string.optimise_option_chosen else R.string.optimise_option_not_chosen)
+    val bestMatch = stringResource(R.string.optimise_tag_best_match)
     Row(
         modifier
             .fillMaxWidth()
@@ -120,7 +126,7 @@ internal fun RankedOptionRow(
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .semantics(mergeDescendants = true) {
                 contentDescription = spoken
-                stateDescription = if (selected) "Chosen" else "Not chosen"
+                stateDescription = chosenText
             }
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -145,7 +151,7 @@ internal fun RankedOptionRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (best) OptTag("Best match")
+                if (best) OptTag(bestMatch)
             }
             if (reason.isNotBlank()) {
                 Text(reason, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
@@ -194,16 +200,21 @@ internal fun RankedOptions(
  */
 @Composable
 internal fun KeepSkip(number: Int, keep: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val groupDescription = stringResource(R.string.optimise_keepskip_description, number)
     Row(
         modifier
             .fillMaxWidth()
             .selectableGroup()
-            .semantics { contentDescription = "Change $number: keep or skip" }
+            .semantics { contentDescription = groupDescription }
             .drawBehind { drawRect(IronvellumColors.Rune, Offset.Zero, Size(size.width, 1.dp.toPx())) },
     ) {
         for (value in listOf(true, false)) {
             val on = keep == value
-            val label = if (value) "Keep" else "Skip"
+            val label = stringResource(if (value) R.string.optimise_keep_button else R.string.optimise_skip_button)
+            val description = stringResource(
+                if (value) R.string.optimise_keep_change_description else R.string.optimise_skip_change_description,
+                number,
+            )
             Row(
                 Modifier
                     .weight(1f)
@@ -211,7 +222,7 @@ internal fun KeepSkip(number: Int, keep: Boolean, onChange: (Boolean) -> Unit, m
                     .background(if (on) IronvellumColors.Ink.copy(alpha = 0.05f) else Color.Transparent)
                     .selectedUnderline(on)
                     .selectable(selected = on, role = Role.RadioButton, onClick = { onChange(value) })
-                    .semantics { contentDescription = "$label change $number" },
+                    .semantics { contentDescription = description },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
@@ -251,6 +262,10 @@ internal fun ChangeCard(
 ) {
     val option = change.options.getOrElse(chosen) { change.options.first() }
     val more = change.options.size - 1
+    val openLabel = stringResource(R.string.optimise_card_open_label, number)
+    val openDescription = stringResource(R.string.optimise_card_open_description, number, change.kind.label, titleFor(change, option))
+    val bestMatch = stringResource(R.string.optimise_tag_best_match)
+    val skipped = stringResource(R.string.optimise_tag_skipped)
     InkPanel(modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Row(
@@ -258,12 +273,12 @@ internal fun ChangeCard(
                     .fillMaxWidth()
                     .heightIn(min = 72.dp)
                     .clickable(
-                        onClickLabel = "Open change $number",
+                        onClickLabel = openLabel,
                         role = Role.Button,
                         onClick = onOpen,
                     )
                     .semantics(mergeDescendants = true) {
-                        contentDescription = "Open change $number: ${change.kind.label}, ${titleFor(change, option)}"
+                        contentDescription = openDescription
                     }
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -279,9 +294,9 @@ internal fun ChangeCard(
                             letterSpacing = IronvellumTracking.InlineLabel,
                             color = IronvellumColors.SystemGreen,
                         )
-                        if (change.options.size > 1 && chosen == 0) OptTag("Best match")
-                        if (change.options.size > 1 && chosen > 0) OptTag("Option ${chosen + 1}")
-                        if (!keep) OptTag("Skipped")
+                        if (change.options.size > 1 && chosen == 0) OptTag(bestMatch)
+                        if (change.options.size > 1 && chosen > 0) OptTag(stringResource(R.string.optimise_tag_option, chosen + 1))
+                        if (!keep) OptTag(skipped)
                     }
                     Text(
                         titleFor(change, option),
@@ -306,20 +321,24 @@ internal fun ChangeCard(
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
                         .clickable(
-                            onClickLabel = "Show $more more options for change $number",
+                            onClickLabel = UiText.plural(R.plurals.optimise_card_more_label, more, more, number).asString(),
                             role = Role.Button,
                             onClick = onOpen,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "$more more ${if (more == 1) "option" else "options"}",
+                        UiText.plural(R.plurals.optimise_card_more_options, more).asString(),
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.SystemGreen,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        "Ranked ${(2..change.options.size).joinToString(" and ")}",
+                        when (change.options.size) {
+                            2 -> stringResource(R.string.optimise_card_ranked_one)
+                            3 -> stringResource(R.string.optimise_card_ranked_two)
+                            else -> stringResource(R.string.optimise_card_ranked_many, change.options.size)
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -344,7 +363,7 @@ internal fun titleFor(change: OptChange, option: OptOption): String =
  * when the lifter picks another option.
  */
 @Composable
-internal fun ImpactList(rows: List<ImpactRow>, modifier: Modifier = Modifier, emptyLine: String = "No muscle changes coverage.") {
+internal fun ImpactList(rows: List<ImpactRow>, modifier: Modifier = Modifier, emptyLine: String = stringResource(R.string.optimise_impact_empty)) {
     Column(modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
         if (rows.isEmpty()) {
             Text(emptyLine, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(vertical = 8.dp))

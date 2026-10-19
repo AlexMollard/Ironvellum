@@ -1,9 +1,11 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.size
@@ -60,6 +62,8 @@ import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.PlanChange
@@ -138,7 +142,11 @@ fun ProposedDay(
                     if (folded) {
                         Modifier
                             .clickable(
-                                onClickLabel = if (dayOpen) "Fold $day, ${preset.name}" else "Open $day, ${preset.name}",
+                                onClickLabel = UiText.res(
+                                    if (dayOpen) R.string.programpreview_day_fold else R.string.programpreview_day_open,
+                                    day,
+                                    preset.name,
+                                ).asString(),
                                 role = Role.Button,
                             ) { dayOpen = !dayOpen }
                             .semantics { stateDescription = if (dayOpen) "Expanded" else "Collapsed" }
@@ -397,13 +405,17 @@ fun TapPad(
 }
 
 /** "Load set", not the enum's "Load_set". */
-private fun changeKindLabel(kind: PlanChange.Kind): String = when (kind) {
-    PlanChange.Kind.ADDED -> "Added"
-    PlanChange.Kind.REMOVED -> "Removed"
-    PlanChange.Kind.SWAPPED -> "Swapped"
-    PlanChange.Kind.ADJUSTED -> "Adjusted"
-    PlanChange.Kind.LOAD_SET -> "Load set"
-}
+private fun changeKindLabel(kind: PlanChange.Kind): String = Words.text(
+    UiText.res(
+        when (kind) {
+            PlanChange.Kind.ADDED -> R.string.programpreview_change_added
+            PlanChange.Kind.REMOVED -> R.string.programpreview_change_removed
+            PlanChange.Kind.SWAPPED -> R.string.programpreview_change_swapped
+            PlanChange.Kind.ADJUSTED -> R.string.programpreview_change_adjusted
+            PlanChange.Kind.LOAD_SET -> R.string.programpreview_change_load_set
+        },
+    ),
+)
 
 /**
  * The improve pass, shown honestly: what left (struck through, named as
@@ -418,7 +430,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
     if (improvement.changes.isEmpty()) {
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
-                "NO CHANGES NEEDED",
+                stringResource(R.string.programpreview_no_changes_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -428,11 +440,12 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
             Spacer(Modifier.height(4.dp))
             Text(
                 if (stillShort.isEmpty()) {
-                    "Already fits your goal. Nothing changed."
+                    stringResource(R.string.programpreview_no_changes_fits)
                 } else {
-                    "Already fits your goal. " +
-                        "${ProgramGenerator.joinWithAnd(stillShort.map { it.label.lowercase() }).replaceFirstChar { it.uppercase() }} " +
-                        "stay short — another day would cover them."
+                    UiText.res(
+                        R.string.programpreview_no_changes_short,
+                        ProgramGenerator.joinWithAnd(stillShort.map { it.label.lowercase() }).replaceFirstChar { it.uppercase() },
+                    ).asString()
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -442,7 +455,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
     }
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "BEFORE",
+            stringResource(R.string.programpreview_before_label),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -462,7 +475,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "${entry.sets}\u00D7${entry.reps}",
+                    UiText.res(R.string.programpreview_sets_reps, entry.sets, entry.reps).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -471,7 +484,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            "AFTER",
+            stringResource(R.string.programpreview_after_label),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -490,12 +503,16 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "${entry.sets}\u00D7${entry.reps}" + when (kind) {
-                        PlanChange.Kind.ADDED -> "  · added"
-                        PlanChange.Kind.SWAPPED -> "  · swapped in"
-                        PlanChange.Kind.ADJUSTED, PlanChange.Kind.LOAD_SET -> "  · adjusted"
-                        else -> ""
-                    },
+                    UiText.res(
+                        when (kind) {
+                            PlanChange.Kind.ADDED -> R.string.programpreview_sets_reps_added
+                            PlanChange.Kind.SWAPPED -> R.string.programpreview_sets_reps_swapped
+                            PlanChange.Kind.ADJUSTED, PlanChange.Kind.LOAD_SET -> R.string.programpreview_sets_reps_adjusted
+                            else -> R.string.programpreview_sets_reps
+                        },
+                        entry.sets,
+                        entry.reps,
+                    ).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SystemGreen,
@@ -504,7 +521,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            "WHAT CHANGED, AND WHY",
+            stringResource(R.string.programpreview_changed_label),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -556,7 +573,7 @@ internal fun SourcesPanel(texts: List<String>) {
     var open by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         Text(
-            "SOURCES (${sources.size})  ${if (open) "-" else "+"}",
+            UiText.res(if (open) R.string.programpreview_sources_open else R.string.programpreview_sources_closed, sources.size).asString(),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -564,13 +581,13 @@ internal fun SourcesPanel(texts: List<String>) {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
-                .clickable(onClickLabel = if (open) "Hide sources" else "Show sources") { open = !open }
+                .clickable(onClickLabel = stringResource(if (open) R.string.programpreview_sources_hide else R.string.programpreview_sources_show)) { open = !open }
                 .padding(vertical = 14.dp),
         )
         if (open) {
             sources.forEach { source ->
                 Text(
-                    "${source.citation} doi:${source.doi}",
+                    UiText.res(R.string.programpreview_source_citation, source.citation, source.doi).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -614,19 +631,21 @@ internal fun SplitPicker(
 }
 
 /** What the picked split does with the week, in one line. */
-internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
-    TrainingSplit.FULL_BODY ->
-        "Every muscle, every ${Words.rite.s}. Fewest days, longest ${Words.rite.pl}."
-    TrainingSplit.UPPER_LOWER ->
-        "Upper, then lower, twice each. Every muscle twice a week."
-    TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
-        "PPL is push / pull / legs. Each muscle once a week: fine for growth, less practice per exercise."
-    } else {
-        "PPL is push / pull / legs, twice over. Short ${Words.rite.pl}, every muscle twice a week."
-    }
-    TrainingSplit.UPPER_LOWER_PPL ->
-        "Hybrid: push / pull / legs, then upper and lower. Every muscle twice in five days."
-}
+internal fun splitCaption(split: TrainingSplit, days: Int): String = Words.text(
+    when (split) {
+        TrainingSplit.FULL_BODY ->
+            UiText.themed(R.string.programpreview_split_full_body, R.string.programpreview_split_full_body__t)
+        TrainingSplit.UPPER_LOWER ->
+            UiText.res(R.string.programpreview_split_upper_lower)
+        TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
+            UiText.res(R.string.programpreview_split_ppl3)
+        } else {
+            UiText.themed(R.string.programpreview_split_ppl6, R.string.programpreview_split_ppl6__t)
+        }
+        TrainingSplit.UPPER_LOWER_PPL ->
+            UiText.res(R.string.programpreview_split_hybrid)
+    },
+)
 
 /**
  * One cell of a pick grid, drawn as an outlined chip: SystemGreen text on a half-strength SystemGreen
@@ -757,17 +776,17 @@ internal fun GearPicker(
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             PickCell(
-                label = "Full gym",
+                label = stringResource(R.string.programpreview_gear_full_gym),
                 selected = equipment?.fullGym == true,
                 modifier = Modifier.weight(1f),
-                description = "Full gym: every machine and cable",
+                description = stringResource(R.string.programpreview_gear_full_gym_description),
                 onClick = { onChange(Equipment.FULL_GYM.copy(kit = current.kit)) },
             )
             PickCell(
-                label = "Nothing",
+                label = stringResource(R.string.programpreview_gear_nothing),
                 selected = nothingSelected(equipment),
                 modifier = Modifier.weight(1f),
-                description = "Nothing: floor work only",
+                description = stringResource(R.string.programpreview_gear_nothing_description),
                 onClick = { onChange(Equipment.NOTHING.copy(kit = current.kit)) },
             )
         }
@@ -779,7 +798,10 @@ internal fun GearPicker(
                         label = gear.label,
                         selected = on,
                         modifier = Modifier.weight(1f),
-                        description = "${gear.label}, ${if (on) "on" else "off"}",
+                        description = UiText.res(
+                            if (on) R.string.programpreview_gear_on_description else R.string.programpreview_gear_off_description,
+                            gear.label,
+                        ).asString(),
                         role = Role.Checkbox,
                         onClick = {
                             val gearSet = if (on) current.gear - gear else current.gear + gear
@@ -796,24 +818,24 @@ internal fun GearPicker(
             val maxKg = equipment.dumbbellMaxKg ?: DEFAULT_DUMBBELL_KG
             val oneOrPair: @Composable RowScope.() -> Unit = {
                 PickCell(
-                    label = "One",
+                    label = stringResource(R.string.programpreview_gear_one),
                     selected = !equipment.dumbbellPair,
                     modifier = Modifier.weight(1f),
-                    description = "One dumbbell",
+                    description = stringResource(R.string.programpreview_gear_one_description),
                     onClick = { onChange(equipment.copy(dumbbellPair = false)) },
                 )
                 PickCell(
-                    label = "Pair",
+                    label = stringResource(R.string.programpreview_gear_pair),
                     selected = equipment.dumbbellPair,
                     modifier = Modifier.weight(1f),
-                    description = "A pair of dumbbells",
+                    description = stringResource(R.string.programpreview_gear_pair_description),
                     onClick = { onChange(equipment.copy(dumbbellPair = true)) },
                 )
             }
             val lower: @Composable () -> Unit = {
                 TapPad(
                     label = "−",
-                    description = "Lower dumbbell max, currently up to ${maxKg.toInt()} kg",
+                    description = UiText.res(R.string.programpreview_dumbbell_lower_description, maxKg.toInt()).asString(),
                     onClick = {
                         onChange(equipment.copy(dumbbellMaxKg = (maxKg - 1.0).coerceAtLeast(MIN_DUMBBELL_KG)))
                     },
@@ -822,7 +844,7 @@ internal fun GearPicker(
             val raise: @Composable () -> Unit = {
                 TapPad(
                     label = "+",
-                    description = "Raise dumbbell max, currently up to ${maxKg.toInt()} kg",
+                    description = UiText.res(R.string.programpreview_dumbbell_raise_description, maxKg.toInt()).asString(),
                     onClick = {
                         onChange(equipment.copy(dumbbellMaxKg = (maxKg + 1.0).coerceAtMost(MAX_DUMBBELL_KG)))
                     },
@@ -830,7 +852,7 @@ internal fun GearPicker(
             }
             val maxText: @Composable (Modifier) -> Unit = { m ->
                 Text(
-                    "Up to ${maxKg.toInt()} kg",
+                    UiText.res(R.string.programpreview_dumbbell_max, maxKg.toInt()).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.Ink,
                     modifier = m,
@@ -888,10 +910,10 @@ private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
     val vestOn = kit.vestMaxKg != null
     val vest: @Composable (Modifier) -> Unit = { cell ->
         PickCell(
-            label = "Weighted vest",
+            label = stringResource(R.string.programpreview_vest_label),
             selected = vestOn,
             modifier = cell,
-            description = "Weighted vest, ${if (vestOn) "on" else "off"}",
+            description = stringResource(if (vestOn) R.string.programpreview_vest_on_description else R.string.programpreview_vest_off_description),
             role = Role.Checkbox,
             onClick = {
                 onChange(current.copy(kit = kit.copy(vestMaxKg = if (vestOn) null else LoadKit.DEFAULT_VEST_KG)))
@@ -900,10 +922,10 @@ private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
     }
     val belt: @Composable (Modifier) -> Unit = { cell ->
         PickCell(
-            label = "Dip belt",
+            label = stringResource(R.string.programpreview_belt_label),
             selected = kit.dipBelt,
             modifier = cell,
-            description = "Dip belt, ${if (kit.dipBelt) "on" else "off"}",
+            description = stringResource(if (kit.dipBelt) R.string.programpreview_belt_on_description else R.string.programpreview_belt_off_description),
             role = Role.Checkbox,
             onClick = { onChange(current.copy(kit = kit.copy(dipBelt = !kit.dipBelt))) },
         )
@@ -920,13 +942,13 @@ private fun WornKitPicker(current: Equipment, onChange: (Equipment) -> Unit) {
     }
     val maxKg = kit.vestMaxKg ?: return
     KitStepperRow(
-        label = "Vest top load",
-        value = "Up to ${Loads.withUnit(maxKg, unit)}",
+        label = stringResource(R.string.programpreview_vest_top_label),
+        value = UiText.res(R.string.programpreview_vest_top_value, Loads.withUnit(maxKg, unit)).asString(),
         onLess = { onChange(current.copy(kit = kit.copy(vestMaxKg = LoadKit.stepVestMax(maxKg, -1, unit)))) },
         onMore = { onChange(current.copy(kit = kit.copy(vestMaxKg = LoadKit.stepVestMax(maxKg, 1, unit)))) },
     )
     KitStepperRow(
-        label = "Vest block",
+        label = stringResource(R.string.programpreview_vest_block_label),
         value = Loads.withUnit(kit.vestBlockKg, unit),
         onLess = { onChange(current.copy(kit = kit.copy(vestBlockKg = LoadKit.stepVestBlock(kit.vestBlockKg, -1, unit)))) },
         onMore = { onChange(current.copy(kit = kit.copy(vestBlockKg = LoadKit.stepVestBlock(kit.vestBlockKg, 1, unit)))) },
@@ -942,9 +964,9 @@ private fun KitStepperRow(label: String, value: String, onLess: () -> Unit, onMo
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-        TapPad(label = "−", description = "Lower ${label.lowercase()}, currently $value", onClick = onLess)
+        TapPad(label = "−", description = UiText.res(R.string.programpreview_kit_lower_description, label.lowercase(), value).asString(), onClick = onLess)
         Text(value, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.Ink)
-        TapPad(label = "+", description = "Raise ${label.lowercase()}, currently $value", onClick = onMore)
+        TapPad(label = "+", description = UiText.res(R.string.programpreview_kit_raise_description, label.lowercase(), value).asString(), onClick = onMore)
     }
 }
 
@@ -955,23 +977,33 @@ internal fun nothingSelected(equipment: Equipment?): Boolean =
 
 /** The vest and belt, appended to the gear caption: "" when the lifter owns neither. */
 private fun kitCaption(kit: LoadKit): String {
-    val vest = kit.vestMaxKg?.let { "weighted vest up to ${Loads.withUnit(it, Units.current)}" }
-    val belt = if (kit.dipBelt) "dip belt" else null
-    val owned = listOfNotNull(vest, belt)
-    return if (owned.isEmpty()) "" else " Plus ${owned.joinToString(" and ")}."
+    val vestKg = kit.vestMaxKg
+    val caption = when {
+        vestKg != null && kit.dipBelt ->
+            UiText.res(R.string.programpreview_kit_caption_both, Loads.withUnit(vestKg, Units.current))
+        vestKg != null -> UiText.res(R.string.programpreview_kit_caption_vest, Loads.withUnit(vestKg, Units.current))
+        kit.dipBelt -> UiText.res(R.string.programpreview_kit_caption_belt)
+        else -> return ""
+    }
+    return " " + Words.text(caption)
 }
 
-private fun gearCaption(equipment: Equipment): String = when {
-    equipment.fullGym -> "Barbells, machines and cables."
-    equipment.gear.isEmpty() -> "Floor work only."
-    else -> {
-        val owned = equipment.gear.joinToString(", ") { it.label.lowercase() }
-        val pair = if (Gear.DUMBBELLS in equipment.gear) {
-            val max = equipment.dumbbellMaxKg?.toInt() ?: DEFAULT_DUMBBELL_KG.toInt()
-            " (${if (equipment.dumbbellPair) "pair" else "one"}, up to $max kg)"
-        } else {
-            ""
+private fun gearCaption(equipment: Equipment): String = Words.text(
+    when {
+        equipment.fullGym -> UiText.res(R.string.programpreview_gear_caption_full)
+        equipment.gear.isEmpty() -> UiText.res(R.string.programpreview_gear_caption_floor)
+        else -> {
+            val owned = equipment.gear.joinToString(", ") { it.label.lowercase() }
+            if (Gear.DUMBBELLS in equipment.gear) {
+                val max = equipment.dumbbellMaxKg?.toInt() ?: DEFAULT_DUMBBELL_KG.toInt()
+                UiText.res(
+                    if (equipment.dumbbellPair) R.string.programpreview_gear_caption_plus_pair else R.string.programpreview_gear_caption_plus_one,
+                    owned,
+                    max,
+                )
+            } else {
+                UiText.res(R.string.programpreview_gear_caption_plus, owned)
+            }
         }
-        "Floor work plus $owned$pair."
-    }
-}
+    },
+)

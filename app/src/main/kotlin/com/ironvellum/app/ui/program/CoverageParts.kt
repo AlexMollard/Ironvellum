@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -36,11 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -119,15 +122,16 @@ internal fun CoverageMark(state: CoverageState, modifier: Modifier = Modifier, s
 internal fun CoverageLegend(showHeavy: Boolean) {
     val floor = ProgramRules.COVERED_MIN.toInt()
     LegendItem(CoverageState.NOT_TRAINED, "0")
-    LegendItem(CoverageState.BELOW_MINIMUM, "under $floor")
+    LegendItem(CoverageState.BELOW_MINIMUM, stringResource(R.string.coverage_legend_under, floor))
     LegendItem(CoverageState.COVERED, "$floor+")
     if (showHeavy) LegendItem(CoverageState.HEAVY, "${ProgramRules.HEAVY_WEEK.toInt()}+")
 }
 
 @Composable
 private fun LegendItem(state: CoverageState, range: String) {
+    val description = stringResource(R.string.coverage_legend_description, state.label, range)
     Row(
-        Modifier.semantics(mergeDescendants = true) { contentDescription = "${state.label}: $range hard sets a week" },
+        Modifier.semantics(mergeDescendants = true) { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CoverageMark(state, size = 16.dp)
@@ -162,13 +166,15 @@ internal fun CoverageRow(
     onPick: () -> Unit,
 ) {
     val sets = hardSetsLabel(load?.weekly ?: 0.0)
+    val showHint = stringResource(R.string.coverage_row_click_hint, muscle.label)
+    val description = stringResource(R.string.coverage_row_description, muscle.label, sets, state.label)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = ListRowHeight)
-            .clickable(onClickLabel = "Show what trains ${muscle.label}", role = Role.Button, onClick = onPick)
+            .clickable(onClickLabel = showHint, role = Role.Button, onClick = onPick)
             .semantics(mergeDescendants = true) {
-                contentDescription = "Show what trains ${muscle.label}: $sets, ${state.label}"
+                contentDescription = description
                 stateDescription = state.label
             }
             .padding(vertical = 8.dp),
@@ -210,14 +216,16 @@ internal fun CoverageRow(
 @Composable
 internal fun CoverageChip(tally: CoverageTally, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val headline = coverageHeadline(tally)
+    val openHint = UiText.themed(R.string.coverage_chip_hint, R.string.coverage_chip_hint__t).asString()
+    val description = stringResource(R.string.coverage_chip_description, headline)
     Column(modifier.fillMaxWidth()) {
         InkDivider()
         Row(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = ListRowHeight)
-                .clickable(onClickLabel = "Open coverage of this ${Words.cycle.s}", role = Role.Button, onClick = onOpen)
-                .semantics(mergeDescendants = true) { contentDescription = "Coverage: $headline" },
+                .clickable(onClickLabel = openHint, role = Role.Button, onClick = onOpen)
+                .semantics(mergeDescendants = true) { contentDescription = description },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -237,7 +245,7 @@ internal fun CoverageChip(tally: CoverageTally, onOpen: () -> Unit, modifier: Mo
                 }
             }
             Text(
-                "Coverage ›",
+                stringResource(R.string.coverage_chip_link),
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.SystemGreen,
             )
@@ -255,11 +263,12 @@ internal fun CoverageTiles(tally: CoverageTally) {
             CoverageState.BELOW_MINIMUM to tally.below.size,
             CoverageState.COVERED to tally.covered.size,
         ).forEach { (state, count) ->
+            val description = UiText.plural(R.plurals.coverage_tile_description, count, count, state.label).asString()
             Column(
                 Modifier
                     .weight(1f)
                     .semantics(mergeDescendants = true) {
-                        contentDescription = "$count ${if (count == 1) "muscle" else "muscles"}: ${state.label}"
+                        contentDescription = description
                     },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -283,11 +292,15 @@ internal fun CoverageTiles(tally: CoverageTally) {
 /** A "+ / −" disclosure row, announced as collapsed or expanded. */
 @Composable
 internal fun Disclosure(title: String, open: Boolean, onToggle: () -> Unit) {
+    val hint = stringResource(
+        if (open) R.string.coverage_disclosure_hide_hint else R.string.coverage_disclosure_show_hint,
+        title,
+    )
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = ListRowHeight)
-            .clickable(role = Role.Button, onClickLabel = if (open) "Hide $title" else "Show $title", onClick = onToggle)
+            .clickable(role = Role.Button, onClickLabel = hint, onClick = onToggle)
             .semantics { stateDescription = if (open) "Expanded" else "Collapsed" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -316,9 +329,10 @@ internal fun CoverageExplainer(tally: CoverageTally, onSeeMuscles: () -> Unit, o
         CoverageTiles(tally)
         Spacer(Modifier.height(12.dp))
         listOf(
-            "Effort drives growth." to "A set taken close to failure is the one that counts.",
-            "More sets help a bit." to "Each extra set adds less than the one before.",
-            "About ${ProgramRules.COVERED_MIN.toInt()} hard sets a week" to "per muscle is a sound floor. Do more if you like.",
+            stringResource(R.string.coverage_explainer_effort_lead) to stringResource(R.string.coverage_explainer_effort_rest),
+            stringResource(R.string.coverage_explainer_more_lead) to stringResource(R.string.coverage_explainer_more_rest),
+            stringResource(R.string.coverage_explainer_floor_lead, ProgramRules.COVERED_MIN.toInt()) to
+                stringResource(R.string.coverage_explainer_floor_rest),
         ).forEachIndexed { index, (lead, rest) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
@@ -344,13 +358,13 @@ internal fun CoverageExplainer(tally: CoverageTally, onSeeMuscles: () -> Unit, o
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Below minimum is a hint, never a block. Save any ${Words.cycle.s} you want.",
+            UiText.themed(R.string.coverage_explainer_hint, R.string.coverage_explainer_hint__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         if (tally.gaps > 0) {
             Text(
-                "See the muscles that need sets ›",
+                stringResource(R.string.coverage_explainer_see_muscles),
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
@@ -359,7 +373,7 @@ internal fun CoverageExplainer(tally: CoverageTally, onSeeMuscles: () -> Unit, o
                     .padding(vertical = 14.dp),
             )
         }
-        IronvellumButton(label = "Got it", onClick = onDone, quiet = true, modifier = Modifier.fillMaxWidth())
+        IronvellumButton(label = stringResource(R.string.coverage_explainer_done_button), onClick = onDone, quiet = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -371,7 +385,7 @@ internal fun HeavyNote(muscle: Muscle, load: MuscleLoad, onDismiss: () -> Unit) 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CoverageMark(CoverageState.HEAVY)
             Text(
-                "${muscle.label} runs heavy: ${hardSetsLabel(load.weekly)} this week",
+                stringResource(R.string.coverage_heavy_note_title, muscle.label, hardSetsWeekLabel(load.weekly)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 modifier = Modifier.semantics { heading() },
@@ -387,7 +401,7 @@ internal fun HeavyNote(muscle: Muscle, load: MuscleLoad, onDismiss: () -> Unit) 
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         IronvellumButton(
-            label = "Dismiss for ${muscle.label}",
+            label = stringResource(R.string.coverage_heavy_dismiss_button, muscle.label),
             onClick = onDismiss,
             quiet = true,
             modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },

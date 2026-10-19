@@ -16,7 +16,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -61,10 +64,10 @@ fun musclesAt(shares: Map<Muscle, Double>, level: ShareLevel): List<Muscle> =
 fun exerciseMuscleSummary(shares: Map<Muscle, Double>): String {
     val main = musclesAt(shares, ShareLevel.MAIN)
     val assist = musclesAt(shares, ShareLevel.ASSIST)
-    if (main.isEmpty() && assist.isEmpty()) return "No muscle data for this exercise."
+    if (main.isEmpty() && assist.isEmpty()) return Words.text(UiText.res(R.string.muscles_exercise_none))
     return buildList {
-        if (main.isNotEmpty()) add("Main: " + main.joinToString(", ") { it.label } + ".")
-        if (assist.isNotEmpty()) add("Assists: " + assist.joinToString(", ") { it.label } + ".")
+        if (main.isNotEmpty()) add(Words.text(UiText.res(R.string.muscles_summary_main, main.joinToString(", ") { it.label })))
+        if (assist.isNotEmpty()) add(Words.text(UiText.res(R.string.muscles_summary_assist, assist.joinToString(", ") { it.label })))
     }.joinToString(" ")
 }
 

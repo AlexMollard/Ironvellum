@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -39,9 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.PocketLock
 import com.ironvellum.app.domain.RestTimer
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -66,6 +69,12 @@ internal fun PocketLockOverlay(
     val now = restNow(rest)
     val restLabel = rest?.takeIf { !it.isOver(now) }?.label(now)
     val summary = PocketLock.summary(restLabel, nextLine)
+    val lockedDescription = UiText.themed(
+        R.string.pocketlock_description,
+        R.string.pocketlock_description__t,
+        summary ?: stringResource(R.string.pocketlock_hold_description),
+    ).asString()
+    val unlockLabel = UiText.themed(R.string.pocketlock_unlock_action, R.string.pocketlock_unlock_action__t).asString()
     val progress = remember { Animatable(0f) }
     var pressed by remember { mutableStateOf(false) }
     LaunchedEffect(pressed) {
@@ -88,9 +97,9 @@ internal fun PocketLockOverlay(
                 })
             }
             .semantics(mergeDescendants = true) {
-                contentDescription = "${Words.trial.c} locked. ${summary ?: "Hold to unlock."}"
-                customActions = listOf(CustomAccessibilityAction("Unlock the ${Words.trial.s}") { unlock(); true })
-                onLongClick(label = "Unlock the ${Words.trial.s}") { unlock(); true }
+                contentDescription = lockedDescription
+                customActions = listOf(CustomAccessibilityAction(unlockLabel) { unlock(); true })
+                onLongClick(label = unlockLabel) { unlock(); true }
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -102,7 +111,7 @@ internal fun PocketLockOverlay(
             Icon(Icons.Outlined.Lock, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(28.dp))
             if (restLabel != null) {
                 Text(
-                    "REST",
+                    stringResource(R.string.session_rest_label),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -119,14 +128,14 @@ internal fun PocketLockOverlay(
             }
             if (nextLine != null) {
                 Text(
-                    if (restLabel != null) "Next · $nextLine" else nextLine,
+                    if (restLabel != null) stringResource(R.string.pocketlock_next_line, nextLine) else nextLine,
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center,
                 )
             }
             Text(
-                "Hold to unlock",
+                stringResource(R.string.pocketlock_hold_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )

@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlin.math.roundToInt
@@ -101,13 +103,22 @@ private fun MuscleNodes(
     Layout(
         content = {
             nodes.forEach { (muscle, view) ->
+                val line = lineFor(muscle)
+                val description = if (muscle in sided) {
+                    stringResource(if (view == FigureView.FRONT) R.string.muscles_figure_node_front else R.string.muscles_figure_node_back, line)
+                } else {
+                    line
+                }
+                val actionLabel = stringResource(
+                    if (muscle == selected) R.string.muscles_figure_clear_hint else R.string.muscles_figure_select_hint,
+                    muscle.label,
+                )
                 Box(
                     Modifier.semantics(mergeDescendants = true) {
                         role = Role.Button
-                        contentDescription = lineFor(muscle) +
-                            if (muscle in sided) ", ${if (view == FigureView.FRONT) "front" else "back"} view" else ""
+                        contentDescription = description
                         this.selected = muscle == selected
-                        onClick(label = if (muscle == selected) "Clear ${muscle.label}" else "Select ${muscle.label}") {
+                        onClick(label = actionLabel) {
                             onSelect(nextSelection(selected, muscle))
                             true
                         }

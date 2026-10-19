@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -40,10 +41,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.InkSpinner
@@ -100,7 +104,7 @@ internal fun ForgeHeader(
                 Text(subtitle, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
             }
         }
-        NavChip("BACK", null, onClick = onBack)
+        NavChip(stringResource(R.string.forge_back_button), null, onClick = onBack)
     }
 }
 
@@ -127,7 +131,7 @@ internal fun ForgeStepTabs(step: Int, labels: List<String>, onSelect: (Int) -> U
                     .selectable(selected = on, role = Role.Tab, onClick = { onSelect(index) })
                     .semantics {
                         contentDescription = label
-                        stateDescription = "Step ${index + 1} of ${labels.size}" + if (done) ", done" else ""
+                        stateDescription = Words.text(UiText.res(if (done) R.string.forge_step_of_done else R.string.forge_step_of, index + 1, labels.size))
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -306,19 +310,19 @@ internal fun ForgeFailedCard(message: String, onTryAgain: () -> Unit, modifier: 
             .semantics(mergeDescendants = true) {},
     ) {
         Text(
-            "${Words.theForge.c} failed",
+            UiText.themed(R.string.forge_failed_title, R.string.forge_failed_title__t).asString(),
             style = MaterialTheme.typography.titleMedium,
             color = IronvellumColors.DangerRed,
             modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "$message The old proposal was cleared so you cannot apply it by mistake. Nothing was written.",
+            UiText.res(R.string.forge_failed_body, message).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(8.dp))
-        IronvellumButton(label = "Try again", onClick = onTryAgain, quiet = true, modifier = Modifier.fillMaxWidth())
+        IronvellumButton(label = stringResource(R.string.forge_try_again), onClick = onTryAgain, quiet = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -328,13 +332,14 @@ internal fun ForgeFailedCard(message: String, onTryAgain: () -> Unit, modifier: 
  */
 @Composable
 internal fun ForgePreviousProposal(plan: RoutinePlan, modifier: Modifier = Modifier) {
+    val clearedDescription = stringResource(R.string.forge_previous_description)
     Column(
         modifier
             .fillMaxWidth()
-            .semantics(mergeDescendants = true) { contentDescription = "Previous proposal, cleared" },
+            .semantics(mergeDescendants = true) { contentDescription = clearedDescription },
     ) {
         Text(
-            "Cleared. Previous proposal, greyed out:",
+            stringResource(R.string.forge_previous_caption),
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(bottom = 6.dp),
@@ -378,12 +383,12 @@ internal fun ForgeAddConflictSheet(
 ) {
     IronvellumDialog(
         onDismissRequest = onCancel,
-        title = { Text("Days already taken") },
+        title = { Text(stringResource(R.string.forge_conflict_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Your ${Words.cycle.s} already has ${Words.rite.pl} on ${joinDays(takenDays)}. " +
-                        "${if (conflict.clashes == 1) "One of" else numberWord(conflict.clashes) + " of"} the new days clash.",
+                    UiText.themed(R.string.forge_conflict_taken, R.string.forge_conflict_taken__t, joinDays(takenDays)).asString() + " " +
+                        UiText.plural(R.plurals.forge_conflict_clash, conflict.clashes, numberWord(conflict.clashes)).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -401,8 +406,8 @@ internal fun ForgeAddConflictSheet(
                         Text(
                             when {
                                 row.takenBy == null -> "Free"
-                                row.movedTo != null -> "Taken by ${row.takenBy} → ${dayShort(row.movedTo)}"
-                                else -> "Taken by ${row.takenBy}"
+                                row.movedTo != null -> UiText.res(R.string.forge_conflict_taken_moved, row.takenBy.toString(), dayShort(row.movedTo)).asString()
+                                else -> UiText.res(R.string.forge_conflict_taken_by, row.takenBy.toString()).asString()
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
@@ -411,16 +416,16 @@ internal fun ForgeAddConflictSheet(
                 }
                 Text(
                     if (conflict.fitsAround) {
-                        "Fit around my days moves the clashing days to the next free one. Nothing is deleted."
+                        stringResource(R.string.forge_conflict_fit_note)
                     } else {
-                        "Your ${Words.cycle.s} leaves too few free days for this week, so it cannot fit around them."
+                        UiText.themed(R.string.forge_conflict_nofit, R.string.forge_conflict_nofit__t).asString()
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
-                QuietAction("Replace my ${Words.cycle.s}", danger = true, onClick = onReplace)
+                QuietAction(UiText.themed(R.string.forge_replace_link, R.string.forge_replace_link__t).asString(), danger = true, onClick = onReplace)
                 Text(
-                    "Deletes your $savedRites current ${if (savedRites == 1) Words.rite.s else Words.rite.pl}. Your ${Words.chronicle.t} is kept.",
+                    UiText.themedPlural(R.plurals.forge_conflict_delete, R.plurals.forge_conflict_delete__t, savedRites).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -428,9 +433,9 @@ internal fun ForgeAddConflictSheet(
         },
         confirmButton = {
             // A disabled Fit says why in the line above; the tap does nothing rather than half-work.
-            IronvellumButton(label = "Fit around my days", onClick = onFit, enabled = conflict.fitsAround)
+            IronvellumButton(label = stringResource(R.string.forge_conflict_fit_button), onClick = onFit, enabled = conflict.fitsAround)
         },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onCancel, quiet = true) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onCancel, quiet = true) },
     )
 }
 
@@ -449,11 +454,11 @@ private fun numberWord(n: Int): String = when (n) {
 internal fun ForgeDiscardSheet(edits: PlanEdits, answersChanged: Boolean, onKeep: () -> Unit, onDiscard: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onKeep,
-        title = { Text("Discard your changes?") },
+        title = { Text(stringResource(R.string.forge_discard_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Your answers and any edits to the proposal will be lost.")
-                val lines = edits.lines() + if (answersChanged) listOf("Your answers will go back to how they were") else emptyList()
+                Text(stringResource(R.string.forge_discard_body))
+                val lines = edits.lines() + if (answersChanged) listOf(stringResource(R.string.forge_discard_answers)) else emptyList()
                 lines.forEach { line ->
                     Text(
                         "• $line",
@@ -463,13 +468,14 @@ internal fun ForgeDiscardSheet(edits: PlanEdits, answersChanged: Boolean, onKeep
                 }
             }
         },
-        confirmButton = { IronvellumButton(label = "Discard", onClick = onDiscard, danger = true) },
-        dismissButton = { IronvellumButton(label = "Keep editing", onClick = onKeep, quiet = true) },
+        confirmButton = { IronvellumButton(label = stringResource(R.string.forge_discard_button), onClick = onDiscard, danger = true) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.forge_discard_keep), onClick = onKeep, quiet = true) },
     )
 }
 
 /** The split the lifter picked and the days it runs, in one line: "4 days a week · Upper / lower". */
-internal fun cycleSubtitle(days: Int, split: TrainingSplit): String = "$days days a week · ${split.label}"
+internal fun cycleSubtitle(days: Int, split: TrainingSplit): String =
+    Words.text(UiText.plural(R.plurals.forge_cycle_subtitle, days, days, split.label))
 
 /** Picking a split keeps the day count when the split fits it, else takes the split's first. */
 internal fun daysAfterSplit(split: TrainingSplit, days: Int): Int =

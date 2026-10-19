@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.program
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Coverage
 import com.ironvellum.app.domain.Evidence
@@ -7,17 +9,22 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
 
 /**
  * Coverage v2, in words and counts: where each muscle stands against the weekly hard-set minimum, and
  * whether it runs heavy. Pure, so the figure, the rows, the Forge chip and the Train card all read ONE rule
  * and cannot disagree. Every state is also a word and a mark; colour is never the only carrier.
  */
-enum class CoverageState(val label: String) {
-    NOT_TRAINED("Not trained"),
-    BELOW_MINIMUM("Below minimum"),
-    COVERED("Covered"),
-    HEAVY("Heavy"),
+enum class CoverageState(@StringRes private val labelRes: Int) {
+    NOT_TRAINED(R.string.coverage_state_not_trained),
+    BELOW_MINIMUM(R.string.coverage_state_below_minimum),
+    COVERED(R.string.coverage_state_covered),
+    HEAVY(R.string.coverage_state_heavy),
+    ;
+
+    /** The state in words, in the current language. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /**
@@ -90,14 +97,14 @@ internal fun coverageTally(presets: List<PlannedPreset>, dismissedHeavy: Set<Mus
  */
 internal fun coverageHeadline(tally: CoverageTally): String {
     val parts = buildList {
-        if (tally.heavy.isNotEmpty()) add("${tally.heavy.size} heavy")
-        if (tally.gaps > 0) add("${tally.gaps} ${if (tally.gaps == 1) "muscle needs" else "muscles need"} more sets")
+        if (tally.heavy.isNotEmpty()) add(Words.text(UiText.res(R.string.coverage_headline_heavy, tally.heavy.size)))
+        if (tally.gaps > 0) add(Words.text(UiText.plural(R.plurals.coverage_headline_gaps, tally.gaps)))
     }
-    return if (parts.isEmpty()) "Every muscle covered" else parts.joinToString(" · ")
+    return if (parts.isEmpty()) Words.text(UiText.res(R.string.coverage_covered_empty)) else parts.joinToString(" · ")
 }
 
 /** Why a muscle "needs more sets", said once beside the summary wherever there is a gap. */
-internal val COVERAGE_REASON: String get() = "About ${ProgramRules.COVERED_MIN.toInt()} hard sets a week per muscle is a sound floor."
+internal val COVERAGE_REASON: String get() = Words.text(UiText.res(R.string.coverage_reason, ProgramRules.COVERED_MIN.toInt()))
 
 /** Which of the coverage dock's two actions have something to do. */
 internal data class DockActions(val forge: Boolean, val optimise: Boolean) {
@@ -114,13 +121,22 @@ internal fun dockActions(tally: CoverageTally, planned: Boolean, hasRites: Boole
 
 /** The quiet line for rites with no day: "1 rite has no day, so it isn't counted". */
 internal fun uncountedRitesLine(count: Int): String =
-    if (count == 1) "1 ${Words.rite.s} has no day, so it isn't counted" else "$count ${Words.rite.pl} have no day, so they aren't counted"
+    Words.text(UiText.themedPlural(R.plurals.coverage_uncounted_rites, R.plurals.coverage_uncounted_rites__t, count))
 
 /** A muscle's weekly hard sets as the page says them: "0 hard sets", "1 hard set", "3.5 hard sets". */
 internal fun hardSetsLabel(sets: Double): String {
     val figure = trimSets(sets)
-    return "$figure hard ${if (figure == "1") "set" else "sets"}"
+    return Words.text(UiText.plural(R.plurals.coverage_hard_sets, figureCount(figure), figure))
 }
+
+/** "3.5 hard sets this week": [hardSetsLabel] with the week said. */
+internal fun hardSetsWeekLabel(sets: Double): String {
+    val figure = trimSets(sets)
+    return Words.text(UiText.plural(R.plurals.coverage_hard_sets_week, figureCount(figure), figure))
+}
+
+/** The plural count for a number written as [figure]: only "1" is singular, whatever the fraction. */
+private fun figureCount(figure: String): Int = if (figure == "1") 1 else 2
 
 /**
  * The muscles that need a look, in the order the list shows them: heavy first (most sets leading), then
@@ -134,18 +150,18 @@ internal fun attentionOrder(loads: Map<Muscle, MuscleLoad>, tally: CoverageTally
 /** Why a muscle runs heavy, in a sentence, and the paper behind it. */
 internal fun heavyReason(load: MuscleLoad): Pair<String, Evidence> =
     if (load.weekly > ProgramRules.HEAVY_WEEK) {
-        "Past about ${ProgramRules.HEAVY_WEEK.toInt()} sets a week, each extra set adds less. " +
-            "A hint about recovery, not a limit." to Evidence.PELLAND_2026
+        Words.text(UiText.res(R.string.coverage_heavy_reason_week, ProgramRules.HEAVY_WEEK.toInt())) to Evidence.PELLAND_2026
     } else {
-        "More than ${ProgramRules.HEAVY_SESSION.toInt()} hard sets in one ${Words.rite.s} is a lot to recover from. " +
-            "Spreading them over more days helps. A hint, not a limit." to Evidence.REMMERT_2025
+        Words.text(
+            UiText.themed(R.string.coverage_heavy_reason_session, R.string.coverage_heavy_reason_session__t, ProgramRules.HEAVY_SESSION.toInt()),
+        ) to Evidence.REMMERT_2025
     }
 
 /** The line under a lit muscle on the figure: "Hamstrings · 6 hard sets this week · Below minimum". */
 internal fun coverageMuscleLine(muscle: Muscle, load: MuscleLoad?, dismissedHeavy: Boolean = false): String {
-    val sets = "${hardSetsLabel(load?.weekly ?: 0.0)} this week"
+    val sets = hardSetsWeekLabel(load?.weekly ?: 0.0)
     // The neck is drawn but never judged: it has a count and no verdict.
     if (muscle !in JUDGED_MUSCLES) return muscleLine(muscle, sets)
     val state = load?.let { stateOf(it, dismissedHeavy) } ?: CoverageState.NOT_TRAINED
-    return muscleLine(muscle, "$sets · ${state.label}")
+    return muscleLine(muscle, Words.text(UiText.res(R.string.muscles_joined_pair, sets, state.label)))
 }

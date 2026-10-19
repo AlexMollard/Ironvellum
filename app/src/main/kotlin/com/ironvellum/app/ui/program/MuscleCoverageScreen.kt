@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -58,6 +60,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.DismissedHeavyStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
@@ -69,7 +72,9 @@ import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkTabbedPager
@@ -99,9 +104,12 @@ import kotlinx.coroutines.launch
  * through [ProgramRules.weeklyVolume] so the two views count identically.
  */
 
-enum class CoverageView(val label: String) {
-    CYCLE("Planned"),
-    LOGGED("Last 7 days"),
+enum class CoverageView(@StringRes private val labelRes: Int) {
+    CYCLE(R.string.coverage_view_planned),
+    LOGGED(R.string.coverage_view_last7),
+    ;
+
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 data class CoverageUi(
@@ -174,7 +182,7 @@ class MuscleCoverageViewModel(
         } else {
             listOf(
                 PlannedPreset(
-                    name = "Last 7 days",
+                    name = Words.text(UiText.res(R.string.coverage_view_last7)),
                     note = "",
                     scheduledDay = null,
                     entries = byExercise.map { (key, sets) ->
@@ -238,7 +246,7 @@ fun MuscleCoverageScreen(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            PushedHeader("Weekly coverage", onBack)
+            PushedHeader(stringResource(R.string.coverage_screen_title), onBack)
             Spacer(Modifier.height(12.dp))
         }
         // The switch comes first: drawn after the empty check, an empty last-7-days view hid it and the
@@ -293,7 +301,7 @@ internal fun CoveragePreviewScreen(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            PushedHeader("Coverage of this ${Words.cycle.s}", onBack)
+            PushedHeader(UiText.themed(R.string.coverage_preview_title, R.string.coverage_preview_title__t).asString(), onBack)
             Spacer(Modifier.height(8.dp))
             Text(
                 coverageHeadline(tally),
@@ -301,7 +309,7 @@ internal fun CoveragePreviewScreen(
                 color = IronvellumColors.Ink,
             )
             Text(
-                "A hint only. Saving is never blocked.",
+                stringResource(R.string.coverage_hint_caption),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -344,7 +352,7 @@ private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (
                 color = IronvellumColors.Ink,
             )
             Text(
-                "A hint only. Saving is never blocked.",
+                stringResource(R.string.coverage_hint_caption),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -352,14 +360,18 @@ private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             if (onOptimise != null) {
                 IronvellumButton(
-                    label = "Optimise ${Words.rite.pl}",
+                    label = UiText.themed(R.string.coverage_dock_optimise_button, R.string.coverage_dock_optimise_button__t).asString(),
                     onClick = onOptimise,
                     quiet = onForge != null,
                     modifier = Modifier.weight(1f),
                 )
             }
             if (onForge != null) {
-                IronvellumButton(label = "${Words.forge.c} ${Words.rite.a}", onClick = onForge, modifier = Modifier.weight(1f))
+                IronvellumButton(
+                    label = UiText.themed(R.string.coverage_dock_forge_button, R.string.coverage_dock_forge_button__t).asString(),
+                    onClick = onForge,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -405,9 +417,9 @@ internal fun CoveragePage(
         if (empty) {
             Text(
                 if (view == CoverageView.CYCLE) {
-                    "No ${Words.rite.pl} are written yet. Build ${Words.cycle.a} and it will be mapped here."
+                    UiText.themed(R.string.coverage_empty_cycle, R.string.coverage_empty_cycle__t).asString()
                 } else {
-                    "${Words.theChronicle.c} is blank for the last 7 days. ${Words.seal.c} ${Words.trial.a} and it is mapped here."
+                    UiText.themed(R.string.coverage_empty_logged, R.string.coverage_empty_logged__t).asString()
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.InkMuted,
@@ -426,7 +438,7 @@ internal fun CoveragePage(
         )
         if (unattributed > 0) {
             Text(
-                "$unattributed sets not counted: no muscle data for those exercises.",
+                UiText.plural(R.plurals.coverage_unattributed_sets, unattributed).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -467,7 +479,7 @@ internal fun CoveragePage(
                 }
                 if (needing.isEmpty()) {
                     Text(
-                        "Every muscle covered",
+                        stringResource(R.string.coverage_covered_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                         modifier = Modifier.padding(vertical = 16.dp),
@@ -481,7 +493,9 @@ internal fun CoveragePage(
                             .heightIn(min = ListRowHeight)
                             .clickable(
                                 role = Role.Button,
-                                onClickLabel = if (coveredOpen) "Hide the covered muscles" else "Show the covered muscles",
+                                onClickLabel = stringResource(
+                                    if (coveredOpen) R.string.coverage_covered_hide_hint else R.string.coverage_covered_show_hint,
+                                ),
                                 onClick = { coveredOpen = !coveredOpen },
                             )
                             .semantics { stateDescription = if (coveredOpen) "Expanded" else "Collapsed" },
@@ -490,7 +504,7 @@ internal fun CoveragePage(
                     ) {
                         CoverageMark(CoverageState.COVERED)
                         Text(
-                            "${covered.size} ${if (covered.size == 1) "muscle" else "muscles"} covered",
+                            UiText.plural(R.plurals.coverage_covered_count, covered.size).asString(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = IronvellumColors.Ink,
                             modifier = Modifier.weight(1f),
@@ -515,9 +529,11 @@ internal fun CoveragePage(
                 Spacer(Modifier.height(8.dp))
                 InkDivider()
                 ListRow(
-                    label = "By exercise",
-                    value = if (byExerciseOpen) "Hide" else null,
-                    onClickLabel = if (byExerciseOpen) "Hide the exercises" else "Show the muscles each exercise works",
+                    label = stringResource(R.string.coverage_by_exercise_label),
+                    value = if (byExerciseOpen) stringResource(R.string.coverage_by_exercise_hide_value) else null,
+                    onClickLabel = stringResource(
+                        if (byExerciseOpen) R.string.coverage_by_exercise_hide_hint else R.string.coverage_by_exercise_show_hint,
+                    ),
                     onClick = { byExerciseOpen = !byExerciseOpen },
                 )
                 InkDivider()
@@ -540,7 +556,7 @@ internal fun CoveragePage(
             }
 
             Spacer(Modifier.height(4.dp))
-            Disclosure("Why effort, not set counts", whyOpen) { whyOpen = !whyOpen }
+            Disclosure(stringResource(R.string.coverage_why_title), whyOpen) { whyOpen = !whyOpen }
             if (whyOpen) {
                 CoverageExplainer(
                     tally = tally,
@@ -569,7 +585,7 @@ private fun UncountedRitesLine(count: Int, onOpen: () -> Unit) {
             .heightIn(min = 48.dp)
             .clickable(
                 role = Role.Button,
-                onClickLabel = if (count == 1) "Open that ${Words.rite.s} to give it a day" else "Open your ${Words.rite.pl} to give them days",
+                onClickLabel = UiText.themedPlural(R.plurals.coverage_uncounted_open_hint, R.plurals.coverage_uncounted_open_hint__t, count).asString(),
                 onClick = onOpen,
             )
             .semantics(mergeDescendants = true) { contentDescription = line },
@@ -647,12 +663,12 @@ private fun MuscleFilter(
 ) {
     // The way back sits beside the heading, in reach the moment the page narrows, not past a long list.
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        SectionHeader("Trains ${muscle.label}", Modifier.weight(1f))
-        NavChip("CLEAR", Icons.Filled.Close, onClick = onClear, modifier = Modifier.padding(bottom = 4.dp))
+        SectionHeader(stringResource(R.string.coverage_filter_title, muscle.label), Modifier.weight(1f))
+        NavChip(stringResource(R.string.common_clear).uppercase(), Icons.Filled.Close, onClick = onClear, modifier = Modifier.padding(bottom = 4.dp))
     }
     if (rites.isEmpty()) {
         Text(
-            "Nothing in this view trains it.",
+            stringResource(R.string.coverage_filter_empty),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -702,7 +718,10 @@ private fun ExerciseRow(
                 .fillMaxWidth()
                 .heightIn(min = ListRowHeight)
                 .clickable(
-                    onClickLabel = if (open) "Hide muscles for $name" else "Show muscles for $name",
+                    onClickLabel = stringResource(
+                        if (open) R.string.coverage_exercise_hide_hint else R.string.coverage_exercise_show_hint,
+                        name,
+                    ),
                     role = Role.Button,
                     onClick = onToggle,
                 )

@@ -47,17 +47,21 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ChangeOp
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -199,14 +203,16 @@ internal fun OptimiseScreen(
             }
 
             else -> MessagePage(
-                title = "Optimise ${Words.rite.pl}",
+                title = UiText.themed(R.string.optimise_title, R.string.optimise_title__t).asString(),
                 body = when (current) {
-                    OptimiseState.NoRites -> "No ${Words.rite.pl} to optimise yet. ${Words.forge.c} ${Words.cycle.a} first, then come back and tighten it."
-                    OptimiseState.NeedsArmoury -> "Optimise ranks movements against your ${Words.armoury.s}. Choose it in ${Words.theForge.t}, then come back."
-                    else -> "${Words.reads.c} your ${Words.rite.pl}…"
+                    OptimiseState.NoRites -> UiText.themed(R.string.optimise_empty_no_rites, R.string.optimise_empty_no_rites__t).asString()
+                    OptimiseState.NeedsArmoury ->
+                        UiText.themed(R.string.optimise_empty_needs_armoury, R.string.optimise_empty_needs_armoury__t).asString()
+                    else -> UiText.themed(R.string.optimise_loading, R.string.optimise_loading__t).asString()
                 },
                 action = when (current) {
-                    OptimiseState.NoRites, OptimiseState.NeedsArmoury -> "${Words.forge.c} ${Words.cycle.a}" to onForgeCycle
+                    OptimiseState.NoRites, OptimiseState.NeedsArmoury ->
+                        UiText.themed(R.string.optimise_forge_button, R.string.optimise_forge_button__t).asString() to onForgeCycle
                     else -> null
                 },
                 onBack = onBack,
@@ -242,6 +248,7 @@ private fun ReadyPages(
 ) {
     val input = report.input
     val week = input.week
+    val daysTitle = stringResource(R.string.optimise_spread_applied_title)
 
     // System back is the header's BACK on every page: each page names where BACK goes, and both take it.
     // The hub leaves the route and the gap sheet closes itself, so neither needs a handler here.
@@ -286,12 +293,8 @@ private fun ReadyPages(
             } else {
                 ChangesPage(
                     title = finding.muscle.label,
-                    status = "Heavy",
-                    subtitle = if (finding.load.weekly > ProgramRules.HEAVY_WEEK) {
-                        "${hardSetsLabel(finding.load.weekly)} a week"
-                    } else {
-                        "${hardSetsLabel(finding.load.maxSession)} in one ${Words.rite.s}"
-                    },
+                    status = stringResource(R.string.optimise_heavy_label),
+                    subtitle = heavyLoadText(finding.load),
                     report = report,
                     focus = finding.muscle,
                     intro = heavyReason(finding.load).first,
@@ -301,8 +304,8 @@ private fun ReadyPages(
                     onPicks = onPicks,
                     saving = saving,
                     error = error,
-                    emptyNote = "No change eases this without leaving another muscle short. The flag is a hint, so leaving it is fine.",
-                    leave = "Leave it, I want the volume",
+                    emptyNote = stringResource(R.string.optimise_heavy_empty),
+                    leave = stringResource(R.string.optimise_heavy_leave_button),
                     onApply = { apply(finding.muscle.label, finding.changes) },
                     onOpen = { onStep(OptStep.Detail(step, it.id)) },
                     onBack = { onStep(OptStep.Hub) },
@@ -323,9 +326,9 @@ private fun ReadyPages(
                 Redirect(onStep)
             } else {
                 ChangesPage(
-                    title = "Spread your days",
+                    title = stringResource(R.string.optimise_spread_title),
                     status = null,
-                    subtitle = "Recovery of 48 hours or more",
+                    subtitle = stringResource(R.string.optimise_spread_subtitle),
                     report = report,
                     focus = null,
                     intro = tightLine(report.tight.first()),
@@ -337,7 +340,7 @@ private fun ReadyPages(
                     error = error,
                     emptyNote = "",
                     leave = null,
-                    onApply = { apply("Days", listOf(change)) },
+                    onApply = { apply(daysTitle, listOf(change)) },
                     onOpen = { onStep(OptStep.Detail(step, it.id)) },
                     onBack = { onStep(OptStep.Hub) },
                 )
@@ -368,18 +371,22 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(20.dp))
         ForgeHeader(
-            "Optimise ${Words.rite.pl}",
+            UiText.themed(R.string.optimise_title, R.string.optimise_title__t).asString(),
             onBack,
-            subtitle = if (report.nothing) "Nothing to change" else "${report.findings} ${if (report.findings == 1) "thing" else "things"} to look at",
+            subtitle = if (report.nothing) {
+                stringResource(R.string.optimise_hub_nothing)
+            } else {
+                UiText.plural(R.plurals.optimise_hub_findings, report.findings).asString()
+            },
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             if (report.nothing) {
                 NothingCard()
             } else {
-                OptNote("Suggestions change the ${Words.rite.pl} you already have. Nothing is written until you apply it.")
+                OptNote(UiText.themed(R.string.optimise_hub_note, R.string.optimise_hub_note__t).asString())
             }
             if (report.gaps.isNotEmpty()) {
-                OptLabel("Gaps")
+                OptLabel(stringResource(R.string.optimise_gaps_label))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
                     report.gaps.forEachIndexed { index, muscle ->
                         if (index > 0) InkDivider()
@@ -389,44 +396,44 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
                             state = state,
                             title = muscle.label,
                             subline = "${hardSetsLabel(load?.weekly ?: 0.0)} · ${state.label}",
-                            onClickLabel = "Add a movement for ${muscle.label.lowercase()}",
-                            spoken = "Add a movement for ${muscle.label}: ${hardSetsLabel(load?.weekly ?: 0.0)}, ${state.label}",
+                            onClickLabel = stringResource(R.string.optimise_gap_open_label, muscle.label.lowercase()),
+                            spoken = stringResource(R.string.optimise_gap_description, muscle.label, hardSetsLabel(load?.weekly ?: 0.0), state.label),
                             onClick = { onStep(OptStep.Gap(muscle)) },
                         )
                     }
                 }
             }
             if (report.heavy.isNotEmpty()) {
-                OptLabel("Heavy")
+                OptLabel(stringResource(R.string.optimise_heavy_label))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
                     report.heavy.forEachIndexed { index, finding ->
                         if (index > 0) InkDivider()
-                        val weekly = finding.load.weekly > ProgramRules.HEAVY_WEEK
-                        val sets = if (weekly) "${hardSetsLabel(finding.load.weekly)} a week" else "${hardSetsLabel(finding.load.maxSession)} in one ${Words.rite.s}"
+                        val sets = heavyLoadText(finding.load)
+                        val changes = changesText(finding.changes.size)
                         FindingRow(
                             state = CoverageState.HEAVY,
                             title = finding.muscle.label,
-                            subline = "$sets · Heavy · ${changesText(finding.changes.size)}",
-                            onClickLabel = "Ease ${finding.muscle.label.lowercase()}",
-                            spoken = "Ease ${finding.muscle.label}: $sets, Heavy, ${changesText(finding.changes.size)}",
+                            subline = stringResource(R.string.optimise_heavy_subline, sets, CoverageState.HEAVY.label, changes),
+                            onClickLabel = stringResource(R.string.optimise_heavy_open_label, finding.muscle.label.lowercase()),
+                            spoken = stringResource(R.string.optimise_heavy_description, finding.muscle.label, sets, CoverageState.HEAVY.label, changes),
                             onClick = { onStep(OptStep.Heavy(finding.muscle)) },
                         )
                     }
                 }
             }
             if (report.overlaps.isNotEmpty() || report.spread != null) {
-                OptLabel("Overlap")
+                OptLabel(stringResource(R.string.optimise_overlap_label))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
                     var shown = 0
                     report.overlaps.forEach { rite ->
                         if (shown++ > 0) InkDivider()
-                        val line = "${rite.changes.size} ${if (rite.changes.size == 1) "overlap" else "overlaps"} found"
+                        val line = UiText.plural(R.plurals.optimise_overlaps_found, rite.changes.size).asString()
                         FindingRow(
                             state = null,
                             title = rite.rite,
-                            subline = "Two movements doing one job · $line",
-                            onClickLabel = "Open the overlaps in ${rite.rite}",
-                            spoken = "${rite.rite}: two movements doing one job, $line",
+                            subline = stringResource(R.string.optimise_overlap_subline, line),
+                            onClickLabel = stringResource(R.string.optimise_overlap_open_label, rite.rite),
+                            spoken = stringResource(R.string.optimise_overlap_description, rite.rite, line),
                             onClick = { onStep(OptStep.Overlap(rite.rite)) },
                         )
                     }
@@ -434,10 +441,10 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
                         if (shown++ > 0) InkDivider()
                         FindingRow(
                             state = null,
-                            title = "Spread your days",
+                            title = stringResource(R.string.optimise_spread_title),
                             subline = tightLine(report.tight.first()),
-                            onClickLabel = "Open the day spacing",
-                            spoken = "Spread your days: ${change.title}. ${tightLine(report.tight.first())}",
+                            onClickLabel = stringResource(R.string.optimise_spread_open_label),
+                            spoken = stringResource(R.string.optimise_spread_description, change.title, tightLine(report.tight.first())),
                             onClick = { onStep(OptStep.Spread) },
                         )
                     }
@@ -448,23 +455,30 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
     }
 }
 
-private fun changesText(n: Int): String = when (n) {
-    0 -> "no safe change"
-    1 -> "1 change"
-    else -> "$n changes"
-}
+@Composable
+private fun changesText(n: Int): String =
+    if (n == 0) stringResource(R.string.optimise_changes_none) else UiText.plural(R.plurals.optimise_changes_count, n).asString()
+
+/** "24 hard sets a week" for a muscle past the weekly mark, else "9 hard sets in one routine". */
+@Composable
+private fun heavyLoadText(load: MuscleLoad): String =
+    if (load.weekly > ProgramRules.HEAVY_WEEK) {
+        stringResource(R.string.optimise_heavy_per_week, hardSetsLabel(load.weekly))
+    } else {
+        UiText.themed(R.string.optimise_heavy_per_session, R.string.optimise_heavy_per_session__t, hardSetsLabel(load.maxSession)).asString()
+    }
 
 /** The Temper v2 "nothing to change" state: a plain sentence, and what is still short. */
 @Composable
 private fun NothingCard() {
     Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
         Text(
-            "Nothing to change",
+            stringResource(R.string.optimise_hub_nothing),
             style = MaterialTheme.typography.titleMedium,
             color = IronvellumColors.Ink,
             modifier = Modifier.semantics { heading() },
         )
-        OptNote("Your ${Words.rite.pl} cover every muscle without running any heavy, and no two movements do one job.")
+        OptNote(UiText.themed(R.string.optimise_nothing_note, R.string.optimise_nothing_note__t).asString())
     }
 }
 
@@ -484,9 +498,10 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
         title = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CoverageMark(state, size = 20.dp)
-                Column(Modifier.semantics(mergeDescendants = true) {
-                    contentDescription = "Add a movement for ${muscle.label.lowercase()}. ${state.label}, ${hardSetsLabel(load?.weekly ?: 0.0)}"
-                }) {
+                val sheetDescription = stringResource(
+                    R.string.optimise_gap_sheet_description, muscle.label.lowercase(), state.label, hardSetsLabel(load?.weekly ?: 0.0),
+                )
+                Column(Modifier.semantics(mergeDescendants = true) { contentDescription = sheetDescription }) {
                     Text(muscle.label, style = MaterialTheme.typography.titleLarge, color = IronvellumColors.Ink)
                     Text(
                         "${state.label} · ${hardSetsLabel(load?.weekly ?: 0.0)}",
@@ -500,24 +515,27 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     if ((load?.weekly ?: 0.0) <= 0.0) {
-                        "Nothing in your ${Words.cycle.s} trains ${muscle.label.lowercase()} directly. ${ProgramRules.COVERED_MIN.toInt()} or more hard sets a week gets it covered."
+                        UiText.themed(
+                            R.string.optimise_gap_none_caption, R.string.optimise_gap_none_caption__t,
+                            muscle.label.lowercase(), ProgramRules.COVERED_MIN.toInt(),
+                        ).asString()
                     } else {
-                        "${ProgramRules.COVERED_MIN.toInt()} or more hard sets a week gets ${muscle.label.lowercase()} covered."
+                        stringResource(R.string.optimise_gap_short_caption, ProgramRules.COVERED_MIN.toInt(), muscle.label.lowercase())
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 if (ranked.isEmpty()) {
-                    OptNote("Nothing in your ${Words.armoury.s} trains it. Another ${Words.armoury.s}, or ${Words.rite.a} ${Words.forged.s} for it, would.")
+                    OptNote(UiText.themed(R.string.optimise_gap_no_options, R.string.optimise_gap_no_options__t).asString())
                 } else {
                     Text(
-                        "Fits your ${Words.armoury.s} · ranked best first",
+                        UiText.themed(R.string.optimise_gap_ranked_heading, R.string.optimise_gap_ranked_heading__t).asString(),
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.semantics { heading() },
                     )
                     RankedOptions(
-                        label = "Movement to add for ${muscle.label.lowercase()}, ranked best to worst",
+                        label = stringResource(R.string.optimise_gap_ranked_description, muscle.label.lowercase()),
                         names = ranked.map { it.exercise.name },
                         reasons = ranked.map { reasonLine(it.tags) },
                         lines = ranked.map { candidate ->
@@ -532,13 +550,13 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
         },
         confirmButton = {
             IronvellumButton(
-                label = if (picked != null) "Add ${picked.exercise.name}" else "Add",
+                label = if (picked != null) stringResource(R.string.optimise_add_named, picked.exercise.name) else stringResource(R.string.optimise_add_button),
                 onClick = { onStep(OptStep.Where(muscle, chosen.coerceAtLeast(0))) },
                 enabled = picked != null,
                 modifier = Modifier.heightIn(min = 48.dp),
             )
         },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = { onStep(OptStep.Hub) }, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { onStep(OptStep.Hub) }, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
     )
 }
 
@@ -570,28 +588,30 @@ private fun WherePage(
     val minutes = after.getOrNull(riteIndex)?.let { ProgramRules.dayMinutes(it, input.request.focus) }
     val target = rite?.let { it.scheduledDay?.let { day -> dayLabel(day) } ?: it.name } ?: ""
     val rows = remember(report, riteIndex, entry) { impactRows(week, after, step.muscle) }
+    val putOnDescription = stringResource(R.string.optimise_where_description, candidate.exercise.name)
+    val addedTitle = stringResource(R.string.optimise_where_added_title, candidate.exercise.name, rite?.name.orEmpty())
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             ForgeHeader(
-                "Add ${candidate.exercise.name}",
+                stringResource(R.string.optimise_add_named, candidate.exercise.name),
                 onBack = { onStep(OptStep.Gap(step.muscle)) },
-                subtitle = "${step.muscle.label} · ${hardSetsText(base.sets)} suggested",
+                subtitle = stringResource(R.string.optimise_where_subtitle, step.muscle.label, hardSetsText(base.sets)),
             )
             error?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(top = 8.dp)) }
-            OptLabel("Put it on")
+            OptLabel(stringResource(R.string.optimise_where_label))
             InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-                Column(Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = "Put ${candidate.exercise.name} on" }) {
+                Column(Modifier.fillMaxWidth().selectableGroup().semantics { contentDescription = putOnDescription }) {
                     choices.forEachIndexed { index, c ->
                         if (index > 0) InkDivider()
                         RiteChoiceRow(c, selected = c.index == riteIndex, onSelect = { riteIndex = c.index })
                     }
                 }
             }
-            OptLabel("Hard sets")
+            OptLabel(stringResource(R.string.effort_editor_sets_label))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepperButton("−", "Fewer hard sets for ${candidate.exercise.name}", enabled = sets > SET_SANITY.first) { sets-- }
+                StepperButton("−", stringResource(R.string.effort_editor_sets_less_description, candidate.exercise.name), enabled = sets > SET_SANITY.first) { sets-- }
                 Text(
                     "${entry.sets}",
                     fontFamily = ChakraPetch,
@@ -601,14 +621,14 @@ private fun WherePage(
                     modifier = Modifier.width(48.dp).semantics { liveRegion = LiveRegionMode.Polite },
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
-                StepperButton("+", "More hard sets for ${candidate.exercise.name}", enabled = sets < SET_SANITY.last) { sets++ }
+                StepperButton("+", stringResource(R.string.effort_editor_sets_more_description, candidate.exercise.name), enabled = sets < SET_SANITY.last) { sets++ }
             }
             Text(suggestedSets(entry), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-            OptLabel("Effect on your week")
+            OptLabel(stringResource(R.string.optimise_effect_label))
             ImpactList(rows)
             if (rite != null && minutes != null) {
                 Text(
-                    "$target becomes ${movementsText(rite.entries.size + 1)} · ~$minutes min.",
+                    stringResource(R.string.optimise_where_becomes, target, movementsText(rite.entries.size + 1), minutes),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 8.dp),
@@ -617,12 +637,12 @@ private fun WherePage(
             Spacer(Modifier.height(20.dp))
         }
         ForgeDock(
-            primary = "Add to $target",
+            primary = stringResource(R.string.optimise_where_add_button, target),
             onPrimary = {
                 val index = riteIndex
                 onApply(
                     Applied(
-                        title = "Added ${candidate.exercise.name} to ${rite?.name.orEmpty()}",
+                        title = addedTitle,
                         lines = listOf("Add" to "${candidate.exercise.name}, ${hardSetsText(entry.sets)}"),
                         skipped = 0,
                         before = listOf(input.ids[index] to week[index]),
@@ -633,13 +653,14 @@ private fun WherePage(
             },
             enabled = rite != null && choice != null,
             busy = saving,
-            note = "A suggestion only. Move or remove it later.",
+            note = stringResource(R.string.optimise_where_note),
         )
     }
 }
 
 @Composable
 private fun RiteChoiceRow(choice: RiteChoice, selected: Boolean, onSelect: () -> Unit) {
+    val chosenText = stringResource(if (selected) R.string.optimise_option_chosen else R.string.optimise_option_not_chosen)
     val spoken = buildString {
         append("${choice.title()}, ${choice.line()}")
         choice.note?.let { append(". $it") }
@@ -651,7 +672,7 @@ private fun RiteChoiceRow(choice: RiteChoice, selected: Boolean, onSelect: () ->
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .semantics(mergeDescendants = true) {
                 contentDescription = spoken
-                stateDescription = if (selected) "Chosen" else "Not chosen"
+                stateDescription = chosenText
             }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -727,9 +748,9 @@ private fun ChangesPage(
             if (changes.isEmpty()) {
                 OptNote(emptyNote)
             } else {
-                OptLabel("What it fixes")
-                ImpactList(rows, emptyLine = "Keep a change to see what it does.")
-                OptLabel("Changes")
+                OptLabel(stringResource(R.string.optimise_fixes_label))
+                ImpactList(rows, emptyLine = stringResource(R.string.optimise_fixes_empty))
+                OptLabel(stringResource(R.string.optimise_changes_label))
                 changes.forEachIndexed { index, change ->
                     if (index > 0) Spacer(Modifier.height(8.dp))
                     ChangeCard(
@@ -745,18 +766,21 @@ private fun ChangesPage(
             Spacer(Modifier.height(20.dp))
         }
         ForgeDock(
-            primary = if (kept.isEmpty()) "Apply" else "Apply ${changeCount(kept.size)}",
+            primary = applyLabel(kept.size),
             onPrimary = onApply,
             enabled = kept.isNotEmpty(),
             busy = saving,
-            note = "Nothing is written until you apply. Skipped changes stay as they are.",
+            note = stringResource(R.string.optimise_apply_note),
             link = leave,
             onLink = onBack,
         )
     }
 }
 
-private fun changeCount(n: Int): String = "$n ${if (n == 1) "change" else "changes"}"
+/** "Apply", or "Apply 3 changes" once something is kept. */
+@Composable
+private fun applyLabel(kept: Int): String =
+    if (kept == 0) stringResource(R.string.common_apply) else UiText.plural(R.plurals.optimise_apply_changes, kept).asString()
 
 // ------------------------------------------------------------------------------------- one change, open
 
@@ -787,10 +811,10 @@ private fun DetailPage(
             ForgeHeader(
                 change.kind.label,
                 onBack = back,
-                subtitle = listOfNotNull(change.rite, "change $number of ${siblings.size}").joinToString(" · "),
+                subtitle = listOfNotNull(change.rite, stringResource(R.string.optimise_detail_position, number, siblings.size)).joinToString(" · "),
             )
             if (leaving != null) {
-                OptLabel("Leaves")
+                OptLabel(stringResource(R.string.optimise_leaves_label))
                 InkPanel(Modifier.fillMaxWidth()) {
                     Text(leaving.exerciseName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = IronvellumColors.Ink)
                     Text(movementLine(leaving), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
@@ -803,9 +827,13 @@ private fun DetailPage(
                 }
             }
             if (change.options.size > 1) {
-                OptLabel("Comes in · ranked best first")
+                OptLabel(stringResource(R.string.optimise_comes_in_label))
                 RankedOptions(
-                    label = "Replacement for ${leaving?.exerciseName ?: "it"}, ranked best to worst",
+                    label = if (leaving != null) {
+                        stringResource(R.string.optimise_replacement_description, leaving.exerciseName)
+                    } else {
+                        stringResource(R.string.optimise_replacement_it_description)
+                    },
                     names = change.options.map { it.label },
                     reasons = change.options.map { it.reason },
                     lines = change.options.map { opt -> swapLine(opt) },
@@ -813,15 +841,17 @@ private fun DetailPage(
                     onChoose = { onPicks(picks.with(change, picks.keepOf(change), it)) },
                 )
             } else {
-                OptLabel("What changes")
+                OptLabel(stringResource(R.string.optimise_what_changes_label))
                 Text(change.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = IronvellumColors.Ink)
             }
             Text(change.detail, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 8.dp))
-            OptLabel("Effect on your week")
+            OptLabel(stringResource(R.string.optimise_effect_label))
             ImpactList(rows)
             Spacer(Modifier.height(20.dp))
         }
         // Skip and Keep sit side by side in the dock; Keep is the primary action.
+        val skipDescription = stringResource(R.string.optimise_skip_description)
+        val keepDescription = stringResource(R.string.optimise_keep_description)
         Row(
             Modifier
                 .fillMaxWidth()
@@ -832,21 +862,21 @@ private fun DetailPage(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             IronvellumButton(
-                label = "Skip",
+                label = stringResource(R.string.optimise_skip_button),
                 onClick = {
                     onPicks(picks.with(change, false, chosen))
                     back()
                 },
                 quiet = true,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = "Skip this change" },
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = skipDescription },
             )
             IronvellumButton(
-                label = "Keep",
+                label = stringResource(R.string.optimise_keep_button),
                 onClick = {
                     onPicks(picks.with(change, true, chosen))
                     back()
                 },
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = "Keep this change" },
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = keepDescription },
             )
         }
     }
@@ -886,9 +916,9 @@ private fun OverlapPage(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             ForgeHeader(
-                "Optimise ${rite.rite}",
+                stringResource(R.string.optimise_overlap_title, rite.rite),
                 onBack,
-                subtitle = "${rite.changes.size} ${if (rite.changes.size == 1) "overlap" else "overlaps"} found",
+                subtitle = UiText.plural(R.plurals.optimise_overlaps_found, rite.changes.size).asString(),
             )
             error?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(top = 8.dp)) }
             rite.changes.forEachIndexed { index, change ->
@@ -896,7 +926,7 @@ private fun OverlapPage(
                 val option = change.options[chosen]
                 val rows = remember(report, change, chosen) { impactRows(week, resolveWeek(week, listOf(option)), null) }
                 val from = change.title.substringBefore(" → ")
-                OptLabel("Two movements, one job")
+                OptLabel(stringResource(R.string.optimise_overlap_pair_label))
                 InkPanel(Modifier.fillMaxWidth()) {
                     change.movements.forEachIndexed { i, (name, muscles) ->
                         if (i > 0) Spacer(Modifier.height(8.dp))
@@ -905,10 +935,10 @@ private fun OverlapPage(
                     }
                 }
                 Text(change.detail, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 8.dp))
-                OptLabel("Swap $from for · ranked best first")
-                if (change.options.size > 1 || !option.label.startsWith("Remove")) {
+                OptLabel(stringResource(R.string.optimise_swap_label, from))
+                if (change.options.size > 1 || option.edits.none { it.op is ChangeOp.RemoveEntry }) {
                     RankedOptions(
-                        label = "Replacement for $from, ranked best to worst",
+                        label = stringResource(R.string.optimise_replacement_description, from),
                         names = change.options.map { it.label },
                         reasons = change.options.map { it.reason },
                         lines = change.options.map { swapLine(it) },
@@ -916,23 +946,23 @@ private fun OverlapPage(
                         onChoose = { onPicks(picks.with(change, picks.keepOf(change), it)) },
                     )
                 } else {
-                    OptNote("Nothing in your ${Words.armoury.s} makes a better pair, so the change removes $from.")
+                    OptNote(UiText.themed(R.string.optimise_overlap_no_pair, R.string.optimise_overlap_no_pair__t, from).asString())
                 }
                 Spacer(Modifier.height(8.dp))
                 InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
                     KeepSkip(index + 1, picks.keepOf(change), { onPicks(picks.with(change, it, chosen)) })
                 }
-                OptLabel("Effect with ${option.label}")
+                OptLabel(stringResource(R.string.optimise_effect_with_label, option.label))
                 ImpactList(rows)
             }
             Spacer(Modifier.height(20.dp))
         }
         ForgeDock(
-            primary = if (kept.isEmpty()) "Apply" else "Apply ${changeCount(kept.size)}",
+            primary = applyLabel(kept.size),
             onPrimary = onApply,
             enabled = kept.isNotEmpty(),
             busy = saving,
-            note = "Nothing is written until you apply.",
+            note = stringResource(R.string.optimise_apply_note_short),
         )
     }
 }
@@ -947,17 +977,17 @@ private fun AppliedPage(applied: Applied, saving: Boolean, error: String?, onUnd
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            ForgeHeader(applied.title, onBack = onDone, status = "Applied")
+            ForgeHeader(applied.title, onBack = onDone, status = stringResource(R.string.optimise_applied_status))
             val count = applied.lines.size
             Text(
-                "$count ${if (count == 1) "change" else "changes"} applied",
+                UiText.plural(R.plurals.optimise_applied_count, count).asString(),
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
                 modifier = Modifier.padding(top = 16.dp).semantics { liveRegion = LiveRegionMode.Polite; heading() },
             )
             if (applied.skipped > 0) {
                 Text(
-                    "${applied.skipped} skipped, left as it was.",
+                    stringResource(R.string.optimise_applied_skipped, applied.skipped),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -989,10 +1019,14 @@ private fun AppliedPage(applied: Applied, saving: Boolean, error: String?, onUnd
             Spacer(Modifier.height(20.dp))
         }
         ForgeDock(
-            primary = "Done",
+            primary = stringResource(R.string.common_done),
             onPrimary = onDone,
             enabled = !saving,
-            link = if (applied.riteNames.size == 1) "Undo, put ${applied.riteNames.single()} back" else "Undo, put the ${Words.rite.pl} back",
+            link = if (applied.riteNames.size == 1) {
+                stringResource(R.string.optimise_applied_undo_named, applied.riteNames.single())
+            } else {
+                UiText.themed(R.string.optimise_applied_undo_all, R.string.optimise_applied_undo_all__t).asString()
+            },
             onLink = onUndo,
         )
     }

@@ -11,33 +11,38 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** The seven weekdays as the pick grid draws them, then the option that leaves the rite off the cycle. */
-internal val DAY_PICKS = listOf(
-    1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
-    5 to "Fri", 6 to "Sat", 7 to "Sun", null to "No day",
-)
+internal val DAY_PICKS: List<Pair<Int?, String>>
+    get() = listOf(
+        1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
+        5 to "Fri", 6 to "Sat", 7 to "Sun", null to Words.text(UiText.res(R.string.riteday_no_day)),
+    )
 
 /**
  * What the sheet says under the grid about the day that is ticked. A free day says so, a held one names its
  * rite, and "No day" says what it costs: Weekly coverage counts only rites that have a day.
  */
 internal fun daySheetNote(picked: Int?, saved: List<WorkoutPreset>): String {
-    if (picked == null) return "${Words.rite.ca} with no day is not counted in Weekly coverage."
+    if (picked == null) return Words.text(UiText.themed(R.string.riteday_note_no_day, R.string.riteday_note_no_day__t))
     val holders = saved.filter { it.scheduledDay == picked }.map { it.name }
     return if (holders.isEmpty()) {
-        "${dayLabel(picked)} is free."
+        Words.text(UiText.res(R.string.riteday_note_free, dayLabel(picked)))
     } else {
-        "${holders.joinToString(" and ")} ${if (holders.size == 1) "is" else "are"} already on ${dayLabel(picked)}. The two would share it."
+        Words.text(UiText.plural(R.plurals.riteday_note_taken, holders.size, holders.joinToString(" and "), dayLabel(picked)))
     }
 }
 
@@ -59,7 +64,15 @@ internal fun RiteDaySheet(
     val taken = saved.filter { it.scheduledDay != null }.groupBy { it.scheduledDay!! }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Which day is ${riteName.ifBlank { "this ${Words.rite.s}" }} on?") },
+        title = {
+            Text(
+                if (riteName.isBlank()) {
+                    UiText.themed(R.string.riteday_title_blank, R.string.riteday_title_blank__t).asString()
+                } else {
+                    UiText.res(R.string.riteday_title, riteName).asString()
+                },
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DAY_PICKS.chunked(4).forEach { chunk ->
@@ -71,9 +84,13 @@ internal fun RiteDaySheet(
                                 selected = picked == day,
                                 modifier = Modifier.weight(1f),
                                 description = when {
-                                    day == null -> "No day"
-                                    holders.isEmpty() -> "${dayLabel(day)}, free"
-                                    else -> "${dayLabel(day)}, taken by ${holders.joinToString(" and ") { it.name }}"
+                                    day == null -> UiText.res(R.string.riteday_no_day).asString()
+                                    holders.isEmpty() -> UiText.res(R.string.riteday_free_description, dayLabel(day)).asString()
+                                    else -> UiText.res(
+                                        R.string.riteday_taken_description,
+                                        dayLabel(day),
+                                        holders.joinToString(" and ") { it.name },
+                                    ).asString()
                                 },
                                 onClick = { onPick(day) },
                             )
@@ -89,15 +106,18 @@ internal fun RiteDaySheet(
                 )
                 if (taken.isNotEmpty()) {
                     Text(
-                        "Already on: " + taken.entries.sortedBy { it.key }
-                            .joinToString(" · ") { (day, rites) -> "${dayShort(day)} ${rites.joinToString(" and ") { it.name }}" },
+                        UiText.res(
+                            R.string.riteday_already_on,
+                            taken.entries.sortedBy { it.key }
+                                .joinToString(" · ") { (day, rites) -> "${dayShort(day)} ${rites.joinToString(" and ") { it.name }}" },
+                        ).asString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
                 }
             }
         },
-        confirmButton = { IronvellumButton(label = "Add this ${Words.rite.s}", onClick = onConfirm, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
+        confirmButton = { IronvellumButton(label = UiText.themed(R.string.builder_add_rite, R.string.builder_add_rite__t).asString(), onClick = onConfirm, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, quiet = true, modifier = Modifier.heightIn(min = 48.dp)) },
     )
 }

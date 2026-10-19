@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.R
 import com.ironvellum.app.data.PlateStore
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.LoadUnit
@@ -46,6 +48,8 @@ import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.PlateRack
 import com.ironvellum.app.domain.PlateRack.Kind
 import com.ironvellum.app.domain.PlateSizes
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.BarChooser
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
@@ -88,7 +92,7 @@ internal fun PlateSheet(
         onDismissRequest = onDismiss,
         title = {
             Column {
-                Text("Plates", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                Text(stringResource(R.string.plates_title), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
                 Text(
                     "$exerciseName · $setLabel",
                     style = MaterialTheme.typography.bodySmall,
@@ -99,8 +103,8 @@ internal fun PlateSheet(
         text = {
             Column {
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Load", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-                    StepButton("−", "Previous load the plates can make") { rack.stepFrom(target, up = false)?.let { target = it } }
+                    Text(stringResource(R.string.plates_load_label), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
+                    StepButton("−", stringResource(R.string.plates_load_down_description)) { rack.stepFrom(target, up = false)?.let { target = it } }
                     Text(
                         say(target),
                         style = MaterialTheme.typography.titleLarge,
@@ -109,16 +113,16 @@ internal fun PlateSheet(
                         color = IronvellumColors.Ink,
                         modifier = Modifier.padding(horizontal = 4.dp),
                     )
-                    StepButton("+", "Next load the plates can make") { rack.stepFrom(target, up = true)?.let { target = it } }
+                    StepButton("+", stringResource(R.string.plates_load_up_description)) { rack.stepFrom(target, up = true)?.let { target = it } }
                 }
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
-                        .clickable(role = Role.Button, onClickLabel = "Change the bar") { barOpen = !barOpen },
+                        .clickable(role = Role.Button, onClickLabel = stringResource(R.string.plates_bar_change_label)) { barOpen = !barOpen },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Bar", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.plates_bar_label), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
                     Text("${say(rack.bar)} ›", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 }
                 if (barOpen) {
@@ -126,32 +130,32 @@ internal fun PlateSheet(
                 }
                 Text(
                     when (reading.kind) {
-                        Kind.EXACT -> "Loaded · ${say(reading.build.total)}"
-                        Kind.BETWEEN -> "Closest below · ${say(reading.build.total)}"
-                        Kind.UNDER_BAR -> "Bar only · ${say(rack.bar)}"
-                        Kind.OVER -> "Heaviest you can load · ${say(reading.build.total)}"
-                    }.uppercase(),
+                        Kind.EXACT -> UiText.res(R.string.plates_reading_exact, say(reading.build.total))
+                        Kind.BETWEEN -> UiText.res(R.string.plates_reading_between, say(reading.build.total))
+                        Kind.UNDER_BAR -> UiText.res(R.string.plates_reading_under_bar, say(rack.bar))
+                        Kind.OVER -> UiText.res(R.string.plates_reading_over, say(reading.build.total))
+                    }.asString().uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     letterSpacing = 2.sp,
                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
                 )
-                Barbell(reading.build, unit, "${say(rack.bar)} bar", showGap = reading.kind == Kind.BETWEEN)
+                Barbell(reading.build, unit, UiText.res(R.string.plates_bar_named, say(rack.bar)).asString(), showGap = reading.kind == Kind.BETWEEN)
                 Row(
                     Modifier.padding(top = 8.dp),
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        "EACH SIDE",
+                        stringResource(R.string.plates_each_side).uppercase(),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         letterSpacing = 2.sp,
                     )
                     Text(
-                        if (reading.build.perSide.isEmpty()) "Bar only" else reading.build.perSide.joinToString(" + ") { PlateRack.number(it) },
+                        if (reading.build.perSide.isEmpty()) stringResource(R.string.plates_bar_only) else reading.build.perSide.joinToString(" + ") { PlateRack.number(it) },
                         style = MaterialTheme.typography.headlineSmall,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -160,14 +164,14 @@ internal fun PlateSheet(
                     Text(name, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 }
                 Text(
-                    "${say(reading.build.sideTotal)} a side, ${say(reading.build.sideTotal * 2)} of plates, ${say(rack.bar)} bar",
+                    UiText.res(R.string.plates_summary, say(reading.build.sideTotal), say(reading.build.sideTotal * 2), say(rack.bar)).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 verdict(reading.kind, target, rack, ::say)?.let { (headline, detail) ->
                     Column(Modifier.padding(top = 12.dp)) {
-                        Text(headline, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
-                        Text(detail, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                        Text(headline.asString(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+                        Text(detail.asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                     }
                 }
             }
@@ -180,15 +184,15 @@ internal fun PlateSheet(
                 when (reading.kind) {
                     Kind.EXACT ->
                         if (setLoad != null && setLoad == below) {
-                            IronvellumButton("Done", onClick = onDismiss)
+                            IronvellumButton(stringResource(R.string.common_done), onClick = onDismiss)
                         } else {
-                            IronvellumButton("Use ${say(below)}", onClick = { use(below) })
+                            IronvellumButton(UiText.res(R.string.plates_use, say(below)).asString(), onClick = { use(below) })
                         }
                     Kind.BETWEEN, Kind.UNDER_BAR -> {
-                        if (above != null) IronvellumButton("Use ${say(above)}", quiet = true, onClick = { use(above) })
-                        IronvellumButton("Use ${say(below)}", onClick = { use(below) })
+                        if (above != null) IronvellumButton(UiText.res(R.string.plates_use, say(above)).asString(), quiet = true, onClick = { use(above) })
+                        IronvellumButton(UiText.res(R.string.plates_use, say(below)).asString(), onClick = { use(below) })
                     }
-                    Kind.OVER -> IronvellumButton("Use ${say(below)}", onClick = { use(below) })
+                    Kind.OVER -> IronvellumButton(UiText.res(R.string.plates_use, say(below)).asString(), onClick = { use(below) })
                 }
             }
         },
@@ -196,13 +200,13 @@ internal fun PlateSheet(
 }
 
 /** The headline and detail under the build when the load is not an exact one, or null when it is. */
-private fun verdict(kind: Kind, target: Double, rack: PlateRack, say: (Double) -> String): Pair<String, String>? = when (kind) {
+private fun verdict(kind: Kind, target: Double, rack: PlateRack, say: (Double) -> String): Pair<UiText, UiText>? = when (kind) {
     Kind.EXACT -> null
-    Kind.BETWEEN -> "${say(target)} falls between plates" to
-        (rack.step?.let { "Your smallest plate is ${say(rack.smallest ?: it)}, so loads step by ${say(it)}." }
-            ?: "No plates are set, so only the bar can be loaded.")
-    Kind.UNDER_BAR -> "${say(target)} is lighter than the bar" to "The bar alone is ${say(rack.bar)}."
-    Kind.OVER -> "${say(target)} is more than your plates make" to "The heaviest you can load is ${say(rack.heaviest)}."
+    Kind.BETWEEN -> UiText.res(R.string.plates_between_headline, say(target)) to
+        (rack.step?.let { UiText.res(R.string.plates_between_detail, say(rack.smallest ?: it), say(it)) }
+            ?: UiText.res(R.string.plates_between_detail_none))
+    Kind.UNDER_BAR -> UiText.res(R.string.plates_under_bar_headline, say(target)) to UiText.res(R.string.plates_under_bar_detail, say(rack.bar))
+    Kind.OVER -> UiText.res(R.string.plates_over_headline, say(target)) to UiText.res(R.string.plates_over_detail, say(rack.heaviest))
 }
 
 private const val VIEW_W = 364f
@@ -224,9 +228,13 @@ private fun Barbell(build: PlateRack.Build, unit: LoadUnit, barLabel: String, sh
     val ink = IronvellumColors.Ink
     val largest = PlateSizes.sizes(unit).first()
     val said = if (build.perSide.isEmpty()) {
-        "Barbell with no plates"
+        stringResource(R.string.plates_barbell_empty_description)
     } else {
-        "Barbell with ${build.perSide.joinToString(" and ") { PlateRack.number(it) }} ${unit.label} plates on each side"
+        UiText.res(
+            R.string.plates_barbell_description,
+            build.perSide.joinToString(" and ") { PlateRack.number(it) },
+            unit.label,
+        ).asString()
     }
     Canvas(
         Modifier

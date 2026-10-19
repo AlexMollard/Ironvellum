@@ -4,10 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.UiText
 
 /**
  * The one muscle a figure has lit, or none. Tapping a muscle on any figure sets it; the figure never
@@ -20,7 +23,7 @@ internal fun rememberMuscleSelection(): MutableState<Muscle?> = rememberSaveable
 
 /** "Triceps" alone, or "Triceps · assist in Bench Press": the muscle, then at most one fact. */
 internal fun muscleLine(muscle: Muscle, fact: String? = null): String =
-    if (fact.isNullOrBlank()) muscle.label else "${muscle.label} · $fact"
+    if (fact.isNullOrBlank()) muscle.label else Words.text(UiText.res(R.string.muscles_joined_pair, muscle.label, fact))
 
 /**
  * One exercise's figure: how much of [muscle] the exercise works ([share] null when it is not in the
@@ -29,9 +32,9 @@ internal fun muscleLine(muscle: Muscle, fact: String? = null): String =
 internal fun exerciseMuscleLine(muscle: Muscle, share: Double?, exerciseName: String): String = muscleLine(
     muscle,
     when {
-        share == null || share <= 0.0 -> "not worked in $exerciseName"
-        shareLevel(share) == ShareLevel.MAIN -> "main in $exerciseName"
-        else -> "assist in $exerciseName"
+        share == null || share <= 0.0 -> Words.text(UiText.res(R.string.muscles_fact_not_worked, exerciseName))
+        shareLevel(share) == ShareLevel.MAIN -> Words.text(UiText.res(R.string.muscles_fact_main, exerciseName))
+        else -> Words.text(UiText.res(R.string.muscles_fact_assist, exerciseName))
     },
 )
 
@@ -39,7 +42,11 @@ internal fun exerciseMuscleLine(muscle: Muscle, share: Double?, exerciseName: St
 internal fun riteMuscleLine(muscle: Muscle, sets: Double, riteName: String): String = muscleLine(
     muscle,
     // riteSetsLabel floors at a tenth of a set, so a muscle the rite never reaches is said apart.
-    if (sets <= 0.0) "not worked in $riteName" else "${riteSetsLabel(sets)} in $riteName",
+    if (sets <= 0.0) {
+        Words.text(UiText.res(R.string.muscles_fact_not_worked, riteName))
+    } else {
+        Words.text(UiText.res(R.string.muscles_fact_sets_in, riteSetsLabel(sets), riteName))
+    },
 )
 
 // ---------------------------------------------------------------- the coverage filter

@@ -1,6 +1,10 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.width
 import androidx.activity.compose.BackHandler
@@ -258,7 +262,11 @@ class ProgramBuilderViewModel(
                     ((LocalDate.now().toEpochDay() - first) / 365.25 * 10).toLong() / 10.0
                 }
                 _strength.value = repo.strengthProfile().copy(starter = repo.starterBasis(sex.value, tier.value))
-            }.onFailure { _error.value = "Could not read your ${Words.chronicle.t}: ${it.message}" }
+            }.onFailure {
+                _error.value = Words.text(
+                    UiText.themed(R.string.builder_error_history, R.string.builder_error_history__t, it.message.toString()),
+                )
+            }
             _strengthLoaded.value = true
             // The suggestion lands once, from real history; after she touches
             // the control it is hers, and a later load cannot re-suggest.
@@ -397,11 +405,10 @@ class ProgramBuilderViewModel(
                         ) != null
                         when {
                             isolationWouldFill ->
-                                "Only isolation work would fill the gaps. Turn off Compound & ${Words.technique.s} only, under More options, to add it."
+                                Words.text(UiText.themed(R.string.builder_error_isolation_only, R.string.builder_error_isolation_only__t))
                             sessionKind.value == SessionKind.AUTO ->
-                                "Your ${Words.cycle.s} already reaches the target on every muscle. " +
-                                    "Pick Full body, Upper or Lower for an extra ${Words.rite.s}."
-                            else -> "The catalogue cannot fill this ${Words.rite.s} with your ${Words.armoury.s}."
+                                Words.text(UiText.themed(R.string.builder_error_week_covered, R.string.builder_error_week_covered__t))
+                            else -> Words.text(UiText.themed(R.string.builder_error_cannot_fill, R.string.builder_error_cannot_fill__t))
                         }
                     }
                     Generated(RoutinePlan(listOf(preset)))
@@ -442,7 +449,13 @@ class ProgramBuilderViewModel(
                 _plan.value = null
                 _improvement.value = null
                 improvementFor = null
-                _error.value = "${Words.theForge.c} failed: ${it.message}"
+                _error.value = Words.text(
+                    UiText.res(
+                        R.string.forge_failed_message,
+                        UiText.themed(R.string.forge_failed_title, R.string.forge_failed_title__t),
+                        it.message.toString(),
+                    ),
+                )
             },
         )
         generatedPlan.value = _plan.value
@@ -508,10 +521,14 @@ class ProgramBuilderViewModel(
     fun switchesProgression(): Boolean =
         mode in setOf("week", "template") && progressionModeFor(focus.value) != null
 
-    fun progressionLine(): String = when (focus.value) {
-        TrainingFocus.STRENGTH -> "Strength goal: load goes up when you hit your reps."
-        else -> "Muscle goal: reps go up first, then load."
-    }
+    fun progressionLine(): String = Words.text(
+        UiText.res(
+            when (focus.value) {
+                TrainingFocus.STRENGTH -> R.string.builder_progression_strength
+                else -> R.string.builder_progression_muscle
+            },
+        ),
+    )
 
     /**
      * One save at a time: a second tap while one is in flight is ignored, never a second insert. [write] is
@@ -519,7 +536,7 @@ class ProgramBuilderViewModel(
      * the bookkeeping that follows a write that already landed, and its failure must not claim otherwise.
      */
     private fun save(
-        failure: String,
+        failure: UiText,
         onDone: () -> Unit,
         after: suspend () -> Unit = {},
         write: suspend () -> Unit,
@@ -530,13 +547,13 @@ class ProgramBuilderViewModel(
             try {
                 val written = runCatching { write() }
                 if (written.isFailure) {
-                    _error.value = "$failure: ${written.exceptionOrNull()?.message}. Nothing was written."
+                    _error.value = Words.text(UiText.res(R.string.builder_save_failed, failure, written.exceptionOrNull()?.message.toString()))
                     return@launch
                 }
                 landed = true
                 val bookkeeping = runCatching { after() }
                 _error.value = bookkeeping.exceptionOrNull()?.let {
-                    "Saved, but your answers could not be remembered: ${it.message}"
+                    Words.text(UiText.res(R.string.builder_saved_not_remembered, it.message.toString()))
                 }
                 onDone()
             } finally {
@@ -554,12 +571,12 @@ class ProgramBuilderViewModel(
         val placed = plan.avoidingDays(taken)
         if (placed == null) {
             val needed = plan.presets.count { it.scheduledDay != null }
-            _error.value = "Your ${Words.cycle.s} leaves ${7 - taken.size} free ${if (7 - taken.size == 1) "day" else "days"} " +
-                "and this week needs $needed. Free some days, or replace your ${Words.cycle.s} instead."
+            val free = 7 - taken.size
+            _error.value = Words.text(UiText.themedPlural(R.plurals.builder_no_room, R.plurals.builder_no_room__t, free, free, needed))
             return
         }
         val focusNow = focus.value
-        save("Could not add the ${Words.rite.pl}", onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
+        save(UiText.themed(R.string.builder_fail_add, R.string.builder_fail_add__t), onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
             repo.applyRoutine(placed, replaceExisting = false)
         }
     }
@@ -567,7 +584,7 @@ class ProgramBuilderViewModel(
     fun replacePresets(onDone: () -> Unit) {
         val plan = _plan.value ?: return
         val focusNow = focus.value
-        save("Could not replace the ${Words.cycle.s}", onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
+        save(UiText.themed(R.string.builder_fail_replace, R.string.builder_fail_replace__t), onDone, after = { rememberAnswers(); repo.alignProgressionMode(focusNow) }) {
             repo.applyRoutine(plan, replaceExisting = true)
         }
     }
@@ -575,7 +592,7 @@ class ProgramBuilderViewModel(
     /** Saves the proposed rite on [day] (null: no day, which Weekly coverage does not count). */
     fun addSession(day: Int?, onDone: () -> Unit) {
         val preset = _plan.value?.presets?.firstOrNull()?.copy(scheduledDay = day) ?: return
-        save("Could not save the ${Words.rite.s}", onDone, after = { rememberAnswers() }) {
+        save(UiText.themed(R.string.builder_fail_save, R.string.builder_fail_save__t), onDone, after = { rememberAnswers() }) {
             repo.savePlannedPreset(null, preset)
         }
     }
@@ -584,10 +601,10 @@ class ProgramBuilderViewModel(
         val improvement = _improvement.value ?: return
         val id = selectedPresetId.value ?: presetId
         if (improvementFor != id) {
-            _error.value = "That preview was for another ${Words.rite.s}. Wait for this one to load."
+            _error.value = Words.text(UiText.themed(R.string.builder_preview_stale, R.string.builder_preview_stale__t))
             return
         }
-        save("Could not apply the changes", onDone, after = { rememberAnswers() }) {
+        save(UiText.res(R.string.builder_fail_apply), onDone, after = { rememberAnswers() }) {
             repo.savePlannedPreset(id, improvement.after)
         }
     }
@@ -753,7 +770,7 @@ fun ProgramBuilderScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            Question("Goal") {
+            Question(stringResource(R.string.forge_goal_label)) {
                 InkSegmented(
                     // Templates are hand-authored for strength and hypertrophy
                     // only; offering Skills / Mixed here composed questions
@@ -776,16 +793,18 @@ fun ProgramBuilderScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Caption(
-                    when (focus) {
-                        TrainingFocus.STRENGTH -> "Low reps, heavy load. Bigger numbers on the main exercises."
-                        TrainingFocus.MUSCLE -> "Higher volume, moderate load. Size comes before bragging rights."
-                        TrainingFocus.SKILL -> "Handstands, levers, the planche. Practice over pump."
-                        TrainingFocus.GENERAL -> "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
-                    },
+                    stringResource(
+                        when (focus) {
+                            TrainingFocus.STRENGTH -> R.string.builder_goal_strength_caption
+                            TrainingFocus.MUSCLE -> R.string.builder_goal_muscle_caption
+                            TrainingFocus.SKILL -> R.string.forge_goal_skill_caption
+                            TrainingFocus.GENERAL -> R.string.forge_goal_general_caption
+                        },
+                    ),
                 )
             }
 
-            Question("Starting sets") {
+            Question(stringResource(R.string.forge_starting_sets_label)) {
                 InkSegmented(
                     options = VolumeLevel.entries.map { it to it.label },
                     selected = tier,
@@ -803,21 +822,25 @@ fun ProgramBuilderScreen(
                 ListRow(
                     label = Words.armoury.c,
                     value = SettingsSummaries.armoury(equipment),
-                    onClickLabel = "Choose your ${Words.armoury.s}",
+                    onClickLabel = UiText.themed(R.string.forge_armoury_choose, R.string.forge_armoury_choose__t).asString(),
                     onClick = { armouryOpen = true },
                 )
                 InkDivider()
                 ListRow(
-                    label = "More options",
-                    value = (if (compoundOnly) "Compound · " else "") + "$sessionMinutes min · $maxExercises per ${Words.rite.s}",
-                    onClickLabel = "${Words.rite.c} length, compound only and exercises per ${Words.rite.s}",
+                    label = stringResource(R.string.forge_more_options),
+                    value = if (compoundOnly) {
+                        UiText.themed(R.string.builder_more_value_compound, R.string.builder_more_value_compound__t, sessionMinutes, maxExercises).asString()
+                    } else {
+                        UiText.themed(R.string.builder_more_value, R.string.builder_more_value__t, sessionMinutes, maxExercises).asString()
+                    },
+                    onClickLabel = UiText.themed(R.string.builder_more_description, R.string.builder_more_description__t).asString(),
                     onClick = { moreOpen = true },
                 )
                 InkDivider()
             }
 
             if (mode != "template") {
-                Question("Priorities · up to 3") {
+                Question(stringResource(R.string.builder_priorities_label)) {
                     MuscleAreaChips(
                         selectedAreas = priorities,
                         onToggle = viewModel::togglePriority,
@@ -826,7 +849,7 @@ fun ProgramBuilderScreen(
             }
 
             if (mode == "session") {
-                Question("What kind of ${Words.rite.s}") {
+                Question(UiText.themed(R.string.builder_kind_label, R.string.builder_kind_label__t).asString()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SessionKind.entries.chunked(2).forEach { chunk ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -843,7 +866,7 @@ fun ProgramBuilderScreen(
                         }
                     }
                     Spacer(Modifier.height(6.dp))
-                    Caption("\"What my week is missing\" reads the rest of your ${Words.cycle.s} and fills the gap.")
+                    Caption(UiText.themed(R.string.builder_kind_caption, R.string.builder_kind_caption__t).asString())
                 }
             }
 
@@ -851,24 +874,24 @@ fun ProgramBuilderScreen(
                 SectionHeader(Words.pattern.cpl)
                 val templates = viewModel.matchingTemplates()
                 if (templates.isEmpty()) {
-                    Caption("No hand-written ${Words.pattern.s} for this goal — ${Words.forge.s} ${Words.cycle.a} instead.")
+                    Caption(UiText.themed(R.string.builder_template_none, R.string.builder_template_none__t).asString())
                 }
                 templates.forEachIndexed { index, template ->
                     if (index > 0) InkDivider()
                     ChoiceRow(
                         title = template.name,
-                        subline = "${template.split.label} · ${template.days.size} days",
+                        subline = UiText.plural(R.plurals.builder_template_subline, template.days.size, template.split.label, template.days.size).asString(),
                         detail = template.summary,
                         selected = template.id == templateId,
                         onClick = { viewModel.selectedTemplateId.value = template.id },
                     )
                 }
                 Spacer(Modifier.height(6.dp))
-                Caption("Adapted to your ${Words.armoury.s} and weekly volume.")
+                Caption(UiText.themed(R.string.builder_template_adapted, R.string.builder_template_adapted__t).asString())
             }
 
             if (mode == "improve") {
-                SectionHeader("Which ${Words.rite.s}")
+                SectionHeader(UiText.themed(R.string.builder_which_title, R.string.builder_which_title__t).asString())
                 presets.forEachIndexed { index, preset ->
                     if (index > 0) InkDivider()
                     ChoiceRow(
@@ -908,10 +931,9 @@ fun ProgramBuilderScreen(
                     Caption(
                         when {
                             // Room has answered and there is nothing to read: say so instead of waiting forever.
-                            presetsLoaded && presets.isEmpty() ->
-                                "You have no ${Words.rite.pl} to ${Words.temper.s} yet. ${Words.forge.c} ${Words.cycle.a} or ${Words.rite.a} first."
-                            error != null -> "Nothing to show yet."
-                            else -> "${Words.reads.c} your ${Words.rite.s} against the evidence…"
+                            presetsLoaded && presets.isEmpty() -> UiText.themed(R.string.builder_improve_none, R.string.builder_improve_none__t).asString()
+                            error != null -> stringResource(R.string.forge_nothing_yet)
+                            else -> UiText.themed(R.string.builder_improve_loading, R.string.builder_improve_loading__t).asString()
                         },
                     )
                 } else {
@@ -926,8 +948,7 @@ fun ProgramBuilderScreen(
                     )
                     Spacer(Modifier.height(10.dp))
                     if (others.isNotEmpty()) {
-                        val noun = if (others.size == 1) Words.rite.s else Words.rite.pl
-                        Caption("Weekly volume includes your ${others.size} other $noun.")
+                        Caption(UiText.themedPlural(R.plurals.builder_volume_others, R.plurals.builder_volume_others__t, others.size).asString())
                         Spacer(Modifier.height(6.dp))
                     }
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = { coverageOpen = true })
@@ -938,8 +959,8 @@ fun ProgramBuilderScreen(
                     Caption(
                         when {
                             equipment == null -> ARMOURY_PICK_CAPTION
-                            catalogue.isEmpty() -> "Consulting the catalogue…"
-                            else -> "Nothing to show yet."
+                            catalogue.isEmpty() -> stringResource(R.string.forge_consulting)
+                            else -> stringResource(R.string.forge_nothing_yet)
                         },
                     )
                 } else {
@@ -966,8 +987,7 @@ fun ProgramBuilderScreen(
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = { coverageOpen = true })
                     if (presets.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
-                        val noun = if (presets.size == 1) Words.rite.s else Words.rite.pl
-                        Caption("Weekly volume includes your ${presets.size} existing $noun.")
+                        Caption(UiText.themedPlural(R.plurals.builder_volume_existing, R.plurals.builder_volume_existing__t, presets.size).asString())
                     }
                     // Routine-wide advice, said once for the whole plan.
                     Evidence.split(current.note).first.trim().takeIf { it.isNotBlank() }?.let { note ->
@@ -1000,10 +1020,10 @@ fun ProgramBuilderScreen(
                 // With nothing written yet, add and replace are the same
                 // act, and "delete your 0 rites" was a scare for nobody.
                 DockedActionBar(
-                    primary = if (presets.isEmpty()) "Take this ${Words.cycle.s}" else "Add to my ${Words.cycle.s}",
+                    primary = if (presets.isEmpty()) UiText.themed(R.string.builder_take_cycle, R.string.builder_take_cycle__t).asString() else UiText.themed(R.string.builder_add_to_cycle, R.string.builder_add_to_cycle__t).asString(),
                     onPrimary = { viewModel.addPresets(onDone) },
                     primaryEnabled = !saving,
-                    link = if (presets.isNotEmpty()) "Replace my ${Words.cycle.s}" else null,
+                    link = if (presets.isNotEmpty()) UiText.themed(R.string.forge_replace_link, R.string.forge_replace_link__t).asString() else null,
                     linkOn = !saving,
                     linkColor = IronvellumColors.DangerRed,
                     onLink = { confirmReplace = true },
@@ -1011,7 +1031,7 @@ fun ProgramBuilderScreen(
             }
             "session" -> if (plan != null) {
                 DockedActionBar(
-                    primary = "Add this ${Words.rite.s}",
+                    primary = UiText.themed(R.string.builder_add_rite, R.string.builder_add_rite__t).asString(),
                     onPrimary = {
                         // The first free day is ticked, unless the cycle has none.
                         pickedDay = defaultRiteDay(sessionDay, presets.mapNotNull { it.scheduledDay }.toSet())
@@ -1024,13 +1044,13 @@ fun ProgramBuilderScreen(
                 if (improvement?.changes?.isEmpty() == true) {
                     // Nothing to apply: a disabled Apply beside "Keep
                     // original" offered a choice that did not exist.
-                    DockedActionBar(primary = "Done", onPrimary = onDone)
+                    DockedActionBar(primary = stringResource(R.string.common_done), onPrimary = onDone)
                 } else if (improvement != null) {
                     DockedActionBar(
-                        primary = "Apply changes",
+                        primary = stringResource(R.string.builder_apply_changes),
                         onPrimary = { viewModel.applyImprovement(onDone) },
                         primaryEnabled = !saving,
-                        link = "Keep original",
+                        link = stringResource(R.string.builder_keep_original),
                         onLink = onDone,
                     )
                 }
@@ -1058,14 +1078,14 @@ fun ProgramBuilderScreen(
             onDismissRequest = { armouryOpen = false },
             title = { Text(Words.armoury.c) },
             text = { GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it }) },
-            confirmButton = { IronvellumButton(label = "Done", onClick = { armouryOpen = false }) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = { armouryOpen = false }) },
         )
     }
 
     if (moreOpen) {
         IronvellumDialog(
             onDismissRequest = { moreOpen = false },
-            title = { Text("More options") },
+            title = { Text(stringResource(R.string.forge_more_options)) },
             text = {
                 MoreOptionsBody(
                     tier = tier,
@@ -1079,18 +1099,18 @@ fun ProgramBuilderScreen(
                     onSessionMinutes = { viewModel.sessionMinutes.value = it },
                 )
             },
-            confirmButton = { IronvellumButton(label = "Done", onClick = { moreOpen = false }) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = { moreOpen = false }) },
         )
     }
 
     if (confirmDiscard) {
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard your changes?") },
-            text = { Text("Your answers and any edits to the proposal will be lost.") },
+            title = { Text(stringResource(R.string.forge_discard_title)) },
+            text = { Text(stringResource(R.string.forge_discard_body)) },
             confirmButton = {
                 IronvellumButton(
-                    label = "Discard",
+                    label = stringResource(R.string.forge_discard_button),
                     onClick = {
                         confirmDiscard = false
                         onDone()
@@ -1099,7 +1119,7 @@ fun ProgramBuilderScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep editing", onClick = { confirmDiscard = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.forge_discard_keep), onClick = { confirmDiscard = false }, quiet = true)
             },
         )
     }
@@ -1107,17 +1127,16 @@ fun ProgramBuilderScreen(
     if (confirmReplace) {
         IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace your ${Words.cycle.s}?") },
+            title = { Text(UiText.themed(R.string.forge_replace_title, R.string.forge_replace_title__t).asString()) },
             text = {
                 Text(
-                    "Your ${presets.size} current ${if (presets.size == 1) Words.rite.s else Words.rite.pl} will be deleted " +
-                        "and the ${Words.forged.s} ${Words.cycle.s} takes their place. Your ${Words.chronicle.t} is untouched." +
+                    UiText.themedPlural(R.plurals.forge_replace_body, R.plurals.forge_replace_body__t, presets.size).asString() +
                         if (viewModel.switchesProgression()) " " + viewModel.progressionLine() else "",
                 )
             },
             confirmButton = {
                 IronvellumButton(
-                    label = "Replace",
+                    label = stringResource(R.string.forge_replace_button),
                     onClick = {
                         confirmReplace = false
                         viewModel.replacePresets(onDone)
@@ -1126,7 +1145,7 @@ fun ProgramBuilderScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep mine", onClick = { confirmReplace = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.forge_replace_keep), onClick = { confirmReplace = false }, quiet = true)
             },
         )
     }
@@ -1135,19 +1154,20 @@ fun ProgramBuilderScreen(
 private fun volumeSuggestion(hasHistory: Boolean, years: Double?): String {
     // Selection-independent on purpose: a saved answer can preselect
     // Standard, and "starts low" would then contradict it.
-    if (!hasHistory || years == null) return "${Words.theChronicle.c} is blank: pick what you can recover from."
-    return "Suggested from ${historySpan(years)} of training."
+    if (!hasHistory || years == null) {
+        return Words.text(UiText.themed(R.string.builder_history_blank, R.string.builder_history_blank__t))
+    }
+    return Words.text(UiText.res(R.string.builder_history_suggested, historySpan(years)))
 }
 
 /** "3 weeks", "5 months", "1.4 years" - under a year, "0 years" read as no history at all. */
-private fun historySpan(years: Double): String {
+private fun historySpan(years: Double): UiText {
     val days = (years * 365.25).toInt()
-    fun plural(n: Int, unit: String) = "$n $unit${if (n == 1) "" else "s"}"
     return when {
-        days < 14 -> plural(days.coerceAtLeast(1), "day")
-        days < 61 -> plural(days / 7, "week")
-        years < 1.0 -> plural((days / 30.44).toInt(), "month")
-        else -> "${trimYears(years)} year${if (years == 1.0) "" else "s"}"
+        days < 14 -> UiText.plural(R.plurals.builder_span_days, days.coerceAtLeast(1))
+        days < 61 -> UiText.plural(R.plurals.builder_span_weeks, days / 7)
+        years < 1.0 -> UiText.plural(R.plurals.builder_span_months, (days / 30.44).toInt())
+        else -> UiText.plural(R.plurals.builder_span_years, if (years == 1.0) 1 else 2, trimYears(years))
     }
 }
 
@@ -1157,8 +1177,8 @@ private fun trimYears(value: Double): String {
     return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
 }
 
-private val ARMOURY_PICK_CAPTION: String get() =
-    "Pick your ${Words.armoury.s} to see a preview. Nothing means bodyweight only."
+private val ARMOURY_PICK_CAPTION: String
+    @Composable get() = UiText.themed(R.string.builder_armoury_preview, R.string.builder_armoury_preview__t).asString()
 
 /** A question on the page surface: a small muted label, then its control. */
 @Composable
