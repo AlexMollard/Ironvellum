@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!--
         Translators: see docs/TRANSLATING.md. Every sentence that names a glossary concept exists twice: "key" is
         the plain wording and is what a language ships on; "key__t" is the optional themed wording. Placeholders are
@@ -3709,15 +3709,18 @@
     <string name="custom_not_yours">That exercise is not one of yours.</string>
     <string name="custom_metric_locked">Sets are already logged for it, so how it is measured is fixed.</string>
     <!-- Bottom bar: screen-reader label of the tab that has unread items. %1$s is the tab name, %2$d the unread count. -->
-    <string name="nav_tab_unread_description">%1$s, %2$d unread</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="nav_tab_unread_description"><item quantity="one">%1$s, %2$d unread</item><item quantity="other">%1$s, %2$d unread</item></plurals>
     <!-- Tab strip, screen-reader state of the selected tab. %1$d is its position, %2$d the number of tabs. -->
     <string name="inktabs_state_selected">Selected, %1$d of %2$d</string>
     <!-- Tab strip, screen-reader state of an unselected tab. %1$d is its position, %2$d the number of tabs. -->
     <string name="inktabs_state_not_selected">Not selected, %1$d of %2$d</string>
     <!-- Same as inktabs_state_selected for a tab with a count badge; %3$d is the unread count. -->
-    <string name="inktabs_state_selected_unread">Selected, %1$d of %2$d, %3$d unread</string>
+    <!-- The plural quantity is %3$d. -->
+    <plurals name="inktabs_state_selected_unread"><item quantity="one">Selected, %1$d of %2$d, %3$d unread</item><item quantity="other">Selected, %1$d of %2$d, %3$d unread</item></plurals>
     <!-- Same as inktabs_state_not_selected for a tab with a count badge; %3$d is the unread count. -->
-    <string name="inktabs_state_not_selected_unread">Not selected, %1$d of %2$d, %3$d unread</string>
+    <!-- The plural quantity is %3$d. -->
+    <plurals name="inktabs_state_not_selected_unread"><item quantity="one">Not selected, %1$d of %2$d, %3$d unread</item><item quantity="other">Not selected, %1$d of %2$d, %3$d unread</item></plurals>
     <!-- Note under the modifier chips. %1$s is a comma-separated list of the modifier tokens the exercise does not offer. -->
     <string name="modchips_misfit_note">%1$s: not offered for this movement. Tap to remove.</string>
     <!-- Note under the modifier chips. %1$s is a comma-separated list of tokens that are not known modifiers. -->
@@ -3758,10 +3761,12 @@
     <!-- One-time line under the Today header. %1$s is the first level title (the lowest ascension tier). -->
     <string name="today_first_run_rank_titles">%1$s is your level title and rises with your XP. Strength Rank is set by what you lift.</string>
     <!-- Today's day card subtitle while the workout is under way and is the one scheduled for today. %1$d sets done, %2$d sets planned. -->
-    <string name="today_card_live_meta_today">Today\'s workout · %1$d of %2$d sets logged</string>
-    <string name="today_card_live_meta_today__t">Today\'s trial · %1$d of %2$d sets logged</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="today_card_live_meta_today"><item quantity="one">Today\'s workout · %1$d of %2$d set logged</item><item quantity="other">Today\'s workout · %1$d of %2$d sets logged</item></plurals>
+    <plurals name="today_card_live_meta_today__t"><item quantity="one">Today\'s trial · %1$d of %2$d set logged</item><item quantity="other">Today\'s trial · %1$d of %2$d sets logged</item></plurals>
     <!-- Day card subtitle while a workout that is not today's scheduled one is under way. %1$d sets done, %2$d sets planned. -->
-    <string name="today_card_live_meta_under_way">Under way · %1$d of %2$d sets logged</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="today_card_live_meta_under_way"><item quantity="one">Under way · %1$d of %2$d set logged</item><item quantity="other">Under way · %1$d of %2$d sets logged</item></plurals>
     <!-- Button that resumes the workout under way. %1$s is the workout's name (user data). -->
     <string name="today_continue_button">Continue %1$s</string>
     <!-- Button that starts a routine from Today. %1$s is the routine's name (user data). -->
@@ -3785,7 +3790,8 @@
     <string name="today_first_rite_subline">The first routine of your weekly plan</string>
     <string name="today_first_rite_subline__t">The first rite of your cycle</string>
     <!-- Today row for a workout under way on another day. %1$d sets done, %2$d sets planned. -->
-    <string name="today_sets_logged">%1$d of %2$d sets logged</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="today_sets_logged"><item quantity="one">%1$d of %2$d set logged</item><item quantity="other">%1$d of %2$d sets logged</item></plurals>
     <!-- Week rail, screen-reader state of a day that holds a finished workout. -->
     <string name="today_week_status_sealed">Finished workout</string>
     <string name="today_week_status_sealed__t">Sealed trial</string>
@@ -3802,7 +3808,7 @@
     <!-- Tiny label above today's tile in the week rail. Keep it to about five upper-case letters. -->
     <string name="today_week_label_today">TODAY</string>
     <!-- Day card, last line when exercise rows did not fit. %1$d is how many are hidden. -->
-    <string name="today_more_rows">+%1$d more</string>
+    <plurals name="today_more_rows"><item quantity="one">+%1$d more</item><item quantity="other">+%1$d more</item></plurals>
     <!-- Screen-reader click label of the Next link. %1$s is a short day name. -->
     <string name="today_next_show_label">Show %1$s</string>
     <!-- Quiet link that shows the next scheduled day. %1$s is the routine's name (user data), %2$s a short day name. -->
@@ -3835,9 +3841,11 @@
     <!-- Screen-reader state of the level bar. %1$d is XP into the level, %2$d XP the level needs. -->
     <string name="today_level_state">%1$d of %2$d XP towards the next level</string>
     <!-- Today, streak figure while a milestone is ahead. %1$d is the days kept (shown in gold), %2$d the days the next milestone needs. -->
-    <string name="today_oath_progress">%1$d / %2$d days</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="today_oath_progress"><item quantity="one">%1$d / %2$d day</item><item quantity="other">%1$d / %2$d days</item></plurals>
     <!-- Screen-reader state of the streak bar. %1$s is the days kept (for example 3 days kept), %2$d the days the next milestone needs. -->
-    <string name="today_oath_state_next">%1$s; next milestone at %2$d days</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="today_oath_state_next"><item quantity="one">%1$s; next milestone at %2$d day</item><item quantity="other">%1$s; next milestone at %2$d days</item></plurals>
     <!-- Today, caption under the streak bar. %1$s is the name of the next title milestone. -->
     <string name="today_oath_caption_next">Next: %1$s</string>
     <!-- Today, caption under the streak bar when every streak milestone is reached. -->
@@ -3893,7 +3901,7 @@
     <!-- Debug builds only: appended to the level line when the rescore would have lowered the level. -->
     <string name="settings_advanced_dev_held">(held: the level never drops)</string>
     <!-- Debug builds only: appended to the level line. %1$d is the number of inscriptions the rescore pays. -->
-    <string name="settings_advanced_dev_inscriptions_due">%1$d inscription(s) due</string>
+    <plurals name="settings_advanced_dev_inscriptions_due"><item quantity="one">%1$d inscription due</item><item quantity="other">%1$d inscriptions due</item></plurals>
     <!-- Debug builds only: last line of the rescore preview. %1$s and %2$s are the old and new level; %3$s is empty or text such as " (held: the level never drops), 2 inscription(s) due". -->
     <string name="settings_advanced_dev_level">Level %1$s → %2$s%3$s.</string>
     <!-- Debug builds only: one rescored workout. %1$s is its date, %2$s its name (user data). -->
@@ -3911,8 +3919,9 @@
     <string name="settings_advanced_dev_pricing_title">Pricing every workout…</string>
     <string name="settings_advanced_dev_pricing_title__t">Pricing every trial…</string>
     <!-- Debug builds only: first line of the rescore preview. %1$d is how many change, %2$d how many were priced. -->
-    <string name="settings_advanced_dev_changed">%1$d of %2$d workouts change.</string>
-    <string name="settings_advanced_dev_changed__t">%1$d of %2$d trials change.</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="settings_advanced_dev_changed"><item quantity="one">%1$d of %2$d workout changes.</item><item quantity="other">%1$d of %2$d workouts change.</item></plurals>
+    <plurals name="settings_advanced_dev_changed__t"><item quantity="one">%1$d of %2$d trial changes.</item><item quantity="other">%1$d of %2$d trials change.</item></plurals>
     <!-- Debug builds only: second line of the rescore preview. %1$s is the signed XP change in workouts, %2$s and %3$s the total XP before and after, %4$s the signed applied difference. -->
     <string name="settings_advanced_dev_xp_line">Workout XP %1$s; total XP %2$s → %3$s (%4$s).</string>
     <string name="settings_advanced_dev_xp_line__t">Trial XP %1$s; total XP %2$s → %3$s (%4$s).</string>
@@ -4079,7 +4088,8 @@
     <string name="ledger_ffmi_needs_body_fat">needs a body fat %</string>
     <string name="ledger_bmi_ffmi_explainer">BMI relates weight to height; FFMI relates lean mass to height. Tap either for its ranges.</string>
     <!-- Row for the tape measurements: %1$d sites logged, %2$d sites in all. -->
-    <string name="ledger_tape_logged">%1$d of %2$d logged</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="ledger_tape_logged"><item quantity="one">%1$d of %2$d logged</item><item quantity="other">%1$d of %2$d logged</item></plurals>
     <string name="ledger_stays_on_device">stays on this device</string>
     <string name="ledger_log_weight_button">Log weight</string>
     <string name="ledger_consistency_label">Consistency</string>
@@ -4200,10 +4210,13 @@
     <!-- Log weight dialog. -->
     <string name="stats_add_weight_label">Weight (kg)</string>
     <!-- %1$d and %2$d are the lowest and highest accepted weight in kg. -->
-    <string name="stats_add_weight_error">Enter a weight between %1$d and %2$d kg.</string>
-    <string name="stats_add_body_fat_label">Body fat % (optional)</string>
+    <!-- %1$d and %2$d are the ends of a range in kg, not a count of a noun, so no plural. -->
+    <string name="stats_add_weight_error" tools:ignore="PluralsCandidate">Enter a weight between %1$d and %2$d kg.</string>
+    <!-- The percent sign is not a count of a noun, so no plural. -->
+    <string name="stats_add_body_fat_label" tools:ignore="PluralsCandidate">Body fat % (optional)</string>
     <!-- %1$d and %2$d are the lowest and highest accepted body fat percentage. -->
-    <string name="stats_add_body_fat_error">Enter a body fat between %1$d and %2$d%%, or leave it blank.</string>
+    <!-- %1$d and %2$d are the ends of a percent range, not a count of a noun, so no plural. -->
+    <string name="stats_add_body_fat_error" tools:ignore="PluralsCandidate">Enter a body fat between %1$d and %2$d%%, or leave it blank.</string>
     <string name="stats_add_height_hint">Height unlocks BMI and FFMI.</string>
     <string name="stats_add_set_height">Set height</string>
     <string name="stats_add_hide_estimator">Hide estimator</string>
@@ -4357,10 +4370,12 @@
     <!-- Name of a draw that paid echoes ("1 echo", "40 echoes"). -->
     <plurals name="celebration_echoes_count"><item quantity="one">%1$d echo</item><item quantity="other">%1$d echoes</item></plurals>
     <!-- Under a crest's name: where it came from, then how many of the crests are held. %1$s is the source line, %2$d the crests held, %3$d the crests in all. -->
-    <string name="celebration_crest_line_count">%1$s · %2$d of %3$d crests</string>
+    <!-- The plural quantity is %3$d. -->
+    <plurals name="celebration_crest_line_count"><item quantity="one">%1$s · %2$d of %3$d crest</item><item quantity="other">%1$s · %2$d of %3$d crests</item></plurals>
     <string name="celebration_crest_lead_chance">Chance draw</string>
     <!-- Source line of a ladder crest. %1$d is the level reached. -->
-    <string name="celebration_crest_lead_level">Level %1$d milestone</string>
+    <!-- %1$d is an ordinal level number (Level 7), not a count of a noun, so no plural. -->
+    <string name="celebration_crest_lead_level" tools:ignore="PluralsCandidate">Level %1$d milestone</string>
     <!-- Source line of a deed crest. %1$s is the deed's name. A deed is the reward layer, so no twin. -->
     <string name="always_celebration_crest_lead_deed">Deed crest · %1$s</string>
     <!-- Source line of a house crest. %1$s is the house's name. -->
@@ -4427,7 +4442,8 @@
 
     <!-- XP breakdown (ui/components/XpReveal.kt, XpPage.kt): the segments of what a workout paid. -->
     <!-- Under a movement. %1$d and %2$d are counts of hard and easy sets. -->
-    <string name="xp_subline_hard_easy">%1$d hard · %2$d easy</string>
+    <!-- %1$d and %2$d count hard and easy sets, each next to its own adjective, so one plural quantity cannot serve both. -->
+    <string name="xp_subline_hard_easy" tools:ignore="PluralsCandidate">%1$d hard · %2$d easy</string>
     <plurals name="xp_subline_hard_sets"><item quantity="one">%1$d hard set</item><item quantity="other">%1$d hard sets</item></plurals>
     <plurals name="xp_subline_hard_holds"><item quantity="one">%1$d hard hold</item><item quantity="other">%1$d hard holds</item></plurals>
     <plurals name="xp_subline_easy_sets"><item quantity="one">%1$d easy set</item><item quantity="other">%1$d easy sets</item></plurals>
@@ -4447,7 +4463,8 @@
     <string name="xp_line_spoken">%1$s, %2$d XP</string>
     <string name="xp_line_spoken_note">%1$s, %2$s, %3$d XP</string>
     <!-- The whole page spoken in one breath. %1$d is the XP, %2$d the effort part, %3$d the bonus part, %4$s one of the two level sentences below. -->
-    <string name="xp_page_spoken">Earned %1$d XP, %2$d effort and %3$d bonus. %4$s</string>
+    <!-- %1$d, %2$d and %3$d are amounts of XP, not a count of a noun, so no plural. -->
+    <string name="xp_page_spoken" tools:ignore="PluralsCandidate">Earned %1$d XP, %2$d effort and %3$d bonus. %4$s</string>
     <string name="xp_page_spoken_level_up">Level up, %1$d to %2$d.</string>
     <string name="xp_page_spoken_level">Level %1$d.</string>
     <!-- The level moment's quiet line. The Veil is themed in both modes, so no twin. %1$d is the inscriptions banked. -->
@@ -4455,12 +4472,14 @@
     <!-- Heading of the breakdown panel, spoken. %1$d is the total XP, %2$d the segments, %3$d the level. -->
     <plurals name="xp_headline"><item quantity="one">Earned %1$d XP across %2$d segment, level %3$d</item><item quantity="other">Earned %1$d XP across %2$d segments, level %3$d</item></plurals>
     <!-- Caption under the bar once it has filled. %1$d is the XP from effort, %2$d from bonuses. -->
-    <string name="xp_effort_bonus_caption">%1$d effort · %2$d bonus</string>
+    <!-- %1$d and %2$d are amounts of XP, not a count of a noun, so no plural. -->
+    <string name="xp_effort_bonus_caption" tools:ignore="PluralsCandidate">%1$d effort · %2$d bonus</string>
     <!-- Section labels over the segments; shown in capitals. -->
     <string name="xp_section_effort">Effort</string>
     <string name="xp_section_bonuses">Bonuses</string>
     <!-- Caption under the big total. %1$d is the XP from effort, %2$d from bonuses. -->
-    <string name="xppage_total_caption">XP · %1$d effort · %2$d bonus</string>
+    <!-- %1$d and %2$d are amounts of XP, not a count of a noun, so no plural. -->
+    <string name="xppage_total_caption" tools:ignore="PluralsCandidate">XP · %1$d effort · %2$d bonus</string>
     <string name="xppage_skip_button">Skip ›</string>
     <!-- Screen reader text of the level crossing. %1$d and %2$d are the levels before and after. -->
     <string name="xppage_level_up_description">Level up, %1$d to %2$d</string>
@@ -4469,7 +4488,7 @@
 
     <!-- The Veil's reveals (ui/components/VeilReveals.kt). The Veil is themed in both modes, so these have no twins. -->
     <!-- Dock button while inscriptions are still banked. %1$d is how many are left. -->
-    <string name="veilreveal_again_button">Inscribe again (%1$d left)</string>
+    <plurals name="veilreveal_again_button"><item quantity="one">Inscribe again (%1$d left)</item><item quantity="other">Inscribe again (%1$d left)</item></plurals>
     <string name="veilreveal_row_strongest">Strongest relic</string>
     <string name="veilreveal_row_rate">Rate</string>
     <!-- Relic page, line two. %1$s is what the relic does, %2$s the new multiplier ("1.25"). -->
@@ -4487,7 +4506,8 @@
     <!-- %1$d is the length of echo draw run after which one is guaranteed. -->
     <string name="veilreveal_run_note_after">After %1$d, your next inscription is a relic or a crest.</string>
     <!-- Screen reader text of the run squares. %1$d are filled, %2$d the squares in all. -->
-    <string name="veilreveal_run_description">%1$d of %2$d echo draws in a row</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="veilreveal_run_description"><item quantity="one">%1$d of %2$d echo draw in a row</item><item quantity="other">%1$d of %2$d echo draws in a row</item></plurals>
     <plurals name="veilreveal_run_title"><item quantity="one">%1$d echo draw in a row</item><item quantity="other">%1$d echo draws in a row</item></plurals>
     <!-- Rate row. %1$s and %2$s are the rate before and after, one decimal ("148.9"). -->
     <string name="veilreveal_rate_moved">%1$s → %2$s per hour</string>
@@ -4521,8 +4541,8 @@
     <string name="terminfo_deload_definition__t">If you fail the same load three trials in a row, the next one drops it by %1$d%% so you can recover and build back past where you stalled. It happens on its own.</string>
     <string name="terminfo_ranks_title">Strength Rank and Ascension</string>
     <!-- %1$d is the days the rank looks back over, %2$s the ascension tiers from terminfo_ranks_ladder_item joined by commas. -->
-    <string name="terminfo_ranks_definition">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</string>
-    <string name="terminfo_ranks_definition__t">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</string>
+    <plurals name="terminfo_ranks_definition"><item quantity="one">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d day. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</item><item quantity="other">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</item></plurals>
+    <plurals name="terminfo_ranks_definition__t"><item quantity="one">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d day. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</item><item quantity="other">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</item></plurals>
     <!-- One tier of the ascension ladder. %1$s is its name, %2$d the level it starts at. -->
     <string name="terminfo_ranks_ladder_item">%1$s at %2$d</string>
     <string name="terminfo_tuck_title">Tuck</string>
@@ -4551,8 +4571,8 @@
     <string name="terminfo_level_definition">Each finished workout earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
     <string name="terminfo_level_definition__t">Each sealed trial earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
     <!-- %1$d is the days a streak survives without a workout. The last sentence names the deed milestone, which is the reward layer in both modes. -->
-    <string name="terminfo_oath_definition">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</string>
-    <string name="terminfo_oath_definition__t">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</string>
+    <plurals name="terminfo_oath_definition"><item quantity="one">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$d day passes without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</item><item quantity="other">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</item></plurals>
+    <plurals name="terminfo_oath_definition__t"><item quantity="one">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$d day passes without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</item><item quantity="other">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</item></plurals>
     <string name="terminfo_seal_definition">Finishing a workout. Finishing banks its XP and adds its strength score to your lifetime total. A finished workout can still be amended later, and the difference is settled.</string>
     <string name="terminfo_seal_definition__t">Finishing a trial. Sealing banks its XP and adds its strength score to your lifetime total. A sealed trial can still be amended later, and the difference is settled.</string>
     <string name="terminfo_set_types_title">Set types</string>
@@ -4630,11 +4650,13 @@
     <!-- A category row's value: %1$d earned of %2$d. -->
     <string name="deeds_category_count">%1$d of %2$d</string>
     <!-- Screen reader text of a category row. %1$s is the category, %2$s its blurb, %3$d earned of %4$d. -->
-    <string name="always_deeds_category_description">%1$s. %2$s. %3$d of %4$d deeds earned.</string>
+    <!-- The plural quantity is %4$d. -->
+    <plurals name="always_deeds_category_description"><item quantity="one">%1$s. %2$s. %3$d of %4$d deed earned.</item><item quantity="other">%1$s. %2$s. %3$d of %4$d deeds earned.</item></plurals>
     <!-- Header over the earned wall; %1$d is how many deeds are held. -->
     <string name="deeds_earned_header">EARNED %1$d</string>
     <!-- %1$d earned of %2$d in all, or in one category. -->
-    <string name="deeds_earned_of_total">%1$d of %2$d earned</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="deeds_earned_of_total"><item quantity="one">%1$d of %2$d earned</item><item quantity="other">%1$d of %2$d earned</item></plurals>
     <string name="deeds_complete_description">Complete</string>
     <string name="deeds_wall_empty">Nothing is written here yet. Finish a workout to earn the first deed.</string>
     <string name="deeds_wall_empty__t">Nothing is written here yet. Seal a trial to earn the first deed.</string>
@@ -4649,28 +4671,31 @@
     <string name="deeds_range_earned">Earned</string>
     <string name="deeds_range_all">All</string>
     <!-- Screen reader text of a category header: %1$s the category, %2$d earned of %3$d, %4$s its blurb. -->
-    <string name="always_deeds_category_summary">%1$s deeds: %2$d of %3$d earned. %4$s.</string>
+    <!-- The plural quantity is %3$d. -->
+    <plurals name="always_deeds_category_summary"><item quantity="one">%1$s deeds: %2$d of %3$d earned. %4$s.</item><item quantity="other">%1$s deeds: %2$d of %3$d earned. %4$s.</item></plurals>
     <string name="always_deeds_all_earned">Every deed in %1$s is earned.</string>
     <string name="always_deeds_page_empty">Nothing is written here yet. Earned deeds appear on this page.</string>
     <string name="always_deeds_none_here">No deeds here.</string>
     <!-- Screen reader text of a deed series: %1$d earned of %2$d. -->
-    <string name="always_deeds_ladder_held">%1$d of %2$d deeds earned.</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="always_deeds_ladder_held"><item quantity="one">%1$d of %2$d deed earned.</item><item quantity="other">%1$d of %2$d deeds earned.</item></plurals>
     <!-- %1$s is the next deed's name, %2$s its tier. -->
     <string name="deeds_ladder_next">Next: %1$s, %2$s.</string>
     <string name="deeds_ladder_complete">Complete.</string>
     <!-- Under a series card: %1$s is the next deed's name. -->
     <string name="deeds_ladder_next_name">Next · %1$s</string>
-    <string name="always_deeds_ladder_all_earned">All %1$d deeds earned</string>
+    <plurals name="always_deeds_ladder_all_earned"><item quantity="one">All %1$d deed earned</item><item quantity="other">All %1$d deeds earned</item></plurals>
     <!-- Screen reader text of a near-won deed: %1$s name, %2$s tier, %3$s what it asks, %4$s how far to go. -->
     <string name="deeds_near_description">%1$s, %2$s. %3$s %4$s.</string>
     <!-- Screen reader text of a series' rung strip: %1$d rungs, %2$s each rung with its state. -->
-    <string name="always_deeds_rung_strip_description">%1$d deeds. %2$s</string>
+    <plurals name="always_deeds_rung_strip_description"><item quantity="one">%1$d deed. %2$s</item><item quantity="other">%1$d deeds. %2$s</item></plurals>
     <string name="deeds_rung_earned">earned</string>
     <string name="deeds_rung_next">next to earn</string>
     <string name="deeds_rung_locked">locked</string>
 
     <!-- Paths. %1$d mastered of %2$d. -->
-    <string name="path_mastered_of_total">%1$d of %2$d mastered</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="path_mastered_of_total"><item quantity="one">%1$d of %2$d mastered</item><item quantity="other">%1$d of %2$d mastered</item></plurals>
     <!-- Screen reader: a path tile's name. %1$s is the path's name (Pull, Push). -->
     <string name="path_tile_name">%1$s skill tree</string>
     <string name="path_tile_name__t">%1$s path</string>
@@ -4682,14 +4707,16 @@
     <string name="path_status_locked_needs">locked: needs %1$s (%2$s)</string>
     <string name="path_status_locked">locked</string>
     <!-- Under a path tile: %1$d of %2$d mastered, then %3$s the status ("next: Pull-up"). -->
-    <string name="path_subline_next">%1$d of %2$d mastered · %3$s</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="path_subline_next"><item quantity="one">%1$d of %2$d mastered · %3$s</item><item quantity="other">%1$d of %2$d mastered · %3$s</item></plurals>
     <!-- Quiet tag on the path of the latest attempt. -->
     <string name="path_recent_tag">Recent</string>
     <string name="path_open_description">Open skill tree</string>
     <string name="path_open_description__t">Open path</string>
     <!-- Screen reader text of a path chip: %1$s the path's name, %2$d mastered of %3$d. -->
-    <string name="path_chip_description">%1$s skill tree, %2$d of %3$d mastered</string>
-    <string name="path_chip_description__t">%1$s path, %2$d of %3$d mastered</string>
+    <!-- The plural quantity is %3$d. -->
+    <plurals name="path_chip_description"><item quantity="one">%1$s skill tree, %2$d of %3$d mastered</item><item quantity="other">%1$s skill tree, %2$d of %3$d mastered</item></plurals>
+    <plurals name="path_chip_description__t"><item quantity="one">%1$s path, %2$d of %3$d mastered</item><item quantity="other">%1$s path, %2$d of %3$d mastered</item></plurals>
     <string name="path_chip_open_description">Open %1$s skill tree</string>
     <string name="path_chip_open_description__t">Open %1$s path</string>
 
@@ -4784,10 +4811,11 @@
     <plurals name="skilljournal_days_practised"><item quantity="one">%1$d day practised</item><item quantity="other">%1$d days practised</item></plurals>
     <plurals name="skilljournal_attempts_count"><item quantity="one">%1$d attempt</item><item quantity="other">%1$d attempts</item></plurals>
     <!-- Heat strip summary read out as one sentence. %1$d weeks, %2$s days practised, %3$s the most attempts in a day, %4$s that day. -->
-    <string name="skilljournal_heatmap_summary">%1$d weeks: %2$s, most %3$s on %4$s</string>
-    <string name="skilljournal_heatmap_empty">%1$d weeks: no attempts logged</string>
+    <plurals name="skilljournal_heatmap_summary"><item quantity="one">%1$d week: %2$s, most %3$s on %4$s</item><item quantity="other">%1$d weeks: %2$s, most %3$s on %4$s</item></plurals>
+    <plurals name="skilljournal_heatmap_empty"><item quantity="one">%1$d week: no attempts logged</item><item quantity="other">%1$d weeks: no attempts logged</item></plurals>
     <!-- Paths row subline: %1$s the first path names joined by commas, %2$d how many more there are. -->
-    <string name="skilljournal_paths_named_more">%1$s and %2$d more</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="skilljournal_paths_named_more"><item quantity="one">%1$s and %2$d more</item><item quantity="other">%1$s and %2$d more</item></plurals>
     <string name="skilljournal_open_paths_description">Open Skills</string>
     <string name="skilljournal_open_paths_description__t">Open Paths</string>
     <string name="skilljournal_timeline_header">Timeline</string>
@@ -4803,8 +4831,9 @@
     <string name="titles_unclaim_stays">This skill stays mastered.</string>
     <string name="titles_unclaim_stays__t">This technique stays claimed.</string>
     <!-- Paths tab tally: %1$d mastered of %2$d in all. -->
-    <string name="titles_paths_tally">%1$d of %2$d skills mastered</string>
-    <string name="titles_paths_tally__t">%1$d of %2$d techniques mastered</string>
+    <!-- The plural quantity is %2$d. -->
+    <plurals name="titles_paths_tally"><item quantity="one">%1$d of %2$d skill mastered</item><item quantity="other">%1$d of %2$d skills mastered</item></plurals>
+    <plurals name="titles_paths_tally__t"><item quantity="one">%1$d of %2$d technique mastered</item><item quantity="other">%1$d of %2$d techniques mastered</item></plurals>
     <string name="titles_tiers_intro">Each skill has a tier from I to V; some need an easier one first.</string>
     <string name="titles_tiers_intro__t">Each technique has a tier from I to V; some need an easier one first.</string>
     <!-- Dialog for adding a skill to a routine. %1$s is the skill. -->
@@ -4858,7 +4887,7 @@
     <string name="customex_need_nothing">Nothing</string>
     <!-- Exercise form: shown under the name field when it is blank on save or too long. %1$d is the maximum number of characters. -->
     <string name="customex_error_name_empty">Give it a name.</string>
-    <string name="customex_error_name_long">Keep the name to %1$d characters.</string>
+    <plurals name="customex_error_name_long"><item quantity="one">Keep the name to %1$d character.</item><item quantity="other">Keep the name to %1$d characters.</item></plurals>
     <!-- Exercise form: shown when a delete was refused because a set or routine started using the exercise meanwhile. -->
     <string name="customex_error_used_now">It is used now, so it stays.</string>
     <!-- Exercise form: the screen title for a new exercise and for editing one of the lifter's own. -->
@@ -5024,4 +5053,1136 @@
     <!-- Today: first part of the day card meta line, before the plan summary. -->
     <string name="today_meta_todays">Today\'s workout</string>
     <string name="today_meta_todays__t">Today\'s trial</string>
+    <!-- Phase 8: idle -->
+    <!-- Gacha / Veil draw results -->
+    <!-- Buy sheet: what pity says about the NEXT draw. An echo draw pays only echoes (no relic, no crest). -->
+    <string name="gacha_pity_first">Your first inscription is a relic.</string>
+    <!-- %1$d is how many draws in a row paid only echoes. -->
+    <plurals name="gacha_pity_echo_run"><item quantity="one">Your last %1$d draw was an echo, so this one is a relic or a crest.</item><item quantity="other">Your last %1$d draws were echoes, so this one is a relic or a crest.</item></plurals>
+    <!-- %1$d is how many draws have passed since the last relic. -->
+    <plurals name="gacha_pity_relic_drought"><item quantity="one">It has been %1$d draw since your last relic, so this one is a relic.</item><item quantity="other">It has been %1$d draws since your last relic, so this one is a relic.</item></plurals>
+    <!-- %1$d is the number of echo draws in a row that forces a relic or a crest. -->
+    <plurals name="gacha_pity_after"><item quantity="one">After %1$d echo draw in a row, the next one is a relic or a crest.</item><item quantity="other">After %1$d echo draws in a row, the next one is a relic or a crest.</item></plurals>
+    <!-- Reveal note once a draw completes a relic house. %1$s is the house name (e.g. House of Iron), %2$s its set bonus. Keep the " · " separator: the screen splits on it. -->
+    <string name="veil_bonus_complete">%1$s complete · %2$s</string>
+    <!-- Reveal note once a draw reaches a set bonus. %1$s is the bonus. Keep the " · " separator: the screen splits on it. -->
+    <string name="veil_bonus_reached">Set bonus reached · %1$s</string>
+    <!-- After a run of draws. %1$s is the name of a relic or crest. -->
+    <string name="veil_joined_collection">%1$s joined your collection</string>
+    <!-- %1$s is a relic name, %2$s its new multiplier, e.g. 1.55 (the x sign is printed here). -->
+    <string name="veil_relic_refined">%1$s was refined to ×%2$s</string>
+    <!-- %1$s is a relic name, %2$s a count of echoes, e.g. "40 echoes". -->
+    <string name="veil_relic_paid_echoes">%1$s paid %2$s</string>
+    <!-- %1$s is a count of echoes, e.g. "40 echoes". The Veil is named the same in both modes. -->
+    <string name="always_veil_echoes_added">%1$s added to the Veil</string>
+
+    <!-- Relic houses sheet (Collection > "How houses work") -->
+    <string name="idle_houses_title">Relic houses</string>
+    <string name="idle_houses_intro">Every relic lifts your whole essence rate, and the strongest counts most. A house follows one habit and adds set bonuses that pay while you keep it.</string>
+    <!-- %1$s is what the house follows, e.g. "your training days". -->
+    <string name="idle_houses_follows">Follows %1$s.</string>
+    <!-- %1$d is how many relics of the house are needed, %2$s the bonus it pays. -->
+    <plurals name="idle_houses_set_bonus"><item quantity="one">%1$d relic: %2$s</item><item quantity="other">%1$d relics: %2$s</item></plurals>
+    <string name="idle_houses_footer">Bonuses only touch your essence rate. They never change your level, XP, strength or titles. Relics come from levels and from essence you earned by training.</string>
+    <!-- Dialog confirm button. -->
+    <string name="idle_got_it_button">Got it</string>
+    <string name="idle_houses_link">How houses work</string>
+    <string name="idle_houses_link_description">Open how houses work</string>
+
+    <!-- Buy an inscription sheet (Veil > Buy) -->
+    <string name="idle_buy_title">Buy an inscription</string>
+    <string name="idle_buy_intro">It is drawn as soon as you buy it.</string>
+    <string name="idle_buy_price_label">Price</string>
+    <!-- %1$d is the price in essence. -->
+    <!-- %1$,d is an amount of essence, an in-game currency, not a count of a noun, so no plural. -->
+    <string name="idle_buy_price_value" tools:ignore="PluralsCandidate">%1$,d essence</string>
+    <string name="idle_buy_have_label">You have</string>
+    <string name="idle_buy_after_label">After buying</string>
+    <!-- %1$s is the next price (a formatted number), %2$s how much each purchase adds to the price. -->
+    <string name="idle_buy_next_cost">The next one costs %1$s. Each one you buy adds %2$s.</string>
+    <string name="idle_buy_gives_header">What a draw can give</string>
+    <!-- Column labels over a percentage bar; keep them short. -->
+    <string name="idle_buy_share_echoes">Echoes</string>
+    <string name="idle_buy_share_relic">Relic</string>
+    <string name="idle_buy_share_crest">Crest</string>
+    <!-- %1$s is a list of echo ranges, one per rarity, e.g. "20-40, 60-120". -->
+    <string name="idle_buy_echo_pays">An echo draw pays %1$s, by rarity.</string>
+    <!-- Dialog confirm button. -->
+    <string name="idle_buy_confirm_button">Buy and inscribe</string>
+
+    <!-- Collection screen (Veil > View the collection) -->
+    <!-- Shown when wearing a crest is refused (also the dock caption on a crest page). -->
+    <string name="idle_crest_changed_today">You changed your crest today. Come back tomorrow.</string>
+    <string name="idle_crest_not_owned">That crest is not yours yet.</string>
+    <!-- Page title; also the title of the Veil\'s collection card and link. -->
+    <string name="idle_collection_title">Collection</string>
+    <!-- Tab label, shown beside the other tab. %1$d relics held, %2$d relics in all. Keep short: the two tabs share one row. -->
+    <string name="idle_collection_tab_relics">Relics %1$d of %2$d</string>
+    <!-- Tab label. %1$d crests held, %2$d crests in all. Keep short: the two tabs share one row. -->
+    <string name="idle_collection_tab_crests">Crests %1$d of %2$d</string>
+    <string name="idle_collection_relics_intro">The strongest relic counts most. A house adds bonuses for holding several of its relics.</string>
+    <!-- Beside a relic house name: %1$d relics held of %2$d in the house. -->
+    <string name="idle_collection_house_owned">%1$d of %2$d</string>
+    <!-- Accessibility label of the tick beside a set bonus that is in force. -->
+    <string name="idle_collection_reached_description">Reached</string>
+    <!-- A house set bonus row. %1$d is how many relics of the house it needs, %2$s the bonus. -->
+    <plurals name="idle_collection_bonus_row"><item quantity="one">%1$d relic · %2$s</item><item quantity="other">%1$d relics · %2$s</item></plurals>
+    <!-- Beside a set bonus not yet reached: %1$d more relics needed. -->
+    <string name="idle_collection_to_go">%1$d to go</string>
+    <!-- Accessibility text of a relic tile. %1$s relic name, %2$s rarity word in lower case. -->
+    <string name="idle_collection_relic_description">%1$s, %2$s</string>
+    <string name="idle_collection_relic_not_drawn_description">%1$s, %2$s, not yet drawn</string>
+    <string name="idle_collection_relic_strongest_description">%1$s, %2$s, strongest</string>
+    <!-- Small badge over the strongest relic tile; keep it short. -->
+    <string name="idle_collection_strongest_badge">Strongest</string>
+
+    <!-- Crests tab and a crest\'s own page -->
+    <!-- %1$s is a crest name written as a sentence, e.g. "iron crest". -->
+    <string name="idle_crest_wearing">Wearing %1$s</string>
+    <!-- Link on the worn-crest card; keep it short. -->
+    <string name="idle_crests_change_button">Change</string>
+    <string name="idle_crests_none_worn">No crest worn. Tap an earned crest to wear it; friends see it on your avatar.</string>
+    <string name="idle_crests_none_worn__t">No crest worn. Tap an earned crest to wear it; allies see it on your avatar.</string>
+    <!-- Section header on the Crests tab. %1$s is the group (e.g. "Ladder - every 5 levels"), %2$d crests held in it, %3$d crests in it. -->
+    <string name="idle_crests_group_header">%1$s · %2$d of %3$d</string>
+    <!-- Group heading for the ladder crests, won every %1$d levels. -->
+    <plurals name="idle_crests_group_ladder"><item quantity="one">Ladder · every %1$d level</item><item quantity="other">Ladder · every %1$d levels</item></plurals>
+    <string name="idle_crests_group_houses">Houses · complete a house</string>
+    <!-- Group heading for the crests the Veil\'s chance draws pay. The Veil is named the same in both modes. -->
+    <string name="always_crests_group_veil">The Veil · chance draws</string>
+    <!-- Click label of a crest row. %1$s is the crest name. -->
+    <string name="idle_crest_open_description">Open %1$s</string>
+    <!-- Accessibility text of a crest row. %1$s crest name, %2$s what it asks or does. -->
+    <string name="idle_crest_row_worn_description">%1$s, worn. %2$s</string>
+    <string name="idle_crest_row_owned_description">%1$s, owned. %2$s</string>
+    <string name="idle_crest_row_locked_description">%1$s, locked. %2$s</string>
+    <!-- Small badge beside the crest being worn; keep it short. -->
+    <string name="idle_crest_worn_badge">Worn</string>
+    <string name="idle_crest_title">Crest</string>
+    <!-- Under the crest name on its page. %1$s is where the crest comes from. -->
+    <string name="idle_crest_source_locked">%1$s · Locked</string>
+    <!-- Small upper-case label over how to earn a crest. -->
+    <string name="idle_crest_how_label">HOW TO EARN IT</string>
+    <!-- %1$s is the name of a deed. The deed is the reward layer, named the same in both modes. -->
+    <string name="always_crest_how_deed">The deed %1$s. The crest is yours for good once it is earned.</string>
+    <string name="idle_crest_how_ladder">Every level from here pays toward it. It is yours for good once earned.</string>
+    <string name="idle_crest_how_houses">Hold all four relics of the house. The crest is yours for good once it is complete.</string>
+    <string name="always_crest_how_veil">It cannot be bought or levelled to: a Veil draw that pays a crest can pay this one.</string>
+    <!-- Small upper-case label over an owned crest\'s perk. The Veil is named the same in both modes. -->
+    <string name="always_crest_perk_label">VEIL PERK</string>
+    <string name="idle_crest_perk_once_worn_label">PERK ONCE WORN</string>
+    <string name="idle_crest_instead_label">INSTEAD OF WHAT YOU WEAR NOW</string>
+    <string name="idle_crest_seen_label">SEEN BY YOUR FRIENDS</string>
+    <string name="idle_crest_seen_label__t">SEEN BY YOUR ALLIES</string>
+    <string name="idle_crest_seen_owned">On your avatar wherever your friends see you.</string>
+    <string name="idle_crest_seen_owned__t">On your avatar wherever your allies see you.</string>
+    <string name="idle_crest_seen_unowned">Friends see it once you wear it.</string>
+    <string name="idle_crest_seen_unowned__t">Allies see it once you wear it.</string>
+    <!-- Dock buttons on a crest page. %1$s is the crest name, e.g. "Iron crest". -->
+    <string name="idle_crest_earn_button">Earn it to wear it</string>
+    <string name="idle_crest_wear_button">Wear %1$s</string>
+    <string name="idle_crest_is_worn">This is the crest you wear.</string>
+    <string name="idle_crest_wear_hint">Wearing collects your essence first. One change a day.</string>
+
+    <!-- The Veil screen (Today > Veil) -->
+    <string name="idle_gathering">The echoes are gathering…</string>
+    <!-- Section header over the essence figure; also the first row of the "how the Veil works" sheet. -->
+    <string name="idle_essence_label">Essence</string>
+    <!-- "How the Veil works" sheet, one row per thing the screen shows. Titles are the reward words and stay the same in both modes. -->
+    <!-- %1$d is the number of hours of full-strength gathering after the last collect. -->
+    <plurals name="idle_intro_essence_body"><item quantity="one">It gathers on its own while you are away. Full strength for %1$d hour after you last collected, then it tapers.</item><item quantity="other">It gathers on its own while you are away. Full strength for %1$d hours after you last collected, then it tapers.</item></plurals>
+    <string name="idle_intro_echoes_title">Echoes</string>
+    <string name="idle_intro_echoes_body">Your workouts leave them behind, and they gather essence for you.</string>
+    <string name="idle_intro_echoes_body__t">Your trials leave them behind, and they gather essence for you.</string>
+    <string name="idle_intro_inscriptions_title">Inscriptions</string>
+    <string name="idle_intro_inscriptions_body">Each level-up earns one. Spend it on echoes, a relic or a crest.</string>
+    <string name="idle_intro_relics_title">Relics</string>
+    <string name="idle_intro_relics_body">They lift your rate. Only the strongest counts in full.</string>
+    <string name="idle_intro_crests_title">Crests</string>
+    <!-- Names the Veil, which is named the same in both modes, so the pair carries the always_ prefix. -->
+    <string name="always_idle_intro_crests_body">The mark you wear on your profile. Its perk only works in the Veil.</string>
+    <string name="always_idle_intro_crests_body__t">The mark you wear on your folio. Its perk only works in the Veil.</string>
+    <!-- Beside the figure of essence per hour; %1$s is the figure, e.g. "148.9". -->
+    <string name="idle_rate_per_hour">%1$s per hour</string>
+    <!-- Link beside the rate, also the title of the rate breakdown page. -->
+    <string name="idle_why_rate_label">Why this rate</string>
+    <string name="idle_why_rate_description">Open why this rate</string>
+    <!-- Under the strength bar. %1$d hours at full strength so far, %2$d hours of full strength in all. -->
+    <string name="idle_strength_caption">%1$d h of %2$d at full strength, then it tapers</string>
+    <!-- Report of what gathered while the lifter was away. %1$d is essence, %2$s how long ("3 h 20 m", "2 days", "moments"). -->
+    <!-- %1$,d is an amount of essence, an in-game currency, not a count of a noun, so no plural. -->
+    <string name="idle_away_line" tools:ignore="PluralsCandidate">+%1$,d essence banked while you were away, %2$s</string>
+    <!-- Time away. %1$d hours, %2$d minutes; h and m are unit abbreviations. -->
+    <string name="idle_away_hours_minutes">%1$d h %2$d m</string>
+    <string name="idle_away_moments">moments</string>
+    <string name="idle_away_minutes">%1$d m</string>
+    <!-- After a draw: click label and text of the link to the collection. -->
+    <string name="idle_landing_view_description">View the collection</string>
+    <string name="idle_landing_view_button">View</string>
+    <!-- Card of the strongest relic. The label is upper case and small. -->
+    <string name="idle_strongest_label">STRONGEST RELIC</string>
+    <!-- %1$d is the percentage the relic lifts the essence rate by. -->
+    <string name="idle_strongest_lift">Lifts your essence rate by %1$d%%</string>
+    <string name="idle_strongest_none">No relic yet</string>
+    <string name="idle_strongest_none_hint">Your first inscription is a relic. It lifts your essence rate.</string>
+    <!-- Row under the strongest relic, shown with more than one relic held. %1$d is how many. -->
+    <plurals name="idle_relics_together"><item quantity="one">Your %1$d relic together</item><item quantity="other">Your %1$d relics together</item></plurals>
+    <!-- %1$s is the combined multiplier, e.g. "1.55". -->
+    <string name="idle_stacked_rate">×%1$s rate</string>
+    <!-- Collection card on the Veil. %1$d relics held of %2$d in all, %3$d crests held of %4$d in all. -->
+    <!-- Two independent counts of different nouns (relics and crests), so one plural quantity cannot serve both. -->
+    <string name="idle_collection_summary" tools:ignore="PluralsCandidate">%1$d of %2$d relics · %3$d of %4$d crests</string>
+    <!-- Accessibility label of the card. %1$s is the summary above. -->
+    <string name="idle_collection_open_description">Open your collection, %1$s</string>
+    <!-- Gold marker before the name of what the last draw added; keep it short. -->
+    <string name="idle_collection_new_badge">New</string>
+    <!-- Row under the collection card. %1$d is the level of the next ladder crest. -->
+    <string name="idle_next_crest">Next crest at level %1$d</string>
+    <!-- Levels left until the next ladder crest. -->
+    <plurals name="idle_next_crest_levels"><item quantity="one">%1$d level</item><item quantity="other">%1$d levels</item></plurals>
+    <!-- Bottom dock of the Veil. %1$s is a price like "300 essence". -->
+    <string name="idle_dock_buy_another">Or buy another · %1$s</string>
+    <string name="idle_dock_buy">Buy an inscription · %1$s</string>
+    <string name="idle_dock_none_waiting">No inscriptions waiting. Every level-up earns one.</string>
+    <!-- Essence held of the price. Both are whole numbers. -->
+    <string name="idle_dock_progress">%1$,d of %2$,d</string>
+    <!-- Same, with the wait. %3$d is hours until the price is reached, %4$s essence per hour (e.g. "148.9"). -->
+    <string name="idle_dock_progress_eta">%1$,d of %2$,d · about %3$d h at %4$s/h</string>
+    <!-- Click label of the circle banner on the Veil. -->
+    <string name="idle_circle_open_description">Open the group</string>
+    <string name="idle_circle_open_description__t">Open the circle</string>
+    <!-- The circle banner, one quiet row. %1$s is the group name, %2$d days trained this week by the group, %3$d its weekly goal. -->
+    <string name="idle_circle_line">Group · %1$s</string>
+    <string name="idle_circle_line__t">Circle · %1$s</string>
+    <!-- %2$d / %3$d is progress with no noun after the numbers, so no plural. -->
+    <string name="idle_circle_line_goal" tools:ignore="PluralsCandidate">Group · %1$s · %2$d / %3$d this week</string>
+    <!-- %2$d / %3$d is progress with no noun after the numbers, so no plural. -->
+    <string name="idle_circle_line_goal__t" tools:ignore="PluralsCandidate">Circle · %1$s · %2$d / %3$d this week</string>
+    <!-- %2$d / %3$d is progress with no noun after the numbers, so no plural. -->
+    <string name="idle_circle_line_met" tools:ignore="PluralsCandidate">Group · %1$s · %2$d / %3$d this week · goal met</string>
+    <!-- %2$d / %3$d is progress with no noun after the numbers, so no plural. -->
+    <string name="idle_circle_line_met__t" tools:ignore="PluralsCandidate">Circle · %1$s · %2$d / %3$d this week · goal met</string>
+
+    <!-- Why this rate (Veil > Why this rate) -->
+    <!-- Beside the big essence-per-hour figure. -->
+    <string name="idle_rate_unit_label">essence per hour</string>
+    <!-- %1$d is the base rate, in essence per hour, before the four multipliers. -->
+    <string name="idle_rate_intro">It starts at %1$d an hour and four things multiply it.</string>
+    <string name="idle_rate_decayed">The echoes have heard nothing from you. Your rate has decayed to its floor; return to training and they will rise again.</string>
+    <!-- Names of the four multipliers of the rate. -->
+    <string name="idle_rate_training_label">Training</string>
+    <string name="idle_rate_relics_label">Relics</string>
+    <string name="idle_rate_echoes_label">Echoes</string>
+    <!-- What feeds Training: %1$s workouts in 7 days, %2$s the volume lifted (a weight with its unit), %3$s the current streak. -->
+    <string name="idle_rate_training_feeds">%1$s · %2$s · %3$s</string>
+    <!-- Part of the line above. %1$d is the number of workouts in the last 7 days. -->
+    <plurals name="idle_rate_sessions"><item quantity="one">%1$d workout in 7 days</item><item quantity="other">%1$d workouts in 7 days</item></plurals>
+    <plurals name="idle_rate_sessions__t"><item quantity="one">%1$d trial in 7 days</item><item quantity="other">%1$d trials in 7 days</item></plurals>
+    <!-- Part of the line above. %1$d is the current streak in days. -->
+    <plurals name="idle_rate_streak"><item quantity="one">streak %1$d day</item><item quantity="other">streak %1$d days</item></plurals>
+    <plurals name="idle_rate_streak__t"><item quantity="one">Oath %1$d day</item><item quantity="other">Oath %1$d days</item></plurals>
+    <!-- What feeds the skill factor. %1$d is the number of skills unlocked. -->
+    <plurals name="idle_rate_skills_unlocked"><item quantity="one">%1$d skill unlocked, kept for good</item><item quantity="other">%1$d skills unlocked, kept for good</item></plurals>
+    <plurals name="idle_rate_skills_unlocked__t"><item quantity="one">%1$d technique unlocked, kept for good</item><item quantity="other">%1$d techniques unlocked, kept for good</item></plurals>
+    <string name="idle_rate_relics_none">No relics yet. Your first inscription is a relic.</string>
+    <!-- What feeds the relic factor. %1$d relics held, %2$s the strongest relic\'s name, %3$d the percentage it lifts the rate by. -->
+    <plurals name="idle_rate_relics_feeds"><item quantity="one">%1$d relic. The strongest, %2$s, lifts it by %3$d%%.</item><item quantity="other">%1$d relics. The strongest, %2$s, lifts it by %3$d%%.</item></plurals>
+    <!-- What feeds the echo factor. %1$d echoes held, %2$d echoes per step, %3$s percent added per step (e.g. "0.5"), %4$d the cap in percent. -->
+    <plurals name="idle_rate_echoes_feeds"><item quantity="one">%1$,d echo. Every %2$d add %3$s%%, up to %4$d%%.</item><item quantity="other">%1$,d echoes. Every %2$d add %3$s%%, up to %4$d%%.</item></plurals>
+    <string name="idle_rate_houses_header">House bonuses</string>
+    <string name="idle_rate_away_header">While you are away</string>
+    <!-- %1$d is the most hours of work one absence can pay. The Veil is named the same in both modes. -->
+    <string name="always_idle_rate_away_note">One absence pays at most %1$d h of work. Opening the Veil banks it and starts the clock again.</string>
+    <!-- Accessibility text of a factor bar. %1$s factor name, %2$s its value, %3$s its ceiling (numbers like "1.25"). -->
+    <string name="idle_rate_factor_description">%1$s factor, %2$s of %3$s</string>
+    <!-- Beside a factor bar. %1$s is the ceiling, a number like "1.25". -->
+    <string name="idle_rate_max">max ×%1$s</string>
+    <!-- Where a relic house\'s two-relic bonus lands. -->
+    <string name="idle_rate_term_iron">Lifting term, inside Training</string>
+    <string name="idle_rate_term_vigil">Consistency term, inside Training</string>
+    <string name="idle_rate_term_craft">Skill term, inside skill</string>
+    <string name="idle_rate_term_craft__t">Technique term, inside Technique</string>
+    <string name="idle_rate_term_return">Comeback term, on the time away</string>
+    <!-- What the next relic of a house adds. %1$d relics still needed, %2$s the gain, e.g. "2 h of full strength". -->
+    <plurals name="idle_rate_next_gain"><item quantity="one">%1$d more relic adds %2$s</item><item quantity="other">%1$d more relics add %2$s</item></plurals>
+    <!-- %1$d relics still needed, %2$s the name of the term, e.g. "lifting". -->
+    <plurals name="idle_rate_next_term"><item quantity="one">%1$d more relic adds +5%% to the %2$s term</item><item quantity="other">%1$d more relics add +5%% to the %2$s term</item></plurals>
+    <!-- A house row. %1$s says where the bonus lands, %2$s what the next relic adds. -->
+    <string name="idle_rate_house_in_force">%1$s. %2$s.</string>
+    <string name="idle_rate_house_complete">%1$s. Complete.</string>
+    <string name="idle_rate_house_next">%1$s.</string>
+    <!-- Accessibility label of the tick beside a house bonus in force. -->
+    <string name="idle_rate_in_force_description">In force</string>
+    <string name="idle_rate_collection_description">Open the collection</string>
+    <!-- Accessibility text of the away-time curve. %1$d hours at full pace, %2$d the percent it tapers to, %3$d the hour the taper ends. -->
+    <!-- Two hour counts and a percentage in one sentence, so one plural quantity cannot serve them. -->
+    <string name="idle_rate_curve_description" tools:ignore="PluralsCandidate">Full pace for %1$d hours, then tapering to %2$d%% by %3$d hours</string>
+    <!-- Labels under the away-time curve; keep them short, they share one row. -->
+    <string name="idle_rate_axis_start">0 h</string>
+    <string name="idle_rate_axis_full_ends">%1$d h, full pace ends</string>
+    <string name="idle_rate_axis_taper_end">%1$d h, %2$d%%</string>
+
+    <!-- Phase 8: misc -->
+    <!-- ===== Phase 8: data, health, backup and program leftovers ===== -->
+
+    <!-- Settings > Backup: shown under the panel when the chosen folder can no longer be written to. -->
+    <string name="backup_folder_lost">Access to the backup folder was lost. Choose the folder again.</string>
+    <!-- Settings > Backup: %1$s is the reason the write failed (a system message, or backup_file_not_written). -->
+    <string name="backup_last_failed">The last backup failed: %1$s</string>
+    <!-- Fills %1$s of backup_last_failed when the system gave no reason. Lower case, follows a colon. -->
+    <string name="backup_file_not_written">the file could not be written</string>
+    <!-- Name of the backup folder when the system did not report one. Shown in Settings > Backup in "Backups go to %1$s". -->
+    <string name="backup_folder_fallback">the chosen folder</string>
+
+    <!-- Settings > Health Connect: a problem found while reading history. Short, shown after "Health Connect sync:". -->
+    <string name="health_unavailable">Health Connect unavailable</string>
+    <string name="health_permissions_missing">Health Connect permissions not granted</string>
+    <string name="health_not_wired">Health Connect not wired</string>
+    <!-- %1$s is a technical error class name, for example SecurityException. -->
+    <string name="health_read_failed">read failed: %1$s</string>
+    <!-- %d is the number of days that were requested. -->
+    <plurals name="health_no_activity">
+        <item quantity="one">Health Connect returned no activity for the last day</item>
+        <item quantity="other">Health Connect returned no activity for the last %d days</item>
+    </plurals>
+    <!-- Shown when saving a finished workout to Health Connect failed; follows "Last save failed:". Lower case where it continues a sentence. -->
+    <string name="health_writeback_unavailable">Health Connect is not available</string>
+    <string name="health_writeback_revoked">Health Connect no longer lets Ironvellum save</string>
+    <string name="health_writeback_remove_failed">the earlier entry could not be removed</string>
+
+    <!-- Names of the Health Connect metrics, lower case: Settings > Advanced coverage line ("steps 90 - sleep 85") and the start of a read problem ("sleep: SecurityException"). -->
+    <string name="health_metric_steps">steps</string>
+    <string name="health_metric_distance">distance</string>
+    <string name="health_metric_active_calories">active calories</string>
+    <string name="health_metric_calories">calories</string>
+    <string name="health_metric_sleep">sleep</string>
+    <string name="health_metric_resting_hr">resting heart rate</string>
+    <string name="health_metric_heart_rate">heart rate</string>
+    <string name="health_metric_weight">weight</string>
+    <string name="health_metric_body_fat">body fat</string>
+
+    <!-- Export warning. %1$s is the stored site key, %2$s the value in centimetres. -->
+    <string name="data_export_unknown_site">measurement with unknown site \"%1$s\" (%2$s cm) left out of the archive</string>
+    <string name="data_export_unknown_site__t">reading with unknown site \"%1$s\" (%2$s cm) left out of the archive</string>
+    <!-- Import warning. %1$s is the exercise name, %2$s the muscle group it was given (an internal key, shown as is). -->
+    <string name="data_import_exercise_guessed">exercise \"%1$s\" not in catalogue — created with guessed muscleGroup=%2$s and isWeighted=true</string>
+    <!-- Import warning. %1$s is the name of the saved routine. -->
+    <string name="data_import_routine_entry_dropped">routine \"%1$s\" entry dropped: no exercise name</string>
+    <string name="data_import_routine_entry_dropped__t">rite \"%1$s\" entry dropped: no exercise name</string>
+    <!-- Import warning. %1$s is the name of the logged workout. -->
+    <string name="data_import_set_dropped">workout \"%1$s\" set dropped: no exercise name</string>
+    <string name="data_import_set_dropped__t">trial \"%1$s\" set dropped: no exercise name</string>
+    <!-- Import warning. %1$s is a date (2026-10-03), %2$s the weight in kg, %3$s the body fat percentage or a dash. -->
+    <string name="data_import_stat_dropped">measurement from %1$s dropped: %2$s kg / %3$s%% outside plausible range</string>
+    <string name="data_import_stat_dropped__t">reading from %1$s dropped: %2$s kg / %3$s%% outside plausible range</string>
+
+    <!-- Programme summary shown on a template card. The citation in brackets stays as written. -->
+    <string name="program_extra_summary_full_body_strength">Three full-body days on five big lifts. Add a little weight each workout while it keeps moving (ACSM 2009).</string>
+    <string name="program_extra_summary_full_body_strength__t">Three full-body days on five big lifts. Add a little weight each trial while it keeps moving (ACSM 2009).</string>
+    <string name="program_extra_summary_full_body_size">Three full-body days: every muscle each workout, big lifts first, stretch-focused exercises after (Pelland 2026).</string>
+    <string name="program_extra_summary_full_body_size__t">Three full-body days: every muscle each trial, big lifts first, stretch-focused exercises after (Pelland 2026).</string>
+    <string name="program_extra_summary_upper_lower_size">Upper/lower twice a week, each routine led by a big lift and finished with stretch-focused exercises (Pelland 2026; Maeo 2021).</string>
+    <string name="program_extra_summary_upper_lower_size__t">Upper/lower twice a week, each rite led by a big lift and finished with stretch-focused exercises (Pelland 2026; Maeo 2021).</string>
+    <!-- Appended to a generated day's note when it cannot fit the session budget. %d is the budget in minutes. -->
+    <plurals name="program_extra_over_budget">
+        <item quantity="one">Runs past %d minute even at 2 sets each.</item>
+        <item quantity="other">Runs past %d minutes even at 2 sets each.</item>
+    </plurals>
+    <!-- Reason line under a swapped exercise in the programme preview. %1$s is the replaced exercise name, lower case. -->
+    <string name="program_extra_eases_load">Eases the load: stands in for the %1$s with less on the heavy muscle</string>
+
+    <!-- Strength Rank: the smallest added load that earns the next step. %1$s is the load with its unit (+2.5 kg), %2$s the exercise name, %3$d the reps. -->
+    <string name="misc_rank_lift_target">+%1$s on %2$s × %3$d</string>
+    <!-- Shown in place of a score that needs a sex to be chosen first; tapping it opens Profile. -->
+    <string name="misc_sex_hold">Add sex in Profile</string>
+    <!-- Play flavour only (GoogleSignIn.kt). Google is a product name. -->
+    <string name="misc_google_continue" tools:ignore="UnusedResources">Continue with Google</string>
+    <string name="misc_google_no_account" tools:ignore="UnusedResources">No Google account found on this device — use the email form below.</string>
+
+    <!-- Phase 8: social-a -->
+    <!-- Joining a circle by invite code: the server's refusals, shown under the code field. -->
+    <string name="circles_join_no_such_code">No group answers to that code</string>
+    <string name="circles_join_no_such_code__t">No circle answers to that code</string>
+    <string name="circles_join_full">That group is full</string>
+    <string name="circles_join_full__t">That circle is full</string>
+    <!-- Deliberately neutral: it says nothing of who blocked whom. -->
+    <string name="circles_join_closed">That group is closed to you</string>
+    <string name="circles_join_closed__t">That circle is closed to you</string>
+    <string name="circles_join_throttled">Too many code attempts today — try again tomorrow.</string>
+    <string name="circles_join_failed">The group did not take you in — try again</string>
+    <string name="circles_join_failed__t">The circle did not take you in — try again</string>
+
+    <!-- Cloud errors: one sentence the lifter can act on, shown where the failed action was started (sign-in form, sync status, snackbars). -->
+    <string name="cloud_error_unavailable">Cloud sync is not available</string>
+    <string name="cloud_error_wrong_credentials">Wrong email or password</string>
+    <string name="cloud_error_email_taken">That email is already registered — sign in instead</string>
+    <string name="cloud_error_email_unconfirmed">Confirm your email first — open the link we sent, then sign in</string>
+    <string name="cloud_error_code_expired">That code is wrong or expired — request a new one</string>
+    <string name="cloud_error_same_password">Pick a password you have not used on this account</string>
+    <string name="cloud_error_weak_password">That password is too weak — make it longer</string>
+    <string name="cloud_error_rate_limited">Too many attempts — wait a minute and try again</string>
+    <string name="cloud_error_signin_refused">Sign-in was refused — try again in a moment</string>
+    <string name="cloud_error_name_taken">That display name is taken</string>
+    <string name="cloud_error_name_taken__t">That true name is taken</string>
+    <string name="cloud_error_not_allowed">The cloud refused this — you are not allowed to change that record</string>
+    <string name="cloud_error_out_of_range">The cloud rejected this value as out of range</string>
+    <string name="cloud_error_refused">The cloud refused this request — try again</string>
+    <string name="cloud_error_not_set_up">This part of the cloud is not set up yet — its database migration has not been applied</string>
+    <string name="cloud_error_offline">Could not reach the cloud — check your connection</string>
+
+    <!-- Account: why a typed display name is refused. %1$d and %2$d are the shortest and longest allowed length. -->
+    <!-- %1$d and %2$d are the ends of a range (N to M characters); one plural quantity cannot serve a range. -->
+    <string name="cloud_name_length" tools:ignore="PluralsCandidate">Your display name must be %1$d to %2$d characters</string>
+    <!-- %1$d and %2$d are the ends of a range (N to M characters); one plural quantity cannot serve a range. -->
+    <string name="cloud_name_length__t" tools:ignore="PluralsCandidate">Your true name must be %1$d to %2$d characters</string>
+    <!-- %1$d is the minimum number of letters or digits. -->
+    <plurals name="cloud_name_letters"><item quantity="one">Your display name needs at least %1$d letter or digit</item><item quantity="other">Your display name needs at least %1$d letters or digits</item></plurals>
+    <plurals name="cloud_name_letters__t"><item quantity="one">Your true name needs at least %1$d letter or digit</item><item quantity="other">Your true name needs at least %1$d letters or digits</item></plurals>
+
+    <!-- Sync problems: one line each in the sync result list under Account settings. %1$s is the reason (a sentence from the cloud errors). -->
+    <string name="cloud_sync_deleted_failed">Deleted workouts were not removed from the cloud: %1$s</string>
+    <string name="cloud_sync_deleted_failed__t">Deleted trials were not removed from the cloud: %1$s</string>
+    <string name="cloud_sync_totals_failed">Profile totals were not synced: %1$s</string>
+    <!-- %1$s is the name the user gave the workout. -->
+    <string name="cloud_sync_unmatched">Workout \"%1$s\" could not be matched on the cloud</string>
+    <string name="cloud_sync_unmatched__t">Trial \"%1$s\" could not be matched on the cloud</string>
+    <!-- %1$s is the name the user gave the workout. -->
+    <string name="cloud_sync_set_skipped">A set in \"%1$s\" has no exercise name and was skipped</string>
+    <string name="cloud_sync_tiers_failed">Lift tiers were not synced: %1$s</string>
+    <string name="cloud_sync_tiers_failed__t">Lift rungs were not synced: %1$s</string>
+    <string name="cloud_sync_trial_hidden">This workout is not visible to you</string>
+    <string name="cloud_sync_trial_hidden__t">This trial is not visible to you</string>
+
+    <!-- Cloud backup messages. %1$d and %2$d are byte counts: the backup size and the largest the cloud accepts. -->
+    <!-- %1$d and %2$d are byte amounts, not a count of a noun, so no plural. -->
+    <string name="cloud_backup_too_large" tools:ignore="PluralsCandidate">Backup is too large for the cloud (%1$d of %2$d bytes) — export an archive file instead</string>
+    <string name="cloud_backup_none">No cloud backup yet — back up on the old device first</string>
+    <string name="cloud_backup_restore_failed">The backup could not be restored</string>
+
+    <!-- Stand-in name for a person whose display name the server hides from you. -->
+    <string name="cloud_hidden_lifter">Hidden lifter</string>
+    <string name="cloud_hidden_lifter__t">Hidden Ironbound</string>
+
+    <!-- Group (circle) actions: refusals shown under the form that raised them. -->
+    <string name="cloud_circle_name_missing">Give the group a name</string>
+    <string name="cloud_circle_name_missing__t">Give the circle a name</string>
+    <string name="cloud_circle_missing">The group did not appear — pull to refresh</string>
+    <string name="cloud_circle_missing__t">The circle did not appear — pull to refresh</string>
+    <string name="cloud_circle_code_shape">That code is not the right shape</string>
+    <string name="cloud_circle_goal_range">A weekly goal is 1–7 days</string>
+    <string name="cloud_circle_name_length">A group name is 1–24 characters</string>
+    <string name="cloud_circle_name_length__t">A circle name is 1–24 characters</string>
+
+    <!-- Friend (ally) requests: refusals shown under the invite field. %1$s is the name the user typed. -->
+    <string name="cloud_ally_type_name">Type a lifter\'s display name first</string>
+    <string name="cloud_ally_type_name__t">Type an Ironbound\'s true name first</string>
+    <string name="cloud_ally_not_found">No lifter has the display name \"%1$s\"</string>
+    <string name="cloud_ally_not_found__t">No Ironbound has the true name \"%1$s\"</string>
+    <string name="cloud_ally_self_request">You cannot send yourself a friend request</string>
+    <string name="cloud_ally_self_request__t">You cannot send yourself an ally request</string>
+    <string name="cloud_ally_already_requested">Already requested — waiting for \"%1$s\" to accept</string>
+    <string name="cloud_ally_no_pending">No pending request from that lifter</string>
+    <string name="cloud_ally_no_pending__t">No pending request from that Ironbound</string>
+
+    <!-- Kudos (tributes) and comments (remarks) on a workout. %1$d is the character limit. -->
+    <string name="cloud_tributes_hidden">These kudos are not visible to you</string>
+    <string name="cloud_tributes_hidden__t">These tributes are not visible to you</string>
+    <string name="cloud_remark_empty">Write something first</string>
+    <plurals name="cloud_remark_too_long"><item quantity="one">Comments are at most %1$d character</item><item quantity="other">Comments are at most %1$d characters</item></plurals>
+    <plurals name="cloud_remark_too_long__t"><item quantity="one">Remarks are at most %1$d character</item><item quantity="other">Remarks are at most %1$d characters</item></plurals>
+    <string name="cloud_remark_gone">That comment is already gone or not yours to remove</string>
+    <string name="cloud_remark_gone__t">That remark is already gone or not yours to remove</string>
+
+    <!-- Blocking, muting and reporting another person. %1$d is the character limit of the report note. -->
+    <string name="cloud_block_self">You can’t block yourself</string>
+    <string name="cloud_mute_self">You can’t mute yourself</string>
+    <string name="cloud_report_self">You can’t report yourself</string>
+    <plurals name="cloud_report_note_too_long"><item quantity="one">Keep the note to %1$d character</item><item quantity="other">Keep the note to %1$d characters</item></plurals>
+
+    <!-- Account / Allies tab, signed out. -->
+    <string name="acct_failure_unknown">Unknown failure</string>
+    <!-- Notice under the sign-up form. %1$s is the email address the confirmation link was sent to. -->
+    <string name="acct_signup_confirm_notice">Account created — open the link sent to %1$s, then sign in.</string>
+    <!-- Notice under the reset form. %1$s is the email address typed by the user. -->
+    <string name="acct_reset_sent_notice">If %1$s has an account, a code is on its way.</string>
+    <!-- Header of the pushed account screen. Upper case on purpose. -->
+    <string name="acct_title_upper">ACCOUNT</string>
+    <string name="acct_unavailable">Cloud features aren\'t available in this build.</string>
+    <!-- Two sentences shown above the sign-in form: what the tab gives. -->
+    <string name="acct_intro">Friends see your finished workouts and answer with kudos and comments. Groups share a weekly goal, and the leaderboard ranks everyone.</string>
+    <string name="acct_intro__t">Allies see your sealed trials and answer with tributes and remarks. Circles share a weekly goal, and the reckoning ranks everyone.</string>
+    <string name="acct_signin_optional">Optional: everything else works without an account. Sign in to back up your workouts, add friends, join a group and appear on the leaderboard.</string>
+    <string name="acct_signin_optional__t">Optional: everything else works without an account. Sign in to back up your trials, add allies, join a circle and stand in the Reckoning.</string>
+    <string name="acct_reset_title">Reset your password</string>
+    <!-- Error under the form after the server refused. %1$s is the reason, a full sentence. -->
+    <string name="acct_auth_failed_signin">Sign-in failed: %1$s</string>
+    <string name="acct_auth_failed_signup">Sign-up failed: %1$s</string>
+    <string name="acct_auth_failed_reset">Reset failed: %1$s</string>
+    <string name="acct_email_invalid">Enter a valid email address.</string>
+    <string name="acct_password_short">Password needs at least 6 characters.</string>
+    <string name="acct_password_mismatch">Passwords don\'t match.</string>
+    <string name="acct_name_range">Display name needs 2–24 characters.</string>
+    <string name="acct_name_range__t">True Name needs 2–24 characters.</string>
+    <string name="acct_reset_hint">We\'ll email you a code to set a new password.</string>
+    <!-- Text field labels (floating labels: keep short). -->
+    <string name="acct_email_label">Email</string>
+    <string name="acct_code_label">Code from email</string>
+    <string name="acct_password_label">Password</string>
+    <string name="acct_password_new_label">New password</string>
+    <string name="acct_password_confirm_label">Confirm password</string>
+    <!-- Small link button under the password field. -->
+    <string name="acct_password_forgot_button">Forgot password?</string>
+    <!-- Main button of the form; the label changes with the form. Full width, one line. -->
+    <string name="acct_signin_button">Sign in</string>
+    <string name="acct_signup_button">Create account</string>
+    <string name="acct_reset_set_button">Set new password</string>
+    <string name="acct_reset_send_button">Email me a code</string>
+    <!-- Shown under a greyed-out main button: what is missing. -->
+    <string name="acct_hint_signin">Enter your email and password to sign in.</string>
+    <string name="acct_hint_signup">Fill in every field to create your account.</string>
+    <string name="acct_hint_reset_code">Enter the code and a new password.</string>
+    <string name="acct_hint_reset_email">Enter your email to get a code.</string>
+    <!-- Link buttons that switch between the three forms. -->
+    <string name="acct_mode_signup_link">New here? Create an account</string>
+    <string name="acct_mode_signin_link">Have an account? Sign in</string>
+    <string name="acct_mode_back_link">Back to sign in</string>
+    <!-- What stays on the phone and what syncs. The deed is the reward layer and keeps its name in both modes. -->
+    <string name="acct_sync_note">Measurements stay on this device; workouts, XP and deeds sync.</string>
+    <string name="acct_sync_note__t">Readings stay on this device; trials, XP and deeds sync.</string>
+    <!-- Content descriptions of the eye button in the password fields. -->
+    <string name="acct_password_hide_description">Hide password</string>
+    <string name="acct_password_show_description">Show password</string>
+
+    <!-- Account / Allies tab, signed in. -->
+    <string name="acct_settings_description">Account settings</string>
+    <!-- Read-only chip under your name: who can read your workouts. -->
+    <string name="acct_visibility_public">Public</string>
+    <string name="acct_visibility_friends">Friends only</string>
+    <string name="acct_visibility_friends__t">Allies only</string>
+    <string name="acct_visibility_private">Private</string>
+
+    <!-- Prompt for a Google user who still has a seeded handle. -->
+    <string name="acct_claim_title">Take your display name</string>
+    <string name="acct_claim_title__t">Take your true name</string>
+    <string name="acct_claim_caption">This display name is how other lifters find and add you.</string>
+    <string name="acct_claim_caption__t">This true name is how other Ironbound find and add you.</string>
+    <!-- %1$s is the seeded handle the user has now. -->
+    <string name="acct_claim_current">Currently: %1$s</string>
+    <!-- Floating label of the name field. (2–24) is the allowed length. -->
+    <string name="acct_claim_field_label">Display name (2–24)</string>
+    <string name="acct_claim_field_label__t">True Name (2–24)</string>
+    <!-- Shown under a name field when the typed name is not allowed. -->
+    <string name="acct_name_rule">2–24 characters, letters and numbers</string>
+    <string name="acct_claim_take_button">Take</string>
+    <string name="acct_claim_skip_button">Skip for now</string>
+
+    <!-- Invite field: caption over the field, and the link inside it. -->
+    <string name="acct_invite_label">Add a friend by display name</string>
+    <string name="acct_invite_label__t">Add an ally by true name</string>
+    <string name="acct_invite_button">Invite</string>
+    <!-- Row that counts pending requests. %1$d is the count. -->
+    <plurals name="acct_requests_count"><item quantity="one">%1$d friend request</item><item quantity="other">%1$d friend requests</item></plurals>
+    <plurals name="acct_requests_count__t"><item quantity="one">%1$d ally request</item><item quantity="other">%1$d ally requests</item></plurals>
+    <!-- Spoken action of that row: it opens the inbox tab. -->
+    <string name="acct_requests_open_description">Open messages</string>
+    <string name="acct_requests_open_description__t">Open Missives</string>
+    <string name="acct_allies_empty">No friends yet. Invite one by display name above.</string>
+    <string name="acct_allies_empty__t">No allies yet. Invite one by true name above.</string>
+    <!-- Section header over the list. %1$d is how many there are. -->
+    <string name="acct_allies_header">Friends · %1$d</string>
+    <string name="acct_allies_header__t">Allies · %1$d</string>
+
+    <!-- Account settings (pushed screen). Section headers are upper case on purpose. -->
+    <string name="acct_section_profile">PROFILE</string>
+    <string name="acct_section_cloud">CLOUD</string>
+    <string name="acct_section_privacy">PRIVACY</string>
+    <!-- Spoken action of the profile row. -->
+    <string name="acct_edit_name_description">Edit display name</string>
+    <string name="acct_edit_name_description__t">Edit true name</string>
+    <!-- Trailing text of the profile row. -->
+    <string name="acct_edit_button">Edit</string>
+    <!-- Who can read your workouts, one line under the visibility selector. -->
+    <string name="acct_visibility_public_caption">Every lifter can read your workouts.</string>
+    <string name="acct_visibility_public_caption__t">Every Ironbound can read your trials.</string>
+    <string name="acct_visibility_friends_caption">Only your friends can read your workouts.</string>
+    <string name="acct_visibility_friends_caption__t">Only your allies can read your trials.</string>
+    <string name="acct_visibility_private_caption">No one but you can read your workouts.</string>
+    <string name="acct_visibility_private_caption__t">No one but you can read your trials.</string>
+    <!-- Switch row: notifications about friends. Title, then a one-line caption. -->
+    <string name="acct_alerts_label">Friend activity</string>
+    <string name="acct_alerts_label__t">Ally activity</string>
+    <string name="acct_alerts_caption">Requests, comments and kudos</string>
+    <string name="acct_alerts_caption__t">Requests, remarks and tributes</string>
+    <string name="acct_alerts_blocked">Friend activity won\'t arrive until you allow notifications.</string>
+    <string name="acct_alerts_blocked__t">Ally activity won\'t arrive until you allow notifications.</string>
+    <!-- Cloud rows. -->
+    <string name="acct_sync_label">Sync</string>
+    <string name="acct_sync_caption">Uploads after each workout</string>
+    <string name="acct_sync_caption__t">Uploads after each trial</string>
+    <!-- Result line under Sync, joined with a middle dot: "Pushed 3 workouts · 12 sets · 2 titles · 1 skipped". %1$d is the count of workouts. -->
+    <plurals name="acct_sync_pushed"><item quantity="one">Pushed %1$d workout</item><item quantity="other">Pushed %1$d workouts</item></plurals>
+    <plurals name="acct_sync_pushed__t"><item quantity="one">Pushed %1$d trial</item><item quantity="other">Pushed %1$d trials</item></plurals>
+    <!-- Result line under Restore, same shape. %1$d is the count of workouts. -->
+    <plurals name="acct_sync_restored"><item quantity="one">Restored %1$d workout</item><item quantity="other">Restored %1$d workouts</item></plurals>
+    <plurals name="acct_sync_restored__t"><item quantity="one">Restored %1$d trial</item><item quantity="other">Restored %1$d trials</item></plurals>
+    <!-- Titles are the rank titles a person has earned. -->
+    <plurals name="acct_titles_count"><item quantity="one">%1$d title</item><item quantity="other">%1$d titles</item></plurals>
+    <!-- Last part of the result line: how many items could not be synced. -->
+    <plurals name="acct_sync_skipped"><item quantity="one">%1$d skipped</item><item quantity="other">%1$d skipped</item></plurals>
+    <string name="acct_backup_label">Back up</string>
+    <string name="acct_backup_none">No backup yet</string>
+    <!-- File size under Back up. %1$d is bytes, %1$.1f is kilobytes with one decimal. -->
+    <string name="acct_size_bytes">%1$d B</string>
+    <string name="acct_size_kb">%1$.1f KB</string>
+    <string name="acct_restore_label">Restore from the cloud</string>
+    <!-- Inline warning before a restore replaces everything on the phone. -->
+    <string name="acct_restore_warning">This replaces EVERYTHING logged on this phone — workouts, titles, skills and measurements — with the cloud archive. Anything not in that archive is lost for good.</string>
+    <string name="acct_restore_warning__t">This replaces EVERYTHING logged on this phone — trials, titles, techniques and readings — with the cloud archive. Anything not in that archive is lost for good.</string>
+    <!-- Two buttons side by side under the warning: keep short. -->
+    <string name="acct_restore_confirm_button">Replace my data</string>
+    <string name="acct_restore_keep_button">Keep mine</string>
+    <!-- Privacy rows. -->
+    <string name="acct_blocked_label">Blocked lifter</string>
+    <string name="acct_blocked_label__t">Blocked Ironbound</string>
+    <string name="acct_blocked_show_description">Show blocked lifter</string>
+    <string name="acct_blocked_show_description__t">Show blocked Ironbound</string>
+    <string name="acct_blocked_hide_description">Hide blocked lifter</string>
+    <string name="acct_blocked_hide_description__t">Hide blocked Ironbound</string>
+    <string name="acct_blocked_empty">Nobody blocked. Block a lifter from their profile.</string>
+    <string name="acct_blocked_empty__t">Nobody blocked. Block an Ironbound from their folio.</string>
+    <string name="acct_unblock_button">Unblock</string>
+    <string name="acct_private_note">Measurements and private notes never leave this device.</string>
+    <string name="acct_private_note__t">Readings and private notes never leave this device.</string>
+    <!-- Sign out and delete. -->
+    <string name="acct_signout_label">Sign out</string>
+    <string name="acct_signout_dialog_title">Sign out?</string>
+    <string name="acct_signout_dialog_text">Your training stays on this phone. Sign back in to sync it again.</string>
+    <!-- Inline warning before the cloud account is deleted. -->
+    <string name="acct_delete_warning">This deletes your account, profile, synced workouts, titles, friends and cloud backup for good, and signs you out. Training on this phone stays on this phone.</string>
+    <string name="acct_delete_warning__t">This deletes your account, folio, synced trials, titles, allies and cloud backup for good, and signs you out. Training on this phone stays on this phone.</string>
+    <string name="acct_delete_confirm_button">Delete account</string>
+    <string name="acct_delete_keep_button">Keep it</string>
+    <string name="acct_delete_label">Delete my cloud account</string>
+    <string name="acct_delete_caption">Deletes your cloud account and everything synced. Your on-device training is untouched.</string>
+
+    <!-- Social tabs: our own dialog that explains notifications before the system prompt. -->
+    <string name="acct_notifications_title">Friend notifications?</string>
+    <string name="acct_notifications_title__t">Ally notifications?</string>
+    <string name="acct_notifications_text">See friend requests, comments and kudos.</string>
+    <string name="acct_notifications_text__t">See ally requests, remarks and tributes.</string>
+    <string name="acct_allow_button">Allow</string>
+    <string name="acct_not_now_button">Not now</string>
+    <!-- Marks your own row in a list of people. Under the name, one muted line. -->
+    <string name="acct_you_label">You</string>
+    <!-- Small chip beside a name: LV is short for Level, %1$d is the level. Keep to a few characters. -->
+    <string name="acct_level_chip">LV %1$d</string>
+
+    <!-- Leaderboard tab: the two or three boards in the segmented control (short). -->
+    <string name="acct_board_training">Training</string>
+    <string name="acct_board_lifts">Lifts</string>
+    <!-- Ranking metrics: the picker rows and the value in the Ranked by row (short). -->
+    <string name="acct_metric_xp">XP</string>
+    <string name="acct_metric_level">Level</string>
+    <string name="acct_metric_strength">Strength score</string>
+    <string name="acct_metric_last7">Last 7 days</string>
+    <!-- The figure shown beside each person. %1$s is a number already grouped by thousands, e.g. 11,686. -->
+    <string name="acct_metric_xp_value">%1$s XP</string>
+    <!-- STR is short for strength score; %1$s is a grouped number. -->
+    <string name="acct_metric_strength_value">STR %1$s</string>
+    <!-- Workouts completed in the last 7 days: %1$d is the count. -->
+    <string name="acct_metric_last7_value">%1$d in 7 days</string>
+    <!-- The reward layer keeps its name in both modes, so there is no plain twin. %1$d is the count. -->
+    <plurals name="always_acct_deeds_count"><item quantity="one">%1$d deed</item><item quantity="other">%1$d deeds</item></plurals>
+    <string name="acct_ranked_by_label">Ranked by</string>
+    <string name="acct_ranked_by_change_description">Change ranking</string>
+    <!-- Link buttons under an empty or failed board. -->
+    <string name="acct_retry_link">Try again</string>
+    <string name="acct_check_again_link">Check again</string>
+    <string name="acct_board_loading">Loading leaderboard…</string>
+    <string name="acct_board_loading__t">Reading the reckoning…</string>
+    <string name="acct_board_empty">No standings yet. Add friends by display name on the Friends tab.</string>
+    <string name="acct_board_empty__t">No standings yet. Add allies by true name on the Allies tab.</string>
+    <string name="acct_board_alone">You are alone on the leaderboard. Add friends from the Friends tab to fill it.</string>
+    <string name="acct_board_alone__t">You stand alone in the reckoning. Add allies from the Allies tab to fill it.</string>
+    <!-- Caption over your own row when it is below the visible list. -->
+    <string name="acct_board_your_standing">Your position</string>
+    <string name="acct_board_your_standing__t">Your standing</string>
+    <!-- Podium card with nobody on it yet. Two lines at most. -->
+    <string name="acct_podium_slot_open">Friend slot open</string>
+    <string name="acct_podium_slot_open__t">Ally slot open</string>
+    <!-- Spoken action of a row: opens that person's profile. -->
+    <string name="acct_open_folio_description">Open profile</string>
+    <string name="acct_open_folio_description__t">Open folio</string>
+    <!-- Marks your own row. -->
+    <string name="acct_you_subline">You · %1$s</string>
+    <!-- Content description of the check mark on the chosen row. -->
+    <string name="acct_selected_description">Selected</string>
+    <!-- Veil board row. %1$d is the echo count, %2$s the rate per hour, e.g. 218.2/h. Reward layer: same in both modes. -->
+    <plurals name="always_acct_echoes_rate"><item quantity="one">%1$d echo · %2$s</item><item quantity="other">%1$d echoes · %2$s</item></plurals>
+    <!-- %1$s is a grouped number of essence. Reward layer: same in both modes. -->
+    <string name="always_acct_essence_value">%1$s essence</string>
+    <!-- Extraction rate per hour. %1$.1f is the rate with one decimal. -->
+    <string name="acct_rate_per_hour">%1$.1f/h</string>
+    <!-- Lift boards: window selector (short) and the note over the list. -->
+    <string name="acct_window_week">Week</string>
+    <string name="acct_window_all_time">All time</string>
+    <string name="acct_lifts_note">Tiers only — bodyweight stays on each phone.</string>
+    <string name="acct_lifts_note__t">Rungs only — bodyweight stays on each phone.</string>
+    <!-- Lift board picker. -->
+    <string name="acct_board_choose">Choose a leaderboard</string>
+    <string name="acct_board_choose__t">Choose a reckoning</string>
+    <string name="acct_board_search">Search leaderboards</string>
+    <string name="acct_board_search__t">Search reckonings</string>
+    <!-- Count at the top of the picker. %1$d is how many boards match. -->
+    <plurals name="acct_boards_count"><item quantity="one">%1$d leaderboard</item><item quantity="other">%1$d leaderboards</item></plurals>
+    <plurals name="acct_boards_count__t"><item quantity="one">%1$d reckoning</item><item quantity="other">%1$d reckonings</item></plurals>
+    <string name="acct_lift_bodyweight">Bodyweight tiers</string>
+    <string name="acct_lift_bodyweight__t">Bodyweight rungs</string>
+    <!-- Picker row detail: %1$d is the number of tiers, %2$s the exercise of the first tier, %3$s the exercise of the last. -->
+    <plurals name="acct_lift_rungs"><item quantity="one">%1$d tier · %2$s to %3$s</item><item quantity="other">%1$d tiers · %2$s to %3$s</item></plurals>
+    <plurals name="acct_lift_rungs__t"><item quantity="one">%1$d rung · %2$s to %3$s</item><item quantity="other">%1$d rungs · %2$s to %3$s</item></plurals>
+    <!-- Trailing text of a picker row: how many people are ranked on that board. -->
+    <string name="acct_lift_none_ranked">none yet</string>
+    <plurals name="acct_lift_ranked"><item quantity="one">%1$d ranked</item><item quantity="other">%1$d ranked</item></plurals>
+
+    <!-- Account sign-in / sign-up / profile refusals, shown under the form that raised them. -->
+    <string name="cloud_account_signup_no_profile">Account created, but your profile could not be loaded — sign in again</string>
+    <string name="cloud_account_signin_no_profile">Signed in, but your profile could not be loaded — try again</string>
+    <string name="cloud_account_reset_no_profile">Password changed, but your profile could not be loaded — sign in again</string>
+    <string name="cloud_account_google_no_user">Google sign-in returned no user</string>
+    <string name="cloud_account_google_no_profile">Signed in with Google, but your profile could not be loaded — try again</string>
+    <string name="cloud_account_claim_signed_out">Sign in before taking a display name</string>
+    <string name="cloud_account_claim_signed_out__t">Sign in before taking a true name</string>
+    <string name="cloud_account_name_taken">That display name is taken — another lifter got there first</string>
+    <string name="cloud_account_name_taken__t">That true name is taken — another Ironbound got there first</string>
+    <string name="cloud_account_delete_signed_out">Sign in before deleting your cloud account</string>
+    <string name="cloud_account_no_profile">Your profile could not be loaded</string>
+    <string name="cloud_account_visibility_signed_out">Sign in before changing visibility</string>
+    <string name="cloud_account_signed_out">Sign in to use cloud features</string>
+    <string name="cloud_not_configured">Cloud sync is not configured on this build</string>
+
+    <!-- Phase 8: social-b -->
+    <!-- ===== CircleUi.kt: the circle block of the Friends tab ===== -->
+    <!-- Shown when a failure carries no message of its own. -->
+    <string name="circle_unknown_failure">Unknown failure</string>
+    <!-- Circle panel while the first read is in flight. -->
+    <string name="circle_loading">Loading the group…</string>
+    <string name="circle_loading__t">Reading the circle…</string>
+    <!-- Text link under a failed circle read. -->
+    <string name="circle_try_again">Try again</string>
+    <!-- Button on the circle pitch panel, and the title of the dialog it opens. Short: it sits in a button. -->
+    <string name="circle_form_button">Form a group</string>
+    <string name="circle_form_button__t">Form a circle</string>
+    <!-- Confirm button of the form-a-circle dialog. -->
+    <string name="circle_create_button">Create</string>
+    <!-- Title of the rename dialog, and the row in the manage sheet that opens it. -->
+    <string name="circle_rename_title">Rename the group</string>
+    <string name="circle_rename_title__t">Rename the circle</string>
+    <!-- Confirm dialog before the invite code is replaced. -->
+    <string name="circle_rotate_title">New group code?</string>
+    <string name="circle_rotate_title__t">New circle code?</string>
+    <string name="circle_rotate_body">The current code stops working at once. Members stay; anyone holding the old code can no longer join.</string>
+    <!-- Confirm button of that dialog, and the manage sheet row that opens it. -->
+    <string name="circle_new_code_button">New code</string>
+    <!-- Dismiss button of the new-code and remove-member dialogs: do nothing. -->
+    <string name="circle_keep_button">Keep</string>
+    <!-- Remove-member dialog. %1$s is the member's display name. -->
+    <string name="circle_remove_title">Remove %1$s?</string>
+    <string name="circle_remove_body">They are told, and their days this week still count. They can rejoin with the code unless you change it first.</string>
+    <!-- Button of that dialog, and the text link on each member row. -->
+    <string name="circle_remove_button">Remove</string>
+    <!-- Screen reader label of the Remove link on a member row. %1$s is the member's display name. -->
+    <string name="circle_remove_member_description">Remove %1$s from the group</string>
+    <string name="circle_remove_member_description__t">Remove %1$s from the circle</string>
+    <!-- Leave dialog title. %1$s is the circle's name. -->
+    <string name="circle_leave_title">Leave %1$s?</string>
+    <!-- Leave dialog title when the circle has no name to show. -->
+    <string name="circle_leave_unnamed_title">Leave the group?</string>
+    <string name="circle_leave_unnamed_title__t">Leave the circle?</string>
+    <string name="circle_leave_body">You leave the group and its shared week. If you are the owner, the longest-standing remaining member takes over.</string>
+    <string name="circle_leave_body__t">You leave the circle and its shared week. If you are the Keeper, the longest-standing remaining member takes over.</string>
+    <string name="circle_leave_last_body">You are the last member — leaving deletes the group and its code.</string>
+    <string name="circle_leave_last_body__t">You are the last member — leaving deletes the circle and its code.</string>
+    <!-- Confirm button of the leave dialog. -->
+    <string name="circle_leave_button">Leave</string>
+    <!-- Dismiss button of the leave dialog: stay in the circle. -->
+    <string name="circle_stay_button">Stay</string>
+    <!-- Name shown on the weekly-bonus celebration when the circle's own name is unknown. -->
+    <string name="circle_paid_name_fallback">The group</string>
+    <string name="circle_paid_name_fallback__t">The circle</string>
+    <!-- Pitch on the panel shown to someone who is in no circle. -->
+    <string name="circle_pitch">Form a group of up to 8 friends — share one code, chase one week.</string>
+    <string name="circle_pitch__t">Form a circle of up to 8 allies — share one code, chase one week.</string>
+    <!-- Button on the pitch panel, and the title of the join dialog. -->
+    <string name="circle_join_button">Join a group</string>
+    <string name="circle_join_button__t">Join a circle</string>
+    <!-- Header of the roster: the weekly goal has been reached. Short, sits beside the circle name. -->
+    <string name="circle_goal_met">Goal met</string>
+    <!-- Screen reader label of the tick shown on a member who met the weekly goal. -->
+    <string name="circle_goal_met_description">Goal met</string>
+    <!-- Header of the roster: days trained by the whole circle so far vs. its goal. %1$d is days so far, %2$d is the goal. Short. -->
+    <!-- %1$d / %2$d is progress with no noun after the numbers, so no plural. -->
+    <string name="circle_progress_week" tools:ignore="PluralsCandidate">%1$d / %2$d this week</string>
+    <!-- Header of the roster in the first week, before a goal exists. Short. -->
+    <string name="circle_warmup_week">Warm-up week</string>
+    <!-- Invite code line under the roster. %1$s is the 8-character code. -->
+    <string name="circle_code_label">Code %1$s</string>
+    <!-- Screen reader label of the Share link next to the invite code. -->
+    <string name="circle_share_code_description">Share the group code</string>
+    <string name="circle_share_code_description__t">Share the circle code</string>
+    <!-- Text sent through the share sheet. %1$s is the circle's name, %2$s the invite code. -->
+    <string name="circle_share_text">Join my Ironvellum group %1$s — code %2$s</string>
+    <string name="circle_share_text__t">Join my Ironvellum circle %1$s — code %2$s</string>
+    <!-- Title of the system share sheet. -->
+    <string name="circle_share_chooser_title">Share group</string>
+    <string name="circle_share_chooser_title__t">Share circle</string>
+    <!-- Row at the foot of the roster that opens the manage sheet. -->
+    <string name="circle_manage_label">Manage group</string>
+    <string name="circle_manage_label__t">Manage circle</string>
+    <!-- Right-hand value of that row for the owner: what the sheet offers. -->
+    <string name="circle_manage_value_owner">Rename, new code, goal, leave</string>
+    <!-- Right-hand value of that row for an ordinary member. -->
+    <string name="circle_manage_value_member">Leave</string>
+    <!-- Screen reader label of the goal rail. %1$d days met so far, %2$d the goal. -->
+    <plurals name="circle_goal_rail_description">
+        <item quantity="one">Group goal, %1$d of %2$d day</item>
+        <item quantity="other">Group goal, %1$d of %2$d days</item>
+    </plurals>
+    <plurals name="circle_goal_rail_description__t">
+        <item quantity="one">Circle goal, %1$d of %2$d day</item>
+        <item quantity="other">Circle goal, %1$d of %2$d days</item>
+    </plurals>
+    <!-- Role tag after the member's own name on the roster. -->
+    <string name="circle_member_you">You</string>
+    <!-- Days a member trained this week out of the weekly goal. %1$d done, %2$d goal. Short. -->
+    <string name="circle_member_days">%1$d of %2$d</string>
+    <!-- Title of the manage sheet. %1$s is the circle's name. -->
+    <string name="circle_manage_title">Manage %1$s</string>
+    <!-- First part of the muted line in the manage sheet; the parts are joined with " · ". %1$d is the goal in days per member. -->
+    <plurals name="circle_manage_each">
+        <item quantity="one">%1$d day each</item>
+        <item quantity="other">%1$d days each</item>
+    </plurals>
+    <!-- Second part of that line, only when a goal change is queued. %1$d is the new days per member. -->
+    <plurals name="circle_manage_pending"><item quantity="one">%1$d from next week</item><item quantity="other">%1$d from next week</item></plurals>
+    <!-- Third part: how many weeks the circle met its goal. %1$d is the count. -->
+    <string name="circle_manage_weeks_met">weeks met %1$d</string>
+    <!-- Fourth part: when the week closes. %1$s is a weekday and time in the device's clock, such as "Mon 1 Jun, 02:00". -->
+    <string name="circle_manage_resets">resets %1$s</string>
+    <!-- Row in the manage sheet that opens the goal editor. -->
+    <string name="circle_weekly_goal_label">Weekly goal</string>
+    <!-- Dismiss button of the manage sheet: leave the circle. -->
+    <string name="circle_leave_circle_button">Leave group</string>
+    <string name="circle_leave_circle_button__t">Leave circle</string>
+    <!-- Field label of the create and rename dialogs. The range is the allowed name length. -->
+    <string name="circle_name_label">Group name (1–24)</string>
+    <string name="circle_name_label__t">Circle name (1–24)</string>
+    <!-- Helper text under the name field while it is too long or empty. -->
+    <string name="circle_name_error">1–24 characters</string>
+    <!-- Field label of the join dialog. -->
+    <string name="circle_code_field_label">Group code (8 characters)</string>
+    <string name="circle_code_field_label__t">Circle code (8 characters)</string>
+    <string name="circle_join_hint">Your days count toward the group\'s goal from next Monday.</string>
+    <string name="circle_join_hint__t">Your days count toward the circle\'s goal from next Monday.</string>
+    <!-- Confirm button of the join dialog. -->
+    <string name="circle_join_confirm">Join</string>
+    <!-- Goal editor: the owner sets how many days each member aims to train. -->
+    <string name="circle_goal_title">Weekly goal per member</string>
+    <string name="circle_goal_hint">Days each member aims to train per week. A change starts next Monday.</string>
+    <!-- Screen reader labels of the minus and plus pads of the goal stepper. %1$d is the current goal. -->
+    <string name="circle_goal_lower_description">Lower the weekly goal, currently %1$d</string>
+    <string name="circle_goal_raise_description">Raise the weekly goal, currently %1$d</string>
+    <!-- Screen reader label of the goal number, announced as it changes. %1$d is days per week. -->
+    <plurals name="circle_goal_value_description">
+        <item quantity="one">%1$d day per week</item>
+        <item quantity="other">%1$d days per week</item>
+    </plurals>
+
+    <!-- ===== CommentsScreen.kt: one shared workout and its comment thread ===== -->
+    <string name="comments_unknown_failure">Unknown failure</string>
+    <!-- Name given to the lifter's own reaction row until the list is read again. -->
+    <string name="comments_you">You</string>
+    <!-- Quiet confirmation under the thread after a report went through. -->
+    <string name="comments_report_sent">Report sent — thanks.</string>
+    <!-- Section header over the sets, in capitals. -->
+    <string name="comments_work_header">THE WORK</string>
+    <string name="comments_work_empty">No sets were shared with this workout.</string>
+    <string name="comments_work_empty__t">No sets were shared with this trial.</string>
+    <string name="comments_thread_loading">Loading the thread…</string>
+    <string name="comments_thread_loading__t">Reading the thread…</string>
+    <!-- Text link under a failed read. -->
+    <string name="comments_try_again">Try again</string>
+    <string name="comments_empty">No comments yet — say something first.</string>
+    <string name="comments_empty__t">No remarks yet — say something first.</string>
+    <!-- Send button of the comment field, and its busy state. Short. -->
+    <string name="comments_sending_button">Sending…</string>
+    <string name="comments_send_button">Send</string>
+    <string name="comments_delete_title">Delete this comment?</string>
+    <string name="comments_delete_title__t">Delete this remark?</string>
+    <string name="comments_delete_body">It disappears for everyone. This can\'t be undone.</string>
+    <!-- Confirm button of that dialog, and the text link on a comment row. -->
+    <string name="comments_delete_button">Delete</string>
+    <string name="comments_keep_button">Keep</string>
+    <!-- Captions under the four figures at the top of a workout, in capitals. Short: four share one row. -->
+    <string name="comments_stat_sets">SETS</string>
+    <string name="comments_stat_reps">REPS</string>
+    <string name="comments_stat_xp">XP</string>
+    <string name="comments_stat_strength">STR</string>
+    <string name="comments_workout_loading">Opening the workout…</string>
+    <string name="comments_workout_loading__t">Opening the trial…</string>
+    <!-- Shown when a reaction could not be saved. %1$s is the server's reason. -->
+    <string name="comments_reaction_error">Kudos not saved: %1$s</string>
+    <string name="comments_reaction_error__t">Tribute not saved: %1$s</string>
+    <string name="comments_reactions_loading">Loading the kudos…</string>
+    <string name="comments_reactions_loading__t">Reading the tributes…</string>
+    <string name="comments_reactions_empty">No kudos yet.</string>
+    <string name="comments_reactions_empty__t">No tributes yet.</string>
+    <!-- Small heading, in capitals, over the list of people who reacted. -->
+    <string name="comments_reactions_who">WHO PAID KUDOS</string>
+    <string name="comments_reactions_who__t">WHO PAID TRIBUTE</string>
+    <!-- Text link on a comment row that opens a report for it. -->
+    <string name="comments_report_button">Report</string>
+    <!-- Spoken action of the commenter's name: opens their profile. -->
+    <string name="comments_open_profile_label">Open profile</string>
+    <string name="comments_open_profile_label__t">Open folio</string>
+    <!-- Report dialog title. %1$s is the reported person's display name. -->
+    <string name="comments_report_title">Report %1$s</string>
+    <!-- Report dialog title when the person has no display name. -->
+    <string name="comments_report_title_unnamed">Report this lifter</string>
+    <string name="comments_report_title_unnamed__t">Report this Ironbound</string>
+    <string name="comments_report_note">Only the Ironvellum owner sees reports. They aren\'t told who sent it.</string>
+    <string name="comments_report_note_label">Note (optional)</string>
+    <string name="comments_report_send_button">Send report</string>
+    <!-- The four report reasons: pill labels, in capitals. Short: two per row in a narrow dialog. -->
+    <string name="comments_report_reason_spam">SPAM</string>
+    <string name="comments_report_reason_abuse">ABUSE</string>
+    <string name="comments_report_reason_cheating">CHEATING</string>
+    <string name="comments_report_reason_other">OTHER</string>
+
+    <!-- ===== FeedScreen.kt: the public feed ===== -->
+    <string name="feed_unknown_failure">Unknown failure</string>
+    <!-- Banner when a friend request from a card was refused. %1$s is the server's reason. -->
+    <string name="feed_ally_request_failed">Friend request failed: %1$s</string>
+    <string name="feed_ally_request_failed__t">Ally request failed: %1$s</string>
+    <string name="feed_loading">Loading the feed…</string>
+    <string name="feed_loading__t">Reading the tidings…</string>
+    <string name="feed_empty">No feed yet. Make your workouts public in Account settings and be the first.</string>
+    <string name="feed_empty__t">No tidings yet. Make your trials public in Account settings and be the first.</string>
+    <!-- Text links under an empty feed and under a failed read. -->
+    <string name="feed_check_again">Check again</string>
+    <string name="feed_try_again">Try again</string>
+    <!-- Muted line above the list. -->
+    <string name="feed_header">Every lifter\'s public workouts, newest first</string>
+    <string name="feed_header__t">Every Ironbound\'s public trials, newest first</string>
+    <!-- Shown at the foot of the list when loading the next page failed. -->
+    <string name="feed_paging_error">Older workouts slipped away — keep pulling to try again.</string>
+    <string name="feed_paging_error__t">Older trials slipped away — keep pulling to try again.</string>
+    <!-- Shown at the foot of the list while the next page loads. -->
+    <string name="feed_loading_more">Loading older workouts…</string>
+    <string name="feed_loading_more__t">Turning to older trials…</string>
+    <string name="feed_end">You\'ve reached the first page of the feed.</string>
+    <string name="feed_end__t">You\'ve reached the first page of the tidings.</string>
+    <!-- Timestamp line of an edited workout. %1$s is the time, such as "2h ago". -->
+    <string name="feed_stamp_amended">%1$s · amended</string>
+    <!-- Screen reader label of the reaction button when the lifter has reacted. %1$s is the reaction name (Honour, Iron or Flame). -->
+    <string name="feed_reaction_mine_description">Your kudos: %1$s</string>
+    <string name="feed_reaction_mine_description__t">Your tribute: %1$s</string>
+    <!-- Screen reader label of the reaction button before the lifter has reacted. -->
+    <string name="feed_reaction_pay_description">Pay kudos</string>
+    <string name="feed_reaction_pay_description__t">Pay tribute</string>
+    <!-- Chip on a card offering a friend request. Short. -->
+    <string name="feed_add_ally_button">Add friend</string>
+    <string name="feed_add_ally_button__t">Add ally</string>
+    <!-- Muted note on a card once a friend request is sent but not yet accepted. -->
+    <string name="feed_ally_pending">Pending</string>
+    <!-- Line under a card when saving a reaction failed. %1$s is the server's reason. -->
+    <string name="feed_reaction_error">Kudos not saved: %1$s</string>
+    <string name="feed_reaction_error__t">Tribute not saved: %1$s</string>
+    <!-- Text link in the reaction picker that removes the lifter's reaction. -->
+    <string name="feed_reaction_remove">Remove</string>
+    <!-- Picker option with its count. %1$s is the reaction name, %2$d how many people chose it. -->
+    <string name="feed_reaction_option_count">%1$s %2$d</string>
+    <!-- The three reactions. Names of the wire values; keep short. -->
+    <string name="feed_reaction_honour">Honour</string>
+    <string name="feed_reaction_iron">Iron</string>
+    <string name="feed_reaction_flame">Flame</string>
+    <!-- Stat line of a climb that only has attempts. %1$d is the attempt count. -->
+    <plurals name="feed_stat_attempts">
+        <item quantity="one">%1$d attempt</item>
+        <item quantity="other">%1$d attempts</item>
+    </plurals>
+    <!-- Stat line of a hold. %1$d is seconds. -->
+    <string name="feed_stat_held">%1$ds held</string>
+    <!-- Stat line of a run or row. %1$s is a distance with its unit, such as "5.0 KM". -->
+    <string name="feed_stat_covered">%1$s covered</string>
+    <!-- Headline of the best set on a card. %1$s is the set, such as "8 × 100.0 kg". -->
+    <string name="feed_best_set">Best %1$s</string>
+    <!-- Headline of a climb. %1$s is the hardest grade climbed. -->
+    <string name="feed_hardest_grade">Hardest %1$s</string>
+    <!-- Relative times on every social surface. -->
+    <string name="feed_time_just_now">just now</string>
+    <!-- %1$d is minutes, written with its unit, such as "5m ago". -->
+    <string name="feed_time_minutes_ago">%1$dm ago</string>
+    <!-- %1$d is hours, written with its unit, such as "3h ago". -->
+    <string name="feed_time_hours_ago">%1$dh ago</string>
+    <string name="feed_time_yesterday">yesterday</string>
+
+    <!-- ===== InboxScreen.kt: the inbox ===== -->
+    <string name="inbox_unknown_failure">Unknown failure</string>
+    <string name="inbox_loading">Loading your messages…</string>
+    <string name="inbox_loading__t">Reading your missives…</string>
+    <string name="inbox_try_again">Try again</string>
+    <!-- Undo bar after declining a friend request. %1$s is the requester's display name. -->
+    <string name="inbox_declined_message">Declined %1$s</string>
+    <string name="inbox_empty_title">No messages yet</string>
+    <string name="inbox_empty_title__t">No missives yet</string>
+    <string name="inbox_empty_body">Friend requests, comments and kudos on your workouts land here.</string>
+    <string name="inbox_empty_body__t">Ally requests, remarks and tributes on your trials land here.</string>
+    <!-- Inbox row lines: they follow the person's name, so each starts lower case. -->
+    <string name="inbox_line_friend_request">wants to be your friend</string>
+    <string name="inbox_line_friend_request__t">wants to be your ally</string>
+    <string name="inbox_line_request_accepted">accepted your friend request</string>
+    <string name="inbox_line_request_accepted__t">accepted your ally request</string>
+    <!-- %1$s is the title of the workout that was commented on. -->
+    <string name="inbox_line_comment">left a comment on %1$s</string>
+    <string name="inbox_line_comment__t">left a remark on %1$s</string>
+    <!-- Same line when the workout has no title. -->
+    <string name="inbox_line_comment_untitled">left a comment on your workout</string>
+    <string name="inbox_line_comment_untitled__t">left a remark on your trial</string>
+    <!-- A reply in a thread the lifter joined. %1$s is the title of the workout. -->
+    <string name="inbox_line_reply">replied on %1$s</string>
+    <!-- Same line when the workout has no title. -->
+    <string name="inbox_line_reply_untitled">replied on a workout</string>
+    <string name="inbox_line_reply_untitled__t">replied on a trial</string>
+    <!-- %1$s is the reaction name (Honour, Iron or Flame), %2$s the title of the workout. -->
+    <string name="inbox_line_reaction">paid %1$s kudos on %2$s</string>
+    <string name="inbox_line_reaction__t">paid %1$s tribute on %2$s</string>
+    <!-- Same line when the workout has no title. %1$s is the reaction name. -->
+    <string name="inbox_line_reaction_untitled">paid %1$s kudos on your workout</string>
+    <string name="inbox_line_reaction_untitled__t">paid %1$s tribute on your trial</string>
+    <!-- Circle lines. %1$s is the circle's name. -->
+    <string name="inbox_line_circle_joined">joined your group %1$s</string>
+    <string name="inbox_line_circle_joined__t">joined your circle %1$s</string>
+    <string name="inbox_line_circle_goal_met">finished the workout that met your group\'s weekly goal</string>
+    <string name="inbox_line_circle_goal_met__t">sealed the trial that met your circle\'s weekly goal</string>
+    <string name="inbox_line_circle_left">left your group %1$s</string>
+    <string name="inbox_line_circle_left__t">left your circle %1$s</string>
+    <string name="inbox_line_circle_keys">passed you the keys of %1$s</string>
+    <string name="inbox_line_circle_removed">removed you from %1$s</string>
+    <!-- Standing in for a workout title that is blank, as the headline of the comments screen. -->
+    <string name="inbox_headline_your_trial">your workout</string>
+    <string name="inbox_headline_your_trial__t">your trial</string>
+    <!-- Screen reader label of the dot that marks an unread row. -->
+    <string name="inbox_unread_description">New</string>
+    <!-- Muted label on a friend request that was answered. -->
+    <string name="inbox_answer_accepted">Accepted</string>
+    <string name="inbox_answer_accepted__t">Allied</string>
+    <string name="inbox_answer_declined">Declined</string>
+    <!-- Buttons on a friend request row. Short. -->
+    <string name="inbox_accept_button">Accept</string>
+    <string name="inbox_decline_button">Decline</string>
+    <!-- A comment shown in quotation marks. %1$s is the comment text, typed by the other person. -->
+    <string name="inbox_remark_quote">“%1$s”</string>
+
+    <!-- ===== LifterScreen.kt: another lifter's profile ===== -->
+    <string name="lifter_none_selected">No lifter selected.</string>
+    <string name="lifter_none_selected__t">No Ironbound selected.</string>
+    <string name="lifter_unknown_error">Unknown error</string>
+    <string name="lifter_unknown_failure">Unknown failure</string>
+    <!-- Quiet note after removing a friend. -->
+    <string name="lifter_no_longer_allies">No longer friends.</string>
+    <string name="lifter_no_longer_allies__t">No longer allies.</string>
+    <string name="lifter_muted">Muted.</string>
+    <string name="lifter_unmuted">Unmuted.</string>
+    <string name="lifter_report_sent">Report sent — thanks.</string>
+    <!-- Busy state of the add-friend chip. Short. -->
+    <string name="lifter_sending">Sending…</string>
+    <!-- Chip beside the name offering a friend request. Short. -->
+    <string name="lifter_add_ally_button">Add friend</string>
+    <string name="lifter_add_ally_button__t">Add ally</string>
+    <!-- Muted state beside the name once a request is out. Short. -->
+    <string name="lifter_request_pending">Request pending</string>
+    <!-- %1$s is the server's reason. -->
+    <string name="lifter_ally_request_failed">Friend request failed: %1$s</string>
+    <string name="lifter_ally_request_failed__t">Ally request failed: %1$s</string>
+    <string name="lifter_opening">Opening the profile…</string>
+    <string name="lifter_opening__t">Opening the folio…</string>
+    <!-- %1$s is the server's reason. -->
+    <string name="lifter_open_failed">The profile won\'t open. %1$s</string>
+    <string name="lifter_open_failed__t">The folio won\'t open. %1$s</string>
+    <string name="lifter_nothing_shared">Nothing shared. This lifter has no workouts you may read: either none are finished, or their visibility does not include you.</string>
+    <string name="lifter_nothing_shared__t">Nothing shared. This Ironbound has no trials you may read: either none are sealed, or their visibility does not include you.</string>
+    <!-- Summary line under the name; the parts are joined with " · ". Count of shared workouts. %1$d is the count. -->
+    <plurals name="lifter_summary_shared">
+        <item quantity="one">%1$d workout shared</item>
+        <item quantity="other">%1$d workouts shared</item>
+    </plurals>
+    <plurals name="lifter_summary_shared__t">
+        <item quantity="one">%1$d trial shared</item>
+        <item quantity="other">%1$d trials shared</item>
+    </plurals>
+    <!-- %1$s is a grouped number such as "12,400". -->
+    <string name="lifter_xp_gain">+%1$s XP</string>
+    <!-- Average workouts per week. %1$s is a number with one decimal, such as "2.5". -->
+    <string name="lifter_summary_per_week">%1$s a week</string>
+    <string name="lifter_summary_last_today">last workout today</string>
+    <string name="lifter_summary_last_today__t">last trial today</string>
+    <string name="lifter_summary_last_yesterday">last workout yesterday</string>
+    <string name="lifter_summary_last_yesterday__t">last trial yesterday</string>
+    <!-- %1$d is how many days ago, 2 or more. -->
+    <plurals name="lifter_summary_last_days_ago">
+        <item quantity="one">last workout %1$d day ago</item>
+        <item quantity="other">last workout %1$d days ago</item>
+    </plurals>
+    <plurals name="lifter_summary_last_days_ago__t">
+        <item quantity="one">last trial %1$d day ago</item>
+        <item quantity="other">last trial %1$d days ago</item>
+    </plurals>
+    <!-- Title of the strength chart panel. -->
+    <string name="lifter_strength_title">Strength line</string>
+    <!-- Highest point of the strength line, in capitals, top right of the panel. %1$d is the strength score. -->
+    <string name="lifter_strength_peak">PR %1$d</string>
+    <string name="lifter_strength_peak__t">PEAK %1$d</string>
+    <!-- Chart tooltip. %1$.0f is the strength score, whole. -->
+    <string name="lifter_strength_value">%1$.0f strength</string>
+    <string name="lifter_strength_single">One workout on record. The line begins with the next.</string>
+    <string name="lifter_strength_single__t">One trial on record. The line begins with the next.</string>
+    <string name="lifter_recent_header">Recent workouts</string>
+    <string name="lifter_recent_header__t">Recent trials</string>
+    <!-- Strength score in a recent-workout row. %1$d is the score. STR is the game stat. -->
+    <string name="lifter_str_figure">STR %1$d</string>
+    <!-- Tag in a recent-workout row for a workout that was edited afterwards. -->
+    <string name="lifter_amended">amended</string>
+    <!-- Section header, then its rows. -->
+    <string name="lifter_manage_header">Manage profile</string>
+    <string name="lifter_manage_header__t">Manage folio</string>
+    <string name="lifter_mute_label">Mute</string>
+    <string name="lifter_mute_caption">Hides their workouts, comments and kudos. They aren\'t told.</string>
+    <string name="lifter_mute_caption__t">Hides their trials, remarks and tributes. They aren\'t told.</string>
+    <string name="lifter_remove_ally_label">Remove friend</string>
+    <string name="lifter_remove_ally_label__t">Remove ally</string>
+    <!-- Row and confirm button of the block dialog. -->
+    <string name="lifter_block_label">Block</string>
+    <string name="lifter_report_label">Report</string>
+    <!-- Remove-friend dialog. %1$s is the person's display name. -->
+    <string name="lifter_remove_title">Remove %1$s as a friend?</string>
+    <string name="lifter_remove_title__t">Remove %1$s as an ally?</string>
+    <!-- Same title when the person has no display name. -->
+    <string name="lifter_remove_title_unnamed">Remove this lifter as a friend?</string>
+    <string name="lifter_remove_title_unnamed__t">Remove this Ironbound as an ally?</string>
+    <string name="lifter_remove_body">Their friends-only workouts leave your feed. Either of you can send a new request later.</string>
+    <string name="lifter_remove_body__t">Their allies-only trials leave your tidings. Either of you can send a new request later.</string>
+    <string name="lifter_remove_button">Remove</string>
+    <string name="lifter_keep_button">Keep</string>
+    <!-- Block dialog. %1$s is the person's display name. -->
+    <string name="lifter_block_title">Block %1$s?</string>
+    <!-- Same title when the person has no display name. -->
+    <string name="lifter_block_title_unnamed">Block this lifter?</string>
+    <string name="lifter_block_title_unnamed__t">Block this Ironbound?</string>
+    <!-- %1$s is the person's display name. The last words name the tab where blocks are undone. -->
+    <string name="lifter_block_body">You and %1$s will no longer see each other\'s workouts, comments or kudos, any alliance ends, and neither of you can send a friend request. Unblock any time under Friends.</string>
+    <string name="lifter_block_body__t">You and %1$s will no longer see each other\'s trials, remarks or tributes, any alliance ends, and neither of you can send an ally request. Unblock any time under Allies.</string>
+    <!-- Same text when the person has no display name. -->
+    <string name="lifter_block_body_unnamed">You and this lifter will no longer see each other\'s workouts, comments or kudos, any alliance ends, and neither of you can send a friend request. Unblock any time under Friends.</string>
+    <string name="lifter_block_body_unnamed__t">You and this Ironbound will no longer see each other\'s trials, remarks or tributes, any alliance ends, and neither of you can send an ally request. Unblock any time under Allies.</string>
 </resources>

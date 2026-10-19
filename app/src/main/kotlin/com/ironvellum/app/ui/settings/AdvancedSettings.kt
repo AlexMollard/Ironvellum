@@ -312,9 +312,9 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                 if (plan != null) {
                     val signed = { n: Long -> (if (n > 0) "+" else "") + n }
                     val held = if (plan.clamped) " " + stringResource(R.string.settings_advanced_dev_held) else ""
-                    val due = if (plan.inscriptionsDue > 0) ", " + stringResource(R.string.settings_advanced_dev_inscriptions_due, plan.inscriptionsDue) else ""
+                    val due = if (plan.inscriptionsDue > 0) ", " + UiText.plural(R.plurals.settings_advanced_dev_inscriptions_due, plan.inscriptionsDue).asString() else ""
                     Text(
-                        UiText.themed(R.string.settings_advanced_dev_changed, R.string.settings_advanced_dev_changed__t, changed.size, plan.changes.size).asString() + "\n" +
+                        UiText.themedPlural(R.plurals.settings_advanced_dev_changed, R.plurals.settings_advanced_dev_changed__t, plan.changes.size, changed.size, plan.changes.size).asString() + "\n" +
                             UiText.themed(R.string.settings_advanced_dev_xp_line, R.string.settings_advanced_dev_xp_line__t, signed(plan.delta), plan.totalBefore, plan.totalAfter, signed(plan.applied)).asString() + "\n" +
                             stringResource(R.string.settings_advanced_dev_level, plan.levelBefore, plan.levelAfter, held + due),
                         style = MaterialTheme.typography.bodyMedium,

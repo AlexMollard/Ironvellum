@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import kotlin.math.max
 
 /**
@@ -351,7 +353,7 @@ object Easing {
                 sets = from.sets,
                 reps = fill?.reps ?: from.reps,
                 targetWeightKg = fill?.kg,
-                why = "Eases the load: stands in for the ${from.exerciseName.lowercase()} with less on the heavy muscle",
+                why = Words.text(UiText.res(R.string.program_extra_eases_load, from.exerciseName.lowercase())),
                 loadNote = fill?.note,
             ),
             request.volume, request.focus,

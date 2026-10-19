@@ -1,6 +1,10 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -63,7 +67,6 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.TapRow
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -72,7 +75,6 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import java.text.DateFormat
 import java.util.Date
-import com.ironvellum.app.domain.fmt
 
 /**
  * Everything about the account that is not social: name, visibility, cloud
@@ -119,10 +121,10 @@ fun AccountSettingsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        PushedHeader("ACCOUNT", onBack)
+        PushedHeader(stringResource(R.string.acct_title_upper), onBack)
 
-        SettingsGroup("PROFILE", rows = true) {
-            TapRow(onClickLabel = "Edit ${Words.trueName.s}", onClick = { editingName = true }) {
+        SettingsGroup(stringResource(R.string.acct_section_profile), rows = true) {
+            TapRow(onClickLabel = UiText.themed(R.string.acct_edit_name_description, R.string.acct_edit_name_description__t).asString(), onClick = { editingName = true }) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         acct.displayName,
@@ -140,7 +142,7 @@ fun AccountSettingsScreen(
                     )
                 }
                 Text(
-                    "Edit",
+                    stringResource(R.string.acct_edit_button),
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
@@ -153,16 +155,20 @@ fun AccountSettingsScreen(
                 Spacer(Modifier.height(12.dp))
                 // Wire values stay public/friends/private; only the labels differ.
                 InkSegmented(
-                    options = listOf("public" to "Public", "friends" to "${Words.ally.cpl} only", "private" to "Private"),
+                    options = listOf(
+                        "public" to stringResource(R.string.acct_visibility_public),
+                        "friends" to UiText.themed(R.string.acct_visibility_friends, R.string.acct_visibility_friends__t).asString(),
+                        "private" to stringResource(R.string.acct_visibility_private),
+                    ),
                     selected = acct.visibility,
                     onPick = viewModel::setVisibility,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     when (acct.visibility) {
-                        "public" -> "Every ${Words.lifter.t} can read your ${Words.trial.pl}."
-                        "friends" -> "Only your ${Words.ally.pl} can read your ${Words.trial.pl}."
-                        else -> "No one but you can read your ${Words.trial.pl}."
+                        "public" -> UiText.themed(R.string.acct_visibility_public_caption, R.string.acct_visibility_public_caption__t).asString()
+                        "friends" -> UiText.themed(R.string.acct_visibility_friends_caption, R.string.acct_visibility_friends_caption__t).asString()
+                        else -> UiText.themed(R.string.acct_visibility_private_caption, R.string.acct_visibility_private_caption__t).asString()
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
@@ -192,9 +198,9 @@ fun AccountSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("${Words.ally.c} activity", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                    Text(UiText.themed(R.string.acct_alerts_label, R.string.acct_alerts_label__t).asString(), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
                     Text(
-                        "Requests, ${Words.remark.pl} and ${Words.tribute.pl}",
+                        UiText.themed(R.string.acct_alerts_caption, R.string.acct_alerts_caption__t).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -219,25 +225,20 @@ fun AccountSettingsScreen(
                 NotificationBlockedNotice(
                     channelId = Notifications.CHANNEL_ALLIES,
                     access = allyAccess,
-                    blockedText = "${Words.ally.c} activity won't arrive until you allow notifications.",
+                    blockedText = UiText.themed(R.string.acct_alerts_blocked, R.string.acct_alerts_blocked__t).asString(),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
 
-        SettingsGroup("CLOUD", rows = true) {
+        SettingsGroup(stringResource(R.string.acct_section_cloud), rows = true) {
             val outcome = ui.lastSync
             ActionRow(
-                label = "Sync",
+                label = stringResource(R.string.acct_sync_label),
                 subline = if (outcome == null) {
-                    "Uploads after each ${Words.trial.s}"
+                    UiText.themed(R.string.acct_sync_caption, R.string.acct_sync_caption__t).asString()
                 } else {
-                    buildString {
-                        append("Pushed ${outcome.sessions} ${plural(outcome.sessions, Words.trial.s, Words.trial.pl)} · ")
-                        append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                        append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                        if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                    }
+                    syncSummary(false, outcome.sessions, outcome.sets, outcome.titles, outcome.problems.size)
                 },
                 enabled = !ui.busy,
                 onClick = viewModel::syncNow,
@@ -257,10 +258,10 @@ fun AccountSettingsScreen(
             // Freshness must be visible without tapping anything: a lifter has
             // to tell at a glance whether they are protected.
             ActionRow(
-                label = "Back up",
+                label = stringResource(R.string.acct_backup_label),
                 subline = ui.lastBackup?.let {
                     DateFormat.getDateTimeInstance().format(Date(it.atMs)) + " · " + formatBytes(it.bytes)
-                } ?: "No backup yet",
+                } ?: stringResource(R.string.acct_backup_none),
                 enabled = !ui.busy,
                 onClick = viewModel::backUpNow,
             )
@@ -282,16 +283,14 @@ fun AccountSettingsScreen(
             if (confirmRestore) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        "This replaces EVERYTHING logged on this phone — ${Words.trial.pl}, " +
-                            "titles, ${Words.technique.pl} and ${Words.reading.pl} — with the cloud " +
-                            "archive. Anything not in that archive is lost for good.",
+                        UiText.themed(R.string.acct_restore_warning, R.string.acct_restore_warning__t).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.DangerRed,
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         IronvellumButton(
-                            label = "Replace my data",
+                            label = stringResource(R.string.acct_restore_confirm_button),
                             onClick = {
                                 confirmRestore = false
                                 viewModel.restoreFromCloud()
@@ -301,7 +300,7 @@ fun AccountSettingsScreen(
                             danger = true,
                         )
                         IronvellumButton(
-                            label = "Keep mine",
+                            label = stringResource(R.string.acct_restore_keep_button),
                             onClick = { confirmRestore = false },
                             enabled = !ui.busy,
                             quiet = true,
@@ -309,16 +308,11 @@ fun AccountSettingsScreen(
                     }
                 }
             } else {
-                ActionRow(label = "Restore from the cloud", onClick = { confirmRestore = true })
+                ActionRow(label = stringResource(R.string.acct_restore_label), onClick = { confirmRestore = true })
             }
             ui.lastRestore?.let { outcome ->
                 Text(
-                    buildString {
-                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, Words.trial.s, Words.trial.pl)} · ")
-                        append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                        append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                        if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                    },
+                    syncSummary(true, outcome.sessions, outcome.sets, outcome.titles, outcome.problems.size),
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -327,14 +321,14 @@ fun AccountSettingsScreen(
             }
         }
 
-        SettingsGroup("PRIVACY", rows = true) {
+        SettingsGroup(stringResource(R.string.acct_section_privacy), rows = true) {
             var showBlocked by remember { mutableStateOf(false) }
             TapRow(
-                onClickLabel = if (showBlocked) "Hide blocked ${Words.lifter.t}" else "Show blocked ${Words.lifter.t}",
+                onClickLabel = if (showBlocked) UiText.themed(R.string.acct_blocked_hide_description, R.string.acct_blocked_hide_description__t).asString() else UiText.themed(R.string.acct_blocked_show_description, R.string.acct_blocked_show_description__t).asString(),
                 onClick = { showBlocked = !showBlocked },
             ) {
                 Text(
-                    "Blocked ${Words.lifter.t}",
+                    UiText.themed(R.string.acct_blocked_label, R.string.acct_blocked_label__t).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
@@ -356,7 +350,7 @@ fun AccountSettingsScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "${Words.reading.cpl} and private notes never leave this device.",
+                    UiText.themed(R.string.acct_private_note, R.string.acct_private_note__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -368,7 +362,7 @@ fun AccountSettingsScreen(
         // only other way out was to ask someone with database access.
         SettingsGroup(null, rows = true) {
             ActionRow(
-                label = "Sign out",
+                label = stringResource(R.string.acct_signout_label),
                 enabled = !ui.busy,
                 onClick = { confirmSignOut = true },
             )
@@ -376,16 +370,14 @@ fun AccountSettingsScreen(
             if (confirmDelete) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        "This deletes your account, ${Words.folio.s}, synced ${Words.trial.pl}, titles, ${Words.ally.pl} " +
-                            "and cloud backup for good, and signs you out. Training on this " +
-                            "phone stays on this phone.",
+                        UiText.themed(R.string.acct_delete_warning, R.string.acct_delete_warning__t).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.DangerRed,
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         IronvellumButton(
-                            label = "Delete account",
+                            label = stringResource(R.string.acct_delete_confirm_button),
                             onClick = {
                                 confirmDelete = false
                                 InboxNotifier.reset(context)
@@ -396,7 +388,7 @@ fun AccountSettingsScreen(
                             danger = true,
                         )
                         IronvellumButton(
-                            label = "Keep it",
+                            label = stringResource(R.string.acct_delete_keep_button),
                             onClick = { confirmDelete = false },
                             enabled = !ui.busy,
                             quiet = true,
@@ -405,8 +397,8 @@ fun AccountSettingsScreen(
                 }
             } else {
                 ActionRow(
-                    label = "Delete my cloud account",
-                    subline = "Deletes your cloud account and everything synced. Your on-device training is untouched.",
+                    label = stringResource(R.string.acct_delete_label),
+                    subline = stringResource(R.string.acct_delete_caption),
                     labelColor = IronvellumColors.DangerRed,
                     enabled = !ui.busy,
                     onClick = { confirmDelete = true },
@@ -416,11 +408,11 @@ fun AccountSettingsScreen(
         if (confirmSignOut) {
             IronvellumDialog(
                 onDismissRequest = { confirmSignOut = false },
-                title = { Text("Sign out?") },
-                text = { Text("Your training stays on this phone. Sign back in to sync it again.") },
+                title = { Text(stringResource(R.string.acct_signout_dialog_title)) },
+                text = { Text(stringResource(R.string.acct_signout_dialog_text)) },
                 confirmButton = {
                     IronvellumButton(
-                        label = "Sign out",
+                        label = stringResource(R.string.acct_signout_label),
                         onClick = {
                             confirmSignOut = false
                             // The next lifter must not inherit this one's notification or mark.
@@ -430,7 +422,7 @@ fun AccountSettingsScreen(
                     )
                 },
                 dismissButton = {
-                    IronvellumButton(label = "Cancel", onClick = { confirmSignOut = false }, quiet = true)
+                    IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { confirmSignOut = false }, quiet = true)
                 },
             )
         }
@@ -524,12 +516,12 @@ private fun EditNameDialog(
                     colors = ironvellumFieldColors(),
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("${Words.trueName.c} (2–24)") },
+                    label = { Text(UiText.themed(R.string.acct_claim_field_label, R.string.acct_claim_field_label__t).asString()) },
                     singleLine = true,
                     enabled = !busy,
                     isError = name.isNotBlank() && !valid,
                     supportingText = {
-                        if (name.isNotBlank() && !valid) Text("2–24 characters, letters and numbers")
+                        if (name.isNotBlank() && !valid) Text(stringResource(R.string.acct_name_rule))
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -546,7 +538,7 @@ private fun EditNameDialog(
         },
         confirmButton = {
             IronvellumButton(
-                label = "Save",
+                label = stringResource(R.string.common_save),
                 onClick = {
                     submitted = true
                     onSave(cleaned)
@@ -555,7 +547,7 @@ private fun EditNameDialog(
             )
         },
         dismissButton = {
-            IronvellumButton(label = "Cancel", onClick = onDismiss, enabled = !busy, quiet = true)
+            IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, enabled = !busy, quiet = true)
         },
     )
 }
@@ -568,7 +560,7 @@ private fun EditNameDialog(
 private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Unit) {
     if (blocked.isEmpty()) {
         Text(
-            "Nobody blocked. Block ${Words.lifter.at} from their ${Words.folio.s}.",
+            UiText.themed(R.string.acct_blocked_empty, R.string.acct_blocked_empty__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 4.dp),
@@ -581,18 +573,36 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                lifter.displayName.ifBlank { "Hidden ${Words.lifter.t}" },
+                lifter.displayName.ifBlank { UiText.themed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t).asString() },
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            IronvellumButton(label = "Unblock", onClick = { onUnblock(lifter.userId) }, quiet = true)
+            IronvellumButton(label = stringResource(R.string.acct_unblock_button), onClick = { onUnblock(lifter.userId) }, quiet = true)
         }
     }
 }
 
 /** Bytes to a short human label for the backup-freshness line. */
 private fun formatBytes(bytes: Int): String =
-    if (bytes < 1024) "$bytes B" else "%.1f KB".fmt(bytes / 1024f)
+    if (bytes < 1024) Words.text(UiText.res(R.string.acct_size_bytes, bytes))
+    else Words.text(UiText.res(R.string.acct_size_kb, bytes / 1024f))
+
+/** "Pushed 3 workouts · 12 sets · 2 titles · 1 skipped": the result line under Sync and under Restore. */
+@Composable
+private fun syncSummary(restored: Boolean, sessions: Int, sets: Int, titles: Int, problems: Int): String {
+    val head = if (restored) {
+        UiText.themedPlural(R.plurals.acct_sync_restored, R.plurals.acct_sync_restored__t, sessions)
+    } else {
+        UiText.themedPlural(R.plurals.acct_sync_pushed, R.plurals.acct_sync_pushed__t, sessions)
+    }
+    val parts = mutableListOf(
+        head.asString(),
+        UiText.plural(R.plurals.common_sets_count, sets).asString(),
+        UiText.plural(R.plurals.acct_titles_count, titles).asString(),
+    )
+    if (problems > 0) parts += UiText.plural(R.plurals.acct_sync_skipped, problems).asString()
+    return parts.joinToString(" · ")
+}

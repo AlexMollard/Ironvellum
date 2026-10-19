@@ -12,11 +12,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.RelicHouses
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -30,45 +34,44 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun HousesSheet(onDismiss: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Relic houses") },
+        title = { Text(stringResource(R.string.idle_houses_title)) },
         text = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(
-                    "Every relic lifts your whole essence rate, and the strongest counts most. " +
-                        "A house follows one habit and adds set bonuses that pay while you keep it.",
+                    stringResource(R.string.idle_houses_intro),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                 )
                 RelicHouse.entries.forEach { house ->
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text("${house.title} · ${house.habit}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
-                        Text("Follows ${house.follows}.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-                        Text("${RelicHouses.PAIR} relics: ${house.pairBonus}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink)
-                        Text("${RelicHouses.FULL} relics: ${house.fullBonus}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink)
+                        Text(stringResource(R.string.idle_houses_follows, house.follows), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                        Text(UiText.plural(R.plurals.idle_houses_set_bonus, RelicHouses.PAIR, RelicHouses.PAIR, house.pairBonus).asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink)
+                        Text(UiText.plural(R.plurals.idle_houses_set_bonus, RelicHouses.FULL, RelicHouses.FULL, house.fullBonus).asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink)
                     }
                 }
                 Text(
-                    "Bonuses only touch your essence rate. They never change your level, XP, strength or titles. " +
-                        "Relics come from levels and from essence you earned by training.",
+                    stringResource(R.string.idle_houses_footer),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
         },
-        confirmButton = { IronvellumButton("Got it", onClick = onDismiss) },
+        confirmButton = { IronvellumButton(stringResource(R.string.idle_got_it_button), onClick = onDismiss) },
     )
 }
 
 /** The quiet link that opens the houses sheet, on a 48dp target. */
 @Composable
 internal fun HousesLink(onClick: () -> Unit) {
+    val openLabel = stringResource(R.string.idle_houses_link_description)
     Text(
-        "How houses work",
+        stringResource(R.string.idle_houses_link),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.SystemGreen,
         modifier = Modifier
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Open how houses work", onClick = onClick)
+            .clickable(role = Role.Button, onClickLabel = openLabel, onClick = onClick)
             .padding(horizontal = 4.dp)
             .wrapContentHeight(Alignment.CenterVertically),
     )

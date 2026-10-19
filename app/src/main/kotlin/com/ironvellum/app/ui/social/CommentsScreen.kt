@@ -1,7 +1,12 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -130,7 +135,7 @@ internal class CommentsViewModel(
     /** A reaction call in flight: a second pick before it answers would roll back to a state that is already stale. */
     private var reacting = false
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.comments_unknown_failure))
 
     init {
         viewModelScope.launch {
@@ -213,7 +218,7 @@ internal class CommentsViewModel(
         if (reacting) return
         val before = current.likers
         if (before?.firstOrNull { it.userId == me }?.reaction == reaction) return
-        val name = accountRepo.account.value?.displayName ?: "You"
+        val name = accountRepo.account.value?.displayName ?: Words.text(UiText.res(R.string.comments_you))
         reacting = true
         val others = before.orEmpty().filter { it.userId != me }
         _ui.value = current.copy(
@@ -276,7 +281,7 @@ internal class CommentsViewModel(
                 sessionId = sessionId,
                 commentId = comment.id,
             )
-                .onSuccess { _ui.value = _ui.value.copy(notice = "Report sent — thanks.") }
+                .onSuccess { _ui.value = _ui.value.copy(notice = Words.text(UiText.res(R.string.comments_report_sent))) }
                 .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
         }
     }
@@ -342,11 +347,11 @@ internal fun CommentsScreen(
                 )
             }
             ui.workout?.let { workout ->
-                item(key = "work-header") { SectionHeader("THE WORK") }
+                item(key = "work-header") { SectionHeader(stringResource(R.string.comments_work_header)) }
                 if (workout.exercises.isEmpty()) {
                     item(key = "work-empty") {
                         Text(
-                            "No sets were shared with this ${Words.trial.s}.",
+                            UiText.themed(R.string.comments_work_empty, R.string.comments_work_empty__t).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -369,7 +374,7 @@ internal fun CommentsScreen(
                 ui.loading && ui.comments.isEmpty() -> item(key = "comments-loading") {
                     InkPanel(Modifier.fillMaxWidth()) {
                         Text(
-                            "${Words.reads.c} the thread…",
+                            UiText.themed(R.string.comments_thread_loading, R.string.comments_thread_loading__t).asString(),
                             style = MaterialTheme.typography.bodyMedium,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -384,13 +389,13 @@ internal fun CommentsScreen(
                             color = IronvellumColors.InkMuted,
                         )
                         Spacer(Modifier.height(6.dp))
-                        SocialRefreshLink(onClick = { viewModel.load(force = true) }, label = "Try again")
+                        SocialRefreshLink(onClick = { viewModel.load(force = true) }, label = stringResource(R.string.comments_try_again))
                     }
                 }
                 ui.comments.isEmpty() -> item(key = "comments-empty") {
                     InkPanel(Modifier.fillMaxWidth()) {
                         Text(
-                            "No ${Words.remark.pl} yet — say something first.",
+                            UiText.themed(R.string.comments_empty, R.string.comments_empty__t).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -440,7 +445,7 @@ internal fun CommentsScreen(
                 modifier = Modifier.weight(1f),
             )
             IronvellumButton(
-                label = if (ui.sending) "Sending…" else "Send",
+                label = stringResource(if (ui.sending) R.string.comments_sending_button else R.string.comments_send_button),
                 onClick = viewModel::send,
                 enabled = ui.draft.isNotBlank() && !ui.sending && ui.myUserId != null,
             )
@@ -457,16 +462,16 @@ internal fun CommentsScreen(
     confirmDelete?.let { comment ->
         IronvellumDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete this ${Words.remark.s}?") },
-            text = { Text("It disappears for everyone. This can't be undone.") },
+            title = { Text(UiText.themed(R.string.comments_delete_title, R.string.comments_delete_title__t).asString()) },
+            text = { Text(stringResource(R.string.comments_delete_body)) },
             confirmButton = {
-                IronvellumButton(label = "Delete", onClick = {
+                IronvellumButton(label = stringResource(R.string.comments_delete_button), onClick = {
                     confirmDelete = null
                     viewModel.delete(comment)
                 }, danger = true)
             },
             dismissButton = {
-                IronvellumButton(label = "Keep", onClick = { confirmDelete = null }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.comments_keep_button), onClick = { confirmDelete = null }, quiet = true)
             },
         )
     }
@@ -530,10 +535,10 @@ private fun WorkoutHeaderPanel(
                 val done = workout.exercises.flatMap { it.sets }.filter { it.done }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    WorkoutStat("${done.size}", "SETS")
-                    WorkoutStat("${done.filter { it.countsReps() }.sumOf { it.reps }}", "REPS")
-                    WorkoutStat("+${workout.xpAwarded}", "XP", IronvellumColors.Emerald)
-                    WorkoutStat("${workout.strengthScore}", "STR", IronvellumColors.SovereignGold)
+                    WorkoutStat("${done.size}", stringResource(R.string.comments_stat_sets))
+                    WorkoutStat("${done.filter { it.countsReps() }.sumOf { it.reps }}", stringResource(R.string.comments_stat_reps))
+                    WorkoutStat("+${workout.xpAwarded}", stringResource(R.string.comments_stat_xp), IronvellumColors.Emerald)
+                    WorkoutStat("${workout.strengthScore}", stringResource(R.string.comments_stat_strength), IronvellumColors.SovereignGold)
                 }
                 if (workout.note.isNotBlank()) {
                     Spacer(Modifier.height(10.dp))
@@ -548,12 +553,12 @@ private fun WorkoutHeaderPanel(
                 Spacer(Modifier.height(10.dp))
                 SocialErrorBanner(ui.workoutError)
                 Spacer(Modifier.height(4.dp))
-                SocialRefreshLink(onClick = onRetry, label = "Try again")
+                SocialRefreshLink(onClick = onRetry, label = stringResource(R.string.comments_try_again))
             }
             else -> {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Opening the ${Words.trial.s}…",
+                    UiText.themed(R.string.comments_workout_loading, R.string.comments_workout_loading__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -602,7 +607,7 @@ internal fun AllySet.figure(): String {
             (seconds?.let { " · ${it}s" }.orEmpty())
         !grade.isNullOrBlank() -> "$reps × $grade"
         seconds != null -> "${seconds}s" + (load?.let { " × $it" }.orEmpty())
-        else -> "$reps × ${load ?: "BW"}"
+        else -> "$reps × ${load ?: Loads.bodyweight()}"
     }
 }
 
@@ -626,7 +631,8 @@ private fun ExercisePanel(exercise: AllyExercise) {
                 modifier = Modifier.weight(1f, fill = false),
             )
             Text(
-                "${done.size} sets" + if (reps > 0) " · $reps reps" else "",
+                UiText.plural(R.plurals.common_sets_count, done.size).asString() +
+                    if (reps > 0) " · " + UiText.plural(R.plurals.common_reps_count, reps).asString() else "",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -702,7 +708,7 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
         ui.reactionError?.let {
             Spacer(Modifier.height(6.dp))
             Text(
-                "${Words.tribute.c} not saved: $it",
+                UiText.themed(R.string.comments_reaction_error, R.string.comments_reaction_error__t, it).asString(),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,
@@ -713,22 +719,22 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
             likers == null && ui.likersError != null -> {
                 SocialErrorBanner(ui.likersError)
                 Spacer(Modifier.height(4.dp))
-                SocialRefreshLink(onClick = onRetry, label = "Try again")
+                SocialRefreshLink(onClick = onRetry, label = stringResource(R.string.comments_try_again))
             }
             likers == null -> Text(
-                "${Words.reads.c} the ${Words.tribute.pl}…",
+                UiText.themed(R.string.comments_reactions_loading, R.string.comments_reactions_loading__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
             )
             likers.isEmpty() -> Text(
-                "No ${Words.tribute.pl} yet.",
+                UiText.themed(R.string.comments_reactions_empty, R.string.comments_reactions_empty__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             else -> {
                 Text(
-                    "WHO PAID ${Words.tribute.u}",
+                    UiText.themed(R.string.comments_reactions_who, R.string.comments_reactions_who__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.EmeraldBright,
@@ -796,7 +802,7 @@ private fun CommentRow(
                     .weight(1f, fill = false)
                     .heightIn(min = 48.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClickLabel = "Open ${Words.folio.s}") { onOpenLifter() }
+                    .clickable(role = Role.Button, onClickLabel = UiText.themed(R.string.comments_open_profile_label, R.string.comments_open_profile_label__t).asString()) { onOpenLifter() }
                     .wrapContentHeight(),
             )
             Text(
@@ -807,8 +813,8 @@ private fun CommentRow(
                 maxLines = 1,
                 modifier = Modifier.weight(1f),
             )
-            if (canReport) RowAction("Report", IronvellumColors.SystemGreen, onClick = onReport)
-            if (canDelete) RowAction("Delete", IronvellumColors.DangerRed, onClick = onDelete)
+            if (canReport) RowAction(stringResource(R.string.comments_report_button), IronvellumColors.SystemGreen, onClick = onReport)
+            if (canDelete) RowAction(stringResource(R.string.comments_delete_button), IronvellumColors.DangerRed, onClick = onDelete)
         }
         Text(
             comment.body,
@@ -869,11 +875,19 @@ internal fun ReportDialog(
     var note by remember { mutableStateOf("") }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Report ${lifterName.ifBlank { "this ${Words.lifter.t}" }}") },
+        title = {
+            Text(
+                if (lifterName.isBlank()) {
+                    UiText.themed(R.string.comments_report_title_unnamed, R.string.comments_report_title_unnamed__t).asString()
+                } else {
+                    stringResource(R.string.comments_report_title, lifterName)
+                },
+            )
+        },
         text = {
             Column {
                 Text(
-                    "Only the Ironvellum owner sees reports. They aren't told who sent it.",
+                    stringResource(R.string.comments_report_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -900,7 +914,7 @@ internal fun ReportDialog(
                     colors = ironvellumFieldColors(),
                     value = note,
                     onValueChange = { note = it.take(WireLimits.REPORT_NOTE_MAX) },
-                    label = { Text("Note (optional)") },
+                    label = { Text(stringResource(R.string.comments_report_note_label)) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -915,20 +929,23 @@ internal fun ReportDialog(
         },
         confirmButton = {
             IronvellumButton(
-                label = "Send report",
+                label = stringResource(R.string.comments_report_send_button),
                 onClick = { reason?.let { onSend(it, note.trim()) } },
                 enabled = reason != null,
             )
         },
         dismissButton = {
-            IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true)
+            IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, quiet = true)
         },
     )
 }
 
-private fun ReportReason.label(): String = when (this) {
-    ReportReason.SPAM -> "SPAM"
-    ReportReason.ABUSE -> "ABUSE"
-    ReportReason.CHEATING -> "CHEATING"
-    ReportReason.OTHER -> "OTHER"
-}
+@Composable
+private fun ReportReason.label(): String = stringResource(
+    when (this) {
+        ReportReason.SPAM -> R.string.comments_report_reason_spam
+        ReportReason.ABUSE -> R.string.comments_report_reason_abuse
+        ReportReason.CHEATING -> R.string.comments_report_reason_cheating
+        ReportReason.OTHER -> R.string.comments_report_reason_other
+    },
+)

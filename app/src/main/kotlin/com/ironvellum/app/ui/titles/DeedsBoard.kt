@@ -291,7 +291,7 @@ private fun DeedsHome(
                         val held = defs.count { it.id in earnedIds }
                         if (i > 0) InkDivider()
                         val categoryDescription =
-                            UiText.res(R.string.always_deeds_category_description, c.name, c.blurb, held, defs.size).asString()
+                            UiText.plural(R.plurals.always_deeds_category_description, defs.size, c.name, c.blurb, held, defs.size).asString()
                         ListRow(
                             label = c.name,
                             value = UiText.res(R.string.deeds_category_count, held, defs.size).asString(),
@@ -337,7 +337,7 @@ private fun DeedsHome(
 private fun DeedsHeader(earned: Int, total: Int) {
     Column(Modifier.fillMaxWidth()) {
         Text(
-            UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
+            UiText.plural(R.plurals.deeds_earned_of_total, total, earned, total).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.semantics { heading() },
@@ -540,7 +540,7 @@ private fun CategoryScreen(
     val ladders = remember(category, Words.themed) { DeedLadders.ALL.filter { it.category == category } }
     val total = ladders.sumOf { it.rungs.size }
     val earned = ladders.sumOf { l -> l.rungs.count { it.id in earnedIds } }
-    val summaryDescription = UiText.res(R.string.always_deeds_category_summary, category, earned, total, blurb).asString()
+    val summaryDescription = UiText.plural(R.plurals.always_deeds_category_summary, total, category, earned, total, blurb).asString()
 
     val shown = remember(ladders, earnedIds, progressOf, range) {
         ladders
@@ -575,7 +575,7 @@ private fun CategoryScreen(
                         color = IronvellumColors.InkMuted,
                     )
                     Text(
-                        UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
+                        UiText.plural(R.plurals.deeds_earned_of_total, total, earned, total).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
                     )
@@ -641,7 +641,7 @@ private fun LadderCard(
     val progress = progressOf.getValue(target.id)
     val text = deedProgressText(target, progress, ledger, earned = next == null)
 
-    val heldSentence = UiText.res(R.string.always_deeds_ladder_held, held, ladder.rungs.size).asString()
+    val heldSentence = UiText.plural(R.plurals.always_deeds_ladder_held, ladder.rungs.size, held, ladder.rungs.size).asString()
     val nextSentence = if (next != null) UiText.res(R.string.deeds_ladder_next, next.name, next.rarity.label).asString() else ""
     val completeSentence = UiText.res(R.string.deeds_ladder_complete).asString()
     val sentence = buildString {
@@ -707,7 +707,7 @@ private fun LadderCard(
             } else {
                 val whenEarned = unlocked[target.id]?.let { formatDate(it, "d MMM yyyy") }
                 Text(
-                    if (series) UiText.res(R.string.always_deeds_ladder_all_earned, ladder.rungs.size).asString()
+                    if (series) UiText.plural(R.plurals.always_deeds_ladder_all_earned, ladder.rungs.size).asString()
                     else UiText.res(R.string.deeds_detail_earned, whenEarned.orEmpty()).asString().trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SovereignGold,
@@ -738,7 +738,7 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
         "${ladder.rungs[i].name} ${words[i]}"
     }
     val next = ladder.next(earnedIds) ?: ladder.rungs.last()
-    val description = UiText.res(R.string.always_deeds_rung_strip_description, count, summary).asString()
+    val description = UiText.plural(R.plurals.always_deeds_rung_strip_description, count, count, summary).asString()
     val openNextLabel = UiText.res(R.string.titles_open_description, next.name).asString()
     val openLabels = ladder.rungs.map { UiText.res(R.string.titles_open_description, it.name).asString() }
     Row(

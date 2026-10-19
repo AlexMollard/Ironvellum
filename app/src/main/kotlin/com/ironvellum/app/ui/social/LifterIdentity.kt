@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.components.CrestPlate
@@ -131,7 +133,7 @@ internal fun IdentityRow(
                 if (plain) {
                     // One muted line: no gold title, no separate "You" line.
                     val sub = listOfNotNull(
-                        "You".takeIf { isMe && size == IdentitySize.Card },
+                        stringResource(R.string.acct_you_label).takeIf { isMe && size == IdentitySize.Card },
                         wornTitle,
                         level?.takeIf { size == IdentitySize.Profile }?.let { "${ArmyClass.forLevel(it).title} $it" },
                     ).joinToString(" · ")
@@ -151,7 +153,7 @@ internal fun IdentityRow(
                 // Your own row says so in words, not in gold.
                 if (isMe && !plain) {
                     Text(
-                        "You",
+                        stringResource(R.string.acct_you_label),
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -161,7 +163,7 @@ internal fun IdentityRow(
             }
             if (level != null && size == IdentitySize.Card) {
                 Text(
-                    "Level $level",
+                    stringResource(R.string.xp_level_label, level),
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -195,7 +197,7 @@ private fun WornTitle(title: String, modifier: Modifier = Modifier) {
 @Composable
 private fun LevelChip(level: Int) {
     Text(
-        "LV $level",
+        stringResource(R.string.acct_level_chip, level),
         style = MaterialTheme.typography.labelSmall,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.Bold,

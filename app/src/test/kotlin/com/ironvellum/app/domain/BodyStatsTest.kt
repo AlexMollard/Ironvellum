@@ -46,8 +46,8 @@ class BodyStatsTest {
     fun `ffmi categories follow Kouri 1995 norms`() {
         assertEquals("Below average", BodyStats.ffmiCategory(17.9))
         assertEquals("Average (active male)", BodyStats.ffmiCategory(19.0))
-        assertEquals("Above average (1-3 yrs training)", BodyStats.ffmiCategory(20.9))
-        assertEquals("Excellent (3-5 yrs training)", BodyStats.ffmiCategory(22.5))
+        assertEquals("Above average (1–3 yrs training)", BodyStats.ffmiCategory(20.9))
+        assertEquals("Excellent (3–5 yrs training)", BodyStats.ffmiCategory(22.5))
         assertEquals("Approaching natural ceiling", BodyStats.ffmiCategory(24.0))
     }
 

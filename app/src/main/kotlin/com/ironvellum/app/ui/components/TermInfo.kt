@@ -27,6 +27,7 @@ import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Streak
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -67,11 +68,14 @@ enum class Term private constructor(
     RANKS(
         { uiString(R.string.terminfo_ranks_title) },
         {
-            uiPair(
-                R.string.terminfo_ranks_definition,
-                R.string.terminfo_ranks_definition__t,
-                Rank.WINDOW_DAYS,
-                ArmyClass.LADDER.joinToString(", ") { uiString(R.string.terminfo_ranks_ladder_item, it.title, it.level) },
+            Words.text(
+                UiText.themedPlural(
+                    R.plurals.terminfo_ranks_definition,
+                    R.plurals.terminfo_ranks_definition__t,
+                    Rank.WINDOW_DAYS,
+                    Rank.WINDOW_DAYS,
+                    ArmyClass.LADDER.joinToString(", ") { uiString(R.string.terminfo_ranks_ladder_item, it.title, it.level) },
+                ),
             )
         },
     ),
@@ -128,7 +132,7 @@ enum class Term private constructor(
     ),
     OATH(
         { Words.oath.c },
-        { uiPair(R.string.terminfo_oath_definition, R.string.terminfo_oath_definition__t, Streak.MAX_GAP_DAYS) },
+        { Words.text(UiText.themedPlural(R.plurals.terminfo_oath_definition, R.plurals.terminfo_oath_definition__t, Streak.MAX_GAP_DAYS.toInt(), Streak.MAX_GAP_DAYS)) },
     ),
     SEAL(
         { Words.seal.c },

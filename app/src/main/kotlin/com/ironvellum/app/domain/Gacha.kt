@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import java.util.Random
 
 /**
@@ -153,14 +155,14 @@ object Gacha {
      * a run of [PITY_AFTER] echo draws forces a relic or a crest, and [RELIC_PITY] draws without a relic
      * force one; otherwise how the first rule counts.
      */
-    fun pityLine(pity: Pity): String = when {
-        pity.guaranteeFirstRelic -> "Your first inscription is a relic."
-        pity.figureStreak >= PITY_AFTER ->
-            "Your last ${pity.figureStreak} draws were echoes, so this one is a relic or a crest."
-        pity.relicStreak >= RELIC_PITY - 1 ->
-            "It has been ${pity.relicStreak} draws since your last relic, so this one is a relic."
-        else -> "After $PITY_AFTER echo draws in a row, the next one is a relic or a crest."
-    }
+    fun pityLine(pity: Pity): String = Words.text(
+        when {
+            pity.guaranteeFirstRelic -> UiText.res(R.string.gacha_pity_first)
+            pity.figureStreak >= PITY_AFTER -> UiText.plural(R.plurals.gacha_pity_echo_run, pity.figureStreak)
+            pity.relicStreak >= RELIC_PITY - 1 -> UiText.plural(R.plurals.gacha_pity_relic_drought, pity.relicStreak)
+            else -> UiText.plural(R.plurals.gacha_pity_after, PITY_AFTER)
+        },
+    )
 
     /** [roll] driven by a [Pity] state, the one entry point the repository and the simulations share. */
     fun roll(

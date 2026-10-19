@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.components
 
 import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.animation.core.animateFloatAsState
@@ -127,10 +129,10 @@ fun InkTabs(
                 val selected = index == selectedIndex
                 val badge = badges.getOrElse(index) { 0 }
                 val state = if (badge > 0) {
-                    stringResource(
-                        if (selected) R.string.inktabs_state_selected_unread else R.string.inktabs_state_not_selected_unread,
-                        index + 1, labels.size, badge,
-                    )
+                    UiText.plural(
+                        if (selected) R.plurals.inktabs_state_selected_unread else R.plurals.inktabs_state_not_selected_unread,
+                        badge, index + 1, labels.size, badge,
+                    ).asString()
                 } else {
                     stringResource(
                         if (selected) R.string.inktabs_state_selected else R.string.inktabs_state_not_selected,

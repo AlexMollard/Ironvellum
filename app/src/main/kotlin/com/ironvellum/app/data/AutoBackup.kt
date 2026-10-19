@@ -3,6 +3,8 @@ package com.ironvellum.app.data
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
 import android.provider.DocumentsContract
 import androidx.core.content.edit
 import androidx.work.Constraints
@@ -41,7 +43,7 @@ object AutoBackup {
     private const val KEY_LAST_AT = "last_at"
     private const val KEY_LAST_ERROR = "last_error"
     private const val WORK_NAME = "ironvellum-auto-backup"
-    private const val LOST = "Access to the backup folder was lost. Choose the folder again."
+    private val LOST get() = Words.text(UiText.res(R.string.backup_folder_lost))
 
     private val lock = Mutex()
 
@@ -70,7 +72,7 @@ object AutoBackup {
         val p = prefs(context)
         val tree = folder(context) ?: return State(null, 0L, null)
         val error = if (hasAccess(context, tree)) p.getString(KEY_LAST_ERROR, null) else LOST
-        return State(p.getString(KEY_FOLDER_NAME, null) ?: "the chosen folder", p.getLong(KEY_LAST_AT, 0L), error)
+        return State(p.getString(KEY_FOLDER_NAME, null) ?: Words.text(UiText.res(R.string.backup_folder_fallback)), p.getLong(KEY_LAST_AT, 0L), error)
     }
 
     private fun publish(context: Context) {
@@ -133,7 +135,7 @@ object AutoBackup {
             runCatching {
                 val json = repo.exportJson()
                 withContext(Dispatchers.IO) { write(context, tree, json) }
-            }.exceptionOrNull()?.let { "The last backup failed: ${it.message ?: "the file could not be written"}" }
+            }.exceptionOrNull()?.let { Words.text(UiText.res(R.string.backup_last_failed, it.message ?: Words.text(UiText.res(R.string.backup_file_not_written)))) }
         }
         prefs(context).edit {
             if (failure == null) {

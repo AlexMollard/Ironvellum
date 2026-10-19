@@ -301,13 +301,13 @@ class Repository(
      */
     suspend fun syncHealthHistory(days: Int = 90): HealthSync.HistoryRead {
         val health = health ?: return HealthSync.HistoryRead(
-            problems = listOf("Health Connect not wired"),
+            problems = listOf(Words.text(UiText.res(R.string.health_not_wired))),
         )
         if (!health.available()) return HealthSync.HistoryRead(
-            problems = listOf("Health Connect unavailable"),
+            problems = listOf(Words.text(UiText.res(R.string.health_unavailable))),
         )
         val read = runCatching { health.readDailyHistory(days) }
-            .getOrElse { HealthSync.HistoryRead(problems = listOf("read failed: ${it.javaClass.simpleName}")) }
+            .getOrElse { HealthSync.HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_read_failed, it.javaClass.simpleName)))) }
         healthDayDao.purgeEmpty()
         if (read.days.isNotEmpty()) {
             healthDayDao.upsertAll(
@@ -3243,7 +3243,9 @@ class Repository(
                 // The import side reports every guess it makes; the export must
                 // be equally honest about rows it cannot carry.
                 exportProblems.add(
-                    "measurement with unknown site \"${e.site}\" (${e.valueCm} cm) left out of the archive",
+                    Words.text(
+                        UiText.themed(R.string.data_export_unknown_site, R.string.data_export_unknown_site__t, e.site, e.valueCm),
+                    ),
                 )
                 return@mapNotNull null
             }
@@ -3409,8 +3411,7 @@ class Repository(
                     exerciseIdByName[name.lowercase()] = newId
                     if (meta == null) {
                         problems.add(
-                            "exercise \"$name\" not in catalogue — created with guessed " +
-                                "muscleGroup=$guessedMuscleGroup and isWeighted=true",
+                            Words.text(UiText.res(R.string.data_import_exercise_guessed, name, guessedMuscleGroup)),
                         )
                     }
                     return newId
@@ -3431,7 +3432,15 @@ class Repository(
                         preset.entries.sortedBy { it.position }.mapNotNull { entry ->
                             val exerciseId = resolveExercise(entry.exerciseName)
                             if (exerciseId == null) {
-                                problems.add("${Words.rite.s} \"${preset.name}\" entry dropped: no exercise name")
+                                problems.add(
+                                    Words.text(
+                                        UiText.themed(
+                                            R.string.data_import_routine_entry_dropped,
+                                            R.string.data_import_routine_entry_dropped__t,
+                                            preset.name,
+                                        ),
+                                    ),
+                                )
                                 return@mapNotNull null
                             }
                             PresetEntryEntity(
@@ -3477,7 +3486,13 @@ class Repository(
                             val exerciseId = resolveExercise(s.exerciseName)
                             if (exerciseId == null) {
                                 problems.add(
-                                    "${Words.trial.s} \"${session.label}\" set dropped: no exercise name",
+                                    Words.text(
+                                        UiText.themed(
+                                            R.string.data_import_set_dropped,
+                                            R.string.data_import_set_dropped__t,
+                                            session.label,
+                                        ),
+                                    ),
                                 )
                                 return@mapNotNull null
                             }
@@ -3512,8 +3527,15 @@ class Repository(
                     // lose readings and still report a clean import.
                     if (!ok) {
                         problems.add(
-                            "${Words.reading.s} from ${Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate()} dropped: " +
-                                "${it.weightKg} kg / ${it.bodyFatPct ?: "-"}% outside plausible range",
+                            Words.text(
+                                UiText.themed(
+                                    R.string.data_import_stat_dropped,
+                                    R.string.data_import_stat_dropped__t,
+                                    Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate().toString(),
+                                    it.weightKg.toString(),
+                                    (it.bodyFatPct ?: "-").toString(),
+                                ),
+                            ),
                         )
                     }
                     ok

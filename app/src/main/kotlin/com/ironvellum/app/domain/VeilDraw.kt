@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -51,7 +52,10 @@ data class DrawChange(
         get() {
             val bonus = unlocked.lastOrNull() ?: return null
             val of = house ?: return null
-            return if (bonus.needed == RelicHouses.FULL) "${of.title} complete · ${bonus.summary}" else "Set bonus reached · ${bonus.summary}"
+            return Words.text(
+                if (bonus.needed == RelicHouses.FULL) UiText.res(R.string.veil_bonus_complete, of.title, bonus.summary)
+                else UiText.res(R.string.veil_bonus_reached, bonus.summary),
+            )
         }
 }
 
@@ -113,14 +117,17 @@ object VeilDraw {
         val reward = joined.result.reward
         val tab = if (reward is Reward.CrestFrame) CollectionTab.Crests else CollectionTab.Relics
         val name = joinedName(joined)
-        val line = name?.let { "$it joined your collection" } ?: when (reward) {
-            is Reward.Relic -> when (reward.outcome) {
-                RelicOutcome.Refined -> "${reward.name} was refined to ×${"%.2f".format(java.util.Locale.US, reward.multiplier)}"
-                else -> "${reward.name} paid ${echoWord(reward.echoes)}"
-            }
-            is Reward.Figures -> "${echoWord(reward.count)} added to ${Words.theVeil.t}"
-            is Reward.CrestFrame -> "${crestName(reward)} joined your collection"
-        }
+        val line = Words.text(
+            name?.let { UiText.res(R.string.veil_joined_collection, it) } ?: when (reward) {
+                is Reward.Relic -> when (reward.outcome) {
+                    RelicOutcome.Refined ->
+                        UiText.res(R.string.veil_relic_refined, reward.name, "%.2f".format(java.util.Locale.US, reward.multiplier))
+                    else -> UiText.res(R.string.veil_relic_paid_echoes, reward.name, echoText(reward.echoes))
+                }
+                is Reward.Figures -> UiText.res(R.string.always_veil_echoes_added, echoText(reward.count))
+                is Reward.CrestFrame -> UiText.res(R.string.veil_joined_collection, crestName(reward))
+            },
+        )
         return VeilLanding(
             line = line,
             tab = tab,
@@ -143,7 +150,7 @@ object VeilDraw {
 
     private fun crestName(crest: Reward.CrestFrame) = crest.name.replace(" Crest", " crest")
 
-    private fun echoWord(count: Int) = "$count ${if (count == 1) "echo" else "echoes"}"
+    private fun echoText(count: Int) = UiText.plural(R.plurals.celebration_echoes_count, count)
 }
 
 /** How long, in whole hours, until [short] more essence has gathered at [perHour]; null when nothing is gathering. */

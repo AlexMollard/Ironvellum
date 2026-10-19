@@ -14,8 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.CrestEffects
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.Veil
@@ -50,30 +52,30 @@ internal fun VeilBuySheet(
     val shares = remember(ownedFrames) { Gacha.typeShares(ownedFrames) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Buy an inscription") },
+        title = { Text(stringResource(R.string.idle_buy_title)) },
         text = {
             Column {
-                Text("It is drawn as soon as you buy it.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.idle_buy_intro), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 Column(Modifier.padding(top = 10.dp)) {
                     InkDivider()
-                    SheetRow("Price", "%,d essence".fmt(cost), strong = true)
+                    SheetRow(stringResource(R.string.idle_buy_price_label), stringResource(R.string.idle_buy_price_value, cost), strong = true)
                     InkDivider()
-                    SheetRow("You have", "%,d".fmt(essence))
+                    SheetRow(stringResource(R.string.idle_buy_have_label), "%,d".fmt(essence))
                     InkDivider()
-                    SheetRow("After buying", "%,d".fmt((essence - cost).coerceAtLeast(0L)))
+                    SheetRow(stringResource(R.string.idle_buy_after_label), "%,d".fmt((essence - cost).coerceAtLeast(0L)))
                     InkDivider()
                 }
                 Text(
-                    "The next one costs ${"%,d".fmt(nextCost)}. Each one you buy adds ${crest.offeringStep}.",
+                    stringResource(R.string.idle_buy_next_cost, "%,d".fmt(nextCost), crest.offeringStep),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 8.dp),
                 )
-                SectionHeader("What a draw can give", topPadding = 16.dp)
+                SectionHeader(stringResource(R.string.idle_buy_gives_header), topPadding = 16.dp)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Share("Echoes", shares.echoes, Modifier.weight(1f))
-                    Share("Relic", shares.relic, Modifier.weight(1f))
-                    Share("Crest", shares.crest, Modifier.weight(1f))
+                    Share(stringResource(R.string.idle_buy_share_echoes), shares.echoes, Modifier.weight(1f))
+                    Share(stringResource(R.string.idle_buy_share_relic), shares.relic, Modifier.weight(1f))
+                    Share(stringResource(R.string.idle_buy_share_crest), shares.crest, Modifier.weight(1f))
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Gacha.DROP_TABLE.forEach { odds ->
@@ -90,7 +92,7 @@ internal fun VeilBuySheet(
                     "%,d–%,d".fmt(range.first, range.last)
                 }
                 Text(
-                    "An echo draw pays $echoes, by rarity.",
+                    stringResource(R.string.idle_buy_echo_pays, echoes),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 10.dp),
@@ -103,8 +105,8 @@ internal fun VeilBuySheet(
                 )
             }
         },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss) },
-        confirmButton = { IronvellumButton(label = "Buy and inscribe", onClick = onConfirm, enabled = essence >= cost) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss) },
+        confirmButton = { IronvellumButton(label = stringResource(R.string.idle_buy_confirm_button), onClick = onConfirm, enabled = essence >= cost) },
     )
 }
 

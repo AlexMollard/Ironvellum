@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,11 +46,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.CollectionTab
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.HouseProgress
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.Veil
@@ -63,6 +66,7 @@ import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.UnheldEdge
 import com.ironvellum.app.ui.components.UnheldGround
 import com.ironvellum.app.ui.components.rarityWord
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.dashboard.rememberTodayMotion
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -107,10 +111,10 @@ class CollectionViewModel(private val repo: Repository) : ViewModel() {
     ) { crests, deeds, level -> crests.copy(deeds = deeds, level = level) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CrestUi())
 
-    private val _notice = MutableStateFlow<String?>(null)
+    private val _notice = MutableStateFlow<UiText?>(null)
 
     /** What the last attempt to wear a crest said, when it did not work. */
-    val notice: StateFlow<String?> = _notice.asStateFlow()
+    val notice: StateFlow<UiText?> = _notice.asStateFlow()
 
     init {
         // The deed crests show their deed's progress. The ledger is read when the crests change (a deed
@@ -128,8 +132,8 @@ class CollectionViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch {
             _notice.value = when (repo.equipFrame(frameId)) {
                 Crests.Equip.Worn -> { onWorn(); null }
-                Crests.Equip.TooSoon -> "You changed your crest today. Come back tomorrow."
-                Crests.Equip.NotOwned -> "That crest is not yours yet."
+                Crests.Equip.TooSoon -> UiText.res(R.string.idle_crest_changed_today)
+                Crests.Equip.NotOwned -> UiText.res(R.string.idle_crest_not_owned)
             }
         }
     }
@@ -180,11 +184,11 @@ fun CollectionScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("Collection", onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
+        PushedHeader(stringResource(R.string.idle_collection_title), onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
         InkTabs(
             labels = listOf(
-                "Relics ${vault?.ownedCount ?: 0} of ${vault?.total ?: 16}",
-                "Crests ${crests.owned.size} of ${Crests.ALL.size}",
+                stringResource(R.string.idle_collection_tab_relics, vault?.ownedCount ?: 0, vault?.total ?: 16),
+                stringResource(R.string.idle_collection_tab_crests, crests.owned.size, Crests.ALL.size),
             ),
             selectedIndex = tab,
             onSelect = { tab = it },
@@ -211,7 +215,7 @@ fun CollectionScreen(
 @Composable
 private fun RelicsPage(vault: VaultState?, animate: Boolean, onShowHouses: () -> Unit) {
     Text(
-        "The strongest relic counts most. A house adds bonuses for holding several of its relics.",
+        stringResource(R.string.idle_collection_relics_intro),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp),
@@ -235,7 +239,7 @@ private fun HouseBlock(house: HouseProgress, animate: Boolean) {
             color = IronvellumColors.Ink,
             modifier = Modifier.weight(1f),
         )
-        Text("${house.owned} of ${house.size}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        Text(stringResource(R.string.idle_collection_house_owned, house.owned, house.size), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         house.slots.forEach { slot -> RelicTile(slot, animate, Modifier.weight(1f)) }
@@ -247,18 +251,18 @@ private fun HouseBlock(house: HouseProgress, animate: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (bonus.reached) {
-                Icon(Icons.Filled.Check, contentDescription = "Reached", tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
+                Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.idle_collection_reached_description), tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
             } else {
                 Text("·", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.size(14.dp))
             }
             Text(
-                "${bonus.needed} relics · ${bonus.summary}",
+                UiText.plural(R.plurals.idle_collection_bonus_row, bonus.needed, bonus.needed, bonus.summary).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (bonus.reached) IronvellumColors.Ink else IronvellumColors.InkMuted,
                 modifier = Modifier.weight(1f),
             )
             if (!bonus.reached) {
-                Text("${bonus.needed - house.owned} to go", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.idle_collection_to_go, bonus.needed - house.owned), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
         }
     }
@@ -271,10 +275,15 @@ private fun HouseBlock(house: HouseProgress, animate: Boolean) {
 @Composable
 private fun RelicTile(slot: VaultSlot, animate: Boolean, modifier: Modifier = Modifier) {
     val held = slot.isOwned
-    val description = buildString {
-        append("${slot.relic.name}, ${rarityWord(slot.tier).lowercase()}")
-        if (!held) append(", not yet drawn") else if (slot.active) append(", strongest")
-    }
+    val description = stringResource(
+        when {
+            !held -> R.string.idle_collection_relic_not_drawn_description
+            slot.active -> R.string.idle_collection_relic_strongest_description
+            else -> R.string.idle_collection_relic_description
+        },
+        slot.relic.name,
+        rarityWord(slot.tier).lowercase(),
+    )
     Box(
         modifier
             .background(if (slot.active) IronvellumColors.VaultHigh else if (held) IronvellumColors.Vault else UnheldGround, TileShape)
@@ -300,7 +309,7 @@ private fun RelicTile(slot: VaultSlot, animate: Boolean, modifier: Modifier = Mo
         }
         if (slot.active) {
             Text(
-                "Strongest",
+                stringResource(R.string.idle_collection_strongest_badge),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary,

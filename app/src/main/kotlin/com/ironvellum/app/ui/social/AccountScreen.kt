@@ -5,7 +5,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TabTitle
@@ -23,7 +27,6 @@ import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkTextLink
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
-import com.ironvellum.app.ui.components.plural
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
@@ -187,7 +190,7 @@ class AccountViewModel(
     }
 
     /** Extract the genuine reason from a Result failure — shown verbatim. */
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.acct_failure_unknown))
 
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
@@ -207,7 +210,7 @@ class AccountViewModel(
                 .onSuccess { outcome ->
                     if (outcome is SignUpOutcome.ConfirmEmail) {
                         _ui.value = _ui.value.copy(
-                            notice = "Account created — open the link sent to $email, then sign in.",
+                            notice = Words.text(UiText.res(R.string.acct_signup_confirm_notice, email)),
                         )
                     }
                 }
@@ -225,7 +228,7 @@ class AccountViewModel(
                 .onSuccess {
                     _ui.value = _ui.value.copy(
                         resetCodeSentTo = email,
-                        notice = "If $email has an account, a code is on its way.",
+                        notice = Words.text(UiText.res(R.string.acct_reset_sent_notice, email)),
                     )
                 }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
@@ -547,7 +550,7 @@ fun AccountScreen(
 @Composable
 private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
     if (pushed) {
-        PushedHeader("ACCOUNT", onBack)
+        PushedHeader(stringResource(R.string.acct_title_upper), onBack)
     } else {
         // The tab says what it is for; the account is how a lifter gets in.
         TabTitle(Words.ally.upl)
@@ -558,7 +561,7 @@ private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
 @Composable
 private fun NotConfiguredPanel() {
     Text(
-        "Cloud features aren't available in this build.",
+        stringResource(R.string.acct_unavailable),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -596,15 +599,13 @@ internal fun AuthPanels(
     // A login wall with no reason to sign in reads as a requirement. Say what the tab gives, that it is
     // optional, and what signing in adds, before asking for anything.
     Text(
-        "${Words.ally.cpl} see your ${Words.sealed.s} ${Words.trial.pl} and answer with ${Words.tribute.pl} and ${Words.remark.pl}. " +
-            "${Words.circle.cpl} share a weekly goal, and the ${Words.reckoning.s} ranks everyone.",
+        UiText.themed(R.string.acct_intro, R.string.acct_intro__t).asString(),
         style = MaterialTheme.typography.bodyMedium,
         color = IronvellumColors.Ink,
     )
     Spacer(Modifier.height(8.dp))
     Text(
-        "Optional: everything else works without an account. Sign in to back up your ${Words.trial.pl}, " +
-            "add ${Words.ally.pl}, join ${Words.circle.a} and ${Words.pick("stand in the Reckoning", "appear on the leaderboard")}.",
+        UiText.themed(R.string.acct_signin_optional, R.string.acct_signin_optional__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.Ink,
     )
@@ -612,7 +613,7 @@ internal fun AuthPanels(
 
     if (mode == AuthMode.RESET) {
         Text(
-            "Reset your password",
+            stringResource(R.string.acct_reset_title),
             style = MaterialTheme.typography.titleMedium,
             color = IronvellumColors.Ink,
         )
@@ -654,29 +655,29 @@ internal fun AuthPanels(
     // Each message sits under the field it belongs to. A refusal from the
     // server goes under the last field of the form, the one just filled in.
     val serverError = error?.let {
-        "${when (mode) {
-            AuthMode.SIGN_IN -> "Sign-in"
-            AuthMode.SIGN_UP -> "Sign-up"
-            AuthMode.RESET -> "Reset"
-        }} failed: $it"
+        when (mode) {
+            AuthMode.SIGN_IN -> stringResource(R.string.acct_auth_failed_signin, it)
+            AuthMode.SIGN_UP -> stringResource(R.string.acct_auth_failed_signup, it)
+            AuthMode.RESET -> stringResource(R.string.acct_auth_failed_reset, it)
+        }
     }
     val emailError = when {
-        !emailValid && email.isNotEmpty() -> "Enter a valid email address."
+        !emailValid && email.isNotEmpty() -> stringResource(R.string.acct_email_invalid)
         mode == AuthMode.RESET && !codeSent -> serverError
         else -> null
     }
     val passwordError = when {
-        password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
+        password.isNotEmpty() && !passwordValid -> stringResource(R.string.acct_password_short)
         mode == AuthMode.SIGN_IN -> serverError
         else -> null
     }
     val confirmError = when {
-        choosingPassword && confirm.isNotEmpty() && !confirmed -> "Passwords don't match."
+        choosingPassword && confirm.isNotEmpty() && !confirmed -> stringResource(R.string.acct_password_mismatch)
         mode == AuthMode.RESET && codeSent -> serverError
         else -> null
     }
     val nameError = when {
-        mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid -> "${Words.trueName.c} needs 2–24 characters."
+        mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid -> UiText.themed(R.string.acct_name_range, R.string.acct_name_range__t).asString()
         mode == AuthMode.SIGN_UP -> serverError
         else -> null
     }
@@ -684,7 +685,7 @@ internal fun AuthPanels(
     if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
     if (mode == AuthMode.RESET && !codeSent) {
         Text(
-            "We'll email you a code to set a new password.",
+            stringResource(R.string.acct_reset_hint),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -695,7 +696,7 @@ internal fun AuthPanels(
         colors = ironvellumFieldColors(),
         value = email,
         onValueChange = { email = it.trim() },
-        label = { Text("Email") },
+        label = { Text(stringResource(R.string.acct_email_label)) },
         singleLine = true,
         isError = emailError != null,
         supportingText = emailError?.let { { Text(it, color = IronvellumColors.DangerRed) } },
@@ -709,7 +710,7 @@ internal fun AuthPanels(
             colors = ironvellumFieldColors(),
             value = code,
             onValueChange = { typed -> code = DecimalInput.sanitizeCode(typed, 10) },
-            label = { Text("Code from email") },
+            label = { Text(stringResource(R.string.acct_code_label)) },
             singleLine = true,
             keyboardOptions = wholeKeyboard(),
             modifier = Modifier.fillMaxWidth(),
@@ -720,7 +721,7 @@ internal fun AuthPanels(
         PasswordField(
             value = password,
             onValueChange = { password = it },
-            label = if (mode == AuthMode.RESET) "New password" else "Password",
+            label = if (mode == AuthMode.RESET) stringResource(R.string.acct_password_new_label) else stringResource(R.string.acct_password_label),
             shown = showPassword,
             onToggleShown = { showPassword = !showPassword },
             error = passwordError,
@@ -730,7 +731,7 @@ internal fun AuthPanels(
         // Under the password field it belongs to, at the trailing edge.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             IronvellumButton(
-                label = "Forgot password?",
+                label = stringResource(R.string.acct_password_forgot_button),
                 onClick = { mode = AuthMode.RESET },
                 quiet = true,
             )
@@ -741,7 +742,7 @@ internal fun AuthPanels(
         PasswordField(
             value = confirm,
             onValueChange = { confirm = it },
-            label = "Confirm password",
+            label = stringResource(R.string.acct_password_confirm_label),
             shown = showPassword,
             onToggleShown = { showPassword = !showPassword },
             error = confirmError,
@@ -765,9 +766,9 @@ internal fun AuthPanels(
     Spacer(Modifier.height(14.dp))
     IronvellumButton(
         label = when (mode) {
-            AuthMode.SIGN_IN -> "Sign in"
-            AuthMode.SIGN_UP -> "Create account"
-            AuthMode.RESET -> if (codeSent) "Set new password" else "Email me a code"
+            AuthMode.SIGN_IN -> stringResource(R.string.acct_signin_button)
+            AuthMode.SIGN_UP -> stringResource(R.string.acct_signup_button)
+            AuthMode.RESET -> if (codeSent) stringResource(R.string.acct_reset_set_button) else stringResource(R.string.acct_reset_send_button)
         },
         onClick = {
             when (mode) {
@@ -785,9 +786,9 @@ internal fun AuthPanels(
         Spacer(Modifier.height(6.dp))
         Text(
             when (mode) {
-                AuthMode.SIGN_IN -> "Enter your email and password to sign in."
-                AuthMode.SIGN_UP -> "Fill in every field to create your account."
-                AuthMode.RESET -> if (codeSent) "Enter the code and a new password." else "Enter your email to get a code."
+                AuthMode.SIGN_IN -> stringResource(R.string.acct_hint_signin)
+                AuthMode.SIGN_UP -> stringResource(R.string.acct_hint_signup)
+                AuthMode.RESET -> if (codeSent) stringResource(R.string.acct_hint_reset_code) else stringResource(R.string.acct_hint_reset_email)
             },
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
@@ -797,9 +798,9 @@ internal fun AuthPanels(
     // Which form this is, and the way to the other one: a link, not a switch.
     IronvellumButton(
         label = when (mode) {
-            AuthMode.SIGN_IN -> "New here? Create an account"
-            AuthMode.SIGN_UP -> "Have an account? Sign in"
-            AuthMode.RESET -> "Back to sign in"
+            AuthMode.SIGN_IN -> stringResource(R.string.acct_mode_signup_link)
+            AuthMode.SIGN_UP -> stringResource(R.string.acct_mode_signin_link)
+            AuthMode.RESET -> stringResource(R.string.acct_mode_back_link)
         },
         onClick = { mode = if (mode == AuthMode.SIGN_IN) AuthMode.SIGN_UP else AuthMode.SIGN_IN },
         quiet = true,
@@ -808,7 +809,7 @@ internal fun AuthPanels(
     if (mode != AuthMode.RESET || codeSent) {
         Spacer(Modifier.height(8.dp))
         Text(
-            "${Words.reading.cpl} stay on this device; ${Words.trial.pl}, XP and ${Words.deed.pl} sync.",
+            UiText.themed(R.string.acct_sync_note, R.string.acct_sync_note__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -849,7 +850,7 @@ private fun PasswordField(
             InkIconButton(onClick = onToggleShown) {
                 Icon(
                     if (shown) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (shown) "Hide password" else "Show password",
+                    contentDescription = if (shown) stringResource(R.string.acct_password_hide_description) else stringResource(R.string.acct_password_show_description),
                     tint = IronvellumColors.InkMuted,
                 )
             }
@@ -917,7 +918,7 @@ private fun SignedInPanels(
         SocialErrorBanner(it)
     }
 
-    SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else "${Words.ally.cpl} · ${accepted.size}", topPadding = 18.dp)
+    SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else UiText.themed(R.string.acct_allies_header, R.string.acct_allies_header__t, accepted.size).asString(), topPadding = 18.dp)
     AlliesPanel(
         accepted = accepted,
         empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
@@ -958,7 +959,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
                 InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
                     Icon(
                         Icons.Outlined.Settings,
-                        contentDescription = "Account settings",
+                        contentDescription = stringResource(R.string.acct_settings_description),
                         tint = IronvellumColors.InkMuted,
                     )
                 }
@@ -974,9 +975,9 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
 @Composable
 private fun VisibilityChip(visibility: String) {
     val (icon, label) = when (visibility) {
-        "public" -> Icons.Outlined.Public to "Public"
-        "friends" -> Icons.Outlined.Group to "${Words.ally.cpl} only"
-        else -> Icons.Outlined.Lock to "Private"
+        "public" -> Icons.Outlined.Public to stringResource(R.string.acct_visibility_public)
+        "friends" -> Icons.Outlined.Group to UiText.themed(R.string.acct_visibility_friends, R.string.acct_visibility_friends__t).asString()
+        else -> Icons.Outlined.Lock to stringResource(R.string.acct_visibility_private)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1014,14 +1015,14 @@ private fun ClaimNamePanel(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.InkMuted)
             Text(
-                "Take your ${Words.trueName.s}",
+                UiText.themed(R.string.acct_claim_title, R.string.acct_claim_title__t).asString(),
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
             )
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "This ${Words.trueName.s} is how other ${Words.lifter.t} find and add you.",
+            UiText.themed(R.string.acct_claim_caption, R.string.acct_claim_caption__t).asString(),
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
             maxLines = 2,
@@ -1029,7 +1030,7 @@ private fun ClaimNamePanel(
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "Currently: $currentHandle",
+            stringResource(R.string.acct_claim_current, currentHandle),
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -1042,27 +1043,27 @@ private fun ClaimNamePanel(
             colors = ironvellumFieldColors(),
             value = name,
             onValueChange = { name = it.take(24) },
-            label = { Text("${Words.trueName.c} (2–24)") },
+            label = { Text(UiText.themed(R.string.acct_claim_field_label, R.string.acct_claim_field_label__t).asString()) },
             singleLine = true,
             enabled = !busy,
             isError = name.isNotBlank() && !valid,
             supportingText = {
                 if (name.isNotBlank() && !valid) {
-                    Text("2–24 characters, letters and numbers")
+                    Text(stringResource(R.string.acct_name_rule))
                 }
             },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
         IronvellumButton(
-            label = "Take",
+            label = stringResource(R.string.acct_claim_take_button),
             onClick = { onClaim(cleaned) },
             enabled = valid && !busy,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(8.dp))
         IronvellumButton(
-            label = "Skip for now",
+            label = stringResource(R.string.acct_claim_skip_button),
             onClick = onSkip,
             enabled = !busy,
             quiet = true,
@@ -1088,7 +1089,7 @@ private fun ClaimNamePanel(
 private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
     val canInvite = friendName.trim().length >= 2 && !loading
-    val label = "Add ${Words.ally.a} by ${Words.trueName.s}"
+    val label = UiText.themed(R.string.acct_invite_label, R.string.acct_invite_label__t).asString()
     // A caption over a hairline field with "Invite" inside it: no box, like the mockup.
     Column(Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
@@ -1111,7 +1112,7 @@ private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
                 },
             )
             InkTextLink(
-                label = "Invite",
+                label = stringResource(R.string.acct_invite_button),
                 enabled = canInvite,
                 modifier = Modifier.padding(start = 12.dp, end = 4.dp),
                 onClick = {
@@ -1133,10 +1134,10 @@ private fun RequestsRow(count: Int, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         InkDivider()
         ListRow(
-            label = "$count ${Words.ally.s} ${plural(count, "request", "requests")}",
+            label = UiText.themedPlural(R.plurals.acct_requests_count, R.plurals.acct_requests_count__t, count).asString(),
             value = Words.missive.cpl,
             icon = Icons.Outlined.PersonAdd,
-            onClickLabel = "Open ${Words.missive.tpl}",
+            onClickLabel = UiText.themed(R.string.acct_requests_open_description, R.string.acct_requests_open_description__t).asString(),
             contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp),
             onClick = onClick,
         )
@@ -1153,7 +1154,7 @@ private fun AlliesPanel(
 ) {
     if (empty) {
         Text(
-            "No ${Words.ally.pl} yet. Invite one by ${Words.trueName.s} above.",
+            UiText.themed(R.string.acct_allies_empty, R.string.acct_allies_empty__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1194,7 +1195,7 @@ private fun AlliesPanel(
                 }
             }
             friend.level?.let {
-                Text("Level $it", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.xp_level_label, it), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
         }

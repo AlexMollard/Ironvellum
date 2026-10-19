@@ -414,9 +414,10 @@ fun TitlesScreen(
                             // No "Skill Tree" heading: the selected pill above already says it.
                             // The tally is the line worth keeping here.
                             Text(
-                                UiText.themed(
-                                    R.string.titles_paths_tally,
-                                    R.string.titles_paths_tally__t,
+                                UiText.themedPlural(
+                                    R.plurals.titles_paths_tally,
+                                    R.plurals.titles_paths_tally__t,
+                                    Skills.ALL.size,
                                     mastered.count { it in Skills.BY_NAME },
                                     Skills.ALL.size,
                                 ).asString(),

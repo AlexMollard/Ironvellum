@@ -204,7 +204,7 @@ object Rank {
                 s to roundUpTenth(needed - s.movedKg)
             }
             .minByOrNull { it.second }
-            ?.let { (s, delta) -> "+${loadUp(delta, unit)} on ${s.exerciseName} × ${s.reps}" }
+            ?.let { (s, delta) -> Words.text(UiText.res(R.string.misc_rank_lift_target, loadUp(delta, unit), s.exerciseName, s.reps)) }
     }
 
     /**

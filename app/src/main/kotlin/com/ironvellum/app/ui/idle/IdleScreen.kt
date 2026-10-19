@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -58,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
@@ -75,6 +77,7 @@ import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RewardRarity
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.VeilDraw
@@ -83,6 +86,7 @@ import com.ironvellum.app.domain.VeilSample
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.hoursToGather
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.components.HouseEmblem
@@ -98,7 +102,6 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.inscribedDraw
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.rarityWord
 import com.ironvellum.app.ui.dashboard.EssenceFigure
 import com.ironvellum.app.ui.dashboard.VeilMotes
@@ -375,7 +378,7 @@ fun IdleScreen(
             if (snapshot == null || inputs == null || live == null) {
                 // Brief empty frame while the flows warm up; never fake numbers.
                 Text(
-                    "The echoes are gathering…",
+                    stringResource(R.string.idle_gathering),
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     style = MaterialTheme.typography.bodyMedium,
@@ -457,21 +460,37 @@ private fun VeilIntroSheet(fullHours: Int, onDone: () -> Unit) {
             Column {
                 IntroRow(
                     Icons.Outlined.WaterDrop,
-                    "Essence",
-                    "It gathers on its own while you are away. Full strength for $fullHours hours after you last collected, then it tapers.",
+                    stringResource(R.string.idle_essence_label),
+                    UiText.plural(R.plurals.idle_intro_essence_body, fullHours).asString(),
                 )
                 InkDivider()
                 // The reward words keep their names in both modes, so each says what it is.
-                IntroRow(Icons.Outlined.Bolt, "Echoes", "Your ${Words.trial.pl} leave them behind, and they gather essence for you.")
+                IntroRow(
+                    Icons.Outlined.Bolt,
+                    stringResource(R.string.idle_intro_echoes_title),
+                    UiText.themed(R.string.idle_intro_echoes_body, R.string.idle_intro_echoes_body__t).asString(),
+                )
                 InkDivider()
-                IntroRow(Icons.Outlined.StarBorder, "Inscriptions", "Each level-up earns one. Spend it on echoes, a relic or a crest.")
+                IntroRow(
+                    Icons.Outlined.StarBorder,
+                    stringResource(R.string.idle_intro_inscriptions_title),
+                    stringResource(R.string.idle_intro_inscriptions_body),
+                )
                 InkDivider()
-                IntroRow(Icons.Outlined.Diamond, "Relics", "They lift your rate. Only the strongest counts in full.")
+                IntroRow(
+                    Icons.Outlined.Diamond,
+                    stringResource(R.string.idle_intro_relics_title),
+                    stringResource(R.string.idle_intro_relics_body),
+                )
                 InkDivider()
-                IntroRow(Icons.Outlined.WorkspacePremium, "Crests", "The mark you wear on your ${Words.folio.s}. Its perk only works in ${Words.theVeil.t}.")
+                IntroRow(
+                    Icons.Outlined.WorkspacePremium,
+                    stringResource(R.string.idle_intro_crests_title),
+                    UiText.themed(R.string.always_idle_intro_crests_body, R.string.always_idle_intro_crests_body__t).asString(),
+                )
             }
         },
-        confirmButton = { IronvellumButton(label = "Got it", onClick = onDone) },
+        confirmButton = { IronvellumButton(label = stringResource(R.string.idle_got_it_button), onClick = onDone) },
     )
 }
 
@@ -501,7 +520,7 @@ private fun EssenceBlock(snapshot: IdleSnapshot, total: Double, now: Long, anima
     val phase = rememberVeilPhase(animate)
     val motes = remember { veilMotes(9, 5) }
 
-    SectionHeader("Essence", topPadding = 14.dp)
+    SectionHeader(stringResource(R.string.idle_essence_label), topPadding = 14.dp)
     Box(Modifier.fillMaxWidth().height(EssenceBoxHeight).clipToBounds()) {
         VeilMotes(motes, phase, animate, Modifier.matchParentSize())
         EssenceFigure(
@@ -513,11 +532,16 @@ private fun EssenceBlock(snapshot: IdleSnapshot, total: Double, now: Long, anima
             modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 6.dp),
         )
     }
+    val rateFigure = "%.1f".fmt(rate.perHour)
+    val rateText = stringResource(R.string.idle_rate_per_hour, rateFigure)
+    val rateLinkLabel = stringResource(R.string.idle_why_rate_description)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             buildAnnotatedString {
-                withStyle(SpanStyle(color = IronvellumColors.Ink)) { append("%.1f".fmt(rate.perHour)) }
-                append(" per hour")
+                append(rateText)
+                // The figure is ink, the rest muted; found by text so a translation may reorder them.
+                val figureAt = rateText.indexOf(rateFigure)
+                if (figureAt >= 0) addStyle(SpanStyle(color = IronvellumColors.Ink), figureAt, figureAt + rateFigure.length)
                 if (rateDelta != 0.0) {
                     append("  ")
                     withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)) {
@@ -532,10 +556,10 @@ private fun EssenceBlock(snapshot: IdleSnapshot, total: Double, now: Long, anima
         Row(
             Modifier
                 .heightIn(min = 48.dp)
-                .clickable(role = Role.Button, onClickLabel = "Open why this rate", onClick = onOpenRate),
+                .clickable(role = Role.Button, onClickLabel = rateLinkLabel, onClick = onOpenRate),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Why this rate", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
+            Text(stringResource(R.string.idle_why_rate_label), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(18.dp))
         }
     }
@@ -545,7 +569,7 @@ private fun EssenceBlock(snapshot: IdleSnapshot, total: Double, now: Long, anima
         InkRail(strength.fraction, height = 4.dp)
         val hours = ceil(strength.fraction * window).toInt()
         Text(
-            if (strength.fraction > 0f) "$hours h of ${window.roundToInt()} at full strength, then it tapers" else strength.caption,
+            if (strength.fraction > 0f) stringResource(R.string.idle_strength_caption, hours, window.roundToInt()) else strength.caption,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 6.dp),
@@ -560,7 +584,7 @@ private fun EssenceBlock(snapshot: IdleSnapshot, total: Double, now: Long, anima
 @Composable
 private fun AwayLine(report: AwayReport) {
     Text(
-        "+%,d essence banked while you were away, %s".fmt(report.essence, formatAway(report.awayMs)),
+        stringResource(R.string.idle_away_line, report.essence, formatAway(report.awayMs).asString()),
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.SemiBold,
         color = IronvellumColors.SovereignGold,
@@ -574,6 +598,7 @@ private fun AwayLine(report: AwayReport) {
  */
 @Composable
 private fun LandingLine(landing: VeilLanding, onView: () -> Unit) {
+    val viewLabel = stringResource(R.string.idle_landing_view_description)
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             landing.line,
@@ -585,26 +610,26 @@ private fun LandingLine(landing: VeilLanding, onView: () -> Unit) {
         Box(
             Modifier
                 .heightIn(min = 48.dp)
-                .clickable(role = Role.Button, onClickLabel = "View the collection", onClick = onView)
+                .clickable(role = Role.Button, onClickLabel = viewLabel, onClick = onView)
                 .padding(start = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("View", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
+            Text(stringResource(R.string.idle_landing_view_button), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SystemGreen)
         }
     }
 }
 
 /** Away duration in the coarsest honest unit: "3 h 20 m", "2 days". */
-private fun formatAway(ms: Long): String {
+private fun formatAway(ms: Long): UiText {
     val minutes = ms / 60_000
     val hours = minutes / 60
     val days = hours / 24
     return when {
-        days >= 1 -> if (days == 1L) "1 day" else "$days days"
-        hours >= 1 -> "$hours h ${minutes % 60} m"
+        days >= 1 -> UiText.plural(R.plurals.common_days_count, days.toInt())
+        hours >= 1 -> UiText.res(R.string.idle_away_hours_minutes, hours, minutes % 60)
         // Banking twice in a row read as "banked over 0 m".
-        minutes < 1 -> "moments"
-        else -> "$minutes m"
+        minutes < 1 -> UiText.res(R.string.idle_away_moments)
+        else -> UiText.res(R.string.idle_away_minutes, minutes)
     }
 }
 
@@ -628,7 +653,7 @@ private fun StrongestRelicCard(vault: VaultState?, stacked: Double, animate: Boo
             }
             Column(Modifier.weight(1f)) {
                 Text(
-                    "STRONGEST RELIC",
+                    stringResource(R.string.idle_strongest_label),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -652,21 +677,21 @@ private fun StrongestRelicCard(vault: VaultState?, stacked: Double, animate: Boo
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     Text(
-                        "Lifts your essence rate by ${(((strongest.owned?.multiplier ?: 1.0) - 1.0) * 100).roundToInt()}%",
+                        stringResource(R.string.idle_strongest_lift, (((strongest.owned?.multiplier ?: 1.0) - 1.0) * 100).roundToInt()),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 } else {
                     Text(
-                        "No relic yet",
+                        stringResource(R.string.idle_strongest_none),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = IronvellumColors.Ink,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                     Text(
-                        "Your first inscription is a relic. It lifts your essence rate.",
+                        stringResource(R.string.idle_strongest_none_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(top = 6.dp),
@@ -681,8 +706,8 @@ private fun StrongestRelicCard(vault: VaultState?, stacked: Double, animate: Boo
                 Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Your $held relics together", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-                Text("×${"%.2f".fmt(stacked)} rate", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+                Text(UiText.plural(R.plurals.idle_relics_together, held).asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.idle_stacked_rate, "%.2f".fmt(stacked)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
             }
         }
     }
@@ -705,15 +730,17 @@ private fun CollectionCard(
     val relics = vault?.ownedCount ?: 0
     val total = vault?.total ?: 16
     val crests = ownedFrames.size
-    val summary = "$relics of $total relics · $crests of ${Gacha.CREST_FRAMES.size} crests"
+    val summary = stringResource(R.string.idle_collection_summary, relics, total, crests, Gacha.CREST_FRAMES.size)
+    val openDescription = stringResource(R.string.idle_collection_open_description, summary)
+    val newWord = stringResource(R.string.idle_collection_new_badge)
     InkPanel(
-        Modifier.padding(top = 12.dp).semantics { contentDescription = "Open your collection, $summary" },
+        Modifier.padding(top = 12.dp).semantics { contentDescription = openDescription },
         onClick = onOpen,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Collection", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+                Text(stringResource(R.string.idle_collection_title), style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
                 Text(summary, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(18.dp))
@@ -751,7 +778,7 @@ private fun CollectionCard(
                 Column(Modifier.weight(1f)) {
                     Text(
                         buildAnnotatedString {
-                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append("New") }
+                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append(newWord) }
                             append(" · ${landing.fresh}")
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -779,14 +806,14 @@ private fun NextCrestRow(level: Int, owned: Set<String>, animate: Boolean) {
     ) {
         CrestPlate(crest, Modifier.size(32.dp), owned = false, animate = animate)
         Column(Modifier.weight(1f)) {
-            Text("Next crest at level $next", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+            Text(stringResource(R.string.idle_next_crest, next), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             InkRail(
                 ((level - (next - Veil.MILESTONE_EVERY)).toFloat() / Veil.MILESTONE_EVERY).coerceIn(0f, 1f),
                 Modifier.padding(top = 6.dp),
                 height = 4.dp,
             )
         }
-        Text("$toGo ${plural(toGo, "level", "levels")}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        Text(UiText.plural(R.plurals.idle_next_crest_levels, toGo).asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
     }
 }
 
@@ -806,16 +833,16 @@ private fun VeilDock(
     onBuy: () -> Unit,
 ) {
     val affordable = essence >= cost
-    val price = "%,d essence".fmt(cost)
+    val price = stringResource(R.string.idle_buy_price_value, cost)
     when {
         rolls > 0 -> CelebrationDock(
-            primary = "Inscribe ($rolls)",
+            primary = stringResource(R.string.always_veil_inscribe_action, rolls),
             onPrimary = onInscribe,
-            link = "Or buy another · $price".takeIf { affordable },
+            link = stringResource(R.string.idle_dock_buy_another, price).takeIf { affordable },
             onLink = onBuy,
             caption = {
                 Text(
-                    "$rolls ${plural(rolls, "inscription", "inscriptions")} waiting",
+                    UiText.plural(R.plurals.always_veil_inscriptions_waiting, rolls).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = IronvellumColors.SovereignGold,
@@ -825,7 +852,7 @@ private fun VeilDock(
             },
         )
         affordable -> CelebrationDock(
-            primary = "Buy an inscription · $price",
+            primary = stringResource(R.string.idle_dock_buy, price),
             onPrimary = onBuy,
             reserveLink = false,
             caption = { NoneWaiting(Modifier.padding(bottom = 10.dp)) },
@@ -838,7 +865,11 @@ private fun VeilDock(
                 InkRail((essence.toFloat() / cost).coerceIn(0f, 1f), Modifier.padding(top = 10.dp), height = 4.dp)
                 val hours = hoursToGather((cost - essence).toDouble(), perHour)
                 Text(
-                    "%,d of %,d".fmt(essence, cost) + (hours?.let { " · about $it h at ${"%.1f".fmt(perHour)}/h" } ?: ""),
+                    if (hours != null) {
+                        stringResource(R.string.idle_dock_progress_eta, essence, cost, hours, "%.1f".fmt(perHour))
+                    } else {
+                        stringResource(R.string.idle_dock_progress, essence, cost)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -852,7 +883,7 @@ private fun VeilDock(
 @Composable
 private fun NoneWaiting(modifier: Modifier = Modifier) {
     Text(
-        "No inscriptions waiting. Every level-up earns one.",
+        stringResource(R.string.idle_dock_none_waiting),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         textAlign = TextAlign.Center,
@@ -892,13 +923,17 @@ private fun CircleBannerLine(onOpen: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClickLabel = "Open the ${Words.circle.s}", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = UiText.themed(R.string.idle_circle_open_description, R.string.idle_circle_open_description__t).asString(), onClick = onOpen)
                     .heightIn(min = 48.dp)
                     .padding(horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "${Words.circle.c} · ${b.name}" + if (goal > 0) " · $total / $goal this week" + if (met) " · goal met" else "" else "",
+                    when {
+                        goal <= 0 -> UiText.themed(R.string.idle_circle_line, R.string.idle_circle_line__t, b.name)
+                        met -> UiText.themed(R.string.idle_circle_line_met, R.string.idle_circle_line_met__t, b.name, total, goal)
+                        else -> UiText.themed(R.string.idle_circle_line_goal, R.string.idle_circle_line_goal__t, b.name, total, goal)
+                    }.asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     modifier = Modifier.weight(1f),

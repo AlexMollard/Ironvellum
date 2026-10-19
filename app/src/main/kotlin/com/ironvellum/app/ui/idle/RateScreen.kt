@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,6 +46,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
@@ -53,14 +55,15 @@ import com.ironvellum.app.domain.HouseProgress
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.RelicHouses
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.dashboard.FIRST_RUN_VEIL_LINE
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -93,7 +96,7 @@ fun RateScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("Why this rate", onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
+        PushedHeader(stringResource(R.string.idle_why_rate_label), onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
         Column(
             Modifier
                 .weight(1f)
@@ -129,10 +132,10 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
             fontWeight = FontWeight.Bold,
             color = IronvellumColors.Ink,
         )
-        Text("essence per hour", style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted, modifier = Modifier.padding(bottom = 6.dp))
+        Text(stringResource(R.string.idle_rate_unit_label), style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted, modifier = Modifier.padding(bottom = 6.dp))
     }
     Text(
-        "It starts at ${Idle.FLOOR.roundToInt()} an hour and four things multiply it.",
+        stringResource(R.string.idle_rate_intro, Idle.FLOOR.roundToInt()),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(start = 2.dp, top = 2.dp),
@@ -142,7 +145,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
             if (firstRun) {
                 FIRST_RUN_VEIL_LINE
             } else {
-                "The echoes have heard nothing from you. Your rate has decayed to its floor; return to training and they will rise again."
+                stringResource(R.string.idle_rate_decayed)
             },
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
@@ -156,53 +159,68 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
     val skillMax = 1.0 + houses.skillCeiling * houses.term(RelicHouse.Craft)
     InkPanel(Modifier.padding(top = 14.dp), contentPadding = PaddingValues(0.dp)) {
         FactorRow(
-            "Training",
+            stringResource(R.string.idle_rate_training_label),
             rate.trainingFactor,
-            "${inputs.sessionsLast7d} ${plural(inputs.sessionsLast7d, Words.trial.s, Words.trial.pl)} in 7 days" +
-                " · ${Units.volume(inputs.volumeLast7d)} · ${Words.oath.s} ${inputs.streakDays} ${plural(inputs.streakDays, "day", "days")}",
+            UiText.res(
+                R.string.idle_rate_training_feeds,
+                UiText.themedPlural(R.plurals.idle_rate_sessions, R.plurals.idle_rate_sessions__t, inputs.sessionsLast7d),
+                Units.volume(inputs.volumeLast7d),
+                UiText.themedPlural(R.plurals.idle_rate_streak, R.plurals.idle_rate_streak__t, inputs.streakDays),
+            ).asString(),
             ceiling = trainingMax,
         )
         InkDivider()
         FactorRow(
             Words.technique.c,
             rate.skillFactor,
-            "${inputs.skillsUnlocked} ${plural(inputs.skillsUnlocked, Words.technique.s, Words.technique.pl)} unlocked, kept for good",
+            UiText.themedPlural(R.plurals.idle_rate_skills_unlocked, R.plurals.idle_rate_skills_unlocked__t, inputs.skillsUnlocked).asString(),
             ceiling = skillMax,
         )
         InkDivider()
         val held = vault?.ownedCount ?: 0
         val strongest = vault?.active
         FactorRow(
-            "Relics",
+            stringResource(R.string.idle_rate_relics_label),
             state.relicMultiplier,
             if (strongest == null) {
-                "No relics yet. Your first inscription is a relic."
+                stringResource(R.string.idle_rate_relics_none)
             } else {
-                "$held ${plural(held, "relic", "relics")}. The strongest, ${strongest.relic.name}, lifts it by " +
-                    "${(((strongest.owned?.multiplier ?: 1.0) - 1.0) * 100).roundToInt()}%."
+                UiText.plural(
+                    R.plurals.idle_rate_relics_feeds,
+                    held,
+                    held,
+                    strongest.relic.name,
+                    (((strongest.owned?.multiplier ?: 1.0) - 1.0) * 100).roundToInt(),
+                ).asString()
             },
             ceiling = null,
         )
         InkDivider()
         FactorRow(
-            "Echoes",
+            stringResource(R.string.idle_rate_echoes_label),
             rate.echoFactor,
-            "${"%,d".fmt(state.figures)} ${plural(state.figures, "echo", "echoes")}. Every ${Idle.ECHO_BONUS_PER.roundToInt()} add " +
-                "${"%.1f".fmt(houses.crest.echoStep * 100).removeSuffix(".0")}%, up to ${(houses.crest.echoCap * 100).roundToInt()}%.",
+            UiText.plural(
+                R.plurals.idle_rate_echoes_feeds,
+                state.figures,
+                state.figures,
+                Idle.ECHO_BONUS_PER.roundToInt(),
+                "%.1f".fmt(houses.crest.echoStep * 100).removeSuffix(".0"),
+                (houses.crest.echoCap * 100).roundToInt(),
+            ).asString(),
             ceiling = 1.0 + houses.crest.echoCap,
         )
     }
 
     if (vault != null) {
-        SectionHeader("House bonuses", topPadding = 18.dp)
+        SectionHeader(stringResource(R.string.idle_rate_houses_header), topPadding = 18.dp)
         vault.houses.forEach { HouseBonusRow(it, vault.effects.term(it.house), onOpenCollection) }
         InkDivider()
     }
 
-    SectionHeader("While you are away", topPadding = 18.dp)
+    SectionHeader(stringResource(R.string.idle_rate_away_header), topPadding = 18.dp)
     AwayCurve(houses.fullStrengthHours, houses.minEfficiency, houses.taperWindowHours)
     Text(
-        "One absence pays at most ${houses.maxEffectiveHours.roundToInt()} h of work. Opening ${Words.theVeil.t} banks it and starts the clock again.",
+        stringResource(R.string.always_idle_rate_away_note, houses.maxEffectiveHours.roundToInt()),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(start = 2.dp, top = 6.dp),
@@ -212,6 +230,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
 /** One multiplier of the rate: its name and factor, what feeds it, and a rail to its ceiling when it has one. */
 @Composable
 private fun FactorRow(label: String, factor: Double, feeds: String, ceiling: Double?) {
+    val factorDescription = stringResource(R.string.idle_rate_factor_description, label, "%.2f".fmt(factor), "%.2f".fmt(ceiling ?: 0.0))
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
@@ -230,29 +249,32 @@ private fun FactorRow(label: String, factor: Double, feeds: String, ceiling: Dou
                     ((factor - 1.0) / (ceiling - 1.0)).toFloat().coerceIn(0f, 1f),
                     Modifier
                         .weight(1f)
-                        .semantics { contentDescription = "$label factor, ${"%.2f".fmt(factor)} of ${"%.2f".fmt(ceiling)}" },
+                        .semantics { contentDescription = factorDescription },
                     height = 4.dp,
                 )
-                Text("max ×${"%.2f".fmt(ceiling)}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.idle_rate_max, "%.2f".fmt(ceiling)), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
         }
     }
 }
 
 /** What the house's term in the rate is called: where its 2-relic bonus lands. */
-private fun termWhere(house: RelicHouse): String = when (house) {
-    RelicHouse.Iron -> "Lifting term, inside Training"
-    RelicHouse.Vigil -> "Consistency term, inside Training"
-    RelicHouse.Craft -> "${Words.technique.c} term, inside ${Words.technique.t}"
-    RelicHouse.Return -> "Comeback term, on the time away"
+private fun termWhere(house: RelicHouse): UiText = when (house) {
+    RelicHouse.Iron -> UiText.res(R.string.idle_rate_term_iron)
+    RelicHouse.Vigil -> UiText.res(R.string.idle_rate_term_vigil)
+    RelicHouse.Craft -> UiText.themed(R.string.idle_rate_term_craft, R.string.idle_rate_term_craft__t)
+    RelicHouse.Return -> UiText.res(R.string.idle_rate_term_return)
 }
 
 /** "1 more relic adds 2 h of full strength", or null once the house is complete. */
-private fun nextBonusText(house: HouseProgress): String? {
+private fun nextBonusText(house: HouseProgress): UiText? {
     val next = house.next ?: return null
     val left = house.toNext
-    return "$left more ${plural(left, "relic adds", "relics add")} " +
-        if (next.needed == RelicHouses.FULL) house.house.fullGain else "+5% to the ${house.house.term} term"
+    return if (next.needed == RelicHouses.FULL) {
+        UiText.plural(R.plurals.idle_rate_next_gain, left, left, house.house.fullGain)
+    } else {
+        UiText.plural(R.plurals.idle_rate_next_term, left, left, house.house.term)
+    }
 }
 
 /**
@@ -262,6 +284,7 @@ private fun nextBonusText(house: HouseProgress): String? {
 @Composable
 private fun HouseBonusRow(house: HouseProgress, term: Double, onOpenCollection: () -> Unit) {
     val inForce = house.owned >= RelicHouses.PAIR
+    val collectionLabel = stringResource(R.string.idle_rate_collection_description)
     InkDivider()
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 6.dp),
@@ -269,17 +292,20 @@ private fun HouseBonusRow(house: HouseProgress, term: Double, onOpenCollection: 
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (inForce) {
-            Icon(Icons.Filled.Check, contentDescription = "In force", tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
+            Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.idle_rate_in_force_description), tint = IronvellumColors.SystemGreen, modifier = Modifier.size(14.dp))
         } else {
             Text("·", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, textAlign = TextAlign.Center, modifier = Modifier.size(14.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(house.house.title, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Text(
-                if (inForce) {
-                    "${termWhere(house.house)}. ${nextBonusText(house)?.plus(".") ?: "Complete."}"
-                } else {
-                    "${nextBonusText(house)}."
+                run {
+                    val next = nextBonusText(house)
+                    when {
+                        inForce && next != null -> UiText.res(R.string.idle_rate_house_in_force, termWhere(house.house), next)
+                        inForce -> UiText.res(R.string.idle_rate_house_complete, termWhere(house.house))
+                        else -> UiText.res(R.string.idle_rate_house_next, next ?: UiText.Raw(""))
+                    }.asString()
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -289,12 +315,12 @@ private fun HouseBonusRow(house: HouseProgress, term: Double, onOpenCollection: 
             Text("×${"%.2f".fmt(term)}", style = TextStyle(fontFeatureSettings = "tnum"), fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
         } else {
             Text(
-                "Collection",
+                stringResource(R.string.idle_collection_title),
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
                     .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Open the collection", onClick = onOpenCollection)
+                    .clickable(role = Role.Button, onClickLabel = collectionLabel, onClick = onOpenCollection)
                     .padding(horizontal = 4.dp)
                     .wrapCenter(),
             )
@@ -312,7 +338,7 @@ private fun Modifier.wrapCenter(): Modifier = this.then(Modifier.heightIn(min = 
 private fun AwayCurve(fullHours: Double, floor: Double, window: Double = Idle.TAPER_WINDOW_HOURS) {
     val taperEnd = fullHours + window
     val axisEnd = taperEnd + 24.0
-    val description = "Full pace for ${fullHours.roundToInt()} hours, then tapering to ${(floor * 100).roundToInt()}% by ${taperEnd.roundToInt()} hours"
+    val description = stringResource(R.string.idle_rate_curve_description, fullHours.roundToInt(), (floor * 100).roundToInt(), taperEnd.roundToInt())
     Canvas(
         Modifier
             .fillMaxWidth()
@@ -343,8 +369,8 @@ private fun AwayCurve(fullHours: Double, floor: Double, window: Double = Idle.TA
         drawPath(taper, IronvellumColors.InkMuted, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
-        Text("0 h", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(fullHours.toFloat()))
-        Text("${fullHours.roundToInt()} h, full pace ends", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(window.toFloat()))
-        Text("${taperEnd.roundToInt()} h, ${(floor * 100).roundToInt()}%", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(24f))
+        Text(stringResource(R.string.idle_rate_axis_start), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(fullHours.toFloat()))
+        Text(stringResource(R.string.idle_rate_axis_full_ends, fullHours.roundToInt()), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(window.toFloat()))
+        Text(stringResource(R.string.idle_rate_axis_taper_end, taperEnd.roundToInt(), (floor * 100).roundToInt()), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(24f))
     }
 }

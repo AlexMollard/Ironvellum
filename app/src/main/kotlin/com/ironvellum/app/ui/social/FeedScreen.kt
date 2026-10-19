@@ -62,6 +62,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
@@ -71,6 +73,8 @@ import com.ironvellum.app.data.cloud.FeedEntry
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.Reaction
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.selectedUnderline
@@ -139,7 +143,7 @@ class FeedViewModel(
     /** Workouts with a reaction call in flight; blocks the double-tap re-fire that drifts the count. */
     private val reactionCallsInFlight = mutableSetOf<String>()
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.feed_unknown_failure))
 
     init {
         // Sign-in happens on a sibling tab AFTER this view model exists, so a
@@ -243,7 +247,7 @@ class FeedViewModel(
                     // snapped back and nothing said why.
                     _ui.value = _ui.value.copy(
                         requestedAlly = _ui.value.requestedAlly - userId,
-                        allyError = it.message ?: it::class.simpleName ?: "Unknown failure",
+                        allyError = it.reason(),
                     )
                 }
         }
@@ -312,7 +316,7 @@ fun FeedScreen(
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
-                    SocialErrorBanner("${Words.ally.c} request failed: $it")
+                    SocialErrorBanner(UiText.themed(R.string.feed_ally_request_failed, R.string.feed_ally_request_failed__t, it).asString())
                     Spacer(Modifier.height(10.dp))
                 }
                 Feed(
@@ -335,7 +339,7 @@ fun FeedScreen(
 private fun LoadingPanel() {
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "${Words.reads.c} the ${Words.tidings.s}…",
+            UiText.themed(R.string.feed_loading, R.string.feed_loading__t).asString(),
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -346,11 +350,11 @@ private fun LoadingPanel() {
 @Composable
 private fun EmptyFeed(onRefresh: () -> Unit) {
     Text(
-        "No ${Words.tidings.s} yet. Make your ${Words.trial.pl} public in Account settings and be the first.",
+        UiText.themed(R.string.feed_empty, R.string.feed_empty__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRefresh, label = "Check again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.feed_check_again))
 }
 
 /**
@@ -376,7 +380,7 @@ private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRetry, label = "Try again")
+    SocialRefreshLink(onClick = onRetry, label = stringResource(R.string.feed_try_again))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -397,7 +401,7 @@ private fun Feed(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            "Every ${Words.lifter.t}'s public ${Words.trial.pl}, newest first",
+            UiText.themed(R.string.feed_header, R.string.feed_header__t).asString(),
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -457,7 +461,7 @@ private fun Feed(
         if (ui.pagingError != null) {
             item(key = "paging-error") {
                 Text(
-                    "Older ${Words.trial.pl} slipped away — keep pulling to try again.",
+                    UiText.themed(R.string.feed_paging_error, R.string.feed_paging_error__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -470,7 +474,7 @@ private fun Feed(
         if (ui.loadingMore) {
             item(key = "loading-more") {
                 Text(
-                    "Turning to older ${Words.trial.pl}…",
+                    UiText.themed(R.string.feed_loading_more, R.string.feed_loading_more__t).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -483,7 +487,7 @@ private fun Feed(
         if (ui.exhausted) {
             item(key = "end") {
                 Text(
-                    "You've reached the first page of the ${Words.tidings.s}.",
+                    UiText.themed(R.string.feed_end, R.string.feed_end__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -586,7 +590,7 @@ private fun FeedCard(
                 Text(
                     // An amended workout says so, or an ally who saw it before
                     // is left wondering why the figures moved.
-                    stamp(ms) + if (entry.editedAtMs != null) " · amended" else "",
+                    if (entry.editedAtMs != null) stringResource(R.string.feed_stamp_amended, stamp(ms)) else stamp(ms),
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -612,7 +616,13 @@ private fun FeedCard(
                 // moment it is picked; the VM reconciles or rolls back.
                 CountButton(
                     icon = (entry.myReaction ?: Reaction.SALUTE).glyph(),
-                    iconDescription = entry.myReaction?.let { "Your ${Words.tribute.s}: ${it.displayName()}" } ?: "Pay ${Words.tribute.s}",
+                    iconDescription = entry.myReaction?.let {
+                        UiText.themed(
+                            R.string.feed_reaction_mine_description,
+                            R.string.feed_reaction_mine_description__t,
+                            it.displayName(),
+                        ).asString()
+                    } ?: UiText.themed(R.string.feed_reaction_pay_description, R.string.feed_reaction_pay_description__t).asString(),
                     count = entry.likeCount,
                     lit = entry.myReaction != null || picking,
                     expanded = picking,
@@ -629,8 +639,8 @@ private fun FeedCard(
                 if (!isMe) {
                     // The one offer is a chip; a settled state is plain muted text.
                     when (ally) {
-                        AllyState.None -> InkChip(label = "Add ${Words.ally.s}", icon = Icons.Outlined.PersonAdd) { onAddAlly(entry.userId) }
-                        AllyState.Pending, AllyState.Incoming -> AllyNote("Pending")
+                        AllyState.None -> InkChip(label = UiText.themed(R.string.feed_add_ally_button, R.string.feed_add_ally_button__t).asString(), icon = Icons.Outlined.PersonAdd) { onAddAlly(entry.userId) }
+                        AllyState.Pending, AllyState.Incoming -> AllyNote(stringResource(R.string.feed_ally_pending))
                         AllyState.Ally -> AllyNote(Words.ally.c)
                     }
                 }
@@ -649,7 +659,7 @@ private fun FeedCard(
             // reserved strip left a blank band under every card.
             if (reactionError != null) {
                 Text(
-                    "${Words.tribute.c} not saved: $reactionError",
+                    UiText.themed(R.string.feed_reaction_error, R.string.feed_reaction_error__t, reactionError).asString(),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -684,7 +694,7 @@ private fun CountButton(
             .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(role = Role.Button) { onClick() }
-            .then(if (expanded != null) Modifier.semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" } else Modifier)
+            .then(if (expanded != null) Modifier.semantics { stateDescription = Words.text(UiText.res(if (expanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) } else Modifier)
             .padding(horizontal = 8.dp),
     ) {
         Icon(icon, contentDescription = iconDescription, tint = tint, modifier = Modifier.size(18.dp))
@@ -731,7 +741,7 @@ internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPi
             val on = reaction == current
             val count = counts[reaction] ?: 0
             PickerOption(
-                label = if (count > 0) "${reaction.displayName()} $count" else reaction.displayName(),
+                label = if (count > 0) stringResource(R.string.feed_reaction_option_count, reaction.displayName(), count) else reaction.displayName(),
                 icon = reaction.glyph(),
                 on = on,
                 first = index == 0,
@@ -741,7 +751,7 @@ internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPi
         Spacer(Modifier.weight(1f))
         if (current != null) {
             Text(
-                "Remove",
+                stringResource(R.string.feed_reaction_remove),
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -787,11 +797,15 @@ internal fun Reaction.glyph(): ImageVector = when (this) {
     Reaction.FLAME -> Icons.Outlined.LocalFireDepartment
 }
 
-internal fun Reaction.displayName(): String = when (this) {
-    Reaction.SALUTE -> "Honour"
-    Reaction.IRON -> "Iron"
-    Reaction.FLAME -> "Flame"
-}
+internal fun Reaction.displayName(): String = Words.text(
+    UiText.res(
+        when (this) {
+            Reaction.SALUTE -> R.string.feed_reaction_honour
+            Reaction.IRON -> R.string.feed_reaction_iron
+            Reaction.FLAME -> R.string.feed_reaction_flame
+        },
+    ),
+)
 
 /** What a workout is called on the comments screen and in the inbox. */
 internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { Words.trial.c }
@@ -829,20 +843,21 @@ private fun StatLine(entry: FeedEntry) {
     val climbOnly = entry.bestSet.isNullOrBlank() && !entry.hardestGrade.isNullOrBlank()
     val timed = !climbOnly && entry.repsDone == 0 && entry.heldSeconds > 0
     val middle = when {
-        climbOnly && entry.repsDone > 0 -> "${entry.repsDone} attempts"
-        timed -> "${entry.heldSeconds}s held"
-        entry.repsDone == 0 && (entry.distanceM ?: 0.0) > 0 -> "${formatDistance(entry.distanceM ?: 0.0)} covered"
+        climbOnly && entry.repsDone > 0 -> UiText.plural(R.plurals.feed_stat_attempts, entry.repsDone).asString()
+        timed -> stringResource(R.string.feed_stat_held, entry.heldSeconds)
+        entry.repsDone == 0 && (entry.distanceM ?: 0.0) > 0 -> stringResource(R.string.feed_stat_covered, formatDistance(entry.distanceM ?: 0.0))
         entry.repsDone == 0 && (entry.durationSec ?: 0) >= 60 -> formatDuration(entry.durationSec ?: 0)
         entry.repsDone == 0 && entry.setsDone > 0 -> null
-        else -> "${entry.repsDone} reps"
+        else -> UiText.plural(R.plurals.common_reps_count, entry.repsDone).asString()
     }
-    val plain = listOfNotNull("${entry.setsDone} ${if (entry.setsDone == 1) "set" else "sets"}", middle).joinToString(" · ")
+    val plain = listOfNotNull(UiText.plural(R.plurals.common_sets_count, entry.setsDone).asString(), middle).joinToString(" · ")
+    val xp = stringResource(R.string.session_xp_gain, entry.xpAwarded)
     Text(
         buildAnnotatedString {
             append(plain)
             append(" · ")
             withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) {
-                append("+${entry.xpAwarded} XP")
+                append(xp)
             }
         },
         style = MaterialTheme.typography.labelMedium,
@@ -867,14 +882,14 @@ private fun MovementLine(entry: FeedEntry) {
     // screen needs no cardio special-case of its own. A run's substance is its
     // distance, a climb's is its grade — headline whichever the hunt has.
     // The view writes "8 x 100.0 kg"; the card shows the app's own "8 × 100.0 kg".
-    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "Best ${it.replace(" x ", " × ")}" }
-        ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { "Hardest $it" }
-        ?: entry.distanceM?.takeIf { it > 0 }?.let { "${formatDistance(it)} covered" }
+    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.feed_best_set, it.replace(" x ", " × ")) }
+        ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.feed_hardest_grade, it) }
+        ?: entry.distanceM?.takeIf { it > 0 }?.let { stringResource(R.string.feed_stat_covered, formatDistance(it)) }
     // One muted line: the best set leads, then the exercise count and duration.
     val meta = buildList {
         headline?.let { add(it) }
         if (entry.movementCount > 0) {
-            add("${entry.movementCount} ${if (entry.movementCount == 1) "exercise" else "exercises"}")
+            add(UiText.plural(R.plurals.common_exercises_count, entry.movementCount).asString())
         }
         entry.durationSec?.takeIf { it >= 60 }?.let { add(formatDuration(it)) }
     }
@@ -931,11 +946,11 @@ internal fun relativeTime(ms: Long): String {
     val then = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDateTime()
     val minutes = ChronoUnit.MINUTES.between(then, now)
     return when {
-        minutes < 1 -> "just now"
-        minutes < 60 -> "${minutes}m ago"
+        minutes < 1 -> Words.text(UiText.res(R.string.feed_time_just_now))
+        minutes < 60 -> Words.text(UiText.res(R.string.feed_time_minutes_ago, minutes))
         ChronoUnit.HOURS.between(then, now) < 24 && then.toLocalDate() == now.toLocalDate() ->
-            "${ChronoUnit.HOURS.between(then, now)}h ago"
-        then.toLocalDate() == now.toLocalDate().minusDays(1) -> "yesterday"
+            Words.text(UiText.res(R.string.feed_time_hours_ago, ChronoUnit.HOURS.between(then, now)))
+        then.toLocalDate() == now.toLocalDate().minusDays(1) -> Words.text(UiText.res(R.string.feed_time_yesterday))
         else -> formatDate(ms, "MMM d")
     }
 }

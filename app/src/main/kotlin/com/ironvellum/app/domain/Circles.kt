@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /*
@@ -111,11 +112,11 @@ object JoinStatus {
     /** The refusal to show for [status], or null when the lifter joined. */
     fun refusal(status: String): String? = when (status) {
         JOINED -> null
-        "no_such_code" -> "No ${Words.circle.s} answers to that code"
-        "full" -> "That ${Words.circle.s} is full"
+        "no_such_code" -> Words.text(UiText.themed(R.string.circles_join_no_such_code, R.string.circles_join_no_such_code__t))
+        "full" -> Words.text(UiText.themed(R.string.circles_join_full, R.string.circles_join_full__t))
         // Deliberately neutral: it says nothing of who blocked whom.
-        "closed" -> "That ${Words.circle.s} is closed to you"
-        "throttled" -> "Too many code attempts today — try again tomorrow."
-        else -> "The ${Words.circle.s} did not take you in — try again"
+        "closed" -> Words.text(UiText.themed(R.string.circles_join_closed, R.string.circles_join_closed__t))
+        "throttled" -> Words.text(UiText.res(R.string.circles_join_throttled))
+        else -> Words.text(UiText.themed(R.string.circles_join_failed, R.string.circles_join_failed__t))
     }
 }

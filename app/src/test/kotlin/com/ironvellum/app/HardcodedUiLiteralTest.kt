@@ -65,6 +65,68 @@ class HardcodedUiLiteralTest {
         "main/data/db/Daos.kt" to "SQL",
     )
 
+    /**
+     * The files the baseline may still list, each with why what is left in it is not screen text. The baseline keeps
+     * counting them (a new literal in one still fails); a file that is not listed here cannot hold a baseline entry.
+     */
+    private val justified = mapOf(
+        "main/data/cloud/AccountRepository.kt" to "regex for generated handles (Hunter/Lifter/Ironbound plus four digits), not screen text",
+        "main/data/cloud/Cloud.kt" to "wire data: the server's English refusal 'Only the Keeper', matched by Words.fromServer",
+        "main/data/cloud/CloudSync.kt" to "PostgREST column lists, select expressions and cache keys sent to the server",
+        "main/data/CrashJournal.kt" to "crash report file content and file-name template: a developer artefact, never shown in the UI",
+        "main/data/DbSnapshot.kt" to "database snapshot file-name templates",
+        "main/data/HealthWriteBack.kt" to "Health Connect client record id template",
+        "main/data/PlateStore.kt" to "SharedPreferences key templates",
+        "main/data/Words.kt" to "ServerTerm table: the server's themed English words, matched in refusals and replaced from resources",
+        "main/domain/Circles.kt" to "regex that finds an invite code in pasted text",
+        "main/domain/Gacha.kt" to "legacy relic house names (the Mark, the Ledger...) used to derive old relic identities: catalogue data",
+        "main/domain/LiftBoards.kt" to "exercise, progression and lift-board names and their matching keys: exercise catalogue data",
+        "main/domain/Modifiers.kt" to "lower-case substrings matched against exercise names, never shown",
+        "main/domain/ProgramEasing.kt" to "de-duplication keys for easing proposals",
+        "main/domain/ProgramGenerator.kt" to "citations ('Lopez 2021') and exercise names: catalogue data; every sentence moved to resources",
+        "main/domain/ProgramRules.kt" to "exercise-name keyed rule tables, one citation and two developer-only @Deprecated messages",
+        "main/domain/ProgramTemplates.kt" to "template, day and exercise names, citations and the remaining summaries: template catalogue data (the three summaries that named a concept moved)",
+        "main/domain/RankPatterns.kt" to "exercise names that map lifts to rank patterns: catalogue data",
+        "main/domain/RestRules.kt" to "lower-case exercise-name keys of the rest-time table",
+        "main/domain/RoutineCode.kt" to "regex for the shared-routine code prefix",
+        "main/domain/SetKind.kt" to "import aliases for other apps' Set Type cells (Strong, Hevy, FitNotes)",
+        "main/ui/components/CelebrationPages.kt" to "animation label",
+        "main/ui/components/Common.kt" to "animation labels and a date pattern",
+        "main/ui/components/CrestMarks.kt" to "SVG path data",
+        "main/ui/components/ExerciseDrawing.kt" to "asset path template",
+        "main/ui/components/InkTabs.kt" to "animation label",
+        "main/ui/components/Sigil.kt" to "animation labels",
+        "main/ui/components/TermInfo.kt" to "lower-case stem matched against exercise text; the term's title and definition are resources",
+        "main/ui/components/XpPage.kt" to "animation label",
+        "main/ui/dashboard/DashboardScreen.kt" to "first-use key and a date pattern",
+        "main/ui/dashboard/TodaySoul.kt" to "Compose test tags",
+        "main/ui/dashboard/VeilShared.kt" to "animation labels",
+        "main/ui/idle/IdleScreen.kt" to "number format patterns and a relic id",
+        "main/ui/idle/RateScreen.kt" to "number format patterns",
+        "main/ui/idle/VeilBuySheet.kt" to "number format patterns",
+        "main/ui/IronvellumNav.kt" to "route patterns and navigation argument names",
+        "main/ui/program/OptimiseModel.kt" to "de-duplication key",
+        "main/ui/program/OptimiseScreen.kt" to "de-duplication key",
+        "main/ui/program/ProgramBuilderScreen.kt" to "state key",
+        "main/ui/settings/AdvancedSettings.kt" to "date pattern",
+        "main/ui/settings/AppearanceSettings.kt" to "animation label",
+        "main/ui/settings/HealthConnectSettings.kt" to "number and date format patterns",
+        "main/ui/settings/SettingsViewModel.kt" to "export file-name template and the exercise-name keyed typical-load table for the kg/lb guess",
+        "main/ui/social/CommentsScreen.kt" to "lazy-list item keys, a unit symbol format and set-marker glyphs: no words",
+        "main/ui/social/FeedScreen.kt" to "unit symbol format",
+        "main/ui/social/LeaderboardScreen.kt" to "developer match against a server message",
+        "main/ui/stats/LedgerBody.kt" to "date pattern and first-use key",
+        "main/ui/stats/MeasurementDetailScreen.kt" to "number and date format patterns",
+        "main/ui/theme/MetalGradient.kt" to "animation labels",
+        "main/ui/titles/DeedDetailSheet.kt" to "date pattern",
+        "main/ui/titles/DeedSeal.kt" to "SVG path data",
+        "main/ui/titles/SkillGlyph.kt" to "skill names used as glyph lookup keys: catalogue data",
+        "main/ui/titles/SkillJournal.kt" to "time pattern",
+        "main/ui/titles/SkillTreeLayout.kt" to "lane markers in layout keys",
+        "main/ui/train/ExerciseExplorerScreen.kt" to "number format patterns",
+        "main/ui/train/SessionScreen.kt" to "date patterns",
+    )
+
     @Test
     fun `the scan actually sees the sources and finds the known shapes`() {
         assertTrue("sources not found from ${File("").absolutePath}", sources.size > 50)
@@ -125,6 +187,15 @@ class HardcodedUiLiteralTest {
             0,
             problems.size,
         )
+    }
+
+    @Test
+    fun `every baseline entry is justified`() {
+        val baseline = readBaseline()
+        val unjustified = baseline.keys.filter { it !in justified }
+        assertEquals("baseline files with no justification (migrate them, or add a reason to justified): $unjustified", 0, unjustified.size)
+        val stale = justified.keys.filter { it !in baseline }
+        assertEquals("justified files that no longer hold a literal (delete the entry): $stale", 0, stale.size)
     }
 
     @Test

@@ -226,7 +226,7 @@ internal fun BodyTab(
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
                 label = Lines.tapeReadings,
-                value = stringResource(R.string.ledger_tape_logged, logged, MeasurementSite.entries.size),
+                value = UiText.plural(R.plurals.ledger_tape_logged, MeasurementSite.entries.size, logged, MeasurementSite.entries.size).asString(),
                 supporting = stringResource(R.string.ledger_stays_on_device),
                 onClick = onOpenTape,
             )

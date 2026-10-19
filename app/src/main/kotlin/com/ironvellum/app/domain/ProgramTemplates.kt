@@ -44,8 +44,7 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.STRENGTH,
             name = "Full-Body Barbell",
-            summary = "Three full-body days on five big lifts. Add a little weight " +
-                "each ${Words.trial.s} while it keeps moving (ACSM 2009).",
+            summary = Words.text(UiText.themed(R.string.program_extra_summary_full_body_strength, R.string.program_extra_summary_full_body_strength__t)),
             days = listOf(
                 day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 5),
@@ -70,8 +69,7 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.MUSCLE,
             name = "Full-Body Size",
-            summary = "Three full-body days: every muscle each ${Words.trial.s}, big lifts " +
-                "first, stretch-focused exercises after (Pelland 2026).",
+            summary = Words.text(UiText.themed(R.string.program_extra_summary_full_body_size, R.string.program_extra_summary_full_body_size__t)),
             days = listOf(
                 day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 8),
@@ -144,8 +142,7 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.MUSCLE,
             name = "Upper/Lower Size",
-            summary = "Upper/lower twice a week, each ${Words.rite.s} led by a big lift " +
-                "and finished with stretch-focused exercises (Pelland 2026; Maeo 2021).",
+            summary = Words.text(UiText.themed(R.string.program_extra_summary_upper_lower_size, R.string.program_extra_summary_upper_lower_size__t)),
             days = listOf(
                 day("Upper A", 1, listOf(
                     entry("Bench Press", 4, 8),
@@ -519,7 +516,7 @@ object ProgramTemplates {
         fun result() = days.mapIndexed { d, day ->
             day.copy(
                 entries = work[d],
-                note = if (d in overBudget) day.note + " Runs past ${budget / 60} minutes even at 2 sets each." else day.note,
+                note = if (d in overBudget) day.note + " " + Words.text(UiText.plural(R.plurals.program_extra_over_budget, budget / 60)) else day.note,
             )
         }
         fun week() = ProgramRules.weeklyVolume(work.map { PlannedPreset("", "", null, it) })

@@ -51,8 +51,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.CircleChange
@@ -107,7 +111,7 @@ internal class InboxViewModel(
     )
     val ui: StateFlow<InboxUi> = _ui.asStateFlow()
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.inbox_unknown_failure))
 
     init {
         viewModelScope.launch {
@@ -214,7 +218,7 @@ internal fun InboxScreen(
             when {
                 !ui.loaded -> InkPanel(Modifier.fillMaxWidth()) {
                     Text(
-                        "${Words.reads.c} your ${Words.missive.pl}…",
+                        UiText.themed(R.string.inbox_loading, R.string.inbox_loading__t).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -227,7 +231,7 @@ internal fun InboxScreen(
                         color = IronvellumColors.InkMuted,
                     )
                     Spacer(Modifier.height(6.dp))
-                    SocialRefreshLink(onClick = { viewModel.open(force = true) }, label = "Try again")
+                    SocialRefreshLink(onClick = { viewModel.open(force = true) }, label = stringResource(R.string.inbox_try_again))
                 }
                 else -> {
                     if (err != null) {
@@ -293,7 +297,7 @@ internal fun InboxScreen(
         }
         ui.pendingDecline?.let { (_, name) ->
             UndoBar(
-                message = "Declined $name",
+                message = stringResource(R.string.inbox_declined_message, name),
                 onUndo = viewModel::undoDecline,
                 onExpired = viewModel::commitDecline,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
@@ -307,14 +311,14 @@ private fun EmptyInbox() {
     // One quiet plate, the same card the list would sit in: a plain title and one muted line.
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "No ${Words.missive.pl} yet",
+            UiText.themed(R.string.inbox_empty_title, R.string.inbox_empty_title__t).asString(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.Ink,
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            "${Words.ally.c} requests, ${Words.remark.pl} and ${Words.tribute.pl} on your ${Words.trial.pl} land here.",
+            UiText.themed(R.string.inbox_empty_body, R.string.inbox_empty_body__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -333,18 +337,43 @@ private fun InboxRow(
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
+    val unreadDescription = stringResource(R.string.inbox_unread_description)
+    // Each line is one whole sentence per mode; a workout with no title gets its own wording
+    // rather than a concept word spliced into the titled one.
     val (icon, line) = when (item) {
-        is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to "wants to be your ${Words.ally.s}"
-        is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ${Words.ally.s} request"
-        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left ${Words.remark.a} on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewReply -> Icons.Outlined.Forum to "replied on ${item.sessionHeadline.ifBlank { Words.trial.a }}"
-        is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} ${Words.tribute.s} on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to "joined your ${Words.circle.s} ${item.circleName}"
-        is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "${Words.sealed.s} the ${Words.trial.s} that met your ${Words.circle.s}'s weekly goal"
+        is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to
+            UiText.themed(R.string.inbox_line_friend_request, R.string.inbox_line_friend_request__t)
+        is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to
+            UiText.themed(R.string.inbox_line_request_accepted, R.string.inbox_line_request_accepted__t)
+        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to (
+            if (item.sessionHeadline.isBlank()) {
+                UiText.themed(R.string.inbox_line_comment_untitled, R.string.inbox_line_comment_untitled__t)
+            } else {
+                UiText.themed(R.string.inbox_line_comment, R.string.inbox_line_comment__t, item.sessionHeadline)
+            }
+            )
+        is InboxItem.NewReply -> Icons.Outlined.Forum to (
+            if (item.sessionHeadline.isBlank()) {
+                UiText.themed(R.string.inbox_line_reply_untitled, R.string.inbox_line_reply_untitled__t)
+            } else {
+                UiText.res(R.string.inbox_line_reply, item.sessionHeadline)
+            }
+            )
+        is InboxItem.NewReaction -> item.reaction.glyph() to (
+            if (item.sessionHeadline.isBlank()) {
+                UiText.themed(R.string.inbox_line_reaction_untitled, R.string.inbox_line_reaction_untitled__t, item.reaction.displayName())
+            } else {
+                UiText.themed(R.string.inbox_line_reaction, R.string.inbox_line_reaction__t, item.reaction.displayName(), item.sessionHeadline)
+            }
+            )
+        is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to
+            UiText.themed(R.string.inbox_line_circle_joined, R.string.inbox_line_circle_joined__t, item.circleName)
+        is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to
+            UiText.themed(R.string.inbox_line_circle_goal_met, R.string.inbox_line_circle_goal_met__t)
         is InboxItem.CircleNotice -> Icons.Outlined.GroupAdd to when (item.change) {
-            CircleChange.LEFT -> "left your ${Words.circle.s} ${item.circleName}"
-            CircleChange.KEEPER -> "passed you the keys of ${item.circleName}"
-            CircleChange.REMOVED -> "removed you from ${item.circleName}"
+            CircleChange.LEFT -> UiText.themed(R.string.inbox_line_circle_left, R.string.inbox_line_circle_left__t, item.circleName)
+            CircleChange.KEEPER -> UiText.res(R.string.inbox_line_circle_keys, item.circleName)
+            CircleChange.REMOVED -> UiText.res(R.string.inbox_line_circle_removed, item.circleName)
         }
     }
     val open: () -> Unit = when (item) {
@@ -380,7 +409,7 @@ private fun InboxRow(
                         .clip(DotShape)
                         .background(IronvellumColors.Emerald)
                         // The dot is the only unread cue a screen reader could miss.
-                        .semantics { contentDescription = "New" },
+                        .semantics { contentDescription = unreadDescription },
                 )
             }
         }
@@ -405,7 +434,7 @@ private fun InboxRow(
                 )
             }
             Text(
-                line,
+                line.asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 maxLines = 2,
@@ -415,7 +444,7 @@ private fun InboxRow(
             if (!remark.isNullOrBlank()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "“$remark”",
+                    stringResource(R.string.inbox_remark_quote, remark),
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     maxLines = 3,
@@ -424,15 +453,15 @@ private fun InboxRow(
             }
             if (item is InboxItem.FriendRequest) {
                 when (answered) {
-                    RequestAnswer.ACCEPTED -> AnswerLabel("Allied")
-                    RequestAnswer.DECLINED -> AnswerLabel("Declined")
+                    RequestAnswer.ACCEPTED -> AnswerLabel(UiText.themed(R.string.inbox_answer_accepted, R.string.inbox_answer_accepted__t).asString())
+                    RequestAnswer.DECLINED -> AnswerLabel(stringResource(R.string.inbox_answer_declined))
                     null -> Row(verticalAlignment = Alignment.CenterVertically) {
                         InkChip(
-                            label = "Accept",
+                            label = stringResource(R.string.inbox_accept_button),
                             onClick = { if (!answering) onAccept() },
                         )
                         Text(
-                            "Decline",
+                            stringResource(R.string.inbox_decline_button),
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -460,4 +489,5 @@ private fun AnswerLabel(text: String) {
     )
 }
 
-private fun String.orWorkout(): String = ifBlank { "your ${Words.trial.s}" }
+private fun String.orWorkout(): String =
+    ifBlank { Words.text(UiText.themed(R.string.inbox_headline_your_trial, R.string.inbox_headline_your_trial__t)) }

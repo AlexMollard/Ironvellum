@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CrestCatalogue
 import com.ironvellum.app.domain.CrestDef
@@ -40,7 +42,9 @@ import com.ironvellum.app.domain.CrestGroup
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Veil
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.components.InkDivider
@@ -89,7 +93,7 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
                 CrestPlate(worn.id, Modifier.size(40.dp), animate = animate)
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "Wearing ${worn.sentenceName}",
+                        stringResource(R.string.idle_crest_wearing, worn.sentenceName),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = IronvellumColors.Ink,
@@ -102,12 +106,12 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text("Change", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
+                Text(stringResource(R.string.idle_crests_change_button), style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
             }
         }
     } else {
         Text(
-            "No crest worn. Tap an earned crest to wear it; ${Words.ally.pl} see it on your avatar.",
+            UiText.themed(R.string.idle_crests_none_worn, R.string.idle_crests_none_worn__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 10.dp, start = 2.dp, end = 2.dp),
@@ -116,7 +120,7 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
     CrestGroup.entries.forEach { group ->
         val inGroup = Crests.inGroup(group)
         val held = inGroup.count { it.id in crests.owned }
-        SectionHeader("${groupLead(group)} · $held of ${inGroup.size}", topPadding = 14.dp)
+        SectionHeader(stringResource(R.string.idle_crests_group_header, groupLead(group), held, inGroup.size), topPadding = 14.dp)
         inGroup.forEach { def ->
             CrestRow(
                 def = def,
@@ -132,11 +136,12 @@ internal fun CrestsPage(crests: CrestUi, animate: Boolean, onOpen: (String) -> U
     }
 }
 
+@Composable
 private fun groupLead(group: CrestGroup): String = when (group) {
-    CrestGroup.Ladder -> "Ladder · every ${Veil.MILESTONE_EVERY} levels"
+    CrestGroup.Ladder -> UiText.plural(R.plurals.idle_crests_group_ladder, Veil.MILESTONE_EVERY).asString()
     CrestGroup.Deeds -> Words.deed.cpl
-    CrestGroup.Houses -> "Houses · complete a house"
-    CrestGroup.Veil -> "${Words.theVeil.c} · chance draws"
+    CrestGroup.Houses -> stringResource(R.string.idle_crests_group_houses)
+    CrestGroup.Veil -> stringResource(R.string.always_crests_group_veil)
 }
 
 /** One crest: its plate, name, perk or ask, and for one in reach a count over a short bar. */
@@ -149,14 +154,19 @@ private fun CrestRow(
     animate: Boolean,
     onOpen: () -> Unit,
 ) {
-    val status = if (worn) "worn" else if (owned) "owned" else "locked"
+    val openLabel = stringResource(R.string.idle_crest_open_description, def.name)
+    val rowDescription = stringResource(
+        if (worn) R.string.idle_crest_row_worn_description else if (owned) R.string.idle_crest_row_owned_description else R.string.idle_crest_row_locked_description,
+        def.name,
+        progress.line,
+    )
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Open ${def.name}", onClick = onOpen)
+            .clickable(role = Role.Button, onClickLabel = openLabel, onClick = onOpen)
             .padding(horizontal = 2.dp, vertical = 6.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "${def.name}, $status. ${progress.line}" },
+            .semantics(mergeDescendants = true) { contentDescription = rowDescription },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -172,7 +182,7 @@ private fun CrestRow(
                 )
                 if (worn) {
                     Text(
-                        "Worn",
+                        stringResource(R.string.idle_crest_worn_badge),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -216,7 +226,7 @@ internal fun CrestSheet(
     def: CrestDef,
     crests: CrestUi,
     animate: Boolean,
-    notice: String?,
+    notice: UiText?,
     onWear: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -226,7 +236,7 @@ internal fun CrestSheet(
     val nextLadder = Veil.nextMilestone(crests.level, crests.owned)?.second
     val progress = CrestCatalogue.progress(def, owned, crests.level, nextLadder, crests.deeds, crests.houseRelics)
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("Crest", onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
+        PushedHeader(stringResource(R.string.idle_crest_title), onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
         Column(
             Modifier
                 .weight(1f)
@@ -246,7 +256,7 @@ internal fun CrestSheet(
                 textAlign = TextAlign.Center,
             )
             Text(
-                CrestCatalogue.sourceLine(def) + if (owned) "" else " · Locked",
+                if (owned) CrestCatalogue.sourceLine(def) else stringResource(R.string.idle_crest_source_locked, CrestCatalogue.sourceLine(def)),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
@@ -254,7 +264,7 @@ internal fun CrestSheet(
             )
             if (!owned) {
                 InkPanel(Modifier.fillMaxWidth().padding(top = 14.dp)) {
-                    Text("HOW TO EARN IT", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.idle_crest_how_label), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     Text(
                         if (def.group == CrestGroup.Deeds) progress.line else def.how,
                         style = MaterialTheme.typography.bodyLarge,
@@ -263,10 +273,10 @@ internal fun CrestSheet(
                     )
                     Text(
                         when (def.group) {
-                            CrestGroup.Deeds -> "The ${Words.deed.s} ${def.deed?.name}. The crest is yours for good once it is earned."
-                            CrestGroup.Ladder -> "Every level from here pays toward it. It is yours for good once earned."
-                            CrestGroup.Houses -> "Hold all four relics of the house. The crest is yours for good once it is complete."
-                            CrestGroup.Veil -> "It cannot be bought or levelled to: ${Words.veilDraw.at} that pays a crest can pay this one."
+                            CrestGroup.Deeds -> stringResource(R.string.always_crest_how_deed, def.deed?.name.orEmpty())
+                            CrestGroup.Ladder -> stringResource(R.string.idle_crest_how_ladder)
+                            CrestGroup.Houses -> stringResource(R.string.idle_crest_how_houses)
+                            CrestGroup.Veil -> stringResource(R.string.always_crest_how_veil)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
@@ -284,7 +294,7 @@ internal fun CrestSheet(
             InkPanel(Modifier.fillMaxWidth().padding(top = 14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (owned) "${Words.veil.u} PERK" else "PERK ONCE WORN",
+                        if (owned) stringResource(R.string.always_crest_perk_label) else stringResource(R.string.idle_crest_perk_once_worn_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f),
@@ -322,7 +332,7 @@ internal fun CrestSheet(
             }
             if (owned && replaced != null) {
                 InkPanel(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                    Text("INSTEAD OF WHAT YOU WEAR NOW", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    Text(stringResource(R.string.idle_crest_instead_label), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         CrestPlate(replaced.id, Modifier.size(32.dp))
                         Text(
@@ -334,12 +344,12 @@ internal fun CrestSheet(
                 }
             }
             InkPanel(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                Text("SEEN BY YOUR ${Words.ally.upl}", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(UiText.themed(R.string.idle_crest_seen_label, R.string.idle_crest_seen_label__t).asString(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 Text(
                     if (owned) {
-                        "On your avatar wherever your ${Words.ally.pl} see you."
+                        UiText.themed(R.string.idle_crest_seen_owned, R.string.idle_crest_seen_owned__t).asString()
                     } else {
-                        "${Words.ally.cpl} see it once you wear it."
+                        UiText.themed(R.string.idle_crest_seen_unowned, R.string.idle_crest_seen_unowned__t).asString()
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
@@ -351,20 +361,20 @@ internal fun CrestSheet(
         val name = def.sentenceName.replaceFirstChar { it.uppercase() }
         CelebrationDock(
             primary = when {
-                !owned -> "Earn it to wear it"
-                worn -> "Wearing $name"
-                else -> "Wear $name"
+                !owned -> stringResource(R.string.idle_crest_earn_button)
+                worn -> stringResource(R.string.idle_crest_wearing, name)
+                else -> stringResource(R.string.idle_crest_wear_button, name)
             },
             onPrimary = onWear,
             primaryEnabled = owned && !worn && crests.mayChange,
             reserveLink = false,
             caption = {
                 Text(
-                    notice ?: when {
-                        !owned -> "${Words.ally.cpl} see it once you wear it."
-                        worn -> "This is the crest you wear."
-                        !crests.mayChange -> "You changed your crest today. Come back tomorrow."
-                        else -> "Wearing collects your essence first. One change a day."
+                    notice?.asString() ?: when {
+                        !owned -> UiText.themed(R.string.idle_crest_seen_unowned, R.string.idle_crest_seen_unowned__t).asString()
+                        worn -> stringResource(R.string.idle_crest_is_worn)
+                        !crests.mayChange -> stringResource(R.string.idle_crest_changed_today)
+                        else -> stringResource(R.string.idle_crest_wear_hint)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,

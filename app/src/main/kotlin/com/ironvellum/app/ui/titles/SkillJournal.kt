@@ -148,7 +148,7 @@ fun SkillJournal(
         ListRow(
             label = Words.paths.c,
             subline = lines.take(PATHS_NAMED).joinToString(", ").let {
-                if (more > 0) UiText.res(R.string.skilljournal_paths_named_more, it, more).asString() else it
+                if (more > 0) UiText.plural(R.plurals.skilljournal_paths_named_more, more, it, more).asString() else it
             },
             onClickLabel = UiText.themed(
                 R.string.skilljournal_open_paths_description,
@@ -227,13 +227,14 @@ private fun Figure(label: String, value: String, modifier: Modifier = Modifier) 
  */
 internal fun heatmapSummary(byDay: Map<LocalDate, Int>, start: LocalDate, today: LocalDate): String {
     val days = byDay.filter { (date, n) -> n > 0 && !date.isBefore(start) && !date.isAfter(today) }
-    if (days.isEmpty()) return Words.text(UiText.res(R.string.skilljournal_heatmap_empty, WEEKS))
+    if (days.isEmpty()) return Words.text(UiText.plural(R.plurals.skilljournal_heatmap_empty, WEEKS))
     // the latest day among those tied for most
     val top = days.entries.maxWith(compareBy({ it.value }, { it.key }))
     val on = top.key.format(DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
     return Words.text(
-        UiText.res(
-            R.string.skilljournal_heatmap_summary,
+        UiText.plural(
+            R.plurals.skilljournal_heatmap_summary,
+            WEEKS,
             WEEKS,
             UiText.plural(R.plurals.skilljournal_days_practised, days.size),
             UiText.plural(R.plurals.skilljournal_attempts_count, top.value),

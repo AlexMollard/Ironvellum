@@ -1,7 +1,10 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.health.connect.client.HealthConnectClient
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
@@ -167,14 +170,16 @@ class HealthSync(private val context: Context) {
         val newestStepAtMs: Long? = null,
     )
 
+    private fun metricName(@StringRes id: Int): String = Words.text(UiText.res(id))
+
     suspend fun readDailyHistory(days: Int): HistoryRead {
-        if (!available()) return HistoryRead(problems = listOf("Health Connect unavailable"))
+        if (!available()) return HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_unavailable))))
         // Nothing granted at all: every aggregate below would be rejected by the
         // platform, so the daily worker was throwing seven SecurityExceptions
         // per run against a service that can never answer it. A PARTIAL grant
         // still proceeds — each metric is isolated, so the ones allowed read.
         if (grantedPermissions().isEmpty()) {
-            return HistoryRead(problems = listOf("Health Connect permissions not granted"))
+            return HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_permissions_missing))))
         }
         val client = HealthConnectClient.getOrCreate(context)
         val zone = ZoneId.systemDefault()
@@ -210,9 +215,9 @@ class HealthSync(private val context: Context) {
             }.toMap()
         }.onFailure { note(label, it) }.getOrDefault(emptyMap())
 
-        val stepsByDate = daily("steps", StepsRecord.COUNT_TOTAL)
-        val distanceByDate = daily("distance", DistanceRecord.DISTANCE_TOTAL)
-        val kcalByDate = daily("active calories", ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL)
+        val stepsByDate = daily(metricName(R.string.health_metric_steps), StepsRecord.COUNT_TOTAL)
+        val distanceByDate = daily(metricName(R.string.health_metric_distance), DistanceRecord.DISTANCE_TOTAL)
+        val kcalByDate = daily(metricName(R.string.health_metric_active_calories), ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL)
 
         val sleepByDate: Map<LocalDate, Long> = runCatching {
             client.readRecords(
@@ -230,7 +235,7 @@ class HealthSync(private val context: Context) {
                 )
             }.let { SleepMath.nightMinutesByWakeDay(it, zone) }
                 .mapValues { it.value.toLong() }
-        }.onFailure { note("sleep", it) }.getOrDefault(emptyMap())
+        }.onFailure { note(metricName(R.string.health_metric_sleep), it) }.getOrDefault(emptyMap())
 
         val restingHrByDate: Map<LocalDate, Int> = runCatching {
             client.readRecords(
@@ -241,7 +246,7 @@ class HealthSync(private val context: Context) {
             ).records
                 .groupBy { it.time.atZone(zone).toLocalDate() }
                 .mapValues { (_, samples) -> samples.map { it.beatsPerMinute }.average().toInt() }
-        }.onFailure { note("resting heart rate", it) }.getOrDefault(emptyMap())
+        }.onFailure { note(metricName(R.string.health_metric_resting_hr), it) }.getOrDefault(emptyMap())
 
         // Only days with real signal: fabricating empty rows made the sync
         // report "90 days" while every screen showed nothing.
@@ -270,7 +275,7 @@ class HealthSync(private val context: Context) {
                     timeRangeFilter = TimeRangeFilter.between(from, to),
                 ),
             ).records
-        }.onFailure { note("weight", it) }.getOrDefault(emptyList())
+        }.onFailure { note(metricName(R.string.health_metric_weight), it) }.getOrDefault(emptyList())
 
         val bodyFatByDate = runCatching {
             client.readRecords(
@@ -281,7 +286,7 @@ class HealthSync(private val context: Context) {
             ).records
                 .groupBy { it.time.atZone(zone).toLocalDate() }
                 .mapValues { (_, samples) -> toInstrumentPrecision(samples.last().percentage.value) }
-        }.onFailure { note("body fat", it) }.getOrDefault(emptyMap())
+        }.onFailure { note(metricName(R.string.health_metric_body_fat), it) }.getOrDefault(emptyMap())
 
         // One reading per day (the last of that day) so repeat weigh-ins do not
         // spam the stat history.
@@ -299,12 +304,12 @@ class HealthSync(private val context: Context) {
             .sortedBy { it.date }
 
         val coverage = mapOf(
-            "steps" to stepsByDate.count { it.value > 0L },
-            "distance" to distanceByDate.size,
-            "calories" to kcalByDate.size,
-            "sleep" to sleepByDate.size,
-            "heart rate" to restingHrByDate.size,
-            "weight" to bodyReadings.size,
+            metricName(R.string.health_metric_steps) to stepsByDate.count { it.value > 0L },
+            metricName(R.string.health_metric_distance) to distanceByDate.size,
+            metricName(R.string.health_metric_calories) to kcalByDate.size,
+            metricName(R.string.health_metric_sleep) to sleepByDate.size,
+            metricName(R.string.health_metric_heart_rate) to restingHrByDate.size,
+            metricName(R.string.health_metric_weight) to bodyReadings.size,
         )
 
         // Provenance: a step count that trails the watch/phone tally means
@@ -325,7 +330,7 @@ class HealthSync(private val context: Context) {
         val newestStepAtMs = rawSteps.maxOfOrNull { it.endTime }?.toEpochMilli()
 
         if (result.isEmpty() && bodyReadings.isEmpty() && problems.isEmpty()) {
-            problems += "Health Connect returned no activity for the last $days days"
+            problems += Words.text(UiText.plural(R.plurals.health_no_activity, days))
         }
         return HistoryRead(result, bodyReadings, coverage, problems, stepSources, newestStepAtMs)
     }

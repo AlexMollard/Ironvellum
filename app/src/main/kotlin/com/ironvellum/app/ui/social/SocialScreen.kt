@@ -12,7 +12,11 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -124,12 +128,12 @@ fun SocialScreen(
     if (explainNotifications) {
         IronvellumDialog(
             onDismissRequest = { explainNotifications = false },
-            title = { Text("${Words.ally.c} notifications?") },
-            text = { Text("See ${Words.ally.s} requests, ${Words.remark.pl} and ${Words.tribute.pl}.") },
+            title = { Text(UiText.themed(R.string.acct_notifications_title, R.string.acct_notifications_title__t).asString()) },
+            text = { Text(UiText.themed(R.string.acct_notifications_text, R.string.acct_notifications_text__t).asString()) },
             // ALLOW is the only path to the system prompt; NOT NOW just closes.
             confirmButton = {
                 IronvellumButton(
-                    "Allow",
+                    stringResource(R.string.acct_allow_button),
                     onClick = {
                         explainNotifications = false
                         // The permission exists only from 33; older systems
@@ -141,7 +145,7 @@ fun SocialScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton("Not now", quiet = true, onClick = { explainNotifications = false })
+                IronvellumButton(stringResource(R.string.acct_not_now_button), quiet = true, onClick = { explainNotifications = false })
             },
         )
     }

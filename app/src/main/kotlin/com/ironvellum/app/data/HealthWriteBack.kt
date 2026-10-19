@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutSession
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -136,8 +138,8 @@ class HealthWriteBack(
         if (!current.value.enabled) return
         val spec = ExerciseSessionMapping.specFor(session, nowMs(), zone()) ?: return
         scope.launch {
-            if (!health.available()) return@launch fail("Health Connect is not available")
-            if (!permitted()) return@launch fail("Health Connect no longer lets Ironvellum save")
+            if (!health.available()) return@launch fail(Words.text(UiText.res(R.string.health_writeback_unavailable)))
+            if (!permitted()) return@launch fail(Words.text(UiText.res(R.string.health_writeback_revoked)))
             try {
                 health.writeExerciseSession(spec)
                 succeed()
@@ -156,7 +158,7 @@ class HealthWriteBack(
                 health.deleteExerciseSession(ExerciseSessionMapping.clientRecordId(sessionId, startedAtMs))
             } catch (e: Exception) {
                 Log.w(TAG, "health connect removal failed", e)
-                if (current.value.enabled) fail("the earlier entry could not be removed")
+                if (current.value.enabled) fail(Words.text(UiText.res(R.string.health_writeback_remove_failed)))
             }
         }
     }

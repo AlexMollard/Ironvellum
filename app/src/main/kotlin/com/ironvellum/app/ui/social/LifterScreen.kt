@@ -1,11 +1,14 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.data.cloud.FriendRow
-import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,7 +55,6 @@ import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import java.util.Locale
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
@@ -110,7 +112,7 @@ internal class LifterViewModel(
 
     fun load(userId: String) {
         if (userId.isBlank()) {
-            _ui.value = LifterUi(loading = false, error = "No ${Words.lifter.t} selected.")
+            _ui.value = LifterUi(loading = false, error = Words.text(UiText.themed(R.string.lifter_none_selected, R.string.lifter_none_selected__t)))
             return
         }
         _ui.value = LifterUi(myUserId = accountRepo.account.value?.userId)
@@ -123,7 +125,7 @@ internal class LifterViewModel(
                         loading = false,
                         // The real reason, not "failed" — RLS refusals read very
                         // differently from being offline.
-                        error = it.message ?: it::class.simpleName ?: "Unknown error",
+                        error = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_error)),
                     )
                 }
             refreshSocial(userId)
@@ -149,7 +151,7 @@ internal class LifterViewModel(
             // Leave allyState unknown: guessing None would offer ADD ALLY to an
             // existing ally, so the button stays hidden until the read answers.
             _ui.value = _ui.value.copy(
-                allyError = error.message ?: error::class.simpleName ?: "Unknown error",
+                allyError = error.message ?: error::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_error)),
                 allyBusy = false,
             )
         }
@@ -194,7 +196,7 @@ internal class LifterViewModel(
                     _ui.value = _ui.value.copy(
                         allyState = AllyState.None,
                         allyBusy = false,
-                        allyError = it.message ?: it::class.simpleName ?: "Unknown failure",
+                        allyError = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_failure)),
                     )
                 }
         }
@@ -202,13 +204,13 @@ internal class LifterViewModel(
 
     fun removeAlly(userId: String) = act {
         cloud.removeFriend(userId).onSuccess {
-            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = "No longer ${Words.ally.pl}.")
+            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = Words.text(UiText.themed(R.string.lifter_no_longer_allies, R.string.lifter_no_longer_allies__t)))
         }
     }
 
     fun setMuted(userId: String, mute: Boolean) = act {
         (if (mute) cloud.mute(userId) else cloud.unmute(userId)).onSuccess {
-            _ui.value = _ui.value.copy(muted = mute, notice = if (mute) "Muted." else "Unmuted.")
+            _ui.value = _ui.value.copy(muted = mute, notice = Words.text(UiText.res(if (mute) R.string.lifter_muted else R.string.lifter_unmuted)))
         }
     }
 
@@ -218,7 +220,7 @@ internal class LifterViewModel(
 
     fun report(userId: String, reason: ReportReason, note: String) = act {
         cloud.report(targetUserId = userId, reason = reason, note = note).onSuccess {
-            _ui.value = _ui.value.copy(notice = "Report sent — thanks.")
+            _ui.value = _ui.value.copy(notice = Words.text(UiText.res(R.string.lifter_report_sent)))
         }
     }
 
@@ -227,7 +229,7 @@ internal class LifterViewModel(
         _ui.value = _ui.value.copy(actionBusy = true, actionError = null, notice = null)
         viewModelScope.launch {
             call().onFailure {
-                _ui.value = _ui.value.copy(actionError = it.message ?: it::class.simpleName ?: "Unknown failure")
+                _ui.value = _ui.value.copy(actionError = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_failure)))
             }
             _ui.value = _ui.value.copy(actionBusy = false)
         }
@@ -254,7 +256,7 @@ internal fun LifterScreen(
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmBlock by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
-    val name = displayName.ifBlank { "this ${Words.lifter.t}" }
+    val named = displayName.isNotBlank()
     val canManage = ui.myUserId != null && !isMe
 
     Column(
@@ -282,11 +284,15 @@ internal fun LifterScreen(
                     when (ui.allyState) {
                         null -> {}
                         AllyState.None -> AllyChip(
-                            label = if (ui.allyBusy) "Sending…" else "Add ${Words.ally.s}",
+                            label = if (ui.allyBusy) {
+                                stringResource(R.string.lifter_sending)
+                            } else {
+                                UiText.themed(R.string.lifter_add_ally_button, R.string.lifter_add_ally_button__t).asString()
+                            },
                             tappable = !ui.allyBusy,
                             onClick = { viewModel.addAlly(userId) },
                         )
-                        AllyState.Pending, AllyState.Incoming -> AllyStatus("Request pending", check = false)
+                        AllyState.Pending, AllyState.Incoming -> AllyStatus(stringResource(R.string.lifter_request_pending), check = false)
                         AllyState.Ally -> AllyStatus(Words.ally.c, check = true)
                     }
                 }
@@ -299,26 +305,27 @@ internal fun LifterScreen(
         // so instead of silently guessing or snapping the button back.
         if (canManage && ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
             Spacer(Modifier.height(6.dp))
-            SocialErrorBanner("${Words.ally.c} request failed: ${ui.allyError}")
+            SocialErrorBanner(
+                UiText.themed(R.string.lifter_ally_request_failed, R.string.lifter_ally_request_failed__t, ui.allyError.orEmpty()).asString(),
+            )
         }
         Spacer(Modifier.height(14.dp))
 
         when {
             ui.loading -> Text(
-                "Opening the ${Words.folio.s}…",
+                UiText.themed(R.string.lifter_opening, R.string.lifter_opening__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
 
             ui.error != null -> Text(
-                "The ${Words.folio.s} won't open. ${ui.error.orEmpty()}",
+                UiText.themed(R.string.lifter_open_failed, R.string.lifter_open_failed__t, ui.error.orEmpty()).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.DangerRed,
             )
 
             ui.sessions.isEmpty() -> Text(
-                "Nothing shared. This ${Words.lifter.t} has no ${Words.trial.pl} you may read: either none are ${Words.sealed.s}, " +
-                    "or their visibility does not include you.",
+                UiText.themed(R.string.lifter_nothing_shared, R.string.lifter_nothing_shared__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -335,11 +342,27 @@ internal fun LifterScreen(
                 val strSeries = chrono.map { it.strengthScore.toDouble() }
 
                 val summary = buildList {
-                    add("${ui.sessions.size} ${plural(ui.sessions.size, Words.trial.s, Words.trial.pl)} shared")
-                    add("+${grouped(ui.sessions.sumOf { it.xpAwarded }.toLong())} XP")
-                    add(String.format(Locale.ENGLISH, "%.1f", perWeek) + " a week")
+                    add(
+                        UiText.themedPlural(
+                            R.plurals.lifter_summary_shared,
+                            R.plurals.lifter_summary_shared__t,
+                            ui.sessions.size,
+                        ).asString(),
+                    )
+                    add(stringResource(R.string.lifter_xp_gain, grouped(ui.sessions.sumOf { it.xpAwarded }.toLong())))
+                    add(stringResource(R.string.lifter_summary_per_week, String.format(Locale.ENGLISH, "%.1f", perWeek)))
                     daysSince?.let {
-                        add("last ${Words.trial.s} " + when (it) { 0 -> "today"; 1 -> "yesterday"; else -> "$it days ago" })
+                        add(
+                            when (it) {
+                                0 -> UiText.themed(R.string.lifter_summary_last_today, R.string.lifter_summary_last_today__t)
+                                1 -> UiText.themed(R.string.lifter_summary_last_yesterday, R.string.lifter_summary_last_yesterday__t)
+                                else -> UiText.themedPlural(
+                                    R.plurals.lifter_summary_last_days_ago,
+                                    R.plurals.lifter_summary_last_days_ago__t,
+                                    it,
+                                )
+                            }.asString(),
+                        )
                     }
                 }.joinToString(" · ")
                 Text(
@@ -353,14 +376,14 @@ internal fun LifterScreen(
                 InkPanel(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Strength line",
+                            stringResource(R.string.lifter_strength_title),
                             style = MaterialTheme.typography.titleSmall,
                             color = IronvellumColors.Ink,
                             modifier = Modifier.weight(1f),
                         )
                         if (strSeries.size >= 2) {
                             Text(
-                                "${Words.peak.u} ${strSeries.max().toInt()}",
+                                UiText.themed(R.string.lifter_strength_peak, R.string.lifter_strength_peak__t, strSeries.max().toInt()).asString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = IronvellumColors.SovereignGold,
                                 letterSpacing = IronvellumTracking.InlineLabel,
@@ -373,35 +396,35 @@ internal fun LifterScreen(
                             strSeries,
                             startLabel = chrono.first().completedAtMs?.let { formatDate(it, "d MMM") },
                             endLabel = chrono.last().completedAtMs?.let { formatDate(it, "d MMM") },
-                            valueText = { "%.0f strength".fmt(it) },
+                            valueText = { Words.text(UiText.res(R.string.lifter_strength_value, it)) },
                             dateText = { chrono[it].completedAtMs?.let { ms -> formatDate(ms, "d MMM") } },
                         )
                     } else {
                         // A single trial cannot draw a line: say so instead of
                         // leaving a blank canvas.
                         Text(
-                            "One ${Words.trial.s} on record. The line begins with the next.",
+                            UiText.themed(R.string.lifter_strength_single, R.string.lifter_strength_single__t).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
                     }
                 }
 
-                SectionHeader("Recent ${Words.trial.pl}", topPadding = 20.dp)
+                SectionHeader(UiText.themed(R.string.lifter_recent_header, R.string.lifter_recent_header__t).asString(), topPadding = 20.dp)
                 // Bounded at the source: CloudSync.friendSessions fetches at
                 // most 20 rows, so this plain Column never composes more.
                 ui.sessions.forEach { session ->
                     val headline = session.title.ifBlank { session.label }.ifBlank { Words.trial.c }
                     val subline = buildList {
                         session.completedAtMs?.let { add(formatDate(it, "d MMM")) }
-                        add("${session.sets} ${plural(session.sets, "set", "sets")}")
-                        add("STR ${session.strengthScore}")
-                        if (session.editedAtMs != null) add("amended")
+                        add(UiText.plural(R.plurals.common_sets_count, session.sets).asString())
+                        add(stringResource(R.string.lifter_str_figure, session.strengthScore))
+                        if (session.editedAtMs != null) add(stringResource(R.string.lifter_amended))
                     }.joinToString(" · ")
                     ListRow(
                         label = headline,
                         subline = subline,
-                        value = "+${grouped(session.xpAwarded.toLong())} XP",
+                        value = stringResource(R.string.lifter_xp_gain, grouped(session.xpAwarded.toLong())),
                         valueColor = IronvellumColors.SovereignGold,
                         onClickLabel = Words.openTrial.c,
                         onClick = if (session.id.isNotBlank()) {
@@ -418,21 +441,21 @@ internal fun LifterScreen(
         // Last, after the record: these are rare, heavy actions, and at the top
         // they crowded out the training the screen exists to show.
         if (canManage) {
-            SectionHeader("Manage ${Words.folio.s}", topPadding = 20.dp)
+            SectionHeader(UiText.themed(R.string.lifter_manage_header, R.string.lifter_manage_header__t).asString(), topPadding = 20.dp)
             ui.muted?.let { muted ->
                 SettingsSwitchRow(
-                    label = "Mute",
-                    caption = "Hides their ${Words.trial.pl}, ${Words.remark.pl} and ${Words.tribute.pl}. They aren't told.",
+                    label = stringResource(R.string.lifter_mute_label),
+                    caption = UiText.themed(R.string.lifter_mute_caption, R.string.lifter_mute_caption__t).asString(),
                     checked = muted,
                     onCheckedChange = { if (!ui.actionBusy) viewModel.setMuted(userId, it) },
                 )
                 InkDivider()
             }
             if (ui.allyState == AllyState.Ally) {
-                ManageRow("Remove ${Words.ally.s}", IronvellumColors.Ink) { if (!ui.actionBusy) confirmRemove = true }
+                ManageRow(UiText.themed(R.string.lifter_remove_ally_label, R.string.lifter_remove_ally_label__t).asString(), IronvellumColors.Ink) { if (!ui.actionBusy) confirmRemove = true }
             }
-            ManageRow("Block", IronvellumColors.DangerRed) { if (!ui.actionBusy) confirmBlock = true }
-            ManageRow("Report", IronvellumColors.DangerRed) { if (!ui.actionBusy) reporting = true }
+            ManageRow(stringResource(R.string.lifter_block_label), IronvellumColors.DangerRed) { if (!ui.actionBusy) confirmBlock = true }
+            ManageRow(stringResource(R.string.lifter_report_label), IronvellumColors.DangerRed) { if (!ui.actionBusy) reporting = true }
             ui.notice?.let {
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -453,16 +476,24 @@ internal fun LifterScreen(
     if (confirmRemove) {
         IronvellumDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove $name as ${Words.ally.a}?") },
-            text = { Text("Their ${Words.ally.pl}-only ${Words.trial.pl} leave your ${Words.tidings.s}. Either of you can send a new request later.") },
+            title = {
+                Text(
+                    if (named) {
+                        UiText.themed(R.string.lifter_remove_title, R.string.lifter_remove_title__t, displayName).asString()
+                    } else {
+                        UiText.themed(R.string.lifter_remove_title_unnamed, R.string.lifter_remove_title_unnamed__t).asString()
+                    },
+                )
+            },
+            text = { Text(UiText.themed(R.string.lifter_remove_body, R.string.lifter_remove_body__t).asString()) },
             confirmButton = {
-                IronvellumButton(label = "Remove", onClick = {
+                IronvellumButton(label = stringResource(R.string.lifter_remove_button), onClick = {
                     confirmRemove = false
                     viewModel.removeAlly(userId)
                 }, danger = true)
             },
             dismissButton = {
-                IronvellumButton(label = "Keep", onClick = { confirmRemove = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.lifter_keep_button), onClick = { confirmRemove = false }, quiet = true)
             },
         )
     }
@@ -470,21 +501,32 @@ internal fun LifterScreen(
     if (confirmBlock) {
         IronvellumDialog(
             onDismissRequest = { confirmBlock = false },
-            title = { Text("Block $name?") },
+            title = {
+                Text(
+                    if (named) {
+                        stringResource(R.string.lifter_block_title, displayName)
+                    } else {
+                        UiText.themed(R.string.lifter_block_title_unnamed, R.string.lifter_block_title_unnamed__t).asString()
+                    },
+                )
+            },
             text = {
                 Text(
-                    "You and $name will no longer see each other's ${Words.trial.pl}, ${Words.remark.pl} or ${Words.tribute.pl}, " +
-                        "any alliance ends, and neither of you can send ${Words.ally.a} request. Unblock any time under ${Words.ally.tpl}.",
+                    if (named) {
+                        UiText.themed(R.string.lifter_block_body, R.string.lifter_block_body__t, displayName).asString()
+                    } else {
+                        UiText.themed(R.string.lifter_block_body_unnamed, R.string.lifter_block_body_unnamed__t).asString()
+                    },
                 )
             },
             confirmButton = {
-                IronvellumButton(label = "Block", onClick = {
+                IronvellumButton(label = stringResource(R.string.lifter_block_label), onClick = {
                     confirmBlock = false
                     viewModel.block(userId)
                 }, danger = true)
             },
             dismissButton = {
-                IronvellumButton(label = "Cancel", onClick = { confirmBlock = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { confirmBlock = false }, quiet = true)
             },
         )
     }

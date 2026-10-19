@@ -111,7 +111,7 @@ internal fun InscribedOverlay(
             // Keyed so each draw starts its own clock and haptics.
             key(draw.serial) {
                 val page = draw.page
-                val again = stringResource(R.string.veilreveal_again_button, left)
+                val again = UiText.plural(R.plurals.veilreveal_again_button, left).asString()
                 val dock: @Composable () -> Unit = {
                     if (left > 0) {
                         CelebrationDock(primary = again, onPrimary = onAgain, link = stringResource(R.string.common_done), onLink = onDone)
@@ -321,7 +321,7 @@ private fun runNote(run: Int): String =
 @Composable
 private fun RunRow(run: Int) {
     val filled = run.coerceIn(0, Gacha.PITY_AFTER)
-    val runDescription = stringResource(R.string.veilreveal_run_description, filled, Gacha.PITY_AFTER)
+    val runDescription = UiText.plural(R.plurals.veilreveal_run_description, Gacha.PITY_AFTER, filled, Gacha.PITY_AFTER).asString()
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

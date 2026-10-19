@@ -171,7 +171,7 @@ object CustomExercises {
     fun nameProblem(raw: String, existing: Collection<String>, own: String? = null): String? {
         val name = cleanName(raw)
         if (name.isEmpty()) return Words.text(UiText.res(R.string.customex_error_name_empty))
-        if (name.length > MAX_NAME) return Words.text(UiText.res(R.string.customex_error_name_long, MAX_NAME))
+        if (name.length > MAX_NAME) return Words.text(UiText.plural(R.plurals.customex_error_name_long, MAX_NAME))
         val key = name.lowercase()
         if (own != null && key == cleanName(own).lowercase()) return null
         val hit = existing.firstOrNull { cleanName(it).lowercase() == key }

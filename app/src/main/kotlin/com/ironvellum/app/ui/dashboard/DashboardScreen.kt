@@ -804,8 +804,8 @@ private fun TodayDayBody(
                         title = trial.label,
                         narrator = narratorLine(kind, liveDone, liveWork.size, daysKept),
                         meta = AnnotatedString(
-                            if (ofToday) UiText.themed(R.string.today_card_live_meta_today, R.string.today_card_live_meta_today__t, liveDone, liveWork.size).asString()
-                            else stringResource(R.string.today_card_live_meta_under_way, liveDone, liveWork.size),
+                            if (ofToday) UiText.themedPlural(R.plurals.today_card_live_meta_today, R.plurals.today_card_live_meta_today__t, liveWork.size, liveDone, liveWork.size).asString()
+                            else UiText.plural(R.plurals.today_card_live_meta_under_way, liveWork.size, liveDone, liveWork.size).asString(),
                         ),
                         corner = if (ofToday) ({ RiteGlyph(glyphSets) }) else null,
                     )
@@ -929,7 +929,7 @@ private fun TodayDayBody(
             add {
                 ListRow(
                     label = stringResource(R.string.today_continue_button, liveTrial.label),
-                    subline = stringResource(R.string.today_sets_logged, liveDone, liveWork.size),
+                    subline = UiText.plural(R.plurals.today_sets_logged, liveWork.size, liveDone, liveWork.size).asString(),
                     onClick = { actions.onStartSession(liveTrial.id) },
                 )
             }
@@ -1262,7 +1262,7 @@ private fun MoreLine(hidden: Int, divider: Boolean) {
     Box(Modifier.fillMaxWidth().heightIn(min = MORE_LINE), contentAlignment = Alignment.CenterStart) {
         if (divider) InkDivider(Modifier.align(Alignment.TopStart))
         Text(
-            stringResource(R.string.today_more_rows, hidden),
+            UiText.plural(R.plurals.today_more_rows, hidden).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             maxLines = 1,

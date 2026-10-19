@@ -1,6 +1,8 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.data.cloud.Cloud.failure
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -114,7 +116,7 @@ class AccountRepository {
             } else {
                 SignUpOutcome.SignedIn(
                     loadSignedInAccount(email)
-                        ?: throw IllegalStateException("Account created, but your profile could not be loaded — sign in again"),
+                        ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signup_no_profile))),
                 )
             }
         }.recoverCatching { error ->
@@ -131,7 +133,7 @@ class AccountRepository {
                 this.password = password
             }
             loadSignedInAccount(email)
-                ?: throw IllegalStateException("Signed in, but your profile could not be loaded — try again")
+                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signin_no_profile)))
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -159,7 +161,7 @@ class AccountRepository {
             client.auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email, token = code)
             client.auth.updateUser { password = newPassword }
             loadSignedInAccount(email)
-                ?: throw IllegalStateException("Password changed, but your profile could not be loaded — sign in again")
+                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_reset_no_profile)))
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -179,11 +181,11 @@ class AccountRepository {
                 this.nonce = rawNonce
             }
             val user = client.auth.currentUserOrNull()
-                ?: throw IllegalStateException("Google sign-in returned no user")
+                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_google_no_user)))
             // The server seeded a neutral Lifter#### handle for a new Google
             // user (never the legal name); ALLIES offers to claim a real one.
             loadAccount(user.id, user.email ?: "")?.also { _account.value = it }
-                ?: throw IllegalStateException("Signed in with Google, but your profile could not be loaded — try again")
+                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_google_no_profile)))
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -206,7 +208,7 @@ class AccountRepository {
      */
     suspend fun updateDisplayName(raw: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException("Sign in before taking ${Words.trueName.a}"))
+            ?: return Result.failure(IllegalStateException(Words.text(UiText.themed(R.string.cloud_account_claim_signed_out, R.string.cloud_account_claim_signed_out__t))))
         val client = requireClient().getOrElse { return failure(it) }
         trueNameProblem(raw)?.let { return Result.failure(IllegalStateException(it)) }
         val name = sanitizeHandle(raw)
@@ -223,7 +225,7 @@ class AccountRepository {
             val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
             throw IllegalStateException(
-                if (taken) "That ${Words.trueName.s} is taken — another ${Words.lifter.t} got there first"
+                if (taken) Words.text(UiText.themed(R.string.cloud_account_name_taken, R.string.cloud_account_name_taken__t))
                 else Cloud.explain(error),
             )
         }
@@ -243,7 +245,7 @@ class AccountRepository {
     suspend fun deleteCloudData(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
         _account.value?.userId
-            ?: return Result.failure(IllegalStateException("Sign in before deleting your cloud account"))
+            ?: return Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_delete_signed_out))))
         return runCatching {
             client.postgrest.rpc("delete_my_account")
             // The server session died with the user; a failed sign-out call
@@ -262,7 +264,7 @@ class AccountRepository {
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             val profile = loadAccount(current.userId, current.email)
-                ?: throw IllegalStateException("Your profile could not be loaded")
+                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_no_profile)))
             _account.value = profile
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -282,7 +284,7 @@ class AccountRepository {
 
     suspend fun setVisibility(visibility: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException("Sign in before changing visibility"))
+            ?: return Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_visibility_signed_out))))
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             client.postgrest.from("profiles").update(
@@ -329,10 +331,10 @@ fun trueNameProblem(raw: String): String? {
     val trimmed = raw.trim()
     return when {
         trimmed.length !in WireLimits.DISPLAY_NAME_MIN..WireLimits.DISPLAY_NAME_MAX ->
-            "Your ${Words.trueName.s} must be 2 to 24 characters"
+            Words.text(UiText.themed(R.string.cloud_name_length, R.string.cloud_name_length__t, WireLimits.DISPLAY_NAME_MIN, WireLimits.DISPLAY_NAME_MAX))
         // A claim keeps letters, digits and spaces only; "!!" would otherwise become a seeded-looking handle.
         trimmed.count { it.isLetterOrDigit() } < WireLimits.DISPLAY_NAME_MIN ->
-            "Your ${Words.trueName.s} needs at least 2 letters or digits"
+            Words.text(UiText.themedPlural(R.plurals.cloud_name_letters, R.plurals.cloud_name_letters__t, WireLimits.DISPLAY_NAME_MIN))
         else -> null
     }
 }
@@ -364,7 +366,7 @@ private val UnclaimedHandle = Regex("^(?:Hunter|Lifter|Ironbound)\\d{4}$")
 internal fun requireAccount(account: AccountRepository): Result<Account> {
     val current = account.account.value
     return if (current == null) {
-        Result.failure(IllegalStateException("Sign in to use cloud features"))
+        Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signed_out))))
     } else {
         Result.success(current)
     }

@@ -147,8 +147,8 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
         }.filter { it.first > days }.minByOrNull { it.first }
     }
     val oathKept = UiText.plural(R.plurals.today_oath_kept, days).asString()
-    val oathValue = if (next != null) stringResource(R.string.today_oath_progress, days, next.first) else oathKept
-    val oathState = if (next != null) stringResource(R.string.today_oath_state_next, oathKept, next.first) else oathKept
+    val oathValue = if (next != null) UiText.plural(R.plurals.today_oath_progress, next.first, days, next.first).asString() else oathKept
+    val oathState = if (next != null) UiText.plural(R.plurals.today_oath_state_next, next.first, oathKept, next.first).asString() else oathKept
     Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
         ProgressColumn(
             title = "${ArmyClass.forLevel(progress.level).title} ${progress.level}",

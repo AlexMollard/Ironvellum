@@ -35,7 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ExerciseSearch
 import com.ironvellum.app.domain.LiftGroup
@@ -74,7 +79,6 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.metalPlate
@@ -125,8 +129,8 @@ data class LiftsBoardUi(
 
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(private val labelText: () -> String) {
-    Training({ "Training" }),
-    Lifts({ "Lifts" }),
+    Training({ Words.text(UiText.res(R.string.acct_board_training)) }),
+    Lifts({ Words.text(UiText.res(R.string.acct_board_lifts)) }),
     Muster({ Words.theVeil.c });
 
     val label: String get() = labelText()
@@ -134,12 +138,12 @@ private enum class Board(private val labelText: () -> String) {
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
 private enum class BoardMetric(private val labelText: () -> String) {
-    Xp({ "XP" }),
-    Level({ "Level" }),
+    Xp({ Words.text(UiText.res(R.string.acct_metric_xp)) }),
+    Level({ Words.text(UiText.res(R.string.acct_metric_level)) }),
     Streak({ Words.oath.c }),
     Titles({ Words.deed.cpl }),
-    Strength({ "Strength score" }),
-    Last7({ "Last 7 days" }),
+    Strength({ Words.text(UiText.res(R.string.acct_metric_strength)) }),
+    Last7({ Words.text(UiText.res(R.string.acct_metric_last7)) }),
     ;
 
     val label: String get() = labelText()
@@ -156,12 +160,12 @@ private enum class BoardMetric(private val labelText: () -> String) {
 
     /** The big per-row display of this metric's value. */
     fun format(row: LeaderboardRow): String = when (this) {
-        Xp -> "${grouped(row.totalXp)} XP"
-        Level -> "Level ${row.level}"
-        Streak -> "${row.streakDays} " + plural(row.streakDays, "day", "days")
-        Titles -> "${row.titlesCount} " + plural(row.titlesCount, Words.deed.s, Words.deed.pl)
-        Strength -> "STR ${grouped(row.lifetimeStrength)}"
-        Last7 -> "${row.sessionsLast7d} in 7 days"
+        Xp -> Words.text(UiText.res(R.string.acct_metric_xp_value, grouped(row.totalXp)))
+        Level -> Words.text(UiText.res(R.string.xp_level_label, row.level))
+        Streak -> Words.text(UiText.plural(R.plurals.common_days_count, row.streakDays))
+        Titles -> Words.text(UiText.plural(R.plurals.always_acct_deeds_count, row.titlesCount))
+        Strength -> Words.text(UiText.res(R.string.acct_metric_strength_value, grouped(row.lifetimeStrength)))
+        Last7 -> Words.text(UiText.res(R.string.acct_metric_last7_value, row.sessionsLast7d))
     }
 }
 
@@ -263,7 +267,7 @@ class LeaderboardViewModel(
         }
     }
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.acct_failure_unknown))
 
     fun load() {
         viewModelScope.launch {
@@ -317,9 +321,9 @@ fun LeaderboardScreen(
         if (board == Board.Training) {
             Spacer(Modifier.height(12.dp))
             ListRow(
-                label = "Ranked by",
+                label = stringResource(R.string.acct_ranked_by_label),
                 value = metric.label,
-                onClickLabel = "Change ranking",
+                onClickLabel = stringResource(R.string.acct_ranked_by_change_description),
                 onClick = { pickingMetric = true },
             )
             InkDivider()
@@ -383,7 +387,7 @@ fun LeaderboardScreen(
         // A bottom sheet: six short rows, no scroll of its own in the text slot.
         IronvellumDialog(
             onDismissRequest = { pickingMetric = false },
-            title = { Text("Ranked by") },
+            title = { Text(stringResource(R.string.acct_ranked_by_label)) },
             text = {
                 Column {
                     BoardMetric.entries.forEach { candidate ->
@@ -398,7 +402,7 @@ fun LeaderboardScreen(
                     }
                 }
             },
-            confirmButton = { IronvellumButton(label = "Done", onClick = { pickingMetric = false }) },
+            confirmButton = { IronvellumButton(label = stringResource(R.string.common_done), onClick = { pickingMetric = false }) },
         )
     }
 }
@@ -406,7 +410,7 @@ fun LeaderboardScreen(
 @Composable
 private fun LoadingLine() {
     Text(
-        "${Words.reads.c} ${Words.theReckoning.s}…",
+        UiText.themed(R.string.acct_board_loading, R.string.acct_board_loading__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -415,12 +419,12 @@ private fun LoadingLine() {
 @Composable
 private fun EmptyBoard(onRefresh: () -> Unit) {
     Text(
-        "No standings yet. Add ${Words.ally.pl} by ${Words.trueName.s} on the ${Words.ally.cpl} tab.",
+        UiText.themed(R.string.acct_board_empty, R.string.acct_board_empty__t).asString(),
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
     // Kept explicitly: an empty board has nothing to pull down on.
-    SocialRefreshLink(onClick = onRefresh, label = "Try again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
 }
 
 /** Load failed with nothing on the board: one muted line and one clean retry. */
@@ -431,7 +435,7 @@ private fun ErrorPanel(onRefresh: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRefresh, label = "Try again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
 }
 
 @Composable
@@ -456,7 +460,7 @@ private fun Board(
     // the message so stale rows are never silently served.
     if (ui.error != null) {
         SocialErrorBanner(Lines.standingsStale(ui.error))
-        SocialRefreshLink(onClick = onRefresh, label = "Try again")
+        SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
     }
 
     Spacer(Modifier.height(4.dp))
@@ -465,7 +469,7 @@ private fun Board(
 
     if (sorted.size == 1) {
         Text(
-            "You stand alone in ${Words.theReckoning.s}. Add ${Words.ally.pl} from the ${Words.ally.cpl} tab to fill it.",
+            UiText.themed(R.string.acct_board_alone, R.string.acct_board_alone__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(bottom = 10.dp),
@@ -488,7 +492,7 @@ private fun Board(
         val myRow = sorted[myIndex]
         Spacer(Modifier.height(16.dp))
         Text(
-            "Your ${Words.standing.s}",
+            UiText.themed(R.string.acct_board_your_standing, R.string.acct_board_your_standing__t).asString(),
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
@@ -515,7 +519,7 @@ private fun TrainingRow(
         displayName = row.displayName,
         level = row.level,
         titleId = row.currentTitleId,
-        subline = if (metric == BoardMetric.Level) "${grouped(row.totalXp)} XP" else "Level ${row.level}",
+        subline = if (metric == BoardMetric.Level) stringResource(R.string.acct_metric_xp_value, grouped(row.totalXp)) else stringResource(R.string.xp_level_label, row.level),
         figure = metric.format(row),
         isMe = isMe,
         equippedFrame = equippedFrame,
@@ -632,7 +636,7 @@ private fun PodiumSlot(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    if (isMe) "You" else row.displayName,
+                    if (isMe) stringResource(R.string.acct_you_label) else row.displayName,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -655,7 +659,7 @@ private fun PodiumSlot(
             } else {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${Words.ally.c} slot open",
+                    UiText.themed(R.string.acct_podium_slot_open, R.string.acct_podium_slot_open__t).asString(),
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
@@ -708,7 +712,7 @@ private fun BoardRow(
                     Modifier
                 },
             )
-            .then(if (onClick != null) Modifier.clickable(onClickLabel = "Open ${Words.folio.s}", role = Role.Button, onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = UiText.themed(R.string.acct_open_folio_description, R.string.acct_open_folio_description__t).asString(), role = Role.Button, onClick = onClick) else Modifier)
             .heightIn(min = 56.dp)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -737,7 +741,7 @@ private fun BoardRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                if (isMe) "You · $subline" else subline,
+                if (isMe) stringResource(R.string.acct_you_subline, subline) else subline,
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 maxLines = 1,
@@ -796,7 +800,7 @@ private fun ChoiceRow(
             Text(trailing, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
         }
         if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = "Selected", tint = IronvellumColors.Emerald, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.acct_selected_description), tint = IronvellumColors.Emerald, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -851,8 +855,8 @@ private fun MusterBoard(
                                 displayName = row.displayName,
                                 level = row.level,
                                 titleId = row.currentTitleId,
-                                subline = "${row.shadows} echoes · ${formatRate(row.ratePerHour)}",
-                                figure = "${formatEssence(row.essence)} essence",
+                                subline = UiText.plural(R.plurals.always_acct_echoes_rate, row.shadows, row.shadows, formatRate(row.ratePerHour)).asString(),
+                                figure = stringResource(R.string.always_acct_essence_value, formatEssence(row.essence)),
                                 isMe = row.userId == myUserId,
                                 equippedFrame = equippedFrame,
                                 crestId = row.crestId,
@@ -873,7 +877,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRefresh, label = "Try again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
 }
 
 /** The muster board answered, but no lifter has banked essence yet. */
@@ -884,7 +888,7 @@ private fun MusterEmptyPanel(onRefresh: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRefresh, label = "Check again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_check_again_link))
 }
 
 /** Thousands-separated essence, e.g. 12,480. */
@@ -892,12 +896,15 @@ private fun formatEssence(value: Long): String =
     "%,d".fmt(value)
 
 /** Extraction rate as e.g. 218.2/h. */
-private fun formatRate(ratePerHour: Double): String = "%.1f/h".fmt(ratePerHour)
+private fun formatRate(ratePerHour: Double): String = Words.text(UiText.res(R.string.acct_rate_per_hour, ratePerHour))
 
 /** Which slice of a lift board ranks: the best set of the last 7 days, or the best ever. */
-private enum class LiftWindow(val label: String) {
-    Week("Week"),
-    AllTime("All time"),
+private enum class LiftWindow(@StringRes private val labelRes: Int) {
+    Week(R.string.acct_window_week),
+    AllTime(R.string.acct_window_all_time),
+    ;
+
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /** One lifter's place on one lift board; [step] is the tier step that ranked them, never a ratio. */
@@ -946,7 +953,7 @@ private fun LiftsBoard(
         // and offer the retry, without controls that would act on no data.
         ui.rows.isEmpty() && ui.error != null -> {
             SocialErrorBanner(ui.error)
-            SocialRefreshLink(onClick = onRefresh, label = "Try again")
+            SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
         }
         else -> {
             val pullState = remember { PullToRefreshState() }
@@ -967,7 +974,7 @@ private fun LiftsBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "${Words.rung.cpl} only — bodyweight stays on each phone.",
+                        UiText.themed(R.string.acct_lifts_note, R.string.acct_lifts_note__t).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
@@ -1003,7 +1010,7 @@ private fun LiftsBoard(
                                     displayName = row.displayName,
                                     level = row.level,
                                     titleId = row.currentTitleId,
-                                    subline = LiftBoards.stepDetail(row.lift, standing.step) ?: "Level ${row.level}",
+                                    subline = LiftBoards.stepDetail(row.lift, standing.step) ?: stringResource(R.string.xp_level_label, row.level),
                                     figure = LiftBoards.stepLabel(row.lift, standing.step),
                                     isMe = row.userId == myUserId,
                                     equippedFrame = equippedFrame,
@@ -1035,7 +1042,7 @@ private fun LiftPicker(
     ListRow(
         label = selected.label,
         subline = selected.group.label,
-        onClickLabel = "Choose ${Words.reckoning.a}",
+        onClickLabel = UiText.themed(R.string.acct_board_choose, R.string.acct_board_choose__t).asString(),
         onClick = { open = true },
     )
     if (!open) return
@@ -1048,13 +1055,13 @@ private fun LiftPicker(
     // Board order within a group is progression order; a query re-sorts by how well it matched.
     val shown = if (query.isBlank()) matches.map { it.first } else matches.sortedBy { it.second }.map { it.first }
     InkPickerSheet(
-        title = "Choose ${Words.reckoning.a}",
+        title = UiText.themed(R.string.acct_board_choose, R.string.acct_board_choose__t).asString(),
         onDismiss = { open = false },
         query = query,
         onQueryChange = { query = it },
-        searchLabel = "Search ${Words.reckoning.pl}",
+        searchLabel = UiText.themed(R.string.acct_board_search, R.string.acct_board_search__t).asString(),
         count = shown.size,
-        countNoun = Words.reckoning.s to Words.reckoning.pl,
+        countLabel = { n -> UiText.themedPlural(R.plurals.acct_boards_count, R.plurals.acct_boards_count__t, n).asString() },
     ) {
         LiftGroup.entries.forEach { group ->
             val inGroup = shown.filter { it.group == group }
@@ -1076,16 +1083,23 @@ private fun LiftPicker(
 private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick: () -> Unit) {
     val rungs = LiftBoards.rungs(lift)
     val detail = if (rungs.isEmpty()) {
-        "Bodyweight ${Words.rung.pl}"
+        UiText.themed(R.string.acct_lift_bodyweight, R.string.acct_lift_bodyweight__t).asString()
     } else {
-        "${rungs.size} ${Words.rung.pl} · ${rungs.first().exercise} to ${rungs.last().exercise}"
+        UiText.themedPlural(
+            R.plurals.acct_lift_rungs,
+            R.plurals.acct_lift_rungs__t,
+            rungs.size,
+            rungs.size,
+            rungs.first().exercise,
+            rungs.last().exercise,
+        ).asString()
     }
     ChoiceRow(
         label = lift.label,
         selected = isSelected,
         onClick = onClick,
         subline = detail,
-        trailing = if (ranked == 0) "none yet" else "$ranked ranked",
+        trailing = if (ranked == 0) stringResource(R.string.acct_lift_none_ranked) else UiText.plural(R.plurals.acct_lift_ranked, ranked).asString(),
     )
 }
 
@@ -1097,5 +1111,5 @@ private fun LiftEmptyPanel(onRefresh: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
-    SocialRefreshLink(onClick = onRefresh, label = "Check again")
+    SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_check_again_link))
 }

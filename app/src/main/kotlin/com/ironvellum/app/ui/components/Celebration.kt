@@ -193,7 +193,7 @@ internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crests
 
 /** "Chance draw · 5 of 28 crests", or just the lead when the count is not known. */
 internal fun crestLine(lead: String, owned: Int?): String =
-    if (owned == null) lead else uiString(R.string.celebration_crest_line_count, lead, owned, Crests.ALL.size)
+    if (owned == null) lead else uiPlural(R.plurals.celebration_crest_line_count, Crests.ALL.size, lead, owned, Crests.ALL.size)
 
 /**
  * What the Veil paid outside a draw, as moments. The one-time catch-up is a single page that
