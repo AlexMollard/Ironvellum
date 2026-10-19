@@ -140,6 +140,13 @@ so a release needs no merge request:
    it usually appears within a few days.
 4. Store text and screenshots ship from `fastlane/metadata/android/en-US/` at
    the tagged commit, so update them before tagging.
+5. Never rename or delete a store screenshot file. F-Droid keeps a screenshot
+   that was deleted from the repository (fdroidserver issue 490), so it stays on
+   the listing beside the new ones. A new set reuses the existing file names,
+   `01-today.png` to `08-veil.png`: overwrite each file in place. If the set
+   shrinks, overwrite the surplus names with copies of screenshots you still
+   want (a repeat reads better than a stale image) and say so in the commit
+   message; removing the file would not remove it from the listing.
 
 ## 8. Post-upload
 
