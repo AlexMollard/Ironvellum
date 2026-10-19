@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.asString
@@ -42,7 +43,7 @@ internal fun daySheetNote(picked: Int?, saved: List<WorkoutPreset>): String {
     return if (holders.isEmpty()) {
         Words.text(UiText.res(R.string.riteday_note_free, dayLabel(picked)))
     } else {
-        Words.text(UiText.plural(R.plurals.riteday_note_taken, holders.size, holders.joinToString(" and "), dayLabel(picked)))
+        Words.text(UiText.plural(R.plurals.riteday_note_taken, holders.size, ListText.and(holders), dayLabel(picked)))
     }
 }
 
@@ -89,7 +90,7 @@ internal fun RiteDaySheet(
                                     else -> UiText.res(
                                         R.string.riteday_taken_description,
                                         dayLabel(day),
-                                        holders.joinToString(" and ") { it.name },
+                                        ListText.and(holders.map { it.name }),
                                     ).asString()
                                 },
                                 onClick = { onPick(day) },
@@ -109,7 +110,7 @@ internal fun RiteDaySheet(
                         UiText.res(
                             R.string.riteday_already_on,
                             taken.entries.sortedBy { it.key }
-                                .joinToString(" · ") { (day, rites) -> "${dayShort(day)} ${rites.joinToString(" and ") { it.name }}" },
+                                .joinToString(" · ") { (day, rites) -> "${dayShort(day)} ${ListText.and(rites.map { it.name })}" },
                         ).asString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,

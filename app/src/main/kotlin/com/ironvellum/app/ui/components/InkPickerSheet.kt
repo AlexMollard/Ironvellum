@@ -61,6 +61,8 @@ fun InkPickerSheet(
     count: Int,
     /** What [count] counts, singular and plural: the figure alone ("583") named nothing. */
     countNoun: Pair<String, String>? = null,
+    /** The whole count text for [count] (a plural resource); wins over [countNoun]. */
+    countLabel: (@Composable (Int) -> String)? = null,
     content: LazyListScope.() -> Unit,
 ) {
     Dialog(
@@ -87,7 +89,8 @@ fun InkPickerSheet(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    if (countNoun != null) "$count ${plural(count, countNoun.first, countNoun.second)}" else "$count",
+                    countLabel?.invoke(count)
+                        ?: if (countNoun != null) "$count ${plural(count, countNoun.first, countNoun.second)}" else "$count",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(end = 8.dp),

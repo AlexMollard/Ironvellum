@@ -1,15 +1,5 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.asString
-import com.ironvellum.app.domain.UiText
-import com.ironvellum.app.R
-import androidx.compose.ui.res.stringResource
-import com.ironvellum.app.data.ProgramAnswersStore
-import com.ironvellum.app.domain.LoadKit
-import com.ironvellum.app.domain.Loads
-import com.ironvellum.app.domain.WornLoad
-import com.ironvellum.app.domain.LoadUnit
-import com.ironvellum.app.data.Units
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,14 +41,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import com.ironvellum.app.data.TrialPrefs
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -77,24 +67,36 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
+import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.DayNames
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LiftLoading
-import com.ironvellum.app.domain.WEIGHTED_MODIFIER
-import com.ironvellum.app.domain.applicableModifiers
-import com.ironvellum.app.domain.modifierChips
-import com.ironvellum.app.domain.modifiersFollowingLoad
-import com.ironvellum.app.domain.modifierTokens
-import com.ironvellum.app.domain.toggleModifier
-import com.ironvellum.app.ui.components.ModifierChipGrid
+import com.ironvellum.app.domain.ListText
+import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.SchemeText
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetScheme
 import com.ironvellum.app.domain.Supersets
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.domain.WEIGHTED_MODIFIER
+import com.ironvellum.app.domain.WornLoad
+import com.ironvellum.app.domain.applicableModifiers
+import com.ironvellum.app.domain.modifierChips
+import com.ironvellum.app.domain.modifierTokens
+import com.ironvellum.app.domain.modifiersFollowingLoad
+import com.ironvellum.app.domain.toggleModifier
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DecimalStepper
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.EntryCard
@@ -103,10 +105,11 @@ import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ModifierChipGrid
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.StepperRow
 import com.ironvellum.app.ui.components.SettingsSwitchRow
+import com.ironvellum.app.ui.components.StepperRow
 import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.WholeStepper
@@ -360,8 +363,8 @@ internal fun List<EditorEntry>.arranged(layout: Supersets.Layout): List<EditorEn
 /** "With Bench press" for the superset holding [index] (two partners read "With A and B"); null when it is in none. */
 internal fun supersetPartners(entries: List<EditorEntry>, index: Int): String? {
     val run = Supersets.runAt(entries.map { it.supersetGroup }, index) ?: return null
-    val names = run.filter { it != index }.map { entries[it].exerciseName.ifBlank { "exercise" } }
-    return "With " + names.joinToString(" and ")
+    val names = run.filter { it != index }.map { entries[it].exerciseName.ifBlank { Words.text(UiText.res(R.string.preseteditor_superset_partner_fallback)) } }
+    return Words.text(UiText.res(R.string.preseteditor_superset_with, ListText.and(names)))
 }
 
 /** The reps stored for distance work, whose editor has no reps field. */
@@ -398,11 +401,9 @@ internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
         baseline.entries != current.entries
 
 
-private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-
 /** The cycle day as the Day row shows it. */
 @Composable
-private fun dayName(day: Int?): String = day?.let { DAY_NAMES.getOrNull(it - 1) } ?: stringResource(R.string.preseteditor_no_day)
+private fun dayName(day: Int?): String = day?.let { DayNames.full(it) } ?: stringResource(R.string.preseteditor_no_day)
 
 /** Sets cap at 30 and reps at 500 when saved, so two and three digits. */
 private const val SETS_DIGITS = 2
@@ -483,11 +484,19 @@ internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
             SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1)?.let { it + load }
                 ?: ("${v(entry.sets)} × ${repsFigure(entry)}" + load)
         }
-        ExerciseMetric.HOLD ->
-            "${v(entry.sets)} × ${repsFigure(entry)} s" + if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
-        ExerciseMetric.DURATION -> "${v(entry.sets)} × ${v(entry.reps)} min"
-        ExerciseMetric.DISTANCE_TIME -> "${v(entry.sets)} × ${v(entry.weight)} km"
-        ExerciseMetric.ATTEMPTS_GRADE -> "${v(entry.sets)} × ${v(entry.reps)} attempts"
+        ExerciseMetric.HOLD -> Words.text(
+            UiText.res(
+                R.string.exercise_target_hold,
+                v(entry.sets),
+                repsFigure(entry),
+                if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}",
+            ),
+        )
+        ExerciseMetric.DURATION -> Words.text(UiText.res(R.string.exercise_target_minutes, v(entry.sets), v(entry.reps)))
+        ExerciseMetric.DISTANCE_TIME -> Words.text(UiText.res(R.string.exercise_target_km, v(entry.sets), v(entry.weight)))
+        ExerciseMetric.ATTEMPTS_GRADE -> Words.text(
+            UiText.plural(R.plurals.exercise_target_attempts, DecimalInput.parseWhole(entry.reps) ?: 2, v(entry.sets), v(entry.reps)),
+        )
     }
 }
 
@@ -795,7 +804,7 @@ fun PresetEditorScreen(
             title = { Text(stringResource(R.string.preseteditor_day_label)) },
             text = {
                 Column {
-                    (1..7).map { it to DAY_NAMES[it - 1] }.plus(null to stringResource(R.string.preseteditor_no_day)).forEach { (day, label) ->
+                    (1..7).map { it to DayNames.full(it).orEmpty() }.plus(null to stringResource(R.string.preseteditor_no_day)).forEach { (day, label) ->
                         val selected = ui.scheduledDay == day
                         Row(
                             Modifier

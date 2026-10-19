@@ -1,11 +1,6 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.asString
-import com.ironvellum.app.domain.UiText
-import com.ironvellum.app.R
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import com.ironvellum.app.data.Units
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +22,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,15 +33,20 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ExerciseSetEntry
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.ExercisePickerPanel
 import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkDivider
@@ -59,6 +60,7 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -67,7 +69,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
-import java.util.Locale
 
 data class ExplorerUi(
     val exercises: List<Exercise> = emptyList(),
@@ -214,15 +215,19 @@ fun ExerciseExplorerScreen(
 /** One set as the lifter reads it: "100 kg × 5", "BW × 12", or for a hold "45 s · 20 kg". */
 internal fun setText(reps: Int, weightKg: Double?, hold: Boolean): String =
     if (hold) {
-        "$reps s" + (weightKg?.let { " · ${Units.withUnit(it)}" } ?: "")
+        holdSet(reps, weightKg?.let { Units.withUnit(it) })
     } else {
         Units.label(weightKg) + " × $reps"
     }
 
+private fun holdSet(seconds: Int, load: String?): String = Words.text(
+    if (load == null) UiText.res(R.string.explorer_set_hold, seconds) else UiText.res(R.string.explorer_set_hold_loaded, seconds, load),
+)
+
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
 internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
-    if (hold) "$reps s" + (weightKg?.let { " · ${Units.format(it)}" } ?: "")
-    else (weightKg?.let { Units.format(it) } ?: "BW") + " × $reps"
+    if (hold) holdSet(reps, weightKg?.let { Units.format(it) })
+    else (weightKg?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
 
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a

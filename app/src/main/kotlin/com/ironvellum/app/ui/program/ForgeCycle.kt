@@ -364,7 +364,7 @@ private fun ForgeFormPage(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            ForgeHeader("${Words.forge.c} ${Words.cycle.a}", onBack)
+            ForgeHeader(UiText.themed(R.string.builder_header_week, R.string.builder_header_week__t).asString(), onBack)
             ForgeStepTabs(step, STEP_LABELS, onStep)
         }
         Column(
@@ -385,7 +385,7 @@ private fun ForgeFormPage(
             primary = when (step) {
                 0 -> stringResource(R.string.forge_next_kit)
                 1 -> stringResource(R.string.forge_next_focus)
-                else -> "${Words.forge.c} ${Words.cycle.s}"
+                else -> UiText.themed(R.string.forge_form_primary, R.string.forge_form_primary__t).asString()
             },
             onPrimary = onNext,
             enabled = ready,

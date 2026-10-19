@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import androidx.annotation.StringRes
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Candidate
@@ -8,8 +9,8 @@ import com.ironvellum.app.domain.Easing
 import com.ironvellum.app.domain.EasingOption
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.MuscleLoad
+import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.OverlapFinding
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -50,11 +51,14 @@ internal data class OptimiseInput(
     val ids: List<Long> = counted.map { it.id }
 }
 
-enum class OptKind(val label: String) {
-    TRIM("Trim"),
-    SWAP("Swap"),
-    MOVE("Move"),
-    SPREAD("Spread"),
+enum class OptKind(@StringRes private val labelRes: Int) {
+    TRIM(R.string.optimise_kind_trim),
+    SWAP(R.string.optimise_kind_swap),
+    MOVE(R.string.optimise_kind_move),
+    SPREAD(R.string.optimise_kind_spread),
+    ;
+
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /** A rite moved to another weekday by [to]; [from] is where it was. Index into the counted week. */

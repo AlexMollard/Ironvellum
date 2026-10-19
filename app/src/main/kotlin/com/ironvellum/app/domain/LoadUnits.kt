@@ -68,7 +68,10 @@ object Loads {
      * back on: with no load it reads "0 kg", never "BW", which would say the bar was not there.
      */
     fun label(kg: Double?, unit: LoadUnit, weighted: Boolean = false): String =
-        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit) } ?: if (weighted) withUnit(0.0, unit) else "BW"
+        kg?.takeIf { it > 0.0 }?.let { withUnit(it, unit) } ?: if (weighted) withUnit(0.0, unit) else bodyweight()
+
+    /** "BW": the abbreviation for no external load. */
+    fun bodyweight(): String = Words.text(UiText.res(R.string.load_bodyweight))
 
     /** The ceiling as the "Enter 0 to N" hint reads it. */
     fun ceilingText(maxKg: Double, unit: LoadUnit): String = floor(snap(maxKg, unit)).toLong().toString()

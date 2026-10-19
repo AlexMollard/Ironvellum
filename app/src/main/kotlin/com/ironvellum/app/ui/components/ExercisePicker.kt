@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.components
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
@@ -23,8 +24,13 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.InkEdgeShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -218,7 +224,7 @@ fun ExercisePickerSheet(
     exercises: List<Exercise>,
     onPick: (Exercise) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Select exercise",
+    title: String = stringResource(R.string.picker_title_default),
     defaultMyGear: Boolean = true,
     topContent: (LazyListScope.() -> Unit)? = null,
 ) {
@@ -246,9 +252,9 @@ fun ExercisePickerSheet(
         onDismiss = onDismiss,
         query = controls.query,
         onQueryChange = { controls.query = it },
-        searchLabel = "Search exercises",
+        searchLabel = stringResource(R.string.picker_search_label),
         count = view.count,
-        countNoun = "exercise" to "exercises",
+        countLabel = { n -> pluralStringResource(R.plurals.picker_exercise_count, n, n) },
     ) {
         topContent?.invoke(this)
         item(key = "filters") {
@@ -297,13 +303,13 @@ fun ExercisePickerPanel(
         }
     Column(modifier.fillMaxWidth()) {
         Text(
-            plural(view.count, "1 exercise", "${view.count} exercises"),
+            pluralStringResource(R.plurals.picker_exercise_count, view.count, view.count),
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.align(Alignment.End),
         )
         Spacer(Modifier.height(4.dp))
-        PickerSearchField(controls.query, { controls.query = it }, "Search exercises")
+        PickerSearchField(controls.query, { controls.query = it }, stringResource(R.string.picker_search_label))
         Spacer(Modifier.height(10.dp))
         PickerFilterBar(exercises, controls, data.equipment)
         Spacer(Modifier.height(12.dp))
@@ -354,7 +360,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
             if (!controls.filtersOpen) active.forEach { (label, clear) -> FilterChip("$label ✕", true, clear) }
         }
         if (!controls.filtersOpen) return@Column
-        FilterGroup("Type") {
+        FilterGroup(stringResource(R.string.picker_filter_type)) {
             LIFTING_GROUPS.forEach { mg ->
                 FilterChip(sentence(mg.name), f.group == mg) {
                     controls.filters = f.copy(group = if (f.group == mg) null else mg, category = null)
@@ -369,7 +375,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
         FilterGroup(Words.armoury.c) {
             // Absent without saved equipment: nothing to filter by.
             if (equipment != null) {
-                FilterChip("My ${Words.armoury.s}", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
+                FilterChip(UiText.themed(R.string.picker_filter_my_gear, R.string.picker_filter_my_gear__t).asString(), f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
             }
             EquipmentFacet.entries.forEach { facet ->
                 FilterChip(facet.label, f.facet == facet) {
@@ -398,8 +404,8 @@ private fun sentence(word: String): String = word.lowercase().replaceFirstChar {
 @Composable
 private fun FiltersButton(open: Boolean, activeCount: Int, onClick: () -> Unit) {
     InkChip(
-        label = if (activeCount > 0) "Filters · $activeCount" else "Filters",
-        clickLabel = if (open) "Hide filters" else "Show filters",
+        label = if (activeCount > 0) stringResource(R.string.picker_filters_label_active, activeCount) else stringResource(R.string.picker_filters_label),
+        clickLabel = stringResource(if (open) R.string.picker_filters_hide_description else R.string.picker_filters_show_description),
         icon = Icons.Outlined.Tune,
         onClick = onClick,
     )
@@ -441,8 +447,8 @@ private fun LazyListScope.exerciseRows(
     item(key = "new_exercise") {
         InkPanel(contentPadding = PaddingValues(0.dp)) {
             ListRow(
-                label = "New exercise",
-                subline = "Your own movement, muscles and ${Words.armoury.s}",
+                label = stringResource(R.string.picker_new_title),
+                subline = UiText.themed(R.string.picker_new_caption, R.string.picker_new_caption__t).asString(),
                 icon = Icons.Outlined.Add,
                 onClick = { onNew("") },
             )
@@ -452,13 +458,13 @@ private fun LazyListScope.exerciseRows(
         section("yours", Words.yours.c, "yours", view.yours)
     }
     if (view.favourites.isNotEmpty()) {
-        section("favourites", "Favourites", "fav", view.favourites)
+        section("favourites", Words.text(UiText.res(R.string.picker_section_favourites)), "fav", view.favourites)
     }
     if (view.recents.isNotEmpty()) {
-        section("recent", "Recent", "recent", view.recents)
+        section("recent", Words.text(UiText.res(R.string.picker_section_recent)), "recent", view.recents)
     }
     view.grouped.forEach { (cat, list) ->
-        section("cat_$cat", if (cat.isBlank()) "Strength" else cat, "row", list)
+        section("cat_$cat", if (cat.isBlank()) Words.text(UiText.res(R.string.picker_section_strength)) else cat, "row", list)
     }
     if (view.count == 0) {
         item(key = "empty") {
@@ -466,7 +472,7 @@ private fun LazyListScope.exerciseRows(
             // its own line, because the fix (Filters) is not the words.
             Text(
                 when {
-                    gearHidAll -> "Nothing your ${Words.armoury.s} covers — tap Filters to show everything"
+                    gearHidAll -> UiText.themed(R.string.picker_empty_gear, R.string.picker_empty_gear__t).asString()
                     query.isNotBlank() -> Lines.noExerciseMatching(query)
                     else -> Lines.noExerciseForFilters
                 },
@@ -481,8 +487,8 @@ private fun LazyListScope.exerciseRows(
                 val name = CustomExercises.cleanName(query).take(CustomExercises.MAX_NAME)
                 InkPanel(contentPadding = PaddingValues(0.dp)) {
                     ListRow(
-                        label = "Create \"$name\"",
-                        subline = "Your own movement, muscles and ${Words.armoury.s}",
+                        label = stringResource(R.string.picker_create_title, name),
+                        subline = UiText.themed(R.string.picker_new_caption, R.string.picker_new_caption__t).asString(),
                         icon = Icons.Outlined.Add,
                         onClick = { onNew(name) },
                     )
@@ -500,10 +506,13 @@ private fun LazyListScope.exerciseRows(
  * loading. Activities (cardio, sport, climbing) carry no equipment facet:
  * the facet answers a gym-floor question, so selecting one hides activities.
  */
-enum class EquipmentFacet(val label: String) {
-    BODYWEIGHT("Bodyweight"),
-    FREE_WEIGHT("Free weight"),
-    MACHINE("Machine"),
+enum class EquipmentFacet(@StringRes private val labelRes: Int) {
+    BODYWEIGHT(R.string.picker_facet_bodyweight),
+    FREE_WEIGHT(R.string.picker_facet_free_weight),
+    MACHINE(R.string.picker_facet_machine),
+    ;
+
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 fun equipmentFacet(exercise: Exercise): EquipmentFacet? = when {
@@ -619,8 +628,8 @@ private fun PickerRow(
                     append(exercise.muscleGroup.name.lowercase())
                     append(" · ")
                     append(metricWord(exercise.metric))
-                    if (exercise.isWeighted) append(" · weighted")
-                    if (skill != null) append(" · ${Words.technique.s} ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                    if (exercise.isWeighted) append(" · ").append(Words.text(UiText.res(R.string.picker_row_weighted)))
+                    if (skill != null) append(" · ").append(skillWord(Skills.tierLabel(skill.tier), skill.line))
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -629,7 +638,7 @@ private fun PickerRow(
             )
             if (lastLine != null) {
                 Text(
-                    "last $lastLine",
+                    stringResource(R.string.picker_row_last, lastLine),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     maxLines = 2,
@@ -637,7 +646,7 @@ private fun PickerRow(
                 )
             }
         }
-        val infoLabel = "About ${exercise.name}"
+        val infoLabel = stringResource(R.string.picker_row_about_description, exercise.name)
         Box(
             Modifier
                 .size(48.dp)
@@ -655,7 +664,10 @@ private fun PickerRow(
                 tint = IronvellumColors.InkMuted,
             )
         }
-        val starLabel = if (favourite) "Remove ${exercise.name} from favourites" else "Add ${exercise.name} to favourites"
+        val starLabel = stringResource(
+            if (favourite) R.string.picker_row_unfavourite_description else R.string.picker_row_favourite_description,
+            exercise.name,
+        )
         Box(
             Modifier
                 .size(48.dp)
@@ -685,7 +697,7 @@ private fun PickerRow(
                 showInfo = false
                 onPick(exercise)
             },
-            confirmLabel = if (browse) "Choose" else "Add",
+            confirmLabel = stringResource(if (browse) R.string.picker_confirm_choose else R.string.picker_confirm_add),
             onEdit = if (exercise.custom) {
                 {
                     showInfo = false
@@ -761,10 +773,17 @@ internal fun YoursTag(modifier: Modifier = Modifier) {
     )
 }
 
-internal fun metricWord(metric: ExerciseMetric): String = when (metric) {
-    ExerciseMetric.REPS -> "reps"
-    ExerciseMetric.HOLD -> "hold"
-    ExerciseMetric.DURATION -> "time"
-    ExerciseMetric.DISTANCE_TIME -> "distance"
-    ExerciseMetric.ATTEMPTS_GRADE -> "attempts"
-}
+internal fun metricWord(metric: ExerciseMetric): String = Words.text(
+    UiText.res(
+        when (metric) {
+            ExerciseMetric.REPS -> R.string.picker_metric_reps
+            ExerciseMetric.HOLD -> R.string.picker_metric_hold
+            ExerciseMetric.DURATION -> R.string.picker_metric_time
+            ExerciseMetric.DISTANCE_TIME -> R.string.picker_metric_distance
+            ExerciseMetric.ATTEMPTS_GRADE -> R.string.picker_metric_attempts
+        },
+    ),
+)
+
+private fun skillWord(tier: String, line: String): String =
+    Words.text(UiText.themed(R.string.picker_row_skill, R.string.picker_row_skill__t, tier, line))

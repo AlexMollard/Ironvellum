@@ -1,17 +1,5 @@
 package com.ironvellum.app.ui.program
 
-import com.ironvellum.app.R
-import com.ironvellum.app.data.Units
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.size
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.TermInfo
-import com.ironvellum.app.ui.components.Term
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,33 +8,40 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -54,31 +49,37 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.domain.MuscleArea
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.DayNames
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.Loads
-import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.UiText
-import com.ironvellum.app.ui.asString
+import com.ironvellum.app.domain.MuscleArea
+import com.ironvellum.app.domain.PlanChange
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
-import com.ironvellum.app.domain.PlanChange
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.RoutinePlan
-import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.EntryCard
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.StepperRow
+import com.ironvellum.app.ui.components.Term
+import com.ironvellum.app.ui.components.TermInfo
 import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -91,11 +92,9 @@ import com.ironvellum.app.ui.theme.inkBorder
  * days from here, so the two can never drift into looking like different apps.
  */
 
-private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-
 /** ISO weekday to a name; null stays legible instead of crashing on an index. */
 fun dayLabel(scheduledDay: Int?): String =
-    scheduledDay?.let { DAY_NAMES.getOrNull(it - 1) } ?: "Unscheduled"
+    scheduledDay?.let { DayNames.full(it) } ?: Words.text(UiText.res(R.string.day_unscheduled))
 
 /** What an exercise row is, apart from where it sits: the movement and its modifiers. */
 internal fun entryKey(entry: PlannedEntry): String = "${entry.exerciseName}|${entry.modifiers}"
@@ -364,7 +363,7 @@ fun ProposedEntryRow(
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
+                    if (ProgramRules.isMaxNote(line)) TermInfo(Term.ONE_REP_MAX)
                 }
             }
             Spacer(Modifier.height(8.dp))

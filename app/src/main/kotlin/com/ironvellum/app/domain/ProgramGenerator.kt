@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -630,24 +631,21 @@ object ProgramGenerator {
         // dumbbell the lifter owns, not "48 kg per dumbbells".
         val each = equipment.dumbbellMaxKg ?: cap
         val eachLabel = if (each % 1.0 == 0.0) each.toInt().toString() else "%.1f".fmt(each)
-        val kit = if (GearRequirements.needsPair(exercise.name)) {
-            "your $eachLabel kg dumbbells"
-        } else {
-            "your $eachLabel kg dumbbell"
-        }
+        val kit = Words.text(
+            UiText.plural(R.plurals.program_kit_dumbbells, if (GearRequirements.needsPair(exercise.name)) 2 else 1, eachLabel),
+        )
         return if (rawReps > MAX_DUMBBELL_REPS) {
             LoadFill(
                 cap, MAX_DUMBBELL_REPS,
-                "capped at $kit for $MAX_DUMBBELL_REPS reps, still short of failure - " +
-                    "move to a harder variant of this when you can",
+                Words.text(UiText.res(R.string.program_load_capped_far, kit, MAX_DUMBBELL_REPS)),
                 overCap = true,
             )
         } else {
             val raised = rawReps.coerceAtLeast(reps).coerceAtMost(MAX_DUMBBELL_REPS)
             val note = if (raised > reps) {
-                "capped at $kit; reps raised to stay near failure - Lopez 2021"
+                cite(Words.text(UiText.res(R.string.program_load_capped_raised, kit)), "Lopez 2021")
             } else {
-                "capped at $kit"
+                Words.text(UiText.res(R.string.program_load_capped, kit))
             }
             LoadFill(cap, raised, note, overCap = false)
         }
@@ -731,10 +729,9 @@ object ProgramGenerator {
                             add(
                                 ctx, session, main,
                                 why = if (main.name.equals(mainName, true)) {
-                                    "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025"
+                                    cite(Words.text(UiText.res(R.string.program_why_main_lift)), "Buckner 2017", "TaskSpec 2025")
                                 } else {
-                                    "Your ${Words.armoury.s}'s stand-in for the ${mainName}: good for size, less for max strength - " +
-                                        "Kikuchi 2017; Buckner 2017"
+                                    cite(Words.text(UiText.themed(R.string.program_why_main_standin, R.string.program_why_main_standin__t, mainName)), "Kikuchi 2017", "Buckner 2017")
                                 },
                             )
                             handled = true
@@ -788,12 +785,16 @@ object ProgramGenerator {
         val capacityNote = if (capacityLimited) {
             shortfallNote(volume, capacityAdvice(days))
         } else {
-            shortfallNote(volume, "a fuller ${Words.armoury.s} would cover them.")
+            shortfallNote(volume, Words.text(UiText.themed(R.string.program_advice_fuller_kit, R.string.program_advice_fuller_kit__t)))
         }
         val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
         val built = sessions.filter { it.entries.isNotEmpty() }
         val fewerDaysNote = if (built.size < sessions.size) {
-            "Only ${built.size} of ${sessions.size} days could be planned — your ${Words.armoury.s} had nothing for the rest."
+            Words.text(
+                UiText.themedPlural(
+                    R.plurals.program_note_fewer_days, R.plurals.program_note_fewer_days__t, sessions.size, built.size, sessions.size,
+                ),
+            )
         } else {
             ""
         }
@@ -818,8 +819,7 @@ object ProgramGenerator {
     }
 
     /** The routine note when the gear and settings leave no movement to build a week from. */
-    internal val NOTHING_TO_PLAN_NOTE: String get() =
-        "No days could be planned — your ${Words.armoury.s} and settings left nothing to build a week from."
+    internal val NOTHING_TO_PLAN_NOTE: String get() = Words.text(UiText.themed(R.string.program_note_nothing_to_plan, R.string.program_note_nothing_to_plan__t))
 
     /**
      * What to do about muscles the session time could not reach. A sixth day
@@ -827,7 +827,7 @@ object ProgramGenerator {
      * lever left: a priority claims time before the other muscles fill.
      */
     internal fun capacityAdvice(days: Int): String =
-        if (days < 6) "add a day to cover them." else "every ${Words.rite.s} is full; prioritising them would move time their way."
+        if (days < 6) Words.text(UiText.res(R.string.program_advice_add_day)) else Words.text(UiText.themed(R.string.program_advice_every_full, R.string.program_advice_every_full__t))
 
     /** Routine-level note parts, blank ones dropped, one space between. */
     internal fun joinNotes(vararg parts: String): String = parts.filter { it.isNotBlank() }.joinToString(" ")
@@ -905,8 +905,16 @@ object ProgramGenerator {
     ): String {
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ProgramRules.COVERED_MIN - 1e-9 }
         if (short.isEmpty()) return ""
-        val count = if (short.size == 1) "1 muscle" else "${short.size} muscles"
-        return "$count below ${ProgramRules.COVERED_MIN.toInt()} hard sets (${joinWithAnd(short.map { it.label.lowercase() })}) — $advice"
+        return Words.text(
+            UiText.plural(
+                R.plurals.program_shortfall,
+                short.size,
+                short.size,
+                ProgramRules.COVERED_MIN.toInt(),
+                joinWithAnd(short.map { it.label.lowercase() }),
+                advice,
+            ),
+        )
     }
 
     /**
@@ -956,8 +964,7 @@ object ProgramGenerator {
             } ?: continue
             val entry = add(
                 ctx, host, exercise, sets = 3,
-                why = "Second ${exercise.name.lowercase()} practice: strength comes from practising " +
-                    "the lift - Grgic 2018; Buckner 2017",
+                why = cite(Words.text(UiText.res(R.string.program_why_second_practice, exercise.name.lowercase())), "Grgic 2018", "Buckner 2017"),
             )
             host.entries.removeAt(host.entries.lastIndex)
             val at = leading.getOrDefault(host, 0)
@@ -974,8 +981,7 @@ object ProgramGenerator {
     }
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */
-    internal const val ONCE_A_WEEK_NOTE =
-        "Each muscle once a week — fine, but each exercise gets less practice (Pelland 2026; Grgic 2018)."
+    internal val ONCE_A_WEEK_NOTE: String get() = Words.text(UiText.res(R.string.program_note_once_a_week))
 
     /** Deadlift and press practice scales with the room the week has. */
     private fun mainTargetCount(days: Int): Int = if (days >= 5) 2 else 1
@@ -989,26 +995,31 @@ object ProgramGenerator {
     private fun backboneWhy(exercise: Exercise, focus: TrainingFocus): String {
         val profile = profileOf(exercise)
         val muscles = muscleListOf(exercise)
-        val lead = "${patternLabel(profile.pattern).replaceFirstChar { it.uppercase() }} compound: $muscles"
+        val pattern = patternLabel(profile.pattern).replaceFirstChar { it.uppercase() }
         return when {
-            focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL -> "$lead - Gentil 2015"
+            focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL ->
+                cite(Words.text(UiText.res(R.string.program_why_backbone, pattern, muscles)), "Gentil 2015")
             profile.stretchBias ->
-                "$lead, loaded stretched - Gentil 2015; ${longLengthEvidence(dominantMuscle(profile))}"
-            else -> "$lead - Gentil 2015"
+                cite(Words.text(UiText.res(R.string.program_why_backbone_stretched, pattern, muscles)), "Gentil 2015", longLengthEvidence(dominantMuscle(profile)))
+            else -> cite(Words.text(UiText.res(R.string.program_why_backbone, pattern, muscles)), "Gentil 2015")
         }
     }
 
-    private fun patternLabel(pattern: MovementPattern): String = when (pattern) {
-        MovementPattern.SQUAT -> "squat"
-        MovementPattern.HINGE -> "hip-hinge"
-        MovementPattern.LUNGE -> "single-leg"
-        MovementPattern.HORIZONTAL_PUSH -> "horizontal press"
-        MovementPattern.VERTICAL_PUSH -> "overhead press"
-        MovementPattern.HORIZONTAL_PULL -> "row"
-        MovementPattern.VERTICAL_PULL -> "vertical pull"
-        MovementPattern.ISOLATION -> "isolation"
-        MovementPattern.CORE -> "core"
-    }
+    private fun patternLabel(pattern: MovementPattern): String = Words.text(
+        UiText.res(
+            when (pattern) {
+                MovementPattern.SQUAT -> R.string.program_pattern_squat
+                MovementPattern.HINGE -> R.string.program_pattern_hinge
+                MovementPattern.LUNGE -> R.string.program_pattern_lunge
+                MovementPattern.HORIZONTAL_PUSH -> R.string.program_pattern_horizontal_push
+                MovementPattern.VERTICAL_PUSH -> R.string.program_pattern_vertical_push
+                MovementPattern.HORIZONTAL_PULL -> R.string.program_pattern_horizontal_pull
+                MovementPattern.VERTICAL_PULL -> R.string.program_pattern_vertical_pull
+                MovementPattern.ISOLATION -> R.string.program_pattern_isolation
+                MovementPattern.CORE -> R.string.program_pattern_core
+            },
+        ),
+    )
 
     /** Main muscles of a movement, plain-labelled and deterministic: "mid chest, front delts and triceps". */
     internal fun muscleListOf(exercise: Exercise, include: Muscle? = null): String {
@@ -1020,12 +1031,10 @@ object ProgramGenerator {
         return joinWithAnd(ordered.map { it.label.lowercase() })
     }
 
-    internal fun joinWithAnd(items: List<String>): String = when (items.size) {
-        0 -> ""
-        1 -> items[0]
-        2 -> "${items[0]} and ${items[1]}"
-        else -> items.dropLast(1).joinToString(", ") + " and " + items.last()
-    }
+    internal fun joinWithAnd(items: List<String>): String = ListText.and(items)
+
+    /** [text] with the papers behind it after a dash; [Evidence.split] reads them back off the end. */
+    internal fun cite(text: String, vararg sources: String): String = "$text - ${sources.joinToString("; ")}"
 
     private fun closestEquivalent(
         ctx: Ctx,
@@ -1429,8 +1438,10 @@ object ProgramGenerator {
             "%.1f".fmt(sets)
         }
 
-    private fun setsPhrase(sets: Double): String =
-        "${fmtSets(sets)} ${if (fmtSets(sets) == "1") "set" else "sets"}"
+    private fun setsPhrase(sets: Double): String {
+        val figure = fmtSets(sets)
+        return Words.text(UiText.plural(R.plurals.program_sets_phrase, if (figure == "1") 1 else 2, figure))
+    }
 
     /**
      * The trial that measured long-length growth for THIS muscle where one
@@ -1456,12 +1467,12 @@ object ProgramGenerator {
         // A sub-set shortfall is indirect-share noise; say so instead of
         // printing "0.1 sets". The target itself is on the volume panel.
         val name = muscle.label.lowercase()
-        val was = if (deficit < 0.5) "just under target" else "${setsPhrase(deficit)} short"
-        val target = if (muscle in ctx.priorityMuscles) "priority $name" else name
+        val was = if (deficit < 0.5) Words.text(UiText.res(R.string.program_was_just_under)) else Words.text(UiText.res(R.string.program_was_short, setsPhrase(deficit)))
+        val target = if (muscle in ctx.priorityMuscles) Words.text(UiText.res(R.string.program_priority_muscle, name)) else name
         return if (stretchesFor(exercise, muscle)) {
-            "Fills $target at full stretch: the week was $was - ${longLengthEvidence(muscle)}"
+            cite(Words.text(UiText.res(R.string.program_why_fills_stretch, target, was)), longLengthEvidence(muscle))
         } else {
-            "Fills $target: the week was $was - Pelland 2026"
+            cite(Words.text(UiText.res(R.string.program_why_fills, target, was)), "Pelland 2026")
         }
     }
 
@@ -1620,20 +1631,20 @@ object ProgramGenerator {
 
     /** Why the reps moved, in the goal's own language. */
     private fun adjustReason(focus: TrainingFocus, compound: Boolean, reps: Int, range: IntRange): String {
-        val lead = "Reps set to $reps (${range.first}-${range.last})"
+        fun say(key: Int) = Words.text(UiText.res(key, reps, range.first, range.last))
         return when {
             focus == TrainingFocus.MUSCLE ->
-                "$lead: builds muscle without grinding - Lopez 2021; Robinson 2024"
+                cite(say(R.string.program_why_reps_muscle), "Lopez 2021", "Robinson 2024")
             focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL ->
                 if (compound) {
-                    "$lead: heavy reps build strength on compound exercises - Lopez 2021; Buckner 2017"
+                    cite(say(R.string.program_why_reps_strength_compound), "Lopez 2021", "Buckner 2017")
                 } else {
-                    "$lead: extra exercises build muscle at higher reps - Lopez 2021"
+                    cite(say(R.string.program_why_reps_strength_isolation), "Lopez 2021")
                 }
             compound ->
-                "$lead: compound exercises stay heavy - Lopez 2021"
+                cite(say(R.string.program_why_reps_general_compound), "Lopez 2021")
             else ->
-                "$lead: extra exercises carry volume at higher reps - Lopez 2021"
+                cite(say(R.string.program_why_reps_general_isolation), "Lopez 2021")
         }
     }
 
@@ -1864,8 +1875,7 @@ object ProgramGenerator {
                 if (standIn != null) {
                     record.swap = SwapRecord(
                         standIn,
-                        "Swapped for ${standIn.name}: compound & ${Words.technique.s} only, and it trains the same " +
-                            "muscles - Gentil 2015",
+                        cite(Words.text(UiText.themed(R.string.program_why_swap_compound, R.string.program_why_swap_compound__t, standIn.name)), "Gentil 2015"),
                         standInOptions.getValue(index),
                         clearsLoad = true,
                     )
@@ -1874,7 +1884,7 @@ object ProgramGenerator {
                     load = null
                     loadNote = null
                 } else if (dropAllowed) {
-                    record.removal = "Removed: with Compound & ${Words.technique.s} only on, nothing replaces its muscles - Gentil 2015"
+                    record.removal = cite(Words.text(UiText.themed(R.string.program_why_removed_compound, R.string.program_why_removed_compound__t)), "Gentil 2015")
                     continue
                 }
             }
@@ -1894,9 +1904,17 @@ object ProgramGenerator {
                 if (replacement != null) {
                     record.swap = SwapRecord(
                         replacement,
-                        "Swapped for ${replacement.name}: loads the " +
-                            "${dominantMuscle(profile)?.label?.lowercase() ?: "target muscle"} stretched, " +
-                            "where it grows more - ${longLengthEvidence(dominantMuscle(profile))}",
+                        cite(
+                            Words.text(
+                                UiText.res(
+                                    R.string.program_why_swap_stretch,
+                                    replacement.name,
+                                    dominantMuscle(profile)?.label?.lowercase()
+                                        ?: Words.text(UiText.res(R.string.program_target_muscle_fallback)),
+                                ),
+                            ),
+                            longLengthEvidence(dominantMuscle(profile)),
+                        ),
                         ProgramSuggestions.rank(ctx, twins, dominantMuscle(profile), profile, weekBefore),
                         clearsLoad = false,
                     )
@@ -1917,15 +1935,14 @@ object ProgramGenerator {
             if (sets < 2) {
                 sets = 2
                 record.sets = sets to if (repsAdjusted) {
-                    "Sets ${entry.sets} → 2: one set is too little work to progress on"
+                    Words.text(UiText.res(R.string.program_why_sets_floor, entry.sets))
                 } else {
                     adjustReason(request.focus, newProfile.compound, reps, range)
                 }
             }
             val ceiling = ceilingOf(request, entry, name)
             if (sets > ceiling) {
-                record.sets = ceiling to "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single ${Words.trial.s}; " +
-                    "the rest belongs on another exercise or day - Remmert 2025"
+                record.sets = ceiling to cite(Words.text(UiText.themed(R.string.program_why_sets_ceiling, R.string.program_why_sets_ceiling__t, sets, ceiling)), "Remmert 2025")
                 sets = ceiling
             }
 
@@ -1940,7 +1957,7 @@ object ProgramGenerator {
                         loadNote = filled.note
                         record.load = LoadRecord(
                             filled.kg, filled.reps, filled.note,
-                            "Load set from your logged sets (${filled.note}) - Zourdos 2016",
+                            cite(Words.text(UiText.res(R.string.program_load_from_logged, filled.note.orEmpty())), "Zourdos 2016"),
                         )
                     }
                 }
@@ -1957,8 +1974,8 @@ object ProgramGenerator {
                 // muscle through this pattern and the first copy has sets to
                 // spare (Gentil 2015). At its set ceiling a second variant
                 // is the only way to add volume, as in the week generator.
-                record.removal =
-                    "Removed: another exercise already trains ${dominant.label.lowercase()} the same way - Gentil 2015"
+                record.removal = cite(Words.text(UiText.res(R.string.program_why_removed_redundant, dominant.label.lowercase())), "Gentil 2015")
+                record.removalSamePattern = true
                 record.swap = null
                 continue
             }
@@ -1987,9 +2004,9 @@ object ProgramGenerator {
             records[gone].dropped = true
             trimOrder += target.entries[gone].exerciseName
             capRemovals += gone to if (cost < 1e-9) {
-                "Removed: over your ${ctx.cap}-exercise cap, and the ${Words.cycle.s} already covers its muscles - Pelland 2026"
+                cite(Words.text(UiText.themed(R.string.program_why_removed_cap_covered, R.string.program_why_removed_cap_covered__t, ctx.cap)), "Pelland 2026")
             } else {
-                "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
+                cite(Words.text(UiText.res(R.string.program_why_removed_cap_least, ctx.cap)), "Pelland 2026")
             }
         }
 
@@ -2038,8 +2055,7 @@ object ProgramGenerator {
             additions += AddRecord(
                 resultIndex = result.size,
                 exerciseName = exercise.name,
-                detail = "Added ${exercise.name}: the week was ${setsPhrase(deficit)} short on " +
-                    "${muscle.label.lowercase()} - Pelland 2026",
+                detail = cite(Words.text(UiText.res(R.string.program_why_added, exercise.name, setsPhrase(deficit), muscle.label.lowercase())), "Pelland 2026"),
                 options = ProgramSuggestions.rank(ctx, fitting, muscle, null, weekBefore),
             )
             result += inRange
@@ -2089,9 +2105,9 @@ object ProgramGenerator {
         val topUps = mutableListOf<Int>()
         result.indices.filter { result[it].sets > originalSets[it] }.forEach { i ->
             val from = origin[i] ?: return@forEach
-            val muscles = raisedFor.getValue(i).joinToString(" and ") { it.label.lowercase() }
+            val muscles = ListText.and(raisedFor.getValue(i).map { it.label.lowercase() })
             records[from].sets = result[i].sets to
-                "Sets ${target.entries[from].sets} → ${result[i].sets}: the week was short on $muscles - Pelland 2026"
+                cite(Words.text(UiText.res(R.string.program_why_topup, target.entries[from].sets, result[i].sets, muscles)), "Pelland 2026")
             records[from].topUp = raisedFor.getValue(i).toList()
             topUps += from
         }
@@ -2124,7 +2140,7 @@ object ProgramGenerator {
             record.removal?.let {
                 change(
                     PlanChange.Kind.REMOVED, entry.exerciseName, it, ChangeOp.RemoveEntry(entry.exerciseName),
-                    tags = if (it.contains("already trains")) listOf(ReasonTag(Reason.SAME_PATTERN_AS_MAIN)) else emptyList(),
+                    tags = if (record.removalSamePattern) listOf(ReasonTag(Reason.SAME_PATTERN_AS_MAIN)) else emptyList(),
                 )
                 return@forEachIndexed
             }
@@ -2181,7 +2197,7 @@ object ProgramGenerator {
         }
         for (entry in spacing) {
             change(
-                PlanChange.Kind.ADJUSTED, entry.exerciseName, "Moved up so no two pull-up variants run back to back",
+                PlanChange.Kind.ADJUSTED, entry.exerciseName, Words.text(UiText.res(R.string.program_why_moved_up)),
                 ChangeOp.SpaceEntry(entry.exerciseName),
             )
         }
@@ -2208,6 +2224,9 @@ object ProgramGenerator {
         var load: LoadRecord? = null
         var removal: String? = null
 
+        /** [removal] is because another exercise already trains the muscle the same way (tagged for the card). */
+        var removalSamePattern = false
+
         /** Muscles a top-up raised the sets for, when one did (it owns [sets]). */
         var topUp: List<Muscle>? = null
 
@@ -2231,12 +2250,10 @@ object ProgramGenerator {
      * Refalo 2023).
      */
     internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
-        val effort = "Compound exercises: stop 0–2 reps short of failure; single-joint: last set to failure"
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
-            "Rest 3–5 min on compound exercises, 90 s on the rest. $effort " +
-                "(Schoenfeld 2016; Singer 2024; Refalo 2023)."
+            Words.text(UiText.res(R.string.program_note_rest_strength, "Schoenfeld 2016; Singer 2024; Refalo 2023"))
         } else {
-            "Rest 2–3 min, at least 90 s. $effort (Singer 2024; Refalo 2023)."
+            Words.text(UiText.res(R.string.program_note_rest_muscle, "Singer 2024; Refalo 2023"))
         }
     }
 

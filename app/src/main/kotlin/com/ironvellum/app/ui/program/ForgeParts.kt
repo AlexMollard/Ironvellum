@@ -43,14 +43,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.DayNames
+import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
-import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.selectedUnderline
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -230,7 +232,7 @@ internal fun ForgeDock(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     busy: Boolean = false,
-    busyLabel: String = "Applying…",
+    busyLabel: String = stringResource(R.string.forge_dock_busy_label),
     note: String? = null,
     link: String? = null,
     linkDanger: Boolean = false,
@@ -238,6 +240,7 @@ internal fun ForgeDock(
     above: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val live = enabled && !busy
+    val applying = stringResource(R.string.forge_dock_busy_description)
     Column(
         modifier
             .fillMaxWidth()
@@ -254,7 +257,7 @@ internal fun ForgeDock(
                 .clip(MaterialTheme.shapes.medium)
                 .background(if (live) IronvellumColors.Emerald else IronvellumColors.Rune)
                 .clickable(enabled = live, role = Role.Button, onClick = onPrimary)
-                .semantics { if (busy) stateDescription = "Applying" },
+                .semantics { if (busy) stateDescription = applying },
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -355,16 +358,11 @@ internal fun ForgePreviousProposal(plan: RoutinePlan, modifier: Modifier = Modif
 }
 
 /** "Mon", "Tue" ... for the days sheet; null reads as no day. */
-internal fun dayShort(day: Int?): String = day?.let { dayLabel(it).take(3) } ?: "—"
+internal fun dayShort(day: Int?): String = day?.let { DayNames.short(it) } ?: "—"
 
 /** "Mon, Wed and Fri". */
 internal fun joinDays(days: List<Int>): String {
-    val names = days.sorted().map { dayShort(it) }
-    return when (names.size) {
-        0 -> ""
-        1 -> names[0]
-        else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
-    }
+    return ListText.and(days.sorted().map { dayShort(it) })
 }
 
 /**

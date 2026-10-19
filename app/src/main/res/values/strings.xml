@@ -3143,8 +3143,8 @@
     <string name="exercise_target_km">%1$s × %2$s km</string>
     <!-- %1$s the sets, %2$d the attempts. -->
     <plurals name="exercise_target_attempts">
-        <item quantity="one">%1$s × %2$d attempt</item>
-        <item quantity="other">%1$s × %2$d attempts</item>
+        <item quantity="one">%1$s × %2$s attempt</item>
+        <item quantity="other">%1$s × %2$s attempts</item>
     </plurals>
 
     <!-- Why the next load moved. %1$d is the reps (or seconds) asked for. -->
@@ -3326,4 +3326,248 @@
     <string name="energy_basis_steps_stride">net MET 2.5 × %1$s kg × %2$s min (%3$s km walked, stride from height)</string>
     <string name="energy_basis_steps_measured">net MET 2.5 × %1$s kg × %2$s min (%3$s km walked, measured)</string>
     <string name="energy_basis_measured_day">measured active kcal (Health Connect); estimates not added</string>
+
+    <!-- Muscle names, as the figure, the rows and the generated notes say them. Written in sentence case; notes lower-case them. -->
+    <string name="muscle_upper_chest">Upper chest</string>
+    <string name="muscle_mid_chest">Mid chest</string>
+    <string name="muscle_lower_chest">Lower chest</string>
+    <string name="muscle_lats">Lats</string>
+    <string name="muscle_rhomboids">Rhomboids</string>
+    <string name="muscle_traps">Traps</string>
+    <string name="muscle_neck">Neck</string>
+    <string name="muscle_front_delts">Front delts</string>
+    <string name="muscle_side_delts">Side delts</string>
+    <string name="muscle_rear_delts">Rear delts</string>
+    <string name="muscle_rotator_cuff">Rotator cuff</string>
+    <string name="muscle_serratus">Serratus</string>
+    <string name="muscle_biceps">Biceps</string>
+    <string name="muscle_brachialis">Brachialis</string>
+    <string name="muscle_triceps">Triceps</string>
+    <string name="muscle_forearms">Forearms</string>
+    <string name="muscle_abs">Abs</string>
+    <string name="muscle_obliques">Obliques</string>
+    <string name="muscle_lower_back">Lower back</string>
+    <string name="muscle_hip_flexors">Hip flexors</string>
+    <string name="muscle_quads">Quads</string>
+    <string name="muscle_hamstrings">Hamstrings</string>
+    <string name="muscle_glutes">Glutes</string>
+    <string name="muscle_adductors">Adductors (inner thigh)</string>
+    <string name="muscle_abductors">Abductors (outer hip)</string>
+    <string name="muscle_calves">Calves</string>
+    <string name="muscle_tibialis">Tibialis</string>
+    <string name="musclearea_chest">Chest</string>
+    <string name="musclearea_back">Back</string>
+    <string name="musclearea_shoulders">Shoulders</string>
+    <string name="musclearea_arms">Arms</string>
+    <string name="musclearea_quads">Quads</string>
+    <string name="musclearea_hamstrings">Hamstrings</string>
+    <string name="musclearea_glutes">Glutes</string>
+    <string name="musclearea_calves">Calves</string>
+    <string name="musclearea_core">Core</string>
+    <!-- How much of a muscle one exercise works, in capitals. -->
+    <string name="sharelevel_main">MAIN</string>
+    <string name="sharelevel_assist">ASSIST</string>
+    <!-- The kind of change an Improve card suggests: a one-word badge. -->
+    <string name="optimise_kind_trim">Trim</string>
+    <string name="optimise_kind_swap">Swap</string>
+    <string name="optimise_kind_move">Move</string>
+    <string name="optimise_kind_spread">Spread</string>
+    <!-- Abbreviation for bodyweight, shown where a load would be ("BW × 12"). -->
+    <string name="load_bodyweight">BW</string>
+    <!-- Shown where a weekday would be, for a routine with no day. -->
+    <string name="day_unscheduled">Unscheduled</string>
+    <!-- The Forge dock button while the plan is being applied (with an ellipsis), and what a screen reader says. -->
+    <string name="forge_dock_busy_label">Applying…</string>
+    <string name="forge_dock_busy_description">Applying</string>
+    <!-- Under a routine row in a superset: %1$s is the partner exercise, or "A and B" for two. -->
+    <string name="preseteditor_superset_with">With %1$s</string>
+    <!-- Names a partner in a superset when its exercise has no name yet. -->
+    <string name="preseteditor_superset_partner_fallback">exercise</string>
+    <!-- One hold set in the explorer: %1$d seconds, then %2$s the load with its unit ("45 s · 20 kg"). -->
+    <string name="explorer_set_hold">%1$d s</string>
+    <string name="explorer_set_hold_loaded">%1$d s · %2$s</string>
+
+    <!-- Plan builder: page titles and section headers. Each is a whole phrase in plain and themed wording. -->
+    <string name="builder_header_template">From a template</string>
+    <string name="builder_header_template__t">From a pattern</string>
+    <string name="builder_header_week">Build a weekly plan</string>
+    <string name="builder_header_week__t">Forge a cycle</string>
+    <string name="builder_header_session">Build a routine</string>
+    <string name="builder_header_session__t">Forge a rite</string>
+    <string name="builder_header_improve">Improve a routine</string>
+    <string name="builder_header_improve__t">Temper a rite</string>
+    <string name="builder_section_proposed_session">Proposed routine</string>
+    <string name="builder_section_proposed_session__t">Proposed rite</string>
+    <string name="builder_section_proposed_week">Proposed weekly plan</string>
+    <string name="builder_section_proposed_week__t">Proposed cycle</string>
+    <string name="builder_section_preview">Preview</string>
+    <string name="builder_error_pick_rite">Pick a routine to improve.</string>
+    <string name="builder_error_pick_rite__t">Pick a rite to temper.</string>
+    <string name="forge_form_primary">Build weekly plan</string>
+    <string name="forge_form_primary__t">Forge cycle</string>
+
+    <!-- Exercise picker: the sheet's title, search, filters, section headers and row labels. -->
+    <string name="picker_title_default">Select exercise</string>
+    <string name="picker_search_label">Search exercises</string>
+    <plurals name="picker_exercise_count">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <string name="picker_filter_type">Type</string>
+    <string name="picker_filter_my_gear">My equipment</string>
+    <string name="picker_filter_my_gear__t">My armoury</string>
+    <string name="picker_filters_label">Filters</string>
+    <!-- %1$d is how many filters are on. -->
+    <string name="picker_filters_label_active">Filters · %1$d</string>
+    <string name="picker_filters_hide_description">Hide filters</string>
+    <string name="picker_filters_show_description">Show filters</string>
+    <string name="picker_new_title">New exercise</string>
+    <string name="picker_new_caption">Your own movement, muscles and equipment</string>
+    <string name="picker_new_caption__t">Your own movement, muscles and armoury</string>
+    <!-- %1$s is the name typed into the search. -->
+    <string name="picker_create_title">Create \"%1$s\"</string>
+    <string name="picker_section_favourites">Favourites</string>
+    <string name="picker_section_recent">Recent</string>
+    <string name="picker_section_strength">Strength</string>
+    <string name="picker_empty_gear">Nothing your equipment covers — tap Filters to show everything</string>
+    <string name="picker_empty_gear__t">Nothing your armoury covers — tap Filters to show everything</string>
+    <!-- The three equipment filters. -->
+    <string name="picker_facet_bodyweight">Bodyweight</string>
+    <string name="picker_facet_free_weight">Free weight</string>
+    <string name="picker_facet_machine">Machine</string>
+    <!-- What a movement logs, in lower case on the exercise row. -->
+    <string name="picker_metric_reps">reps</string>
+    <string name="picker_metric_hold">hold</string>
+    <string name="picker_metric_time">time</string>
+    <string name="picker_metric_distance">distance</string>
+    <string name="picker_metric_attempts">attempts</string>
+    <string name="picker_row_weighted">weighted</string>
+    <!-- On a skill's exercise row: %1$s is the tier numeral, %2$s the skill line (data). -->
+    <string name="picker_row_skill">skill %1$s %2$s</string>
+    <string name="picker_row_skill__t">technique %1$s %2$s</string>
+    <!-- %1$s is the last set logged, "80 kg × 5". -->
+    <string name="picker_row_last">last %1$s</string>
+    <!-- %1$s is the exercise's name. -->
+    <string name="picker_row_about_description">About %1$s</string>
+    <string name="picker_row_favourite_description">Add %1$s to favourites</string>
+    <string name="picker_row_unfavourite_description">Remove %1$s from favourites</string>
+    <!-- The button on the exercise sheet: Choose when browsing, Add when picking for a routine. -->
+    <string name="picker_confirm_choose">Choose</string>
+    <string name="picker_confirm_add">Add</string>
+
+    <!-- Why the generator and the improve pass chose what they did: one whole sentence per reason. The citation after a dash is added by the code. -->
+    <!-- The lifter's own dumbbell size; %1$s is the weight in kg. -->
+    <plurals name="program_kit_dumbbells">
+        <item quantity="one">your %1$s kg dumbbell</item>
+        <item quantity="other">your %1$s kg dumbbells</item>
+    </plurals>
+    <!-- A load note. %1$s is "your 24 kg dumbbells", %2$d the reps. -->
+    <string tools:ignore="PluralsCandidate" name="program_load_capped_far">capped at %1$s for %2$d reps, still short of failure - move to a harder variant of this when you can</string>
+    <string name="program_load_capped_raised">capped at %1$s; reps raised to stay near failure</string>
+    <string name="program_load_capped">capped at %1$s</string>
+    <!-- %1$s is the load note. -->
+    <string name="program_load_from_logged">Load set from your logged sets (%1$s)</string>
+    <!-- %1$s is the lifter's best estimated 1-rep max in kg. -->
+    <string name="program_load_from_max">from your %1$s kg estimated 1-rep max</string>
+    <!-- %1$s is a lift the lifter has logged (a name, title case). -->
+    <string name="program_load_from_related">estimate from %1$s</string>
+    <string name="program_why_main_lift">Main lift: strength is specific to the lift trained</string>
+    <!-- %1$s is the main lift's name. -->
+    <string name="program_why_main_standin">Your equipment\'s stand-in for the %1$s: good for size, less for max strength</string>
+    <string name="program_why_main_standin__t">Your armoury\'s stand-in for the %1$s: good for size, less for max strength</string>
+    <!-- Ends the note about muscles the plan could not reach. -->
+    <string name="program_advice_fuller_kit">a fuller equipment would cover them.</string>
+    <string name="program_advice_fuller_kit__t">a fuller armoury would cover them.</string>
+    <string name="program_advice_add_day">add a day to cover them.</string>
+    <string name="program_advice_every_full">every routine is full; prioritising them would move time their way.</string>
+    <string name="program_advice_every_full__t">every rite is full; prioritising them would move time their way.</string>
+    <string name="program_advice_build_week">build a weekly plan to fill them.</string>
+    <string name="program_advice_build_week__t">forge a cycle to fill them.</string>
+    <!-- %1$d the muscles short, %2$d the minimum sets, %3$s their names, %4$s the advice sentence. -->
+    <plurals name="program_shortfall">
+        <item quantity="one">%1$d muscle below %2$d hard sets (%3$s) — %4$s</item>
+        <item quantity="other">%1$d muscles below %2$d hard sets (%3$s) — %4$s</item>
+    </plurals>
+    <!-- %1$d is how many days were planned, %2$d how many were asked for. -->
+    <plurals name="program_note_fewer_days">
+        <item quantity="one">Only %1$d of %2$d day could be planned — your equipment had nothing for the rest.</item>
+        <item quantity="other">Only %1$d of %2$d days could be planned — your equipment had nothing for the rest.</item>
+    </plurals>
+    <plurals name="program_note_fewer_days__t">
+        <item quantity="one">Only %1$d of %2$d day could be planned — your armoury had nothing for the rest.</item>
+        <item quantity="other">Only %1$d of %2$d days could be planned — your armoury had nothing for the rest.</item>
+    </plurals>
+    <string name="program_note_nothing_to_plan">No days could be planned — your equipment and settings left nothing to build a week from.</string>
+    <string name="program_note_nothing_to_plan__t">No days could be planned — your armoury and settings left nothing to build a week from.</string>
+    <string name="program_note_once_a_week">Each muscle once a week — fine, but each exercise gets less practice (Pelland 2026; Grgic 2018).</string>
+    <!-- %1$s is the lift's name in lower case. -->
+    <string name="program_why_second_practice">Second %1$s practice: strength comes from practising the lift</string>
+    <!-- The movement pattern of a compound, lower case (it starts a sentence in capitals). -->
+    <string name="program_pattern_squat">squat</string>
+    <string name="program_pattern_hinge">hip-hinge</string>
+    <string name="program_pattern_lunge">single-leg</string>
+    <string name="program_pattern_horizontal_push">horizontal press</string>
+    <string name="program_pattern_vertical_push">overhead press</string>
+    <string name="program_pattern_horizontal_pull">row</string>
+    <string name="program_pattern_vertical_pull">vertical pull</string>
+    <string name="program_pattern_isolation">isolation</string>
+    <string name="program_pattern_core">core</string>
+    <!-- %1$s the pattern, capitalised; %2$s the main muscles, "mid chest, front delts and triceps". -->
+    <string name="program_why_backbone">%1$s compound: %2$s</string>
+    <string name="program_why_backbone_stretched">%1$s compound: %2$s, loaded stretched</string>
+    <!-- %1$s is a muscle name in lower case. -->
+    <string name="program_priority_muscle">priority %1$s</string>
+    <string name="program_why_fills_stretch">Fills %1$s at full stretch: the week was %2$s</string>
+    <string name="program_why_fills">Fills %1$s: the week was %2$s</string>
+    <string name="program_was_just_under">just under target</string>
+    <!-- %1$s is "2 sets". -->
+    <string name="program_was_short">%1$s short</string>
+    <!-- %1$s is the number, possibly a fraction ("1.5"). -->
+    <plurals name="program_sets_phrase">
+        <item quantity="one">%1$s set</item>
+        <item quantity="other">%1$s sets</item>
+    </plurals>
+    <!-- %1$s the exercise, %2$s "2 sets", %3$s the muscle. -->
+    <string name="program_why_added">Added %1$s: the week was %2$s short on %3$s</string>
+    <!-- %1$d the reps, %2$d-%3$d the range. -->
+    <string name="program_why_reps_muscle">Reps set to %1$d (%2$d-%3$d): builds muscle without grinding</string>
+    <string name="program_why_reps_strength_compound">Reps set to %1$d (%2$d-%3$d): heavy reps build strength on compound exercises</string>
+    <string name="program_why_reps_strength_isolation">Reps set to %1$d (%2$d-%3$d): extra exercises build muscle at higher reps</string>
+    <string name="program_why_reps_general_compound">Reps set to %1$d (%2$d-%3$d): compound exercises stay heavy</string>
+    <string name="program_why_reps_general_isolation">Reps set to %1$d (%2$d-%3$d): extra exercises carry volume at higher reps</string>
+    <string name="program_why_swap_compound">Swapped for %1$s: compound &amp; skill only, and it trains the same muscles</string>
+    <string name="program_why_swap_compound__t">Swapped for %1$s: compound &amp; technique only, and it trains the same muscles</string>
+    <string name="program_why_removed_compound">Removed: with Compound &amp; skill only on, nothing replaces its muscles</string>
+    <string name="program_why_removed_compound__t">Removed: with Compound &amp; technique only on, nothing replaces its muscles</string>
+    <string name="program_why_swap_stretch">Swapped for %1$s: loads the %2$s stretched, where it grows more</string>
+    <string name="program_target_muscle_fallback">target muscle</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_sets_floor">Sets %1$d → 2: one set is too little work to progress on</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_sets_ceiling">Sets %1$d → %2$d: past %2$d sets one exercise adds little in a single workout; the rest belongs on another exercise or day</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_sets_ceiling__t">Sets %1$d → %2$d: past %2$d sets one exercise adds little in a single trial; the rest belongs on another exercise or day</string>
+    <string name="program_why_removed_redundant">Removed: another exercise already trains %1$s the same way</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_removed_cap_covered">Removed: over your %1$d-exercise cap, and the weekly plan already covers its muscles</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_removed_cap_covered__t">Removed: over your %1$d-exercise cap, and the cycle already covers its muscles</string>
+    <string tools:ignore="PluralsCandidate" name="program_why_removed_cap_least">Removed: over your %1$d-exercise cap, and it helped short muscles least</string>
+    <!-- %1$d the old sets, %2$d the new, %3$s the muscles. -->
+    <string tools:ignore="PluralsCandidate" name="program_why_topup">Sets %1$d → %2$d: the week was short on %3$s</string>
+    <string name="program_why_moved_up">Moved up so no two pull-up variants run back to back</string>
+    <!-- %1$s is the citations, "Schoenfeld 2016; Singer 2024" (names and years, never translated). -->
+    <string name="program_note_rest_strength">Rest 3–5 min on compound exercises, 90 s on the rest. Compound exercises: stop 0–2 reps short of failure; single-joint: last set to failure (%1$s).</string>
+    <string name="program_note_rest_muscle">Rest 2–3 min, at least 90 s. Compound exercises: stop 0–2 reps short of failure; single-joint: last set to failure (%1$s).</string>
+    <!-- %1$s is the citations. -->
+    <string name="program_sex_note">Same weekly plan for men and women; loads scale off your own estimated 1-rep max (%1$s).</string>
+    <string name="program_sex_note__t">Same cycle for men and women; loads scale off your own estimated 1-rep max (%1$s).</string>
+    <string name="program_why_dumbbell_light">Your dumbbell is too light for the %1$s; the %2$s is harder</string>
+    <!-- %1$s the stand-in, %2$s the exercise it replaces. -->
+    <string name="program_why_template_compound_only">Compound &amp; skill only: the %1$s stands in for the %2$s</string>
+    <string name="program_why_template_compound_only__t">Compound &amp; technique only: the %1$s stands in for the %2$s</string>
+    <string name="program_why_template_nothing">Nothing in your equipment for the %1$s; the %2$s is the closest match</string>
+    <string name="program_why_template_nothing__t">Nothing in your armoury for the %1$s; the %2$s is the closest match</string>
+    <string name="program_why_template_stretch">For your %1$s, worked at full stretch</string>
+    <string name="program_why_template_for">For your %1$s</string>
+    <string tools:ignore="PluralsCandidate" name="program_note_trimmed">Trimmed to your %1$d-exercise cap.</string>
+
+    <!-- Shown when a plan is built before any equipment is chosen. -->
+    <string name="builder_error_armoury_not_picked">equipment not picked</string>
+    <string name="builder_error_armoury_not_picked__t">armoury not picked</string>
 </resources>

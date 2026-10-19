@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /**
@@ -374,24 +375,23 @@ object ProgramTemplates {
                 val isMainLift = exercise.name.trim().lowercase() in
                     setOf("back squat", "bench press", "deadlift", "overhead press")
                 val why = if (capSwapped) {
-                    "Your dumbbell is too light for the ${entry.exerciseName}; the " +
-                        "${exercise.name} is harder - Lopez 2021"
+                    ProgramGenerator.cite(Words.text(UiText.res(R.string.program_why_dumbbell_light, entry.exerciseName, exercise.name)), "Lopez 2021")
                 } else if (substituted && compoundOnly && MovementDifficulty.isIsolation(entry.exerciseName)) {
-                    "Compound & ${Words.technique.s} only: the ${exercise.name} stands in for the " +
-                        "${entry.exerciseName} - Gentil 2015"
+                    ProgramGenerator.cite(Words.text(UiText.themed(R.string.program_why_template_compound_only, R.string.program_why_template_compound_only__t, exercise.name, entry.exerciseName)), "Gentil 2015")
                 } else if (substituted) {
-                    "Nothing in your ${Words.armoury.s} for the ${entry.exerciseName}; the ${exercise.name} is the " +
-                        "closest match - Kikuchi 2017; Calatayud 2015"
+                    ProgramGenerator.cite(Words.text(UiText.themed(R.string.program_why_template_nothing, R.string.program_why_template_nothing__t, entry.exerciseName, exercise.name)), "Kikuchi 2017", "Calatayud 2015")
                 } else if (template.focus == TrainingFocus.STRENGTH && isMainLift) {
-                    "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025; Lopez 2021"
+                    ProgramGenerator.cite(Words.text(UiText.res(R.string.program_why_main_lift)), "Buckner 2017", "TaskSpec 2025", "Lopez 2021")
                 } else {
                     val profile = MuscleMap.profile(exercise.name)
                     val primary = profile?.muscles?.filterValues { it >= 0.5 }?.maxByOrNull { it.value }?.key
                     if (template.focus == TrainingFocus.MUSCLE && profile?.stretchBias == true && primary != null) {
-                        "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, worked at full stretch - " +
-                            ProgramGenerator.longLengthEvidence(primary)
+                        ProgramGenerator.cite(
+                            Words.text(UiText.res(R.string.program_why_template_stretch, ProgramGenerator.muscleListOf(exercise, primary))),
+                            ProgramGenerator.longLengthEvidence(primary),
+                        )
                     } else {
-                        "For your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
+                        ProgramGenerator.cite(Words.text(UiText.res(R.string.program_why_template_for, ProgramGenerator.muscleListOf(exercise))), "Pelland 2026")
                     }
                 }
                 entry.copy(
@@ -456,12 +456,12 @@ object ProgramTemplates {
         val capped = presets.mapIndexed { d, (day, _) ->
             day.copy(
                 entries = work[d].first,
-                note = if (d in trimmed) day.note + " Trimmed to your $cap-exercise cap." else day.note,
+                note = if (d in trimmed) day.note + " " + Words.text(UiText.res(R.string.program_note_trimmed, cap)) else day.note,
             )
         }
         val fitted = fitToRange(capped, work.map { it.second }, template.focus, range, budget)
         val shortfall = ProgramGenerator.shortfallNote(
-            ProgramRules.weeklyVolume(fitted), "${Words.forge.s} ${Words.cycle.a} to fill them.",
+            ProgramRules.weeklyVolume(fitted), Words.text(UiText.themed(R.string.program_advice_build_week, R.string.program_advice_build_week__t)),
         )
         return RoutinePlan(
             fitted.map { day -> day.copy(entries = ProgramGenerator.spacePullUps(day.entries)) },

@@ -1,5 +1,9 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * Shared vocabulary of the program generator, the tiered templates and the
  * "improve a preset" pass. Pure data: the rules live in ProgramGenerator,
@@ -111,34 +115,38 @@ enum class TrainingSplit(val label: String, val dayOptions: List<Int>, shortLabe
  * it has no weekly target, so nothing is ever added to chase it. Never
  * persisted, so renames are data-safe.
  */
-enum class Muscle(val label: String) {
-    UPPER_CHEST("Upper chest"),
-    MID_CHEST("Mid chest"),
-    LOWER_CHEST("Lower chest"),
-    LATS("Lats"),
-    RHOMBOIDS("Rhomboids"),
-    TRAPS("Traps"),
-    NECK("Neck"),
-    FRONT_DELTS("Front delts"),
-    SIDE_DELTS("Side delts"),
-    REAR_DELTS("Rear delts"),
-    ROTATOR_CUFF("Rotator cuff"),
-    SERRATUS("Serratus"),
-    BICEPS("Biceps"),
-    BRACHIALIS("Brachialis"),
-    TRICEPS("Triceps"),
-    FOREARMS("Forearms"),
-    ABS("Abs"),
-    OBLIQUES("Obliques"),
-    LOWER_BACK("Lower back"),
-    HIP_FLEXORS("Hip flexors"),
-    QUADS("Quads"),
-    HAMSTRINGS("Hamstrings"),
-    GLUTES("Glutes"),
-    ADDUCTORS("Adductors (inner thigh)"),
-    ABDUCTORS("Abductors (outer hip)"),
-    CALVES("Calves"),
-    TIBIALIS("Tibialis"),
+enum class Muscle(@StringRes private val labelRes: Int) {
+    UPPER_CHEST(R.string.muscle_upper_chest),
+    MID_CHEST(R.string.muscle_mid_chest),
+    LOWER_CHEST(R.string.muscle_lower_chest),
+    LATS(R.string.muscle_lats),
+    RHOMBOIDS(R.string.muscle_rhomboids),
+    TRAPS(R.string.muscle_traps),
+    NECK(R.string.muscle_neck),
+    FRONT_DELTS(R.string.muscle_front_delts),
+    SIDE_DELTS(R.string.muscle_side_delts),
+    REAR_DELTS(R.string.muscle_rear_delts),
+    ROTATOR_CUFF(R.string.muscle_rotator_cuff),
+    SERRATUS(R.string.muscle_serratus),
+    BICEPS(R.string.muscle_biceps),
+    BRACHIALIS(R.string.muscle_brachialis),
+    TRICEPS(R.string.muscle_triceps),
+    FOREARMS(R.string.muscle_forearms),
+    ABS(R.string.muscle_abs),
+    OBLIQUES(R.string.muscle_obliques),
+    LOWER_BACK(R.string.muscle_lower_back),
+    HIP_FLEXORS(R.string.muscle_hip_flexors),
+    QUADS(R.string.muscle_quads),
+    HAMSTRINGS(R.string.muscle_hamstrings),
+    GLUTES(R.string.muscle_glutes),
+    ADDUCTORS(R.string.muscle_adductors),
+    ABDUCTORS(R.string.muscle_abductors),
+    CALVES(R.string.muscle_calves),
+    TIBIALIS(R.string.muscle_tibialis),
+    ;
+
+    /** The muscle's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /**
@@ -148,16 +156,20 @@ enum class Muscle(val label: String) {
  * muscles to the top of their range - helpers keep their floor either way
  * (see ProgramGenerator.floorOrTarget) and only gain the "Priority" wording.
  */
-enum class MuscleArea(val label: String, val muscles: Set<Muscle>) {
-    CHEST("Chest", setOf(Muscle.UPPER_CHEST, Muscle.MID_CHEST, Muscle.LOWER_CHEST)),
-    BACK("Back", setOf(Muscle.LATS, Muscle.RHOMBOIDS, Muscle.TRAPS)),
-    SHOULDERS("Shoulders", setOf(Muscle.SIDE_DELTS, Muscle.REAR_DELTS, Muscle.FRONT_DELTS)),
-    ARMS("Arms", setOf(Muscle.BICEPS, Muscle.TRICEPS)),
-    QUADS("Quads", setOf(Muscle.QUADS)),
-    HAMSTRINGS("Hamstrings", setOf(Muscle.HAMSTRINGS)),
-    GLUTES("Glutes", setOf(Muscle.GLUTES)),
-    CALVES("Calves", setOf(Muscle.CALVES)),
-    CORE("Core", setOf(Muscle.ABS)),
+enum class MuscleArea(@StringRes private val labelRes: Int, val muscles: Set<Muscle>) {
+    CHEST(R.string.musclearea_chest, setOf(Muscle.UPPER_CHEST, Muscle.MID_CHEST, Muscle.LOWER_CHEST)),
+    BACK(R.string.musclearea_back, setOf(Muscle.LATS, Muscle.RHOMBOIDS, Muscle.TRAPS)),
+    SHOULDERS(R.string.musclearea_shoulders, setOf(Muscle.SIDE_DELTS, Muscle.REAR_DELTS, Muscle.FRONT_DELTS)),
+    ARMS(R.string.musclearea_arms, setOf(Muscle.BICEPS, Muscle.TRICEPS)),
+    QUADS(R.string.musclearea_quads, setOf(Muscle.QUADS)),
+    HAMSTRINGS(R.string.musclearea_hamstrings, setOf(Muscle.HAMSTRINGS)),
+    GLUTES(R.string.musclearea_glutes, setOf(Muscle.GLUTES)),
+    CALVES(R.string.musclearea_calves, setOf(Muscle.CALVES)),
+    CORE(R.string.musclearea_core, setOf(Muscle.ABS)),
+    ;
+
+    /** The area's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /** Movement pattern, the unit strength specificity and substitution work in. */

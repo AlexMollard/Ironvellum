@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import kotlin.math.floor
 
@@ -233,8 +234,19 @@ object ProgramRules {
     ): Pair<Double, String>? {
         val e1rm = strength.bestE1rmKg[exerciseName.trim().lowercase()] ?: return null
         return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir, worn) to
-            "from your ${maxE1rmLabel(e1rm)} kg estimated 1-rep max"
+            Words.text(UiText.res(R.string.program_load_from_max, maxE1rmLabel(e1rm)))
     }
+
+    /**
+     * Whether [note] is the "from your N kg estimated 1-rep max" load note, so a screen can offer to explain a 1-rep
+     * max without reading English: it compares against the note's own template, in the language shown.
+     */
+    fun isMaxNote(note: String): Boolean {
+        val parts = Words.text(UiText.res(R.string.program_load_from_max, MAX_NOTE_MARK)).split(MAX_NOTE_MARK)
+        return parts.size == 2 && note.startsWith(parts[0]) && note.endsWith(parts[1])
+    }
+
+    private const val MAX_NOTE_MARK = "\u0001"
 
     private fun maxE1rmLabel(e1rm: Double): String =
         if (e1rm % 1.0 == 0.0) e1rm.toInt().toString() else "%.1f".fmt(e1rm)
@@ -317,7 +329,7 @@ object ProgramRules {
         val (marked, source) = estimatedE1rmKg(exerciseName, strength) ?: return null
         val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir, worn)
         val sourceLabel = source.split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
-        return load to "estimate from $sourceLabel"
+        return load to Words.text(UiText.res(R.string.program_load_from_related, sourceLabel))
     }
 
     /**
@@ -358,8 +370,7 @@ object ProgramRules {
      * in the STRUCTURE of the plan may change by sex, so the generator takes
      * sex and deliberately ignores it.
      */
-    val SEX_NOTE: String get() =
-        "Same ${Words.cycle.s} for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
+    val SEX_NOTE: String get() = Words.text(UiText.themed(R.string.program_sex_note, R.string.program_sex_note__t, "Roberts 2020; Hunter 2014"))
 
     // ------------------------------------------------------------------ rest
 

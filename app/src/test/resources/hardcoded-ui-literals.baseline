@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 1838 in 116 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 1768 in 113 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
 main/data/DbSnapshot.kt 4
@@ -18,11 +18,11 @@ main/domain/Gacha.kt 10
 main/domain/LiftBoards.kt 75
 main/domain/Measurement.kt 19
 main/domain/Modifiers.kt 2
-main/domain/Program.kt 21
+main/domain/Program.kt 10
 main/domain/ProgramEasing.kt 4
-main/domain/ProgramGenerator.kt 67
-main/domain/ProgramRules.kt 60
-main/domain/ProgramTemplates.kt 186
+main/domain/ProgramGenerator.kt 41
+main/domain/ProgramRules.kt 58
+main/domain/ProgramTemplates.kt 183
 main/domain/Rank.kt 1
 main/domain/RankPatterns.kt 13
 main/domain/RestAlert.kt 4
@@ -43,7 +43,6 @@ main/ui/components/CustomExerciseSheet.kt 18
 main/ui/components/EntrySteppers.kt 4
 main/ui/components/ExerciseDrawing.kt 4
 main/ui/components/ExerciseInfoSheet.kt 5
-main/ui/components/ExercisePicker.kt 23
 main/ui/components/FirstUseLine.kt 1
 main/ui/components/InfoSheet.kt 7
 main/ui/components/InkPickerSheet.kt 1
@@ -76,8 +75,7 @@ main/ui/idle/VeilBuySheet.kt 16
 main/ui/program/BodyFigures.kt 2
 main/ui/program/OptimiseModel.kt 1
 main/ui/program/OptimiseScreen.kt 1
-main/ui/program/ProgramBuilderScreen.kt 2
-main/ui/program/ProgramPreview.kt 1
+main/ui/program/ProgramBuilderScreen.kt 1
 main/ui/settings/AdvancedSettings.kt 19
 main/ui/settings/AppearanceSettings.kt 1
 main/ui/settings/HealthConnectSettings.kt 3
@@ -113,6 +111,5 @@ main/ui/titles/SkillTree.kt 4
 main/ui/titles/SkillTreeLayout.kt 3
 main/ui/titles/TitlesScreen.kt 14
 main/ui/train/ExerciseExplorerScreen.kt 2
-main/ui/train/PresetEditorScreen.kt 3
 main/ui/train/SessionScreen.kt 15
 play/ui/social/GoogleSignIn.kt 2

@@ -306,7 +306,7 @@ class ProgramBuilderViewModel(
     private fun request(): ProgramRequest = ProgramRequest(
         focus = focus.value,
         volume = tier.value,
-        equipment = checkNotNull(equipment.value) { "${Words.armoury.s} not picked" },
+        equipment = checkNotNull(equipment.value) { Words.text(UiText.themed(R.string.builder_error_armoury_not_picked, R.string.builder_error_armoury_not_picked__t)) },
         daysPerWeek = daysPerWeek.value,
         priorities = priorities.value,
         sex = sex.value,
@@ -422,7 +422,7 @@ class ProgramBuilderViewModel(
                     if (target == null) {
                         // Thrown, not set: the fold below owns the error line,
                         // and a returned null would clear it.
-                        throw IllegalArgumentException("Pick ${Words.rite.a} to ${Words.temper.s}.")
+                        throw IllegalArgumentException(Words.text(UiText.themed(R.string.builder_error_pick_rite, R.string.builder_error_pick_rite__t)))
                     } else {
                         val rest = all.filterIndexed { i, _ -> i != index }
                         Generated(
@@ -761,11 +761,11 @@ fun ProgramBuilderScreen(
             Spacer(Modifier.height(20.dp))
             PushedHeader(
                 when (mode) {
-                    "template" -> "From ${Words.pattern.a}"
-                    "week" -> "${Words.forge.c} ${Words.cycle.a}"
-                    "session" -> "${Words.forge.c} ${Words.rite.a}"
-                    else -> "${Words.temper.c} ${Words.rite.a}"
-                },
+                    "template" -> UiText.themed(R.string.builder_header_template, R.string.builder_header_template__t)
+                    "week" -> UiText.themed(R.string.builder_header_week, R.string.builder_header_week__t)
+                    "session" -> UiText.themed(R.string.builder_header_session, R.string.builder_header_session__t)
+                    else -> UiText.themed(R.string.builder_header_improve, R.string.builder_header_improve__t)
+                }.asString(),
                 onBack = { if (dirty) confirmDiscard = true else onDone() },
             )
             Spacer(Modifier.height(12.dp))
@@ -917,10 +917,10 @@ fun ProgramBuilderScreen(
 
             SectionHeader(
                 when (mode) {
-                    "session" -> "Proposed ${Words.rite.s}"
-                    "improve" -> "Preview"
-                    else -> "Proposed ${Words.cycle.s}"
-                },
+                    "session" -> UiText.themed(R.string.builder_section_proposed_session, R.string.builder_section_proposed_session__t)
+                    "improve" -> UiText.res(R.string.builder_section_preview)
+                    else -> UiText.themed(R.string.builder_section_proposed_week, R.string.builder_section_proposed_week__t)
+                }.asString(),
             )
 
             if (mode == "improve") {

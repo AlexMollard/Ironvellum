@@ -25,6 +25,15 @@ import org.junit.Test
  */
 class EffortCopyTest {
 
+    // Weekday and month names follow the default locale: pin English so the expected text is the same on any machine.
+    private val savedLocale = java.util.Locale.getDefault()
+
+    @org.junit.Before
+    fun english() = java.util.Locale.setDefault(java.util.Locale.ENGLISH)
+
+    @org.junit.After
+    fun restoreLocale() = java.util.Locale.setDefault(savedLocale)
+
     private val compound = PlannedEntry(
         "Bench Press", sets = 3, reps = 8, targetWeightKg = 60.0,
         setsMin = 2, setsMax = 3, effort = EffortCue.RIR_0_2, repLow = 6, repHigh = 10,

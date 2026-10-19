@@ -43,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.R
 import com.ironvellum.app.data.PlateStore
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.PlateRack
@@ -232,7 +233,7 @@ private fun Barbell(build: PlateRack.Build, unit: LoadUnit, barLabel: String, sh
     } else {
         UiText.res(
             R.string.plates_barbell_description,
-            build.perSide.joinToString(" and ") { PlateRack.number(it) },
+            ListText.and(build.perSide.map { PlateRack.number(it) }),
             unit.label,
         ).asString()
     }

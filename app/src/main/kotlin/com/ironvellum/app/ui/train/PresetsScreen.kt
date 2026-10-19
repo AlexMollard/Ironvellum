@@ -1,67 +1,52 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.asString
-import com.ironvellum.app.domain.UiText
-import com.ironvellum.app.R
-import androidx.compose.ui.res.stringResource
-import androidx.compose.runtime.mutableIntStateOf
-import com.ironvellum.app.data.Units
-import androidx.compose.material.icons.outlined.FitnessCenter
-import com.ironvellum.app.data.Words
-import com.ironvellum.app.ui.components.InkChip
-import com.ironvellum.app.ui.components.TabTitle
-import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.ListRow
-import com.ironvellum.app.ui.components.ListRowHeight
-import com.ironvellum.app.ui.components.formatDate
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.heading
-import androidx.compose.material.icons.outlined.AccessibilityNew
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Add
-import com.ironvellum.app.ui.dashboard.trialLength
-import kotlin.math.ceil
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.AccessibilityNew
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
-import com.ironvellum.app.ui.components.IronvellumDialog
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.text.style.TextOverflow
-import com.ironvellum.app.domain.TrainFocus
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -70,34 +55,50 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.DayNames
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.SessionClock
-import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.RoutineCode
-import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.InkRowPanel
+import com.ironvellum.app.domain.SessionClock
+import com.ironvellum.app.domain.TrainFocus
+import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRowPanel
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.TabTitle
+import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.dashboard.trialLength
+import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.coverageHeadline
 import com.ironvellum.app.ui.program.coverageTally
 import com.ironvellum.app.ui.program.toPlanned
-import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import java.time.LocalDate
+import kotlin.math.ceil
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 data class TrainUi(
     val presets: List<WorkoutPreset> = emptyList(),
@@ -186,9 +187,8 @@ class PresetsViewModel(
 internal fun weekOrder(presets: List<WorkoutPreset>): List<WorkoutPreset> =
     presets.sortedBy { it.scheduledDay ?: Int.MAX_VALUE }
 
-private val DAY_LABELS = mapOf(1 to "MON", 2 to "TUE", 3 to "WED", 4 to "THU", 5 to "FRI", 6 to "SAT", 7 to "SUN")
-
-internal fun dayLabel(day: Int): String = DAY_LABELS[day].orEmpty()
+/** "MON": the weekday's short name in capitals, blank for a number that is no weekday. */
+internal fun dayLabel(day: Int): String = DayNames.short(day)?.uppercase().orEmpty()
 
 internal fun formatKg(kg: Double?): String =
     when {
