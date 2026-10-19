@@ -2,7 +2,9 @@ package com.ironvellum.app.data.cloud
 
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.MessageException
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.messageText
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.PlayerProfile
@@ -43,14 +45,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** Screen text for a message this file raises: resolved when the failure is built, in the current mode and language. */
-private fun cloudText(@androidx.annotation.StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+/** Screen text for a message this file raises: left unresolved, so whoever shows it does so in the mode and language then. */
+private fun cloudText(@androidx.annotation.StringRes id: Int, vararg args: Any): UiText = UiText.res(id, *args)
 
 private fun cloudThemed(
     @androidx.annotation.StringRes plain: Int,
     @androidx.annotation.StringRes themed: Int,
     vararg args: Any,
-): String = Words.text(UiText.themed(plain, themed, *args))
+): UiText = UiText.themed(plain, themed, *args)
 
 /**
  * Single source of truth for which sets are cloud-eligible. A set with a blank
@@ -160,7 +162,7 @@ class CloudSync(
             )
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
-            val problems = mutableListOf<String>()
+            val problems = mutableListOf<UiText>()
 
             // Trials deleted on this device go from the cloud too, so they stop
             // counting in a circle's week and stop showing in allies' feeds.
@@ -443,7 +445,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
             cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -489,7 +491,7 @@ class CloudSync(
             // Refuse here, where the message can name the fix: the server
             // check would answer the same payload with an opaque 23514.
             if (bytes.size > WireLimits.ARCHIVE_MAX_BYTES) {
-                throw IllegalStateException(
+                throw MessageException(
                     cloudText(R.string.cloud_backup_too_large, bytes.size, WireLimits.ARCHIVE_MAX_BYTES),
                 )
             }
@@ -504,7 +506,7 @@ class CloudSync(
             }
             BackupInfo(atMs = System.currentTimeMillis(), bytes = bytes.size)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -528,7 +530,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -539,16 +541,16 @@ class CloudSync(
             val row = client.postgrest.from("cloud_archives").select {
                 filter { eq("user_id", me.userId) }
             }.decodeList<ArchiveDto>().firstOrNull()
-                ?: throw IllegalStateException(cloudText(R.string.cloud_backup_none))
+                ?: throw MessageException(cloudText(R.string.cloud_backup_none))
             // Device-only data comes back absent BY DESIGN: the archive was
             // built with includeDeviceOnly = false, so private notes are empty
             // and the importer keeps this device's own readings, measurements
             // and Health Connect days instead of clearing them.
             repo.importArchive(row.archive).getOrElse { error ->
-                throw IllegalStateException(error.message ?: cloudText(R.string.cloud_backup_restore_failed))
+                throw MessageException(error.messageText(cloudText(R.string.cloud_backup_restore_failed)))
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -586,7 +588,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -609,7 +611,7 @@ class CloudSync(
                     .mapNotNull { it.toRow() }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -637,7 +639,7 @@ class CloudSync(
                 ) {
                     filter { eq("id", sessionId) }
                 }.decodeList<AllyWorkoutSessionDto>().firstOrNull()
-                    ?: throw IllegalStateException(cloudThemed(R.string.cloud_sync_trial_hidden, R.string.cloud_sync_trial_hidden__t))
+                    ?: throw MessageException(cloudThemed(R.string.cloud_sync_trial_hidden, R.string.cloud_sync_trial_hidden__t))
                 val sets = client.postgrest.from("session_sets").select {
                     filter { eq("session_id", sessionId) }
                     // A workout tops out far below PostgREST's 1000-row cap.
@@ -682,7 +684,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -720,7 +722,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -786,7 +788,7 @@ class CloudSync(
                         userId = other,
                         displayName = profile?.displayName
                             ?: requesterNames[other]?.takeIf { it.isNotBlank() }
-                            ?: cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t),
+                            ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
                         accepted = row.accepted,
                         // Incoming = they asked us and it is not accepted yet.
                         incoming = row.addresseeId == me.userId && !row.accepted,
@@ -797,7 +799,7 @@ class CloudSync(
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -818,7 +820,7 @@ class CloudSync(
                 fetchCircle(client)
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -830,15 +832,15 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val trimmed = name.trim()
         if (trimmed.isEmpty()) {
-            return failure(IllegalArgumentException(cloudThemed(R.string.cloud_circle_name_missing, R.string.cloud_circle_name_missing__t)))
+            return failure(MessageException(cloudThemed(R.string.cloud_circle_name_missing, R.string.cloud_circle_name_missing__t)))
         }
         return runCatching {
             client.postgrest.rpc(RPC_CREATE_CIRCLE, rpcArgs(CreateCircleArgs(name = trimmed)))
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
             fetchCircle(client)
-                ?: throw IllegalStateException(cloudThemed(R.string.cloud_circle_missing, R.string.cloud_circle_missing__t))
+                ?: throw MessageException(cloudThemed(R.string.cloud_circle_missing, R.string.cloud_circle_missing__t))
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -847,18 +849,18 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val cleaned = code.trim().uppercase()
         if (!isValidInviteCode(cleaned)) {
-            return failure(IllegalArgumentException(cloudText(R.string.cloud_circle_code_shape)))
+            return failure(MessageException(cloudText(R.string.cloud_circle_code_shape)))
         }
         return runCatching {
             val status = JoinStatus.parse(
                 client.postgrest.rpc(RPC_JOIN_CIRCLE, rpcArgs(JoinCircleArgs(code = cleaned))).data,
             )
-            JoinStatus.refusal(status)?.let { throw IllegalStateException(it) }
+            JoinStatus.refusal(status)?.let { throw MessageException(it) }
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
             fetchCircle(client)
-                ?: throw IllegalStateException(cloudThemed(R.string.cloud_circle_missing, R.string.cloud_circle_missing__t))
+                ?: throw MessageException(cloudThemed(R.string.cloud_circle_missing, R.string.cloud_circle_missing__t))
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -871,7 +873,7 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -883,7 +885,7 @@ class CloudSync(
         requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (perMember !in Circle.PER_MEMBER_RANGE) {
-            return failure(IllegalArgumentException(cloudText(R.string.cloud_circle_goal_range)))
+            return failure(MessageException(cloudText(R.string.cloud_circle_goal_range)))
         }
         return runCatching {
             client.postgrest.rpc(RPC_SET_CIRCLE_GOAL, rpcArgs(SetCircleGoalArgs(perMember = perMember)))
@@ -891,14 +893,14 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_CIRCLE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
     /** The Keeper renames the circle; the server refuses anyone else. */
     suspend fun renameCircle(name: String): Result<Unit> {
         val trimmed = name.trim()
-        if (trimmed.length !in 1..24) return failure(IllegalArgumentException(cloudThemed(R.string.cloud_circle_name_length, R.string.cloud_circle_name_length__t)))
+        if (trimmed.length !in 1..24) return failure(MessageException(cloudThemed(R.string.cloud_circle_name_length, R.string.cloud_circle_name_length__t)))
         return circleWrite { it.postgrest.rpc(RPC_SET_CIRCLE_NAME, rpcArgs(SetCircleNameArgs(name = trimmed))) }
             .map { }
     }
@@ -918,7 +920,7 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching { call(client) }
             .onSuccess { cache.invalidate(CloudReadCache.KEY_CIRCLE) }
-            .recoverCatching { error -> throw IllegalStateException(Cloud.explain(error)) }
+            .recoverCatching { error -> throw MessageException(Cloud.explain(error)) }
     }
 
     /**
@@ -933,7 +935,7 @@ class CloudSync(
         return runCatching {
             client.postgrest.rpc(RPC_CIRCLE_BONUSES).decodeList<CircleBonusDto>()
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -942,7 +944,7 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val name = displayName.trim()
         if (name.isEmpty()) {
-            return Result.failure(IllegalStateException(cloudThemed(R.string.cloud_ally_type_name, R.string.cloud_ally_type_name__t)))
+            return Result.failure(MessageException(cloudThemed(R.string.cloud_ally_type_name, R.string.cloud_ally_type_name__t)))
         }
         return runCatching {
             // Discovery goes through find_hunter(), not a select on `profiles`.
@@ -958,9 +960,9 @@ class CloudSync(
                 rpcArgs(FindHunterArgs(name = name)),
             ).decodeList<ProfileNameDto>()
             val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
-                ?: throw IllegalStateException(cloudThemed(R.string.cloud_ally_not_found, R.string.cloud_ally_not_found__t, name))
+                ?: throw MessageException(cloudThemed(R.string.cloud_ally_not_found, R.string.cloud_ally_not_found__t, name))
             if (exact.id == me.userId) {
-                throw IllegalStateException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t))
+                throw MessageException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t))
             }
             client.postgrest.from("friendships").insert(
                 FriendshipDto(requesterId = me.userId, addresseeId = exact.id, accepted = false),
@@ -970,9 +972,9 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
         }.recoverCatching { error ->
             if (error is PostgrestRestException && error.code == "23505") {
-                throw IllegalStateException(cloudText(R.string.cloud_ally_already_requested, name))
+                throw MessageException(cloudText(R.string.cloud_ally_already_requested, name))
             }
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -986,7 +988,7 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (userId == me.userId) {
-            return Result.failure(IllegalStateException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t)))
+            return Result.failure(MessageException(cloudThemed(R.string.cloud_ally_self_request, R.string.cloud_ally_self_request__t)))
         }
         return runCatching {
             client.postgrest.from("friendships").insert(
@@ -998,7 +1000,7 @@ class CloudSync(
         }.recoverCatching { error ->
             // Already requested or already friends: nothing to do.
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error), error)
+                throw MessageException(Cloud.explain(error), error)
             }
         }
     }
@@ -1021,12 +1023,12 @@ class CloudSync(
                 select()
             }.decodeList<FriendshipDto>()
             if (updated.isEmpty()) {
-                throw IllegalStateException(cloudThemed(R.string.cloud_ally_no_pending, R.string.cloud_ally_no_pending__t))
+                throw MessageException(cloudThemed(R.string.cloud_ally_no_pending, R.string.cloud_ally_no_pending__t))
             }
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1063,7 +1065,7 @@ class CloudSync(
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1113,7 +1115,7 @@ class CloudSync(
                 fetch()
             }.let { cache.applyReactions(it) }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1151,7 +1153,7 @@ class CloudSync(
             cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1185,7 +1187,7 @@ class CloudSync(
                 }.decodeList<LikerRowDto>().map { row ->
                     Liker(
                         userId = row.userId,
-                        displayName = row.profile?.displayName ?: cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t),
+                        displayName = row.profile?.displayName ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
                         likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
                         reaction = Reaction.fromWire(row.kind),
                     )
@@ -1193,9 +1195,9 @@ class CloudSync(
             }
         }.recoverCatching { error ->
             if (error is PostgrestRestException && error.code == "42501") {
-                throw IllegalStateException(cloudThemed(R.string.cloud_tributes_hidden, R.string.cloud_tributes_hidden__t))
+                throw MessageException(cloudThemed(R.string.cloud_tributes_hidden, R.string.cloud_tributes_hidden__t))
             }
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1225,7 +1227,7 @@ class CloudSync(
                 }.decodeList<CommentDto>().map { it.toComment() }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1236,11 +1238,11 @@ class CloudSync(
         // Refused here so the lifter reads why; the server check would
         // answer the same text with an opaque 23514.
         if (text.isEmpty()) {
-            return Result.failure(IllegalStateException(cloudText(R.string.cloud_remark_empty)))
+            return Result.failure(MessageException(cloudText(R.string.cloud_remark_empty)))
         }
         if (text.length > WireLimits.COMMENT_MAX) {
             return Result.failure(
-                IllegalStateException(Words.text(UiText.themedPlural(R.plurals.cloud_remark_too_long, R.plurals.cloud_remark_too_long__t, WireLimits.COMMENT_MAX))),
+                MessageException(UiText.themedPlural(R.plurals.cloud_remark_too_long, R.plurals.cloud_remark_too_long__t, WireLimits.COMMENT_MAX)),
             )
         }
         return runCatching {
@@ -1256,7 +1258,7 @@ class CloudSync(
             // The card's comment count lives on the cached first page.
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1272,7 +1274,7 @@ class CloudSync(
                 select(Columns.raw("id"))
             }.decodeList<CommentIdDto>()
             if (deleted.isEmpty()) {
-                throw IllegalStateException(cloudThemed(R.string.cloud_remark_gone, R.string.cloud_remark_gone__t))
+                throw MessageException(cloudThemed(R.string.cloud_remark_gone, R.string.cloud_remark_gone__t))
             }
         }.onSuccess {
             // The session id is not known here; threads are cheap to refetch.
@@ -1280,7 +1282,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
             cache.invalidate(CloudReadCache.KEY_INBOX)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1317,7 +1319,7 @@ class CloudSync(
             // lifter's dot.
             if (account.account.value?.userId == me.userId) _inboxUnread.value = inbox.unread
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1334,7 +1336,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_INBOX)
             if (account.account.value?.userId == me.userId) _inboxUnread.value = 0
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1367,7 +1369,7 @@ class CloudSync(
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1388,12 +1390,12 @@ class CloudSync(
                 }.decodeList<BlockDto>().map {
                     BlockedLifter(
                         userId = it.blockedId,
-                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t),
+                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
                     )
                 }
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1402,14 +1404,14 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (userId == me.userId) {
-            return Result.failure(IllegalStateException(cloudText(R.string.cloud_block_self)))
+            return Result.failure(MessageException(cloudText(R.string.cloud_block_self)))
         }
         return runCatching {
             client.postgrest.from("blocks").insert(BlockInsertDto(blockerId = me.userId, blockedId = userId))
             Unit
         }.recoverCatching { error ->
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error), error)
+                throw MessageException(Cloud.explain(error), error)
             }
         }.onSuccess {
             // The trigger deleted the friendship and RLS now hides their
@@ -1435,7 +1437,7 @@ class CloudSync(
             invalidateSocialReads()
             cache.invalidate(CloudReadCache.KEY_BLOCKED)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1455,7 +1457,7 @@ class CloudSync(
                 }.decodeList<MuteDto>().map { it.mutedId }.toSet()
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1464,14 +1466,14 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (userId == me.userId) {
-            return Result.failure(IllegalStateException(cloudText(R.string.cloud_mute_self)))
+            return Result.failure(MessageException(cloudText(R.string.cloud_mute_self)))
         }
         return runCatching {
             client.postgrest.from("mutes").insert(MuteInsertDto(muterId = me.userId, mutedId = userId))
             Unit
         }.recoverCatching { error ->
             if (error !is PostgrestRestException || error.code != "23505") {
-                throw IllegalStateException(Cloud.explain(error), error)
+                throw MessageException(Cloud.explain(error), error)
             }
         }.onSuccess {
             // The feed view and my_inbox() now drop them server-side.
@@ -1495,7 +1497,7 @@ class CloudSync(
             invalidateSocialReads()
             cache.invalidate(CloudReadCache.KEY_MUTED)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -1513,12 +1515,12 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         if (targetUserId == me.userId) {
-            return Result.failure(IllegalStateException(cloudText(R.string.cloud_report_self)))
+            return Result.failure(MessageException(cloudText(R.string.cloud_report_self)))
         }
         val text = note.trim()
         if (text.length > WireLimits.REPORT_NOTE_MAX) {
             return Result.failure(
-                IllegalStateException(Words.text(UiText.plural(R.plurals.cloud_report_note_too_long, WireLimits.REPORT_NOTE_MAX))),
+                MessageException(UiText.plural(R.plurals.cloud_report_note_too_long, WireLimits.REPORT_NOTE_MAX)),
             )
         }
         return runCatching {
@@ -1534,7 +1536,7 @@ class CloudSync(
             )
             Unit
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error), error)
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 

@@ -75,7 +75,7 @@ data class ImportReviewUi(
     val unmatched: List<UnmatchedImportName> = emptyList(),
     val choices: Map<String, String?> = emptyMap(),
     val importing: Boolean = false,
-    val result: String? = null,
+    val result: UiText? = null,
 )
 
 /**
@@ -182,7 +182,7 @@ fun ImportReviewOverlay(
 
             ui.result?.let {
                 Spacer(Modifier.height(14.dp))
-                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(it.asString(), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             Spacer(Modifier.height(14.dp))
             Text(

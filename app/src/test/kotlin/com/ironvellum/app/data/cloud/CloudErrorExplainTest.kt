@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.data.Words
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.ktor.client.request.HttpRequestBuilder
 import org.junit.Assert.assertEquals
@@ -20,7 +21,7 @@ class CloudErrorExplainTest {
         // would erase the one actionable sentence the player gets.
         assertEquals(
             "Wrong email or password",
-            Cloud.explain(IllegalStateException("Wrong email or password")),
+            Words.text(Cloud.explain(IllegalStateException("Wrong email or password"))),
         )
     }
 
@@ -28,7 +29,7 @@ class CloudErrorExplainTest {
     fun `a network failure reads as an offline problem`() {
         assertEquals(
             "Could not reach the cloud — check your connection",
-            Cloud.explain(HttpRequestException("connect timed out", HttpRequestBuilder())),
+            Words.text(Cloud.explain(HttpRequestException("connect timed out", HttpRequestBuilder()))),
         )
     }
 
@@ -36,7 +37,7 @@ class CloudErrorExplainTest {
     fun `an unknown error surfaces the generic message and never the raw text`() {
         // Credential Manager and the auth SDK leak API internals in exception
         // text; the generic branch must drop them wholesale, not interpolate.
-        val explained = Cloud.explain(RuntimeException("Bearer eyJhbGciOiJIUzI1NiJ9.secret-token"))
+        val explained = Words.text(Cloud.explain(RuntimeException("Bearer eyJhbGciOiJIUzI1NiJ9.secret-token")))
         assertEquals("The Ledger stumbled — try again in a moment", explained)
         assertFalse(explained.contains("Bearer"))
     }

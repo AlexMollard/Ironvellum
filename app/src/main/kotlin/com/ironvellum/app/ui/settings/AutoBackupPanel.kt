@@ -29,6 +29,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import com.ironvellum.app.ui.asString
 
 /**
  * The weekly file backup in Data settings: off until a folder is picked, then its
@@ -83,7 +84,7 @@ internal fun AutoBackupPanel(viewModel: SettingsViewModel) {
     }
     state.error?.let {
         Spacer(Modifier.height(8.dp))
-        SettingsCaption(it, color = IronvellumColors.DangerRed)
+        SettingsCaption(it.asString(), color = IronvellumColors.DangerRed)
     }
 }
 

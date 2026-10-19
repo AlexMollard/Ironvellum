@@ -5755,6 +5755,9 @@
     <string name="cloud_account_claim_signed_out__t">Sign in before taking a true name</string>
     <string name="cloud_account_name_taken">That display name is taken — another lifter got there first</string>
     <string name="cloud_account_name_taken__t">That true name is taken — another Ironbound got there first</string>
+    <string name="cloud_account_name_taken_pick">That display name is taken — pick another</string>
+    <string name="cloud_account_name_taken_pick__t">That true name is taken — pick another</string>
+    <string name="cloud_account_email_has_account">That email already has an account — sign in, or use Forgot password?</string>
     <string name="cloud_account_delete_signed_out">Sign in before deleting your cloud account</string>
     <string name="cloud_account_no_profile">Your profile could not be loaded</string>
     <string name="cloud_account_visibility_signed_out">Sign in before changing visibility</string>

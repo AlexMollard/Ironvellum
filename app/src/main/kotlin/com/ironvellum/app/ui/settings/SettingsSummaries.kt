@@ -62,29 +62,36 @@ object SettingsSummaries {
 
     private fun plain(id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
 
-    private fun themedCount(plain: Int, themed: Int, n: Int): String = Words.text(UiText.themedPlural(plain, themed, n))
+    private fun themedCount(plain: Int, themed: Int, n: Int): UiText = UiText.themedPlural(plain, themed, n)
 
-    private fun setsCount(n: Int): String = Words.text(UiText.plural(R.plurals.common_sets_count, n))
+    private fun setsCount(n: Int): UiText = UiText.plural(R.plurals.common_sets_count, n)
 
-    fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int): String =
-        listOf(
-            themedCount(R.plurals.settings_import_csv_sessions, R.plurals.settings_import_csv_sessions__t, sessions),
-            setsCount(sets),
-            plain(R.string.settings_import_csv_xp, xp),
-            Words.text(UiText.themed(R.string.settings_import_csv_skipped, R.string.settings_import_csv_skipped__t, skipped)),
-        ).joinToString(" · ")
+    /** What an import or restore brought in, left unresolved: the line stays on screen across a language or Themed switch. */
+    fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int): UiText =
+        UiText.join(
+            listOf(
+                themedCount(R.plurals.settings_import_csv_sessions, R.plurals.settings_import_csv_sessions__t, sessions),
+                setsCount(sets),
+                UiText.res(R.string.settings_import_csv_xp, xp),
+                UiText.themed(R.string.settings_import_csv_skipped, R.string.settings_import_csv_skipped__t, skipped),
+            ),
+            " · ",
+        )
 
     fun archiveRestored(
         presets: Int, sessions: Int, sets: Int, stats: Int, titles: Int, skills: Int, healthDays: Int,
-    ): String = listOf(
-        themedCount(R.plurals.settings_archive_restored_routines, R.plurals.settings_archive_restored_routines__t, presets),
-        themedCount(R.plurals.settings_archive_restored_sessions, R.plurals.settings_archive_restored_sessions__t, sessions),
-        setsCount(sets),
-        themedCount(R.plurals.settings_archive_restored_stats, R.plurals.settings_archive_restored_stats__t, stats),
-        Words.text(UiText.plural(R.plurals.settings_archive_restored_deeds, titles)),
-        themedCount(R.plurals.settings_archive_restored_skills, R.plurals.settings_archive_restored_skills__t, skills),
-        Words.text(UiText.plural(R.plurals.settings_archive_restored_health_days, healthDays)),
-    ).joinToString(" · ")
+    ): UiText = UiText.join(
+        listOf(
+            themedCount(R.plurals.settings_archive_restored_routines, R.plurals.settings_archive_restored_routines__t, presets),
+            themedCount(R.plurals.settings_archive_restored_sessions, R.plurals.settings_archive_restored_sessions__t, sessions),
+            setsCount(sets),
+            themedCount(R.plurals.settings_archive_restored_stats, R.plurals.settings_archive_restored_stats__t, stats),
+            UiText.plural(R.plurals.settings_archive_restored_deeds, titles),
+            themedCount(R.plurals.settings_archive_restored_skills, R.plurals.settings_archive_restored_skills__t, skills),
+            UiText.plural(R.plurals.settings_archive_restored_health_days, healthDays),
+        ),
+        " · ",
+    )
 
     /**
      * Heights are almost always whole centimetres: show "180", not "180.0".

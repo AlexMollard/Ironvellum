@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import com.ironvellum.app.data.MessageException
 
 /** How an email sign-up ended: signed in now, or waiting on the confirmation link. */
 sealed interface SignUpOutcome {
@@ -79,7 +80,7 @@ class AccountRepository {
                 )
             }
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -91,7 +92,7 @@ class AccountRepository {
      */
     suspend fun signUp(email: String, password: String, displayName: String): Result<SignUpOutcome> {
         val name = displayName.trim()
-        trueNameProblem(name)?.let { return Result.failure(IllegalStateException(it)) }
+        trueNameProblem(name)?.let { return Result.failure(MessageException(it)) }
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             // Asked first: on a taken name the server quietly seeds a
@@ -116,12 +117,12 @@ class AccountRepository {
             } else {
                 SignUpOutcome.SignedIn(
                     loadSignedInAccount(email)
-                        ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signup_no_profile))),
+                        ?: throw MessageException(UiText.res(R.string.cloud_account_signup_no_profile)),
                 )
             }
         }.recoverCatching { error ->
             if (error is NameTakenException || error is EmailTakenException) throw error
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -133,9 +134,9 @@ class AccountRepository {
                 this.password = password
             }
             loadSignedInAccount(email)
-                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signin_no_profile)))
+                ?: throw MessageException(UiText.res(R.string.cloud_account_signin_no_profile))
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -150,7 +151,7 @@ class AccountRepository {
         return runCatching {
             client.auth.resetPasswordForEmail(email, redirectUrl = null)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -161,9 +162,9 @@ class AccountRepository {
             client.auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email, token = code)
             client.auth.updateUser { password = newPassword }
             loadSignedInAccount(email)
-                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_reset_no_profile)))
+                ?: throw MessageException(UiText.res(R.string.cloud_account_reset_no_profile))
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -181,13 +182,13 @@ class AccountRepository {
                 this.nonce = rawNonce
             }
             val user = client.auth.currentUserOrNull()
-                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_google_no_user)))
+                ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_user))
             // The server seeded a neutral Lifter#### handle for a new Google
             // user (never the legal name); ALLIES offers to claim a real one.
             loadAccount(user.id, user.email ?: "")?.also { _account.value = it }
-                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_google_no_profile)))
+                ?: throw MessageException(UiText.res(R.string.cloud_account_google_no_profile))
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -208,9 +209,9 @@ class AccountRepository {
      */
     suspend fun updateDisplayName(raw: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException(Words.text(UiText.themed(R.string.cloud_account_claim_signed_out, R.string.cloud_account_claim_signed_out__t))))
+            ?: return Result.failure(MessageException(UiText.themed(R.string.cloud_account_claim_signed_out, R.string.cloud_account_claim_signed_out__t)))
         val client = requireClient().getOrElse { return failure(it) }
-        trueNameProblem(raw)?.let { return Result.failure(IllegalStateException(it)) }
+        trueNameProblem(raw)?.let { return Result.failure(MessageException(it)) }
         val name = sanitizeHandle(raw)
         return runCatching {
             client.postgrest.from("profiles").update(
@@ -224,8 +225,8 @@ class AccountRepository {
         }.recoverCatching { error ->
             val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
-            throw IllegalStateException(
-                if (taken) Words.text(UiText.themed(R.string.cloud_account_name_taken, R.string.cloud_account_name_taken__t))
+            throw MessageException(
+                if (taken) UiText.themed(R.string.cloud_account_name_taken, R.string.cloud_account_name_taken__t)
                 else Cloud.explain(error),
             )
         }
@@ -245,7 +246,7 @@ class AccountRepository {
     suspend fun deleteCloudData(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
         _account.value?.userId
-            ?: return Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_delete_signed_out))))
+            ?: return Result.failure(MessageException(UiText.res(R.string.cloud_account_delete_signed_out)))
         return runCatching {
             client.postgrest.rpc("delete_my_account")
             // The server session died with the user; a failed sign-out call
@@ -253,7 +254,7 @@ class AccountRepository {
             runCatching { client.auth.signOut() }
             _account.value = null
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -264,10 +265,10 @@ class AccountRepository {
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             val profile = loadAccount(current.userId, current.email)
-                ?: throw IllegalStateException(Words.text(UiText.res(R.string.cloud_account_no_profile)))
+                ?: throw MessageException(UiText.res(R.string.cloud_account_no_profile))
             _account.value = profile
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -284,7 +285,7 @@ class AccountRepository {
 
     suspend fun setVisibility(visibility: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_visibility_signed_out))))
+            ?: return Result.failure(MessageException(UiText.res(R.string.cloud_account_visibility_signed_out)))
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             client.postgrest.from("profiles").update(
@@ -296,7 +297,7 @@ class AccountRepository {
             }
             _account.value = current.copy(visibility = visibility)
         }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
+            throw MessageException(Cloud.explain(error))
         }
     }
 
@@ -327,14 +328,14 @@ class AccountRepository {
 fun isUnclaimedHandle(name: String?): Boolean = name != null && UnclaimedHandle.matches(name)
 
 /** Why [raw] cannot be the true name, or null when it can: 2..24 trimmed, as the profiles table checks. */
-fun trueNameProblem(raw: String): String? {
+fun trueNameProblem(raw: String): UiText? {
     val trimmed = raw.trim()
     return when {
         trimmed.length !in WireLimits.DISPLAY_NAME_MIN..WireLimits.DISPLAY_NAME_MAX ->
-            Words.text(UiText.themed(R.string.cloud_name_length, R.string.cloud_name_length__t, WireLimits.DISPLAY_NAME_MIN, WireLimits.DISPLAY_NAME_MAX))
+            UiText.themed(R.string.cloud_name_length, R.string.cloud_name_length__t, WireLimits.DISPLAY_NAME_MIN, WireLimits.DISPLAY_NAME_MAX)
         // A claim keeps letters, digits and spaces only; "!!" would otherwise become a seeded-looking handle.
         trimmed.count { it.isLetterOrDigit() } < WireLimits.DISPLAY_NAME_MIN ->
-            Words.text(UiText.themedPlural(R.plurals.cloud_name_letters, R.plurals.cloud_name_letters__t, WireLimits.DISPLAY_NAME_MIN))
+            UiText.themedPlural(R.plurals.cloud_name_letters, R.plurals.cloud_name_letters__t, WireLimits.DISPLAY_NAME_MIN)
         else -> null
     }
 }
@@ -366,16 +367,16 @@ private val UnclaimedHandle = Regex("^(?:Hunter|Lifter|Ironbound)\\d{4}$")
 internal fun requireAccount(account: AccountRepository): Result<Account> {
     val current = account.account.value
     return if (current == null) {
-        Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_account_signed_out))))
+        Result.failure(MessageException(UiText.res(R.string.cloud_account_signed_out)))
     } else {
         Result.success(current)
     }
 }
 
 /** The display name was taken before sign-up; shown to the lifter as is. */
-private class NameTakenException : IllegalStateException("That ${Words.trueName.s} is taken — pick another")
+private class NameTakenException : MessageException(
+    UiText.themed(R.string.cloud_account_name_taken_pick, R.string.cloud_account_name_taken_pick__t),
+)
 
 /** A repeat sign-up of a registered email; shown to the lifter as is. */
-private class EmailTakenException : IllegalStateException(
-    "That email already has an account — sign in, or use Forgot password?",
-)
+private class EmailTakenException : MessageException(UiText.res(R.string.cloud_account_email_has_account))

@@ -247,7 +247,7 @@ fun AccountSettingsScreen(
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                     outcome.problems.forEach { problem ->
                         Text(
-                            "· $problem",
+                            "· ${problem.asString()}",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -269,7 +269,7 @@ fun AccountSettingsScreen(
             // screen read as a button that simply did nothing.
             ui.backupError?.let {
                 Text(
-                    it,
+                    it.asString(),
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -429,7 +429,7 @@ fun AccountSettingsScreen(
         Spacer(Modifier.height(8.dp))
         ui.error?.let {
             Spacer(Modifier.height(8.dp))
-            SocialErrorBanner(it)
+            SocialErrorBanner(it.asString())
         }
         Spacer(Modifier.height(28.dp))
     }
@@ -437,7 +437,7 @@ fun AccountSettingsScreen(
     if (editingName) {
         EditNameDialog(
             currentName = acct.displayName,
-            error = ui.claimError,
+            error = ui.claimError?.asString(),
             busy = ui.claimBusy,
             onSave = viewModel::claimName,
             onDismiss = { editingName = false },

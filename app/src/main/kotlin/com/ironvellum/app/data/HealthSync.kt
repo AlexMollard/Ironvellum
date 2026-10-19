@@ -164,7 +164,7 @@ class HealthSync(private val context: Context) {
         val days: List<HealthDay> = emptyList(),
         val bodyReadings: List<BodyReading> = emptyList(),
         val coverage: Map<String, Int> = emptyMap(),
-        val problems: List<String> = emptyList(),
+        val problems: List<UiText> = emptyList(),
         /** Apps that wrote the step records, and when the newest one ends. */
         val stepSources: List<String> = emptyList(),
         val newestStepAtMs: Long? = null,
@@ -173,13 +173,13 @@ class HealthSync(private val context: Context) {
     private fun metricName(@StringRes id: Int): String = Words.text(UiText.res(id))
 
     suspend fun readDailyHistory(days: Int): HistoryRead {
-        if (!available()) return HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_unavailable))))
+        if (!available()) return HistoryRead(problems = listOf(UiText.res(R.string.health_unavailable)))
         // Nothing granted at all: every aggregate below would be rejected by the
         // platform, so the daily worker was throwing seven SecurityExceptions
         // per run against a service that can never answer it. A PARTIAL grant
         // still proceeds — each metric is isolated, so the ones allowed read.
         if (grantedPermissions().isEmpty()) {
-            return HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_permissions_missing))))
+            return HistoryRead(problems = listOf(UiText.res(R.string.health_permissions_missing)))
         }
         val client = HealthConnectClient.getOrCreate(context)
         val zone = ZoneId.systemDefault()
@@ -192,10 +192,10 @@ class HealthSync(private val context: Context) {
         // AggregateGroupByDurationRequest" — this silently zeroed every day.
         val fromLocal = start.atStartOfDay()
         val toLocal = end.plusDays(1).atStartOfDay()
-        val problems = mutableListOf<String>()
+        val problems = mutableListOf<UiText>()
 
         fun note(metric: String, error: Throwable) {
-            problems += "$metric: ${error.javaClass.simpleName}${error.message?.let { " $it" } ?: ""}"
+            problems += UiText.Raw("$metric: ${error.javaClass.simpleName}${error.message?.let { " $it" } ?: ""}")
         }
 
         // One request per metric: a single denied permission (calories was the
@@ -330,7 +330,7 @@ class HealthSync(private val context: Context) {
         val newestStepAtMs = rawSteps.maxOfOrNull { it.endTime }?.toEpochMilli()
 
         if (result.isEmpty() && bodyReadings.isEmpty() && problems.isEmpty()) {
-            problems += Words.text(UiText.plural(R.plurals.health_no_activity, days))
+            problems += UiText.plural(R.plurals.health_no_activity, days)
         }
         return HistoryRead(result, bodyReadings, coverage, problems, stepSources, newestStepAtMs)
     }

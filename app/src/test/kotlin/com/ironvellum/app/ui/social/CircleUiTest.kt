@@ -4,6 +4,7 @@ import com.ironvellum.app.data.CircleBonusPaid
 import com.ironvellum.app.data.CircleGateway
 import com.ironvellum.app.data.CircleRead
 import com.ironvellum.app.domain.Circle
+import com.ironvellum.app.domain.UiText
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
@@ -120,7 +121,7 @@ class CircleUiTest {
         vm.load(force = true)
         assertEquals("North Gate", vm.ui.value.circle?.name)
         assertTrue(vm.ui.value.refreshFailed)
-        assertEquals("offline", vm.ui.value.error)
+        assertEquals(UiText.Raw("offline"), vm.ui.value.error)
         gateway.readError = null
         vm.load(force = true)
         assertFalse(vm.ui.value.refreshFailed)
@@ -149,7 +150,7 @@ class CircleUiTest {
         var done = false
         vm.join("K7M2PQ4X") { done = true }
         assertFalse(done)
-        assertEquals("That circle is full", vm.ui.value.actionError)
+        assertEquals(UiText.Raw("That circle is full"), vm.ui.value.actionError)
         assertFalse(vm.ui.value.actionBusy)
         vm.dismissActionError()
         assertNull(vm.ui.value.actionError)
@@ -162,7 +163,7 @@ class CircleUiTest {
         gateway.actionError = IllegalStateException("Only the Keeper changes the circle code")
         gateway.circle = circle("Gate House")
         vm.newCode()
-        assertEquals("Only the Keeper changes the circle code", vm.ui.value.actionError)
+        assertEquals(UiText.Raw("Only the Keeper changes the circle code"), vm.ui.value.actionError)
         assertEquals("Gate House", vm.ui.value.circle?.name)
         assertEquals(listOf(false, true), gateway.reads)
     }

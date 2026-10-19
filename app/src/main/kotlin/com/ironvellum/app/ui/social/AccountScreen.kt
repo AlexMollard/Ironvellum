@@ -11,6 +11,7 @@ import com.ironvellum.app.data.Lines
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TabTitle
 import androidx.compose.foundation.clickable
@@ -126,16 +127,16 @@ data class AccountUi(
     val account: Account? = null,
     val busy: Boolean = false,
     /** The real server/network reason, verbatim — never a generic "failed". */
-    val error: String? = null,
+    val error: UiText? = null,
     /** Sign-up succeeded but the server wants the email confirmed first. */
-    val notice: String? = null,
+    val notice: UiText? = null,
     /** The address the last reset code went to; the form then asks for it. */
     val resetCodeSentTo: String? = null,
     val lastSync: SyncOutcome? = null,
     val friends: List<FriendRow> = emptyList(),
     val friendsLoading: Boolean = false,
     /** Inline failure of the last CLAIM attempt — house copy, never a trace. */
-    val claimError: String? = null,
+    val claimError: UiText? = null,
     val claimBusy: Boolean = false,
     /** Skip lives only in the ViewModel: no persisted nag-flag, one skip per session. */
     val claimSkipped: Boolean = false,
@@ -148,7 +149,7 @@ data class AccountUi(
      * [error] slot sits below the allies list, several screens down: a failed
      * BACK UP NOW looked like a button that did nothing at all.
      */
-    val backupError: String? = null,
+    val backupError: UiText? = null,
     /** Lifters this account blocked; blocked_name is kept server-side because their profile turns unreadable. */
     val blocked: List<BlockedLifter> = emptyList(),
 )
@@ -190,7 +191,7 @@ class AccountViewModel(
     }
 
     /** Extract the genuine reason from a Result failure — shown verbatim. */
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.acct_failure_unknown))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.acct_failure_unknown))
 
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
@@ -210,7 +211,7 @@ class AccountViewModel(
                 .onSuccess { outcome ->
                     if (outcome is SignUpOutcome.ConfirmEmail) {
                         _ui.value = _ui.value.copy(
-                            notice = Words.text(UiText.res(R.string.acct_signup_confirm_notice, email)),
+                            notice = UiText.res(R.string.acct_signup_confirm_notice, email),
                         )
                     }
                 }
@@ -228,7 +229,7 @@ class AccountViewModel(
                 .onSuccess {
                     _ui.value = _ui.value.copy(
                         resetCodeSentTo = email,
-                        notice = Words.text(UiText.res(R.string.acct_reset_sent_notice, email)),
+                        notice = UiText.res(R.string.acct_reset_sent_notice, email),
                     )
                 }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
@@ -581,8 +582,8 @@ private fun BusyPanel(label: String) {
 }
 @Composable
 internal fun AuthPanels(
-    error: String?,
-    notice: String?,
+    error: UiText?,
+    notice: UiText?,
     busy: Boolean,
     googleEnabled: Boolean,
     onGoogleSignIn: (String, String) -> Unit,
@@ -654,7 +655,7 @@ internal fun AuthPanels(
 
     // Each message sits under the field it belongs to. A refusal from the
     // server goes under the last field of the form, the one just filled in.
-    val serverError = error?.let {
+    val serverError = error?.asString()?.let {
         when (mode) {
             AuthMode.SIGN_IN -> stringResource(R.string.acct_auth_failed_signin, it)
             AuthMode.SIGN_UP -> stringResource(R.string.acct_auth_failed_signup, it)
@@ -817,7 +818,7 @@ internal fun AuthPanels(
     notice?.let {
         Spacer(Modifier.height(8.dp))
         Text(
-            it,
+            it.asString(),
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.Ink,
@@ -915,7 +916,7 @@ private fun SignedInPanels(
     // the usual error here, and at the bottom of the list it went unseen.
     ui.error?.let {
         Spacer(Modifier.height(8.dp))
-        SocialErrorBanner(it)
+        SocialErrorBanner(it.asString())
     }
 
     SectionHeader(if (accepted.isEmpty()) Words.ally.cpl else UiText.themed(R.string.acct_allies_header, R.string.acct_allies_header__t, accepted.size).asString(), topPadding = 18.dp)
@@ -1001,7 +1002,7 @@ private fun VisibilityChip(visibility: String) {
 @Composable
 private fun ClaimNamePanel(
     currentHandle: String,
-    error: String?,
+    error: UiText?,
     busy: Boolean,
     onClaim: (String) -> Unit,
     onSkip: () -> Unit,
@@ -1072,7 +1073,7 @@ private fun ClaimNamePanel(
         error?.let {
             Spacer(Modifier.height(6.dp))
             Text(
-                it,
+                it.asString(),
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,

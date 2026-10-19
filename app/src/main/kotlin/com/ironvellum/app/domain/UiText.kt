@@ -28,11 +28,16 @@ sealed interface UiText {
     /** Text that is data, not copy: shown as it is. */
     data class Raw(val value: String) : UiText
 
+    /** [parts] one after another with [separator] between them: punctuation or a space, never a word. */
+    data class Joined(val parts: List<UiText>, val separator: String = " ") : UiText
+
     companion object {
         fun res(@StringRes id: Int, vararg args: Any): UiText = Res(id, args.toList())
 
         fun plural(@PluralsRes id: Int, count: Int, vararg args: Any): UiText =
             Plural(id, count, if (args.isEmpty()) listOf(count) else args.toList())
+
+        fun join(parts: List<UiText>, separator: String = " "): UiText = Joined(parts, separator)
 
         /** `key` and `key__t` with the same arguments. */
         fun themed(@StringRes plain: Int, @StringRes themed: Int, vararg args: Any): UiText =
@@ -62,6 +67,7 @@ interface StringSource {
 /** The text for [source]; [themed] is the Themed names switch, which a language with incomplete themed strings ignores. */
 fun UiText.resolve(source: StringSource, themed: Boolean): String = when (this) {
     is UiText.Raw -> value
+    is UiText.Joined -> parts.joinToString(separator) { it.resolve(source, themed) }
     is UiText.Res -> source.string(id, args.map { it.resolveArg(source, themed) })
     is UiText.Plural -> source.plural(id, count, args.map { it.resolveArg(source, themed) })
     is UiText.Themed -> (if (themed && source.themedComplete) this.themed else plain).resolve(source, themed)

@@ -102,7 +102,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(6.dp))
-            FieldResult(saved = nameSaved, error = renameError)
+            FieldResult(saved = nameSaved, error = renameError?.asString())
             SettingsCaption(
                 if (signedIn) {
                     UiText.themed(R.string.settings_profile_name_caption_signed_in, R.string.settings_profile_name_caption_signed_in__t).asString()
@@ -130,7 +130,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(6.dp))
-            FieldResult(saved = heightStatus.saved, error = heightStatus.error)
+            FieldResult(saved = heightStatus.saved, error = heightStatus.error?.asString())
             SettingsCaption(stringResource(R.string.settings_profile_height_caption))
             Spacer(Modifier.height(14.dp))
             OutlinedTextField(

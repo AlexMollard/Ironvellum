@@ -110,13 +110,13 @@ object JoinStatus {
     fun parse(raw: String): String = raw.trim().trim('"')
 
     /** The refusal to show for [status], or null when the lifter joined. */
-    fun refusal(status: String): String? = when (status) {
+    fun refusal(status: String): UiText? = when (status) {
         JOINED -> null
-        "no_such_code" -> Words.text(UiText.themed(R.string.circles_join_no_such_code, R.string.circles_join_no_such_code__t))
-        "full" -> Words.text(UiText.themed(R.string.circles_join_full, R.string.circles_join_full__t))
+        "no_such_code" -> UiText.themed(R.string.circles_join_no_such_code, R.string.circles_join_no_such_code__t)
+        "full" -> UiText.themed(R.string.circles_join_full, R.string.circles_join_full__t)
         // Deliberately neutral: it says nothing of who blocked whom.
-        "closed" -> Words.text(UiText.themed(R.string.circles_join_closed, R.string.circles_join_closed__t))
-        "throttled" -> Words.text(UiText.res(R.string.circles_join_throttled))
-        else -> Words.text(UiText.themed(R.string.circles_join_failed, R.string.circles_join_failed__t))
+        "closed" -> UiText.themed(R.string.circles_join_closed, R.string.circles_join_closed__t)
+        "throttled" -> UiText.res(R.string.circles_join_throttled)
+        else -> UiText.themed(R.string.circles_join_failed, R.string.circles_join_failed__t)
     }
 }

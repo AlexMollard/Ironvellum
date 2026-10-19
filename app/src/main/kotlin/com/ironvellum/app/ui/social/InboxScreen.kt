@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.cloud.AccountRepository
@@ -92,9 +93,9 @@ internal data class InboxUi(
      * could read them.
      */
     val seenAtMs: Long? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     /** An accept/decline the server refused, verbatim. */
-    val actionError: String? = null,
+    val actionError: UiText? = null,
     val answering: Set<String> = emptySet(),
     val answered: Map<String, RequestAnswer> = emptyMap(),
     /** A decline waiting out its Undo window: (actor id, name). The server call fires when it closes. */
@@ -111,7 +112,7 @@ internal class InboxViewModel(
     )
     val ui: StateFlow<InboxUi> = _ui.asStateFlow()
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.inbox_unknown_failure))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.inbox_unknown_failure))
 
     init {
         viewModelScope.launch {
@@ -214,7 +215,7 @@ internal fun InboxScreen(
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            val err = ui.error
+            val err = ui.error?.asString()
             when {
                 !ui.loaded -> InkPanel(Modifier.fillMaxWidth()) {
                     Text(
@@ -239,7 +240,7 @@ internal fun InboxScreen(
                         Spacer(Modifier.height(10.dp))
                     }
                     ui.actionError?.let {
-                        SocialErrorBanner(it)
+                        SocialErrorBanner(it.asString())
                         Spacer(Modifier.height(10.dp))
                     }
                     val pullState = rememberPullToRefreshState()

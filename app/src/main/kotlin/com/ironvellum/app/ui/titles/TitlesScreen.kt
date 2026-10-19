@@ -110,8 +110,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     val claim: StateFlow<SkillClaimResult?> = _claim.asStateFlow()
 
     /** Why the last unclaim was refused; null when nothing to show. */
-    private val _unclaimRefusal = MutableStateFlow<String?>(null)
-    val unclaimRefusal: StateFlow<String?> = _unclaimRefusal.asStateFlow()
+    private val _unclaimRefusal = MutableStateFlow<UiText?>(null)
+    val unclaimRefusal: StateFlow<UiText?> = _unclaimRefusal.asStateFlow()
 
     val ui: StateFlow<TitlesUi> = combine(
         repo.observeUnlockedTitles(),
@@ -262,9 +262,9 @@ internal fun bestEfforts(
  * ("<skill> paid N XP but only M XP is left - it stays claimed"), with its
  * clause dash set as the em dash the rest of the app's copy uses.
  */
-internal fun unclaimRefusalCopy(refused: IllegalStateException): String =
-    refused.message?.replace(" - ", " — ")
-        ?: Words.text(UiText.themed(R.string.titles_unclaim_stays, R.string.titles_unclaim_stays__t))
+internal fun unclaimRefusalCopy(refused: IllegalStateException): UiText =
+    refused.message?.replace(" - ", " — ")?.let { UiText.Raw(it) }
+        ?: UiText.themed(R.string.titles_unclaim_stays, R.string.titles_unclaim_stays__t)
 
 @Composable
 fun TitlesScreen(
@@ -368,7 +368,7 @@ fun TitlesScreen(
     unclaimRefusal?.let { message ->
         InfoNotice(
             UiText.themed(R.string.titles_unclaim_refused_title, R.string.titles_unclaim_refused_title__t).asString(),
-            message,
+            message.asString(),
             onDismiss = viewModel::dismissUnclaimRefusal,
         )
     }

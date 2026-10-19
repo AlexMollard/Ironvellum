@@ -92,8 +92,8 @@ internal class OptimiseViewModel(
     /** True while a write is in flight; a second tap does nothing. */
     val saving: StateFlow<Boolean> = _saving.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<UiText?>(null)
+    val error: StateFlow<UiText?> = _error.asStateFlow()
 
     private val _applied = MutableStateFlow<Applied?>(null)
     val applied: StateFlow<Applied?> = _applied.asStateFlow()
@@ -107,7 +107,7 @@ internal class OptimiseViewModel(
                     _error.value = null
                     _applied.value = applied
                 }
-                .onFailure { _error.value = Words.text(UiText.res(R.string.optimise_apply_error, it.message.toString())) }
+                .onFailure { _error.value = UiText.res(R.string.optimise_apply_error, it.message.toString()) }
             _saving.value = false
         }
     }
@@ -122,7 +122,7 @@ internal class OptimiseViewModel(
                     _error.value = null
                     _applied.value = null
                 }
-                .onFailure { _error.value = Words.text(UiText.res(R.string.optimise_undo_error, it.message.toString())) }
+                .onFailure { _error.value = UiText.res(R.string.optimise_undo_error, it.message.toString()) }
             _saving.value = false
         }
     }

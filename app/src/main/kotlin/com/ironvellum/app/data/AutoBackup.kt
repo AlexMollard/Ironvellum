@@ -41,14 +41,16 @@ object AutoBackup {
     private const val KEY_FOLDER = "folder"
     private const val KEY_FOLDER_NAME = "folder_name"
     private const val KEY_LAST_AT = "last_at"
+    // Builds before the reason was stored on its own kept the whole sentence here; read as it is, replaced on the next run.
     private const val KEY_LAST_ERROR = "last_error"
+    private const val KEY_LAST_REASON = "last_reason"
     private const val WORK_NAME = "ironvellum-auto-backup"
-    private val LOST get() = Words.text(UiText.res(R.string.backup_folder_lost))
+    private val LOST = UiText.res(R.string.backup_folder_lost)
 
     private val lock = Mutex()
 
     /** What Settings shows. [error] is the last run's failure, or the lost folder access, in plain words. */
-    data class State(val folderName: String?, val lastAtMs: Long, val error: String?) {
+    data class State(val folderName: String?, val lastAtMs: Long, val error: UiText?) {
         val on: Boolean get() = folderName != null
     }
 
@@ -71,7 +73,15 @@ object AutoBackup {
     private fun read(context: Context): State {
         val p = prefs(context)
         val tree = folder(context) ?: return State(null, 0L, null)
-        val error = if (hasAccess(context, tree)) p.getString(KEY_LAST_ERROR, null) else LOST
+        val error = when {
+            !hasAccess(context, tree) -> LOST
+            p.contains(KEY_LAST_REASON) -> UiText.res(
+                R.string.backup_last_failed,
+                p.getString(KEY_LAST_REASON, null)?.takeIf { it.isNotBlank() }?.let { UiText.Raw(it) }
+                    ?: UiText.res(R.string.backup_file_not_written),
+            )
+            else -> p.getString(KEY_LAST_ERROR, null)?.let { UiText.Raw(it) }
+        }
         return State(p.getString(KEY_FOLDER_NAME, null) ?: Words.text(UiText.res(R.string.backup_folder_fallback)), p.getLong(KEY_LAST_AT, 0L), error)
     }
 
@@ -129,24 +139,25 @@ object AutoBackup {
     /** One backup now. Records the outcome either way; false when it failed. */
     suspend fun run(context: Context, repo: Repository): Boolean = lock.withLock {
         val tree = folder(context) ?: return false
-        val failure = if (!hasAccess(context, tree)) {
-            LOST
-        } else {
-            runCatching {
-                val json = repo.exportJson()
-                withContext(Dispatchers.IO) { write(context, tree, json) }
-            }.exceptionOrNull()?.let { Words.text(UiText.res(R.string.backup_last_failed, it.message ?: Words.text(UiText.res(R.string.backup_file_not_written)))) }
-        }
+        // Lost access is not a stored outcome: read() says so for as long as it is true.
+        val lost = !hasAccess(context, tree)
+        val failure = if (lost) null else runCatching {
+            val json = repo.exportJson()
+            withContext(Dispatchers.IO) { write(context, tree, json) }
+        }.exceptionOrNull()
         prefs(context).edit {
-            if (failure == null) {
+            if (!lost && failure == null) {
                 putLong(KEY_LAST_AT, System.currentTimeMillis())
                 remove(KEY_LAST_ERROR)
-            } else {
-                putString(KEY_LAST_ERROR, failure)
+                remove(KEY_LAST_REASON)
+            } else if (failure != null) {
+                // The reason alone: the sentence around it is built when it is shown, in that moment's language.
+                remove(KEY_LAST_ERROR)
+                putString(KEY_LAST_REASON, failure.message.orEmpty())
             }
         }
         publish(context)
-        failure == null
+        !lost && failure == null
     }
 
     private fun write(context: Context, tree: Uri, json: String) {

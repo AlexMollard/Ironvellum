@@ -100,6 +100,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import com.ironvellum.app.data.MessageException
+import com.ironvellum.app.data.messageText
 
 /**
  * The one generator, surfaced from Train -> NEW PRESET: pick a hand-authored
@@ -206,8 +208,8 @@ class ProgramBuilderViewModel(
     private var lastKey: List<Any?>? = null
 
     /** Set when a generation or write is refused, or a write landed but its bookkeeping did not. */
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<UiText?>(null)
+    val error: StateFlow<UiText?> = _error.asStateFlow()
 
     /** True once she has picked a tier herself; the suggestion must not override her. */
     private var tierTouched = false
@@ -263,9 +265,7 @@ class ProgramBuilderViewModel(
                 }
                 _strength.value = repo.strengthProfile().copy(starter = repo.starterBasis(sex.value, tier.value))
             }.onFailure {
-                _error.value = Words.text(
-                    UiText.themed(R.string.builder_error_history, R.string.builder_error_history__t, it.message.toString()),
-                )
+                _error.value = UiText.themed(R.string.builder_error_history, R.string.builder_error_history__t, it.message.toString())
             }
             _strengthLoaded.value = true
             // The suggestion lands once, from real history; after she touches
@@ -306,7 +306,7 @@ class ProgramBuilderViewModel(
     private fun request(): ProgramRequest = ProgramRequest(
         focus = focus.value,
         volume = tier.value,
-        equipment = checkNotNull(equipment.value) { Words.text(UiText.themed(R.string.builder_error_armoury_not_picked, R.string.builder_error_armoury_not_picked__t)) },
+        equipment = equipment.value ?: throw MessageException(UiText.themed(R.string.builder_error_armoury_not_picked, R.string.builder_error_armoury_not_picked__t)),
         daysPerWeek = daysPerWeek.value,
         priorities = priorities.value,
         sex = sex.value,
@@ -398,19 +398,19 @@ class ProgramBuilderViewModel(
                     // "what my week is missing" it means nothing is missing -
                     // unless compound & skill only is what emptied it, which
                     // the same request without the flag tells apart.
-                    requireNotNull(preset) {
+                    preset ?: throw MessageException(run {
                         val isolationWouldFill = compoundOnly.value && ProgramGenerator.session(
                             request().copy(compoundOnly = false), sessionKind.value, sessionDay.value,
                             week, cat, strengthNow(),
                         ) != null
                         when {
                             isolationWouldFill ->
-                                Words.text(UiText.themed(R.string.builder_error_isolation_only, R.string.builder_error_isolation_only__t))
+                                UiText.themed(R.string.builder_error_isolation_only, R.string.builder_error_isolation_only__t)
                             sessionKind.value == SessionKind.AUTO ->
-                                Words.text(UiText.themed(R.string.builder_error_week_covered, R.string.builder_error_week_covered__t))
-                            else -> Words.text(UiText.themed(R.string.builder_error_cannot_fill, R.string.builder_error_cannot_fill__t))
+                                UiText.themed(R.string.builder_error_week_covered, R.string.builder_error_week_covered__t)
+                            else -> UiText.themed(R.string.builder_error_cannot_fill, R.string.builder_error_cannot_fill__t)
                         }
-                    }
+                    })
                     Generated(RoutinePlan(listOf(preset)))
                 }
                 "improve" -> {
@@ -422,7 +422,7 @@ class ProgramBuilderViewModel(
                     if (target == null) {
                         // Thrown, not set: the fold below owns the error line,
                         // and a returned null would clear it.
-                        throw IllegalArgumentException(Words.text(UiText.themed(R.string.builder_error_pick_rite, R.string.builder_error_pick_rite__t)))
+                        throw MessageException(UiText.themed(R.string.builder_error_pick_rite, R.string.builder_error_pick_rite__t))
                     } else {
                         val rest = all.filterIndexed { i, _ -> i != index }
                         Generated(
@@ -449,12 +449,10 @@ class ProgramBuilderViewModel(
                 _plan.value = null
                 _improvement.value = null
                 improvementFor = null
-                _error.value = Words.text(
-                    UiText.res(
-                        R.string.forge_failed_message,
-                        UiText.themed(R.string.forge_failed_title, R.string.forge_failed_title__t),
-                        it.message.toString(),
-                    ),
+                _error.value = UiText.res(
+                    R.string.forge_failed_message,
+                    UiText.themed(R.string.forge_failed_title, R.string.forge_failed_title__t),
+                    it.messageText(UiText.Raw(it.message.toString())),
                 )
             },
         )
@@ -547,13 +545,13 @@ class ProgramBuilderViewModel(
             try {
                 val written = runCatching { write() }
                 if (written.isFailure) {
-                    _error.value = Words.text(UiText.res(R.string.builder_save_failed, failure, written.exceptionOrNull()?.message.toString()))
+                    _error.value = UiText.res(R.string.builder_save_failed, failure, written.exceptionOrNull()?.message.toString())
                     return@launch
                 }
                 landed = true
                 val bookkeeping = runCatching { after() }
                 _error.value = bookkeeping.exceptionOrNull()?.let {
-                    Words.text(UiText.res(R.string.builder_saved_not_remembered, it.message.toString()))
+                    UiText.res(R.string.builder_saved_not_remembered, it.message.toString())
                 }
                 onDone()
             } finally {
@@ -572,7 +570,7 @@ class ProgramBuilderViewModel(
         if (placed == null) {
             val needed = plan.presets.count { it.scheduledDay != null }
             val free = 7 - taken.size
-            _error.value = Words.text(UiText.themedPlural(R.plurals.builder_no_room, R.plurals.builder_no_room__t, free, free, needed))
+            _error.value = UiText.themedPlural(R.plurals.builder_no_room, R.plurals.builder_no_room__t, free, free, needed)
             return
         }
         val focusNow = focus.value
@@ -601,7 +599,7 @@ class ProgramBuilderViewModel(
         val improvement = _improvement.value ?: return
         val id = selectedPresetId.value ?: presetId
         if (improvementFor != id) {
-            _error.value = Words.text(UiText.themed(R.string.builder_preview_stale, R.string.builder_preview_stale__t))
+            _error.value = UiText.themed(R.string.builder_preview_stale, R.string.builder_preview_stale__t)
             return
         }
         save(UiText.res(R.string.builder_fail_apply), onDone, after = { rememberAnswers() }) {
@@ -906,10 +904,10 @@ fun ProgramBuilderScreen(
             Spacer(Modifier.height(8.dp))
             Caption(Evidence.split(ProgramRules.SEX_NOTE).first)
 
-            if (error != null) {
+            error?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    error!!,
+                    it.asString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.DangerRed,
                 )

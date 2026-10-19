@@ -92,7 +92,7 @@ interface SessionWriteBack {
 }
 
 /** Whether saving is on, and how the last attempt went; the Health Connect page shows it. */
-data class WriteBackState(val enabled: Boolean = false, val lastError: String? = null, val lastOkMs: Long? = null)
+data class WriteBackState(val enabled: Boolean = false, val lastError: UiText? = null, val lastOkMs: Long? = null)
 
 /**
  * Saves finished workouts to Health Connect, when the lifter turned it on and Health Connect allowed it. Every
@@ -116,7 +116,7 @@ class HealthWriteBack(
     private val current = MutableStateFlow(
         WriteBackState(
             enabled = prefs.getBoolean(KEY_ENABLED, false),
-            lastError = prefs.getString(KEY_ERROR, null),
+            lastError = decode(prefs.getString(KEY_ERROR, null)),
             lastOkMs = if (prefs.contains(KEY_OK)) prefs.getLong(KEY_OK, 0L) else null,
         ),
     )
@@ -138,14 +138,14 @@ class HealthWriteBack(
         if (!current.value.enabled) return
         val spec = ExerciseSessionMapping.specFor(session, nowMs(), zone()) ?: return
         scope.launch {
-            if (!health.available()) return@launch fail(Words.text(UiText.res(R.string.health_writeback_unavailable)))
-            if (!permitted()) return@launch fail(Words.text(UiText.res(R.string.health_writeback_revoked)))
+            if (!health.available()) return@launch fail(UNAVAILABLE)
+            if (!permitted()) return@launch fail(REVOKED)
             try {
                 health.writeExerciseSession(spec)
                 succeed()
             } catch (e: Exception) {
                 Log.w(TAG, "health connect save failed", e)
-                fail(e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
+                failRaw(e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
             }
         }
     }
@@ -158,7 +158,7 @@ class HealthWriteBack(
                 health.deleteExerciseSession(ExerciseSessionMapping.clientRecordId(sessionId, startedAtMs))
             } catch (e: Exception) {
                 Log.w(TAG, "health connect removal failed", e)
-                if (current.value.enabled) fail(Words.text(UiText.res(R.string.health_writeback_remove_failed)))
+                if (current.value.enabled) fail(REMOVE_FAILED)
             }
         }
     }
@@ -172,10 +172,14 @@ class HealthWriteBack(
         current.value = current.value.copy(lastError = null, lastOkMs = at)
     }
 
-    private fun fail(reason: String) {
-        prefs.edit { putString(KEY_ERROR, reason) }
-        current.value = current.value.copy(lastError = reason)
+    // The failure is stored as a code (or the platform's own wording), never as a sentence of ours: it is worded when
+    // the page shows it, in that moment's language and Themed names mode.
+    private fun fail(code: String) {
+        prefs.edit { putString(KEY_ERROR, code) }
+        current.value = current.value.copy(lastError = decode(code))
     }
+
+    private fun failRaw(reason: String) = fail(RAW + reason)
 
     companion object {
         /** The one write permission; kept out of the read set that decides whether Health Connect counts as connected. */
@@ -185,5 +189,20 @@ class HealthWriteBack(
         private const val KEY_ENABLED = "enabled"
         private const val KEY_ERROR = "last_error"
         private const val KEY_OK = "last_ok_ms"
+
+        private const val RAW = "raw:"
+        private const val UNAVAILABLE = "unavailable"
+        private const val REVOKED = "revoked"
+        private const val REMOVE_FAILED = "remove_failed"
+
+        /** A stored failure as words; a value that is none of ours is a sentence an older build stored, shown as it is. */
+        private fun decode(stored: String?): UiText? = when {
+            stored == null -> null
+            stored.startsWith(RAW) -> UiText.Raw(stored.removePrefix(RAW))
+            stored == UNAVAILABLE -> UiText.res(R.string.health_writeback_unavailable)
+            stored == REVOKED -> UiText.res(R.string.health_writeback_revoked)
+            stored == REMOVE_FAILED -> UiText.res(R.string.health_writeback_remove_failed)
+            else -> UiText.Raw(stored)
+        }
     }
 }

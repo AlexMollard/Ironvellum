@@ -301,13 +301,13 @@ class Repository(
      */
     suspend fun syncHealthHistory(days: Int = 90): HealthSync.HistoryRead {
         val health = health ?: return HealthSync.HistoryRead(
-            problems = listOf(Words.text(UiText.res(R.string.health_not_wired))),
+            problems = listOf(UiText.res(R.string.health_not_wired)),
         )
         if (!health.available()) return HealthSync.HistoryRead(
-            problems = listOf(Words.text(UiText.res(R.string.health_unavailable))),
+            problems = listOf(UiText.res(R.string.health_unavailable)),
         )
         val read = runCatching { health.readDailyHistory(days) }
-            .getOrElse { HealthSync.HistoryRead(problems = listOf(Words.text(UiText.res(R.string.health_read_failed, it.javaClass.simpleName)))) }
+            .getOrElse { HealthSync.HistoryRead(problems = listOf(UiText.res(R.string.health_read_failed, it.javaClass.simpleName))) }
         healthDayDao.purgeEmpty()
         if (read.days.isNotEmpty()) {
             healthDayDao.upsertAll(
@@ -3326,7 +3326,7 @@ class Repository(
         val skills: Int,
         val healthDays: Int,
         val measurements: Int = 0,
-        val problems: List<String>,
+        val problems: List<UiText>,
     )
 
     /**
@@ -3378,7 +3378,7 @@ class Repository(
                 // defaults and every guess is reported, never silent.
                 val exerciseIdByName = mutableMapOf<String, Long>()
                 val metaByName = archive.exercises.associateBy { it.name.lowercase() }
-                val problems = mutableListOf<String>()
+                val problems = mutableListOf<UiText>()
                 suspend fun resolveExercise(rawName: String): Long? {
                     val name = rawName.trim()
                     if (name.isEmpty()) return null
@@ -3410,9 +3410,7 @@ class Repository(
                     ).first()
                     exerciseIdByName[name.lowercase()] = newId
                     if (meta == null) {
-                        problems.add(
-                            Words.text(UiText.res(R.string.data_import_exercise_guessed, name, guessedMuscleGroup)),
-                        )
+                        problems.add(UiText.res(R.string.data_import_exercise_guessed, name, guessedMuscleGroup))
                     }
                     return newId
                 }
@@ -3433,12 +3431,10 @@ class Repository(
                             val exerciseId = resolveExercise(entry.exerciseName)
                             if (exerciseId == null) {
                                 problems.add(
-                                    Words.text(
-                                        UiText.themed(
-                                            R.string.data_import_routine_entry_dropped,
-                                            R.string.data_import_routine_entry_dropped__t,
-                                            preset.name,
-                                        ),
+                                    UiText.themed(
+                                        R.string.data_import_routine_entry_dropped,
+                                        R.string.data_import_routine_entry_dropped__t,
+                                        preset.name,
                                     ),
                                 )
                                 return@mapNotNull null
@@ -3486,12 +3482,10 @@ class Repository(
                             val exerciseId = resolveExercise(s.exerciseName)
                             if (exerciseId == null) {
                                 problems.add(
-                                    Words.text(
-                                        UiText.themed(
-                                            R.string.data_import_set_dropped,
-                                            R.string.data_import_set_dropped__t,
-                                            session.label,
-                                        ),
+                                    UiText.themed(
+                                        R.string.data_import_set_dropped,
+                                        R.string.data_import_set_dropped__t,
+                                        session.label,
                                     ),
                                 )
                                 return@mapNotNull null
@@ -3527,14 +3521,12 @@ class Repository(
                     // lose readings and still report a clean import.
                     if (!ok) {
                         problems.add(
-                            Words.text(
-                                UiText.themed(
-                                    R.string.data_import_stat_dropped,
-                                    R.string.data_import_stat_dropped__t,
-                                    Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate().toString(),
-                                    it.weightKg.toString(),
-                                    (it.bodyFatPct ?: "-").toString(),
-                                ),
+                            UiText.themed(
+                                R.string.data_import_stat_dropped,
+                                R.string.data_import_stat_dropped__t,
+                                Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate().toString(),
+                                it.weightKg.toString(),
+                                (it.bodyFatPct ?: "-").toString(),
                             ),
                         )
                     }

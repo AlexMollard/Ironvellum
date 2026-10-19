@@ -130,11 +130,11 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
             }
             sync.message?.let {
                 Spacer(Modifier.height(4.dp))
-                SettingsCaption(it)
+                SettingsCaption(it.asString())
             }
             sync.historyMessage?.let {
                 Spacer(Modifier.height(4.dp))
-                SettingsCaption(it)
+                SettingsCaption(it.asString())
             }
         }
         SettingsGroup(null, topSpace = 10.dp) {
@@ -174,7 +174,7 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
             if (status != WriteStatus.OFF) {
                 write.lastError?.let {
                     Spacer(Modifier.height(4.dp))
-                    SettingsCaption(stringResource(R.string.settings_health_last_failed, it), IronvellumColors.Caution)
+                    SettingsCaption(stringResource(R.string.settings_health_last_failed, it.asString()), IronvellumColors.Caution)
                 }
                 if (write.lastError == null) write.lastOkMs?.let {
                     Spacer(Modifier.height(4.dp))

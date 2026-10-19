@@ -142,15 +142,15 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         AutoBackupPanel(viewModel)
         exportError?.let {
             Spacer(Modifier.height(8.dp))
-            SettingsCaption(it, color = IronvellumColors.DangerRed)
+            SettingsCaption(it.asString(), color = IronvellumColors.DangerRed)
         }
         importUi.summary?.let {
             Spacer(Modifier.height(8.dp))
-            SettingsCaption(it)
+            SettingsCaption(it.asString())
         }
         importUi.problems?.let {
             Spacer(Modifier.height(4.dp))
-            SettingsCaption(it)
+            SettingsCaption(it.asString())
         }
     }
 

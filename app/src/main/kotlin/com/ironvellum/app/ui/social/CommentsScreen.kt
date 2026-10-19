@@ -4,6 +4,7 @@ import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
@@ -98,23 +99,23 @@ internal data class CommentsUi(
     val loading: Boolean = true,
     val comments: List<Comment> = emptyList(),
     /** The thread read failed; shown in place of the list when it is empty. */
-    val error: String? = null,
+    val error: UiText? = null,
     /** A send, delete or report the server refused — verbatim, so rate limits read as written. */
-    val actionError: String? = null,
+    val actionError: UiText? = null,
     /** A quiet confirmation, e.g. that a report went through. */
-    val notice: String? = null,
+    val notice: UiText? = null,
     val sending: Boolean = false,
     val draft: String = "",
     val myUserId: String? = null,
     /** Null until the workout read lands; a failed read leaves it null so the thread still works. */
     val workout: AllyWorkout? = null,
     val workoutLoading: Boolean = true,
-    val workoutError: String? = null,
+    val workoutError: UiText? = null,
     val owner: OwnerIdentity? = null,
     /** Every reaction on the workout, newest first; the lifter's own is the row with [myUserId]. */
     val likers: List<Liker>? = null,
-    val likersError: String? = null,
-    val reactionError: String? = null,
+    val likersError: UiText? = null,
+    val reactionError: UiText? = null,
     /** Bumped on each comment the lifter sends, so the list scrolls to it and never on first load. */
     val sentCount: Int = 0,
 )
@@ -135,7 +136,7 @@ internal class CommentsViewModel(
     /** A reaction call in flight: a second pick before it answers would roll back to a state that is already stale. */
     private var reacting = false
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.comments_unknown_failure))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.comments_unknown_failure))
 
     init {
         viewModelScope.launch {
@@ -281,7 +282,7 @@ internal class CommentsViewModel(
                 sessionId = sessionId,
                 commentId = comment.id,
             )
-                .onSuccess { _ui.value = _ui.value.copy(notice = Words.text(UiText.res(R.string.comments_report_sent))) }
+                .onSuccess { _ui.value = _ui.value.copy(notice = UiText.res(R.string.comments_report_sent)) }
                 .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
         }
     }
@@ -328,7 +329,7 @@ internal fun CommentsScreen(
         Spacer(Modifier.height(20.dp))
         PushedHeader(Words.trial.u, onBack)
 
-        val err = ui.error
+        val err = ui.error?.asString()
         LazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -418,12 +419,12 @@ internal fun CommentsScreen(
 
         Spacer(Modifier.height(8.dp))
         ui.actionError?.let {
-            SocialErrorBanner(it)
+            SocialErrorBanner(it.asString())
             Spacer(Modifier.height(6.dp))
         }
         ui.notice?.let {
             Text(
-                it,
+                it.asString(),
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.EmeraldBright,
@@ -551,7 +552,7 @@ private fun WorkoutHeaderPanel(
             }
             ui.workoutError != null -> {
                 Spacer(Modifier.height(10.dp))
-                SocialErrorBanner(ui.workoutError)
+                SocialErrorBanner(ui.workoutError.asString())
                 Spacer(Modifier.height(4.dp))
                 SocialRefreshLink(onClick = onRetry, label = stringResource(R.string.comments_try_again))
             }
@@ -717,7 +718,7 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
         Spacer(Modifier.height(10.dp))
         when {
             likers == null && ui.likersError != null -> {
-                SocialErrorBanner(ui.likersError)
+                SocialErrorBanner(ui.likersError.asString())
                 Spacer(Modifier.height(4.dp))
                 SocialRefreshLink(onClick = onRetry, label = stringResource(R.string.comments_try_again))
             }

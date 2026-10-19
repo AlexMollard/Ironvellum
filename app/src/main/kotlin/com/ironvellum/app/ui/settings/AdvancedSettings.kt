@@ -265,7 +265,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
             InkDivider()
             ListRow(
                 stringResource(R.string.settings_advanced_coverage_label),
-                subline = sync.coverage ?: stringResource(R.string.settings_advanced_coverage_empty),
+                subline = sync.coverage?.asString() ?: stringResource(R.string.settings_advanced_coverage_empty),
             )
         }
         // Debug builds only: BuildConfig.DEBUG is a constant, so a release build has no trace of this group.
@@ -307,7 +307,7 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
         },
         text = {
             Column(Modifier.fillMaxWidth()) {
-                if (ui.error != null) Text(ui.error)
+                ui.error?.let { Text(it.asString()) }
                 if (plan == null && ui.error == null) InkSpinner(Modifier.padding(16.dp))
                 if (plan != null) {
                     val signed = { n: Long -> (if (n > 0) "+" else "") + n }

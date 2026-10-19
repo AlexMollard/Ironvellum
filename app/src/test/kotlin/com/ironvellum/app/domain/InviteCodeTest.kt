@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -109,9 +110,9 @@ class InviteCodeTest {
     fun `join statuses read as a success or a refusal in the app's words`() {
         assertEquals("joined", JoinStatus.parse("\"joined\"\n"))
         assertNull(JoinStatus.refusal("joined"))
-        assertEquals("No circle answers to that code", JoinStatus.refusal("no_such_code"))
-        assertEquals("That circle is full", JoinStatus.refusal("full"))
-        assertTrue(JoinStatus.refusal("throttled")!!.startsWith("Too many code attempts"))
+        assertEquals("No circle answers to that code", Words.text(JoinStatus.refusal("no_such_code")!!))
+        assertEquals("That circle is full", Words.text(JoinStatus.refusal("full")!!))
+        assertTrue(Words.text(JoinStatus.refusal("throttled")!!).startsWith("Too many code attempts"))
         // A status this build does not know is a refusal, never a quiet success.
         assertTrue(JoinStatus.refusal("something-new") != null)
     }

@@ -1,6 +1,8 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -771,7 +773,7 @@ data class SyncOutcome(
     val sessions: Int,
     val sets: Int,
     val titles: Int,
-    val problems: List<String>,
+    val problems: List<UiText>,
 )
 
 /**

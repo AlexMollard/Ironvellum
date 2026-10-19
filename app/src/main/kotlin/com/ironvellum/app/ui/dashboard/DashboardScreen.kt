@@ -344,10 +344,10 @@ class DashboardViewModel(
     val crestsOwned: StateFlow<Int?> = repo.observeOwnedFrames().map<Set<String>, Int?> { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    private val _bodyError = MutableStateFlow<String?>(null)
+    private val _bodyError = MutableStateFlow<UiText?>(null)
 
     /** Why the last body save was refused, for the sheet that asked; null while there is nothing to say. */
-    val bodyError: StateFlow<String?> = _bodyError.asStateFlow()
+    val bodyError: StateFlow<UiText?> = _bodyError.asStateFlow()
 
     fun clearBodyError() {
         _bodyError.value = null
@@ -365,7 +365,7 @@ class DashboardViewModel(
                 weightKg?.let { repo.logTodaysWeight(it) }
             }.fold(
                 onSuccess = { onSaved() },
-                onFailure = { _bodyError.value = Words.text(UiText.res(R.string.today_body_save_error, it.message ?: "")) },
+                onFailure = { _bodyError.value = UiText.res(R.string.today_body_save_error, it.message ?: "") },
             )
         }
     }
@@ -501,7 +501,7 @@ fun DashboardScreen(
         if (bodyOpen) {
             BodyDetailsDialog(
                 gap = gap,
-                error = bodyError,
+                error = bodyError?.asString(),
                 onDismiss = { bodyOpen = false; viewModel.clearBodyError() },
                 onSave = { h, w -> viewModel.saveBody(h, w) { bodyOpen = false } },
             )

@@ -161,7 +161,8 @@ internal fun OptimiseScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val applied by viewModel.applied.collectAsStateWithLifecycle()
     val saving by viewModel.saving.collectAsStateWithLifecycle()
-    val error by viewModel.error.collectAsStateWithLifecycle()
+    val errorText by viewModel.error.collectAsStateWithLifecycle()
+    val error = errorText?.asString()
     var stepKey by rememberSaveable { mutableStateOf("hub") }
     var picks by rememberSaveable { mutableStateOf<Map<String, Int>>(emptyMap()) }
 

@@ -204,11 +204,11 @@ internal fun WelcomeScreen(
             // What the last pick said: a file that could not be read, or what a restore or import did.
             importUi.summary?.let {
                 Spacer(Modifier.height(8.dp))
-                SettingsCaption(it)
+                SettingsCaption(it.asString())
             }
             importUi.problems?.let {
                 Spacer(Modifier.height(4.dp))
-                SettingsCaption(it)
+                SettingsCaption(it.asString())
             }
             }
             }

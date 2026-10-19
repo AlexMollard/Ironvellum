@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.ironvellum.app.data.messageText
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -113,25 +114,25 @@ data class SyncUi(
     /** True for the whole Connect & Sync run: today's snapshot, then the history read. */
     val syncing: Boolean = false,
     val result: HealthSnapshot? = null,
-    val message: String? = null,
+    val message: UiText? = null,
     /** What the history read wrote, or why it wrote nothing. */
-    val historyMessage: String? = null,
+    val historyMessage: UiText? = null,
     /** Days each metric actually filled: "steps 31 · distance 0 · ...". Shown under Advanced. */
-    val coverage: String? = null,
+    val coverage: UiText? = null,
 )
 
 /** Whether Health Connect is usable here and has granted any read; the hub row's value. */
 enum class HealthLink { UNAVAILABLE, UPDATE_REQUIRED, NOT_CONNECTED, CONNECTED }
 
 /** Inline result of committing a text field: a Saved tick, or the reason it was refused. */
-data class FieldStatus(val saved: Boolean = false, val error: String? = null)
+data class FieldStatus(val saved: Boolean = false, val error: UiText? = null)
 
 data class ImportUi(
     val importing: Boolean = false,
     /** On success a count summary, on failure the reason verbatim from the Result. */
-    val summary: String? = null,
+    val summary: UiText? = null,
     /** Reader warnings, first entry plus a count — shown, never swallowed. */
-    val problems: String? = null,
+    val problems: UiText? = null,
 )
 
 /** State of the Settings → Advanced cloud controls: probe/switch progress and result. */
@@ -211,8 +212,8 @@ class SettingsViewModel(
         }
     }
 
-    private val _exportError = MutableStateFlow<String?>(null)
-    val exportError: StateFlow<String?> = _exportError.asStateFlow()
+    private val _exportError = MutableStateFlow<UiText?>(null)
+    val exportError: StateFlow<UiText?> = _exportError.asStateFlow()
 
     private val _import = MutableStateFlow(ImportUi())
     val import: StateFlow<ImportUi> = _import.asStateFlow()
@@ -245,8 +246,8 @@ class SettingsViewModel(
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), accountRepo.account.value != null)
 
-    private val _renameError = MutableStateFlow<String?>(null)
-    val renameError: StateFlow<String?> = _renameError.asStateFlow()
+    private val _renameError = MutableStateFlow<UiText?>(null)
+    val renameError: StateFlow<UiText?> = _renameError.asStateFlow()
     private val _renaming = MutableStateFlow(false)
     val renaming: StateFlow<Boolean> = _renaming.asStateFlow()
 
@@ -330,7 +331,7 @@ class SettingsViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "export failed: ${e.message}")
-                _exportError.value = say(R.string.settings_export_error, e.message ?: say(R.string.settings_export_archive_failed))
+                _exportError.value = say(R.string.settings_export_error, e.messageText(say(R.string.settings_export_archive_failed)))
                 null
             } finally {
                 _exporting.value = false
@@ -352,7 +353,7 @@ class SettingsViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "csv export failed: ${e.message}")
-                _exportError.value = say(R.string.settings_export_error, e.message ?: say(R.string.settings_export_csv_failed))
+                _exportError.value = say(R.string.settings_export_error, e.messageText(say(R.string.settings_export_csv_failed)))
                 null
             } finally {
                 _exporting.value = false
@@ -372,7 +373,7 @@ class SettingsViewModel(
                 CsvWorkoutReader.read(raw, strongWeightIsLbs = false)
             }
             if (firstPass.problems.isNotEmpty() && firstPass.workouts.isEmpty()) {
-                _import.value = ImportUi(summary = firstPass.problems.first().message)
+                _import.value = ImportUi(summary = UiText.Raw(firstPass.problems.first().message))
                 return@launch
             }
             var unit: CsvWorkoutReader.WeightUnit? = null
@@ -447,7 +448,7 @@ class SettingsViewModel(
                     { r ->
 SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     },
-                    { say(R.string.settings_import_failed, it.message ?: say(R.string.settings_import_unreadable)) },
+                    { say(R.string.settings_import_failed, it.messageText(say(R.string.settings_import_unreadable))) },
                 ),
             )
         }
@@ -550,7 +551,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                         },
                     )
                 },
-                { e -> ImportUi(summary = e.message ?: say(R.string.settings_import_not_archive)) },
+                { e -> ImportUi(summary = e.messageText(say(R.string.settings_import_not_archive))) },
             )
         }
     }
@@ -580,7 +581,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     accountRepo.account.value?.let { repo.rename(it.displayName) }
                     _nameSaved.value = true
                 }
-                .onFailure { _renameError.value = it.message ?: say(R.string.settings_profile_rename_failed) }
+                .onFailure { _renameError.value = it.messageText(say(R.string.settings_profile_rename_failed)) }
             _renaming.value = false
         }
     }
@@ -664,7 +665,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                 throw e
             } catch (e: Exception) {
                 Log.w("Ironvellum", "health sync failed: ${e.message}")
-                _sync.value = _sync.value.copy(message = say(R.string.settings_health_sync_failed, e.message ?: e.javaClass.simpleName))
+                _sync.value = _sync.value.copy(message = say(R.string.settings_health_sync_failed, e.messageText(UiText.Raw(e.javaClass.simpleName))))
             } finally {
                 _sync.value = _sync.value.copy(syncing = false)
             }
@@ -716,7 +717,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             )
             return true
         }
-        val message: String
+        val message: UiText
         if (snapshot.weightKg != null && !BodyLimits.validWeight(snapshot.weightKg)) {
             // Health Connect is another app's data, so it is a trust
             // boundary like the keyboard: addStat REFUSES an implausible
@@ -737,20 +738,18 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             if (stored.isFailure) {
                 _sync.value = _sync.value.copy(
                     available = true,
-                    message = Words.text(
-                        UiText.themed(
-                            R.string.settings_health_store_failed,
-                            R.string.settings_health_store_failed__t,
-                            stored.exceptionOrNull()?.message ?: say(R.string.settings_health_unknown_reason),
-                        ),
+                    message = UiText.themed(
+                        R.string.settings_health_store_failed,
+                        R.string.settings_health_store_failed__t,
+                        stored.exceptionOrNull()?.messageText(say(R.string.settings_health_unknown_reason)) ?: say(R.string.settings_health_unknown_reason),
                     ),
                 )
                 return true
             }
             message = if (bodyProfile.value.first == null) {
-                Words.text(UiText.themed(R.string.settings_health_imported_no_height, R.string.settings_health_imported_no_height__t))
+                UiText.themed(R.string.settings_health_imported_no_height, R.string.settings_health_imported_no_height__t)
             } else {
-                Words.text(UiText.themed(R.string.settings_health_imported, R.string.settings_health_imported__t))
+                UiText.themed(R.string.settings_health_imported, R.string.settings_health_imported__t)
             }
         } else {
             message = say(R.string.settings_health_no_weight)
@@ -761,39 +760,41 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
 
     private suspend fun syncHistory() {
         val read = runCatching { repo.syncHealthHistory() }
-            .getOrElse { HealthSync.HistoryRead(problems = listOf(it.javaClass.simpleName)) }
+            .getOrElse { HealthSync.HistoryRead(problems = listOf(UiText.Raw(it.javaClass.simpleName))) }
+        val coverageLine = read.coverage.entries.joinToString(" · ") { (metric, days) -> "$metric $days" }
+        val newestStep = read.newestStepAtMs?.let {
+            say(
+                R.string.settings_health_newest_step,
+                formatDate(it, "EEE HH:mm"),
+                read.stepSources
+                    .map { pkg -> pkg.substringAfterLast('.') }
+                    .joinToString(", ")
+                    .ifBlank { say(R.string.settings_health_unknown_app) },
+            )
+        }
         _sync.value = _sync.value.copy(
-            coverage = buildString {
-                append(
-                    read.coverage.entries.joinToString(" · ") { (metric, days) -> "$metric $days" },
-                )
-                read.newestStepAtMs?.let {
-                    append("\n")
-                    append(
-                        say(
-                            R.string.settings_health_newest_step,
-                            formatDate(it, "EEE HH:mm"),
-                            read.stepSources
-                                .map { pkg -> pkg.substringAfterLast('.') }
-                                .joinToString(", ")
-                                .ifBlank { say(R.string.settings_health_unknown_app) },
-                        ),
-                    )
-                }
-            }.takeIf { it.isNotBlank() },
+            coverage = when {
+                newestStep != null -> UiText.join(listOf(UiText.Raw(coverageLine), newestStep), "\n")
+                coverageLine.isNotBlank() -> UiText.Raw(coverageLine)
+                else -> null
+            },
             historyMessage = when {
                 read.days.isNotEmpty() || read.bodyReadings.isNotEmpty() ->
-                    say(
-                        R.string.settings_health_history_updated,
-                        Words.text(UiText.plural(R.plurals.common_days_count, read.days.size)),
-                        Words.text(
-                            UiText.themedPlural(
-                                R.plurals.settings_health_history_readings,
-                                R.plurals.settings_health_history_readings__t,
-                                read.bodyReadings.size,
+                    UiText.join(
+                        listOfNotNull(
+                            say(
+                                R.string.settings_health_history_updated,
+                                UiText.plural(R.plurals.common_days_count, read.days.size),
+                                UiText.themedPlural(
+                                    R.plurals.settings_health_history_readings,
+                                    R.plurals.settings_health_history_readings__t,
+                                    read.bodyReadings.size,
+                                ),
                             ),
+                            read.problems.firstOrNull()?.let { say(R.string.settings_health_history_partial, it) },
                         ),
-                    ) + read.problems.firstOrNull()?.let { " " + say(R.string.settings_health_history_partial, it) }.orEmpty()
+                        " ",
+                    )
                 // never claim success on an empty write again
                 read.problems.isNotEmpty() -> say(R.string.settings_health_nothing_synced, read.problems.first())
                 else -> say(R.string.settings_health_nothing_synced_empty)
@@ -812,7 +813,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         val plan: XpRescore.Plan? = null,
         /** True once the plan on screen has been written. */
         val applied: Boolean = false,
-        val error: String? = null,
+        val error: UiText? = null,
     )
 
     private val _rescore = MutableStateFlow<RescoreUi?>(null)
@@ -824,7 +825,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         _rescore.value = RescoreUi(busy = true)
         viewModelScope.launchGuarded("preview xp rescore") {
             _rescore.value = runCatching { repo.previewXpRescore() }
-                .fold({ RescoreUi(plan = it) }, { RescoreUi(error = it.message ?: say(R.string.settings_advanced_dev_preview_failed)) })
+                .fold({ RescoreUi(plan = it) }, { RescoreUi(error = it.messageText(say(R.string.settings_advanced_dev_preview_failed))) })
         }
     }
 
@@ -834,7 +835,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         _rescore.value = _rescore.value?.copy(busy = true, error = null)
         viewModelScope.launchGuarded("apply xp rescore") {
             _rescore.value = runCatching { repo.applyXpRescore() }
-                .fold({ RescoreUi(plan = it, applied = true) }, { RescoreUi(error = it.message ?: say(R.string.settings_advanced_dev_apply_failed)) })
+                .fold({ RescoreUi(plan = it, applied = true) }, { RescoreUi(error = it.messageText(say(R.string.settings_advanced_dev_apply_failed))) })
         }
     }
 
@@ -849,14 +850,12 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
     }
 }
 
-/** Text for a message held in view-model state: the string follows the language and the Themed names switch as of now. */
-private fun say(@StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+/** Text for a message held in view-model state: left unresolved, so the screen shows it in the language and Themed names mode of the moment. */
+private fun say(@StringRes id: Int, vararg args: Any): UiText = UiText.res(id, *args)
 
 /** The refusal for an export with nothing in its period. */
-private fun noTrialsMessage(period: WorkoutCsvWriter.Period): String = Words.text(
-    when (period) {
-        WorkoutCsvWriter.Period.WEEK -> UiText.themed(R.string.settings_export_none_week, R.string.settings_export_none_week__t)
-        WorkoutCsvWriter.Period.MONTH -> UiText.themed(R.string.settings_export_none_month, R.string.settings_export_none_month__t)
-        WorkoutCsvWriter.Period.YEAR -> UiText.themed(R.string.settings_export_none_year, R.string.settings_export_none_year__t)
-    },
-)
+private fun noTrialsMessage(period: WorkoutCsvWriter.Period): UiText = when (period) {
+    WorkoutCsvWriter.Period.WEEK -> UiText.themed(R.string.settings_export_none_week, R.string.settings_export_none_week__t)
+    WorkoutCsvWriter.Period.MONTH -> UiText.themed(R.string.settings_export_none_month, R.string.settings_export_none_month__t)
+    WorkoutCsvWriter.Period.YEAR -> UiText.themed(R.string.settings_export_none_year, R.string.settings_export_none_year__t)
+}

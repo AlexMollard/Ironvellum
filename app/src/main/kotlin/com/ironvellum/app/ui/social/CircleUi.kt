@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.IronvellumDialog
@@ -123,13 +124,13 @@ data class CircleUiState(
     val myUserId: String? = null,
     val loading: Boolean = false,
     /** Failure of the circle READ; the panel offers a retry. */
-    val error: String? = null,
+    val error: UiText? = null,
     /** A reload that failed while a circle was already on screen: the roster shown is the last good read. */
     val refreshFailed: Boolean = false,
     /** A create/join/leave call in flight — the buttons wait for the server. */
     val actionBusy: Boolean = false,
     /** A server REFUSAL of the last action (full circle, already in one, bad code) — inline, never a toast-only. */
-    val actionError: String? = null,
+    val actionError: UiText? = null,
     /** The bonus just paid for a settled week — shown once, then cleared. */
     val paid: CircleBonusPaid? = null,
 )
@@ -141,7 +142,7 @@ class CircleViewModel(
     private val _ui = MutableStateFlow(CircleUiState(signedIn = gateway.currentUserId() != null, myUserId = gateway.currentUserId()))
     val ui = _ui.asStateFlow()
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.circle_unknown_failure))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.circle_unknown_failure))
 
     init {
         // Signing in happens on a sibling tab after this view model may already
@@ -287,8 +288,8 @@ fun CircleSection(
     // Locals, not the delegated property: the leave dialog and the error
     // branch need a stable, smart-castable circle/error for one composition.
     val circle = ui.circle
-    val loadError = ui.error
-    val actionError = ui.actionError
+    val loadError = ui.error?.asString()
+    val actionError = ui.actionError?.asString()
 
     var showManage by rememberSaveable { mutableStateOf(false) }
     var showCreate by rememberSaveable { mutableStateOf(false) }

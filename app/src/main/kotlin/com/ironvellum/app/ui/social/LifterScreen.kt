@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.social
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.PushedHeader
@@ -71,7 +72,7 @@ import kotlinx.coroutines.launch
 internal data class LifterUi(
     val loading: Boolean = true,
     val sessions: List<FriendSession> = emptyList(),
-    val error: String? = null,
+    val error: UiText? = null,
     val myUserId: String? = null,
     /** Null while the ally relationship is UNKNOWN — an offline fetch must
      *  never read as "not allies" or the ADD ALLY button would offer a
@@ -79,7 +80,7 @@ internal data class LifterUi(
     val allyState: AllyState? = null,
     val allyBusy: Boolean = false,
     /** The ally-status read itself failed; shown as a banner, button stays hidden. */
-    val allyError: String? = null,
+    val allyError: UiText? = null,
     /** Worn title resolved locally from the leaderboard cache; null when bare or unknown. */
     val wornTitle: String? = null,
     /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
@@ -91,8 +92,8 @@ internal data class LifterUi(
     /** One lifter action (remove, mute, block, report) in flight at a time. */
     val actionBusy: Boolean = false,
     /** A refused action, verbatim — rate limits read as the server wrote them. */
-    val actionError: String? = null,
-    val notice: String? = null,
+    val actionError: UiText? = null,
+    val notice: UiText? = null,
     /** A block landed: neither side can see the other any more, so the screen leaves. */
     val blocked: Boolean = false,
 )
@@ -112,7 +113,7 @@ internal class LifterViewModel(
 
     fun load(userId: String) {
         if (userId.isBlank()) {
-            _ui.value = LifterUi(loading = false, error = Words.text(UiText.themed(R.string.lifter_none_selected, R.string.lifter_none_selected__t)))
+            _ui.value = LifterUi(loading = false, error = UiText.themed(R.string.lifter_none_selected, R.string.lifter_none_selected__t))
             return
         }
         _ui.value = LifterUi(myUserId = accountRepo.account.value?.userId)
@@ -125,7 +126,7 @@ internal class LifterViewModel(
                         loading = false,
                         // The real reason, not "failed" — RLS refusals read very
                         // differently from being offline.
-                        error = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_error)),
+                        error = it.reasonText(UiText.res(R.string.lifter_unknown_error)),
                     )
                 }
             refreshSocial(userId)
@@ -151,7 +152,7 @@ internal class LifterViewModel(
             // Leave allyState unknown: guessing None would offer ADD ALLY to an
             // existing ally, so the button stays hidden until the read answers.
             _ui.value = _ui.value.copy(
-                allyError = error.message ?: error::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_error)),
+                allyError = error.reasonText(UiText.res(R.string.lifter_unknown_error)),
                 allyBusy = false,
             )
         }
@@ -196,7 +197,7 @@ internal class LifterViewModel(
                     _ui.value = _ui.value.copy(
                         allyState = AllyState.None,
                         allyBusy = false,
-                        allyError = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_failure)),
+                        allyError = it.reasonText(UiText.res(R.string.lifter_unknown_failure)),
                     )
                 }
         }
@@ -204,13 +205,13 @@ internal class LifterViewModel(
 
     fun removeAlly(userId: String) = act {
         cloud.removeFriend(userId).onSuccess {
-            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = Words.text(UiText.themed(R.string.lifter_no_longer_allies, R.string.lifter_no_longer_allies__t)))
+            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = UiText.themed(R.string.lifter_no_longer_allies, R.string.lifter_no_longer_allies__t))
         }
     }
 
     fun setMuted(userId: String, mute: Boolean) = act {
         (if (mute) cloud.mute(userId) else cloud.unmute(userId)).onSuccess {
-            _ui.value = _ui.value.copy(muted = mute, notice = Words.text(UiText.res(if (mute) R.string.lifter_muted else R.string.lifter_unmuted)))
+            _ui.value = _ui.value.copy(muted = mute, notice = UiText.res(if (mute) R.string.lifter_muted else R.string.lifter_unmuted))
         }
     }
 
@@ -220,7 +221,7 @@ internal class LifterViewModel(
 
     fun report(userId: String, reason: ReportReason, note: String) = act {
         cloud.report(targetUserId = userId, reason = reason, note = note).onSuccess {
-            _ui.value = _ui.value.copy(notice = Words.text(UiText.res(R.string.lifter_report_sent)))
+            _ui.value = _ui.value.copy(notice = UiText.res(R.string.lifter_report_sent))
         }
     }
 
@@ -229,7 +230,7 @@ internal class LifterViewModel(
         _ui.value = _ui.value.copy(actionBusy = true, actionError = null, notice = null)
         viewModelScope.launch {
             call().onFailure {
-                _ui.value = _ui.value.copy(actionError = it.message ?: it::class.simpleName ?: Words.text(UiText.res(R.string.lifter_unknown_failure)))
+                _ui.value = _ui.value.copy(actionError = it.reasonText(UiText.res(R.string.lifter_unknown_failure)))
             }
             _ui.value = _ui.value.copy(actionBusy = false)
         }
@@ -306,7 +307,7 @@ internal fun LifterScreen(
         if (canManage && ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
             Spacer(Modifier.height(6.dp))
             SocialErrorBanner(
-                UiText.themed(R.string.lifter_ally_request_failed, R.string.lifter_ally_request_failed__t, ui.allyError.orEmpty()).asString(),
+                UiText.themed(R.string.lifter_ally_request_failed, R.string.lifter_ally_request_failed__t, ui.allyError ?: UiText.Raw("")).asString(),
             )
         }
         Spacer(Modifier.height(14.dp))
@@ -319,7 +320,7 @@ internal fun LifterScreen(
             )
 
             ui.error != null -> Text(
-                UiText.themed(R.string.lifter_open_failed, R.string.lifter_open_failed__t, ui.error.orEmpty()).asString(),
+                UiText.themed(R.string.lifter_open_failed, R.string.lifter_open_failed__t, ui.error ?: UiText.Raw("")).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.DangerRed,
             )
@@ -459,14 +460,14 @@ internal fun LifterScreen(
             ui.notice?.let {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    it,
+                    it.asString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
                 )
             }
             ui.actionError?.let {
                 Spacer(Modifier.height(10.dp))
-                SocialErrorBanner(it)
+                SocialErrorBanner(it.asString())
             }
         }
 

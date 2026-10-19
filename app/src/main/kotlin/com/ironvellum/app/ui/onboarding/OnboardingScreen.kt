@@ -247,8 +247,8 @@ class OnboardingViewModel(
     val isStarter: StateFlow<Boolean> = _isStarter.asStateFlow()
 
     /** Set when a write is refused; shown on the step that made it. */
-    private val _applyError = MutableStateFlow<String?>(null)
-    val applyError: StateFlow<String?> = _applyError.asStateFlow()
+    private val _applyError = MutableStateFlow<UiText?>(null)
+    val applyError: StateFlow<UiText?> = _applyError.asStateFlow()
 
     /** True while the profile or the cycle is being written: a second tap is ignored and Continue is off. */
     private val _busy = MutableStateFlow(false)
@@ -302,8 +302,8 @@ class OnboardingViewModel(
                     // The step advances only on this: on a refusal she stays, with the reason on screen.
                     onSuccess = { _profileSaved.value = true },
                     onFailure = {
-                        _applyError.value = it.message?.let { m -> say(R.string.onboarding_save_failed_with, m) }
-                            ?: say(R.string.onboarding_save_failed)
+                        _applyError.value = it.message?.let { m -> sayUi(R.string.onboarding_save_failed_with, m) }
+                            ?: sayUi(R.string.onboarding_save_failed)
                     },
                 )
             } finally {
@@ -373,7 +373,7 @@ class OnboardingViewModel(
                     planKey = null
                     _plan.value = null
                     _isStarter.value = false
-                    _applyError.value = sayThemed(R.string.onboarding_plan_failed, R.string.onboarding_plan_failed__t, it.message.orEmpty())
+                    _applyError.value = sayThemedUi(R.string.onboarding_plan_failed, R.string.onboarding_plan_failed__t, it.message.orEmpty())
                 },
             )
         }
@@ -423,7 +423,7 @@ class OnboardingViewModel(
     ) {
         val plan = _plan.value ?: return
         if (!plan.isTakeable()) {
-            _applyError.value = sayThemed(R.string.onboarding_plan_empty, R.string.onboarding_plan_empty__t)
+            _applyError.value = sayThemedUi(R.string.onboarding_plan_empty, R.string.onboarding_plan_empty__t)
             return
         }
         // One accept at a time: a second tap would replace the cycle the first one just wrote.
@@ -438,8 +438,8 @@ class OnboardingViewModel(
                 }
                 if (written.isFailure) {
                     _applyError.value = written.exceptionOrNull()?.message?.let { m ->
-                        sayThemed(R.string.onboarding_cycle_save_failed_with, R.string.onboarding_cycle_save_failed_with__t, m)
-                    } ?: sayThemed(R.string.onboarding_cycle_save_failed, R.string.onboarding_cycle_save_failed__t)
+                        sayThemedUi(R.string.onboarding_cycle_save_failed_with, R.string.onboarding_cycle_save_failed_with__t, m)
+                    } ?: sayThemedUi(R.string.onboarding_cycle_save_failed, R.string.onboarding_cycle_save_failed__t)
                     return@launch
                 }
                 // The cycle is in. What follows is bookkeeping; if it fails the cycle still stands, and the
@@ -455,8 +455,8 @@ class OnboardingViewModel(
                     }
                 }
                 _applyError.value = bookkeeping.exceptionOrNull()?.let {
-                    it.message?.let { m -> sayThemed(R.string.onboarding_goal_not_saved_with, R.string.onboarding_goal_not_saved_with__t, m) }
-                        ?: sayThemed(R.string.onboarding_goal_not_saved, R.string.onboarding_goal_not_saved__t)
+                    it.message?.let { m -> sayThemedUi(R.string.onboarding_goal_not_saved_with, R.string.onboarding_goal_not_saved_with__t, m) }
+                        ?: sayThemedUi(R.string.onboarding_goal_not_saved, R.string.onboarding_goal_not_saved__t)
                 }
                 _dismissed.value = true
                 prefs.edit { putBoolean(KEY_DISMISSED, true) }
@@ -755,7 +755,7 @@ fun OnboardingScreen(
             planReady = plan?.isTakeable() == true,
             planEmpty = plan != null && plan?.isTakeable() != true,
             armouryPicked = equipment != null,
-            applyError = applyError,
+            applyError = applyError?.asString(),
         )
         // Taking the cycle is the one primary of the last step, emerald like
         // every other screen's: gold is for what was earned, not for accepting.
@@ -1327,3 +1327,9 @@ private fun say(@StringRes id: Int, vararg args: Any): String = Words.text(UiTex
 
 private fun sayThemed(@StringRes plain: Int, @StringRes themed: Int, vararg args: Any): String =
     Words.text(UiText.themed(plain, themed, *args))
+
+/** [say] for a message kept in state: left unresolved, so the screen words it in the language and mode of the moment. */
+private fun sayUi(@StringRes id: Int, vararg args: Any): UiText = UiText.res(id, *args)
+
+private fun sayThemedUi(@StringRes plain: Int, @StringRes themed: Int, vararg args: Any): UiText =
+    UiText.themed(plain, themed, *args)

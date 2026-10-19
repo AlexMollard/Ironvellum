@@ -174,7 +174,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
         ForgePhase.PLAN -> ForgePlanPage(
             plan = plan,
             previousPlan = previousPlan,
-            error = error,
+            error = error?.asString(),
             saving = saving,
             catalogueLoaded = catalogue.isNotEmpty(),
             equipment = equipment,

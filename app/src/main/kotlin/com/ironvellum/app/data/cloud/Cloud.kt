@@ -6,7 +6,9 @@ import androidx.core.content.edit
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.MessageException
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.messageText
 import com.ironvellum.app.domain.UiText
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -171,7 +173,7 @@ object Cloud {
         get() = if (configured) {
             Result.success(client())
         } else {
-            Result.failure(IllegalStateException(Words.text(UiText.res(R.string.cloud_not_configured))))
+            Result.failure(MessageException(UiText.res(R.string.cloud_not_configured)))
         }
 
     /**
@@ -265,33 +267,37 @@ object Cloud {
         }
     }
 
-    /** Translate the supabase-kt exception zoo into a sentence a player can act on. */
-    fun explain(error: Throwable): String = when (error) {
-        is IllegalStateException -> error.message ?: Words.text(UiText.res(R.string.cloud_error_unavailable))
+    /**
+     * Translate the supabase-kt exception zoo into a sentence a player can act on. Unresolved: it becomes words
+     * when the screen shows it (a [MessageException] carries it), so it follows the language and the Themed switch.
+     */
+    fun explain(error: Throwable): UiText = when (error) {
+        is MessageException -> error.text
+        is IllegalStateException -> error.messageText(UiText.res(R.string.cloud_error_unavailable))
         is AuthRestException -> when (error.errorCode) {
-            AuthErrorCode.InvalidCredentials -> Words.text(UiText.res(R.string.cloud_error_wrong_credentials))
-            AuthErrorCode.UserAlreadyExists -> Words.text(UiText.res(R.string.cloud_error_email_taken))
-            AuthErrorCode.EmailNotConfirmed -> Words.text(UiText.res(R.string.cloud_error_email_unconfirmed))
-            AuthErrorCode.OtpExpired -> Words.text(UiText.res(R.string.cloud_error_code_expired))
-            AuthErrorCode.SamePassword -> Words.text(UiText.res(R.string.cloud_error_same_password))
-            AuthErrorCode.WeakPassword -> Words.text(UiText.res(R.string.cloud_error_weak_password))
+            AuthErrorCode.InvalidCredentials -> UiText.res(R.string.cloud_error_wrong_credentials)
+            AuthErrorCode.UserAlreadyExists -> UiText.res(R.string.cloud_error_email_taken)
+            AuthErrorCode.EmailNotConfirmed -> UiText.res(R.string.cloud_error_email_unconfirmed)
+            AuthErrorCode.OtpExpired -> UiText.res(R.string.cloud_error_code_expired)
+            AuthErrorCode.SamePassword -> UiText.res(R.string.cloud_error_same_password)
+            AuthErrorCode.WeakPassword -> UiText.res(R.string.cloud_error_weak_password)
             AuthErrorCode.OverEmailSendRateLimit, AuthErrorCode.OverRequestRateLimit ->
-                Words.text(UiText.res(R.string.cloud_error_rate_limited))
-            else -> Words.text(UiText.res(R.string.cloud_error_signin_refused))
+                UiText.res(R.string.cloud_error_rate_limited)
+            else -> UiText.res(R.string.cloud_error_signin_refused)
         }
         is PostgrestRestException -> when (error.code) {
-            "23505" -> Words.text(UiText.themed(R.string.cloud_error_name_taken, R.string.cloud_error_name_taken__t))
+            "23505" -> UiText.themed(R.string.cloud_error_name_taken, R.string.cloud_error_name_taken__t)
             // circle_keeper_lock refuses a non-Keeper with 42501 and a sentence
             // for the lifter ("Only the Keeper can ..."): the keys may have just
             // been passed on, and the generic line would hide why.
-            "42501" -> error.error.takeIf { it.startsWith(KEEPER_ONLY) }?.let(Words::fromServer)
-                ?: Words.text(UiText.res(R.string.cloud_error_not_allowed))
-            "23514" -> Words.text(UiText.res(R.string.cloud_error_out_of_range))
+            "42501" -> error.error.takeIf { it.startsWith(KEEPER_ONLY) }?.let { UiText.Raw(Words.fromServer(it)) }
+                ?: UiText.res(R.string.cloud_error_not_allowed)
+            "23514" -> UiText.res(R.string.cloud_error_out_of_range)
             // raise exception in our own triggers (rate limits, blocked
             // requests): the message is written for the lifter in the
             // migration, so it is shown as is — "try again" would send them
             // straight back into the same limit.
-            "P0001" -> Words.fromServer(error.error).ifBlank { Words.text(UiText.res(R.string.cloud_error_refused)) }
+            "P0001" -> Words.fromServer(error.error).takeIf { it.isNotBlank() }?.let { UiText.Raw(it) } ?: UiText.res(R.string.cloud_error_refused)
             // These codes mean "that table, column or function is not there"
             // for ANY feature — naming one feature was wrong the moment
             // cloud_archives landed and a failed BACKUP blamed the board.
@@ -304,14 +310,14 @@ object Cloud {
             // PGRST202 made it report "try again" and the lifter retried
             // forever while their level sat frozen on the board.
             "42703", "42P01", "PGRST202", "PGRST204", "PGRST205" ->
-                Words.text(UiText.res(R.string.cloud_error_not_set_up))
-            else -> Words.text(UiText.res(R.string.cloud_error_refused))
+                UiText.res(R.string.cloud_error_not_set_up)
+            else -> UiText.res(R.string.cloud_error_refused)
         }
-        is HttpRequestException -> Words.text(UiText.res(R.string.cloud_error_offline))
+        is HttpRequestException -> UiText.res(R.string.cloud_error_offline)
         // Never interpolate exception text: Credential Manager and the auth
         // SDK leak API internals that read as debug noise to a lifter.
-        else -> Lines.stumbled
+        else -> UiText.themed(R.string.line_stumbled, R.string.line_stumbled__t)
     }
 
-    fun <T> failure(error: Throwable): Result<T> = Result.failure(IllegalStateException(explain(error)))
+    fun <T> failure(error: Throwable): Result<T> = Result.failure(MessageException(explain(error)))
 }

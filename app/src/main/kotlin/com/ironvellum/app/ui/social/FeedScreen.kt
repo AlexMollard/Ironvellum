@@ -67,6 +67,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FeedEntry
@@ -108,17 +109,17 @@ data class FeedUi(
     val loadingMore: Boolean = false,
     /** True once a page came back short of the limit — the board's end is reached. */
     val exhausted: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     /** Last page fetch failed, scoped to paging so one flaky page never blocks the board. */
-    val pagingError: String? = null,
+    val pagingError: UiText? = null,
     /** Ally rows for ADD ALLY buttons; fetched with the feed, never per card. */
     val friends: Map<String, FriendRow> = emptyMap(),
     /** Optimistically-sent ally requests, settled from the server once it answers. */
     val requestedAlly: Set<String> = emptySet(),
     /** A sent ally request that the server refused; null once the next attempt starts. */
-    val allyError: String? = null,
+    val allyError: UiText? = null,
     /** Per-card reaction failures; keyed by sessionId so the message sits on the tapped card. */
-    val reactionErrors: Map<String, String> = emptyMap(),
+    val reactionErrors: Map<String, UiText> = emptyMap(),
 )
 
 class FeedViewModel(
@@ -143,7 +144,7 @@ class FeedViewModel(
     /** Workouts with a reaction call in flight; blocks the double-tap re-fire that drifts the count. */
     private val reactionCallsInFlight = mutableSetOf<String>()
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.feed_unknown_failure))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.feed_unknown_failure))
 
     init {
         // Sign-in happens on a sibling tab AFTER this view model exists, so a
@@ -303,7 +304,7 @@ fun FeedScreen(
     // SocialScreen owns the margins, the top gap and the signed-out screen, so
     // every tab starts its content at the same spot under the pills.
     Column(Modifier.fillMaxSize()) {
-        val err = ui.error
+        val err = ui.error?.asString()
         when {
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
@@ -312,7 +313,7 @@ fun FeedScreen(
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
-                    SocialErrorBanner(Lines.feedStale(ui.error.orEmpty()))
+                    SocialErrorBanner(Lines.feedStale(err.orEmpty()))
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
@@ -517,7 +518,7 @@ private fun FeedCard(
     isMe: Boolean,
     equippedFrame: String?,
     ally: AllyState,
-    reactionError: String?,
+    reactionError: UiText?,
     onOpenLifter: (String, String) -> Unit,
     onReact: (FeedEntry, Reaction?) -> Unit,
     onOpenComments: (FeedEntry) -> Unit,

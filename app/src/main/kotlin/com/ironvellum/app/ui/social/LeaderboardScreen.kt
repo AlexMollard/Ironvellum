@@ -42,6 +42,7 @@ import com.ironvellum.app.data.Lines
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.reasonText
 import com.ironvellum.app.domain.ExerciseSearch
 import com.ironvellum.app.domain.LiftGroup
 import com.ironvellum.app.ui.components.InkDivider
@@ -99,14 +100,14 @@ data class LeaderboardUi(
     val myUserId: String? = null,
     val rows: List<LeaderboardRow> = emptyList(),
     val loading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 /** Snapshot of the muster roll board: rows, loading and failure state, independent of the training board. */
 data class MusterBoardUi(
     val rows: List<ShadowBoardRow> = emptyList(),
     val loading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     /** Set once a fetch has completed, so the first selection can trigger a lazy load exactly once. */
     val loaded: Boolean = false,
     /**
@@ -122,7 +123,7 @@ data class MusterBoardUi(
 data class LiftsBoardUi(
     val rows: List<LiftBoardRow> = emptyList(),
     val loading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     /** Set once a fetch succeeded, so the first selection loads exactly once. */
     val loaded: Boolean = false,
 )
@@ -208,14 +209,13 @@ class LeaderboardViewModel(
             cloudSync.shadowBoard(force)
                 .onSuccess { _muster.value = MusterBoardUi(rows = it, loaded = true) }
                 .onFailure { error ->
-                    val reason = error.reason()
                     _muster.value = _muster.value.copy(
                         loaded = true,
-                        error = reason,
+                        error = error.reason(),
                         // Distinguish "the cloud has no such board" from a
                         // transient network failure: only the former retires
                         // the picker, a dropped connection must stay retryable.
-                        available = !reason.contains("not live yet"),
+                        available = !Words.text(error.reason()).contains("not live yet"),
                     )
                 }
             _muster.value = _muster.value.copy(loading = false)
@@ -267,7 +267,7 @@ class LeaderboardViewModel(
         }
     }
 
-    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: Words.text(UiText.res(R.string.acct_failure_unknown))
+    private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.acct_failure_unknown))
 
     fun load() {
         viewModelScope.launch {
@@ -459,7 +459,7 @@ private fun Board(
     // Retry link only survives in the error state; the banner below carries
     // the message so stale rows are never silently served.
     if (ui.error != null) {
-        SocialErrorBanner(Lines.standingsStale(ui.error))
+        SocialErrorBanner(Lines.standingsStale(ui.error.asString()))
         SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
     }
 
@@ -815,7 +815,7 @@ private fun MusterBoard(
 ) {
     when {
         ui.loading && ui.rows.isEmpty() -> LoadingLine()
-        ui.rows.isEmpty() && ui.error != null -> MusterErrorPanel(ui.error, onRefresh)
+        ui.rows.isEmpty() && ui.error != null -> MusterErrorPanel(ui.error?.asString(), onRefresh)
         ui.rows.isEmpty() -> MusterEmptyPanel(onRefresh)
         else -> {
             val pullState = remember { PullToRefreshState() }
@@ -843,7 +843,7 @@ private fun MusterBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        SocialErrorBanner(Lines.standingsStale(ui.error))
+                        SocialErrorBanner(Lines.standingsStale(ui.error.asString()))
                         Spacer(Modifier.height(10.dp))
                     }
                     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
@@ -952,7 +952,7 @@ private fun LiftsBoard(
         // Nothing to filter yet (e.g. the server is below schema 20): say why
         // and offer the retry, without controls that would act on no data.
         ui.rows.isEmpty() && ui.error != null -> {
-            SocialErrorBanner(ui.error)
+            SocialErrorBanner(ui.error.asString())
             SocialRefreshLink(onClick = onRefresh, label = stringResource(R.string.acct_retry_link))
         }
         else -> {
@@ -981,7 +981,7 @@ private fun LiftsBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        SocialErrorBanner(Lines.standingsStale(ui.error))
+                        SocialErrorBanner(Lines.standingsStale(ui.error.asString()))
                         Spacer(Modifier.height(10.dp))
                     }
                     LiftPicker(

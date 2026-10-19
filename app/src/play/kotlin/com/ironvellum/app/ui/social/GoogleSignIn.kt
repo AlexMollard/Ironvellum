@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
+import com.ironvellum.app.ui.asString
 
 /**
  * "Continue with Google" through Credential Manager. Nonce direction matters:
@@ -85,9 +86,9 @@ internal fun GoogleSignInButton(onToken: (idToken: String, rawNonce: String) -> 
                     } catch (e: GetCredentialException) {
                         // Credential Manager messages are API internals —
                         // they never reach the lifter verbatim.
-                        localError = Cloud.explain(e)
+                        localError = Cloud.explain(e).asString(context)
                     } catch (e: Exception) {
-                        localError = Cloud.explain(e)
+                        localError = Cloud.explain(e).asString(context)
                     } finally {
                         inFlight = false
                     }
