@@ -45,6 +45,12 @@ android {
     namespace = "com.ironvellum.app"
     compileSdk = 37
 
+    androidResources {
+        // Builds res/xml/_generated_res_locales.xml from the values-xx folders (plus the
+        // default language named in res/resources.properties), so per-app language on
+        // Android 13+ lists a language the day its translation lands. English only today.
+        generateLocaleConfig = true
+    }
     defaultConfig {
         applicationId = "com.ironvellum.app"
         minSdk = 29
