@@ -1,17 +1,22 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 
 /** The Type chips of the exercise form: what the movement trains, which fixes its group and category. */
-enum class CustomType(val label: String, val group: MuscleGroup, val category: String) {
-    PULL("Pull", MuscleGroup.PULL, ""),
-    PUSH("Push", MuscleGroup.PUSH, ""),
-    LEGS("Legs", MuscleGroup.LEGS, ""),
-    CORE("Core", MuscleGroup.CORE, ""),
-    CARDIO("Cardio", MuscleGroup.CARDIO, "Cardio"),
-    MOBILITY("Mobility", MuscleGroup.MOBILITY, "Mobility"),
+enum class CustomType(@StringRes private val labelRes: Int, val group: MuscleGroup, val category: String) {
+    PULL(R.string.customex_type_pull, MuscleGroup.PULL, ""),
+    PUSH(R.string.customex_type_push, MuscleGroup.PUSH, ""),
+    LEGS(R.string.customex_type_legs, MuscleGroup.LEGS, ""),
+    CORE(R.string.customex_type_core, MuscleGroup.CORE, ""),
+    CARDIO(R.string.customex_type_cardio, MuscleGroup.CARDIO, "Cardio"),
+    MOBILITY(R.string.customex_type_mobility, MuscleGroup.MOBILITY, "Mobility"),
     ;
+
+    /** The chip's word. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 
     /** Cardio and mobility are activities in this codebase: a category, never gear-gated or generated. */
     val isActivity: Boolean get() = category.isNotBlank()
@@ -22,12 +27,18 @@ enum class CustomType(val label: String, val group: MuscleGroup, val category: S
 }
 
 /** The Logged-as chips: how a set of the movement is measured. */
-enum class CustomLogged(val label: String, val metric: ExerciseMetric, val hint: String) {
-    REPS("Reps", ExerciseMetric.REPS, "Sets of reps at a load."),
-    HOLD("Hold", ExerciseMetric.HOLD, "Sets held for seconds."),
-    TIME("Time", ExerciseMetric.DURATION, "One timed effort."),
-    DISTANCE("Distance", ExerciseMetric.DISTANCE_TIME, "Distance covered in a time."),
+enum class CustomLogged(@StringRes private val labelRes: Int, val metric: ExerciseMetric, @StringRes private val hintRes: Int) {
+    REPS(R.string.customex_logged_reps, ExerciseMetric.REPS, R.string.customex_logged_reps_hint),
+    HOLD(R.string.customex_logged_hold, ExerciseMetric.HOLD, R.string.customex_logged_hold_hint),
+    TIME(R.string.customex_logged_time, ExerciseMetric.DURATION, R.string.customex_logged_time_hint),
+    DISTANCE(R.string.customex_logged_distance, ExerciseMetric.DISTANCE_TIME, R.string.customex_logged_distance_hint),
     ;
+
+    /** The chip's word. */
+    val label: String get() = Words.text(UiText.res(labelRes))
+
+    /** The line under the chips for the chosen one. */
+    val hint: String get() = Words.text(UiText.res(hintRes))
 
     companion object {
         fun of(metric: ExerciseMetric): CustomLogged? = entries.firstOrNull { it.metric == metric }
@@ -35,17 +46,21 @@ enum class CustomLogged(val label: String, val metric: ExerciseMetric, val hint:
 }
 
 /** The Needs chips: the [Gear] list plus a machine or cable, and nothing at all. */
-enum class CustomNeed(val label: String, val gear: Gear?) {
-    MACHINE("Machine or cable", null),
-    BARBELL("Barbell & rack", Gear.BARBELL),
-    DUMBBELLS("Dumbbells", Gear.DUMBBELLS),
-    BENCH("Bench", Gear.BENCH),
-    PULL_UP_BAR("Pull-up bar", Gear.PULL_UP_BAR),
-    DIP_BARS("Dip bars", Gear.DIP_BARS),
-    RINGS("Rings", Gear.RINGS),
-    PARALLETTES("Parallettes", Gear.PARALLETTES),
-    AB_WHEEL("Ab wheel", Gear.AB_WHEEL),
-    NOTHING("Nothing", null),
+enum class CustomNeed(@StringRes private val labelRes: Int, val gear: Gear?) {
+    MACHINE(R.string.customex_need_machine, null),
+    BARBELL(R.string.program_gear_barbell, Gear.BARBELL),
+    DUMBBELLS(R.string.program_gear_dumbbells, Gear.DUMBBELLS),
+    BENCH(R.string.program_gear_bench, Gear.BENCH),
+    PULL_UP_BAR(R.string.program_gear_pull_up_bar, Gear.PULL_UP_BAR),
+    DIP_BARS(R.string.program_gear_dip_bars, Gear.DIP_BARS),
+    RINGS(R.string.program_gear_rings, Gear.RINGS),
+    PARALLETTES(R.string.program_gear_parallettes, Gear.PARALLETTES),
+    AB_WHEEL(R.string.program_gear_ab_wheel, Gear.AB_WHEEL),
+    NOTHING(R.string.customex_need_nothing, null),
+    ;
+
+    /** The chip's word. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /** What the exercise form hands the Repository: the chips, the name and the tapped muscles (see [CustomExercises.shares]). */
@@ -155,8 +170,8 @@ object CustomExercises {
      */
     fun nameProblem(raw: String, existing: Collection<String>, own: String? = null): String? {
         val name = cleanName(raw)
-        if (name.isEmpty()) return "Give it a name."
-        if (name.length > MAX_NAME) return "Keep the name to $MAX_NAME characters."
+        if (name.isEmpty()) return Words.text(UiText.res(R.string.customex_error_name_empty))
+        if (name.length > MAX_NAME) return Words.text(UiText.res(R.string.customex_error_name_long, MAX_NAME))
         val key = name.lowercase()
         if (own != null && key == cleanName(own).lowercase()) return null
         val hit = existing.firstOrNull { cleanName(it).lowercase() == key }

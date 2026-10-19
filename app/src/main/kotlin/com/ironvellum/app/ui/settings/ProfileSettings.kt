@@ -146,7 +146,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption(UiText.themed(R.string.settings_profile_weight_caption, R.string.settings_profile_weight_caption__t).asString())
             Spacer(Modifier.height(14.dp))
             InkSegmented<Sex?>(
-                options = Sex.entries.map { it to sexLabel(it) },
+                options = Sex.entries.map { it to it.label },
                 selected = if (sexUnset) null else bodyProfile.second,
                 onPick = {
                     if (it == null) return@InkSegmented
@@ -158,11 +158,6 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption(stringResource(R.string.settings_profile_sex_caption))
         }
     }
-}
-
-private fun sexLabel(sex: Sex): String = when (sex) {
-    Sex.MALE -> "Male"
-    Sex.FEMALE -> "Female"
 }
 
 /** The inline outcome of a commit: a Saved tick or the refusal, in the field's own place. */

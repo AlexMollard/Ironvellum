@@ -23,6 +23,7 @@ import com.ironvellum.app.data.WarmupStore
 import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
@@ -36,8 +37,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** The generator's goal control words, so one concept has one name. */
 internal fun TrainingMode.label(): String = when (this) {
-    TrainingMode.STRENGTH -> "Power"
-    TrainingMode.HYPERTROPHY -> "Muscle"
+    TrainingMode.STRENGTH -> TrainingFocus.STRENGTH.label
+    TrainingMode.HYPERTROPHY -> TrainingFocus.MUSCLE.label
 }
 
 @Composable

@@ -1,6 +1,10 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
@@ -171,6 +175,9 @@ fun DeedsBoard(
 /** How many nearly-won deeds the shelf shows. */
 private const val SHELF_SIZE = 4
 
+/** Remembers that the deeds intro line was read (a stored key, not text). */
+private const val DEEDS_INTRO_KEY = "deeds"
+
 @Composable
 private fun DeedsHome(
     unlocked: Map<String, Long>,
@@ -210,10 +217,7 @@ private fun DeedsHome(
             Column {
                 DeedsHeader(earned = earned.size, total = Titles.ALL.size)
                 // Deeds keep their name in both modes, so the first visit says what one is.
-                FirstUseLine(
-                    "deeds",
-                    "${Words.deed.cpl} are the milestones you earn by training. Each grants a title to wear.",
-                )
+                FirstUseLine(DEEDS_INTRO_KEY, UiText.res(R.string.always_deeds_intro).asString())
             }
         }
 
@@ -221,11 +225,11 @@ private fun DeedsHome(
             SettingsGroup(label = null, topSpace = LedgerSpace.Panel, rows = true) {
                 when {
                     worn != null -> TapRow(
-                        onClickLabel = "Open ${worn.name}",
+                        onClickLabel = UiText.res(R.string.titles_open_description, worn.name).asString(),
                         onClick = { onOpenDeed(worn.id) },
                     ) {
                         Text(
-                            "Wearing",
+                            UiText.res(R.string.deeds_worn_label).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -241,11 +245,11 @@ private fun DeedsHome(
                         Chevron()
                     }
                     earned.isNotEmpty() -> TapRow(
-                        onClickLabel = "Show the ${Words.deed.pl} you have earned",
+                        onClickLabel = UiText.res(R.string.always_deeds_show_earned_description).asString(),
                         onClick = { scope.launch { listState.animateScrollToItem(wallIndex) } },
                     ) {
                         Text(
-                            "Wear a title you've earned",
+                            UiText.res(R.string.deeds_wear_prompt).asString(),
                             style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.Ink,
@@ -255,7 +259,7 @@ private fun DeedsHome(
                     }
                     else -> Row(Modifier.heightIn(min = LedgerSpace.Target).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "No title worn yet. Earn ${Words.deed.a} and its title is yours to wear.",
+                            UiText.res(R.string.always_deeds_no_title_worn).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -267,7 +271,7 @@ private fun DeedsHome(
         if (shelf.isNotEmpty()) {
             item(key = "close") {
                 Column {
-                    SectionLabel("CLOSE TO EARNING")
+                    SectionLabel(UiText.res(R.string.deeds_close_header).asString())
                     SettingsGroup(label = null, topSpace = 0.dp) {
                         shelf.forEachIndexed { i, def ->
                             if (i > 0) InkDivider()
@@ -280,19 +284,21 @@ private fun DeedsHome(
 
         item(key = "categories") {
             Column {
-                SectionLabel("CATEGORIES")
+                SectionLabel(UiText.res(R.string.deeds_categories_header).asString())
                 InkRowPanel(Modifier.fillMaxWidth()) {
                     DeedLadders.CATEGORIES.forEachIndexed { i, c ->
                         val defs = DeedLadders.ALL.filter { it.category == c.name }.flatMap { it.rungs }
                         val held = defs.count { it.id in earnedIds }
                         if (i > 0) InkDivider()
+                        val categoryDescription =
+                            UiText.res(R.string.always_deeds_category_description, c.name, c.blurb, held, defs.size).asString()
                         ListRow(
                             label = c.name,
-                            value = "$held of ${defs.size}",
-                            onClickLabel = "Open ${c.name}",
+                            value = UiText.res(R.string.deeds_category_count, held, defs.size).asString(),
+                            onClickLabel = UiText.res(R.string.titles_open_description, c.name).asString(),
                             onClick = { onOpenCategory(c.name) },
                             modifier = Modifier.semantics(mergeDescendants = true) {
-                                contentDescription = "${c.name}. ${c.blurb}. $held of ${defs.size} ${Words.deed.pl} earned."
+                                contentDescription = categoryDescription
                             },
                         )
                     }
@@ -302,7 +308,7 @@ private fun DeedsHome(
 
         item(key = "wall") {
             Column {
-                SectionLabel("EARNED  ${earned.size}")
+                SectionLabel(UiText.res(R.string.deeds_earned_header, earned.size).asString())
                 val store = remember { DeedOrderStore(context) }
                 var order by remember { mutableStateOf(store.order) }
                 if (earned.isNotEmpty()) {
@@ -331,7 +337,7 @@ private fun DeedsHome(
 private fun DeedsHeader(earned: Int, total: Int) {
     Column(Modifier.fillMaxWidth()) {
         Text(
-            "$earned of $total earned",
+            UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.semantics { heading() },
@@ -364,15 +370,17 @@ private fun Chevron() {
 private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Ledger, sex: Sex, onClick: () -> Unit) {
     val toGo = deedProgressText(def, progress, ledger, earned = false).toGo
     val requirement = deedRequirement(def, sex, ledger)
+    val description = UiText.res(R.string.deeds_near_description, def.name, def.rarity.label, requirement, toGo).asString()
+    val openLabel = UiText.res(R.string.titles_open_description, def.name).asString()
     Column(
         Modifier
             .fillMaxWidth()
             .heightIn(min = LedgerSpace.Target)
             .clip(MaterialTheme.shapes.extraSmall)
             .semantics(mergeDescendants = true) {
-                contentDescription = "${def.name}, ${def.rarity.label}. $requirement $toGo."
+                contentDescription = description
             }
-            .clickable(onClickLabel = "Open ${def.name}", role = Role.Button, onClick = onClick)
+            .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onClick)
             .padding(vertical = 10.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -424,7 +432,7 @@ private fun BarWithToGo(fraction: Float, toGo: String) {
 private fun GoldCheck() {
     Icon(
         Icons.Filled.Check,
-        contentDescription = "Complete",
+        contentDescription = UiText.res(R.string.deeds_complete_description).asString(),
         tint = IronvellumColors.SovereignGold,
         modifier = Modifier.size(18.dp),
     )
@@ -445,7 +453,7 @@ private fun EarnedWall(
 ) {
     if (earned.isEmpty()) {
         Text(
-            "Nothing is written here yet. ${Words.seal.c} ${Words.trial.a} to earn the first ${Words.deed.s}.",
+            UiText.themed(R.string.deeds_wall_empty, R.string.deeds_wall_empty__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -458,6 +466,11 @@ private fun EarnedWall(
         group.deeds.forEachIndexed { i, def ->
             val worn = def.id == equippedId
             val date = unlocked[def.id]?.let { formatDate(it, "d MMM yyyy") }
+            val rowDescription = UiText.res(
+                if (worn) R.string.deeds_row_description_worn else R.string.deeds_row_description_earned,
+                def.name,
+                def.rarity.label,
+            ).asString()
             if (i > 0) InkDivider()
             ListRow(
                 label = def.name,
@@ -466,14 +479,14 @@ private fun EarnedWall(
                 sublineColor = rarityColor(def.rarity, earned = true),
                 leading = { DeedSeal(def.rarity, category = Titles.category(def.rule)) },
                 value = when {
-                    worn && date != null -> "Worn \u00B7 $date"
-                    worn -> "Worn"
+                    worn && date != null -> UiText.res(R.string.deeds_worn_date, date).asString()
+                    worn -> UiText.res(R.string.deeds_worn_value).asString()
                     else -> date
                 },
-                onClickLabel = "Open ${def.name}",
+                onClickLabel = UiText.res(R.string.titles_open_description, def.name).asString(),
                 onClick = { onOpenDeed(def.id) },
                 modifier = Modifier.semantics(mergeDescendants = true) {
-                    contentDescription = "${def.name}, ${def.rarity.label}, earned" + if (worn) ", worn" else ""
+                    contentDescription = rowDescription
                 },
             )
         }
@@ -504,7 +517,11 @@ private fun TierHeader(rarity: TitleRarity, count: Int, first: Boolean) {
 
 // ------------------------------------------------------------ category ----
 
-private enum class DeedRange(val label: String) { ToDo("To do"), Earned("Earned"), All("All") }
+private enum class DeedRange(@StringRes val labelRes: Int) {
+    ToDo(R.string.deeds_range_todo),
+    Earned(R.string.deeds_range_earned),
+    All(R.string.deeds_range_all),
+}
 
 @Composable
 private fun CategoryScreen(
@@ -523,6 +540,7 @@ private fun CategoryScreen(
     val ladders = remember(category, Words.themed) { DeedLadders.ALL.filter { it.category == category } }
     val total = ladders.sumOf { it.rungs.size }
     val earned = ladders.sumOf { l -> l.rungs.count { it.id in earnedIds } }
+    val summaryDescription = UiText.res(R.string.always_deeds_category_summary, category, earned, total, blurb).asString()
 
     val shown = remember(ladders, earnedIds, progressOf, range) {
         ladders
@@ -548,7 +566,7 @@ private fun CategoryScreen(
                 PushedHeader(category, onBack)
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = "$category ${Words.deed.pl}: $earned of $total earned. $blurb."
+                        contentDescription = summaryDescription
                     },
                 ) {
                     Text(
@@ -557,7 +575,7 @@ private fun CategoryScreen(
                         color = IronvellumColors.InkMuted,
                     )
                     Text(
-                        "$earned of $total earned",
+                        UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
                     )
@@ -570,7 +588,7 @@ private fun CategoryScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 RangeChips(
-                    options = DeedRange.entries.map { it to it.label },
+                    options = DeedRange.entries.map { it to UiText.res(it.labelRes).asString() },
                     selected = range,
                     onPick = { range = it },
                 )
@@ -580,9 +598,9 @@ private fun CategoryScreen(
             item(key = "empty") {
                 Text(
                     when (range) {
-                        DeedRange.ToDo -> "Every ${Words.deed.s} in $category is earned."
-                        DeedRange.Earned -> "Nothing is written here yet. Earned ${Words.deed.pl} appear on this page."
-                        DeedRange.All -> "No ${Words.deed.pl} here."
+                        DeedRange.ToDo -> UiText.res(R.string.always_deeds_all_earned, category).asString()
+                        DeedRange.Earned -> UiText.res(R.string.always_deeds_page_empty).asString()
+                        DeedRange.All -> UiText.res(R.string.always_deeds_none_here).asString()
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -623,15 +641,18 @@ private fun LadderCard(
     val progress = progressOf.getValue(target.id)
     val text = deedProgressText(target, progress, ledger, earned = next == null)
 
+    val heldSentence = UiText.res(R.string.always_deeds_ladder_held, held, ladder.rungs.size).asString()
+    val nextSentence = if (next != null) UiText.res(R.string.deeds_ladder_next, next.name, next.rarity.label).asString() else ""
+    val completeSentence = UiText.res(R.string.deeds_ladder_complete).asString()
     val sentence = buildString {
         append(ladder.title).append(". ")
-        if (series) append("$held of ${ladder.rungs.size} ${Words.deed.pl} earned. ")
+        if (series) append(heldSentence).append(' ')
         if (next != null) {
-            if (series) append("Next: ${next.name}, ${next.rarity.label}. ")
+            if (series) append(nextSentence).append(' ')
             append(deedRequirement(next, sex, ledger)).append(' ')
             append("${text.counts}, ${text.toGo}.")
         } else {
-            append("Complete.")
+            append(completeSentence)
         }
     }
 
@@ -642,7 +663,10 @@ private fun LadderCard(
                 .heightIn(min = LedgerSpace.Target)
                 .clip(MaterialTheme.shapes.extraSmall)
                 .semantics(mergeDescendants = true) { contentDescription = sentence }
-                .clickable(onClickLabel = "Open ${target.name}", role = Role.Button) { onOpenDeed(target.id) },
+                .clickable(
+                    onClickLabel = UiText.res(R.string.titles_open_description, target.name).asString(),
+                    role = Role.Button,
+                ) { onOpenDeed(target.id) },
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -658,7 +682,7 @@ private fun LadderCard(
                 if (series) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Next · ${next.name}",
+                            UiText.res(R.string.deeds_ladder_next_name, next.name).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.Ink,
                             maxLines = 1,
@@ -683,7 +707,8 @@ private fun LadderCard(
             } else {
                 val whenEarned = unlocked[target.id]?.let { formatDate(it, "d MMM yyyy") }
                 Text(
-                    if (series) "All ${ladder.rungs.size} ${Words.deed.pl} earned" else "Earned ${whenEarned.orEmpty()}".trim(),
+                    if (series) UiText.res(R.string.always_deeds_ladder_all_earned, ladder.rungs.size).asString()
+                    else UiText.res(R.string.deeds_detail_earned, whenEarned.orEmpty()).asString().trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SovereignGold,
                 )
@@ -708,10 +733,14 @@ private fun LadderCard(
 private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (String) -> Unit) {
     val states = ladder.states(earnedIds)
     val count = ladder.rungs.size
+    val words = states.map { UiText.res(it.wordRes()).asString() }
     val summary = ladder.rungs.indices.joinToString(", ") { i ->
-        "${ladder.rungs[i].name} ${states[i].word()}"
+        "${ladder.rungs[i].name} ${words[i]}"
     }
     val next = ladder.next(earnedIds) ?: ladder.rungs.last()
+    val description = UiText.res(R.string.always_deeds_rung_strip_description, count, summary).asString()
+    val openNextLabel = UiText.res(R.string.titles_open_description, next.name).asString()
+    val openLabels = ladder.rungs.map { UiText.res(R.string.titles_open_description, it.name).asString() }
     Row(
         Modifier
             .fillMaxWidth()
@@ -723,14 +752,14 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
                 }
             }
             .semantics(mergeDescendants = true) {
-                contentDescription = "$count ${Words.deed.pl}. $summary"
+                contentDescription = description
                 role = Role.Button
-                onClick(label = "Open ${next.name}") {
+                onClick(label = openNextLabel) {
                     onOpenDeed(next.id)
                     true
                 }
-                customActions = ladder.rungs.map { rung ->
-                    CustomAccessibilityAction("Open ${rung.name}") {
+                customActions = ladder.rungs.mapIndexed { i, rung ->
+                    CustomAccessibilityAction(openLabels[i]) {
                         onOpenDeed(rung.id)
                         true
                     }
@@ -744,10 +773,10 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
     }
 }
 
-private fun RungState.word(): String = when (this) {
-    RungState.Earned -> "earned"
-    RungState.Next -> "next to earn"
-    RungState.Locked -> "locked"
+private fun RungState.wordRes(): Int = when (this) {
+    RungState.Earned -> R.string.deeds_rung_earned
+    RungState.Next -> R.string.deeds_rung_next
+    RungState.Locked -> R.string.deeds_rung_locked
 }
 
 @Composable

@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,7 +46,7 @@ fun PushedHeader(
         )
         actions()
         NavChip(
-            "BACK",
+            stringResource(R.string.pushedheader_back_chip),
             null,
             onClick = onBack,
             modifier = if (backDescription != null) Modifier.semantics { contentDescription = backDescription } else Modifier,

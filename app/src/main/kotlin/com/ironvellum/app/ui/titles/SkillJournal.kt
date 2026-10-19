@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,12 +26,13 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.TileShape
 import com.ironvellum.app.ui.theme.inkBorder
@@ -69,7 +71,7 @@ fun SkillJournal(
     // An empty Journal is a row of zeros: say what fills it.
     if (log.isEmpty()) {
         Text(
-            "Every attempt at ${Words.technique.a} is written here. Open ${Words.path.a}, pick ${Words.technique.a} and log an attempt.",
+            UiText.themed(R.string.skilljournal_empty, R.string.skilljournal_empty__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 16.dp),
@@ -78,10 +80,10 @@ fun SkillJournal(
 
     // ---- figures: unboxed, one row ----------------------------------------
     Row(Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, top = 16.dp)) {
-        Figure("Attempts", attempts.size.toString(), Modifier.weight(1f))
-        Figure("Days kept", "${practiceStreak(byDay, today)}", Modifier.weight(1f))
+        Figure(UiText.res(R.string.skilljournal_figure_attempts).asString(), attempts.size.toString(), Modifier.weight(1f))
+        Figure(UiText.res(R.string.skilljournal_figure_days_kept).asString(), "${practiceStreak(byDay, today)}", Modifier.weight(1f))
         Figure(
-            "Last",
+            UiText.res(R.string.skilljournal_figure_last).asString(),
             attempts.firstOrNull()?.let { formatDate(it.practicedAtMs, DAY_PATTERN) } ?: "—",
             Modifier.weight(1f),
         )
@@ -94,9 +96,9 @@ fun SkillJournal(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
     ) {
-        Text("Last 12 weeks", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+        Text(UiText.res(R.string.skilljournal_heat_title).asString(), style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         Text(
-            "$practised ${plural(practised, "day", "days")} practised",
+            UiText.plural(R.plurals.skilljournal_days_practised, practised).asString(),
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -145,8 +147,13 @@ fun SkillJournal(
     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
         ListRow(
             label = Words.paths.c,
-            subline = lines.take(PATHS_NAMED).joinToString(", ") + if (more > 0) " and $more more" else "",
-            onClickLabel = "Open ${Words.paths.c}",
+            subline = lines.take(PATHS_NAMED).joinToString(", ").let {
+                if (more > 0) UiText.res(R.string.skilljournal_paths_named_more, it, more).asString() else it
+            },
+            onClickLabel = UiText.themed(
+                R.string.skilljournal_open_paths_description,
+                R.string.skilljournal_open_paths_description__t,
+            ).asString(),
             // Inside a panel with no padding of its own, so the row pads itself off the border.
             contentPadding = PaddingValues(horizontal = 16.dp),
             onClick = onOpenPaths,
@@ -154,10 +161,10 @@ fun SkillJournal(
     }
 
     // ---- timeline ----------------------------------------------------------
-    SectionHeader("Timeline", topPadding = 16.dp)
+    SectionHeader(UiText.res(R.string.skilljournal_timeline_header).asString(), topPadding = 16.dp)
     if (log.isEmpty()) {
         Text(
-            "The ${Words.journal.t} is blank. Open ${Words.technique.a} and log what you actually hit.",
+            UiText.themed(R.string.skilljournal_blank, R.string.skilljournal_blank__t).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 12.dp),
@@ -186,11 +193,11 @@ fun SkillJournal(
                         (def?.let { " · ${it.line} · ${Skills.tierLabel(it.tier)}" } ?: ""),
                     value = when {
                         entry.claimed -> Words.claimed.c
-                        entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @${formatLoad(entry.weightKg)}${Units.name}"
+                        entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @ ${Units.withUnit(entry.weightKg)}"
                         else -> def?.let { SkillGuidance.withUnit(entry.value, it) } ?: "${entry.value}"
                     },
                     valueColor = if (entry.claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                    onClickLabel = "Open ${entry.skillName}",
+                    onClickLabel = UiText.res(R.string.titles_open_description, entry.skillName).asString(),
                     onClick = { onSelect(entry.skillName) },
                 )
             }
@@ -220,12 +227,19 @@ private fun Figure(label: String, value: String, modifier: Modifier = Modifier) 
  */
 internal fun heatmapSummary(byDay: Map<LocalDate, Int>, start: LocalDate, today: LocalDate): String {
     val days = byDay.filter { (date, n) -> n > 0 && !date.isBefore(start) && !date.isAfter(today) }
-    if (days.isEmpty()) return "$WEEKS weeks: no attempts logged"
+    if (days.isEmpty()) return Words.text(UiText.res(R.string.skilljournal_heatmap_empty, WEEKS))
     // the latest day among those tied for most
     val top = days.entries.maxWith(compareBy({ it.value }, { it.key }))
     val on = top.key.format(DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
-    return "$WEEKS weeks: ${days.size} ${plural(days.size, "day", "days")} practised, " +
-        "most ${top.value} ${plural(top.value, "attempt", "attempts")} on $on"
+    return Words.text(
+        UiText.res(
+            R.string.skilljournal_heatmap_summary,
+            WEEKS,
+            UiText.plural(R.plurals.skilljournal_days_practised, days.size),
+            UiText.plural(R.plurals.skilljournal_attempts_count, top.value),
+            on,
+        ),
+    )
 }
 
 /** Consecutive days with at least one logged attempt, counting back from today. */

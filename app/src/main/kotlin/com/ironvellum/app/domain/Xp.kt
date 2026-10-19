@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import kotlin.math.roundToInt
 
@@ -306,20 +307,20 @@ object Xp {
 
     // ------------------------------------------------------------ breakdown
 
-    enum class Kind(private val labelText: () -> String, val setDriven: Boolean) {
-        EXERCISE({ "" }, true),
-        ACTIVITY({ "" }, true),
-        PEAK({ "New ${Words.peak.s}" }, true),
-        RECORD({ "Strength record" }, true),
-        HONEST_EFFORT({ "Honest effort" }, false),
-        RITE_AS_PLANNED({ "${Words.rite.c} as planned" }, false),
-        WEEK_COVERED({ "Week covered" }, false),
-        WELCOME_BACK({ "Welcome back" }, false),
-        FIRST_OF_WEEK({ "First of the week" }, false),
-        QUEST({ "Today's ${Words.trial.s}" }, false),
-        COMPLETION({ "${Words.trial.c} complete" }, false);
+    enum class Kind(private val labelText: UiText, val setDriven: Boolean) {
+        EXERCISE(UiText.Raw(""), true),
+        ACTIVITY(UiText.Raw(""), true),
+        PEAK(UiText.themed(R.string.xp_kind_peak, R.string.xp_kind_peak__t), true),
+        RECORD(UiText.res(R.string.xp_kind_record), true),
+        HONEST_EFFORT(UiText.res(R.string.xp_kind_honest_effort), false),
+        RITE_AS_PLANNED(UiText.themed(R.string.xp_kind_rite_as_planned, R.string.xp_kind_rite_as_planned__t), false),
+        WEEK_COVERED(UiText.res(R.string.xp_kind_week_covered), false),
+        WELCOME_BACK(UiText.res(R.string.xp_kind_welcome_back), false),
+        FIRST_OF_WEEK(UiText.res(R.string.xp_kind_first_of_week), false),
+        QUEST(UiText.themed(R.string.xp_kind_quest, R.string.xp_kind_quest__t), false),
+        COMPLETION(UiText.themed(R.string.xp_kind_completion, R.string.xp_kind_completion__t), false);
 
-        val label: String get() = labelText()
+        val label: String get() = Words.text(labelText)
     }
 
     /**
@@ -358,7 +359,7 @@ object Xp {
 
         /** Spoken or written in one breath: "Pull-up 142, Peak bonus 15, total 180". */
         fun describe(): String =
-            lines.joinToString(", ") { "${it.label} ${it.xp}" } + (if (lines.isEmpty()) "" else ", total $total")
+            lines.joinToString(", ") { "${it.label} ${it.xp}" } + (if (lines.isEmpty()) "" else Words.text(UiText.res(R.string.xp_describe_total, total)))
 
         companion object {
             val EMPTY = Breakdown(emptyList())

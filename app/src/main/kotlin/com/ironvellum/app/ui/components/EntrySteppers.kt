@@ -43,6 +43,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkStroke
 import com.ironvellum.app.ui.train.MAX_LOAD_KG
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * The target-stepping furniture shared by every place a rite's sets, reps or load are edited: the
@@ -149,8 +151,8 @@ internal fun WholeStepper(
     label = label,
     value = value,
     unit = null,
-    less = "Fewer $noun" + subject?.let { " for $it" }.orEmpty(),
-    more = "More $noun" + subject?.let { " for $it" }.orEmpty(),
+    less = if (subject == null) stringResource(R.string.stepper_fewer, noun) else stringResource(R.string.stepper_fewer_for, noun, subject),
+    more = if (subject == null) stringResource(R.string.stepper_more, noun) else stringResource(R.string.stepper_more_for, noun, subject),
     error = error,
     decimal = false,
     maxDigits = maxDigits,
@@ -323,9 +325,9 @@ internal fun StepperGroup(
 internal fun RangeStepperRow(label: String, from: StepperPart, to: StepperPart, caption: String? = null, toEmpty: String = "–") {
     Row(Modifier.fillMaxWidth().heightIn(min = ROW_MIN_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         RowLabel(label, caption, Modifier.weight(1f))
-        StepperGroup("$label, from", from, valueWidth = RANGE_VALUE_WIDTH)
+        StepperGroup(stringResource(R.string.stepper_range_from, label), from, valueWidth = RANGE_VALUE_WIDTH)
         Text("–", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
-        StepperGroup("$label, up to", to, emptyText = toEmpty, valueWidth = RANGE_VALUE_WIDTH)
+        StepperGroup(stringResource(R.string.stepper_range_to, label), to, emptyText = toEmpty, valueWidth = RANGE_VALUE_WIDTH)
     }
 }
 

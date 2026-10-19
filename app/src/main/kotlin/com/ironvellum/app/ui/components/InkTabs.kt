@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -35,6 +37,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -88,6 +92,7 @@ fun InkTabs(
     LaunchedEffect(selectedIndex, fill) {
         if (!fill && widths.all { it > 0 }) scroll.animateScrollTo(widths.take(selectedIndex).sum())
     }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(modifier.fillMaxWidth().height(LedgerSpace.Target)) {
         Box(
             Modifier
@@ -100,7 +105,7 @@ fun InkTabs(
         Row(
             Modifier
                 .then(if (fill) Modifier.fillMaxWidth() else Modifier.horizontalScroll(scroll))
-                .offset(x = -tabPad)
+                .offset(x = if (rtl) tabPad else -tabPad)
                 .drawBehind {
                     if (labels.size < 2 || widths.any { it == 0 }) return@drawBehind
                     val pos = (indicatorPosition?.invoke() ?: settled.value).coerceIn(0f, labels.lastIndex.toFloat())
@@ -113,12 +118,25 @@ fun InkTabs(
                     val left = lerp(startFrom, startTo, t) + pad
                     val right = lerp(startFrom + widths[from], startTo + widths[from + 1], t) - pad
                     val thick = 2.dp.toPx()
-                    drawRect(IronvellumColors.Emerald, Offset(left, RuleY.toPx() - thick), Size(right - left, thick))
+                    // The tabs lay out from the right in RTL while drawing coordinates still count from the left.
+                    val x = if (rtl) size.width - right else left
+                    drawRect(IronvellumColors.Emerald, Offset(x, RuleY.toPx() - thick), Size(right - left, thick))
                 },
         ) {
             labels.forEachIndexed { index, label ->
                 val selected = index == selectedIndex
                 val badge = badges.getOrElse(index) { 0 }
+                val state = if (badge > 0) {
+                    stringResource(
+                        if (selected) R.string.inktabs_state_selected_unread else R.string.inktabs_state_not_selected_unread,
+                        index + 1, labels.size, badge,
+                    )
+                } else {
+                    stringResource(
+                        if (selected) R.string.inktabs_state_selected else R.string.inktabs_state_not_selected,
+                        index + 1, labels.size,
+                    )
+                }
                 Box(
                     Modifier
                         .then(if (fill) Modifier.weight(1f) else Modifier)
@@ -131,10 +149,7 @@ fun InkTabs(
                             role = Role.Tab,
                             onClick = { onSelect(index) },
                         )
-                        .semantics {
-                            val unread = if (badge > 0) ", $badge unread" else ""
-                            stateDescription = "${if (selected) "Selected" else "Not selected"}, ${index + 1} of ${labels.size}$unread"
-                        }
+                        .semantics { stateDescription = state }
                         .padding(horizontal = tabPad)
                         .padding(bottom = 4.dp),
                     contentAlignment = Alignment.Center,

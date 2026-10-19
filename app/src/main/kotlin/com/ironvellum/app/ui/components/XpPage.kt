@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -108,6 +110,7 @@ internal fun XpRevealPage(
         label = "xp-glow",
     )
     val done = state.phase == XpTimeline.Phase.DONE
+    val skipDescription = stringResource(R.string.xp_skip_summary)
     // Back does what the visible control does: Skip until the page is done, then Continue.
     BackHandler { if (done) onContinue() else onSkip() }
 
@@ -145,11 +148,11 @@ internal fun XpRevealPage(
                     Modifier
                         .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                         .clickable(role = Role.Button, onClick = onSkip)
-                        .semantics { contentDescription = "Skip to summary" },
+                        .semantics { contentDescription = skipDescription },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "Skip ›",
+                        stringResource(R.string.xppage_skip_button),
                         fontFamily = ChakraPetch,
                         fontSize = 14.sp,
                         color = Dim,
@@ -182,7 +185,7 @@ internal fun XpRevealPage(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "CONTINUE",
+                        stringResource(R.string.common_continue).uppercase(),
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
@@ -280,9 +283,9 @@ private fun FillingContent(
     val line = lines.getOrNull(state.segment)
     Column(modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
         Spacer(Modifier.weight(0.35f))
-        TotalBlock(state.counted.toInt(), 64, "XP", spoken)
+        TotalBlock(state.counted.toInt(), 64, stringResource(R.string.victory_row_xp), spoken)
         Spacer(Modifier.height(36.dp))
-        LevelBar(timeline, state.bar, t, false, shades, state.segment, "LEVEL ${timeline.bars[state.bar].level}")
+        LevelBar(timeline, state.bar, t, false, shades, state.segment, stringResource(R.string.xp_level_label, timeline.bars[state.bar].level).uppercase())
         Spacer(Modifier.height(32.dp))
         // The segment filling now, named big; its slot keeps its height between segments.
         Column(
@@ -350,6 +353,7 @@ private fun CrossingContent(
     val last = hold.toBar == timeline.bars.lastIndex
     val shown = phase(t, hold.startMs, 250)
     val move = "$from → $to"
+    val levelUpDescription = stringResource(R.string.xppage_level_up_description, from, to)
     Column(
         modifier.fillMaxWidth().padding(horizontal = 18.dp).graphicsLayer { alpha = shown },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -358,14 +362,14 @@ private fun CrossingContent(
         Column(
             Modifier.fillMaxWidth().clearAndSetSemantics {
                 // The quiet line is part of what is said, or a screen reader never hears it.
-                contentDescription = "Level up, $from to $to" + if (last && veil != null) ". $veil" else ""
+                contentDescription = levelUpDescription + if (last && veil != null) ". $veil" else ""
                 liveRegion = LiveRegionMode.Assertive
                 heading()
             },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "LEVEL UP",
+                stringResource(R.string.xp_level_up_tag).uppercase(),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
@@ -397,7 +401,7 @@ private fun CrossingContent(
         }
         Spacer(Modifier.weight(1f))
         // The fresh bar, with the rest of the segment that crossed already in it.
-        LevelBar(timeline, hold.toBar, t, false, rememberShades(timeline.lines), -1, "LEVEL $to")
+        LevelBar(timeline, hold.toBar, t, false, rememberShades(timeline.lines), -1, stringResource(R.string.xp_level_label, to).uppercase())
         Spacer(Modifier.height(72.dp))
     }
 }
@@ -421,14 +425,18 @@ private fun DoneContent(
         modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp),
     ) {
         Spacer(Modifier.height(16.dp))
-        TotalBlock(total, 56, "XP · $effort effort · ${total - effort} bonus", spoken)
+        TotalBlock(total, 56, stringResource(R.string.xppage_total_caption, effort, total - effort), spoken)
         Spacer(Modifier.height(22.dp))
         // With animations off the level moment never plays, so the level-up is said here.
-        LevelBar(timeline, timeline.bars.lastIndex, 0L, true, shades, -1, if (levelAfter > levelBefore) "LEVEL UP · $level" else "LEVEL $level")
+        LevelBar(timeline, timeline.bars.lastIndex, 0L, true, shades, -1, if (levelAfter > levelBefore) {
+            stringResource(R.string.xppage_level_up_label, level).uppercase()
+        } else {
+            stringResource(R.string.xp_level_label, level).uppercase()
+        })
         Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            if (efforts.isNotEmpty()) SectionLabel("EFFORT", IronvellumColors.Emerald)
+            if (efforts.isNotEmpty()) SectionLabel(stringResource(R.string.xp_section_effort).uppercase(), IronvellumColors.Emerald)
             efforts.forEach { XpRow(lines[it], shades[it], RowState.DONE, subline = XpReveal.subline(lines[it])) }
-            if (bonuses.isNotEmpty()) SectionLabel("BONUSES", IronvellumColors.SovereignGold)
+            if (bonuses.isNotEmpty()) SectionLabel(stringResource(R.string.xp_section_bonuses).uppercase(), IronvellumColors.SovereignGold)
             bonuses.forEach { XpRow(lines[it], shades[it], RowState.DONE, subline = XpReveal.bonusNote(lines[it])) }
         }
         Spacer(Modifier.height(12.dp))

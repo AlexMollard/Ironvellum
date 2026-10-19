@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -37,8 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -123,35 +124,34 @@ internal object XpReveal {
     /** "4 hard sets · +17.7 kg added", "3 hard sets · top 60 kg", "3 hard holds", "2 hard · 1 easy": what a movement was made of. */
     fun subline(line: Xp.Line): String {
         if (line.kind == Xp.Kind.ACTIVITY) return ""
-        val unit = if (line.hold) "hold" else "set"
         val made = when {
-            line.hardSets > 0 && line.easySets > 0 -> "${line.hardSets} hard · ${line.easySets} easy"
-            line.hardSets > 0 -> "${line.hardSets} hard ${plural(line.hardSets, unit, unit + "s")}"
-            line.easySets > 0 -> "${line.easySets} easy ${plural(line.easySets, unit, unit + "s")}"
+            line.hardSets > 0 && line.easySets > 0 -> uiString(R.string.xp_subline_hard_easy, line.hardSets, line.easySets)
+            line.hardSets > 0 -> uiPlural(if (line.hold) R.plurals.xp_subline_hard_holds else R.plurals.xp_subline_hard_sets, line.hardSets)
+            line.easySets > 0 -> uiPlural(if (line.hold) R.plurals.xp_subline_easy_holds else R.plurals.xp_subline_easy_sets, line.easySets)
             else -> ""
         }
         // Said in words: a bare "+60 kg" read as XP. A lifted load is the top one; a body's extra is what was added.
-        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { if (line.externalLoad) "top " + Units.withUnit(it) else "+" + Units.withUnit(it) + " added" }
+        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { uiString(if (line.externalLoad) R.string.xp_subline_top_load else R.string.xp_subline_added_load, Units.withUnit(it)) }
         return listOfNotNull(made.ifEmpty { null }, load).joinToString(" · ")
     }
 
     /** The line under a bonus: what earned it. */
     fun bonusNote(line: Xp.Line): String = when (line.kind) {
         Xp.Kind.PEAK, Xp.Kind.RECORD -> line.detail
-        Xp.Kind.HONEST_EFFORT -> "Every top set rated"
-        Xp.Kind.RITE_AS_PLANNED -> "Every planned set done, hard"
-        Xp.Kind.WEEK_COVERED -> "Every muscle at 4+ hard sets"
-        Xp.Kind.WELCOME_BACK -> "First ${Words.trial.s} in ${Xp.WELCOME_BACK_DAYS}+ days"
+        Xp.Kind.HONEST_EFFORT -> uiString(R.string.xp_bonus_note_honest)
+        Xp.Kind.RITE_AS_PLANNED -> uiString(R.string.xp_bonus_note_rite)
+        Xp.Kind.WEEK_COVERED -> uiString(R.string.xp_bonus_note_week)
+        Xp.Kind.WELCOME_BACK -> uiPair(R.string.xp_bonus_note_welcome_back, R.string.xp_bonus_note_welcome_back__t, Xp.WELCOME_BACK_DAYS)
         else -> ""
     }
 
     /** One row spoken whole: what a screen reader says, whatever the animation has reached. */
     fun spoken(line: Xp.Line): String {
         val note = if (isLift(line)) subline(line) else bonusNote(line)
-        return buildString {
-            append(line.label)
-            if (note.isNotEmpty()) append(", ").append(note)
-            append(", ").append(line.xp).append(" XP")
+        return if (note.isEmpty()) {
+            uiString(R.string.xp_line_spoken, line.label, line.xp)
+        } else {
+            uiString(R.string.xp_line_spoken_note, line.label, note, line.xp)
         }
     }
 
@@ -164,20 +164,20 @@ internal object XpReveal {
      */
     fun pageSpoken(breakdown: Xp.Breakdown, levelBefore: Int, levelAfter: Int): String {
         val effort = effortOf(breakdown)
-        val level = if (levelAfter > levelBefore) "Level up, $levelBefore to $levelAfter." else "Level $levelAfter."
-        return "Earned ${breakdown.total} XP, $effort effort and ${breakdown.total - effort} bonus. $level"
+        val level = if (levelAfter > levelBefore) {
+            uiString(R.string.xp_page_spoken_level_up, levelBefore, levelAfter)
+        } else {
+            uiString(R.string.xp_page_spoken_level, levelAfter)
+        }
+        return uiString(R.string.xp_page_spoken, breakdown.total, effort, breakdown.total - effort, level)
     }
 
     /** The level moment's quiet line: what the level banked, from the inscriptions actually paid; null when none were. */
-    fun veilLine(banked: Int): String? = when {
-        banked <= 0 -> null
-        banked == 1 -> "An inscription waits in ${Words.theVeil.t}"
-        else -> "$banked inscriptions wait in ${Words.theVeil.t}"
-    }
+    fun veilLine(banked: Int): String? = if (banked <= 0) null else uiPlural(R.plurals.always_xp_veil_line, banked)
 
     /** What the whole panel says in one breath, for the heading. */
     fun headline(breakdown: Xp.Breakdown, level: Int): String =
-        "Earned ${breakdown.total} XP across ${breakdown.lines.size} ${plural(breakdown.lines.size, "segment", "segments")}, level $level"
+        uiPlural(R.plurals.xp_headline, breakdown.lines.size, breakdown.total, breakdown.lines.size, level)
 
     // Emerald shades for lifts (deep to light) and gold for bonuses, from the lifter's own accents.
     internal fun liftShade(index: Int, count: Int): Color =
@@ -252,7 +252,7 @@ internal fun XpRevealPanel(
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(
-                "+${count(filled.toInt())} XP",
+                stringResource(R.string.xp_gain_label, count(filled.toInt())),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
@@ -261,7 +261,7 @@ internal fun XpRevealPanel(
                 maxLines = 1,
             )
             Text(
-                "LEVEL ${if (crossing && settled) levelAfter else levelBefore}",
+                stringResource(R.string.xp_level_label, if (crossing && settled) levelAfter else levelBefore).uppercase(),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
@@ -273,7 +273,7 @@ internal fun XpRevealPanel(
         bars.forEachIndexed { i, bar ->
             if (crossing) {
                 Text(
-                    "LEVEL ${bar.level}",
+                    stringResource(R.string.xp_level_label, bar.level).uppercase(),
                     fontFamily = ChakraPetch,
                     fontSize = 11.sp,
                     letterSpacing = IronvellumTracking.InlineLabel,
@@ -302,7 +302,7 @@ internal fun XpRevealPanel(
                 current >= 0 -> "▲ ${lines[current].label} +${lines[current].xp}"
                 else -> {
                     val effort = lines.filter { XpReveal.isLift(it) }.sumOf { it.xp }
-                    "$effort effort · ${breakdown.total - effort} bonus"
+                    stringResource(R.string.xp_effort_bonus_caption, effort, breakdown.total - effort)
                 }
             }
             Text(
@@ -314,7 +314,7 @@ internal fun XpRevealPanel(
                 modifier = Modifier.weight(1f).clearAndSetSemantics { },
             )
             Text(
-                "${count(into)} / ${count(last.needed)} XP",
+                stringResource(R.string.xp_progress_label, count(into), count(last.needed)),
                 style = MaterialTheme.typography.bodySmall,
                 color = Dim,
                 maxLines = 1,
@@ -323,9 +323,9 @@ internal fun XpRevealPanel(
         }
         val efforts = lines.indices.filter { XpReveal.isLift(lines[it]) }
         val bonuses = lines.indices.filter { !XpReveal.isLift(lines[it]) }
-        if (efforts.isNotEmpty()) SectionLabel("EFFORT", IronvellumColors.Emerald)
+        if (efforts.isNotEmpty()) SectionLabel(stringResource(R.string.xp_section_effort).uppercase(), IronvellumColors.Emerald)
         efforts.forEach { XpRow(lines[it], shades[it], rowState(elapsed, it, settled, current), subline = XpReveal.subline(lines[it])) }
-        if (bonuses.isNotEmpty()) SectionLabel("BONUSES", IronvellumColors.SovereignGold)
+        if (bonuses.isNotEmpty()) SectionLabel(stringResource(R.string.xp_section_bonuses).uppercase(), IronvellumColors.SovereignGold)
         bonuses.forEach { XpRow(lines[it], shades[it], rowState(elapsed, it, settled, current), subline = XpReveal.bonusNote(lines[it])) }
     }
 }

@@ -1,8 +1,12 @@
 package com.ironvellum.app.ui.stats
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.settings.SettingsSection
 import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.text.font.FontWeight
@@ -88,7 +92,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.formatBodyValue
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.BodyLimits
@@ -227,7 +230,11 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
  * was called the "Activity Log", so one word named both a step count and a
  * training record. BODY, not FRAME: the tab holds the body.
  */
-private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAINING"), DAILY("DAILY") }
+private enum class StatsTab(@StringRes val labelRes: Int) {
+    BODY(R.string.stats_tab_body),
+    TRAINING(R.string.stats_tab_training),
+    DAILY(R.string.stats_tab_daily),
+}
 
 /** Panes inside the Ledger. They replace the tabs and answer to Back, so they need no routes. */
 private enum class LedgerPage { MAIN, HISTORY, TAPE }
@@ -320,7 +327,7 @@ fun StatsScreen(
 
             // Pages run edge to edge under the strip, each with its own hoisted scroll.
             InkTabbedPager(
-                labels = StatsTab.entries.map { it.label },
+                labels = StatsTab.entries.map { stringResource(it.labelRes) },
                 state = pager,
                 modifier = Modifier.weight(1f),
                 tabsModifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
@@ -409,13 +416,14 @@ fun StatsScreen(
         }
         val series = readings.map { it.second }
         val current = series.lastOrNull()
+        val isBmi = metric == "BMI"
         StatDrillSheet(
             metric = metric,
-            table = if (metric == "BMI") Bands.BMI else Bands.ffmi(ui.sex),
+            table = if (isBmi) Bands.BMI else Bands.ffmi(ui.sex),
             series = series,
             seriesDates = readings.map { formatDate(it.first.takenAtMs, "d MMM") },
             current = current,
-            asOf = if (metric == "BMI") null else ffmiReading?.let { formatDate(it.takenAtMs, "d MMM yyyy") },
+            asOf = if (isBmi) null else ffmiReading?.let { formatDate(it.takenAtMs, "d MMM yyyy") },
             onDismiss = { drill = null },
         )
     }
@@ -431,12 +439,12 @@ fun StatsScreen(
 private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (String) -> Unit) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            PanelLabel("LIFT ${Words.peak.upl}", Modifier.weight(1f))
+            PanelLabel(UiText.themed(R.string.stats_lift_peaks_label, R.string.stats_lift_peaks_label__t).asString(), Modifier.weight(1f))
             TermInfo(Term.ONE_REP_MAX)
         }
         if (records.isEmpty()) {
             Text(
-                "Log weighted sets of 1 to 12 reps to build the board.",
+                stringResource(R.string.stats_lift_board_empty),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
@@ -445,21 +453,26 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
             // The board is a glance; the lift's whole history is on Exercises.
-            val change = record.deltaKg?.let { "${Ledger.signed(Units.amount(it), Units.name)} / 90d" }
+            val change = record.deltaKg?.let { stringResource(R.string.stats_change_90d, Ledger.signed(Units.amount(it), Units.name)) }
             val fresh = LiftRecords.isFresh(record, nowMs)
             ListRow(
                 label = record.label,
                 value = Units.fixed(record.bestE1rmKg, 1),
-                subline = if (fresh) listOfNotNull("New ${Words.peak.s}", change).joinToString(" \u00B7 ") else change,
+                subline = if (fresh) {
+                    val newTag = UiText.themed(R.string.stats_lift_new_peak, R.string.stats_lift_new_peak__t).asString()
+                    change?.let { stringResource(R.string.stats_join, newTag, it) } ?: newTag
+                } else {
+                    change
+                },
                 sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                onClickLabel = "Open ${record.label}",
+                onClickLabel = stringResource(R.string.stats_lift_open, record.label),
                 onClick = { onOpenLift(record.name) },
             )
         }
         // Said once for the board, not on every row that lacks a change.
         if (records.any { it.deltaKg == null }) {
             Text(
-                "A lift shows its 90-day change once it has older sets.",
+                stringResource(R.string.stats_lift_change_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 4.dp),
@@ -508,7 +521,7 @@ private fun TrainingTab(
         if (ui.sessions.isNotEmpty()) LiftRecordsPanel(records, nowMs, onOpenLift)
 
         InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("STRENGTH SCORE PER ${Words.trial.u}")
+            PanelLabel(UiText.themed(R.string.stats_strength_label, R.string.stats_strength_label__t).asString())
             // 0 means "not scored" (no bodyweight existed yet), not a collapse
             // in strength - plotting it dropped the line to the floor.
             val scored = ui.sessions.filter { it.strengthScore > 0 }
@@ -522,18 +535,24 @@ private fun TrainingTab(
                     fromZero = false,
                     startLabel = day(0),
                     endLabel = day(scored.lastIndex),
-                    valueText = { "%.0f strength score".fmt(it) },
+                    valueText = { Words.text(UiText.res(R.string.stats_strength_value, "%.0f".fmt(it))) },
                     dateText = ::day,
                 )
                 ChartCaption(
-                    "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, Words.trial.s, Words.trial.pl)} · scaled to bodyweight",
+                    UiText.themedPlural(
+                        R.plurals.stats_strength_caption,
+                        R.plurals.stats_strength_caption__t,
+                        scores.size,
+                        scores.max().toInt(),
+                        scores.size,
+                    ).asString(),
                 )
             } else if (scores.size == 1) {
-                ChartCaption("Best ${scores.first().toInt()} · one more scored ${Words.trial.s} draws the line.")
+                ChartCaption(UiText.themed(R.string.stats_strength_one, R.string.stats_strength_one__t, scores.first().toInt()).asString())
             } else if (ui.sessions.isEmpty()) {
-                ChartCaption("${Words.seal.c} ${Words.trial.a} to draw this line.")
+                ChartCaption(UiText.themed(R.string.stats_strength_none, R.string.stats_strength_none__t).asString())
             } else {
-                ChartCaption("Log bodyweight to score these ${Words.trial.pl}.")
+                ChartCaption(UiText.themed(R.string.stats_strength_unscored, R.string.stats_strength_unscored__t).asString())
             }
         }
 
@@ -566,15 +585,20 @@ private fun StatDrillSheet(
                     value = value,
                     bands = bands,
                     scaleMax = table.scaleMax,
-                    description = "$metric ${formatBodyValue(value)}, $category, on a scale of " +
+                    description = stringResource(
+                        R.string.stats_drill_description,
+                        metric,
+                        formatBodyValue(value),
+                        category.orEmpty(),
                         bands.indices.joinToString("; ") { "${bands[it].label} ${Bands.rangeText(table, it)}" },
+                    ),
                 )
             }
         },
-        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+        actions = listOf(InfoAction(stringResource(R.string.stats_drill_close), onDismiss, quiet = true)),
     ) {
         if (current == null) {
-            text(null, "This page is still blank. Log ${Words.reading.pl} to fill it.", IronvellumColors.InkMuted)
+            text(null, Words.text(UiText.themed(R.string.stats_drill_blank, R.string.stats_drill_blank__t)), IronvellumColors.InkMuted)
             return@InfoSheet
         }
         // One caps label for the sheet (BANDS); the chart and the note need none.
@@ -588,14 +612,16 @@ private fun StatDrillSheet(
                     valueText = { "$metric ${formatBodyValue(it)}" },
                     dateText = { seriesDates[it] },
                 )
-                ChartCaption("${series.size} ${Words.reading.pl} in the ${Words.ledger.t}")
+                ChartCaption(
+                    UiText.themedPlural(R.plurals.stats_drill_count, R.plurals.stats_drill_count__t, series.size).asString(),
+                )
             } else {
-                ChartCaption("Two ${Words.reading.pl} draw the line.")
+                ChartCaption(UiText.themed(R.string.stats_chart_two_readings, R.string.stats_chart_two_readings__t).asString())
             }
         }
-        rows("BANDS", bands.indices.map { i -> bands[i].label to Bands.rangeText(table, i) }, collapseAfter = 6)
+        rows(Words.text(UiText.res(R.string.stats_drill_bands_label)), bands.indices.map { i -> bands[i].label to Bands.rangeText(table, i) }, collapseAfter = 6)
         val about = listOfNotNull(
-            asOf?.let { "From your ${Words.reading.s} of $it, the newest with body fat." },
+            asOf?.let { Words.text(UiText.themed(R.string.stats_drill_from_reading, R.string.stats_drill_from_reading__t, it)) },
             table.note,
         ).joinToString(" ")
         if (about.isNotEmpty()) text(null, about, IronvellumColors.InkMuted)
@@ -668,7 +694,7 @@ private fun AddStatDialog(
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Log weight") },
+        title = { Text(stringResource(R.string.ledger_log_weight_button)) },
         text = {
             // The dialog body scrolls: with the estimator open and the keyboard up the
             // buttons used to sit below the fold. Never nest a second scroll in here.
@@ -685,12 +711,12 @@ private fun AddStatDialog(
                     colors = ironvellumFieldColors(),
                     value = weight.value,
                     onValueChange = { weight.value = decimalInput(it) },
-                    label = { Text("Weight (kg)") },
+                    label = { Text(stringResource(R.string.stats_add_weight_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     isError = weight.value.isNotBlank() && !validWeight,
                     supportingText = if (weight.value.isNotBlank() && !validWeight) {
-                        { Text("Enter a weight between ${BodyLimits.WEIGHT_KG.start.toInt()} and ${BodyLimits.WEIGHT_KG.endInclusive.toInt()} kg.") }
+                        { Text(stringResource(R.string.stats_add_weight_error, BodyLimits.WEIGHT_KG.start.toInt(), BodyLimits.WEIGHT_KG.endInclusive.toInt())) }
                     } else {
                         null
                     },
@@ -701,7 +727,7 @@ private fun AddStatDialog(
                     colors = ironvellumFieldColors(),
                     value = bodyFat.value,
                     onValueChange = { bodyFat.value = decimalInput(it) },
-                    label = { Text("Body fat % (optional)") },
+                    label = { Text(stringResource(R.string.stats_add_body_fat_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                     // The buttons can sit under the keyboard: its own Done key logs the reading.
@@ -710,7 +736,7 @@ private fun AddStatDialog(
                     ),
                     isError = bodyFat.value.isNotBlank() && !validBodyFat,
                     supportingText = if (bodyFat.value.isNotBlank() && !validBodyFat) {
-                        { Text("Enter a body fat between ${BodyLimits.BODY_FAT_PCT.start.toInt()} and ${BodyLimits.BODY_FAT_PCT.endInclusive.toInt()}%, or leave it blank.") }
+                        { Text(stringResource(R.string.stats_add_body_fat_error, BodyLimits.BODY_FAT_PCT.start.toInt(), BodyLimits.BODY_FAT_PCT.endInclusive.toInt())) }
                     } else {
                         null
                     },
@@ -722,29 +748,31 @@ private fun AddStatDialog(
                     // two tabs and a gear away from this dialog.
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "Height unlocks BMI and FFMI.",
+                            stringResource(R.string.stats_add_height_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier.weight(1f),
                         )
-                        InkTextLink("Set height", onOpenSettings)
+                        InkTextLink(stringResource(R.string.stats_add_set_height), onOpenSettings)
                     }
                 }
-                InkTextLink(if (showEstimator) "Hide estimator" else "Estimate for me", { showEstimator = !showEstimator })
+                InkTextLink(
+                    stringResource(if (showEstimator) R.string.stats_add_hide_estimator else R.string.stats_add_show_estimator),
+                    { showEstimator = !showEstimator },
+                )
                 if (showEstimator) {
                     // US Navy circumference method, pre-filled from the latest
                     // measurements the lifter already logged.
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Navy tape method from your neck, waist" +
-                                if (sex == Sex.FEMALE) ", hips and height." else " and height.",
+                            stringResource(if (sex == Sex.FEMALE) R.string.stats_add_navy_female else R.string.stats_add_navy_male),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier.weight(1f),
                         )
                         TermInfo(Term.NAVY_TAPE)
                     }
-                    listOf("Neck (cm)" to neck, "Waist (cm)" to waist).forEach { (label, field) ->
+                    listOf(stringResource(R.string.stats_add_neck_label) to neck, stringResource(R.string.stats_add_waist_label) to waist).forEach { (label, field) ->
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
                             colors = ironvellumFieldColors(),
@@ -762,7 +790,7 @@ private fun AddStatDialog(
                             colors = ironvellumFieldColors(),
                             value = hips.value,
                             onValueChange = { hips.value = decimalInput(it) },
-                            label = { Text("Hips (cm)") },
+                            label = { Text(stringResource(R.string.stats_add_hips_label)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                             modifier = Modifier.fillMaxWidth(),
@@ -777,14 +805,18 @@ private fun AddStatDialog(
                     ) {
                         Text(
                             estimate?.let {
-                                if (usable) "About ${it.toInt()}% body fat (estimate)" else "Estimate out of range, check the tapes"
-                            } ?: "Tapes not complete",
+                                if (usable) {
+                                    stringResource(R.string.stats_add_estimate, it.toInt())
+                                } else {
+                                    stringResource(R.string.stats_add_estimate_out_of_range)
+                                }
+                            } ?: stringResource(R.string.stats_add_tapes_incomplete),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier.weight(1f),
                         )
                         InkTextLink(
-                            "Use",
+                            stringResource(R.string.stats_add_use),
                             enabled = usable,
                             onClick = {
                                 estimate?.let {
@@ -797,11 +829,11 @@ private fun AddStatDialog(
                 }
             }
         },
-        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true) },
+        dismissButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = onDismiss, quiet = true) },
         // The dialog frame shows this as the green text button; it is still the one primary here.
         confirmButton = {
             IronvellumButton(
-                label = "Log",
+                label = stringResource(R.string.ledger_log_chip),
                 onClick = { onConfirm(Ledger.parseDecimal(weight.value) ?: 0.0, bfValue) },
                 enabled = validWeight && validBodyFat,
             )

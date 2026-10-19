@@ -1,10 +1,18 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /** The three movement patterns Strength Rank averages over. */
-enum class Pattern(val label: String) {
-    PULL("Pull"),
-    PUSH("Push"),
-    LEGS("Legs"),
+enum class Pattern(@StringRes val labelRes: Int) {
+    PULL(R.string.rank_pattern_pull),
+    PUSH(R.string.rank_pattern_push),
+    LEGS(R.string.rank_pattern_legs),
+    ;
+
+    /** The pattern name on screen, in the current language. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /**

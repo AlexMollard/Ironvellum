@@ -300,7 +300,7 @@ private fun SummaryPage(
                     )
                 }
             }
-            result.rankUp?.let { add(Triple(UiText.res(R.string.victory_row_rank_up), it, true)) }
+            result.rankUp?.let { add(Triple(UiText.res(R.string.victory_row_rank_up), com.ironvellum.app.domain.Rank.label(it), true)) }
             deeds.forEach { add(Triple(UiText.res(R.string.always_deed_c), it.name, false)) }
         }
     }

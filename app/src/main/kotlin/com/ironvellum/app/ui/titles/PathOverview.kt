@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
@@ -22,6 +23,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.InkRowPanel
@@ -31,10 +34,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** What a path tile reads out loud: name, progress, then where to go next. */
 internal fun tileDescription(line: String, done: Int, total: Int, status: String, recent: Boolean): String =
     buildList {
-        add("$line ${Words.path.s}")
-        add("$done of $total mastered")
+        add(Words.text(UiText.themed(R.string.path_tile_name, R.string.path_tile_name__t, line)))
+        add(Words.text(UiText.res(R.string.path_mastered_of_total, done, total)))
         add(status)
-        if (recent) add("most recent")
+        if (recent) add(Words.text(UiText.res(R.string.path_tile_recent_description)))
     }.joinToString(", ")
 
 /**
@@ -43,26 +46,29 @@ internal fun tileDescription(line: String, done: Int, total: Int, status: String
  * techniques all wait on another path says which one, rather than "complete".
  */
 internal fun pathStatus(done: Int, total: Int, next: String?, blocker: CrossNeed?): String = when {
-    done >= total -> "complete"
-    next != null -> "next: $next"
-    blocker != null -> "locked: needs ${blocker.skill} (${blocker.line})"
-    else -> "locked"
+    done >= total -> Words.text(UiText.res(R.string.path_status_complete))
+    next != null -> Words.text(UiText.res(R.string.path_status_next, next))
+    blocker != null -> Words.text(UiText.res(R.string.path_status_locked_needs, blocker.skill, blocker.line))
+    else -> Words.text(UiText.res(R.string.path_status_locked))
 }
 
 /** [pathStatus] for a path as the tile reads it, from the graph's own reading order. */
-internal fun pathStatusOf(line: String, mastered: Set<String>): String = pathReading(line, mastered).first
+internal fun pathStatusOf(line: String, mastered: Set<String>): String = pathReading(line, mastered).status
+
+/** A path tile's status line, the technique it waits for on another path, and whether a technique is open to go for next. */
+private class PathReading(val status: String, val blocker: CrossNeed?, val nextUp: Boolean)
 
 /**
  * The tile's status line and, when the path is stuck waiting on another one,
  * the technique it waits for, so the tile can offer to jump there.
  */
-private fun pathReading(line: String, mastered: Set<String>): Pair<String, CrossNeed?> {
+private fun pathReading(line: String, mastered: Set<String>): PathReading {
     val (done, total) = SkillGuidance.lineProgress(line, mastered)
     val layout = treeLayout(line, columns = 4)
     val next = layout.firstNext(mastered)?.name
     val blocker = layout.firstBlocker(mastered)
     val status = pathStatus(done, total, next, blocker)
-    return status to blocker.takeIf { done < total && next == null }
+    return PathReading(status, blocker.takeIf { done < total && next == null }, next != null)
 }
 
 /**
@@ -90,9 +96,10 @@ internal fun PathGrid(
                 line = line,
                 done = done,
                 total = total,
-                status = reading.getValue(line).first,
+                status = reading.getValue(line).status,
+                nextUp = reading.getValue(line).nextUp,
                 recent = line == recentLine,
-                blocker = reading.getValue(line).second,
+                blocker = reading.getValue(line).blocker,
                 onOpenBlocker = onOpenNeed,
                 onClick = { onOpen(line) },
             )
@@ -106,6 +113,7 @@ private fun PathRow(
     done: Int,
     total: Int,
     status: String,
+    nextUp: Boolean,
     recent: Boolean,
     blocker: CrossNeed?,
     onOpenBlocker: (CrossNeed) -> Unit,
@@ -117,9 +125,9 @@ private fun PathRow(
         Column {
             ListRow(
                 label = line,
-                subline = pathSubline(done, total, status, blocker),
-                value = if (recent) "Recent" else null,
-                onClickLabel = "Open ${Words.path.s}",
+                subline = pathSubline(done, total, status, blocker, nextUp),
+                value = if (recent) UiText.res(R.string.path_recent_tag).asString() else null,
+                onClickLabel = UiText.themed(R.string.path_open_description, R.string.path_open_description__t).asString(),
                 onClick = onClick,
                 modifier = Modifier.semantics(mergeDescendants = true) {
                     contentDescription = tileDescription(line, done, total, status, recent)
@@ -144,7 +152,7 @@ private fun PathRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Open ${blocker.skill}") { onOpenBlocker(blocker) }
+                    .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.titles_open_description, blocker.skill).asString()) { onOpenBlocker(blocker) }
                     .padding(horizontal = 16.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
             )
@@ -153,9 +161,9 @@ private fun PathRow(
 }
 
 /** "5 of 11 mastered", then the technique to go for next; a path waiting on another says so on its own link line. */
-private fun pathSubline(done: Int, total: Int, status: String, blocker: CrossNeed?): String =
-    if (done < total && blocker == null && status.startsWith("next: ")) "$done of $total mastered \u00B7 $status"
-    else "$done of $total mastered"
+private fun pathSubline(done: Int, total: Int, status: String, blocker: CrossNeed?, nextUp: Boolean): String =
+    if (done < total && blocker == null && nextUp) Words.text(UiText.res(R.string.path_subline_next, done, total, status))
+    else Words.text(UiText.res(R.string.path_mastered_of_total, done, total))
 
 /** The header over an opened path: back to the list, the path's name, and its progress once as a subline. */
 @Composable
@@ -164,7 +172,7 @@ internal fun PathHeader(line: String, mastered: Set<String>, onBack: () -> Unit)
     Column {
         PushedHeader(line, onBack)
         Text(
-            "$done of $total mastered",
+            UiText.res(R.string.path_mastered_of_total, done, total).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

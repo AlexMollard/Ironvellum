@@ -62,14 +62,19 @@ object ProgramGenerator {
 
     internal enum class Role { FULL_BODY, UPPER, LOWER, PUSH_DAY, PULL_DAY, LEGS_DAY }
 
-    private fun roleLabel(role: Role): String = when (role) {
-        Role.FULL_BODY -> "Full Body"
-        Role.UPPER -> "Upper"
-        Role.LOWER -> "Lower"
-        Role.PUSH_DAY -> "Push"
-        Role.PULL_DAY -> "Pull"
-        Role.LEGS_DAY -> "Legs"
-    }
+    // Written into the routine's name when the plan is made, so it is in the language of that moment (like Words.rite.c below).
+    private fun roleLabel(role: Role): String = Words.text(
+        UiText.res(
+            when (role) {
+                Role.FULL_BODY -> R.string.program_role_full_body
+                Role.UPPER -> R.string.program_session_upper
+                Role.LOWER -> R.string.program_session_lower
+                Role.PUSH_DAY -> R.string.program_session_push
+                Role.PULL_DAY -> R.string.program_session_pull
+                Role.LEGS_DAY -> R.string.program_session_legs
+            },
+        ),
+    )
 
     /** ISO weekday plus role for a split and day count the split fits. */
     private fun layout(split: TrainingSplit, days: Int): List<Pair<Int, Role>> = when (split) {

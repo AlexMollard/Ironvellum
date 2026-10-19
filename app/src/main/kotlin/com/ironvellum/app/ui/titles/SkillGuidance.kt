@@ -1,11 +1,13 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
-import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.domain.UiText
 
 /** The first prerequisite still to master; null when the technique is open. */
 internal fun Skills.SkillDef.firstUnmetPrerequisite(mastered: Set<String>): String? =
@@ -74,16 +76,17 @@ object SkillGuidance {
 
     /** A figure with its unit, spaced for reps ("8 reps") and tight for "40s" and "20m". */
     fun withUnit(value: Int, skill: Skills.SkillDef): String =
-        if (skill.metric == Skills.Metric.REPS) "$value ${plural(value, "rep", "reps")}" else "$value${skill.unit}"
+        if (skill.metric == Skills.Metric.REPS) Words.text(UiText.plural(R.plurals.common_reps_count, value))
+        else "$value${skill.unit}"
 
     /**
      * The line under the stepper. Nothing touched and nothing logged reads
      * "No attempt yet" rather than a percentage of a value nobody performed.
      */
     fun attemptReadout(skill: Skills.SkillDef, attempt: Int, touched: Boolean): String {
-        if (attempt <= 0 && !touched) return "No attempt yet"
+        if (attempt <= 0 && !touched) return Words.text(UiText.res(R.string.skilldetail_attempt_none))
         val pct = if (skill.target <= 0) 0 else ((attempt * 100) / skill.target).coerceIn(0, 100)
-        return "$pct% of the ${withUnit(skill.target, skill)} standard"
+        return Words.text(UiText.res(R.string.skilldetail_attempt_share, pct, withUnit(skill.target, skill)))
     }
 
     /** "best 40/60s" for a tree row; null with nothing logged or a bodyweight-multiple standard. */
@@ -95,7 +98,7 @@ object SkillGuidance {
     ): String? {
         if (best == null || best.value <= 0 || !judgeable(skill, bodyweightKg, female)) return null
         val load = best.weightKg?.takeIf { it > 0.0 && Skills.loadBar(skill.name, female) != null }
-        return "best ${best.value}/${withUnit(skill.target, skill)}" +
+        return Words.text(UiText.res(R.string.skilltree_cue_best, best.value, withUnit(skill.target, skill))) +
             (load?.let { " @ ${formatLoad(it)}${Units.name}" } ?: "")
     }
 

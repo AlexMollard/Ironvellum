@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import java.util.Locale
 import kotlin.math.ceil
 
@@ -54,6 +56,24 @@ object Rank {
     const val INTERMEDIATE = "Intermediate"
     const val ADVANCED = "Advanced"
     const val ELITE = "Elite"
+
+    /**
+     * A band as the lifter reads it. The constants above are the band's identity (compared, ordered and stored as
+     * the rank-up high-water mark), so they stay as they are; only this turns one into screen text.
+     */
+    fun label(band: String): String = Words.text(
+        UiText.res(
+            when (band) {
+                UNRANKED -> R.string.rank_band_unranked
+                UNTRAINED -> R.string.rank_band_untrained
+                NOVICE -> R.string.rank_band_novice
+                INTERMEDIATE -> R.string.rank_band_intermediate
+                ADVANCED -> R.string.rank_band_advanced
+                ELITE -> R.string.rank_band_elite
+                else -> return band
+            },
+        ),
+    )
 
     const val WINDOW_DAYS = 90
 

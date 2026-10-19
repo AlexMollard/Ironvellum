@@ -78,6 +78,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 
 /**
  * The app's card: flat [IronvellumColors.Vault] with a 1dp [IronvellumColors.Rune]
@@ -404,25 +407,25 @@ fun setFigure(
     durationSec: Int?,
     distanceM: Double?,
 ): SetFigure = when (metric) {
-    ExerciseMetric.REPS -> SetFigure(reps.toString(), plural(reps, "REP", "REPS"))
+    ExerciseMetric.REPS -> SetFigure(reps.toString(), Words.text(UiText.plural(R.plurals.setfigure_noun_reps, reps)))
     ExerciseMetric.HOLD -> {
         val seconds = durationSec ?: reps
-        SetFigure(seconds.toString(), plural(seconds, "SECOND", "SECONDS"))
+        SetFigure(seconds.toString(), Words.text(UiText.plural(R.plurals.setfigure_noun_seconds, seconds)))
     }
     ExerciseMetric.DURATION -> {
         val minutes = (durationSec ?: 0) / 60
         // A 40-minute yoga set rounds cleanly; a 40-second one must not read
         // as zero work.
-        SetFigure(if (durationSec != null && durationSec < 60) "<1" else minutes.toString(), "MINUTES")
+        SetFigure(if (durationSec != null && durationSec < 60) "<1" else minutes.toString(), Words.text(UiText.res(R.string.setfigure_noun_minutes)))
     }
     ExerciseMetric.DISTANCE_TIME -> {
         val km = (distanceM ?: 0.0) / 1000.0
         val minutes = (durationSec ?: 0) / 60
-        SetFigure("${formatBodyValue(km)} km · $minutes min", "KM · MIN")
+        SetFigure(Words.text(UiText.res(R.string.session_figure_km_minutes, formatBodyValue(km), minutes)), Words.text(UiText.res(R.string.setfigure_noun_km_minutes)))
     }
     // The attempt count rides `reps` (as ActivityScore reads it). The
     // free-text grade is presentation, so the caller shows it where it fits.
-    ExerciseMetric.ATTEMPTS_GRADE -> SetFigure(reps.toString(), plural(reps, "ATTEMPT", "ATTEMPTS"))
+    ExerciseMetric.ATTEMPTS_GRADE -> SetFigure(reps.toString(), Words.text(UiText.plural(R.plurals.setfigure_noun_attempts, reps)))
 }
 
 /**

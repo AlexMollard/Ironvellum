@@ -18,8 +18,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -62,7 +66,6 @@ import com.ironvellum.app.ui.components.StatValue
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -145,7 +148,7 @@ fun MeasurementDetailScreen(
     var lastDeleted by remember { mutableStateOf<MeasurementEntry?>(null) }
 
     Column(Modifier.fillMaxSize().imePadding()) {
-        PushedHeader(site.label.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back")
+        PushedHeader(site.label.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = stringResource(R.string.measurement_back_description))
         Column(
             Modifier
                 .weight(1f)
@@ -171,7 +174,7 @@ fun MeasurementDetailScreen(
                     colors = ironvellumFieldColors(),
                     value = readingInput,
                     onValueChange = { readingInput = sanitizeCm(it) },
-                    label = { Text("Circumference (cm)") },
+                    label = { Text(stringResource(R.string.measurement_circumference_label)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Done,
@@ -189,7 +192,7 @@ fun MeasurementDetailScreen(
                     singleLine = true,
                     supportingText = {
                         Text(
-                            "Metric cm, one decimal \u00B7 ${CM_MIN.toInt()}\u2013${CM_MAX.toInt()} cm",
+                            stringResource(R.string.measurement_input_hint, CM_MIN.toInt(), CM_MAX.toInt()),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
@@ -197,7 +200,7 @@ fun MeasurementDetailScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 IronvellumButton(
-                    "Log ${Words.reading.s}",
+                    UiText.themed(R.string.measurement_log_button, R.string.measurement_log_button__t).asString(),
                     onClick = {
                         parsed?.let {
                             viewModel.log(Math.round(it * 10.0) / 10.0)
@@ -225,10 +228,10 @@ fun MeasurementDetailScreen(
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            StatValue("%.1f".fmt(latest.valueCm), size = StatSize.Hero, unit = "cm")
+                            StatValue("%.1f".fmt(latest.valueCm), size = StatSize.Hero, unit = stringResource(R.string.stats_unit_cm))
                             delta?.let {
                                 Text(
-                                    "${Ledger.signed(it, "cm")} \u00B7 30D",
+                                    stringResource(R.string.measurement_delta_30d, Ledger.signed(it, stringResource(R.string.stats_unit_cm))),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontFamily = ChakraPetch,
                                     color = IronvellumColors.InkMuted,
@@ -237,28 +240,29 @@ fun MeasurementDetailScreen(
                             }
                         }
                         Text(
-                            "Taken ${formatDate(latest.takenAtMs, "d MMM")}",
+                            stringResource(R.string.measurement_taken_on, formatDate(latest.takenAtMs, "d MMM")),
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
                         if (chartEntries.size >= 2) {
                             Spacer(Modifier.height(8.dp))
                             val dates = chartEntries.map { Ledger.dateOf(it.takenAtMs, zone) }
+                            val shortPattern = stringResource(R.string.stats_short_date_pattern)
                             // Narrow band: a zero-based axis would flatten the line into nothing.
                             TrendChart(
                                 chartEntries.map { it.valueCm },
                                 IronvellumColors.Emerald,
                                 fromZero = false,
                                 positions = Ledger.datePositions(dates),
-                                startLabel = formatDate(chartEntries.first().takenAtMs, "d MMM"),
-                                endLabel = formatDate(chartEntries.last().takenAtMs, "d MMM"),
+                                startLabel = formatDate(chartEntries.first().takenAtMs, shortPattern),
+                                endLabel = formatDate(chartEntries.last().takenAtMs, shortPattern),
                                 recordMarker = false,
-                                valueText = { "%.1f cm".fmt(it) },
-                                dateText = { formatDate(chartEntries[it].takenAtMs, "d MMM") },
+                                valueText = { Words.text(UiText.res(R.string.stats_cm_value, "%.1f".fmt(it))) },
+                                dateText = { formatDate(chartEntries[it].takenAtMs, shortPattern) },
                             )
                         } else {
                             Text(
-                                "Two days of ${Words.reading.pl} draw the line.",
+                                UiText.themed(R.string.measurement_chart_two_days, R.string.measurement_chart_two_days__t).asString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = IronvellumColors.InkMuted,
                             )
@@ -275,7 +279,11 @@ fun MeasurementDetailScreen(
                     if (newestFirst.size > RECENT_ROWS) {
                         InkDivider()
                         InkListRow(
-                            label = if (showAll) "Show fewer" else "Show all ${newestFirst.size} ${plural(newestFirst.size, Words.reading.s, Words.reading.pl)}",
+                            label = if (showAll) {
+                                stringResource(R.string.measurement_show_fewer)
+                            } else {
+                                UiText.themedPlural(R.plurals.measurement_show_all, R.plurals.measurement_show_all__t, newestFirst.size).asString()
+                            },
                             value = null,
                             onClick = { showAll = !showAll },
                         )
@@ -286,7 +294,7 @@ fun MeasurementDetailScreen(
         }
         lastDeleted?.let { gone ->
             UndoBar(
-                "${Words.reading.c} deleted",
+                UiText.themed(R.string.stats_reading_deleted, R.string.stats_reading_deleted__t).asString(),
                 onUndo = {
                     viewModel.restore(gone)
                     lastDeleted = null
@@ -307,20 +315,20 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
     ) {
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
             Text(
-                "${"%.1f".fmt(entry.valueCm)} cm",
+                stringResource(R.string.stats_cm_value, "%.1f".fmt(entry.valueCm)),
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,
             )
             Text(
-                formatDate(entry.takenAtMs, "d MMM yyyy \u00B7 HH:mm"),
+                formatDate(entry.takenAtMs, stringResource(R.string.stats_history_date_pattern)),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
         }
         // Immediate: the bar under the page offers Undo.
         InkIconButton(onClick = onDelete) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Delete ${Words.reading.s}", tint = IronvellumColors.InkMuted)
+            Icon(Icons.Outlined.Delete, contentDescription = UiText.themed(R.string.stats_delete_reading, R.string.stats_delete_reading__t).asString(), tint = IronvellumColors.InkMuted)
         }
     }
 }

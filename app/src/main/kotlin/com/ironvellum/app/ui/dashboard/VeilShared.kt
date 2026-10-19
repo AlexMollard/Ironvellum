@@ -1,5 +1,8 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -31,7 +34,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkDot
@@ -39,8 +41,8 @@ import kotlinx.coroutines.delay
 import kotlin.math.min
 
 /** Said once to a lifter who has sealed nothing, on Today's Veil and again on the Veil screen. */
-internal val FIRST_RUN_VEIL_LINE: String get() =
-    "${Words.theVeil.c} gathers essence while you're away. ${Words.seal.c} ${Words.trial.pl} to raise the pace; your echoes and ${Words.chronicle.t} will fill in as you train."
+internal val FIRST_RUN_VEIL_LINE: String
+    @Composable get() = UiText.themed(R.string.always_veil_first_run, R.string.always_veil_first_run__t).asString()
 
 /*
  * The Veil's ticker and motes, shared by the Veil section on Today (TodayVeil.kt) and the Veil screen

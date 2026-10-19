@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.stats
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Energy
 import com.ironvellum.app.domain.EnergyConfidence
@@ -33,8 +35,10 @@ import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.STEP_GOAL
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.BarChart
 import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoSheet
@@ -97,7 +101,7 @@ internal fun ActivityTab(
         if (!hasHealthData) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
-                    "Link Health Connect and your days fill in here.",
+                    stringResource(R.string.daily_link_prompt),
                     style = MaterialTheme.typography.titleSmall,
                     color = IronvellumColors.Ink,
                 )
@@ -105,17 +109,21 @@ internal fun ActivityTab(
                 // A ghost of what the tab will hold, so the empty tab says what
                 // it is for instead of being one sentence on a black page.
                 Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpace.Panel)) {
-                    listOf("Steps" to listOf(5, 7, 4, 8, 6, 9, 7), "Sleep" to listOf(7, 6, 8, 7, 5, 8, 7), "Resting HR" to listOf(6, 6, 5, 6, 5, 5, 4))
+                    listOf(
+                        stringResource(R.string.daily_ghost_steps) to listOf(5, 7, 4, 8, 6, 9, 7),
+                        stringResource(R.string.daily_ghost_sleep) to listOf(7, 6, 8, 7, 5, 8, 7),
+                        stringResource(R.string.daily_ghost_resting_hr) to listOf(6, 6, 5, 6, 5, 5, 4),
+                    )
                         .forEach { (label, bars) -> GhostChart(label, bars, Modifier.weight(1f)) }
                 }
                 Spacer(Modifier.height(LedgerSpace.Panel))
                 Text(
-                    "Steps, sleep and resting heart rate, read from Health Connect on this phone.",
+                    stringResource(R.string.daily_link_caption),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.height(10.dp))
-                IronvellumButton(label = "Link Health Connect", onClick = onOpenSettings, modifier = Modifier.fillMaxWidth())
+                IronvellumButton(label = stringResource(R.string.daily_link_button), onClick = onOpenSettings, modifier = Modifier.fillMaxWidth())
             }
         }
 
@@ -139,6 +147,7 @@ internal fun ActivityTab(
         val avgHr = remember(days, today) {
             Ledger.average(days, today, 7, includeToday = true) { it.restingHr?.toDouble() }
         }
+        val todayWord = stringResource(R.string.daily_today)
         val startLabel = shortDate(today.minusDays(n - 1L))
         // Slot i is the day i places from the oldest of the n shown.
         val slotDate: (Int) -> String = { shortDate(today.minusDays(n - 1L - it)) }
@@ -162,14 +171,18 @@ internal fun ActivityTab(
         }
 
         if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
-            ChartHeader("STEPS", rangeSwitch.takeIf { firstCard == DailyCard.STEPS })
+            ChartHeader(stringResource(R.string.daily_steps_header), rangeSwitch.takeIf { firstCard == DailyCard.STEPS })
             TodayFigure(
-                todaySteps?.let { fmtInt(it) } ?: "\u2014",
-                if (todaySteps != null) stepsAsOfCaption(syncedAtMs, today) ?: "Health Connect" else "not synced today",
+                todaySteps?.let { fmtInt(it) } ?: stringResource(R.string.stats_dash),
+                if (todaySteps != null) {
+                    stepsAsOfCaption(syncedAtMs, today) ?: stringResource(R.string.daily_health_connect)
+                } else {
+                    stringResource(R.string.daily_not_synced)
+                },
             )
             Text(
-                avgSteps?.let { "avg ${fmtInt(it.value.toInt())}/day \u00B7 ${it.tracked} of $n days, today excluded" }
-                    ?: "no days tracked",
+                avgSteps?.let { UiText.plural(R.plurals.daily_steps_avg, n, fmtInt(it.value.toInt()), it.tracked, n).asString() }
+                    ?: stringResource(R.string.daily_steps_none),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -181,23 +194,27 @@ internal fun ActivityTab(
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
-                endLabel = "today",
-                valueText = { "%,d steps".fmt(Math.round(it)) },
+                endLabel = todayWord,
+                valueText = { Words.text(UiText.plural(R.plurals.daily_steps_value, Math.round(it).toInt(), fmtInt(Math.round(it).toInt()))) },
                 dateText = slotDate,
             )
             val hits = steps.count { (it ?: 0.0) >= STEP_GOAL }
             Text(
-                "$hits of $n days hit ${fmtInt(STEP_GOAL)}",
+                UiText.plural(R.plurals.daily_steps_goal, n, hits, n, fmtInt(STEP_GOAL)).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
 
         if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
-            ChartHeader("SLEEP", null)
-            TodayFigure(lastNight?.let { Ledger.sleepText(it) } ?: "\u2014", if (lastNight != null) "last night" else "not synced today")
+            ChartHeader(stringResource(R.string.daily_sleep_header), null)
+            TodayFigure(
+                lastNight?.let { Ledger.sleepText(it) } ?: stringResource(R.string.stats_dash),
+                stringResource(if (lastNight != null) R.string.daily_sleep_last_night else R.string.daily_not_synced),
+            )
             Text(
-                avgSleep?.let { "avg ${Ledger.sleepText(it.value.toInt())} \u00B7 ${it.tracked} of $n nights" } ?: "no nights tracked",
+                avgSleep?.let { UiText.plural(R.plurals.daily_sleep_avg, n, Ledger.sleepText(it.value.toInt()), it.tracked, n).asString() }
+                    ?: stringResource(R.string.daily_sleep_none),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -208,21 +225,21 @@ internal fun ActivityTab(
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
-                endLabel = "today",
+                endLabel = todayWord,
                 valueText = { Ledger.sleepText(it.toInt()) },
                 dateText = slotDate,
             )
         }
 
         if (anyBurn) InkPanel(Modifier.fillMaxWidth()) {
-            ChartHeader("ACTIVE KCAL", rangeSwitch.takeIf { firstCard == DailyCard.KCAL })
+            ChartHeader(stringResource(R.string.daily_kcal_header), rangeSwitch.takeIf { firstCard == DailyCard.KCAL })
             TodayFigure(
-                todayBurn?.let { fmtInt(it.kcal) } ?: "\u2014",
-                todayBurn?.let { confidenceWord(it.confidence) } ?: "not synced today",
+                todayBurn?.let { fmtInt(it.kcal) } ?: stringResource(R.string.stats_dash),
+                todayBurn?.let { confidenceWord(it.confidence) } ?: stringResource(R.string.daily_not_synced),
             )
             val measured = burns.count { it?.confidence == EnergyConfidence.MEASURED }
             Text(
-                "${burns.count { it != null }} of $n days \u00B7 $measured measured, faded bars are estimates",
+                UiText.plural(R.plurals.daily_kcal_summary, n, burns.count { it != null }, n, measured).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -234,8 +251,8 @@ internal fun ActivityTab(
                 lastColor = IronvellumColors.Emerald,
                 emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
-                endLabel = "today",
-                valueText = { "%,d kcal".fmt(Math.round(it)) },
+                endLabel = todayWord,
+                valueText = { Words.text(UiText.res(R.string.daily_kcal_value, fmtInt(Math.round(it).toInt()))) },
                 dateText = slotDate,
             )
         }
@@ -243,16 +260,17 @@ internal fun ActivityTab(
         if (hasHealthData || anyBurn) InkRowPanel(Modifier.fillMaxWidth()) {
             if (hasHealthData) {
                 InkListRow(
-                    label = "Resting heart rate",
-                    value = avgHr?.let { "${it.value.toInt()} bpm" } ?: "\u2014",
-                    supporting = avgHr?.let { "7-day average \u00B7 ${it.tracked} of ${it.of} days" } ?: "Health Connect has none yet",
+                    label = stringResource(R.string.daily_resting_hr_label),
+                    value = avgHr?.let { stringResource(R.string.daily_bpm_value, it.value.toInt()) } ?: stringResource(R.string.stats_dash),
+                    supporting = avgHr?.let { UiText.plural(R.plurals.daily_resting_hr_avg, it.of, it.tracked, it.of).asString() }
+                        ?: stringResource(R.string.daily_resting_hr_none),
                 )
                 InkDivider()
             }
             InkListRow(
-                label = "How these are estimated",
+                label = stringResource(R.string.daily_method_row_label),
                 value = null,
-                supporting = "net MET, Katch-McArdle, measured wins",
+                supporting = stringResource(R.string.daily_method_row_caption),
                 onClick = { showMethod = true },
             )
         }
@@ -295,35 +313,34 @@ private fun EnergyMethodDialog(stats: List<StatEntry>, onDismiss: () -> Unit) {
     val bf = Ledger.latestWithBodyFat(stats)
     val resting = Energy.restingKcalPerDay(bf?.weightKg, bf?.bodyFatPct)
     InfoSheet(
-        title = "How energy is estimated",
+        title = stringResource(R.string.daily_method_title),
         onDismiss = onDismiss,
         size = InfoSheetSize.Compact,
-        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+        actions = listOf(InfoAction(stringResource(R.string.daily_method_close), onDismiss, quiet = true)),
     ) {
         text(
-            "MEASURED FIRST",
-            "A measured active-calorie figure from Health Connect always wins, and an estimate is never added on top of it.",
+            Words.text(UiText.res(R.string.daily_method_measured_label)),
+            Words.text(UiText.res(R.string.daily_method_measured_body)),
         )
         text(
-            "ESTIMATES",
-            "Estimates use net MET: the Compendium MET minus 1, because Health Connect's active calories leave resting burn out. " +
-                "Walking is costed at 2.5 net MET, lifting by ${Words.trial.s} time.",
+            Words.text(UiText.res(R.string.daily_method_estimates_label)),
+            Words.text(UiText.themed(R.string.daily_method_estimates_body, R.string.daily_method_estimates_body__t)),
         )
         text(
-            "RESTING BURN",
+            Words.text(UiText.res(R.string.daily_method_resting_label)),
             if (resting != null) {
-                "Katch-McArdle: ${fmtInt(resting.kcal)} kcal/day, ${resting.basis}."
+                Words.text(UiText.res(R.string.daily_method_resting_body, fmtInt(resting.kcal), resting.basis))
             } else {
-                "Log body fat to see a resting burn (Katch-McArdle)."
+                Words.text(UiText.res(R.string.daily_method_resting_none))
             },
         )
     }
 }
 
 private fun confidenceWord(confidence: EnergyConfidence): String = when (confidence) {
-    EnergyConfidence.MEASURED -> "measured"
-    EnergyConfidence.ESTIMATED -> "estimated"
-    EnergyConfidence.COARSE -> "rough estimate"
+    EnergyConfidence.MEASURED -> Words.text(UiText.res(R.string.daily_confidence_measured))
+    EnergyConfidence.ESTIMATED -> Words.text(UiText.res(R.string.daily_confidence_estimated))
+    EnergyConfidence.COARSE -> Words.text(UiText.res(R.string.daily_confidence_coarse))
 }
 
 private fun shortDate(date: LocalDate): String =

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.ui.asString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -271,15 +272,15 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
         if (BuildConfig.DEBUG) {
             Spacer(Modifier.height(24.dp))
             Text(
-                "DEVELOPER",
+                stringResource(R.string.settings_advanced_dev_header),
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
             )
             InkRowPanel(Modifier.fillMaxWidth()) {
                 ListRow(
-                    "Rescore XP with the new rules",
-                    subline = "Previews every ${Words.trial.s}'s old and new XP first; nothing is written until you confirm.",
+                    stringResource(R.string.settings_advanced_dev_rescore_label),
+                    subline = UiText.themed(R.string.settings_advanced_dev_rescore_caption, R.string.settings_advanced_dev_rescore_caption__t).asString(),
                     onClick = viewModel::previewRescore,
                 )
             }
@@ -297,10 +298,10 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
         title = {
             Text(
                 when {
-                    ui.applied -> "XP rescored"
-                    plan != null -> "Rescore XP with the new rules?"
-                    ui.error != null -> "Rescore failed"
-                    else -> "Pricing every ${Words.trial.s}…"
+                    ui.applied -> stringResource(R.string.settings_advanced_dev_rescored_title)
+                    plan != null -> stringResource(R.string.settings_advanced_dev_rescore_title)
+                    ui.error != null -> stringResource(R.string.settings_advanced_dev_failed_title)
+                    else -> UiText.themed(R.string.settings_advanced_dev_pricing_title, R.string.settings_advanced_dev_pricing_title__t).asString()
                 },
             )
         },
@@ -310,13 +311,12 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                 if (plan == null && ui.error == null) InkSpinner(Modifier.padding(16.dp))
                 if (plan != null) {
                     val signed = { n: Long -> (if (n > 0) "+" else "") + n }
+                    val held = if (plan.clamped) " " + stringResource(R.string.settings_advanced_dev_held) else ""
+                    val due = if (plan.inscriptionsDue > 0) ", " + stringResource(R.string.settings_advanced_dev_inscriptions_due, plan.inscriptionsDue) else ""
                     Text(
-                        "${changed.size} of ${plan.changes.size} ${Words.trial.pl} change.\n" +
-                            "${Words.trial.c} XP ${signed(plan.delta)}; total XP ${plan.totalBefore} \u2192 ${plan.totalAfter}" +
-                            " (${signed(plan.applied)}).\n" +
-                            "Level ${plan.levelBefore} \u2192 ${plan.levelAfter}" +
-                            (if (plan.clamped) " (held: the level never drops)" else "") +
-                            (if (plan.inscriptionsDue > 0) ", ${plan.inscriptionsDue} inscription(s) due" else "") + ".",
+                        UiText.themed(R.string.settings_advanced_dev_changed, R.string.settings_advanced_dev_changed__t, changed.size, plan.changes.size).asString() + "\n" +
+                            UiText.themed(R.string.settings_advanced_dev_xp_line, R.string.settings_advanced_dev_xp_line__t, signed(plan.delta), plan.totalBefore, plan.totalAfter, signed(plan.applied)).asString() + "\n" +
+                            stringResource(R.string.settings_advanced_dev_level, plan.levelBefore, plan.levelAfter, held + due),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                     )
@@ -326,7 +326,10 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                             items(changed, key = { it.sessionId }) { c ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Text(
-                                        formatDate(c.startedAtMs, "d MMM yy") + " \u00B7 " + c.label + if (c.amended) " (amended)" else "",
+                                        stringResource(
+                                            if (c.amended) R.string.settings_advanced_dev_row_amended else R.string.settings_advanced_dev_row,
+                                            formatDate(c.startedAtMs, "d MMM yy"), c.label,
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = IronvellumColors.InkMuted,
                                         maxLines = 1,
@@ -334,7 +337,7 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
                                         modifier = Modifier.weight(1f),
                                     )
                                     Text(
-                                        "${c.oldXp} \u2192 ${c.newXp}",
+                                        stringResource(R.string.settings_advanced_dev_xp_change, c.oldXp, c.newXp),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = IronvellumColors.Ink,
                                         modifier = Modifier.padding(start = 8.dp),
@@ -348,9 +351,9 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
         },
         confirmButton = {
             when {
-                ui.applied || (plan == null && !ui.busy) -> IronvellumButton(label = "Close", onClick = viewModel::dismissRescore)
+                ui.applied || (plan == null && !ui.busy) -> IronvellumButton(label = stringResource(R.string.settings_advanced_dev_close_button), onClick = viewModel::dismissRescore)
                 plan != null && !ui.busy -> IronvellumButton(
-                    label = "Apply",
+                    label = stringResource(R.string.common_apply),
                     onClick = viewModel::applyRescore,
                     enabled = changed.isNotEmpty() || plan.applied != 0L,
                     danger = true,
@@ -359,7 +362,7 @@ private fun RescoreDialog(ui: SettingsViewModel.RescoreUi, viewModel: SettingsVi
             }
         },
         dismissButton = if (ui.applied || ui.busy) null else {
-            { IronvellumButton(label = "Cancel", onClick = viewModel::dismissRescore, quiet = true) }
+            { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = viewModel::dismissRescore, quiet = true) }
         },
     )
 }

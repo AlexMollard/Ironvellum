@@ -18,8 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Rank
@@ -39,142 +41,114 @@ enum class Term private constructor(
     val stems: List<String> = emptyList(),
 ) {
     BMI(
-        "BMI",
-        "Body mass index: your weight divided by your height squared. It is a rough screen " +
-            "for body size and cannot tell muscle from fat, so a muscular person often reads high.",
+        { uiString(R.string.terminfo_bmi_title) },
+        { uiString(R.string.terminfo_bmi_definition) },
     ),
     FFMI(
-        "FFMI",
-        { "Fat-free mass index: your weight minus body fat, divided by your height squared. " +
-            "It rates how much muscle you carry for your height. It needs a body fat % ${Words.reading.s}." },
+        { uiString(R.string.terminfo_ffmi_title) },
+        { uiPair(R.string.terminfo_ffmi_definition, R.string.terminfo_ffmi_definition__t, "%") },
     ),
     NAVY_TAPE(
-        "Navy tape method",
-        "The US Navy's body fat estimate from a tape measure: neck and waist (plus hips for " +
-            "women) against your height. Expect it to be within a few percent, not exact. " +
-            "Measure the same way each time and watch the trend.",
+        { uiString(R.string.terminfo_navy_tape_title) },
+        { uiString(R.string.terminfo_navy_tape_definition) },
     ),
     ONE_REP_MAX(
-        "1-rep max",
-        "The heaviest load you could lift once with good form. Ironvellum estimates it from " +
-            "the sets you log, so you never have to test it.",
+        { uiString(R.string.terminfo_one_rep_max_title) },
+        { uiString(R.string.terminfo_one_rep_max_definition) },
     ),
     DOUBLE_PROGRESSION(
-        "Double progression",
-        { "Keep the load and add reps each ${Words.trial.s} until you reach the top of the rep range, then " +
-            "add load and start again at the bottom. Muscle mode trains this way." },
+        { uiString(R.string.terminfo_double_progression_title) },
+        { uiPair(R.string.terminfo_double_progression_definition, R.string.terminfo_double_progression_definition__t) },
     ),
     DELOAD(
-        "Deload",
-        { "If you fail the same load three ${Words.trial.pl} in a row, the next one drops it by 10% so you " +
-            "can recover and build back past where you stalled. It happens on its own." },
+        { uiString(R.string.terminfo_deload_title) },
+        { uiPair(R.string.terminfo_deload_definition, R.string.terminfo_deload_definition__t, 10) },
     ),
     RANKS(
-        { "Strength Rank and Ascension" },
-        { "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
-            "Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, " +
-            "over the last ${Rank.WINDOW_DAYS} days. Each takes its best mark: a squat, bench press, " +
-            "deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your " +
-            "bodyweight, or a pull, push or leg ${Words.technique.s} you cleared, at its tier. Your rank " +
-            "is the average of the patterns you trained, rounded down. One you skipped is left out, " +
-            "and core work never lowers it." +
-            " Ascension follows your level, which rises with the XP each ${Words.trial.s} " +
-            "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + "." },
+        { uiString(R.string.terminfo_ranks_title) },
+        {
+            uiPair(
+                R.string.terminfo_ranks_definition,
+                R.string.terminfo_ranks_definition__t,
+                Rank.WINDOW_DAYS,
+                ArmyClass.LADDER.joinToString(", ") { uiString(R.string.terminfo_ranks_ladder_item, it.title, it.level) },
+            )
+        },
     ),
     TUCK(
-        "Tuck",
-        "Knees pulled in tight to your chest. Folding the legs shortens the lever, so the " +
-            "hold is far easier than with legs straight. It is the first shape of most levers " +
-            "and planches.",
+        { uiString(R.string.terminfo_tuck_title) },
+        { uiString(R.string.terminfo_tuck_definition) },
         stems = listOf("tuck"),
     ),
     STRADDLE(
-        "Straddle",
-        "Legs straight and spread wide apart. Spreading them brings their weight closer to " +
-            "your body, so it sits between a tuck and the full shape in difficulty.",
+        { uiString(R.string.terminfo_straddle_title) },
+        { uiString(R.string.terminfo_straddle_definition) },
         stems = listOf("straddle"),
     ),
     SCAPULA(
-        "Scapula",
-        { "Your shoulder blade. Depression pulls it down away from your ears, retraction " +
-            "squeezes it toward your spine, and protraction pushes it forward around your ribs. " +
-            "Many ${Words.technique.pl} start with the shoulder blade moving before the arm bends." },
+        { uiString(R.string.terminfo_scapula_title) },
+        { uiPair(R.string.terminfo_scapula_definition, R.string.terminfo_scapula_definition__t) },
         stems = listOf("scapul", "protract"),
     ),
     HOLLOW(
-        "Hollow body",
-        "Lower back pressed flat, ribs down, legs and arms long. The whole body makes one " +
-            "shallow curve, like a banana. It is the core shape behind handstands and levers.",
+        { uiString(R.string.terminfo_hollow_title) },
+        { uiString(R.string.terminfo_hollow_definition) },
         stems = listOf("hollow"),
     ),
     PIKE(
-        "Pike",
-        "Bent at the hips with your legs straight, so the body makes an upside-down V.",
+        { uiString(R.string.terminfo_pike_title) },
+        { uiString(R.string.terminfo_pike_definition) },
         stems = listOf("pike"),
     ),
     FALSE_GRIP(
-        "False grip",
-        "On rings, the wrist sits on top of the ring instead of hanging below it. It feels " +
-            "awkward at first but lets you move from below the rings to above them.",
+        { uiString(R.string.terminfo_false_grip_title) },
+        { uiString(R.string.terminfo_false_grip_definition) },
         stems = listOf("false grip"),
     ),
     NEGATIVE(
-        "Negative",
-        "Only the lowering half of a rep, done slowly on purpose. The lowering half is the " +
-            "eccentric; the lifting half is the concentric. You can lower more than you can " +
-            "lift, so negatives build a rep you cannot do yet.",
+        { uiString(R.string.terminfo_negative_title) },
+        { uiString(R.string.terminfo_negative_definition) },
         stems = listOf("negative", "eccentric", "concentric"),
     ),
     TRIAL(
         { Words.trial.c },
-        { "One time through your training: you begin it, log your sets, then ${Words.seal.s} it. Only ${Words.sealed.a} ${Words.trial.s} " +
-            "counts toward your XP, strength score, ${Words.oath.s} and ${Words.deed.pl}." },
+        { uiPair(R.string.terminfo_trial_definition, R.string.terminfo_trial_definition__t) },
     ),
     RITE(
         { Words.rite.c },
-        { "A saved ${Words.trial.s} to repeat: its movements and the sets set out for each. Begin ${Words.trial.a} from a " +
-            "${Words.rite.s}, and edit it any time without touching the ${Words.trial.pl} you have already ${Words.sealed.s}." },
+        { uiPair(R.string.terminfo_rite_definition, R.string.terminfo_rite_definition__t) },
     ),
     CYCLE(
         { Words.cycle.c },
-        { "Your week of ${Words.rite.pl}, each set on a day. ${Words.sealing.c} the ${Words.rite.s} that falls on today " +
-            "earns a bonus on top of the ${Words.trial.s}'s XP." },
+        { uiPair(R.string.terminfo_cycle_definition, R.string.terminfo_cycle_definition__t) },
     ),
     LEVEL(
-        { "Level and XP" },
-        { "Each ${Words.sealed.s} ${Words.trial.s} earns XP. Fill the XP bar to reach your next level. " +
-            "The numbers show XP earned within this level and the XP it needs. " +
-            "Your ascension title follows your level; your Strength Rank follows your strength." },
+        { uiString(R.string.terminfo_level_title) },
+        { uiPair(R.string.terminfo_level_definition, R.string.terminfo_level_definition__t) },
     ),
     OATH(
         { Words.oath.c },
-        { "The days you have kept training without a break. Every ${Words.sealed.s} ${Words.trial.s} keeps it, and so does a day of ${Words.respite.s}: " +
-            "it only breaks when more than ${Streak.MAX_GAP_DAYS} days pass without one. " +
-            "The count is the days since the chain began, so it grows every morning it lives. " +
-            "The ${Words.oath.t} bar shows progress towards the next ${Words.oath.s} ${Words.deed.s} milestone." },
+        { uiPair(R.string.terminfo_oath_definition, R.string.terminfo_oath_definition__t, Streak.MAX_GAP_DAYS) },
     ),
     SEAL(
         { Words.seal.c },
-        { "Finishing ${Words.trial.a}. ${Words.sealing.c} banks its XP and adds its strength score to your lifetime " +
-            "total. ${Words.sealed.ca} ${Words.trial.s} can still be amended later, and the difference is settled." },
+        { uiPair(R.string.terminfo_seal_definition, R.string.terminfo_seal_definition__t) },
     ),
     SET_TYPES(
-        "Set types",
-        { "Each set wears a tag you can tap to change. " +
-            SetKind.entries.joinToString(" ") { "${it.label}: ${it.blurb}" } +
-            " Only a warm-up is left out of XP and volume. On a lift with a top set, only the top set can set ${Words.peak.a} or a record." },
+        { uiString(R.string.terminfo_set_types_title) },
+        {
+            uiPair(
+                R.string.terminfo_set_types_definition,
+                R.string.terminfo_set_types_definition__t,
+                SetKind.entries.joinToString(" ") { "${it.label}: ${it.blurb}" },
+            )
+        },
     ),
     THE_VEIL(
         { Words.theVeil.c },
-        { "Where echoes gather essence while you are away. Your recent training sets the pace, " +
-            "so ${Words.seal.s} ${Words.trial.pl} to raise it, then return to collect." },
+        { uiPair(R.string.terminfo_veil_definition, R.string.terminfo_veil_definition__t) },
     ),
     ;
-
-    constructor(title: String, definition: String, stems: List<String> = emptyList()) : this({ title }, { definition }, stems)
-
-    /** Mixed forms: a fixed title over a definition that names concepts. */
-    constructor(title: String, definition: () -> String, stems: List<String> = emptyList()) : this({ title }, definition, stems)
 
     val title: String get() = titleText()
     val definition: String get() = definitionText()
@@ -195,12 +169,12 @@ fun TermInfo(term: Term, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Explain") { open = true },
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.terminfo_explain_label)) { open = true },
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             Icons.Outlined.Info,
-            contentDescription = "What is ${term.title}?",
+            contentDescription = stringResource(R.string.terminfo_what_is_description, term.title),
             tint = IronvellumColors.InkMuted,
             modifier = Modifier.size(18.dp),
         )
@@ -218,7 +192,7 @@ fun TermChip(term: Term, modifier: Modifier = Modifier) {
     Row(
         modifier
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Explain ${term.title}") { open = true }
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.terminfo_explain_term_label, term.title)) { open = true }
             .padding(end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -244,7 +218,7 @@ internal fun TermDialog(term: Term, onDismiss: () -> Unit) {
         title = term.title,
         onDismiss = onDismiss,
         size = InfoSheetSize.Compact,
-        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+        actions = listOf(InfoAction(stringResource(R.string.terminfo_close_button), onDismiss, quiet = true)),
     ) {
         text(null, term.definition)
     }

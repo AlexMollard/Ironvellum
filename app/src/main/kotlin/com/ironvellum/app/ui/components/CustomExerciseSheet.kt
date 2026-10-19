@@ -31,12 +31,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CustomExercises
 import com.ironvellum.app.domain.CustomLogged
@@ -45,6 +47,8 @@ import com.ironvellum.app.domain.CustomSave
 import com.ironvellum.app.domain.CustomSpec
 import com.ironvellum.app.domain.CustomType
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.program.MuscleSelector
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.train.UnderlineField
@@ -138,12 +142,12 @@ internal fun CustomExerciseSheet(
                     .padding(horizontal = 16.dp),
             ) {
                 PushedHeader(
-                    if (editing == null) "New exercise" else "Edit exercise",
+                    stringResource(if (editing == null) R.string.customex_title_new else R.string.customex_title_edit),
                     onDismiss,
                     Modifier.padding(top = 8.dp),
                 )
                 UnderlineField(
-                    label = "Name",
+                    label = stringResource(R.string.customex_name_label),
                     value = name,
                     onValueChange = { name = it.take(CustomExercises.MAX_NAME); rejected = null },
                     counter = "${name.length} / ${CustomExercises.MAX_NAME}",
@@ -158,19 +162,19 @@ internal fun CustomExerciseSheet(
                     )
                 }
 
-                FilterGroup("Type") {
+                FilterGroup(stringResource(R.string.customex_type_label)) {
                     CustomType.entries.forEach { t ->
                         FilterChip(t.label, type == t) { typeName = t.name }
                     }
                 }
-                FilterGroup("Logged as") {
+                FilterGroup(stringResource(R.string.customex_logged_label)) {
                     CustomLogged.entries.forEach { l ->
                         FilterChip(l.label, logged == l) { loggedName = l.name }
                     }
                 }
                 Hint(logged.hint)
 
-                FilterGroup("Needs") {
+                FilterGroup(stringResource(R.string.customex_needs_label)) {
                     CustomNeed.entries.forEach { n ->
                         val on = if (n == CustomNeed.NOTHING) needs.isEmpty() else n in needs
                         FilterChip(n.label, on) {
@@ -184,10 +188,10 @@ internal fun CustomExerciseSheet(
                         }
                     }
                 }
-                Hint("Machines and cables count as a full gym in MY ${Words.armoury.u}.")
+                Hint(UiText.themed(R.string.customex_needs_note, R.string.customex_needs_note__t).asString())
 
                 Spacer(Modifier.height(14.dp))
-                Text("Muscles", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(stringResource(R.string.customex_muscles_label), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 Spacer(Modifier.height(4.dp))
                 MuscleSelector(shares, onChange = { sharesText = CustomExercises.encodeShares(it) })
 
@@ -198,8 +202,7 @@ internal fun CustomExerciseSheet(
                     when {
                         used == null -> Unit
                         used > 0 -> Text(
-                            "Used by ${plural(used, "1 logged set, ${Words.rite.s} or note", "$used logged sets, ${Words.rite.pl} and notes")}. " +
-                                "It stays while anything uses it, so your history is never orphaned.",
+                            UiText.themedPlural(R.plurals.customex_used_by, R.plurals.customex_used_by__t, used).asString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier.padding(vertical = 12.dp),
@@ -219,14 +222,14 @@ internal fun CustomExerciseSheet(
                                 tint = IronvellumColors.DangerRed,
                                 modifier = Modifier.size(22.dp),
                             )
-                            Text("Delete exercise", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+                            Text(stringResource(R.string.customex_delete_button), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
                         }
                     }
                 }
                 Spacer(Modifier.height(24.dp))
             }
             DockedActionBar(
-                primary = if (editing == null) "Save exercise" else "Save changes",
+                primary = stringResource(if (editing == null) R.string.customex_save_new_button else R.string.customex_save_edit_button),
                 onPrimary = ::save,
                 primaryEnabled = canSave,
                 reserveLink = false,
@@ -237,22 +240,22 @@ internal fun CustomExerciseSheet(
     if (confirmDelete) {
         IronvellumDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete exercise?") },
-            text = { Text("${name.ifBlank { "This exercise" }} will be removed. Nothing has been logged with it.") },
+            title = { Text(stringResource(R.string.customex_delete_title)) },
+            text = { Text(stringResource(R.string.customex_delete_body, name.ifBlank { stringResource(R.string.customex_delete_this_exercise) })) },
             confirmButton = {
                 IronvellumButton(
-                    label = "Delete exercise",
+                    label = stringResource(R.string.customex_delete_button),
                     onClick = {
                         confirmDelete = false
                         scope.launch {
-                            if (onDelete()) onDismiss() else rejected = "It is used now, so it stays."
+                            if (onDelete()) onDismiss() else rejected = Words.text(UiText.res(R.string.customex_error_used_now))
                         }
                     },
                     danger = true,
                 )
             },
             dismissButton = {
-                IronvellumButton(label = "Keep exercise", onClick = { confirmDelete = false }, quiet = true)
+                IronvellumButton(label = stringResource(R.string.customex_keep_button), onClick = { confirmDelete = false }, quiet = true)
             },
         )
     }

@@ -51,8 +51,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.ExerciseDrawing
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
@@ -325,7 +328,8 @@ private fun edgeRank(to: String, mastered: Set<String>): Int = when {
 internal fun crossNeedMarker(needs: List<CrossNeed>, mastered: Set<String>): String? {
     val open = needs.filter { it.skill !in mastered }
     val first = open.firstOrNull() ?: return null
-    return "needs ${first.skill} (${first.line})" + if (open.size > 1) " +${open.size - 1}" else ""
+    return Words.text(UiText.res(R.string.skilltree_needs_marker, first.skill, first.line)) +
+        if (open.size > 1) " +${open.size - 1}" else ""
 }
 
 /** What a screen reader hears for one node: name, tier, state, then what to do next. */
@@ -337,15 +341,22 @@ internal fun rowDescription(
     cue: String?,
 ): String = buildList {
     add(skill.name)
-    add("tier ${Skills.tierLabel(skill.tier)}")
+    add(Words.text(UiText.res(R.string.skilltree_row_tier, Skills.tierLabel(skill.tier))))
     when {
-        mastered -> add("mastered")
+        mastered -> add(Words.text(UiText.res(R.string.skilltree_row_mastered)))
         unlocked -> {
-            add("available, next")
-            add("standard ${skill.standard}")
+            add(Words.text(UiText.res(R.string.skilltree_row_available)))
+            add(Words.text(UiText.res(R.string.skilltree_row_standard, skill.standard)))
             cue?.let(::add)
         }
-        else -> add("locked, needs ${needs ?: "its prerequisite"}")
+        else -> add(
+            Words.text(
+                UiText.res(
+                    R.string.skilltree_row_locked_needs,
+                    needs ?: Words.text(UiText.res(R.string.skilltree_row_its_prerequisite)),
+                ),
+            ),
+        )
     }
 }.joinToString(", ")
 
@@ -372,7 +383,7 @@ private fun SkillNode(
     Column(
         modifier
             .width(width)
-            .clickable(role = Role.Button, onClickLabel = "Open ${Words.technique.s}") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = UiText.themed(R.string.skilltree_node_open_description, R.string.skilltree_node_open_description__t).asString()) { onClick() }
             // One sentence for the whole node; the visible texts stay in the
             // merged node so it is still found by its name.
             .semantics(mergeDescendants = true) { contentDescription = description },
@@ -527,7 +538,7 @@ private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: In
             .heightIn(min = textH / 2 * lines)
             .clip(TileShape)
             .background(MaterialTheme.colorScheme.background)
-            .clickable(role = Role.Button, onClickLabel = "Open ${need.skill}, ${need.line} ${Words.path.s}") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = UiText.themed(R.string.skilltree_need_open_description, R.string.skilltree_need_open_description__t, need.skill, need.line).asString()) { onClick() }
             .padding(horizontal = 3.dp),
     )
 }

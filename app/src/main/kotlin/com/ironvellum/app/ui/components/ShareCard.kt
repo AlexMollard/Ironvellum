@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,9 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Crests
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WorkoutShare
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -81,6 +85,8 @@ fun ShareCardDialog(
         WorkoutShare.signed(render(includeNotes && hasNotes, includeEffort && hasEffort), worn.takeIf { signWithCrest })
     }
 
+    val shareTitle = UiText.themed(R.string.sharecard_title, R.string.sharecard_title__t).asString()
+
     LaunchedEffect(copied) {
         if (copied) {
             delay(1_600)
@@ -90,7 +96,7 @@ fun ShareCardDialog(
 
     IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Share this ${Words.trial.s}") },
+        title = { Text(shareTitle) },
         text = {
             Column {
                 Text(
@@ -111,8 +117,8 @@ fun ShareCardDialog(
                 )
                 if (hasNotes) {
                     SettingsSwitchRow(
-                        label = "Include exercise notes",
-                        caption = "Prints each note under its movement",
+                        label = stringResource(R.string.sharecard_notes_label),
+                        caption = stringResource(R.string.sharecard_notes_caption),
                         checked = includeNotes,
                         onCheckedChange = {
                             includeNotes = it
@@ -122,8 +128,8 @@ fun ShareCardDialog(
                 }
                 if (hasEffort) {
                     SettingsSwitchRow(
-                        label = "Include effort",
-                        caption = "Adds each exercise's top set's RPE or RIR",
+                        label = stringResource(R.string.sharecard_effort_label),
+                        caption = stringResource(R.string.sharecard_effort_caption),
                         checked = includeEffort,
                         onCheckedChange = {
                             includeEffort = it
@@ -133,8 +139,8 @@ fun ShareCardDialog(
                 }
                 if (worn != null) {
                     SettingsSwitchRow(
-                        label = "Sign with my crest",
-                        caption = "Adds your worn crest as the last line",
+                        label = stringResource(R.string.sharecard_crest_label),
+                        caption = stringResource(R.string.sharecard_crest_caption),
                         checked = signWithCrest,
                         onCheckedChange = {
                             signWithCrest = it
@@ -145,7 +151,7 @@ fun ShareCardDialog(
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     IronvellumButton(
-                        label = if (copied) "COPIED" else "COPY",
+                        label = stringResource(if (copied) R.string.sharecard_copied_button else R.string.sharecard_copy_button),
                         quiet = true,
                         onClick = {
                             scope.launch {
@@ -158,14 +164,14 @@ fun ShareCardDialog(
                         modifier = Modifier.weight(1f),
                     )
                     IronvellumButton(
-                        label = "SHARE",
+                        label = stringResource(R.string.sharecard_share_button),
                         gold = true,
                         onClick = {
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, text)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share this ${Words.trial.s}"))
+                            context.startActivity(Intent.createChooser(intent, shareTitle))
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -173,7 +179,7 @@ fun ShareCardDialog(
             }
         },
         confirmButton = {},
-        dismissButton = { IronvellumButton("Close", quiet = true, onClick = onDismiss) },
+        dismissButton = { IronvellumButton(stringResource(R.string.sharecard_close_button), quiet = true, onClick = onDismiss) },
     )
 }
 

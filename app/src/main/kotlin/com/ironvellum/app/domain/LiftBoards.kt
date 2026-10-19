@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import kotlin.math.sqrt
 
@@ -268,7 +269,7 @@ object LiftBoards {
     /** Headline for a step: the tier name on TIERED boards, the rung's exercise on LADDER boards. */
     fun stepLabel(lift: Lift, step: Int): String {
         if (lift.kind == LiftKind.TIERED) return tierName(step)
-        return rungs(lift).getOrNull(step - 1)?.exercise ?: "No ${Words.rung.s} yet"
+        return rungs(lift).getOrNull(step - 1)?.exercise ?: Words.text(UiText.themed(R.string.liftboards_no_rung, R.string.liftboards_no_rung__t))
     }
 
     /** "rung 4 of 6" for a LADDER step; null on TIERED boards and for step 0. */

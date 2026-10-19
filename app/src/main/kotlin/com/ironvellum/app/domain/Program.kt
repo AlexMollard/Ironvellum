@@ -17,15 +17,19 @@ import com.ironvellum.app.data.Words
  * Machines and cables are never toggles - they only come with a full gym.
  * Persisted by constant name (ProgramAnswers), so never rename a constant.
  */
-enum class Gear(val label: String) {
-    PULL_UP_BAR("Pull-up bar"),
-    DIP_BARS("Dip bars"),
-    PARALLETTES("Parallettes"),
-    RINGS("Rings"),
-    DUMBBELLS("Dumbbells"),
-    BARBELL("Barbell & rack"),
-    BENCH("Bench"),
-    AB_WHEEL("Ab wheel"),
+enum class Gear(@StringRes private val labelRes: Int) {
+    PULL_UP_BAR(R.string.program_gear_pull_up_bar),
+    DIP_BARS(R.string.program_gear_dip_bars),
+    PARALLETTES(R.string.program_gear_parallettes),
+    RINGS(R.string.program_gear_rings),
+    DUMBBELLS(R.string.program_gear_dumbbells),
+    BARBELL(R.string.program_gear_barbell),
+    BENCH(R.string.program_gear_bench),
+    AB_WHEEL(R.string.program_gear_ab_wheel),
+    ;
+
+    /** The gear's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /**
@@ -53,7 +57,18 @@ data class Equipment(
  * What the lifter is training for; decides rep ranges, rest and slot mix.
  * Persisted by constant name (ProgramAnswers), so never rename a constant.
  */
-enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
+enum class TrainingFocus {
+    STRENGTH, MUSCLE, SKILL, GENERAL;
+
+    /** The goal's name on a chip: Power, Muscle, the skills word, Mixed. */
+    val label: String
+        get() = when (this) {
+            STRENGTH -> Words.text(UiText.res(R.string.onboarding_focus_power))
+            MUSCLE -> Words.text(UiText.res(R.string.onboarding_focus_muscle))
+            SKILL -> Words.technique.cpl
+            GENERAL -> Words.text(UiText.res(R.string.onboarding_focus_mixed))
+        }
+}
 
 /**
  * How much weekly work the plan prescribes. The volume evidence is tiered on
@@ -63,10 +78,14 @@ enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
  * sets reps in reserve, movements per session and bodyweight progressions.
  * Persisted by constant name (ProgramAnswers), so never rename a constant.
  */
-enum class VolumeLevel(val label: String) {
-    LOW("Low"),
-    STANDARD("Standard"),
-    HIGH("High"),
+enum class VolumeLevel(@StringRes private val labelRes: Int) {
+    LOW(R.string.program_volume_low),
+    STANDARD(R.string.program_volume_standard),
+    HIGH(R.string.program_volume_high),
+    ;
+
+    /** The level's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /**
@@ -76,15 +95,22 @@ enum class VolumeLevel(val label: String) {
  * day counts it fits. Persisted by constant name (ProgramAnswers), so never
  * rename a constant.
  */
-enum class TrainingSplit(val label: String, val dayOptions: List<Int>, shortLabel: String? = null) {
-    FULL_BODY("Full body", listOf(1, 2, 3)),
-    UPPER_LOWER("Upper / lower", listOf(4)),
-    PUSH_PULL_LEGS("Push / pull / legs", listOf(3, 6), shortLabel = "PPL"),
-    UPPER_LOWER_PPL("Upper / lower + PPL", listOf(5), shortLabel = "Hybrid"),
+enum class TrainingSplit(
+    @StringRes private val labelRes: Int,
+    val dayOptions: List<Int>,
+    @StringRes private val shortLabelRes: Int? = null,
+) {
+    FULL_BODY(R.string.program_split_full_body, listOf(1, 2, 3)),
+    UPPER_LOWER(R.string.program_split_upper_lower, listOf(4)),
+    PUSH_PULL_LEGS(R.string.program_split_push_pull_legs, listOf(3, 6), shortLabelRes = R.string.program_split_push_pull_legs_short),
+    UPPER_LOWER_PPL(R.string.program_split_hybrid, listOf(5), shortLabelRes = R.string.program_split_hybrid_short),
     ;
 
+    /** The split's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
+
     /** The label for a one-line tab, so a four-way picker never wraps a word onto a second line. */
-    val pickerLabel: String = shortLabel ?: label
+    val pickerLabel: String get() = shortLabelRes?.let { Words.text(UiText.res(it)) } ?: label
 
     companion object {
         /** The conventional split for a day count: what a request without a split gets. */
@@ -186,14 +212,18 @@ enum class MovementPattern {
 }
 
 /** What one generated session is built around. AUTO fills what the rest of the week is missing. */
-enum class SessionKind(val label: String) {
-    AUTO("What my week is missing"),
-    FULL_BODY("Full body"),
-    UPPER("Upper"),
-    LOWER("Lower"),
-    PUSH("Push"),
-    PULL("Pull"),
-    LEGS("Legs"),
+enum class SessionKind(@StringRes private val labelRes: Int) {
+    AUTO(R.string.program_session_auto),
+    FULL_BODY(R.string.program_split_full_body),
+    UPPER(R.string.program_session_upper),
+    LOWER(R.string.program_session_lower),
+    PUSH(R.string.program_session_push),
+    PULL(R.string.program_session_pull),
+    LEGS(R.string.program_session_legs),
+    ;
+
+    /** The session kind's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 }
 
 /** One prescribed movement inside a proposed session. */

@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
@@ -57,7 +58,9 @@ import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.UnlockedTitle
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.techniquePages
@@ -181,8 +184,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
 
     /** Why the last "Train it" failed, or which rite it landed in; null when nothing to show. */
-    private val _trainResult = MutableStateFlow<String?>(null)
-    val trainResult: StateFlow<String?> = _trainResult.asStateFlow()
+    private val _trainResult = MutableStateFlow<UiText?>(null)
+    val trainResult: StateFlow<UiText?> = _trainResult.asStateFlow()
 
     /**
      * Adds [skillName] to rite [presetId], or to a new rite named after it
@@ -193,7 +196,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         val def = Skills.forName(skillName) ?: return
         viewModelScope.launchGuarded("add to ${Words.rite.s}") {
             val rite = repo.addExerciseToRite(skillName, presetId, targetSets = 3, targetReps = def.target.coerceAtLeast(1))
-            _trainResult.value = "$skillName is in $rite."
+            _trainResult.value = UiText.res(R.string.titles_train_added, skillName, rite)
         }
     }
     fun dismissTrainResult() {
@@ -260,7 +263,8 @@ internal fun bestEfforts(
  * clause dash set as the em dash the rest of the app's copy uses.
  */
 internal fun unclaimRefusalCopy(refused: IllegalStateException): String =
-    refused.message?.replace(" - ", " — ") ?: "This ${Words.technique.s} stays ${Words.claimed.s}."
+    refused.message?.replace(" - ", " — ")
+        ?: Words.text(UiText.themed(R.string.titles_unclaim_stays, R.string.titles_unclaim_stays__t))
 
 @Composable
 fun TitlesScreen(
@@ -351,14 +355,22 @@ fun TitlesScreen(
     }
     val trainResult by viewModel.trainResult.collectAsStateWithLifecycle()
     trainResult?.let { message ->
-        InfoNotice("Added", message, onDismiss = viewModel::dismissTrainResult)
+        InfoNotice(
+            UiText.res(R.string.titles_train_added_title).asString(),
+            message.asString(),
+            onDismiss = viewModel::dismissTrainResult,
+        )
     }
 
     // Unclaim refused (the XP it paid is already spent): say so rather than
     // leave the confirm row sitting there with nothing happening.
     val unclaimRefusal by viewModel.unclaimRefusal.collectAsStateWithLifecycle()
     unclaimRefusal?.let { message ->
-        InfoNotice("Still ${Words.claimed.s}", message, onDismiss = viewModel::dismissUnclaimRefusal)
+        InfoNotice(
+            UiText.themed(R.string.titles_unclaim_refused_title, R.string.titles_unclaim_refused_title__t).asString(),
+            message,
+            onDismiss = viewModel::dismissUnclaimRefusal,
+        )
     }
 
     // Header and tabs stay put; every page runs edge to edge under them and owns its scroll,
@@ -402,11 +414,19 @@ fun TitlesScreen(
                             // No "Skill Tree" heading: the selected pill above already says it.
                             // The tally is the line worth keeping here.
                             Text(
-                                "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} ${Words.technique.pl} mastered",
+                                UiText.themed(
+                                    R.string.titles_paths_tally,
+                                    R.string.titles_paths_tally__t,
+                                    mastered.count { it in Skills.BY_NAME },
+                                    Skills.ALL.size,
+                                ).asString(),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = IronvellumColors.InkMuted,
                             )
-                            FirstUseLine("skill_tiers", "Each ${Words.technique.s} has a tier from I to V; some need an easier one first.")
+                            FirstUseLine(
+                                SKILL_TIERS_KEY,
+                                UiText.themed(R.string.titles_tiers_intro, R.string.titles_tiers_intro__t).asString(),
+                            )
                             Spacer(Modifier.height(10.dp))
                             PathGrid(
                                 mastered = mastered,
@@ -476,6 +496,9 @@ fun TitlesScreen(
 
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
 
+/** Remembers that the tiers intro line was read (a stored key, not text). */
+private const val SKILL_TIERS_KEY = "skill_tiers"
+
 /**
  * Where "Train it" puts a technique: one of the rites, or a new rite named
  * after it. Appends to the chosen rite rather than opening its editor, which
@@ -492,7 +515,7 @@ private fun RiteChoiceDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "Train $skillName",
+                UiText.res(R.string.titles_train_title, skillName).asString(),
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,
@@ -501,7 +524,7 @@ private fun RiteChoiceDialog(
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    "Add it to the end of ${Words.rite.a}, three sets at the standard.",
+                    UiText.themed(R.string.titles_train_caption, R.string.titles_train_caption__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -511,11 +534,14 @@ private fun RiteChoiceDialog(
                     RiteChoiceRow(name) { onPick(id) }
                 }
                 RiteChoiceDivider()
-                RiteChoiceRow("New ${Words.rite.s} · $skillName", accent = IronvellumColors.SystemGreen) { onPick(null) }
+                RiteChoiceRow(
+                    UiText.themed(R.string.titles_train_new, R.string.titles_train_new__t, skillName).asString(),
+                    accent = IronvellumColors.SystemGreen,
+                ) { onPick(null) }
             }
         },
         confirmButton = {
-            IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true)
+            IronvellumButton(label = UiText.res(R.string.common_cancel).asString(), onClick = onDismiss, quiet = true)
         },
     )
 }

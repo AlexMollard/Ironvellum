@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.ArmyClass
@@ -47,13 +51,25 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+
+/** A plain-only string as text for the current language, for builders that run outside composition. */
+internal fun uiString(@StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
+
+/** A plain/themed pair as text for the current mode and language, for builders that run outside composition. */
+internal fun uiPair(@StringRes plain: Int, @StringRes themed: Int, vararg args: Any): String =
+    Words.text(UiText.themed(plain, themed, *args))
+
+/** A plural as text for the current language; [count] is the first argument unless [args] are given. */
+internal fun uiPlural(@PluralsRes id: Int, count: Int, vararg args: Any): String = Words.text(UiText.plural(id, count, *args))
 
 /**
  * One full-screen moment the celebration host can show. Each is one step page; the
@@ -128,7 +144,7 @@ internal fun techniquePages(result: SkillClaimResult, sex: Sex): List<Celebratio
         CelebrationPage.TechniqueMastered(
             name = result.skill.name,
             tier = Skills.tierLabel(result.skill.tier),
-            path = "${result.skill.line} ${Words.path.s}",
+            path = uiPair(R.string.celebration_technique_path_name, R.string.celebration_technique_path_name__t, result.skill.line),
             xp = result.xpAwarded,
             opened = result.unlockedNext.map { it.name },
         ),
@@ -148,14 +164,17 @@ internal fun rarityWord(rarity: RewardRarity): String = if (rarity == RewardRari
 internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crestsOwned: Int? = null): CelebrationPage.Inscribed {
     val relic = (result.reward as? Reward.Relic)?.let { reward -> vault?.let { RelicHouses.reveal(reward, it) } }
     val notes = when (val reward = result.reward) {
-        is Reward.Figures -> listOf("Added to ${Words.theVeil.t}")
-        is Reward.Relic -> listOf("Rate multiplier ×%.2f".fmt(reward.multiplier))
-        is Reward.CrestFrame -> listOf("Crest inscribed", "Wear it on your ${Words.folio.s}")
+        is Reward.Figures -> listOf(uiString(R.string.always_celebration_added_to_veil))
+        is Reward.Relic -> listOf(uiString(R.string.celebration_relic_rate_note, "%.2f".fmt(reward.multiplier)))
+        is Reward.CrestFrame -> listOf(
+            uiString(R.string.celebration_crest_inscribed_note),
+            uiPair(R.string.celebration_crest_wear_hint, R.string.celebration_crest_wear_hint__t),
+        )
     }
     return CelebrationPage.Inscribed(
         rarity = result.rarity,
         name = when (val reward = result.reward) {
-            is Reward.Figures -> "${reward.count} ${if (reward.count == 1) "echo" else "echoes"}"
+            is Reward.Figures -> uiPlural(R.plurals.celebration_echoes_count, reward.count)
             is Reward.Relic -> reward.name
             is Reward.CrestFrame -> reward.name
         },
@@ -168,13 +187,13 @@ internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crests
         relic = relic,
         houseSlots = relic?.let { r -> vault?.houses?.firstOrNull { it.house == r.relic.house }?.slots }.orEmpty(),
         crestId = (result.reward as? Reward.CrestFrame)?.id,
-        crestLine = (result.reward as? Reward.CrestFrame)?.let { crestLine("Chance draw", crestsOwned) },
+        crestLine = (result.reward as? Reward.CrestFrame)?.let { crestLine(uiString(R.string.celebration_crest_lead_chance), crestsOwned) },
     )
 }
 
 /** "Chance draw · 5 of 28 crests", or just the lead when the count is not known. */
 internal fun crestLine(lead: String, owned: Int?): String =
-    if (owned == null) lead else "$lead · $owned of ${Crests.ALL.size} crests"
+    if (owned == null) lead else uiString(R.string.celebration_crest_line_count, lead, owned, Crests.ALL.size)
 
 /**
  * What the Veil paid outside a draw, as moments. The one-time catch-up is a single page that
@@ -185,12 +204,12 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
     val retro = if (grant.retro) {
         val notes = buildList {
             if (grant.inscriptions > 0) {
-                add("${grant.inscriptions} ${if (grant.inscriptions == 1) "inscription" else "inscriptions"} to draw")
+                add(uiPlural(R.plurals.celebration_retro_inscriptions, grant.inscriptions))
             }
-            if (grant.crests.isNotEmpty()) add("${grant.crests.size} ${if (grant.crests.size == 1) "crest" else "crests"} inscribed")
-            if (grant.relics.isNotEmpty()) add("${grant.relics.size} ${if (grant.relics.size == 1) "relic" else "relics"} restored")
+            if (grant.crests.isNotEmpty()) add(uiPlural(R.plurals.celebration_retro_crests, grant.crests.size))
+            if (grant.relics.isNotEmpty()) add(uiPlural(R.plurals.celebration_retro_relics, grant.relics.size))
         }
-        listOf(CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = "${Words.theVeil.c} remembered you", notes = notes))
+        listOf(CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = uiString(R.string.always_celebration_veil_remembered), notes = notes))
     } else {
         emptyList()
     }
@@ -201,7 +220,14 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
         CelebrationPage.Inscribed(
             rarity = RewardRarity.Rare,
             name = name,
-            notes = if (id == null) listOf("Crest earned", "Wear it on your ${Words.folio.s}") else emptyList(),
+            notes = if (id == null) {
+                listOf(
+                    uiString(R.string.celebration_crest_earned),
+                    uiPair(R.string.celebration_crest_wear_hint, R.string.celebration_crest_wear_hint__t),
+                )
+            } else {
+                emptyList()
+            },
             crestId = id,
             crestLine = crest?.let { earnedLine(it, crestsOwned) },
         )
@@ -214,17 +240,17 @@ internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<C
  * deed or a house what earned it and how many of the 28 are held now ("Deed crest · Unbroken · 10 of 28 crests").
  */
 internal fun earnedLine(crest: CrestDef, crestsOwned: Int?): String = when (crest.group) {
-    CrestGroup.Ladder -> "Level ${crest.level} milestone"
-    CrestGroup.Deeds -> crestLine("${Words.deed.c} crest · ${crest.deed?.name}", crestsOwned)
-    CrestGroup.Houses -> crestLine("House crest · ${crest.house?.title}", crestsOwned)
-    CrestGroup.Veil -> crestLine("Chance draw", crestsOwned)
+    CrestGroup.Ladder -> uiString(R.string.celebration_crest_lead_level, crest.level ?: 0)
+    CrestGroup.Deeds -> crestLine(uiString(R.string.always_celebration_crest_lead_deed, crest.deed?.name.orEmpty()), crestsOwned)
+    CrestGroup.Houses -> crestLine(uiString(R.string.celebration_crest_lead_house, crest.house?.title.orEmpty()), crestsOwned)
+    CrestGroup.Veil -> crestLine(uiString(R.string.celebration_crest_lead_chance), crestsOwned)
 }
 
 /** The one narrator line of an inscription, in the voice of Today's: a short sentence with a full stop. */
 internal fun inscribedNarrator(rarity: RewardRarity): String = when (rarity) {
-    RewardRarity.Common -> "A whisper in the dark."
-    RewardRarity.Rare -> "The dark stirs."
-    RewardRarity.Epic -> "The dark bends."
+    RewardRarity.Common -> uiString(R.string.celebration_narrator_common)
+    RewardRarity.Rare -> uiString(R.string.celebration_narrator_rare)
+    RewardRarity.Epic -> uiString(R.string.celebration_narrator_fabled)
     RewardRarity.Masterwork -> Lines.masterworkAnswer
 }
 
@@ -287,7 +313,7 @@ internal fun AchievementOverlay(
                         canSkip = false,
                         onContinue = advance,
                         onSkip = {},
-                        note = "An inscription is waiting".takeIf { page.inscriptionWaiting },
+                        note = stringResource(R.string.celebration_level_inscription_waiting).takeIf { page.inscriptionWaiting },
                     )
                     is CelebrationPage.Deeds -> DeedsPage(
                         deeds = page.deeds,
@@ -304,14 +330,14 @@ internal fun AchievementOverlay(
                         MomentPage(
                             step = at,
                             steps = pages.size,
-                            tag = "${Words.technique.c} mastered",
+                            tag = UiText.themed(R.string.celebration_technique_mastered_tag, R.string.celebration_technique_mastered_tag__t).asString(),
                             name = page.name,
                             beats = MasteredBeats,
                             dock = {
                                 CelebrationDock(
-                                    primary = "Continue",
+                                    primary = stringResource(R.string.common_continue),
                                     onPrimary = advance,
-                                    link = open?.let { "Open $it" },
+                                    link = open?.let { stringResource(R.string.celebration_technique_open_link, it) },
                                     onLink = {
                                         if (open != null) onOpenTechnique?.invoke(open)
                                         advance()
@@ -319,10 +345,10 @@ internal fun AchievementOverlay(
                                 )
                             },
                             subline = {
-                                Text("Tier ${page.tier} · ${page.path}", style = MaterialTheme.typography.bodySmall, color = Dim, modifier = it)
+                                Text(stringResource(R.string.celebration_technique_tier_line, page.tier, page.path), style = MaterialTheme.typography.bodySmall, color = Dim, modifier = it)
                             },
                             xp = page.xp,
-                            notes = page.opened.map { "${Words.technique.c} opened · $it" },
+                            notes = page.opened.map { UiText.themed(R.string.celebration_technique_opened_note, R.string.celebration_technique_opened_note__t, it).asString() },
                         )
                     }
                     is CelebrationPage.Inscribed -> if (page.crestId != null) {
@@ -336,12 +362,12 @@ internal fun AchievementOverlay(
                             line = page.crestLine,
                             dock = {
                                 CelebrationDock(
-                                    primary = if (canWear) "Wear crest" else "Continue",
+                                    primary = if (canWear) stringResource(R.string.celebration_crest_wear_button) else stringResource(R.string.common_continue),
                                     onPrimary = {
                                         if (canWear) onWearCrest?.invoke(id)
                                         advance()
                                     },
-                                    link = if (canWear) (keep?.let { "Keep wearing $it" } ?: "Not now") else null,
+                                    link = if (canWear) (keep?.let { stringResource(R.string.celebration_crest_keep_link, it) } ?: stringResource(R.string.celebration_crest_not_now_link)) else null,
                                     onLink = advance,
                                 )
                             },
@@ -349,10 +375,10 @@ internal fun AchievementOverlay(
                     } else MomentPage(
                         step = at,
                         steps = pages.size,
-                        tag = "Inscribed",
+                        tag = stringResource(R.string.celebration_inscribed_tag),
                         name = page.name,
                         beats = inscribedBeats(page.rarity),
-                        dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
+                        dock = { CelebrationDock(primary = stringResource(R.string.common_continue), onPrimary = advance) },
                         mark = { t ->
                             val seed = page.sigilSeed
                             if (seed != null) RelicMark(seed, page.relicId, page.rarity, t) else DeedSeal(t, 156.dp)
@@ -368,13 +394,13 @@ internal fun AchievementOverlay(
                     is CelebrationPage.GoalMet -> MomentPage(
                         step = at,
                         steps = pages.size,
-                        tag = "${Words.circle.c}'s goal met",
+                        tag = UiText.themed(R.string.celebration_goal_met_tag, R.string.celebration_goal_met_tag__t).asString(),
                         name = page.name,
                         beats = GoalBeats,
-                        dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
+                        dock = { CelebrationDock(primary = stringResource(R.string.common_continue), onPrimary = advance) },
                         subline = {
                             Text(
-                                "The ${Words.circle.s} met its weekly goal and you carried your share.",
+                                UiText.themed(R.string.celebration_goal_met_subline, R.string.celebration_goal_met_subline__t).asString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Dim,
                                 textAlign = TextAlign.Center,
@@ -436,7 +462,7 @@ private fun MomentPage(
         if (xp != null && xp > 0) {
             Spacer(Modifier.height(20.dp))
             Text(
-                "+${count(xp)} XP",
+                stringResource(R.string.xp_gain_label, count(xp)),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,

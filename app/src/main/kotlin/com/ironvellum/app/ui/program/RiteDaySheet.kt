@@ -29,8 +29,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** The seven weekdays as the pick grid draws them, then the option that leaves the rite off the cycle. */
 internal val DAY_PICKS: List<Pair<Int?, String>>
     get() = listOf(
-        1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
-        5 to "Fri", 6 to "Sat", 7 to "Sun", null to Words.text(UiText.res(R.string.riteday_no_day)),
+        1 to dayShort(1), 2 to dayShort(2), 3 to dayShort(3), 4 to dayShort(4),
+        5 to dayShort(5), 6 to dayShort(6), 7 to dayShort(7), null to Words.text(UiText.res(R.string.riteday_no_day)),
     )
 
 /**

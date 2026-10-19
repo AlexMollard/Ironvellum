@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,10 +59,10 @@ fun ModifierChipGrid(
         val misfit = chips.filter { it.flag == ModifierFlag.NOT_APPLICABLE }.map { it.token }
         val unknown = chips.filter { it.flag == ModifierFlag.UNKNOWN }.map { it.token }
         if (misfit.isNotEmpty()) {
-            FlagNote("${misfit.joinToString(", ")}: not offered for this movement. Tap to remove.")
+            FlagNote(stringResource(R.string.modchips_misfit_note, misfit.joinToString(", ")))
         }
         if (unknown.isNotEmpty()) {
-            FlagNote("${unknown.joinToString(", ")}: not a known modifier, so it scores nothing. Tap to remove.")
+            FlagNote(stringResource(R.string.modchips_unknown_note, unknown.joinToString(", ")))
         }
     }
 }
@@ -81,10 +83,10 @@ private fun ModifierChipCell(chip: ModifierChip, modifier: Modifier, onToggle: (
     val shape = MaterialTheme.shapes.extraSmall
     val flagged = chip.flag != ModifierFlag.NONE
     val state = when {
-        chip.flag == ModifierFlag.UNKNOWN -> "set, not a known modifier"
-        chip.flag == ModifierFlag.NOT_APPLICABLE -> "set, not offered for this movement"
-        on -> "set"
-        else -> "not set"
+        chip.flag == ModifierFlag.UNKNOWN -> stringResource(R.string.modchips_state_unknown)
+        chip.flag == ModifierFlag.NOT_APPLICABLE -> stringResource(R.string.modchips_state_misfit)
+        on -> stringResource(R.string.modchips_state_set)
+        else -> stringResource(R.string.modchips_state_not_set)
     }
     Box(
         modifier
@@ -106,7 +108,7 @@ private fun ModifierChipCell(chip: ModifierChip, modifier: Modifier, onToggle: (
                 1.dp,
             )
             .semantics { contentDescription = "${chip.token}, $state" }
-            .clickable(role = Role.Button, onClickLabel = if (on) "Remove ${chip.token}" else "Set ${chip.token}") { onToggle(chip.token) }
+            .clickable(role = Role.Button, onClickLabel = stringResource(if (on) R.string.modchips_remove_label else R.string.modchips_set_label, chip.token)) { onToggle(chip.token) }
             .padding(vertical = 8.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {

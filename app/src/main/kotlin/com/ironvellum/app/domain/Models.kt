@@ -1,11 +1,29 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * Lifting groups first, then the activity groups the seeded sports use.
  * Activity work has no single muscle group, so it gets its own bucket rather
  * than being mislabelled as PULL or LEGS.
  */
-enum class MuscleGroup { PULL, PUSH, LEGS, CORE, CARDIO, SPORT, CLIMBING, WATER, MOBILITY }
+enum class MuscleGroup(@StringRes private val labelRes: Int) {
+    PULL(R.string.musclegroup_pull),
+    PUSH(R.string.musclegroup_push),
+    LEGS(R.string.musclegroup_legs),
+    CORE(R.string.musclegroup_core),
+    CARDIO(R.string.musclegroup_cardio),
+    SPORT(R.string.musclegroup_sport),
+    CLIMBING(R.string.musclegroup_climbing),
+    WATER(R.string.musclegroup_water),
+    MOBILITY(R.string.musclegroup_mobility),
+    ;
+
+    /** The group's name as a chip or caption reads it, in sentence case. */
+    val displayName: String get() = Words.text(UiText.res(labelRes))
+}
 
 /**
  * How a movement is measured. REPS is the lifting/calisthenics case.

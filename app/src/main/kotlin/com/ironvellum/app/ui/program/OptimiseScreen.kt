@@ -69,6 +69,7 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.data.Words
 
 /*
  * Optimise rites. One screen with a small stack of pages (the hub, a gap's movement and rite, a heavy muscle,
@@ -643,7 +644,7 @@ private fun WherePage(
                 onApply(
                     Applied(
                         title = addedTitle,
-                        lines = listOf("Add" to "${candidate.exercise.name}, ${hardSetsText(entry.sets)}"),
+                        lines = listOf(Words.text(UiText.res(R.string.optimise_kind_add)) to "${candidate.exercise.name}, ${hardSetsText(entry.sets)}"),
                         skipped = 0,
                         before = listOf(input.ids[index] to week[index]),
                         riteNames = listOf(week[index].name),

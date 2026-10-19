@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.theme
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -27,15 +31,18 @@ data class AccentPalette(
     }
 }
 
-data class AccentPreset(val name: String, val palette: AccentPalette)
+data class AccentPreset(@StringRes private val nameRes: Int, val palette: AccentPalette) {
+    /** The preset's name as shown. */
+    val name: String get() = Words.text(UiText.res(nameRes))
+}
 
 object AccentPresets {
     /** The dark presets. */
     val entries = listOf(
-        AccentPreset("Emerald & Gold", AccentPalette.Default),
-        AccentPreset("Sapphire & Amber", AccentPalette(0xFF60A5FA.toInt(), 0xFFFBBF24.toInt())),
-        AccentPreset("Violet & Rose", AccentPalette(0xFFA78BFA.toInt(), 0xFFFB7185.toInt())),
-        AccentPreset("Ice & Copper", AccentPalette(0xFF67E8F9.toInt(), 0xFFE6A07C.toInt())),
+        AccentPreset(R.string.accent_emerald_gold, AccentPalette.Default),
+        AccentPreset(R.string.accent_sapphire_amber, AccentPalette(0xFF60A5FA.toInt(), 0xFFFBBF24.toInt())),
+        AccentPreset(R.string.accent_violet_rose, AccentPalette(0xFFA78BFA.toInt(), 0xFFFB7185.toInt())),
+        AccentPreset(R.string.accent_ice_copper, AccentPalette(0xFF67E8F9.toInt(), 0xFFE6A07C.toInt())),
     )
 
     /**
@@ -44,10 +51,10 @@ object AccentPresets {
      * 21 degrees from the gold's (hue 41) and would read as the same colour.
      */
     val light = listOf(
-        AccentPreset("Forest & Gold", AccentPalette.LightDefault),
-        AccentPreset("Oxblood & Gold", AccentPalette(0xFF8E2F2B.toInt(), 0xFF8A5F00.toInt())),
-        AccentPreset("Ink & Gold", AccentPalette(0xFF2F4C7A.toInt(), 0xFF8A5F00.toInt())),
-        AccentPreset("Copper & Teal", AccentPalette(0xFFA9542A.toInt(), 0xFF1B6A72.toInt())),
+        AccentPreset(R.string.accent_forest_gold, AccentPalette.LightDefault),
+        AccentPreset(R.string.accent_oxblood_gold, AccentPalette(0xFF8E2F2B.toInt(), 0xFF8A5F00.toInt())),
+        AccentPreset(R.string.accent_ink_gold, AccentPalette(0xFF2F4C7A.toInt(), 0xFF8A5F00.toInt())),
+        AccentPreset(R.string.accent_copper_teal, AccentPalette(0xFFA9542A.toInt(), 0xFF1B6A72.toInt())),
     )
 
     fun forTheme(light: Boolean) = if (light) this.light else entries

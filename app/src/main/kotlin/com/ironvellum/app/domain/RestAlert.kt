@@ -1,5 +1,9 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
+import androidx.annotation.StringRes
+
 /**
  * How the app tells the lifter a rest is over, and cues the last seconds of a
  * timed set. One setting for both, so a lifter who wants quiet gets quiet
@@ -8,12 +12,15 @@ package com.ironvellum.app.domain
 enum class RestAlert(
     /** Never renamed: it is what the preferences store. */
     val wire: String,
-    val label: String,
-    val caption: String,
+    @StringRes private val labelRes: Int,
+    @StringRes private val captionRes: Int,
 ) {
-    VIBRATE("vibrate", "Vibrate", "One short buzz. No sound."),
-    SOUND_VIBRATE("sound_vibrate", "Sound + vibrate", "The phone's default notification sound, with a buzz."),
-    SILENT("silent", "Silent", "A quiet notice. No sound and no buzz.");
+    VIBRATE("vibrate", R.string.rest_alert_vibrate, R.string.rest_alert_vibrate_caption),
+    SOUND_VIBRATE("sound_vibrate", R.string.rest_alert_sound_vibrate, R.string.rest_alert_sound_vibrate_caption),
+    SILENT("silent", R.string.rest_alert_silent, R.string.rest_alert_silent_caption);
+
+    val label: String get() = Words.text(UiText.res(labelRes))
+    val caption: String get() = Words.text(UiText.res(captionRes))
 
     val vibrates: Boolean get() = this != SILENT
     val sounds: Boolean get() = this == SOUND_VIBRATE

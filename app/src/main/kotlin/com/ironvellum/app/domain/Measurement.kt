@@ -1,57 +1,32 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * Each site carries its own technique note. A circumference is only comparable
  * to your own past numbers if the tape goes in the same place at the same
  * tension every time — an inconsistent method produces a trend line that
  * measures your measuring, not your training.
  */
-enum class MeasurementSite(val label: String, val howTo: String) {
-    NECK(
-        "Neck",
-        "Just below the Adam's apple, tape level and snug without pressing in. " +
-            "Look straight ahead, shoulders relaxed.",
-    ),
-    SHOULDERS(
-        "Shoulders",
-        "Widest point around the deltoids, arms hanging loose. Keep the tape " +
-            "level front and back — easiest with a mirror.",
-    ),
-    CHEST(
-        "Chest",
-        "Widest part, tape level under the armpits across the nipple line. " +
-            "Measure at the end of a normal exhale, never on a held breath.",
-    ),
-    UPPER_ARM(
-        "Upper arm",
-        "Midway between shoulder and elbow. Pick flexed OR relaxed and keep it " +
-            "that way forever — mixing the two invents gains. Same arm each time.",
-    ),
-    FOREARM(
-        "Forearm",
-        "Widest point below the elbow, arm hanging straight, hand open. " +
-            "A clenched fist adds size that is not there.",
-    ),
-    WAIST(
-        "Waist",
-        "Narrowest point, usually just above the navel. Relaxed belly, normal " +
-            "exhale, no sucking in. Morning before food is the most repeatable.",
-    ),
-    HIPS(
-        "Hips",
-        "Widest point around the glutes, feet together, weight even. " +
-            "Tape level the whole way round.",
-    ),
-    THIGH(
-        "Thigh",
-        "Widest point high on the leg, just below the glute fold. Stand tall, " +
-            "weight on both feet, muscle relaxed. Same leg every time.",
-    ),
-    CALF(
-        "Calf",
-        "Widest point mid-calf, standing with weight even on both feet. " +
-            "Seated or on tiptoe gives a different number.",
-    ),
+enum class MeasurementSite(@StringRes val labelRes: Int, @StringRes val howToRes: Int) {
+    NECK(R.string.measurement_site_neck, R.string.measurement_site_neck_how_to),
+    SHOULDERS(R.string.measurement_site_shoulders, R.string.measurement_site_shoulders_how_to),
+    CHEST(R.string.measurement_site_chest, R.string.measurement_site_chest_how_to),
+    UPPER_ARM(R.string.measurement_site_upper_arm, R.string.measurement_site_upper_arm_how_to),
+    FOREARM(R.string.measurement_site_forearm, R.string.measurement_site_forearm_how_to),
+    WAIST(R.string.measurement_site_waist, R.string.measurement_site_waist_how_to),
+    HIPS(R.string.measurement_site_hips, R.string.measurement_site_hips_how_to),
+    THIGH(R.string.measurement_site_thigh, R.string.measurement_site_thigh_how_to),
+    CALF(R.string.measurement_site_calf, R.string.measurement_site_calf_how_to),
+    ;
+
+    /** The site name on screen, in the current language. */
+    val label: String get() = Words.text(UiText.res(labelRes))
+
+    /** The technique note on screen, in the current language. */
+    val howTo: String get() = Words.text(UiText.res(howToRes))
 }
 
 data class MeasurementEntry(

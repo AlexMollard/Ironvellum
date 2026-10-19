@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -68,7 +70,7 @@ fun SettingsValueRow(label: String, value: String?, onClick: () -> Unit) {
     ListRow(
         label,
         value = value,
-        onClickLabel = "Open $label",
+        onClickLabel = stringResource(R.string.settings_row_open_label, label),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         onClick = onClick,
     )

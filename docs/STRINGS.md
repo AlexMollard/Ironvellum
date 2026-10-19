@@ -228,3 +228,24 @@ Lines containing `Words.<concept>.<form>` under `app/src/main`, outside `Words.k
 | ui/social/CommentsScreen.kt | 19 |
 | data/cloud/CloudSync.kt | 19 |
 | data/Repository.kt | 19 |
+
+## Recipe: text that comes from a function or an enum
+
+Domain code has no `Context`, so labels there are resource ids resolved late, keeping the `String` API:
+
+- Enum: `enum class X(@StringRes private val labelRes: Int)` with `val label: String get() = Words.text(UiText.res(labelRes))`
+  (`Gear`, `TrainingSplit`, `SessionKind`, `RestAlert`, `TrainingFocus`). A themed pair uses `UiText.themed(plain, themed)`.
+- Helper returning text (`stepsAsOfCaption`, `peakGainText`, `chartSummary`, `Rank.label(band)`): build a `UiText`
+  and call `Words.text(...)`, or return the `UiText` and let the screen resolve it.
+- Counts: `UiText.plural(id, count, args)`. When `args` is not empty it is the whole argument list, so repeat the
+  count in it (`%1$d`).
+- Accessibility text uses `a11y_state_*` and `..._description` strings, never an inline literal.
+
+The guard cannot see single-word literals (`Text("Save")`), so review those by hand; the en-XA pseudolocale shows
+them as unbracketed English: `adb shell cmd locale set-app-locales com.ironvellum.app --locales en-XA`.
+
+### Not migrated as of 1.8
+
+Social screens (circles, comments, lifter, account), idle / Veil / Crests copy, Cloud and Account error messages,
+rank titles and the catalogue names stay English. The remaining count is the baseline in
+`app/src/test/resources/hardcoded-ui-literals.baseline`.

@@ -44,7 +44,7 @@ object SettingsSummaries {
         name?.trim()?.takeIf { it.isNotEmpty() }?.let(Words::displayName),
         heightCm?.let { plain(R.string.settings_summary_height_cm, formatHeightCm(it)) }
             ?: plain(R.string.settings_summary_height_not_set),
-        sex?.name?.lowercase()?.replaceFirstChar { it.uppercase() },
+        sex?.label,
     ).joinToString(" · ")
 
     /** Whether Health Connect is linked, and how many days it has filled. */

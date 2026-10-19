@@ -498,7 +498,7 @@ internal fun CoveragePage(
                                 ),
                                 onClick = { coveredOpen = !coveredOpen },
                             )
-                            .semantics { stateDescription = if (coveredOpen) "Expanded" else "Collapsed" },
+                            .semantics { stateDescription = Words.text(UiText.res(if (coveredOpen) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {

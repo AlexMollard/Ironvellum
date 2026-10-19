@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -67,12 +68,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Xp
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -283,11 +286,12 @@ internal fun DockedActionBar(
 /** "1 of 2": two dots and a count at the top of a step page. */
 @Composable
 internal fun StepIndicator(step: Int, steps: Int) {
+    val description = stringResource(R.string.celebration_step_description, step + 1, steps)
     Row(
         Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
-            .clearAndSetSemantics { contentDescription = "Step ${step + 1} of $steps" },
+            .clearAndSetSemantics { contentDescription = description },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -301,7 +305,7 @@ internal fun StepIndicator(step: Int, steps: Int) {
             }
         }
         Text(
-            "${step + 1} of $steps",
+            stringResource(R.string.celebration_step_counter, step + 1, steps),
             style = MaterialTheme.typography.labelMedium,
             color = Dim,
             modifier = Modifier.padding(start = 12.dp),
@@ -381,23 +385,25 @@ internal fun LevelUpPage(
         into = end.intoLevel * ((x - toLevelEnd) / (levelUp.xpAwarded - toLevelEnd).coerceAtLeast(1))
         needed = end.needed
     }
-    val tier = levelUp.classAfter.takeIf { it != levelUp.classBefore }?.let { " · $it" }.orEmpty()
+    val tier = levelUp.classAfter.takeIf { it != levelUp.classBefore }
+    val levelDescription = stringResource(R.string.xp_level_label, levelUp.levelAfter)
+    val xpDescription = stringResource(R.string.celebration_level_xp_earned_description, levelUp.xpAwarded)
 
     StepPage(
         step = step,
         steps = steps,
         dock = {
             CelebrationDock(
-                primary = "Continue",
+                primary = stringResource(R.string.common_continue),
                 onPrimary = onContinue,
-                link = "Skip to summary".takeIf { canSkip },
+                link = stringResource(R.string.xp_skip_summary).takeIf { canSkip },
                 linkColor = Dim,
                 onLink = onSkip,
             )
         },
     ) {
         Text(
-            "Level up",
+            stringResource(R.string.xp_level_up_tag),
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
@@ -414,7 +420,7 @@ internal fun LevelUpPage(
                     scaleX = s
                     scaleY = s
                 }
-                .clearAndSetSemantics { contentDescription = "Level ${levelUp.levelAfter}" },
+                .clearAndSetSemantics { contentDescription = levelDescription },
             contentAlignment = Alignment.Center,
         ) {
             Canvas(Modifier.fillMaxSize()) {
@@ -435,7 +441,7 @@ internal fun LevelUpPage(
         Spacer(Modifier.height(34.dp))
         Column(Modifier.fillMaxWidth().reveal(t >= 500, motion)) {
             Text(
-                "+${count(x.toInt())} XP",
+                stringResource(R.string.xp_gain_label, count(x.toInt())),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
@@ -444,18 +450,22 @@ internal fun LevelUpPage(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "${levelUp.xpAwarded} XP earned" },
+                    .semantics { contentDescription = xpDescription },
             )
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "Level ${levelUp.levelBefore} to ${levelUp.levelAfter}$tier",
+                    if (tier == null) {
+                        stringResource(R.string.celebration_level_range, levelUp.levelBefore, levelUp.levelAfter)
+                    } else {
+                        stringResource(R.string.celebration_level_range_tier, levelUp.levelBefore, levelUp.levelAfter, tier)
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = Dim,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "${count(into.toLong())} / ${count(needed)} XP",
+                    stringResource(R.string.xp_progress_label, count(into.toLong()), count(needed)),
                     style = MaterialTheme.typography.labelMedium,
                     color = Dim,
                 )
@@ -472,7 +482,7 @@ internal fun LevelUpPage(
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            "${count(end.needed - end.intoLevel)} XP to level ${levelUp.levelAfter + 1}",
+            stringResource(R.string.celebration_level_xp_to_next, count(end.needed - end.intoLevel), levelUp.levelAfter + 1),
             style = MaterialTheme.typography.labelMedium,
             color = Dim,
             modifier = Modifier.reveal(t >= CROSS_AT, motion),
@@ -574,9 +584,9 @@ internal fun DeedsPage(
         steps = steps,
         dock = {
             CelebrationDock(
-                primary = "Continue",
+                primary = stringResource(R.string.common_continue),
                 onPrimary = onContinue,
-                link = if (target == null) null else if (worn) "Wearing ✓" else "Wear title",
+                link = if (target == null) null else if (worn) stringResource(R.string.celebration_deed_wearing_link) else stringResource(R.string.celebration_deed_wear_button),
                 linkOn = !worn,
                 linkColor = if (worn) IronvellumColors.Emerald else IronvellumColors.SystemGreen,
                 onLink = {
@@ -589,7 +599,7 @@ internal fun DeedsPage(
         },
     ) {
         Text(
-            if (deeds.size == 1) "${Words.deed.c} earned" else "${Words.deed.cpl} earned",
+            UiText.plural(R.plurals.always_celebration_deed_earned, deeds.size).asString(),
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,

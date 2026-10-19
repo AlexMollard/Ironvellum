@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
@@ -177,10 +179,10 @@ internal fun veilStrength(lastCollectedAtMs: Long, nowMs: Long, houses: HouseEff
     val hours = elapsed / 3_600_000.0
     val window = houses.fullStrengthHours
     if (hours >= window) {
-        return VeilStrength(0f, "Tapering, at ${(Idle.efficiencyAtHours(hours, houses) * 100).roundToInt()}% strength")
+        return VeilStrength(0f, Words.text(UiText.res(R.string.always_veil_strength_tapering, (Idle.efficiencyAtHours(hours, houses) * 100).roundToInt())))
     }
     val left = 1.0 - Idle.fullStrengthFraction(elapsed, houses)
-    return VeilStrength(left.toFloat(), "${ceil(left * window).toInt()} h left at full strength")
+    return VeilStrength(left.toFloat(), Words.text(UiText.res(R.string.always_veil_strength_left, ceil(left * window).toInt())))
 }
 
 /** The set a peak was lifted with, as the Ledger's rows read it: "100 kg × 5", "+11 kg × 8" for load added to the body. */
@@ -200,7 +202,7 @@ internal fun peakGainText(peak: RepMax.Recent): String {
         }
         RepMax.Kind.MORE_REPS -> {
             val gain = RepMax.figureOf(hit.set, peak.isHold) - hit.was.figure
-            if (peak.isHold) "${gain}s" else "$gain ${if (gain == 1) "rep" else "reps"}"
+            Words.text(if (peak.isHold) UiText.res(R.string.today_peak_gain_seconds, gain) else UiText.plural(R.plurals.common_reps_count, gain, gain))
         }
     }
 }
@@ -267,12 +269,16 @@ internal data class InscriptionsLine(val text: String, val waiting: Boolean, val
 internal fun inscriptionsLine(waiting: Int?, buyPrice: Long? = null): InscriptionsLine = when {
     waiting == null -> InscriptionsLine("", waiting = false)
     waiting > 0 -> InscriptionsLine(
-        "$waiting ${plural(waiting, "inscription", "inscriptions")} waiting",
+        Words.text(UiText.plural(R.plurals.always_veil_inscriptions_waiting, waiting, waiting)),
         waiting = true,
-        action = "Inscribe ($waiting)",
+        action = Words.text(UiText.res(R.string.always_veil_inscribe_action, waiting)),
     )
-    buyPrice != null -> InscriptionsLine("No inscriptions waiting", waiting = false, action = "Buy one \u00b7 ${"%,d".format(buyPrice)}")
-    else -> InscriptionsLine("No inscriptions waiting", waiting = false)
+    buyPrice != null -> InscriptionsLine(
+        Words.text(UiText.res(R.string.always_veil_inscriptions_none)),
+        waiting = false,
+        action = Words.text(UiText.res(R.string.always_veil_buy_action, "%,d".format(buyPrice))),
+    )
+    else -> InscriptionsLine(Words.text(UiText.res(R.string.always_veil_inscriptions_none)), waiting = false)
 }
 
 /** The SEALED stamp thuds in once, and only for a rite sealed this recently: an old seal is simply there. */

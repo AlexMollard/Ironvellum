@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
@@ -58,7 +62,6 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRail
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.program.BodyFigures
 import com.ironvellum.app.ui.program.FigureGeometry
 import com.ironvellum.app.ui.program.FigureView
@@ -143,15 +146,18 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
             (title.rule as? TitleRule.TrainingStreak)?.days?.let { it to title }
         }.filter { it.first > days }.minByOrNull { it.first }
     }
+    val oathKept = UiText.plural(R.plurals.today_oath_kept, days).asString()
+    val oathValue = if (next != null) stringResource(R.string.today_oath_progress, days, next.first) else oathKept
+    val oathState = if (next != null) stringResource(R.string.today_oath_state_next, oathKept, next.first) else oathKept
     Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
         ProgressColumn(
             title = "${ArmyClass.forLevel(progress.level).title} ${progress.level}",
             fraction = if (progress.needed <= 0) 0f else progress.intoLevel.toFloat() / progress.needed,
-            value = AnnotatedString("${progress.intoLevel} / ${progress.needed} XP"),
-            caption = "Level progress",
+            value = AnnotatedString(stringResource(R.string.today_level_value, progress.intoLevel, progress.needed)),
+            caption = stringResource(R.string.today_level_caption),
             fill = emeraldRamp(),
-            tag = "today-level", barTag = "today-xp-bar", onClickLabel = "Explain level and XP",
-            state = "${progress.intoLevel} of ${progress.needed} XP towards the next level",
+            tag = "today-level", barTag = "today-xp-bar", onClickLabel = stringResource(R.string.today_level_explain_label),
+            state = stringResource(R.string.today_level_state, progress.intoLevel, progress.needed),
             modifier = Modifier.weight(1f), onClick = onLevel,
         )
         Spacer(Modifier.width(20.dp))
@@ -159,18 +165,23 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
             title = Words.oath.c,
             fraction = next?.let { days.toFloat() / it.first } ?: 1f,
             value = buildAnnotatedString {
-                // Gold is for what was earned: no days kept yet reads in plain Ink.
-                withStyle(SpanStyle(color = if (days > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink)) { append(days.toString()) }
-                append(next?.let { " / ${it.first} days" } ?: " ${plural(days, "day", "days")} kept")
+                append(oathValue)
+                // Gold is for what was earned: no days kept yet reads in plain Ink. The figure leads the text in every language
+                // that writes it first; indexOf finds it wherever the translation puts it.
+                val figure = days.toString()
+                val at = oathValue.indexOf(figure)
+                if (at >= 0) {
+                    addStyle(SpanStyle(color = if (days > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink), at, at + figure.length)
+                }
             },
             caption = when {
-                days == 0 -> "${Words.seal.c} ${Words.trial.a} to begin"
-                next != null -> "Next: ${next.second.name}"
-                else -> "Milestones complete"
+                days == 0 -> UiText.themed(R.string.today_oath_caption_begin, R.string.today_oath_caption_begin__t).asString()
+                next != null -> stringResource(R.string.today_oath_caption_next, next.second.name)
+                else -> stringResource(R.string.today_oath_caption_done)
             },
             fill = Metal.Fabled.bounds(),
-            tag = "today-oath", barTag = "today-oath-bar", onClickLabel = "Explain ${Words.oath.t}",
-            state = "$days ${plural(days, "day", "days")} kept" + (next?.let { "; next milestone at ${it.first} days" } ?: ""),
+            tag = "today-oath", barTag = "today-oath-bar", onClickLabel = UiText.themed(R.string.today_oath_explain_label, R.string.today_oath_explain_label__t).asString(),
+            state = oathState,
             modifier = Modifier.weight(1f), onClick = onOath,
         )
     }

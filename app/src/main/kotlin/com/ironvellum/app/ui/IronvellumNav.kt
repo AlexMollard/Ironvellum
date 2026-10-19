@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.SideEffect
 import android.net.Uri
 
@@ -212,11 +214,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
     val inboxUnread by ironvellumApp.cloudSync.inboxUnread.collectAsStateWithLifecycle()
 
     val destinations = listOf(
-        BottomDestination(Routes.DASHBOARD, "Today", Icons.Outlined.Home),
+        BottomDestination(Routes.DASHBOARD, stringResource(R.string.nav_tab_today), Icons.Outlined.Home),
         BottomDestination(Routes.STATS, Words.ledger.c, Icons.Outlined.BarChart),
         // Training is what the app is for, so its tab takes the middle slot,
         // under the thumb, and stands proud of the bar.
-        BottomDestination(Routes.PRESETS, "Train", DumbbellIcon, raised = true),
+        BottomDestination(Routes.PRESETS, stringResource(R.string.nav_tab_train), DumbbellIcon, raised = true),
         BottomDestination(Routes.TITLES, Words.codex.c, Icons.Outlined.AutoStories),
         BottomDestination(Routes.SOCIAL, Words.ally.cpl, Icons.Outlined.Person),
         // The Garrison is reached from Today's footer, not a tab: five is the
@@ -748,7 +750,7 @@ private fun IronvellumBottomBar(
                                 Icon(
                                     destination.icon,
                                     contentDescription = if (unreadHere) {
-                                        "${destination.label}, $inboxUnread unread"
+                                        stringResource(R.string.nav_tab_unread_description, destination.label, inboxUnread)
                                     } else {
                                         destination.label
                                     },

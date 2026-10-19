@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -234,6 +238,7 @@ fun BarChart(
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
+    val noData = stringResource(R.string.trendchart_no_data)
 
     Column(Modifier.fillMaxWidth()) {
         Canvas(
@@ -243,7 +248,7 @@ fun BarChart(
                         spoken, scrubState, values.size,
                         included = { true },
                         readout = { i ->
-                            scrubReadout(values[i]?.let(valueText) ?: "no data", dateText?.invoke(i))
+                            scrubReadout(values[i]?.let(valueText) ?: noData, dateText?.invoke(i))
                         },
                     )
                 }
@@ -290,7 +295,7 @@ fun BarChart(
                 val v = values[at]
                 drawScrub(
                     measurer, readoutStyle,
-                    scrubReadout(if (v == null) "no data" else valueText(v), dateText?.invoke(at)),
+                    scrubReadout(if (v == null) noData else valueText(v), dateText?.invoke(at)),
                     barCenterX(at, values.size, size.width),
                     v?.let { yFor(it).coerceAtMost(base - 2.dp.toPx()) },
                     seed = at,
@@ -349,13 +354,20 @@ internal fun chartSummary(
     valueText: (Double) -> String = ::scrubNumber,
 ): String {
     val present = values.filterNotNull()
-    if (present.isEmpty()) return "Chart with no data"
+    if (present.isEmpty()) return Words.text(UiText.res(R.string.chart_summary_none))
     val f = valueText
     val gaps = values.size - present.size
-    return buildString {
-        append("Chart of ${present.size} ${if (present.size == 1) "value" else "values"}")
-        if (gaps > 0) append(", $gaps of ${values.size} slots empty")
-        append(". Latest ${f(values.last { it != null }!!)}, low ${f(present.min())}, high ${f(present.max())}.")
-        if (startLabel != null && endLabel != null) append(" From $startLabel to $endLabel.")
-    }
+    val n = present.size
+    val latest = f(values.last { it != null }!!)
+    val low = f(present.min())
+    val high = f(present.max())
+    val ranged = startLabel != null && endLabel != null
+    return Words.text(
+        when {
+            gaps > 0 && ranged -> UiText.plural(R.plurals.chart_summary_gaps_range, n, n, gaps, values.size, latest, low, high, startLabel!!, endLabel!!)
+            gaps > 0 -> UiText.plural(R.plurals.chart_summary_gaps, n, n, gaps, values.size, latest, low, high)
+            ranged -> UiText.plural(R.plurals.chart_summary_range, n, n, latest, low, high, startLabel!!, endLabel!!)
+            else -> UiText.plural(R.plurals.chart_summary, n, n, latest, low, high)
+        },
+    )
 }

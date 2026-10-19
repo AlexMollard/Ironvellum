@@ -66,6 +66,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkHairline
 import androidx.core.content.edit
 import kotlinx.coroutines.delay
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 
 /**
  * The one sheet every "info" pop-up uses, so an explainer, an exercise guide, a
@@ -544,20 +548,24 @@ private class InfoSheetBuilder : InfoSheetScope {
 /** The fold toggle: a 48dp target that announces whether the section is open. */
 @Composable
 private fun ShowMore(label: String?, expanded: Boolean, hidden: String, onToggle: (() -> Unit)?) {
-    val what = label?.lowercase() ?: "text"
+    val what = label?.lowercase() ?: stringResource(R.string.infosheet_fold_default_what)
     Row(
         Modifier
             .heightIn(min = LedgerSpace.Target)
             .clickable(
                 role = Role.Button,
-                onClickLabel = if (expanded) "Show less of $what" else "Show more of $what",
+                onClickLabel = stringResource(if (expanded) R.string.infosheet_show_less_of else R.string.infosheet_show_more_of, what),
             ) { onToggle?.invoke() }
-            .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" }
+            .semantics { stateDescription = Words.text(UiText.res(if (expanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) }
             .padding(end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            if (expanded) "Show less" else if (hidden.isNotEmpty()) "Show more ($hidden)" else "Show more",
+            when {
+                expanded -> stringResource(R.string.infosheet_show_less_button)
+                hidden.isNotEmpty() -> stringResource(R.string.infosheet_show_more_count_button, hidden)
+                else -> stringResource(R.string.infosheet_show_more_button)
+            },
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,

@@ -777,15 +777,15 @@ fun ProgramBuilderScreen(
                     // that matched no template.
                     options = if (mode == "template") {
                         listOf(
-                            TrainingFocus.STRENGTH to "Power",
-                            TrainingFocus.MUSCLE to "Muscle",
+                            TrainingFocus.STRENGTH to TrainingFocus.STRENGTH.label,
+                            TrainingFocus.MUSCLE to TrainingFocus.MUSCLE.label,
                         )
                     } else {
                         listOf(
-                            TrainingFocus.STRENGTH to "Power",
-                            TrainingFocus.MUSCLE to "Muscle",
-                            TrainingFocus.SKILL to Words.technique.cpl,
-                            TrainingFocus.GENERAL to "Mixed",
+                            TrainingFocus.STRENGTH to TrainingFocus.STRENGTH.label,
+                            TrainingFocus.MUSCLE to TrainingFocus.MUSCLE.label,
+                            TrainingFocus.SKILL to TrainingFocus.SKILL.label,
+                            TrainingFocus.GENERAL to TrainingFocus.GENERAL.label,
                         )
                     },
                     selected = focus,

@@ -50,6 +50,7 @@ import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.data.Words
 
 /*
  * The coverage furniture: marks, legend, rows, summary and the "why effort" explainer. Every state has a word
@@ -301,7 +302,7 @@ internal fun Disclosure(title: String, open: Boolean, onToggle: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = ListRowHeight)
             .clickable(role = Role.Button, onClickLabel = hint, onClick = onToggle)
-            .semantics { stateDescription = if (open) "Expanded" else "Collapsed" },
+            .semantics { stateDescription = Words.text(UiText.res(if (open) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

@@ -217,10 +217,14 @@ class HardcodedUiLiteralTest {
         // The net under the lists above: prose (two or more words) is copy wherever it sits, whether it reaches
         // the screen through a helper, a return value or a `when` branch. Developer messages are not copy.
         for (lit in scan.literals) {
-            if (lit.start !in hits && isProse(lit.text) && enclosingCall(m, lit.start) !in DEVELOPER_CALLS) hits[lit.start] = lit
+            if (lit.start !in hits && isProse(lit.text) && !isDeveloperCall(enclosingCall(m, lit.start))) hits[lit.start] = lit
         }
         return hits.values.toList()
     }
+
+    /** A call whose text is for developers: `error`, `Log.w`, and `scope.launchGuarded` (the receiver does not matter). */
+    private fun isDeveloperCall(name: String?): Boolean =
+        name != null && (name in DEVELOPER_CALLS || name.substringAfterLast('.') in DEVELOPER_CALLS)
 
     /** The name of the call whose argument list holds [index], or null when it is not an argument. */
     private fun enclosingCall(m: String, index: Int): String? {
@@ -231,11 +235,32 @@ class HardcodedUiLiteralTest {
                 ')', ']', '}' -> depth++
                 '(', '[', '{' -> {
                     if (depth == 0) {
+                        if (m[i] == '{') return trailingLambdaOwner(m, i)
                         if (m[i] != '(') return null
                         return IDENT_BEFORE.find(m.substring(maxOf(0, i - 40), i))?.groupValues?.get(1)
                     }
                     depth--
                 }
+            }
+            i--
+        }
+        return null
+    }
+
+    /**
+     * The call a trailing lambda `{` at [open] belongs to: `require(ok) { "message" }` is owned by `require`, so a
+     * developer message in its lambda is exempt like one in its argument list. Null for a lambda that follows no
+     * argument list (`Column { ... }`, `if (x) { ... }` bodies are not calls).
+     */
+    private fun trailingLambdaOwner(m: String, open: Int): String? {
+        var i = open - 1
+        while (i >= 0 && m[i].isWhitespace()) i--
+        if (i < 0 || m[i] != ')') return null
+        var depth = 0
+        while (i >= 0) {
+            when (m[i]) {
+                ')' -> depth++
+                '(' -> { depth--; if (depth == 0) return IDENT_BEFORE.find(m.substring(maxOf(0, i - 40), i))?.groupValues?.get(1) }
             }
             i--
         }

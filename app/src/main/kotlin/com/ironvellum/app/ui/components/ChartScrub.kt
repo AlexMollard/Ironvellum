@@ -37,6 +37,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
 import kotlin.math.abs
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 
 /*
  * Scrubbing: press and drag across a chart to read the value under the finger.
@@ -172,8 +175,8 @@ internal fun SemanticsPropertyReceiver.scrubSemantics(
         return true
     }
     customActions = listOf(
-        CustomAccessibilityAction("Next point") { go(1) },
-        CustomAccessibilityAction("Previous point") { go(-1) },
+        CustomAccessibilityAction(Words.text(UiText.res(R.string.chartscrub_next_point))) { go(1) },
+        CustomAccessibilityAction(Words.text(UiText.res(R.string.chartscrub_previous_point))) { go(-1) },
     )
 }
 

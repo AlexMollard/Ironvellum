@@ -824,7 +824,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         _rescore.value = RescoreUi(busy = true)
         viewModelScope.launchGuarded("preview xp rescore") {
             _rescore.value = runCatching { repo.previewXpRescore() }
-                .fold({ RescoreUi(plan = it) }, { RescoreUi(error = it.message ?: "The preview failed") })
+                .fold({ RescoreUi(plan = it) }, { RescoreUi(error = it.message ?: say(R.string.settings_advanced_dev_preview_failed)) })
         }
     }
 
@@ -834,7 +834,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         _rescore.value = _rescore.value?.copy(busy = true, error = null)
         viewModelScope.launchGuarded("apply xp rescore") {
             _rescore.value = runCatching { repo.applyXpRescore() }
-                .fold({ RescoreUi(plan = it, applied = true) }, { RescoreUi(error = it.message ?: "The rescore failed") })
+                .fold({ RescoreUi(plan = it, applied = true) }, { RescoreUi(error = it.message ?: say(R.string.settings_advanced_dev_apply_failed)) })
         }
     }
 

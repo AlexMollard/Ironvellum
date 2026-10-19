@@ -1061,7 +1061,7 @@ fun SessionScreen(
     // and it read "Trial in progress" behind a sealed trial).
     if (completion != null) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("${Words.trial.c} ${Words.sealed.s}", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+            Text(UiText.themed(R.string.session_sealed_placeholder_title, R.string.session_sealed_placeholder_title__t).asString(), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
             Text(session.title.ifBlank { session.label }, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
     } else Box(Modifier.fillMaxSize()) {

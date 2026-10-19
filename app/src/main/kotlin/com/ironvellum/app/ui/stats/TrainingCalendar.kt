@@ -18,7 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,7 +47,6 @@ import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
@@ -100,15 +103,14 @@ internal fun calendarWeeks(month: YearMonth, weekStart: DayOfWeek): List<List<Lo
 
 /** What a screen reader says for one day. */
 internal fun daySpeech(date: String, trials: Int, rite: Boolean, isToday: Boolean, future: Boolean): String =
-    buildString {
-        append(date)
-        when {
-            trials == 1 -> append(", ${Words.trial.s} ${Words.sealed.s}")
-            trials > 1 -> append(", $trials ${Words.trial.pl} ${Words.sealed.s}")
-            rite && future -> append(", ${Words.rite.s} day")
-            rite -> append(", ${Words.rite.s} day, no ${Words.trial.s} ${Words.sealed.s}")
+    run {
+        val base: UiText = when {
+            trials >= 1 -> UiText.themedPlural(R.plurals.stats_calendar_trials, R.plurals.stats_calendar_trials__t, trials, date, trials)
+            rite && future -> UiText.themed(R.string.stats_calendar_rite_day, R.string.stats_calendar_rite_day__t, date)
+            rite -> UiText.themed(R.string.stats_calendar_rite_missed, R.string.stats_calendar_rite_missed__t, date)
+            else -> UiText.Raw(date)
         }
-        if (isToday) append(", today")
+        Words.text(if (isToday) UiText.res(R.string.stats_calendar_today_speech, base) else base)
     }
 
 /**
@@ -140,9 +142,13 @@ internal fun TrainingCalendar(
 
     InkPanel(Modifier.fillMaxWidth()) {
         // The oath lives on Today; the month's count is the calendar's own.
-        StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, Words.trial.s, Words.trial.pl))
+        StatValue(inMonth.toString(), size = StatSize.Hero, unit = UiText.themedPlural(R.plurals.stats_calendar_unit, R.plurals.stats_calendar_unit__t, inMonth).asString())
         Text(
-            if (month == YearMonth.from(today)) "${Words.sealed.s} this month" else "${Words.sealed.s} in $monthName",
+            if (month == YearMonth.from(today)) {
+                UiText.themed(R.string.stats_calendar_this_month, R.string.stats_calendar_this_month__t).asString()
+            } else {
+                UiText.themed(R.string.stats_calendar_in_month, R.string.stats_calendar_in_month__t, monthName).asString()
+            },
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -152,7 +158,7 @@ internal fun TrainingCalendar(
             InkIconButton(onClick = { onMonth(-1) }) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous month",
+                    contentDescription = stringResource(R.string.stats_calendar_previous_month),
                     tint = IronvellumColors.SystemGreen,
                 )
             }
@@ -169,7 +175,7 @@ internal fun TrainingCalendar(
             InkIconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",
+                    contentDescription = stringResource(if (canAdvance) R.string.stats_calendar_next_month else R.string.stats_calendar_next_month_blocked),
                     tint = if (canAdvance) IronvellumColors.SystemGreen else LedgerContrast.Graphic,
                 )
             }
@@ -219,8 +225,8 @@ internal fun TrainingCalendar(
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             LegendItem(Words.sealed.s) { SealedMark() }
-            LegendItem("${Words.rite.s} day") { RiteMark() }
-            LegendItem("today") {
+            LegendItem(UiText.themed(R.string.stats_calendar_legend_rite, R.string.stats_calendar_legend_rite__t).asString()) { RiteMark() }
+            LegendItem(stringResource(R.string.stats_calendar_legend_today)) {
                 Box(Modifier.size(12.dp).inkBorder(IronvellumColors.Ink, DotShape, 1.5.dp))
             }
         }

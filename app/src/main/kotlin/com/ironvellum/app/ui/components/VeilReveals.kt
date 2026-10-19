@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.SpanStyle
@@ -43,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ironvellum.app.data.Words
+import com.ironvellum.app.R
 import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.DrawChange
 import com.ironvellum.app.domain.Gacha
@@ -51,9 +52,11 @@ import com.ironvellum.app.domain.RelicOutcome
 import com.ironvellum.app.domain.RelicReveal
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RewardRarity
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.METAL_WASH
@@ -108,12 +111,12 @@ internal fun InscribedOverlay(
             // Keyed so each draw starts its own clock and haptics.
             key(draw.serial) {
                 val page = draw.page
-                val again = "Inscribe again ($left left)"
+                val again = stringResource(R.string.veilreveal_again_button, left)
                 val dock: @Composable () -> Unit = {
                     if (left > 0) {
-                        CelebrationDock(primary = again, onPrimary = onAgain, link = "Done", onLink = onDone)
+                        CelebrationDock(primary = again, onPrimary = onAgain, link = stringResource(R.string.common_done), onLink = onDone)
                     } else {
-                        CelebrationDock(primary = "Done", onPrimary = onDone)
+                        CelebrationDock(primary = stringResource(R.string.common_done), onPrimary = onDone)
                     }
                 }
                 when {
@@ -129,17 +132,17 @@ internal fun InscribedOverlay(
                             line = page.crestLine,
                             dock = {
                                 when {
-                                    left > 0 -> CelebrationDock(primary = again, onPrimary = onAgain, link = "Done", onLink = onDone)
+                                    left > 0 -> CelebrationDock(primary = again, onPrimary = onAgain, link = stringResource(R.string.common_done), onLink = onDone)
                                     canWear -> CelebrationDock(
-                                        primary = "Wear crest",
+                                        primary = stringResource(R.string.celebration_crest_wear_button),
                                         onPrimary = {
                                             onWearCrest(id)
                                             onDone()
                                         },
-                                        link = "Done",
+                                        link = stringResource(R.string.common_done),
                                         onLink = onDone,
                                     )
-                                    else -> CelebrationDock(primary = "Done", onPrimary = onDone)
+                                    else -> CelebrationDock(primary = stringResource(R.string.common_done), onPrimary = onDone)
                                 }
                             },
                         )
@@ -168,7 +171,7 @@ internal fun RelicRevealPage(
     val tint = RarityTint.of(reveal.tier)
     StepPage(step = 0, steps = 1, dock = dock) {
         Text(
-            "Inscribed",
+            stringResource(R.string.celebration_inscribed_tag),
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
@@ -215,7 +218,7 @@ internal fun RelicRevealPage(
         ChangePanel(Modifier.padding(top = 16.dp).reveal(t >= 1_100, motion)) {
             RateRow(change)
             InkDivider()
-            ChangeRow("Strongest relic") { ChangeValue(strongestText(change)) }
+            ChangeRow(stringResource(R.string.veilreveal_row_strongest)) { ChangeValue(strongestText(change)) }
             InkDivider()
             HouseRow(change, reveal, slots)
         }
@@ -225,17 +228,17 @@ internal fun RelicRevealPage(
 /** What the draw did, in the app's voice. Every relic lifts the whole rate; a duplicate refines or pays echoes. */
 private fun outcomeLine(reveal: RelicReveal): String = when (reveal.outcome) {
     RelicOutcome.New -> reveal.effect
-    RelicOutcome.Refined -> "${reveal.effect} A duplicate refined it to ×${"%.2f".fmt(reveal.multiplier)}."
-    RelicOutcome.Maxed -> "Already at the best its tier allows, so it paid ${reveal.echoes} ${if (reveal.echoes == 1) "echo" else "echoes"} instead."
+    RelicOutcome.Refined -> uiString(R.string.veilreveal_outcome_refined, reveal.effect, "%.2f".fmt(reveal.multiplier))
+    RelicOutcome.Maxed -> uiPlural(R.plurals.veilreveal_outcome_maxed, reveal.echoes)
 }
 
 /** "Still Hourglass of Vigil", "New: Crown of Iron", or the first relic's name. */
 private fun strongestText(change: DrawChange): String {
-    val after = change.strongestAfter ?: return "None yet"
+    val after = change.strongestAfter ?: return uiString(R.string.veilreveal_strongest_none)
     return when {
-        change.strongestBefore == null -> "${after.name}, your first"
-        change.strongestChanged -> "New: ${after.name}"
-        else -> "Still ${after.name}"
+        change.strongestBefore == null -> uiString(R.string.veilreveal_strongest_first, after.name)
+        change.strongestChanged -> uiString(R.string.veilreveal_strongest_new, after.name)
+        else -> uiString(R.string.veilreveal_strongest_same, after.name)
     }
 }
 
@@ -253,7 +256,7 @@ internal fun EchoesRevealPage(draw: InscribedDraw, dock: @Composable () -> Unit)
     val tint = RarityTint.of(rarity)
     StepPage(step = 0, steps = 1, dock = dock) {
         Text(
-            "Inscribed",
+            stringResource(R.string.celebration_inscribed_tag),
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
@@ -296,7 +299,7 @@ internal fun EchoesRevealPage(draw: InscribedDraw, dock: @Composable () -> Unit)
         )
         Row(Modifier.padding(top = 2.dp).reveal(t >= 800, motion)) {
             Text(rarityWord(rarity), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = tint)
-            Text(" · added to your echoes, ${count(change.echoesAfter)} in all", style = MaterialTheme.typography.bodyMedium, color = Dim)
+            Text(" · " + stringResource(R.string.veilreveal_echoes_added, count(change.echoesAfter)), style = MaterialTheme.typography.bodyMedium, color = Dim)
         }
         ChangePanel(Modifier.padding(top = 18.dp).reveal(t >= 1_000, motion)) {
             RateRow(change)
@@ -309,22 +312,23 @@ internal fun EchoesRevealPage(draw: InscribedDraw, dock: @Composable () -> Unit)
 /** The line under the echo run: what pity does next. */
 private fun runNote(run: Int): String =
     if (run >= Gacha.PITY_AFTER) {
-        "Your next inscription is a relic or a crest."
+        uiString(R.string.veilreveal_run_note_ready)
     } else {
-        "After ${Gacha.PITY_AFTER}, your next inscription is a relic or a crest."
+        uiString(R.string.veilreveal_run_note_after, Gacha.PITY_AFTER)
     }
 
 /** The echo run as [Gacha.PITY_AFTER] squares, filled as they count, and what it means. */
 @Composable
 private fun RunRow(run: Int) {
     val filled = run.coerceIn(0, Gacha.PITY_AFTER)
+    val runDescription = stringResource(R.string.veilreveal_run_description, filled, Gacha.PITY_AFTER)
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(
-            Modifier.clearAndSetSemantics { contentDescription = "$filled of ${Gacha.PITY_AFTER} echo draws in a row" },
+            Modifier.clearAndSetSemantics { contentDescription = runDescription },
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             repeat(Gacha.PITY_AFTER) { i ->
@@ -339,7 +343,7 @@ private fun RunRow(run: Int) {
         }
         Column(Modifier.weight(1f)) {
             Text(
-                "$run echo ${if (run == 1) "draw" else "draws"} in a row",
+                UiText.plural(R.plurals.veilreveal_run_title, run).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = IronvellumColors.Ink,
@@ -378,17 +382,22 @@ private fun ChangeValue(text: String) {
 /** "148.9 → 156.3 per hour +7.4", or "148.9 per hour, unchanged". */
 @Composable
 private fun RateRow(change: DrawChange) {
-    ChangeRow("Rate") {
+    ChangeRow(stringResource(R.string.veilreveal_row_rate)) {
         val moved = change.rateDelta != 0.0
+        val rate = if (moved) {
+            stringResource(R.string.veilreveal_rate_moved, "%.1f".fmt(change.rateBefore), "%.1f".fmt(change.rateAfter))
+        } else {
+            stringResource(R.string.veilreveal_rate_unchanged, "%.1f".fmt(change.rateAfter))
+        }
         Text(
             buildAnnotatedString {
                 if (moved) {
-                    append("${"%.1f".fmt(change.rateBefore)} → ${"%.1f".fmt(change.rateAfter)} per hour ")
+                    append("$rate ")
                     withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) {
                         append("${if (change.rateDelta > 0) "+" else "−"}${"%.1f".fmt(kotlin.math.abs(change.rateDelta))}")
                     }
                 } else {
-                    append("${"%.1f".fmt(change.rateAfter)} per hour, unchanged")
+                    append(rate)
                 }
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -471,7 +480,7 @@ internal fun CrestRevealPage(
     val name = def?.sentenceName ?: crestId
     StepPage(step = step, steps = steps, dock = dock) {
         Text(
-            "Crest earned",
+            stringResource(R.string.celebration_crest_earned),
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
@@ -513,7 +522,7 @@ internal fun CrestRevealPage(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "${Words.veil.u} PERK · ${def.kind.label.uppercase()}",
+                    stringResource(R.string.always_veilreveal_perk_label, def.kind.label.uppercase()),
                     style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 1.sp,
                     color = Dim,
@@ -531,7 +540,7 @@ internal fun CrestRevealPage(
         }
         Spacer(Modifier.height(14.dp))
         Text(
-            "This one is yours to keep, whatever you wear.",
+            stringResource(R.string.veilreveal_crest_keep_note),
             style = MaterialTheme.typography.bodyMedium,
             color = Dim,
             textAlign = TextAlign.Center,

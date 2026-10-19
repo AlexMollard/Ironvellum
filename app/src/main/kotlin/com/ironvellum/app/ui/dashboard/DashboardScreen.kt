@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import androidx.compose.runtime.SideEffect
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.ui.StartupGate
@@ -361,7 +365,7 @@ class DashboardViewModel(
                 weightKg?.let { repo.logTodaysWeight(it) }
             }.fold(
                 onSuccess = { onSaved() },
-                onFailure = { _bodyError.value = "Could not save: ${it.message}" },
+                onFailure = { _bodyError.value = Words.text(UiText.res(R.string.today_body_save_error, it.message ?: "")) },
             )
         }
     }
@@ -400,7 +404,7 @@ internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId 
     if (syncedAtMs == null) return null
     val at = Instant.ofEpochMilli(syncedAtMs).atZone(zone)
     val pattern = if (at.toLocalDate() == today) "HH:mm" else "MMM d"
-    return "as of " + at.format(java.time.format.DateTimeFormatter.ofPattern(pattern, Locale.US))
+    return Words.text(UiText.res(R.string.today_steps_as_of, at.format(java.time.format.DateTimeFormatter.ofPattern(pattern, Locale.US))))
 }
 
 /** "48m", "1h 12m"; null for a trial with no sensible length (imports carry none). */
@@ -608,7 +612,7 @@ internal fun TodayContent(
             Column(
                 Modifier
                     .weight(1f)
-                    .clickable(onClickLabel = "Open the ${Words.codex.c}") { actions.onOpenCodex() },
+                    .clickable(onClickLabel = UiText.themed(R.string.today_codex_open_label, R.string.today_codex_open_label__t).asString()) { actions.onOpenCodex() },
             ) {
                 NameRow(
                     name = {
@@ -621,7 +625,7 @@ internal fun TodayContent(
                                     worn.id,
                                     Modifier
                                         .size(32.dp)
-                                        .clickable(role = Role.Button, onClickLabel = "Open crests") { actions.onOpenCrest() },
+                                        .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_crests_open_label)) { actions.onOpenCrest() },
                                 )
                             }
                             Spacer(Modifier.width(8.dp))
@@ -629,7 +633,7 @@ internal fun TodayContent(
                             // wearing "Lifter" as if it were chosen.
                             val unnamed = profile?.name?.let(Words::isDefaultName) == true
                             Text(
-                                if (unnamed) "Add your name" else profile?.name?.let(Words::displayName) ?: Words.lifter.c,
+                                if (unnamed) stringResource(R.string.today_name_add) else profile?.name?.let(Words::displayName) ?: Words.lifter.c,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (unnamed) IronvellumColors.SystemGreen else IronvellumColors.Ink,
@@ -639,7 +643,7 @@ internal fun TodayContent(
                                     Modifier
                                         .heightIn(min = 48.dp)
                                         .wrapContentHeight(Alignment.CenterVertically)
-                                        .clickable(role = Role.Button, onClickLabel = "Add your name") { actions.onAddName() }
+                                        .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_name_add)) { actions.onAddName() }
                                 } else {
                                     Modifier
                                 },
@@ -652,12 +656,12 @@ internal fun TodayContent(
                         Row(
                             Modifier
                                 .heightIn(min = 48.dp)
-                                .clickable(role = Role.Button, onClickLabel = if (sexUnset) "Add your sex in Profile" else "Show Strength Rank") { if (sexUnset) actions.onAddName() else rankOpen = true }
+                                .clickable(role = Role.Button, onClickLabel = stringResource(if (sexUnset) R.string.today_sex_add_label else R.string.today_rank_show_label)) { if (sexUnset) actions.onAddName() else rankOpen = true }
                                 .padding(start = 10.dp, end = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                com.ironvellum.app.domain.SexHold.rank(strengthRank.ifEmpty { Rank.UNRANKED }, sexUnset),
+                                com.ironvellum.app.domain.SexHold.rank(Rank.label(strengthRank.ifEmpty { Rank.UNRANKED }), sexUnset),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = IronvellumColors.SystemGreen,
                                 maxLines = 1,
@@ -679,12 +683,12 @@ internal fun TodayContent(
             Box(
                 Modifier
                     .size(48.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Open settings") { actions.onOpenSettings() },
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_settings_open_label)) { actions.onOpenSettings() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Outlined.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(R.string.today_settings_description),
                     tint = IronvellumColors.InkMuted,
                     modifier = Modifier.size(22.dp),
                 )
@@ -696,7 +700,7 @@ internal fun TodayContent(
         if (isFirstRun(profile?.totalXp)) {
             FirstUseLine(
                 "rank_titles",
-                "${ArmyClass.LADDER.first().title} is your level title and rises with your XP. Strength Rank is set by what you lift.",
+                stringResource(R.string.today_first_run_rank_titles, ArmyClass.LADDER.first().title),
             )
         }
         // Seven one-letter tiles on fixed 12/24dp slots, with the selected-day tile drawn behind them: they cannot grow.
@@ -799,14 +803,17 @@ private fun TodayDayBody(
                     RiteHeader(
                         title = trial.label,
                         narrator = narratorLine(kind, liveDone, liveWork.size, daysKept),
-                        meta = AnnotatedString("${if (ofToday) "Today's ${Words.trial.s}" else "Under way"} · $liveDone of ${liveWork.size} sets logged"),
+                        meta = AnnotatedString(
+                            if (ofToday) UiText.themed(R.string.today_card_live_meta_today, R.string.today_card_live_meta_today__t, liveDone, liveWork.size).asString()
+                            else stringResource(R.string.today_card_live_meta_under_way, liveDone, liveWork.size),
+                        ),
                         corner = if (ofToday) ({ RiteGlyph(glyphSets) }) else null,
                     )
                     SegmentBar(liveDone, liveWork.size)
                     rows()
                     Spacer(Modifier.height(12.dp))
                     IronvellumButton(
-                        label = "Continue ${trial.label}",
+                        label = stringResource(R.string.today_continue_button, trial.label),
                         onClick = { actions.onStartSession(trial.id) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -815,6 +822,7 @@ private fun TodayDayBody(
                     val trial = sealedTrial!!
                     val rite = selectedPreset!!
                     val done = sealedSets.count { it.done && !it.warmup }
+                    val xpText = stringResource(R.string.session_xp_gain, trial.xpAwarded)
                     // The stamp thuds in once, the first time this process shows a rite sealed just now.
                     val thud = LocalTodayLive.current && LocalTodayMotion.current &&
                         remember(trial.id) { stampIsFresh(trial.completedAtMs, nowMs) && stampedTrials.add(trial.id) }
@@ -826,7 +834,7 @@ private fun TodayDayBody(
                             append(" · ${cardRows.size} ${plural(cardRows.size, "exercise", "exercises")} · $done ${plural(done, "set", "sets")}")
                             trialLength(trial)?.let { append(" · $it") }
                             append(" · ")
-                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("+${trial.xpAwarded} XP") }
+                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(xpText) }
                         },
                         corner = { SealedRiteGlyph(sets = glyphSets, date = formatDate(trial.completedAtMs ?: trial.startedAtMs, "EEE d MMM"), thud = thud) },
                     )
@@ -841,7 +849,7 @@ private fun TodayDayBody(
                         title = rite.name,
                         narrator = narratorLine(kind, daysKept = daysKept),
                         meta = AnnotatedString(
-                            (if (isTodaySelected) "Today's ${Words.trial.s}" else dayLong(selectedDay)) + " · " +
+                            (if (isTodaySelected) UiText.themed(R.string.today_meta_todays, R.string.today_meta_todays__t).asString() else dayLong(selectedDay)) + " · " +
                                 sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))),
                         ),
                         corner = { RiteGlyph(glyphSets) },
@@ -851,7 +859,7 @@ private fun TodayDayBody(
                     if (kind == DayKind.BEGIN) {
                         Spacer(Modifier.height(12.dp))
                         IronvellumButton(
-                            label = "Begin ${rite.name}",
+                            label = stringResource(R.string.today_begin_button, rite.name),
                             onClick = { actions.onBeginPreset(rite.id) },
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -864,9 +872,11 @@ private fun TodayDayBody(
                         title = Words.respite.c,
                         narrator = narratorLine(kind, daysKept = daysKept),
                         meta = sealedHere?.let { trial ->
+                            val sealedToday = UiText.themed(R.string.today_card_sealed_today, R.string.today_card_sealed_today__t).asString()
+                            val xpText = stringResource(R.string.session_xp_gain, trial.xpAwarded)
                             buildAnnotatedString {
-                                withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append("${Words.sealed.c} today") }
-                                append(" · ${trial.label} · +${trial.xpAwarded} XP")
+                                withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append(sealedToday) }
+                                append(" · ${trial.label} · $xpText")
                             }
                         },
                         lead = { LedgerMotif() },
@@ -874,9 +884,9 @@ private fun TodayDayBody(
                     nextRite?.let { next -> NextLink(next, chevron = true) { actions.onSelectDay(next.scheduledDay!!) } }
                 }
                 DayKind.NO_CYCLE -> {
-                    RiteHeader(title = "No ${Words.cycle.s} yet", narrator = narratorLine(kind), meta = null)
+                    RiteHeader(title = UiText.themed(R.string.today_no_cycle_title, R.string.today_no_cycle_title__t).asString(), narrator = narratorLine(kind), meta = null)
                     Spacer(Modifier.height(16.dp))
-                    IronvellumButton(label = "${Words.forge.c} ${Words.cycle.a}", onClick = actions.onOpenForge, modifier = Modifier.fillMaxWidth())
+                    IronvellumButton(label = UiText.themed(R.string.today_no_cycle_forge_button, R.string.today_no_cycle_forge_button__t).asString(), onClick = actions.onOpenForge, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -890,8 +900,8 @@ private fun TodayDayBody(
                 // Not everyone wants a plan first: a trial can be logged
                 // exercise by exercise with no cycle at all.
                 ListRow(
-                    label = "Begin ${Words.openTrial.a}",
-                    subline = "Log exercises as you go, no ${Words.cycle.s} needed",
+                    label = UiText.themed(R.string.today_open_trial_label, R.string.today_open_trial_label__t).asString(),
+                    subline = UiText.themed(R.string.today_open_trial_subline, R.string.today_open_trial_subline__t).asString(),
                     onClick = actions.onBeginOpen,
                 )
             }
@@ -902,13 +912,13 @@ private fun TodayDayBody(
             add {
                 when (begin) {
                     FirstBegin.RITE -> ListRow(
-                        label = "Begin ${openingRite!!.name}",
-                        subline = "The first ${Words.rite.s} of your ${Words.cycle.s}",
+                        label = stringResource(R.string.today_begin_button, openingRite!!.name),
+                        subline = UiText.themed(R.string.today_first_rite_subline, R.string.today_first_rite_subline__t).asString(),
                         onClick = { actions.onBeginPreset(openingRite.id) },
                     )
                     FirstBegin.OPEN -> ListRow(
-                        label = "Begin ${Words.openTrial.a}",
-                        subline = "Log exercises as you go, no ${Words.cycle.s} needed",
+                        label = UiText.themed(R.string.today_open_trial_label, R.string.today_open_trial_label__t).asString(),
+                        subline = UiText.themed(R.string.today_open_trial_subline, R.string.today_open_trial_subline__t).asString(),
                         onClick = actions.onBeginOpen,
                     )
                 }
@@ -918,8 +928,8 @@ private fun TodayDayBody(
         if (liveTrial != null && kind != DayKind.LIVE) {
             add {
                 ListRow(
-                    label = "Continue ${liveTrial.label}",
-                    subline = "$liveDone of ${liveWork.size} sets logged",
+                    label = stringResource(R.string.today_continue_button, liveTrial.label),
+                    subline = stringResource(R.string.today_sets_logged, liveDone, liveWork.size),
                     onClick = { actions.onStartSession(liveTrial.id) },
                 )
             }
@@ -1113,10 +1123,12 @@ private fun WeekRail(
                 val isSelected = day == selectedDay
                 val isToday = day == today
                 val status = when {
-                    isDone -> "${Words.sealed.c} ${Words.trial.s}"
-                    day in scheduled -> "${Words.rite.c} in ${Words.cycle.s}"
-                    else -> "No ${Words.rite.s}"
+                    isDone -> UiText.themed(R.string.today_week_status_sealed, R.string.today_week_status_sealed__t).asString()
+                    day in scheduled -> UiText.themed(R.string.today_week_status_scheduled, R.string.today_week_status_scheduled__t).asString()
+                    else -> UiText.themed(R.string.today_week_status_none, R.string.today_week_status_none__t).asString()
                 }
+                val dayDescription = dayLong(day).let { if (isDone) stringResource(R.string.today_week_day_done, it) else it }
+                val stateText = if (isToday) stringResource(R.string.today_week_status_today, status) else status
                 Column(
                     Modifier
                         .weight(1f)
@@ -1124,15 +1136,15 @@ private fun WeekRail(
                         .clickable(role = Role.Tab) { onSelect(day) }
                         .semantics(mergeDescendants = true) {
                             selected = isSelected
-                            contentDescription = dayLong(day) + if (isDone) ", done" else ""
-                            stateDescription = if (isToday) "Today, $status" else status
+                            contentDescription = dayDescription
+                            stateDescription = stateText
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     // All three slots are reserved even when empty: no reflow between states.
                     Box(Modifier.height(12.dp), contentAlignment = Alignment.Center) {
                         if (isToday) Text(
-                            "TODAY",
+                            stringResource(R.string.today_week_label_today),
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 9.sp,
                             lineHeight = 12.sp,
@@ -1250,7 +1262,7 @@ private fun MoreLine(hidden: Int, divider: Boolean) {
     Box(Modifier.fillMaxWidth().heightIn(min = MORE_LINE), contentAlignment = Alignment.CenterStart) {
         if (divider) InkDivider(Modifier.align(Alignment.TopStart))
         Text(
-            "+$hidden more",
+            stringResource(R.string.today_more_rows, hidden),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             maxLines = 1,
@@ -1266,12 +1278,12 @@ private fun NextLink(next: WorkoutPreset, chevron: Boolean, onClick: () -> Unit)
     Row(
         Modifier
             .heightIn(min = 48.dp)
-            .clickable(role = Role.Button, onClickLabel = "Show ${dayName(day)}", onClick = onClick),
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_next_show_label, dayName(day)), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            "Next: ${next.name} · ${dayName(day)}",
+            stringResource(R.string.today_next_link, next.name, dayName(day)),
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.SystemGreen,
             maxLines = 1,
@@ -1298,7 +1310,7 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClickLabel = "Open ${peak.label}", onClick = onOpen)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_peak_open_label, peak.label), onClick = onOpen)
             .heightIn(min = ListRowHeight)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1312,10 +1324,12 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            val newPeak = UiText.themed(R.string.today_peak_new, R.string.today_peak_new__t).asString()
+            val detail = stringResource(R.string.today_peak_detail, peak.hit.kind.label, shortWhen(peak.atMs), peakGainText(peak))
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("New ${Words.peak.s}") }
-                    append(" · ${peak.hit.kind.label} · ${shortWhen(peak.atMs)} · up ${peakGainText(peak)}")
+                    withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(newPeak) }
+                    append(" · $detail")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -1337,9 +1351,9 @@ private fun PeakRow(peak: RepMax.Recent, onOpen: () -> Unit) {
 @Composable
 private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
     val (label, subline) = when (gap) {
-        BodyGap.BOTH -> "Add your height and weight" to "Unlocks your scores"
-        BodyGap.HEIGHT -> "Add your height" to "Unlocks BMI, FFMI and your scores"
-        BodyGap.WEIGHT -> "Add your weight" to "Unlocks your scores"
+        BodyGap.BOTH -> stringResource(R.string.today_body_gap_both_label) to stringResource(R.string.today_body_gap_scores_subline)
+        BodyGap.HEIGHT -> stringResource(R.string.today_body_gap_height_label) to stringResource(R.string.today_body_gap_height_subline)
+        BodyGap.WEIGHT -> stringResource(R.string.today_body_gap_weight_label) to stringResource(R.string.today_body_gap_scores_subline)
     }
     Row(
         Modifier
@@ -1356,7 +1370,7 @@ private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
             Text(subline, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         Text(
-            "Add",
+            stringResource(R.string.today_body_gap_add_button),
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.SystemGreen,
             maxLines = 1,

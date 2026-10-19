@@ -1,5 +1,6 @@
 package com.ironvellum.app.data
 import androidx.room.withTransaction
+import com.ironvellum.app.R
 import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.FavouriteExerciseEntity
@@ -120,6 +121,7 @@ import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.data.cloud.localNameToAdopt
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.WorkoutPreset
@@ -417,12 +419,12 @@ class Repository(
      */
     suspend fun updateCustomExercise(id: Long, spec: CustomSpec): CustomSave = db.withTransaction {
         val before = exerciseDao.byId(id)?.takeIf { it.custom }
-            ?: return@withTransaction CustomSave.Rejected("That exercise is not one of yours.")
+            ?: return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_not_yours)))
         val catalogue = exerciseDao.observeAll().first()
         CustomExercises.nameProblem(spec.name, catalogue.map { it.name }, own = before.name)
             ?.let { return@withTransaction CustomSave.Rejected(it) }
         if (spec.logged.metric.name != before.metric && exerciseDao.loggedSets(id) > 0) {
-            return@withTransaction CustomSave.Rejected("Sets are already logged for it, so how it is measured is fixed.")
+            return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_metric_locked)))
         }
         val row = customRow(spec, id)
         exerciseDao.update(row)

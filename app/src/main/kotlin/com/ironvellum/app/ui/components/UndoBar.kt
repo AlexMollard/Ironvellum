@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.background
@@ -75,7 +77,7 @@ fun UndoBar(
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Undo", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
+            Text(stringResource(R.string.undobar_button), style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
         }
     }
 }

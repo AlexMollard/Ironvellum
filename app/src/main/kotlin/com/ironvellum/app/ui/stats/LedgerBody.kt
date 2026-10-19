@@ -1,7 +1,11 @@
 package com.ironvellum.app.ui.stats
 
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.domain.fmt
@@ -130,7 +134,7 @@ internal fun BodyTab(
 
         InkPanel(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                PanelLabel("WEIGHT", Modifier.weight(1f))
+                PanelLabel(stringResource(R.string.stats_weight_label), Modifier.weight(1f))
                 // One reading has no range to compare over: the chips wait for a second.
                 if (ui.stats.size >= 2) {
                     RangeChips(
@@ -148,10 +152,10 @@ internal fun BodyTab(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    StatValue(formatBodyValue(latest.weightKg), size = StatSize.Hero, unit = "kg")
+                    StatValue(formatBodyValue(latest.weightKg), size = StatSize.Hero, unit = stringResource(R.string.stats_unit_kg))
                     plot?.deltaKg?.let {
                         Text(
-                            "${Ledger.signed(it, "kg")} \u00B7 ${range.label}",
+                            stringResource(R.string.stats_delta_range, Ledger.signed(it, stringResource(R.string.stats_unit_kg)), range.label),
                             style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -161,20 +165,20 @@ internal fun BodyTab(
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Logged ${formatDate(latest.takenAtMs, "d MMM")}",
+                        stringResource(R.string.stats_logged_on, formatDate(latest.takenAtMs, "d MMM")),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f),
                     )
                     // The one way to log a weight once there is one, beside the
                     // readings behind the chart.
-                    InkChip("Log", "Log weight", Icons.Outlined.Add, height = 48.dp, onClick = onLogWeight)
-                    InkChip("History", "Open weight history", height = 48.dp, onClick = onOpenHistory)
+                    InkChip(stringResource(R.string.ledger_log_chip), stringResource(R.string.ledger_log_weight_description), Icons.Outlined.Add, height = 48.dp, onClick = onLogWeight)
+                    InkChip(stringResource(R.string.ledger_history_chip), stringResource(R.string.ledger_history_description), height = 48.dp, onClick = onOpenHistory)
                 }
                 Spacer(Modifier.height(4.dp))
                 when {
-                    plot == null -> ChartNote("No ${Words.reading.s} in the last ${range.label}. Widen the range.")
-                    plot.values.size < 2 -> ChartNote("Two ${Words.reading.pl} draw the line.")
+                    plot == null -> ChartNote(UiText.themed(R.string.ledger_chart_empty_range, R.string.ledger_chart_empty_range__t, range.label).asString())
+                    plot.values.size < 2 -> ChartNote(UiText.themed(R.string.stats_chart_two_readings, R.string.stats_chart_two_readings__t).asString())
                     else -> TrendChart(
                         plot.values,
                         IronvellumColors.Emerald,
@@ -183,7 +187,7 @@ internal fun BodyTab(
                         startLabel = shortDay(plot.startDate),
                         endLabel = shortDay(plot.endDate),
                         recordMarker = false,
-                        valueText = { "%.1f kg".fmt(it) },
+                        valueText = { Words.text(UiText.res(R.string.stats_weight_value, "%.1f".fmt(it))) },
                         dateText = { shortDay(plot.dates[it]) },
                     )
                 }
@@ -194,25 +198,26 @@ internal fun BodyTab(
                 horizontalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
             ) {
                 StatChip(
-                    "BMI",
-                    bmi?.let { formatBodyValue(it) } ?: "\u2014",
-                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "needs a weight" else "tap to set your height",
+                    stringResource(R.string.stats_bmi_label),
+                    bmi?.let { formatBodyValue(it) } ?: stringResource(R.string.stats_dash),
+                    bmi?.let { BodyStats.bmiCategory(it) }
+                        ?: stringResource(if (heightKnown) R.string.ledger_bmi_needs_weight else R.string.ledger_tap_set_height),
                     onClick = { if (heightKnown) onDrill("BMI") else onSetHeight() },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 StatChip(
-                    "FFMI",
-                    SexHold.figure(ffmi?.let { formatBodyValue(it.value) } ?: "\u2014", sexUnset),
+                    stringResource(R.string.stats_ffmi_label),
+                    SexHold.figure(ffmi?.let { formatBodyValue(it.value) } ?: stringResource(R.string.stats_dash), sexUnset),
                     SexHold.line(
-                        ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
-                            ?: if (heightKnown) "needs a body fat %" else "tap to set your height",
+                        ffmi?.let { stringResource(R.string.ledger_ffmi_from, formatDate(it.takenAtMs, "d MMM")) }
+                            ?: stringResource(if (heightKnown) R.string.ledger_ffmi_needs_body_fat else R.string.ledger_tap_set_height),
                         sexUnset,
                     ),
                     onClick = { if (heightKnown && !sexUnset) onDrill("FFMI") else onSetHeight() },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
-            FirstUseLine("bmi_ffmi", "BMI relates weight to height; FFMI relates lean mass to height. Tap either for its ranges.")
+            FirstUseLine("bmi_ffmi", stringResource(R.string.ledger_bmi_ffmi_explainer))
         }
 
         InkRowPanel(Modifier.fillMaxWidth()) {
@@ -221,8 +226,8 @@ internal fun BodyTab(
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
                 label = Lines.tapeReadings,
-                value = "$logged of ${MeasurementSite.entries.size} logged",
-                supporting = "stays on this device",
+                value = stringResource(R.string.ledger_tape_logged, logged, MeasurementSite.entries.size),
+                supporting = stringResource(R.string.ledger_stays_on_device),
                 onClick = onOpenTape,
             )
         }
@@ -250,7 +255,7 @@ private fun WeightEmpty(onLogWeight: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
-        IronvellumButton("Log weight", onClick = onLogWeight)
+        IronvellumButton(stringResource(R.string.ledger_log_weight_button), onClick = onLogWeight)
     }
 }
 
@@ -289,9 +294,13 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
         // already leads with that number.
         val perWeek = if (weeks.isEmpty()) 0.0 else weeks.sum().toDouble() / weeks.size
         InkListRow(
-            label = "Consistency",
-            value = if (perWeek == 0.0) "\u2014" else "${"%.1f".format(java.util.Locale.US, perWeek)} a week",
-            supporting = "${Words.sealed.s} days per week, last 12 weeks",
+            label = stringResource(R.string.ledger_consistency_label),
+            value = if (perWeek == 0.0) {
+                stringResource(R.string.stats_dash)
+            } else {
+                stringResource(R.string.ledger_consistency_per_week, "%.1f".format(java.util.Locale.US, perWeek))
+            },
+            supporting = UiText.themed(R.string.ledger_consistency_caption, R.string.ledger_consistency_caption__t).asString(),
             onClick = onOpen,
         )
         // Twelve flat dashes said nothing; until a week has a trial, say what fills it.
@@ -299,7 +308,7 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
             WeekStrip(weeks, Modifier.padding(horizontal = 16.dp))
         } else {
             Text(
-                "Each week fills in here as you ${Words.seal.s} ${Words.trial.pl}.",
+                UiText.themed(R.string.ledger_consistency_empty, R.string.ledger_consistency_empty__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -312,13 +321,19 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
 @Composable
 private fun WeekStrip(weeks: List<Int>, modifier: Modifier = Modifier) {
     val height = 28.dp
+    val description = UiText.themedPlural(
+        R.plurals.ledger_week_strip_description,
+        R.plurals.ledger_week_strip_description__t,
+        weeks.size,
+        weeks.size,
+        weeks.joinToString(", "),
+    ).asString()
     Row(
         modifier
             .fillMaxWidth()
             .height(height)
             .clearAndSetSemantics {
-                contentDescription = "${Words.sealed.c} days per week over the last ${weeks.size} weeks, oldest first: " +
-                    weeks.joinToString(", ")
+                contentDescription = description
             },
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.Bottom,
@@ -348,11 +363,16 @@ internal fun WeightHistoryPage(
     onBack: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        PushedHeader("WEIGHT HISTORY", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
+        PushedHeader(
+            stringResource(R.string.ledger_history_header),
+            onBack,
+            Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter),
+            backDescription = UiText.themed(R.string.stats_back_to_ledger, R.string.stats_back_to_ledger__t).asString(),
+        )
         Box(Modifier.weight(1f).padding(horizontal = LedgerSpace.Gutter)) {
             if (stats.isEmpty()) {
                 Text(
-                    "Nothing logged yet.",
+                    stringResource(R.string.ledger_history_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = LedgerSpace.Panel),
@@ -369,7 +389,7 @@ internal fun WeightHistoryPage(
         }
         if (lastDeleted != null) {
             UndoBar(
-                "${Words.reading.c} deleted",
+                UiText.themed(R.string.stats_reading_deleted, R.string.stats_reading_deleted__t).asString(),
                 onUndo = onUndo,
                 modifier = Modifier.padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel),
                 onExpired = onUndoExpired,
@@ -388,21 +408,22 @@ private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> 
         Modifier.fillMaxWidth().heightIn(min = ListRowHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val datePattern = stringResource(R.string.stats_history_date_pattern)
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
-            Text("${formatBodyValue(stat.weightKg)} kg", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+            Text(stringResource(R.string.stats_weight_value, formatBodyValue(stat.weightKg)), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Text(
-                buildString {
-                    append(formatDate(stat.takenAtMs, "d MMM yyyy \u00B7 HH:mm"))
-                    stat.bodyFatPct?.let { append(" \u00B7 ${formatBodyValue(it)}% bf") }
-                    Ledger.bmiOf(stat, profileHeight)?.let { append(" \u00B7 BMI ${formatBodyValue(it)}") }
-                },
+                listOfNotNull(
+                    formatDate(stat.takenAtMs, datePattern),
+                    stat.bodyFatPct?.let { stringResource(R.string.ledger_history_body_fat, formatBodyValue(it)) },
+                    Ledger.bmiOf(stat, profileHeight)?.let { stringResource(R.string.ledger_history_bmi, formatBodyValue(it)) },
+                ).reduce { joined, part -> stringResource(R.string.stats_join, joined, part) },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
         // Immediate: the bar under the list offers Undo, which puts the reading back as it was.
         InkIconButton(onClick = onDelete) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Delete ${Words.reading.s}", tint = IronvellumColors.InkMuted)
+            Icon(Icons.Outlined.Delete, contentDescription = UiText.themed(R.string.stats_delete_reading, R.string.stats_delete_reading__t).asString(), tint = IronvellumColors.InkMuted)
         }
     }
 }

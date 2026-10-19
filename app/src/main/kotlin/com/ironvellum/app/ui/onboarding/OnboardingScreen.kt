@@ -1017,7 +1017,7 @@ private fun ProfileStep(
                 colors = ironvellumFieldColors(),
                 value = heightInput,
                 onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                label = { Text(stringResource(R.string.onboarding_profile_height_label)) },
+                label = { Text(stringResource(R.string.onboarding_profile_height_label), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
                 singleLine = true,
                 isError = heightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Next),
@@ -1028,7 +1028,7 @@ private fun ProfileStep(
                 colors = ironvellumFieldColors(),
                 value = weightInput,
                 onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                label = { Text(stringResource(R.string.onboarding_profile_weight_label, Units.name)) },
+                label = { Text(stringResource(R.string.onboarding_profile_weight_label, Units.name), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
                 singleLine = true,
                 isError = weightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Done),
@@ -1061,7 +1061,7 @@ private fun ProfileStep(
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             Sex.entries.forEach { option ->
                 PickCell(
-                    label = option.name.lowercase().replaceFirstChar(Char::titlecase),
+                    label = option.label,
                     selected = sex == option,
                     modifier = Modifier.weight(1f),
                     role = Role.RadioButton,

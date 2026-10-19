@@ -43,6 +43,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * The full-screen picker sheet every "choose one of many" surface shares.
@@ -95,7 +97,7 @@ fun InkPickerSheet(
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(end = 8.dp),
                 )
-                NavChip("Close", null, onClick = onDismiss)
+                NavChip(stringResource(R.string.inkpicker_close_button), null, onClick = onDismiss)
             }
             Spacer(Modifier.height(6.dp))
             PickerSearchField(query = query, onQueryChange = onQueryChange, label = searchLabel)

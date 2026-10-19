@@ -403,7 +403,7 @@ internal fun ForgeAddConflictSheet(
                         Text(row.rite, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
                         Text(
                             when {
-                                row.takenBy == null -> "Free"
+                                row.takenBy == null -> stringResource(R.string.forge_conflict_free)
                                 row.movedTo != null -> UiText.res(R.string.forge_conflict_taken_moved, row.takenBy.toString(), dayShort(row.movedTo)).asString()
                                 else -> UiText.res(R.string.forge_conflict_taken_by, row.takenBy.toString()).asString()
                             },
@@ -437,14 +437,14 @@ internal fun ForgeAddConflictSheet(
     )
 }
 
-private fun numberWord(n: Int): String = when (n) {
-    1 -> "One"
-    2 -> "Two"
-    3 -> "Three"
-    4 -> "Four"
-    5 -> "Five"
-    6 -> "Six"
-    else -> "$n"
+private fun numberWord(n: Int): UiText = when (n) {
+    1 -> UiText.res(R.string.forge_number_one)
+    2 -> UiText.res(R.string.forge_number_two)
+    3 -> UiText.res(R.string.forge_number_three)
+    4 -> UiText.res(R.string.forge_number_four)
+    5 -> UiText.res(R.string.forge_number_five)
+    6 -> UiText.res(R.string.forge_number_six)
+    else -> UiText.Raw("$n")
 }
 
 /** The discard sheet: what is about to be lost, counted. */

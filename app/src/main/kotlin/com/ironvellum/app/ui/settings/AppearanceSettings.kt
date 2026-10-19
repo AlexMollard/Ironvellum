@@ -210,7 +210,7 @@ private fun AccentSwatch(colour: Int) {
 private fun AccentRow(label: String, subline: String, colour: Int, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = ListRowHeight)
-            .clickable(role = Role.Button, onClickLabel = "Edit $label", onClick = onClick)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.settings_appearance_edit_accent_label, label), onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

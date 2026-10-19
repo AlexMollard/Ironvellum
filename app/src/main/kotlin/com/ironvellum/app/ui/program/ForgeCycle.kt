@@ -70,7 +70,7 @@ private const val PICK_ADD = 2
 internal val ARMOURY_REQUIRED: String
     @Composable get() = UiText.themed(R.string.forge_armoury_required, R.string.forge_armoury_required__t).asString()
 
-private val STEP_LABELS = listOf("Goal", "Kit", "Focus")
+private val STEP_LABEL_RES = listOf(R.string.forge_step_goal, R.string.forge_step_kit, R.string.forge_step_focus)
 
 @Composable
 internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
@@ -104,7 +104,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var confirmReplace by rememberSaveable { mutableStateOf(false) }
     var daySheet by rememberSaveable { mutableStateOf(false) }
-    val stepScrolls = List(STEP_LABELS.size) { rememberScrollState() }
+    val stepScrolls = List(STEP_LABEL_RES.size) { rememberScrollState() }
     val planScroll = rememberScrollState()
     val dayScroll = rememberScrollState()
 
@@ -169,7 +169,7 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
             onMore = { moreOpen = true },
             priorities = priorities,
             onPriority = vm::togglePriority,
-            onNext = { if (step < STEP_LABELS.lastIndex) step += 1 else phase = ForgePhase.PLAN },
+            onNext = { if (step < STEP_LABEL_RES.lastIndex) step += 1 else phase = ForgePhase.PLAN },
         )
         ForgePhase.PLAN -> ForgePlanPage(
             plan = plan,
@@ -365,7 +365,7 @@ private fun ForgeFormPage(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             ForgeHeader(UiText.themed(R.string.builder_header_week, R.string.builder_header_week__t).asString(), onBack)
-            ForgeStepTabs(step, STEP_LABELS, onStep)
+            ForgeStepTabs(step, STEP_LABEL_RES.map { stringResource(it) }, onStep)
         }
         Column(
             Modifier
@@ -391,8 +391,8 @@ private fun ForgeFormPage(
             enabled = ready,
             note = when {
                 !ready -> ARMOURY_REQUIRED
-                step == 0 -> UiText.res(R.string.forge_step_of, 1, STEP_LABELS.size).asString()
-                step == 1 -> UiText.res(R.string.forge_step_of, 2, STEP_LABELS.size).asString()
+                step == 0 -> UiText.res(R.string.forge_step_of, 1, STEP_LABEL_RES.size).asString()
+                step == 1 -> UiText.res(R.string.forge_step_of, 2, STEP_LABEL_RES.size).asString()
                 else -> stringResource(R.string.forge_change_numbers_note)
             },
         )
@@ -422,10 +422,10 @@ private fun ForgeGoalStep(
     ForgeRadioRow(
         label = stringResource(R.string.forge_goal_label),
         options = listOf(
-            TrainingFocus.STRENGTH to "Power",
-            TrainingFocus.MUSCLE to "Muscle",
-            TrainingFocus.SKILL to Words.technique.cpl,
-            TrainingFocus.GENERAL to "Mixed",
+            TrainingFocus.STRENGTH to TrainingFocus.STRENGTH.label,
+            TrainingFocus.MUSCLE to TrainingFocus.MUSCLE.label,
+            TrainingFocus.SKILL to TrainingFocus.SKILL.label,
+            TrainingFocus.GENERAL to TrainingFocus.GENERAL.label,
         ),
         selected = focus,
         onPick = onFocus,
@@ -471,7 +471,7 @@ private fun ForgeKitStep(
     ForgeLabel(UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString())
     ForgeRadioRow(
         label = UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString(),
-        options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
+        options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to UiText.res(R.string.forge_minutes_option, it).asString() },
         selected = sessionMinutes,
         onPick = onSessionMinutes,
     )
@@ -546,7 +546,7 @@ internal fun MoreOptionsBody(
             Spacer(Modifier.height(6.dp))
             ForgeRadioRow(
                 label = UiText.themed(R.string.forge_rite_length_label, R.string.forge_rite_length_label__t).asString(),
-                options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to "$it min" },
+                options = ProgramRules.SESSION_MINUTES_OPTIONS.map { it to UiText.res(R.string.forge_minutes_option, it).asString() },
                 selected = sessionMinutes,
                 onPick = onSessionMinutes,
             )
@@ -637,8 +637,8 @@ internal fun ForgePlanPage(
                 onBack,
                 subtitle = subtitle.takeIf { hasPlan },
                 status = when {
-                    failed -> "Failed"
-                    saving -> "Saving"
+                    failed -> stringResource(R.string.forge_status_failed)
+                    saving -> stringResource(R.string.forge_status_saving)
                     else -> null
                 },
             )

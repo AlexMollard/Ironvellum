@@ -18,14 +18,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.domain.Measurements
+import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkRowPanel
@@ -48,7 +51,7 @@ internal fun TapePage(
 ) {
     val latest = Measurements.latest(entries)
     Column(Modifier.fillMaxSize()) {
-        PushedHeader(Lines.tapeReadings.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to ${Words.ledger.c}")
+        PushedHeader(Lines.tapeReadings.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = UiText.themed(R.string.stats_back_to_ledger, R.string.stats_back_to_ledger__t).asString())
         Column(
             Modifier
                 .fillMaxSize()
@@ -60,7 +63,7 @@ internal fun TapePage(
             // One hint for the whole list, not one on every empty site.
             if (MeasurementSite.entries.any { latest[it] == null }) {
                 Text(
-                    "Tap a site to take its first ${Words.reading.s}.",
+                    UiText.themed(R.string.measurement_tape_hint, R.string.measurement_tape_hint__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -71,11 +74,11 @@ internal fun TapePage(
                     val reading = latest[site]
                     InkListRow(
                         label = site.label,
-                        value = reading?.let { "%.1f cm".fmt(it.valueCm) } ?: "\u2014",
+                        value = reading?.let { stringResource(R.string.stats_cm_value, "%.1f".fmt(it.valueCm)) } ?: stringResource(R.string.stats_dash),
                         supporting = reading?.let { r ->
                             val delta = Measurements.deltaCm(entries, site, days = 30)
-                            formatDate(r.takenAtMs, "d MMM") +
-                                (delta?.let { " \u00B7 ${Ledger.signed(it, "cm")} / 30d" } ?: "")
+                            val taken = formatDate(r.takenAtMs, "d MMM")
+                            delta?.let { stringResource(R.string.measurement_row_delta, taken, Ledger.signed(it, stringResource(R.string.stats_unit_cm))) } ?: taken
                         },
                         onClick = { onOpenSite(site) },
                     )
@@ -89,7 +92,7 @@ internal fun TapePage(
                     tint = IronvellumColors.InkMuted,
                 )
                 Text(
-                    "Stays on this device. ${Words.reading.cpl} are excluded from cloud sync by design.",
+                    UiText.themed(R.string.measurement_tape_privacy, R.string.measurement_tape_privacy__t).asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

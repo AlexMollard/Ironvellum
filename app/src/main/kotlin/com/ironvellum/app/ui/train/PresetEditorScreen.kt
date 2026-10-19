@@ -419,16 +419,15 @@ private fun loadTarget(kgText: String): String =
     DecimalInput.parse(kgText)?.let { Units.withUnit(it) } ?: "$kgText ${Units.name}"
 
 /** What a load stepper reads while no load is set: it never says "none"; the figure is 48dp wide, so one short word. A bodyweight lift reads "BW". */
-internal const val LOAD_EMPTY = "Add"
-
-internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean) = if (bodyweight) "BW" else LOAD_EMPTY
+internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean): String =
+    Words.text(UiText.res(if (bodyweight) R.string.load_bodyweight else R.string.preseteditor_load_empty))
 
 /**
  * The rite editor's load target. It is stored as kg text, so in lb the stepper works on lb text kept
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = stringResource(R.string.preseteditor_load_label), emptyText: String = LOAD_EMPTY, caption: String? = null, onKgText: (String) -> Unit) {
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = stringResource(R.string.preseteditor_load_label), emptyText: String = stringResource(R.string.preseteditor_load_empty), caption: String? = null, onKgText: (String) -> Unit) {
     val unit = Units.current
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.

@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -169,7 +171,7 @@ internal fun VeilSection(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable(role = Role.Button, onClickLabel = "Open ${Words.theVeil.t}", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.always_veil_open_label), onClick = onOpen)
                     .padding(top = if (form == VeilForm.COMPACT) 2.dp else 10.dp),
             ) {
                 when (form) {
@@ -196,7 +198,7 @@ private fun PerkChip(crest: CrestDef, perHour: Double, onOpen: () -> Unit) {
             .padding(top = 4.dp)
             .heightIn(min = 48.dp)
             .inkBorder(IronvellumColors.Rune, TileShape, 1.dp)
-            .clickable(role = Role.Button, onClickLabel = "Open the crest", onClick = onOpen)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_veil_crest_open_label), onClick = onOpen)
             .padding(start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -207,7 +209,7 @@ private fun PerkChip(crest: CrestDef, perHour: Double, onOpen: () -> Unit) {
             Text(crest.short, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (perHour >= 0.05) {
-            Text("+${rateLabel(perHour)}/h", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
+            Text(stringResource(R.string.today_veil_rate_gain, rateLabel(perHour)), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
         }
     }
 }
@@ -236,7 +238,7 @@ private fun TitleRow(trailing: @Composable RowScope.() -> Unit, modifier: Modifi
 private fun RateLabel(snapshot: com.ironvellum.app.data.IdleSnapshot?) {
     if (snapshot == null) return
     Text(
-        "${rateLabel(snapshot.rate.perHour)}/h",
+        stringResource(R.string.today_veil_rate, rateLabel(snapshot.rate.perHour)),
         style = MaterialTheme.typography.labelMedium,
         color = IronvellumColors.InkMuted,
     )
@@ -255,10 +257,11 @@ private fun CompactBody(
         modifier = Modifier.heightIn(min = 40.dp),
         trailing = {
             if (snapshot != null && essence != null) {
+                val essenceRate = stringResource(R.string.today_veil_essence_rate, rateLabel(snapshot.rate.perHour))
                 Text(
                     buildAnnotatedString {
                         withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.SemiBold)) { append("%,d".fmt(essence)) }
-                        append(" essence · ${rateLabel(snapshot.rate.perHour)}/h")
+                        append(" $essenceRate")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
@@ -287,7 +290,7 @@ private fun FullBody(
         Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
             EssenceFigure(essence, 26.sp, animate)
             Text(
-                "essence",
+                stringResource(R.string.today_veil_essence_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 6.dp, bottom = 3.dp),
@@ -342,7 +345,7 @@ private fun HeroBody(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 EssenceFigure(essence, 40.sp, animate)
                 Text(
-                    "essence",
+                    stringResource(R.string.today_veil_essence_label),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -379,7 +382,7 @@ private fun RelicCentrepiece(
         if (essence != null && snapshot != null) {
             EssenceFigure(essence, 34.sp, animate, Modifier.padding(top = 4.dp))
             Text(
-                "essence",
+                stringResource(R.string.today_veil_essence_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
@@ -431,7 +434,7 @@ private fun InscriptionsSlot(waiting: Int?, buyPrice: Long?, onOpen: () -> Unit)
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
                     .heightIn(min = SLOT_HEIGHT)
-                    .clickable(role = Role.Button, onClickLabel = if (line.waiting) "Inscribe in ${Words.theVeil.t}" else "Buy an inscription in ${Words.theVeil.t}", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = stringResource(if (line.waiting) R.string.always_veil_inscribe_label else R.string.always_veil_buy_inscription_label), onClick = onOpen)
                     .padding(start = 12.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
             )

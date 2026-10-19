@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * A one-line explanation of a word the app keeps in its own voice (a deed, a rank title, BMI), shown the first
@@ -43,7 +45,7 @@ fun FirstUseLine(key: String, text: String, modifier: Modifier = Modifier) {
             color = IronvellumColors.InkMuted,
             modifier = Modifier.weight(1f),
         )
-        InkTextLink("Got it", onClick = {
+        InkTextLink(stringResource(R.string.firstuse_got_it_button), onClick = {
             FirstRunPrefs.setTermSeen(context, key)
             seen = true
         })

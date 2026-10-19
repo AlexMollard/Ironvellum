@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Loads
@@ -57,6 +58,8 @@ import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.domain.SexHold
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.Skills
 import androidx.compose.foundation.layout.ColumnScope
 import com.ironvellum.app.ui.components.InfoAction
@@ -176,11 +179,12 @@ fun SkillDetailSheet(
         val added = Skills.loadBar(skill.name, female)?.added == true
         when {
             sexHeld -> SexHold.TEXT
-            cleared -> "standard cleared"
+            cleared -> UiText.res(R.string.skilldetail_standard_cleared).asString()
             // Reps alone cannot judge a bodyweight-multiple bar.
-            !SkillGuidance.judgeable(skill, bodyweightKg, female) -> "check the load yourself"
-            bestOverall >= skill.target && needKg != null -> "needs ${if (added) "+" else ""}${formatLoad(needKg)}${Units.name}"
-            else -> "${SkillGuidance.withUnit(skill.target - bestOverall, skill)} to standard"
+            !SkillGuidance.judgeable(skill, bodyweightKg, female) -> UiText.res(R.string.skilldetail_check_load).asString()
+            bestOverall >= skill.target && needKg != null ->
+                UiText.res(R.string.skilldetail_standard_needs, (if (added) "+" else "") + Units.withUnit(needKg)).asString()
+            else -> UiText.res(R.string.skilldetail_standard_to_go, SkillGuidance.withUnit(skill.target - bestOverall, skill)).asString()
         }
     }
     val summary: (@Composable ColumnScope.() -> Unit)? = if (mastered) {
@@ -191,12 +195,12 @@ fun SkillDetailSheet(
                 fraction = if (cleared) 1f else if (skill.target <= 0) 0f else (bestOverall.toFloat() / skill.target).coerceIn(0f, 1f),
                 line = "${SkillGuidance.withUnit(bestOverall, skill)} / ${SkillGuidance.withUnit(skill.target, skill)} · $standardWord",
                 caption = listOfNotNull(
-                    if (best > 0) "Practice best ${SkillGuidance.withUnit(best, skill)}" else null,
+                    if (best > 0) UiText.res(R.string.skilldetail_caption_practice_best, SkillGuidance.withUnit(best, skill)).asString() else null,
                     trained?.let { t ->
                         buildString {
-                            append("from training ${SkillGuidance.withUnit(t.value, skill)}")
+                            append(UiText.res(R.string.skilldetail_caption_from_training, SkillGuidance.withUnit(t.value, skill)).asString())
                             val w = t.weightKg
-                            if (w != null && w > 0.0) append(" @ ${formatLoad(w)}${Units.name}")
+                            if (w != null && w > 0.0) append(" @ ${Units.withUnit(w)}")
                         }
                     },
                 ).joinToString(" · "),
@@ -207,46 +211,78 @@ fun SkillDetailSheet(
         {
             InfoFigures(
                 listOf(
-                    InfoFigure("TO ${Words.claim.u}", SkillGuidance.withUnit(skill.target, skill)),
-                    InfoFigure("REWARD", "+${skill.xp}", unit = "XP", color = IronvellumColors.SovereignGold),
+                    InfoFigure(
+                        UiText.themed(R.string.skilldetail_figure_to_claim, R.string.skilldetail_figure_to_claim__t).asString(),
+                        SkillGuidance.withUnit(skill.target, skill),
+                    ),
+                    InfoFigure(
+                        UiText.res(R.string.skilldetail_figure_reward).asString(),
+                        "+${skill.xp}",
+                        unit = "XP",
+                        color = IronvellumColors.SovereignGold,
+                    ),
                 ),
             )
         }
     }
 
+    // The page builders below are not composable, so what they show is read here.
+    val trainLabel = UiText.res(R.string.skilldetail_train_button).asString()
+    val aboutLabel = UiText.res(R.string.skilldetail_page_about).asString()
+    val logLabel = UiText.res(R.string.skilldetail_page_log).asString()
+    val formLabel = UiText.res(R.string.skilldetail_page_form).asString()
+    val whyTitle = UiText.res(R.string.skilldetail_why_title).asString()
+    val wordsTitle = UiText.res(R.string.skilldetail_words_title).asString()
+    val requiresTitle = UiText.res(R.string.skilldetail_requires_title).asString()
+    val logTitle = UiText.res(R.string.skilldetail_log_title).asString()
+    val attemptsTitle = UiText.res(R.string.skilldetail_attempts_title).asString()
+    val beforeTitle = UiText.themed(R.string.skilldetail_before_title, R.string.skilldetail_before_title__t).asString()
+    val lockedUntil = UiText.res(R.string.skilldetail_locked_until, skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")).asString()
+    val attemptTimePattern = UiText.res(R.string.skilldetail_attempt_time_pattern).asString()
+    val attemptRows = recent.map { entry ->
+        formatDate(entry.practicedAtMs, attemptTimePattern) to when {
+            entry.claimed -> Words.claimed.u
+            entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${Units.withUnit(entry.weightKg)}"
+            else -> SkillGuidance.withUnit(entry.value, skill)
+        }
+    }
     InfoSheet(
         title = skill.name,
         // Back steps out of the unclaim question first, as "Keep it" does.
         onDismiss = { if (mastered && confirmUnclaim) confirmUnclaim = false else onDismiss() },
         titleColor = if (mastered) IronvellumColors.SovereignGold else IronvellumColors.Ink,
         chips = buildList {
-            add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))
+            add(InfoChip(UiText.res(R.string.skilldetail_chip_tier, Skills.tierLabel(skill.tier)).asString(), IronvellumColors.SystemGreen))
             add(InfoChip(skill.line))
             // A mastered technique shows what the claim paid, which is what giving it back removes.
-            if (hasEvidence || mastered) add(InfoChip("+${if (mastered) refundXp else skill.xp} XP", IronvellumColors.SovereignGold))
-            if (mastered) add(InfoChip("Mastered", IronvellumColors.SovereignGold))
-            else if (!unlocked) add(InfoChip("Locked", IronvellumColors.DangerRed))
+            if (hasEvidence || mastered) add(InfoChip(UiText.res(R.string.skilldetail_chip_xp, if (mastered) refundXp else skill.xp).asString(), IronvellumColors.SovereignGold))
+            if (mastered) add(InfoChip(UiText.res(R.string.skilldetail_chip_mastered).asString(), IronvellumColors.SovereignGold))
+            else if (!unlocked) add(InfoChip(UiText.res(R.string.skilldetail_chip_locked).asString(), IronvellumColors.DangerRed))
         },
         // Fixed in the header, so the question stays on screen whichever page is open.
-        subtitle = if (mastered && confirmUnclaim) "Give the ${Words.technique.s} back? The $refundXp XP is removed too." else null,
+        subtitle = if (mastered && confirmUnclaim) {
+            UiText.themed(R.string.skilldetail_unclaim_question, R.string.skilldetail_unclaim_question__t, refundXp).asString()
+        } else {
+            null
+        },
         subtitleColor = IronvellumColors.DangerRed,
         actions = when {
             mastered && confirmUnclaim -> listOf(
-                InfoAction("Keep it", { confirmUnclaim = false }, quiet = true),
-                InfoAction("Unclaim −$refundXp XP", onUnclaim, danger = true),
+                InfoAction(UiText.res(R.string.skilldetail_keep_button).asString(), { confirmUnclaim = false }, quiet = true),
+                InfoAction(UiText.res(R.string.skilldetail_unclaim_button, refundXp).asString(), onUnclaim, danger = true),
             )
             mastered -> listOf(
-                InfoAction("Train it", onTrain, quiet = true),
-                InfoAction("Give back", { confirmUnclaim = true }, danger = true),
+                InfoAction(trainLabel, onTrain, quiet = true),
+                InfoAction(UiText.res(R.string.skilldetail_give_back_button).asString(), { confirmUnclaim = true }, danger = true),
             )
             unlocked -> listOf(
-                InfoAction("Train it", onTrain, quiet = true),
+                InfoAction(trainLabel, onTrain, quiet = true),
                 InfoAction(Words.claim.c, onClaim, gold = cleared, quiet = !cleared),
             )
-            else -> listOf(InfoAction("Train it", onTrain, quiet = true))
+            else -> listOf(InfoAction(trainLabel, onTrain, quiet = true))
         },
         pages = listOf(
-            InfoPage("ABOUT", summary) {
+            InfoPage(aboutLabel, summary) {
                 // A female lifter reads her own published bar, not the male default.
                 val standard = if (sexHeld) SexHold.TEXT else sexBar ?: skill.standard
                 val drawing = techniqueDrawing(skill.name)
@@ -273,7 +309,7 @@ fun SkillDetailSheet(
                                 Spacer(Modifier.height(8.dp))
                                 Text(standard, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
                                 Spacer(Modifier.height(20.dp))
-                                PanelLabel("WHY IT MATTERS")
+                                PanelLabel(whyTitle)
                                 Spacer(Modifier.height(8.dp))
                                 Text(skill.why, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
                             }
@@ -281,19 +317,19 @@ fun SkillDetailSheet(
                     }
                 } else {
                     text(Lines.claimStandard, standard, IronvellumColors.SovereignGold)
-                    text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
+                    text(whyTitle, skill.why, IronvellumColors.InkMuted)
                 }
                 // The same figure and gear line the exercise sheet shows.
                 muscleFacts(skill.name)
                 gearFacts(skill.name)
                 if (terms.isNotEmpty()) {
                     // The words a beginner trips on, each one tap from a plain definition.
-                    section("WORDS TO KNOW") {
+                    section(wordsTitle) {
                         FlowRow(Modifier.fillMaxWidth()) { terms.forEach { TermChip(it) } }
                     }
                 }
                 if (skill.prerequisites.isNotEmpty()) {
-                    section("REQUIRES") {
+                    section(requiresTitle) {
                         FlowRow(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -306,16 +342,12 @@ fun SkillDetailSheet(
                     }
                 }
                 if (!mastered && !unlocked) {
-                    text(
-                        null,
-                        "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")} is mastered.",
-                        IronvellumColors.InkMuted,
-                    )
+                    text(null, lockedUntil, IronvellumColors.InkMuted)
                 }
             },
-            InfoPage("LOG") {
+            InfoPage(logLabel) {
                 if (!mastered && unlocked) {
-                    section("LOG AN ATTEMPT") {
+                    section(logTitle) {
                         AttemptLogger(
                             skill = skill,
                             attempt = attempt,
@@ -337,25 +369,15 @@ fun SkillDetailSheet(
                     // Every attempt for this technique, newest first: the sheet folds the
                     // list past six with its own "Show more". The Journal timeline only
                     // holds the last fortnight, so this is the full record.
-                    rows(
-                        "ATTEMPTS",
-                        recent.map { entry ->
-                            formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
-                                entry.claimed -> Words.claimed.u
-                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}${Units.name}"
-                                else -> SkillGuidance.withUnit(entry.value, skill)
-                            }
-                        },
-                        collapseAfter = 6,
-                    )
+                    rows(attemptsTitle, attemptRows, collapseAfter = 6)
                 }
             },
-            InfoPage("FORM") {
+            InfoPage(formLabel) {
                 // How to do it: the same page the exercise info card shows.
                 formFacts(skill.name)
                 if (!mastered && unlocked) {
                     text(
-                        "BEFORE YOU ${Words.claim.u}",
+                        beforeTitle,
                         Lines.claimHelp(cleared, SkillGuidance.withUnit(skill.target, skill), skill.xp),
                         IronvellumColors.InkMuted,
                     )
@@ -394,7 +416,7 @@ private fun AttemptLogger(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepGlyph("−", "Fewer") { onAttempt((attempt - stepDown(skill, attempt)).coerceAtLeast(0)) }
+        StepGlyph("−", UiText.res(R.string.skilldetail_step_fewer).asString()) { onAttempt((attempt - stepDown(skill, attempt)).coerceAtLeast(0)) }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 attempt.toString(),
@@ -404,18 +426,20 @@ private fun AttemptLogger(
                 color = if (attempt >= skill.target) IronvellumColors.SovereignGold else IronvellumColors.Ink,
             )
             Text(
-                when (skill.metric) {
-                    Skills.Metric.SECONDS -> "SECONDS HELD"
-                    Skills.Metric.REPS -> "REPS DONE"
-                    Skills.Metric.METRES -> "METRES"
-                },
+                UiText.res(
+                    when (skill.metric) {
+                        Skills.Metric.SECONDS -> R.string.skilldetail_metric_seconds
+                        Skills.Metric.REPS -> R.string.skilldetail_metric_reps
+                        Skills.Metric.METRES -> R.string.skilldetail_metric_metres
+                    },
+                ).asString(),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 letterSpacing = 2.sp,
             )
         }
-        StepGlyph("+", "More") { onAttempt(attempt + stepUp(skill, attempt)) }
+        StepGlyph("+", UiText.res(R.string.skilldetail_step_more).asString()) { onAttempt(attempt + stepUp(skill, attempt)) }
     }
 
     Spacer(Modifier.height(8.dp))
@@ -429,7 +453,7 @@ private fun AttemptLogger(
     )
 
     Spacer(Modifier.height(10.dp))
-    MiniLabel("QUICK SET")
+    MiniLabel(UiText.res(R.string.skilldetail_quick_set_label).asString())
     Spacer(Modifier.height(4.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         quickValues(skill).forEach { v ->
@@ -449,28 +473,28 @@ private fun AttemptLogger(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // A barbell lift logs the whole bar; a weighted bodyweight move, what hangs on top.
-            MiniLabel(if (barLoad) "BAR LOAD" else "ADDED LOAD")
+            MiniLabel(UiText.res(if (barLoad) R.string.skilldetail_load_bar_label else R.string.skilldetail_load_added_label).asString())
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepGlyph("−", "Less added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepDown(load, Units.current, 5.0, 2.5) ?: 0.0 else (load - 2.5).coerceAtLeast(0.0)) }
+                StepGlyph("−", UiText.res(R.string.skilldetail_step_less_load).asString()) { onLoad(if (Units.current == LoadUnit.LB) Loads.stepDown(load, Units.current, 5.0, 2.5) ?: 0.0 else (load - 2.5).coerceAtLeast(0.0)) }
                 Text(
-                    if (load <= 0.0) (if (barLoad) "0${Units.name}" else "BW") else "${formatLoad(load)}${Units.name}",
+                    Units.label(load, weighted = barLoad),
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
                     color = IronvellumColors.Ink,
                 )
-                StepGlyph("+", "More added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepUp(load, Units.current, 5.0, 2.5) else load + 2.5) }
+                StepGlyph("+", UiText.res(R.string.skilldetail_step_more_load).asString()) { onLoad(if (Units.current == LoadUnit.LB) Loads.stepUp(load, Units.current, 5.0, 2.5) else load + 2.5) }
             }
         }
     } else {
         Text(
-            if (barLoad) "+ ADD BAR LOAD" else "+ ADD LOAD",
+            UiText.res(if (barLoad) R.string.skilldetail_add_bar_load_button else R.string.skilldetail_add_load_button).asString(),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
             letterSpacing = 2.sp,
             modifier = Modifier
-                .clickable(role = Role.Button, onClickLabel = "Add a load") { onShowLoad() }
+                .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.skilldetail_add_load_description).asString()) { onShowLoad() }
                 .heightIn(min = 48.dp)
                 .wrapContentHeight(),
         )
@@ -480,7 +504,7 @@ private fun AttemptLogger(
     // it supplies its own gap; only the stepper row needs one.
     Spacer(Modifier.height(if (showLoad || load > 0.0) 12.dp else 0.dp))
     IronvellumButton(
-        "Log attempt",
+        UiText.res(R.string.skilldetail_log_button).asString(),
         onClick = onLog,
         // Off until a value is set by hand and is above zero.
         enabled = touched && attempt > 0,
@@ -549,7 +573,7 @@ private fun QuickChip(
                 shape,
             )
             .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
-            .clickable(role = Role.Button, onClickLabel = "Set $label") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.skilldetail_quick_set_description, label).asString()) { onClick() }
             .heightIn(min = 48.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -572,7 +596,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
             .heightIn(min = 48.dp)
             .background(IronvellumColors.Wells.top, shape)
             .inkBorder(if (met) emeraldRamp(0.7f) else SolidColor(color), shape, 1.dp)
-            .clickable(role = Role.Button, onClickLabel = "Open $name") { onClick() }
+            .clickable(role = Role.Button, onClickLabel = UiText.res(R.string.titles_open_description, name).asString()) { onClick() }
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -583,7 +607,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
             modifier = Modifier.size(14.dp),
         )
         Text(
-            "$name  ·  ${if (met) "mastered" else "not yet mastered"}",
+            UiText.res(if (met) R.string.skilldetail_prerequisite_met else R.string.skilldetail_prerequisite_unmet, name).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = color,
             modifier = Modifier.padding(start = 6.dp),

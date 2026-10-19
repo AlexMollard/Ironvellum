@@ -8,7 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
@@ -16,8 +18,11 @@ import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.LiftKind
+import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.program.ExerciseMuscles
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -36,7 +41,7 @@ internal fun ExerciseInfoSheet(
     lastLine: String?,
     onDismiss: () -> Unit,
     onPick: (() -> Unit)?,
-    confirmLabel: String = "Add",
+    confirmLabel: String = stringResource(R.string.picker_confirm_add),
     modifiers: String = "",
     /** Shown for the lifter's own movements: opens the exercise form on this one. */
     onEdit: (() -> Unit)? = null,
@@ -44,11 +49,11 @@ internal fun ExerciseInfoSheet(
     val skill = Skills.forName(exercise.name)
     val boards = LiftBoards.boardsFor(exercise.name)
     val chips = buildList {
-        add(InfoChip(exercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() }))
+        add(InfoChip(exercise.muscleGroup.displayName))
         add(InfoChip(metricWord(exercise.metric).replaceFirstChar { it.uppercase() }))
-        add(InfoChip(if (exercise.isWeighted) "Weighted" else "Bodyweight"))
+        add(InfoChip(stringResource(if (exercise.isWeighted) R.string.infosheet_chip_weighted else R.string.infosheet_chip_bodyweight)))
         if (exercise.custom) add(InfoChip(Words.yours.c))
-        if (skill != null) add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))
+        if (skill != null) add(InfoChip(stringResource(R.string.infosheet_chip_tier, Skills.tierLabel(skill.tier)), IronvellumColors.SystemGreen))
     }
 
     InfoSheet(
@@ -56,19 +61,19 @@ internal fun ExerciseInfoSheet(
         onDismiss = onDismiss,
         chips = chips,
         actions = buildList {
-            add(InfoAction("Close", onDismiss, quiet = true))
-            if (onEdit != null) add(InfoAction("Edit", onEdit, quiet = true))
+            add(InfoAction(stringResource(R.string.infosheet_close_button), onDismiss, quiet = true))
+            if (onEdit != null) add(InfoAction(stringResource(R.string.infosheet_edit_button), onEdit, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
         // Two pages: the gear rides on About, and how to, cues and mistakes share Form. The
         // sheet drops a page with nothing on it.
         pages = listOf(
-            InfoPage("About") {
+            InfoPage(stringResource(R.string.infosheet_page_about)) {
                 // The drawing leads: what the movement looks like before anything is said about it.
                 section(null) {
                     ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp))
                 }
-                if (lastLine != null) text("LAST ${Words.trial.u}", lastLine)
+                if (lastLine != null) text(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
                 gearFacts(exercise.name)
                 if (skill != null) {
@@ -76,7 +81,7 @@ internal fun ExerciseInfoSheet(
                         TechniqueLine("${skill.line} · ${Lines.claimAt}: ${skill.standard}", IronvellumColors.Ink)
                         if (skill.why.isNotBlank()) TechniqueLine(skill.why, IronvellumColors.InkMuted)
                         if (skill.prerequisites.isNotEmpty()) {
-                            TechniqueLine("Needs ${skill.prerequisites.joinToString(" and ")} first", IronvellumColors.InkMuted)
+                            TechniqueLine(UiText.res(R.string.infosheet_skill_needs, ListText.and(skill.prerequisites)).asString(), IronvellumColors.InkMuted)
                         }
                     }
                 }
@@ -85,15 +90,15 @@ internal fun ExerciseInfoSheet(
                         Words.theReckoning.u,
                         boards.map { board ->
                             if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
-                                "${board.lift.label} ${Words.reckoning.s} — ${Words.rung.s} ${board.rung} of ${board.rungCount}"
+                                Words.text(UiText.themed(R.string.infosheet_board_rung, R.string.infosheet_board_rung__t, board.lift.label, board.rung.toString(), board.rungCount.toString()))
                             } else {
-                                "Counts toward the ${board.lift.label.lowercase()} ${Words.reckoning.s}"
+                                Words.text(UiText.themed(R.string.infosheet_board_counts, R.string.infosheet_board_counts__t, board.lift.label.lowercase()))
                             }
                         },
                     )
                 }
             },
-            InfoPage("Form") { formFacts(exercise.name) },
+            InfoPage(stringResource(R.string.infosheet_page_form)) { formFacts(exercise.name) },
         ),
     )
 }
@@ -123,25 +128,25 @@ internal fun InfoSheetScope.formFacts(name: String) {
 internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", showMissingMuscles: Boolean = false) {
     val shares = MuscleMap.profile(name, modifiers)?.muscles.orEmpty()
     if (shares.isNotEmpty()) {
-        section("MUSCLES") { ExerciseMuscles(shares, name, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
+        section(Words.text(UiText.res(R.string.infosheet_section_muscles))) { ExerciseMuscles(shares, name, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
     } else if (showMissingMuscles) {
-        text("MUSCLES", Lines.noMuscleData, IronvellumColors.InkMuted)
+        text(Words.text(UiText.res(R.string.infosheet_section_muscles)), Lines.noMuscleData, IronvellumColors.InkMuted)
     }
 }
 
 private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
-    steps("HOW TO", guide.steps, lead = guide.setup)
+    steps(Words.text(UiText.res(R.string.infosheet_section_how_to)), guide.steps, lead = guide.setup)
 }
 
 private fun InfoSheetScope.cueFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
-    bullets("CUES", guide.cues)
+    bullets(Words.text(UiText.res(R.string.infosheet_section_cues)), guide.cues)
 }
 
 private fun InfoSheetScope.mistakeFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
-    bullets("COMMON MISTAKES", guide.commonMistakes, IronvellumColors.InkMuted)
+    bullets(Words.text(UiText.res(R.string.infosheet_section_mistakes)), guide.commonMistakes, IronvellumColors.InkMuted)
 }
 
 internal fun InfoSheetScope.gearFacts(name: String) {

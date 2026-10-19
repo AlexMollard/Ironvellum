@@ -1,24 +1,28 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
 import com.ironvellum.app.domain.RankPatterns
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** Strength Rank written out: each pattern's mark, what earned it, and what lifts it next. */
 @Composable
 fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
     InfoSheet(
-        title = breakdown?.band ?: Rank.UNRANKED,
-        subtitle = "Strength Rank",
+        title = Rank.label(breakdown?.band ?: Rank.UNRANKED),
+        subtitle = stringResource(R.string.rank_sheet_subtitle),
         onDismiss = onDismiss,
         summary = if (breakdown != null) ({ RankProgress(breakdown) }) else null,
     ) {
         if (breakdown == null) {
-            text(null, "${Words.seal.c} ${Words.trial.a} with a pull, push or leg ${Words.technique.s} you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.")
+            text(null, Words.text(UiText.themed(R.string.rank_sheet_empty, R.string.rank_sheet_empty__t)))
             explainer()
             return@InfoSheet
         }
@@ -26,14 +30,14 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
             bullets(
                 p.pattern.label,
                 listOfNotNull(
-                    "${Rank.forStep(p.step)}, from ${p.source}",
-                    p.liftTarget?.let { "Next lift: $it" },
-                    p.skillTarget?.let { "Next ${Words.technique.s}: $it" },
+                    Words.text(UiText.res(R.string.rank_sheet_step_from, Rank.label(Rank.forStep(p.step)), p.source)),
+                    p.liftTarget?.let { Words.text(UiText.res(R.string.rank_sheet_next_lift, it)) },
+                    p.skillTarget?.let { Words.text(UiText.themed(R.string.rank_sheet_next_skill, R.string.rank_sheet_next_skill__t, it)) },
                     if (p.liftTarget == null && p.skillTarget == null) {
-                        "Next: " + if (p.step >= LiftBoards.MAX_STEP) {
-                            "Top of the scale"
+                        if (p.step >= LiftBoards.MAX_STEP) {
+                            Words.text(UiText.res(R.string.rank_sheet_next_top))
                         } else {
-                            "Log a ${RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }} to climb further"
+                            Words.text(UiText.res(R.string.rank_sheet_next_log, RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }))
                         }
                     } else {
                         null
@@ -43,8 +47,7 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
         }
         text(
             null,
-            "A pattern you have not trained in ${Rank.WINDOW_DAYS} days is left out, not counted as zero. " +
-                "Core work never lowers your rank.",
+            Words.text(UiText.plural(R.plurals.rank_sheet_window_note, Rank.WINDOW_DAYS)),
             color = IronvellumColors.InkMuted,
         )
         explainer()
@@ -59,7 +62,11 @@ private fun RankProgress(b: RankBreakdown) {
     val steps = b.stepsToNext
     InfoProgress(
         fraction = b.progress,
-        line = if (b.nextBand == null || steps == null) "Top of the scale" else "$steps ${if (steps == 1) "step" else "steps"} to ${b.nextBand}",
-        caption = "Average of ${b.patterns.size} of 3 patterns over the last ${Rank.WINDOW_DAYS} days",
+        line = if (b.nextBand == null || steps == null) {
+            stringResource(R.string.rank_sheet_top_of_scale)
+        } else {
+            UiText.plural(R.plurals.rank_sheet_steps_to_next, steps, steps, b.nextBand).asString()
+        },
+        caption = UiText.plural(R.plurals.rank_sheet_progress_caption, Rank.WINDOW_DAYS, b.patterns.size, Rank.WINDOW_DAYS).asString(),
     )
 }

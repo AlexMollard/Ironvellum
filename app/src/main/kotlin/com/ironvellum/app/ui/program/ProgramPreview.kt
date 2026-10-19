@@ -148,7 +148,7 @@ fun ProposedDay(
                                 ).asString(),
                                 role = Role.Button,
                             ) { dayOpen = !dayOpen }
-                            .semantics { stateDescription = if (dayOpen) "Expanded" else "Collapsed" }
+                            .semantics { stateDescription = Words.text(UiText.res(if (dayOpen) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) }
                     } else {
                         Modifier
                     },
@@ -311,7 +311,7 @@ fun ProposedEntryRow(
                 .then(
                     if (opens) {
                         Modifier.clickable(
-                            onClickLabel = if (expanded) "Close ${entry.exerciseName}" else "Open ${entry.exerciseName}",
+                            onClickLabel = UiText.res(if (expanded) R.string.programpreview_entry_close else R.string.programpreview_entry_open, entry.exerciseName).asString(),
                             role = Role.Button,
                             onClick = onToggle,
                         )
@@ -621,7 +621,7 @@ internal fun SplitPicker(
         if (counts.size > 1) {
             Spacer(Modifier.height(8.dp))
             InkSegmented(
-                options = counts.map { it to "$it days" },
+                options = counts.map { it to UiText.plural(R.plurals.common_days_count, it).asString() },
                 selected = days,
                 onPick = { onPick(split, it) },
             )
