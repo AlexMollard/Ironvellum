@@ -246,6 +246,14 @@ them as unbracketed English: `adb shell cmd locale set-app-locales com.ironvellu
 
 ### Not migrated as of 1.8
 
-Social screens (circles, comments, lifter, account), idle / Veil / Crests copy, Cloud and Account error messages,
-rank titles and the catalogue names stay English. The remaining count is the baseline in
-`app/src/test/resources/hardcoded-ui-literals.baseline`.
+Rank titles and the catalogue names (skills, titles, crests, deeds, relics, exercises, templates) stay English data. What
+else is left in the baseline (`app/src/test/resources/hardcoded-ui-literals.baseline`) is not screen text: formats,
+routes, keys, test tags, SVG paths, import aliases. `HardcodedUiLiteralTest.justified` says why for each file, and a
+baseline entry for a file with no reason fails the test.
+
+### Plurals and the lint check
+
+`strings.xml` no longer suppresses `PluralsCandidate` on the root. A number followed by a noun is a `<plurals>`; when the
+string holds two numbers, the quantity is the one the noun agrees with ("%1$d of %2$d sets": the total). A string whose
+number is not a count of a noun (an amount of XP or essence, an ordinal, a range, a progress figure) stays a `<string>`
+with `tools:ignore="PluralsCandidate"` and a translator comment above it saying why.
