@@ -23,7 +23,9 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.BuildConfig
+import com.ironvellum.app.R
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -47,7 +49,7 @@ internal fun GoogleSignInButton(onToken: (idToken: String, rawNonce: String) -> 
 
     Column {
         IronvellumButton(
-            label = "Continue with Google",
+            label = stringResource(R.string.misc_google_continue),
             modifier = Modifier.fillMaxWidth(),
             // Same busy-guard as the other IronvellumButtons ("Sync Now",
             // "Sever the link"): a second tap mid-flow would fire a parallel
@@ -79,7 +81,7 @@ internal fun GoogleSignInButton(onToken: (idToken: String, rawNonce: String) -> 
                     } catch (_: GetCredentialCancellationException) {
                         // The lifter dismissed the sheet — not an error.
                     } catch (_: NoCredentialException) {
-                        localError = "No Google account found on this device — use the email form below."
+                        localError = context.getString(R.string.misc_google_no_account)
                     } catch (e: GetCredentialException) {
                         // Credential Manager messages are API internals —
                         // they never reach the lifter verbatim.
