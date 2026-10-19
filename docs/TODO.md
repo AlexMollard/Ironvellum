@@ -38,7 +38,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] XP rescore in one pass over history: 4.1 s to 0.08 s on 450 trials (52351cdd)
 - [x] 2 Scheduled file backup to a chosen folder, newest 5 kept (8680225f)
 - [x] 3 1.7 leftovers and the 24-48dp touch-target audit (53815525, e144686c, bc739d7c)
-- [ ] 4 Measure: release APK size done (foss 14.3 MB); frame stats on the owner's phone owed (needs the phone plugged in)
+- [x] 4 Measure: release APK size (foss 14.3 MB); phone frame stats 2026-10-19 (debug build, 8.9% janky, p95 34 ms); a release-build pass and per-screen attribution are open
 - [x] 5 Home-screen widgets "Today" and "Streak & week", 2x1 and 4x2 (8bef739a, f046207e, 9a120550)
 - [x] 6 Honour the system font scale, with a 200% sweep test (131a1e53 to 61106a9b)
 - [x] 7 Health Connect write-back of finished workouts, opt-in (c21654c7)
@@ -137,8 +137,15 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
 4. **Measure.** Release APK size, and frame stats on the owner's phone.
    APK measured 2026-10-16 (unsigned, R8): foss 14.3 MB, play 15.0 MB; of foss,
    `classes.dex` 8.4 MB (the guide and catalogue data in Kotlin included) and
-   `assets` 5.4 MB (exercise art paths). No action needed. Frame stats still
-   owed: they need the phone connected.
+   `assets` 5.4 MB (exercise art paths). No action needed. Frame stats on the
+   owner's S25 Ultra (SM-S938B, 120 Hz) 2026-10-19, foss debug at ac978ee1, about
+   3 minutes of normal use (Today, Stats, a lift page, the log, a live workout):
+   5847 frames, 8.9% janky (missed deadline), median 7 ms, p90 17 ms, p95 34 ms,
+   p99 73 ms; GPU p99 8 ms; 486 slow UI-thread frames. The GPU is idle; the
+   hitches are main-thread work. A debug build is the worst case (no R8, no
+   baseline profile). Launch alone (204 frames) was 28% janky, p99 150 ms. Open:
+   measure a release build, and attribute the slow frames to screens (JankStats or
+   a Perfetto trace) before changing anything. Raw dumps: `.tmp/framestats/`.
 5. **Home-screen widget.** Done 2026-10-16 (8bef739a). Two widgets from one state
    function (`widget/TodayWidgetState.kt`, built on Today's own day kind, week ticks
    and streak): "Today" (the day card) and "Streak & week", each in a 2x1 and a 4x2
@@ -252,8 +259,9 @@ privacy-policy URL, health-data form, OAuth out of Testing) are the blockers.
   Only the transport is unproven. A signed-in sync, one friend request and one
   circle action against production are still the smoke test
   (`RELEASE_CHECKLIST.md` section 4).
-- No real-device jank number. Emulator frame stats (software renderer) varied
-  11 points between identical runs, so they attribute nothing.
+- Real-device jank is measured on a debug build only (item 4); no release-build
+  number yet, and no per-screen attribution. Emulator frame stats (software
+  renderer) varied 11 points between identical runs, so they attribute nothing.
 - The cloud-backup exclusions (`db-snapshots`, `crash`, `ironvellum.db` in
   `backup_rules.xml` and `data_extraction_rules.xml`) are proven present and
   parsed, not proven at the payload level; that needs a device signed into a
