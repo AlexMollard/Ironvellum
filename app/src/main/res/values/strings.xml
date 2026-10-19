@@ -634,7 +634,7 @@
     <string name="widget_workout_button__t">Trial</string>
     <string name="widget_empty_workout">Empty workout</string>
     <string name="widget_empty_workout__t">Open trial</string>
-    <string name="widget_recent_label">Recent · tap to repeat</string>
+    <string name="widget_recent_label">Recent</string>
     <!-- A recent workout's line: %1$s the weekday, short ("Mon"), %2$s its sets ("16 sets"). -->
     <string name="widget_recent_when">%1$s · %2$s</string>
     <string name="widget_free_day">A free day</string>

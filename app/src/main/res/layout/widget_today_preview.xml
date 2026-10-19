@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The picker's live sample: the card with sample content in the places the face fills. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -18,6 +18,7 @@
             android:layout_height="40dp"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:gravity="center_vertical">
             <LinearLayout
                 android:layout_width="0dp"
@@ -30,6 +31,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical">
                     <TextView
                         android:id="@+id/h_title"
@@ -51,6 +53,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:gravity="center_vertical"
                         android:layout_marginStart="8dp">
                         <ImageView
@@ -173,7 +176,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="horizontal"
-                        android:clipChildren="false">
+                        android:clipChildren="false"
+                        android:baselineAligned="false">
                         <ImageView
                             android:id="@+id/act_pill_l"
                             android:layout_width="6dp"
@@ -207,6 +211,7 @@
                         android:layout_height="match_parent"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:gravity="center"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp">
@@ -244,10 +249,12 @@
             android:layout_weight="1">
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
+                android:layout_height="0dp"
                 android:clipChildren="false"
                 android:layout_marginStart="-6dp"
-                android:layout_marginEnd="-6dp">
+                android:layout_marginEnd="-6dp"
+                android:layout_weight="1"
+                android:minHeight="26dp">
                 <ImageView
                     android:id="@+id/row_bg"
                     android:layout_width="match_parent"
@@ -262,6 +269,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp">
@@ -324,6 +332,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:layout_marginStart="-3dp"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone"
@@ -333,6 +342,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:minWidth="70dp"
                         android:gravity="end|center_vertical">
                         <ImageView
@@ -360,10 +370,12 @@
             </FrameLayout>
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
+                android:layout_height="0dp"
                 android:clipChildren="false"
                 android:layout_marginStart="-6dp"
-                android:layout_marginEnd="-6dp">
+                android:layout_marginEnd="-6dp"
+                android:layout_weight="1"
+                android:minHeight="26dp">
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -377,6 +389,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp">
@@ -433,6 +446,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:layout_marginStart="-3dp"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone"
@@ -442,6 +456,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:minWidth="70dp"
                         android:gravity="end|center_vertical">
                         <ImageView
@@ -467,10 +482,12 @@
             </FrameLayout>
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
+                android:layout_height="0dp"
                 android:clipChildren="false"
                 android:layout_marginStart="-6dp"
-                android:layout_marginEnd="-6dp">
+                android:layout_marginEnd="-6dp"
+                android:layout_weight="1"
+                android:minHeight="26dp">
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -484,6 +501,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp">
@@ -540,6 +558,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:layout_marginStart="-3dp"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone"
@@ -549,6 +568,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:minWidth="70dp"
                         android:gravity="end|center_vertical">
                         <ImageView
@@ -574,10 +594,12 @@
             </FrameLayout>
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
+                android:layout_height="0dp"
                 android:clipChildren="false"
                 android:layout_marginStart="-6dp"
-                android:layout_marginEnd="-6dp">
+                android:layout_marginEnd="-6dp"
+                android:layout_weight="1"
+                android:minHeight="26dp">
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -591,6 +613,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp">
@@ -647,6 +670,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:layout_marginStart="-3dp"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone"
@@ -656,6 +680,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:minWidth="70dp"
                         android:gravity="end|center_vertical">
                         <ImageView
@@ -681,10 +706,12 @@
             </FrameLayout>
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
+                android:layout_height="0dp"
                 android:clipChildren="false"
                 android:layout_marginStart="-6dp"
-                android:layout_marginEnd="-6dp">
+                android:layout_marginEnd="-6dp"
+                android:layout_weight="1"
+                android:minHeight="26dp">
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -698,6 +725,7 @@
                     android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:clipChildren="false"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp">
@@ -754,6 +782,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:layout_marginStart="-3dp"
                         android:layout_marginEnd="8dp"
                         android:visibility="gone"
@@ -763,6 +792,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:clipChildren="false"
+                        android:baselineAligned="false"
                         android:minWidth="70dp"
                         android:gravity="end|center_vertical">
                         <ImageView

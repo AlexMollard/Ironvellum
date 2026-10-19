@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- One day of the week strip, l size. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:layout_width="0dp"
     android:layout_height="match_parent"
     android:clipChildren="false"

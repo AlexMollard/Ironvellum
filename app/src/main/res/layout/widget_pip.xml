@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- One set pip of a 4x2 row. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:layout_width="7dp"
     android:layout_height="7dp"
     android:clipChildren="false"

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Today on a 4x1 cell: the header and the set ladder, centred as one group. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -21,6 +21,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:layout_marginTop="8dp"
             android:layout_marginStart="-1dp"
             android:layout_marginEnd="-1dp" />

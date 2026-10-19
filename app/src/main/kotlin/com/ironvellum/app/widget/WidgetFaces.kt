@@ -476,19 +476,22 @@ internal object WidgetFaces {
         return b
     }
 
+    private const val ROW_SLOTS = 5
+
     private fun RemoteViews.todayBody(context: Context, state: WidgetState, big: Boolean) {
         val body = fresh(R.id.body)
         fun UiText.str() = asString(context)
         val rowLayout = R.layout.widget_row26
+        var padAfter = 0
         when (state.kind) {
-            DayKind.BEGIN -> state.rows.window(5).forEach { r ->
+            DayKind.BEGIN -> state.rows.window(5).also { padAfter = ROW_SLOTS - it.size }.forEach { r ->
                 addView(
                     body,
                     if (big) twoLine(context, Lead.DOT, r.name, load(r.loadKg, r.weighted, context), r.reps.map { Triple(it, 0, false) })
                     else line(context, rowLayout, Lead.DOT, r.name, plan(context, r)),
                 )
             }
-            DayKind.LIVE -> state.rows.window(5).forEach { r ->
+            DayKind.LIVE -> state.rows.window(5).also { padAfter = ROW_SLOTS - it.size }.forEach { r ->
                 val lead = if (r.finished) Lead.CHECK else if (r.current) Lead.PLAY else Lead.DOT
                 if (big) {
                     val boxes = r.reps.mapIndexed { i, reps ->
@@ -503,7 +506,7 @@ internal object WidgetFaces {
                 }
             }
             DayKind.SEALED -> {
-                state.rows.window(5).forEach { r ->
+                state.rows.window(5).also { padAfter = ROW_SLOTS - it.size }.forEach { r ->
                     val best = UiText.res(R.string.widget_row_best, load(r.bestKg, r.weighted, context), r.bestReps).str()
                     addView(
                         body,
@@ -513,7 +516,8 @@ internal object WidgetFaces {
                 }
                 if (big) {
                     next(state)?.str()?.let { text ->
-                        addView(body, view(context, R.layout.widget_spacer))
+                        padRows(context, body, padAfter)
+                        padAfter = 0
                         val nextLine = view(context, R.layout.widget_next_line)
                         nextLine.text(R.id.next, text.emphasise(state.next!!.name, ForegroundColorSpan(INK), StyleSpan(android.graphics.Typeface.BOLD)))
                         nextLine.color(R.id.next, MUTED)
@@ -529,7 +533,7 @@ internal object WidgetFaces {
                     label.color(R.id.label, MUTED)
                     addView(body, label)
                 }
-                state.nextRows.take(4).forEach { r ->
+                state.nextRows.take(4).also { padAfter = 4 - it.size }.forEach { r ->
                     addView(
                         body,
                         if (big) twoLine(context, Lead.DOT, r.name, load(r.loadKg, r.weighted, context), r.reps.map { Triple(it, 0, false) }, dim = true)
@@ -542,11 +546,12 @@ internal object WidgetFaces {
                 label.text(R.id.label, context.getString(R.string.widget_recent_label))
                 label.color(R.id.label, MUTED)
                 addView(body, label)
-                state.recent.take(if (big) 4 else 3).forEach { r ->
+                state.recent.take(if (big) 4 else 3).also { padAfter = (if (big) 4 else 3) - it.size }.forEach { r ->
                     val right = UiText.res(R.string.widget_recent_when, dayShort(r.day), sets(r.sets)).str()
                     addView(body, line(context, if (big) R.layout.widget_row36 else rowLayout, Lead.DIAMOND, r.name, right))
                 }
-                addView(body, view(context, R.layout.widget_spacer))
+                padRows(context, body, padAfter)
+                padAfter = 0
                 val ghost = view(context, R.layout.widget_ghost_btn)
                 ghost.text(R.id.gb_text, UiText.themed(R.string.widget_empty_workout, R.string.widget_empty_workout__t).str())
                 ghost.color(R.id.gb_text, deep)
@@ -556,6 +561,12 @@ internal object WidgetFaces {
                 addView(body, ghost)
             }
         }
+        padRows(context, body, padAfter)
+    }
+
+    /** Rows share the body's height; empty slots keep a short plan's rows the size of a full one's. */
+    private fun RemoteViews.padRows(context: Context, body: Int, slots: Int) {
+        repeat(slots.coerceAtLeast(0)) { addView(body, view(context, R.layout.widget_spacer)) }
     }
 
     private fun plan(context: Context, r: ExRow): String =

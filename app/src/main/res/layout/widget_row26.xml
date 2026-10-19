@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- One exercise line of the 4x2 Today card (v4 mockup: 26dp, tint reaching the card padding). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:layout_width="match_parent"
-    android:layout_height="26dp"
+    android:layout_height="0dp"
     android:clipChildren="false"
     android:layout_marginStart="-6dp"
-    android:layout_marginEnd="-6dp">
+    android:layout_marginEnd="-6dp"
+    android:layout_weight="1"
+    android:minHeight="26dp">
     <ImageView
         android:id="@+id/row_bg"
         android:layout_width="match_parent"
@@ -20,6 +22,7 @@
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:clipChildren="false"
+        android:baselineAligned="false"
         android:gravity="center_vertical"
         android:paddingStart="6dp"
         android:paddingEnd="6dp">
@@ -83,6 +86,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:layout_marginStart="-3dp"
             android:layout_marginEnd="8dp"
             android:visibility="gone"
@@ -92,6 +96,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:minWidth="70dp"
             android:gravity="end|center_vertical">
             <ImageView

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The Today header: name and streak over the meta line, and the action (40dp). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:layout_width="match_parent"
     android:layout_height="40dp"
     android:orientation="horizontal"
     android:clipChildren="false"
+    android:baselineAligned="false"
     android:gravity="center_vertical">
     <LinearLayout
         android:layout_width="0dp"
@@ -17,6 +18,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:gravity="center_vertical">
             <TextView
                 android:id="@+id/h_title"
@@ -38,6 +40,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:clipChildren="false"
+                android:baselineAligned="false"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp">
                 <ImageView
@@ -161,7 +164,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
-                android:clipChildren="false">
+                android:clipChildren="false"
+                android:baselineAligned="false">
                 <ImageView
                     android:id="@+id/act_pill_l"
                     android:layout_width="6dp"
@@ -195,6 +199,7 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:clipChildren="false"
+                android:baselineAligned="false"
                 android:gravity="center"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp">

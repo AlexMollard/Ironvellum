@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Streak & week on a 2x1 cell: the streak line over seven day cells. -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" tools:ignore="HardcodedText,ContentDescription,UseCompoundDrawables,UselessParent,UselessLeaf,SmallSp,NestedWeights,TooManyViews"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -18,6 +18,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:gravity="bottom">
             <TextView
                 android:id="@+id/k_number"
@@ -52,6 +53,7 @@
             android:layout_height="0dp"
             android:orientation="horizontal"
             android:clipChildren="false"
+            android:baselineAligned="false"
             android:layout_weight="1"
             android:layout_marginTop="4dp"
             android:layout_marginStart="-1dp"

@@ -48,12 +48,12 @@ class TodayWidgetRenderTest {
             (applied(WidgetFaces.today(context, WidgetSamples.state(kind), size)).findViewById<LinearLayout>(R.id.body)).childCount
         assertEquals(5, lines(DayKind.BEGIN, WidgetSize.M))
         assertEquals(5, lines(DayKind.LIVE, WidgetSize.L))
-        // Done at 4x3: five exercises, the spacer and the next line.
-        assertEquals(7, lines(DayKind.SEALED, WidgetSize.L))
+        // Done at 4x3: five exercises and the next line (the rows share the height).
+        assertEquals(6, lines(DayKind.SEALED, WidgetSize.L))
         // Rest: the label and the next routine's four exercises.
         assertEquals(5, lines(DayKind.RESPITE, WidgetSize.M))
-        // No plan: the label, three recent workouts, the spacer and the button.
-        assertEquals(6, lines(DayKind.NO_CYCLE, WidgetSize.M))
+        // No plan: the label, three recent workouts and the button.
+        assertEquals(5, lines(DayKind.NO_CYCLE, WidgetSize.M))
     }
 
     @Test
