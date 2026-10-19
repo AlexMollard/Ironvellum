@@ -603,6 +603,6 @@ private fun syncSummary(restored: Boolean, sessions: Int, sets: Int, titles: Int
         UiText.plural(R.plurals.common_sets_count, sets).asString(),
         UiText.plural(R.plurals.acct_titles_count, titles).asString(),
     )
-    if (problems > 0) parts += UiText.plural(R.plurals.acct_sync_skipped, problems).asString()
+    if (problems > 0) parts += UiText.res(R.string.acct_sync_skipped, problems).asString()
     return parts.joinToString(" · ")
 }

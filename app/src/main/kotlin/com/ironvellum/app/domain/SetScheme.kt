@@ -263,7 +263,7 @@ object SchemeText {
 
     /** One short clause for the keep-offer's Sets line: "3 straight", "top + 2 back-offs". */
     fun clause(scheme: SetScheme, sets: Int): String = when (scheme.type) {
-        SchemeType.STRAIGHT -> Words.text(UiText.plural(R.plurals.scheme_clause_straight, sets))
+        SchemeType.STRAIGHT -> Words.text(UiText.res(R.string.scheme_clause_straight, sets))
         SchemeType.TOP_BACKOFF -> Words.text(UiText.plural(R.plurals.scheme_clause_top_backoffs, scheme.backoffSets))
         SchemeType.DROPS -> Words.text(UiText.res(R.string.scheme_clause_drops, last(scheme.dropSets), times(scheme.dropCount), scheme.dropPercent))
         SchemeType.CUSTOM -> Words.text(UiText.plural(R.plurals.scheme_clause_custom, scheme.custom.size))

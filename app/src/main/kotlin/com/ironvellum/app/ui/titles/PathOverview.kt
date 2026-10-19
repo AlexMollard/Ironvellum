@@ -35,7 +35,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 internal fun tileDescription(line: String, done: Int, total: Int, status: String, recent: Boolean): String =
     buildList {
         add(Words.text(UiText.themed(R.string.path_tile_name, R.string.path_tile_name__t, line)))
-        add(Words.text(UiText.plural(R.plurals.path_mastered_of_total, total, done, total)))
+        add(Words.text(UiText.res(R.string.path_mastered_of_total, done, total)))
         add(status)
         if (recent) add(Words.text(UiText.res(R.string.path_tile_recent_description)))
     }.joinToString(", ")
@@ -162,8 +162,8 @@ private fun PathRow(
 
 /** "5 of 11 mastered", then the technique to go for next; a path waiting on another says so on its own link line. */
 private fun pathSubline(done: Int, total: Int, status: String, blocker: CrossNeed?, nextUp: Boolean): String =
-    if (done < total && blocker == null && nextUp) Words.text(UiText.plural(R.plurals.path_subline_next, total, done, total, status))
-    else Words.text(UiText.plural(R.plurals.path_mastered_of_total, total, done, total))
+    if (done < total && blocker == null && nextUp) Words.text(UiText.res(R.string.path_subline_next, done, total, status))
+    else Words.text(UiText.res(R.string.path_mastered_of_total, done, total))
 
 /** The header over an opened path: back to the list, the path's name, and its progress once as a subline. */
 @Composable
@@ -172,7 +172,7 @@ internal fun PathHeader(line: String, mastered: Set<String>, onBack: () -> Unit)
     Column {
         PushedHeader(line, onBack)
         Text(
-            UiText.plural(R.plurals.path_mastered_of_total, total, done, total).asString(),
+            UiText.res(R.string.path_mastered_of_total, done, total).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

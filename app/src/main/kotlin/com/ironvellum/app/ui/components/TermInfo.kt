@@ -69,11 +69,10 @@ enum class Term private constructor(
         { uiString(R.string.terminfo_ranks_title) },
         {
             Words.text(
-                UiText.themedPlural(
-                    R.plurals.terminfo_ranks_definition,
-                    R.plurals.terminfo_ranks_definition__t,
-                    Rank.WINDOW_DAYS,
-                    Rank.WINDOW_DAYS,
+                UiText.themed(
+                    R.string.terminfo_ranks_definition,
+                    R.string.terminfo_ranks_definition__t,
+                    UiText.plural(R.plurals.terminfo_ranks_window, Rank.WINDOW_DAYS),
                     ArmyClass.LADDER.joinToString(", ") { uiString(R.string.terminfo_ranks_ladder_item, it.title, it.level) },
                 ),
             )
@@ -132,7 +131,7 @@ enum class Term private constructor(
     ),
     OATH(
         { Words.oath.c },
-        { Words.text(UiText.themedPlural(R.plurals.terminfo_oath_definition, R.plurals.terminfo_oath_definition__t, Streak.MAX_GAP_DAYS.toInt(), Streak.MAX_GAP_DAYS)) },
+        { Words.text(UiText.themed(R.string.terminfo_oath_definition, R.string.terminfo_oath_definition__t, UiText.plural(R.plurals.terminfo_oath_gap, Streak.MAX_GAP_DAYS.toInt(), Streak.MAX_GAP_DAYS))) },
     ),
     SEAL(
         { Words.seal.c },

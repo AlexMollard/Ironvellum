@@ -1262,7 +1262,7 @@ private fun MoreLine(hidden: Int, divider: Boolean) {
     Box(Modifier.fillMaxWidth().heightIn(min = MORE_LINE), contentAlignment = Alignment.CenterStart) {
         if (divider) InkDivider(Modifier.align(Alignment.TopStart))
         Text(
-            UiText.plural(R.plurals.today_more_rows, hidden).asString(),
+            UiText.res(R.string.today_more_rows, hidden).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             maxLines = 1,

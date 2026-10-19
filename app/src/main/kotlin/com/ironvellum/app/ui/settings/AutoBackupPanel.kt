@@ -57,9 +57,8 @@ internal fun AutoBackupPanel(viewModel: SettingsViewModel) {
             ListRow(
                 stringResource(R.string.settings_backup_title),
                 value = stringResource(R.string.settings_backup_weekly),
-                subline = pluralStringResource(
-                    R.plurals.settings_backup_folder_caption,
-                    BackupFiles.KEEP,
+                subline = stringResource(
+                    R.string.settings_backup_folder_caption,
                     state.folderName.orEmpty(),
                     BackupFiles.KEEP,
                 ),

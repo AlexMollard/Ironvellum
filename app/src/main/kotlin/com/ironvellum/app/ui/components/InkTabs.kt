@@ -129,9 +129,9 @@ fun InkTabs(
                 val selected = index == selectedIndex
                 val badge = badges.getOrElse(index) { 0 }
                 val state = if (badge > 0) {
-                    UiText.plural(
-                        if (selected) R.plurals.inktabs_state_selected_unread else R.plurals.inktabs_state_not_selected_unread,
-                        badge, index + 1, labels.size, badge,
+                    UiText.res(
+                        if (selected) R.string.inktabs_state_selected_unread else R.string.inktabs_state_not_selected_unread,
+                        index + 1, labels.size, badge,
                     ).asString()
                 } else {
                     stringResource(

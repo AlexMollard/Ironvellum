@@ -337,7 +337,7 @@ private fun DeedsHome(
 private fun DeedsHeader(earned: Int, total: Int) {
     Column(Modifier.fillMaxWidth()) {
         Text(
-            UiText.plural(R.plurals.deeds_earned_of_total, total, earned, total).asString(),
+            UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.semantics { heading() },
@@ -540,7 +540,7 @@ private fun CategoryScreen(
     val ladders = remember(category, Words.themed) { DeedLadders.ALL.filter { it.category == category } }
     val total = ladders.sumOf { it.rungs.size }
     val earned = ladders.sumOf { l -> l.rungs.count { it.id in earnedIds } }
-    val summaryDescription = UiText.plural(R.plurals.always_deeds_category_summary, total, category, earned, total, blurb).asString()
+    val summaryDescription = UiText.res(R.string.always_deeds_category_summary, category, earned, total, blurb).asString()
 
     val shown = remember(ladders, earnedIds, progressOf, range) {
         ladders
@@ -575,7 +575,7 @@ private fun CategoryScreen(
                         color = IronvellumColors.InkMuted,
                     )
                     Text(
-                        UiText.plural(R.plurals.deeds_earned_of_total, total, earned, total).asString(),
+                        UiText.res(R.string.deeds_earned_of_total, earned, total).asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.Ink,
                     )

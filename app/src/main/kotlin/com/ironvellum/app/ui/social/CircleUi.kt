@@ -770,7 +770,7 @@ private fun ManageCircleSheet(
                 Text(
                     buildList {
                         add(UiText.plural(R.plurals.circle_manage_each, circle.perMember).asString())
-                        circle.pendingPerMember?.let { add(UiText.plural(R.plurals.circle_manage_pending, it).asString()) }
+                        circle.pendingPerMember?.let { add(UiText.res(R.string.circle_manage_pending, it).asString()) }
                         add(stringResource(R.string.circle_manage_weeks_met, circle.weeksMet))
                         add(stringResource(R.string.circle_manage_resets, resets))
                     }.joinToString(" · "),

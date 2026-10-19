@@ -917,7 +917,8 @@
     <string name="settings_backup_weekly">Weekly</string>
     <string name="settings_backup_off_caption">Saves a full archive to a folder you choose, every week.</string>
     <!-- Settings > Data > Automatic backup. %1$s is the folder's name, %2$d how many of the newest backups are kept. -->
-    <plurals name="settings_backup_folder_caption"><item quantity="one">Folder: %1$s. Keeps the newest %2$d.</item><item quantity="other">Folder: %1$s. Keeps the newest %2$d.</item></plurals>
+    <!-- Settings > Data. %1$s is the folder name, %2$d how many backup files are kept. The line sits under the backup row, which names the noun, so no noun follows the number and it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="settings_backup_folder_caption">Folder: %1$s. Keeps the newest %2$d.</string>
     <string name="settings_backup_last_label">Last backup</string>
     <string name="settings_backup_last_failed">Failed</string>
     <string name="settings_backup_last_never">Not yet</string>
@@ -3167,11 +3168,8 @@
         <item quantity="one">Custom, %1$d set</item>
         <item quantity="other">Custom, %1$d sets</item>
     </plurals>
-    <!-- The keep-offer's Sets line. -->
-    <plurals name="scheme_clause_straight">
-        <item quantity="one">%1$d straight</item>
-        <item quantity="other">%1$d straight</item>
-    </plurals>
+    <!-- The keep-offer's Sets line, which names the noun: "Sets: 3 straight". %1$d is how many sets. No noun follows the number, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="scheme_clause_straight">%1$d straight</string>
     <plurals name="scheme_clause_top_backoffs">
         <item quantity="one">top + %1$d back-off</item>
         <item quantity="other">top + %1$d back-offs</item>
@@ -3710,17 +3708,20 @@
     <string name="custom_metric_locked">Sets are already logged for it, so how it is measured is fixed.</string>
     <!-- Bottom bar: screen-reader label of the tab that has unread items. %1$s is the tab name, %2$d the unread count. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="nav_tab_unread_description"><item quantity="one">%1$s, %2$d unread</item><item quantity="other">%1$s, %2$d unread</item></plurals>
+    <!-- Tab accessibility description. %1$s is the tab name, %2$d how many are unread. No noun follows the number, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="nav_tab_unread_description">%1$s, %2$d unread</string>
     <!-- Tab strip, screen-reader state of the selected tab. %1$d is its position, %2$d the number of tabs. -->
     <string name="inktabs_state_selected">Selected, %1$d of %2$d</string>
     <!-- Tab strip, screen-reader state of an unselected tab. %1$d is its position, %2$d the number of tabs. -->
     <string name="inktabs_state_not_selected">Not selected, %1$d of %2$d</string>
     <!-- Same as inktabs_state_selected for a tab with a count badge; %3$d is the unread count. -->
     <!-- The plural quantity is %3$d. -->
-    <plurals name="inktabs_state_selected_unread"><item quantity="one">Selected, %1$d of %2$d, %3$d unread</item><item quantity="other">Selected, %1$d of %2$d, %3$d unread</item></plurals>
+    <!-- Tab state for a screen reader. %1$d is the tab position, %2$d how many tabs, %3$d how many are unread. No noun follows the unread count, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="inktabs_state_selected_unread">Selected, %1$d of %2$d, %3$d unread</string>
     <!-- Same as inktabs_state_not_selected for a tab with a count badge; %3$d is the unread count. -->
     <!-- The plural quantity is %3$d. -->
-    <plurals name="inktabs_state_not_selected_unread"><item quantity="one">Not selected, %1$d of %2$d, %3$d unread</item><item quantity="other">Not selected, %1$d of %2$d, %3$d unread</item></plurals>
+    <!-- Tab state for a screen reader. %1$d is the tab position, %2$d how many tabs, %3$d how many are unread. No noun follows the unread count, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="inktabs_state_not_selected_unread">Not selected, %1$d of %2$d, %3$d unread</string>
     <!-- Note under the modifier chips. %1$s is a comma-separated list of the modifier tokens the exercise does not offer. -->
     <string name="modchips_misfit_note">%1$s: not offered for this movement. Tap to remove.</string>
     <!-- Note under the modifier chips. %1$s is a comma-separated list of tokens that are not known modifiers. -->
@@ -3808,7 +3809,8 @@
     <!-- Tiny label above today's tile in the week rail. Keep it to about five upper-case letters. -->
     <string name="today_week_label_today">TODAY</string>
     <!-- Day card, last line when exercise rows did not fit. %1$d is how many are hidden. -->
-    <plurals name="today_more_rows"><item quantity="one">+%1$d more</item><item quantity="other">+%1$d more</item></plurals>
+    <!-- Today list footer. %1$d is how many rows are hidden. A bare "+N more": no noun follows the number, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="today_more_rows">+%1$d more</string>
     <!-- Screen-reader click label of the Next link. %1$s is a short day name. -->
     <string name="today_next_show_label">Show %1$s</string>
     <!-- Quiet link that shows the next scheduled day. %1$s is the routine's name (user data), %2$s a short day name. -->
@@ -4089,7 +4091,8 @@
     <string name="ledger_bmi_ffmi_explainer">BMI relates weight to height; FFMI relates lean mass to height. Tap either for its ranges.</string>
     <!-- Row for the tape measurements: %1$d sites logged, %2$d sites in all. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="ledger_tape_logged"><item quantity="one">%1$d of %2$d logged</item><item quantity="other">%1$d of %2$d logged</item></plurals>
+    <!-- Ledger row value. %1$d is how many sites have a reading, %2$d how many sites there are. A progress figure, not a count of a noun, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="ledger_tape_logged">%1$d of %2$d logged</string>
     <string name="ledger_stays_on_device">stays on this device</string>
     <string name="ledger_log_weight_button">Log weight</string>
     <string name="ledger_consistency_label">Consistency</string>
@@ -4488,7 +4491,8 @@
 
     <!-- The Veil's reveals (ui/components/VeilReveals.kt). The Veil is themed in both modes, so these have no twins. -->
     <!-- Dock button while inscriptions are still banked. %1$d is how many are left. -->
-    <plurals name="veilreveal_again_button"><item quantity="one">Inscribe again (%1$d left)</item><item quantity="other">Inscribe again (%1$d left)</item></plurals>
+    <!-- Button. %1$d is how many inscriptions are left. The number sits in brackets with no noun, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="veilreveal_again_button">Inscribe again (%1$d left)</string>
     <string name="veilreveal_row_strongest">Strongest relic</string>
     <string name="veilreveal_row_rate">Rate</string>
     <!-- Relic page, line two. %1$s is what the relic does, %2$s the new multiplier ("1.25"). -->
@@ -4540,9 +4544,11 @@
     <string name="terminfo_deload_definition">If you fail the same load three workouts in a row, the next one drops it by %1$d%% so you can recover and build back past where you stalled. It happens on its own.</string>
     <string name="terminfo_deload_definition__t">If you fail the same load three trials in a row, the next one drops it by %1$d%% so you can recover and build back past where you stalled. It happens on its own.</string>
     <string name="terminfo_ranks_title">Strength Rank and Ascension</string>
-    <!-- %1$d is the days the rank looks back over, %2$s the ascension tiers from terminfo_ranks_ladder_item joined by commas. -->
-    <plurals name="terminfo_ranks_definition"><item quantity="one">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d day. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</item><item quantity="other">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</item></plurals>
-    <plurals name="terminfo_ranks_definition__t"><item quantity="one">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d day. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</item><item quantity="other">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$d days. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</item></plurals>
+    <!-- %1$s is the days the rank looks back over, from terminfo_ranks_window; %2$s the ascension tiers from terminfo_ranks_ladder_item joined by commas. -->
+    <string name="terminfo_ranks_definition">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$s. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg skill you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each workout earns: %2$s.</string>
+    <string name="terminfo_ranks_definition__t">Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, over the last %1$s. Each takes its best mark: a squat, bench press, deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank is the average of the patterns you trained, rounded down. One you skipped is left out, and core work never lowers it. Ascension follows your level, which rises with the XP each trial earns: %2$s.</string>
+    <!-- The days the Strength Rank looks back over, written into terminfo_ranks_definition and its themed twin: "30 days", "1 day". -->
+    <plurals name="terminfo_ranks_window"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
     <!-- One tier of the ascension ladder. %1$s is its name, %2$d the level it starts at. -->
     <string name="terminfo_ranks_ladder_item">%1$s at %2$d</string>
     <string name="terminfo_tuck_title">Tuck</string>
@@ -4570,9 +4576,11 @@
     <string name="terminfo_level_title">Level and XP</string>
     <string name="terminfo_level_definition">Each finished workout earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
     <string name="terminfo_level_definition__t">Each sealed trial earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
-    <!-- %1$d is the days a streak survives without a workout. The last sentence names the deed milestone, which is the reward layer in both modes. -->
-    <plurals name="terminfo_oath_definition"><item quantity="one">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$d day passes without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</item><item quantity="other">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</item></plurals>
-    <plurals name="terminfo_oath_definition__t"><item quantity="one">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$d day passes without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</item><item quantity="other">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$d days pass without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</item></plurals>
+    <!-- %1$s is the gap a streak survives without a workout, from terminfo_oath_gap. The last sentence names the deed milestone, which is the reward layer in both modes. -->
+    <string name="terminfo_oath_definition">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$s without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</string>
+    <string name="terminfo_oath_definition__t">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$s without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</string>
+    <!-- The gap, in days, written into terminfo_oath_definition and its themed twin: "2 days pass", "1 day passes". The verb agrees with the number. -->
+    <plurals name="terminfo_oath_gap"><item quantity="one">%1$d day passes</item><item quantity="other">%1$d days pass</item></plurals>
     <string name="terminfo_seal_definition">Finishing a workout. Finishing banks its XP and adds its strength score to your lifetime total. A finished workout can still be amended later, and the difference is settled.</string>
     <string name="terminfo_seal_definition__t">Finishing a trial. Sealing banks its XP and adds its strength score to your lifetime total. A sealed trial can still be amended later, and the difference is settled.</string>
     <string name="terminfo_set_types_title">Set types</string>
@@ -4656,7 +4664,8 @@
     <string name="deeds_earned_header">EARNED %1$d</string>
     <!-- %1$d earned of %2$d in all, or in one category. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="deeds_earned_of_total"><item quantity="one">%1$d of %2$d earned</item><item quantity="other">%1$d of %2$d earned</item></plurals>
+    <!-- Progress figure: %1$d earned of %2$d. No noun follows the numbers, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="deeds_earned_of_total">%1$d of %2$d earned</string>
     <string name="deeds_complete_description">Complete</string>
     <string name="deeds_wall_empty">Nothing is written here yet. Finish a workout to earn the first deed.</string>
     <string name="deeds_wall_empty__t">Nothing is written here yet. Seal a trial to earn the first deed.</string>
@@ -4672,7 +4681,8 @@
     <string name="deeds_range_all">All</string>
     <!-- Screen reader text of a category header: %1$s the category, %2$d earned of %3$d, %4$s its blurb. -->
     <!-- The plural quantity is %3$d. -->
-    <plurals name="always_deeds_category_summary"><item quantity="one">%1$s deeds: %2$d of %3$d earned. %4$s.</item><item quantity="other">%1$s deeds: %2$d of %3$d earned. %4$s.</item></plurals>
+    <!-- Spoken summary of a deed category. %1$s is the category, %2$d how many earned, %3$d how many in all, %4$s its blurb. A progress figure, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="always_deeds_category_summary">%1$s deeds: %2$d of %3$d earned. %4$s.</string>
     <string name="always_deeds_all_earned">Every deed in %1$s is earned.</string>
     <string name="always_deeds_page_empty">Nothing is written here yet. Earned deeds appear on this page.</string>
     <string name="always_deeds_none_here">No deeds here.</string>
@@ -4695,7 +4705,8 @@
 
     <!-- Paths. %1$d mastered of %2$d. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="path_mastered_of_total"><item quantity="one">%1$d of %2$d mastered</item><item quantity="other">%1$d of %2$d mastered</item></plurals>
+    <!-- Progress figure: %1$d mastered of %2$d. No noun follows the numbers, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="path_mastered_of_total">%1$d of %2$d mastered</string>
     <!-- Screen reader: a path tile's name. %1$s is the path's name (Pull, Push). -->
     <string name="path_tile_name">%1$s skill tree</string>
     <string name="path_tile_name__t">%1$s path</string>
@@ -4708,15 +4719,18 @@
     <string name="path_status_locked">locked</string>
     <!-- Under a path tile: %1$d of %2$d mastered, then %3$s the status ("next: Pull-up"). -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="path_subline_next"><item quantity="one">%1$d of %2$d mastered · %3$s</item><item quantity="other">%1$d of %2$d mastered · %3$s</item></plurals>
+    <!-- Path subline. %1$d mastered of %2$d, %3$s what is next. A progress figure, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="path_subline_next">%1$d of %2$d mastered · %3$s</string>
     <!-- Quiet tag on the path of the latest attempt. -->
     <string name="path_recent_tag">Recent</string>
     <string name="path_open_description">Open skill tree</string>
     <string name="path_open_description__t">Open path</string>
     <!-- Screen reader text of a path chip: %1$s the path's name, %2$d mastered of %3$d. -->
     <!-- The plural quantity is %3$d. -->
-    <plurals name="path_chip_description"><item quantity="one">%1$s skill tree, %2$d of %3$d mastered</item><item quantity="other">%1$s skill tree, %2$d of %3$d mastered</item></plurals>
-    <plurals name="path_chip_description__t"><item quantity="one">%1$s path, %2$d of %3$d mastered</item><item quantity="other">%1$s path, %2$d of %3$d mastered</item></plurals>
+    <!-- Spoken description of a path chip. %1$s is the path, %2$d how many mastered of %3$d. A progress figure, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="path_chip_description">%1$s skill tree, %2$d of %3$d mastered</string>
+    <!-- Themed wording of path_chip_description. %1$s is the path, %2$d how many mastered of %3$d. A progress figure, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="path_chip_description__t">%1$s path, %2$d of %3$d mastered</string>
     <string name="path_chip_open_description">Open %1$s skill tree</string>
     <string name="path_chip_open_description__t">Open %1$s path</string>
 
@@ -4815,7 +4829,8 @@
     <plurals name="skilljournal_heatmap_empty"><item quantity="one">%1$d week: no attempts logged</item><item quantity="other">%1$d weeks: no attempts logged</item></plurals>
     <!-- Paths row subline: %1$s the first path names joined by commas, %2$d how many more there are. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="skilljournal_paths_named_more"><item quantity="one">%1$s and %2$d more</item><item quantity="other">%1$s and %2$d more</item></plurals>
+    <!-- Skill Journal subline. %1$s is the first paths named, %2$d how many more there are. A bare "and N more", so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="skilljournal_paths_named_more">%1$s and %2$d more</string>
     <string name="skilljournal_open_paths_description">Open Skills</string>
     <string name="skilljournal_open_paths_description__t">Open Paths</string>
     <string name="skilljournal_timeline_header">Timeline</string>
@@ -5628,7 +5643,8 @@
     <!-- Titles are the rank titles a person has earned. -->
     <plurals name="acct_titles_count"><item quantity="one">%1$d title</item><item quantity="other">%1$d titles</item></plurals>
     <!-- Last part of the result line: how many items could not be synced. -->
-    <plurals name="acct_sync_skipped"><item quantity="one">%1$d skipped</item><item quantity="other">%1$d skipped</item></plurals>
+    <!-- Sync summary part. %1$d is how many items were skipped. No noun follows the number, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="acct_sync_skipped">%1$d skipped</string>
     <string name="acct_backup_label">Back up</string>
     <string name="acct_backup_none">No backup yet</string>
     <!-- File size under Back up. %1$d is bytes, %1$.1f is kilobytes with one decimal. -->
@@ -5867,7 +5883,8 @@
         <item quantity="other">%1$d days each</item>
     </plurals>
     <!-- Second part of that line, only when a goal change is queued. %1$d is the new days per member. -->
-    <plurals name="circle_manage_pending"><item quantity="one">%1$d from next week</item><item quantity="other">%1$d from next week</item></plurals>
+    <!-- Circle manage line. %1$d is the amount each member still owes from next week. An amount, not a count of a noun, so it is a string. -->
+    <string tools:ignore="PluralsCandidate" name="circle_manage_pending">%1$d from next week</string>
     <!-- Third part: how many weeks the circle met its goal. %1$d is the count. -->
     <string name="circle_manage_weeks_met">weeks met %1$d</string>
     <!-- Fourth part: when the week closes. %1$s is a weekday and time in the device's clock, such as "Mon 1 Jun, 02:00". -->

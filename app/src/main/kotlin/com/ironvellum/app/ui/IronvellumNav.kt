@@ -750,7 +750,7 @@ private fun IronvellumBottomBar(
                                 Icon(
                                     destination.icon,
                                     contentDescription = if (unreadHere) {
-                                        com.ironvellum.app.domain.UiText.plural(R.plurals.nav_tab_unread_description, inboxUnread, destination.label, inboxUnread).asString()
+                                        com.ironvellum.app.domain.UiText.res(R.string.nav_tab_unread_description, destination.label, inboxUnread).asString()
                                     } else {
                                         destination.label
                                     },

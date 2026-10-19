@@ -148,7 +148,7 @@ fun SkillJournal(
         ListRow(
             label = Words.paths.c,
             subline = lines.take(PATHS_NAMED).joinToString(", ").let {
-                if (more > 0) UiText.plural(R.plurals.skilljournal_paths_named_more, more, it, more).asString() else it
+                if (more > 0) UiText.res(R.string.skilljournal_paths_named_more, it, more).asString() else it
             },
             onClickLabel = UiText.themed(
                 R.string.skilljournal_open_paths_description,

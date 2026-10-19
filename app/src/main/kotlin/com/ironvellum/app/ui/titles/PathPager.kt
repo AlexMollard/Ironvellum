@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.drop
 
 /** What a path chip reads out loud: the name, how far along it is, and whether it is the open one. */
 internal fun chipDescription(line: String, done: Int, total: Int): String =
-    Words.text(UiText.themedPlural(R.plurals.path_chip_description, R.plurals.path_chip_description__t, total, line, done, total))
+    Words.text(UiText.themed(R.string.path_chip_description, R.string.path_chip_description__t, line, done, total))
 
 /**
  * An open path: a strip of every path above a pager of their trees. The strip and a horizontal

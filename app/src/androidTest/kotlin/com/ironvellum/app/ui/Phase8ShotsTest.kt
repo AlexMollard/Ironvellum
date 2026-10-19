@@ -178,7 +178,7 @@ class Phase8ShotsTest {
                         UiText.plural(R.plurals.skilljournal_heatmap_summary, n, n, "quiet", "attempts", "Mon"),
                         UiText.plural(R.plurals.always_deeds_ladder_held, n, 1, n),
                         UiText.plural(R.plurals.veilreveal_run_description, n, 1, n),
-                        UiText.plural(R.plurals.acct_sync_skipped, n),
+                        UiText.res(R.string.acct_sync_skipped, n),
                     )
                     for (line in lines) androidx.compose.material3.Text("$n: " + line.asString(), color = androidx.compose.ui.graphics.Color.White)
                 }
