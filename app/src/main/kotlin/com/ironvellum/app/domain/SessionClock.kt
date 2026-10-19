@@ -1,6 +1,7 @@
 package com.ironvellum.app.domain
 
-import java.util.Locale
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 
 /**
  * Clock arithmetic for a workout: the live elapsed figure on the session
@@ -129,9 +130,10 @@ object SessionClock {
     fun minutes(seconds: Int): Int = (seconds.coerceAtLeast(0) + 59) / 60
 
     /** "EST 58 MIN · ~31 LEFT"; the tail drops once nothing is left. */
-    fun estimateLine(totalSeconds: Int, remainingSeconds: Int): String =
-        if (remainingSeconds <= 0) "EST ${minutes(totalSeconds)} MIN"
-        else "EST ${minutes(totalSeconds)} MIN · ~${minutes(remainingSeconds)} LEFT"
+    fun estimateLine(totalSeconds: Int, remainingSeconds: Int): String = Words.text(
+        if (remainingSeconds <= 0) UiText.res(R.string.session_estimate, minutes(totalSeconds))
+        else UiText.res(R.string.session_estimate_left, minutes(totalSeconds), minutes(remainingSeconds)),
+    )
 
     /** Estimated clock seconds of a preset's entries before it starts; [planLine] and the home-screen widget read it. */
     fun planSeconds(
@@ -164,18 +166,18 @@ object SessionClock {
     ): String {
         val sets = entries.sumOf { it.sets }
         val seconds = planSeconds(entries, focus, paceSeconds, metricOf)
-        val exercises = if (entries.size == 1) "EXERCISE" else "EXERCISES"
-        val setWord = if (sets == 1) "SET" else "SETS"
-        return "${entries.size} $exercises · $sets $setWord · ~${minutes(seconds)} MIN"
+        return Words.text(
+            UiText.res(
+                R.string.session_plan_line,
+                UiText.plural(R.plurals.session_plan_exercises, entries.size),
+                UiText.plural(R.plurals.session_plan_sets, sets),
+                minutes(seconds),
+            ),
+        )
     }
 
     /** "4:07" under an hour, "1:04:07" past it. A clock set backwards reads 0:00. */
     fun elapsedLabel(elapsedMs: Long): String {
-        val total = elapsedMs.coerceAtLeast(0) / 1000
-        val h = total / 3600
-        val m = (total % 3600) / 60
-        val s = total % 60
-        return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, s)
-        else String.format(Locale.ROOT, "%d:%02d", m, s)
+        return ClockText.elapsed(elapsedMs.coerceAtLeast(0) / 1000)
     }
 }

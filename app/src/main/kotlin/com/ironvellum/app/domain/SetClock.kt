@@ -121,7 +121,7 @@ data class SetClock(
         fun readyCue(seconds: Int): Cue = if (seconds in 1..CUE_SECONDS) Cue.TICK else Cue.NONE
 
         /** "1:05", the face of either clock. */
-        fun face(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
+        fun face(seconds: Int): String = ClockText.minutesSeconds(seconds.toLong())
 
         /** Whether a metric is timed against its target figure (a hold, a duration). */
         fun countsDown(metric: ExerciseMetric): Boolean =

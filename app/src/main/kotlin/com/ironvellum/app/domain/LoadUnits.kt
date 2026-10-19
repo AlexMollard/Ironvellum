@@ -1,11 +1,21 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToLong
 
 /** The unit a lifter reads loads in. Storage is kg everywhere; this only changes what is shown and typed. */
-enum class LoadUnit(val label: String) { KG("kg"), LB("lb") }
+enum class LoadUnit(@StringRes private val labelRes: Int) {
+    KG(R.string.unit_kg),
+    LB(R.string.unit_lb),
+    ;
+
+    /** The unit's symbol, "kg" or "lb", in the app's language. */
+    val label: String get() = Words.text(UiText.res(labelRes))
+}
 
 /**
  * The one conversion and formatting helper for loads. Every screen, share text and progression

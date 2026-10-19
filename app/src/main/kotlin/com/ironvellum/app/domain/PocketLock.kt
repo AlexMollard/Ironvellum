@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * The pocket lock's one rule: a dim cover over the live trial that ignores touches
  * until the lifter holds for [HOLD_MS]. A brush of fabric, a tap or a swipe never
@@ -21,7 +24,7 @@ object PocketLock {
      * hand, else nothing. [restLabel] is the timer's own "1:05".
      */
     fun summary(restLabel: String?, nextLine: String?): String? = when {
-        restLabel != null -> "Rest $restLabel"
+        restLabel != null -> Words.text(UiText.res(R.string.pocketlock_rest, restLabel))
         nextLine != null -> nextLine
         else -> null
     }

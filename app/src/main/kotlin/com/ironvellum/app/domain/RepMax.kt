@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import kotlin.math.roundToInt
 
 /** Movement and variation ([Variation.liftKey]) to every working set done before a trial: what [RepMax] judges against. */
@@ -25,7 +28,13 @@ object RepMax {
     /** One earlier set of a movement: reps (seconds for a hold) and the marked load, 0 when none. */
     data class Mark(val figure: Int, val weightKg: Double)
 
-    enum class Kind(val label: String) { HEAVIER("heavier"), MORE_REPS("more reps") }
+    enum class Kind(@StringRes private val labelRes: Int) {
+        HEAVIER(R.string.repmax_kind_heavier),
+        MORE_REPS(R.string.repmax_kind_more_reps),
+        ;
+
+        val label: String get() = Words.text(UiText.res(labelRes))
+    }
 
     /** A set that peaked, the kind of peak and the earlier best it passed. */
     data class Hit(val set: SessionSet, val kind: Kind, val was: Mark)

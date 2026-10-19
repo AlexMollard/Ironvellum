@@ -324,6 +324,8 @@ class HardcodedUiLiteralTest {
             "error", "require", "check", "requireNotNull", "checkNotNull", "assert", "println", "TODO", "Log.d", "Log.i",
             "Log.w", "Log.e", "Log.v", "IllegalStateException", "IllegalArgumentException", "UnsupportedOperationException",
             "NoSuchElementException", "AssertionError", "RuntimeException", "Exception",
+            // SessionScreen.launchGuarded(label) { ... }: the string is the log label of a failed action, never shown.
+            "launchGuarded",
         )
         val DATE_PATTERN = Regex("""[dMyEHhmsaLwSZzXx'.:,/ \-]+""")
 

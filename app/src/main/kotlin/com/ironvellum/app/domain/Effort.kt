@@ -1,10 +1,17 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /** How effort is read and shown: RPE (10 is your limit) or RIR (the reps you had left). The same stored figure either way. */
-enum class EffortScale(val label: String) {
-    RPE("RPE"),
-    RIR("RIR"),
+enum class EffortScale(@StringRes private val labelRes: Int) {
+    RPE(R.string.effort_scale_rpe),
+    RIR(R.string.effort_scale_rir),
     ;
+
+    /** The scale's abbreviation as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 
     companion object {
         /** The stored name, read defensively: anything unknown is RPE, the default. */
@@ -46,33 +53,32 @@ object Effort {
 
     /** A chip's face: "≤5", "6" ... "10" on RPE; "5+", "4" ... "0" on RIR. */
     fun chip(rpe: Int, scale: EffortScale): String = when (scale) {
-        EffortScale.RPE -> if (rpe <= MIN) "≤5" else rpe.toString()
-        EffortScale.RIR -> rir(rpe).let { if (rpe <= MIN) "5+" else it.toString() }
+        EffortScale.RPE -> if (rpe <= MIN) Words.text(UiText.res(R.string.effort_chip_rpe_low)) else rpe.toString()
+        EffortScale.RIR -> rir(rpe).let { if (rpe <= MIN) Words.text(UiText.res(R.string.effort_chip_rir_high)) else it.toString() }
     }
 
     /** What a logged set carries at its right: "RPE 8", "RPE ≤5", "2 RIR", "5+ RIR". */
-    fun value(rpe: Int, scale: EffortScale): String = when (scale) {
-        EffortScale.RPE -> "RPE ${chip(rpe, scale)}"
-        EffortScale.RIR -> "${chip(rpe, scale)} RIR"
-    }
-
-    private val reps = listOf("nothing", "one rep", "two reps", "three reps", "four reps")
+    fun value(rpe: Int, scale: EffortScale): String = Words.text(
+        UiText.res(if (scale == EffortScale.RPE) R.string.effort_value_rpe else R.string.effort_value_rir, chip(rpe, scale)),
+    )
 
     /** The line under the chips for the chosen one: "RPE 8: about two reps left", "2 RIR: two reps left". */
     fun caption(rpe: Int, scale: EffortScale): String {
         val left = rir(rpe)
-        val words = when {
-            left == 0 -> "nothing left"
-            rpe <= MIN -> "five or more reps left"
-            scale == EffortScale.RPE -> "about ${reps[left]} left"
-            else -> "${reps[left]} left"
+        val rpeScale = scale == EffortScale.RPE
+        val sentence = when {
+            left == 0 -> R.string.effort_caption_none_left
+            rpe <= MIN -> R.string.effort_caption_five_plus
+            left == 1 -> if (rpeScale) R.string.effort_caption_rpe_1 else R.string.effort_caption_rir_1
+            left == 2 -> if (rpeScale) R.string.effort_caption_rpe_2 else R.string.effort_caption_rir_2
+            left == 3 -> if (rpeScale) R.string.effort_caption_rpe_3 else R.string.effort_caption_rir_3
+            else -> if (rpeScale) R.string.effort_caption_rpe_4 else R.string.effort_caption_rir_4
         }
-        return "${value(rpe, scale)}: $words"
+        return Words.text(UiText.res(sentence, value(rpe, scale)))
     }
 
     /** The line before anything is chosen: what the scale means. */
-    fun hint(scale: EffortScale): String = when (scale) {
-        EffortScale.RPE -> "RPE 10 is your limit; 8 leaves two reps in hand."
-        EffortScale.RIR -> "RIR is the reps you had left; 0 is your limit."
-    }
+    fun hint(scale: EffortScale): String = Words.text(
+        UiText.res(if (scale == EffortScale.RPE) R.string.effort_hint_rpe else R.string.effort_hint_rir),
+    )
 }

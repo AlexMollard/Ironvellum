@@ -2937,4 +2937,112 @@
     <string name="bodymap_summary_not_trained">%1$s not trained</string>
     <string name="bodymap_summary_below">%1$s below minimum</string>
     <string tools:ignore="PluralsCandidate" name="bodymap_summary_covered">%d covered</string>
+
+    <!-- Phase 6: copy built by domain and data helpers. -->
+    <!-- A clock face: %1$d minutes, %2$d seconds written with two digits. Keep the digits; change the separator only if the language writes it differently. -->
+    <string name="clock_minutes_seconds">%1$d:%2$02d</string>
+    <!-- A clock face past the hour: %1$d hours, %2$d minutes, %3$d seconds (two digits each). -->
+    <string name="clock_hours_minutes_seconds">%1$d:%2$02d:%3$02d</string>
+
+    <!-- Symbols of the two load units, shown after a weight ("225 lb"). Not prose: keep the symbol the language uses. -->
+    <string name="unit_kg">kg</string>
+    <string name="unit_lb">lb</string>
+
+    <!-- Pocket lock cover while a rest runs: %1$s is the countdown, "1:05". -->
+    <string name="pocketlock_rest">Rest %1$s</string>
+
+    <!-- Effort scales: the two ways of saying how hard a set was. Both are shown as abbreviations. -->
+    <string name="effort_scale_rpe">RPE</string>
+    <string name="effort_scale_rir">RIR</string>
+    <!-- A chip on the RPE scale for "5 or less" (5 is the lowest value stored). -->
+    <string name="effort_chip_rpe_low">≤5</string>
+    <!-- A chip on the RIR scale for "5 or more reps left". -->
+    <string name="effort_chip_rir_high">5+</string>
+    <!-- A logged set's effort at its right. %1$s is the chip face: "8", "≤5". -->
+    <string name="effort_value_rpe">RPE %1$s</string>
+    <!-- %1$s is the chip face: "2", "5+". -->
+    <string name="effort_value_rir">%1$s RIR</string>
+    <!-- Line under the effort chips for the chosen one. %1$s is the value ("RPE 8", "2 RIR"). -->
+    <string name="effort_caption_none_left">%1$s: nothing left</string>
+    <string name="effort_caption_five_plus">%1$s: five or more reps left</string>
+    <string name="effort_caption_rpe_1">%1$s: about one rep left</string>
+    <string name="effort_caption_rpe_2">%1$s: about two reps left</string>
+    <string name="effort_caption_rpe_3">%1$s: about three reps left</string>
+    <string name="effort_caption_rpe_4">%1$s: about four reps left</string>
+    <string name="effort_caption_rir_1">%1$s: one rep left</string>
+    <string name="effort_caption_rir_2">%1$s: two reps left</string>
+    <string name="effort_caption_rir_3">%1$s: three reps left</string>
+    <string name="effort_caption_rir_4">%1$s: four reps left</string>
+    <!-- Shown before an effort is chosen: what the scale means. -->
+    <string name="effort_hint_rpe">RPE 10 is your limit; 8 leaves two reps in hand.</string>
+    <string name="effort_hint_rir">RIR is the reps you had left; 0 is your limit.</string>
+
+    <!-- Set types: the name, the one-letter tag on the set row and the explainer line of each. -->
+    <string name="setkind_working_label">Working</string>
+    <string name="setkind_working_blurb">A normal set you count: it earns XP and can set a PR.</string>
+    <string name="setkind_working_blurb__t">A normal set you count: it earns XP and can set a peak.</string>
+    <string name="setkind_warmup_label">Warm-up</string>
+    <string name="setkind_warmup_tag">W</string>
+    <string name="setkind_warmup_blurb">A lighter set to prepare. It never earns XP, volume or a PR.</string>
+    <string name="setkind_warmup_blurb__t">A lighter set to prepare. It never earns XP, volume or a peak.</string>
+    <string name="setkind_top_label">Top set</string>
+    <string name="setkind_top_letter">T</string>
+    <string name="setkind_top_blurb">The heaviest set of the lift, taken near your limit. It counts as a working set and is the one a PR is judged on.</string>
+    <string name="setkind_top_blurb__t">The heaviest set of the lift, taken near your limit. It counts as a working set and is the one a peak is judged on.</string>
+    <string name="setkind_backoff_label">Back-off</string>
+    <string name="setkind_backoff_tag">B</string>
+    <string name="setkind_backoff_blurb">A lighter set after the top set, for volume. It counts as a working set.</string>
+    <string name="setkind_drop_label">Drop</string>
+    <string name="setkind_drop_tag">D</string>
+    <string name="setkind_drop_blurb">Straight after a set to the limit, cut the load and keep going. It counts as a working set.</string>
+    <string name="setkind_failure_label">Failure</string>
+    <string name="setkind_failure_tag">F</string>
+    <string name="setkind_failure_blurb">Taken until no clean rep was left. It counts as a working set.</string>
+    <string name="setkind_rest_pause_label">Rest-pause</string>
+    <string name="setkind_rest_pause_tag">R</string>
+    <string name="setkind_rest_pause_blurb">A short breath mid-set, then more reps at the same load. It counts as a working set.</string>
+
+    <!-- The kind of peak a set made, said after a dot in a list: a heavier load, or more reps. -->
+    <string name="repmax_kind_heavier">heavier</string>
+    <string name="repmax_kind_more_reps">more reps</string>
+
+    <!-- A skill's tier shown as a numeral (I to V); the last is shown when the tier is unknown. -->
+    <string name="skill_tier_1">I</string>
+    <string name="skill_tier_2">II</string>
+    <string name="skill_tier_3">III</string>
+    <string name="skill_tier_4">IV</string>
+    <string name="skill_tier_5">V</string>
+    <string name="skill_tier_unknown">\?</string>
+
+    <!-- Session time estimate, shown in capitals. %1$d is the whole session in minutes. -->
+    <string name="session_estimate">EST %1$d MIN</string>
+    <!-- Same, while the session runs: %1$d the whole session, %2$d the minutes still ahead. -->
+    <string name="session_estimate_left">EST %1$d MIN · ~%2$d LEFT</string>
+    <!-- The preset plan line, in capitals: %1$s the exercise count, %2$s the set count, %3$d the estimated minutes. -->
+    <string name="session_plan_line">%1$s · %2$s · ~%3$d MIN</string>
+    <plurals name="session_plan_exercises">
+        <item quantity="one">%d EXERCISE</item>
+        <item quantity="other">%d EXERCISES</item>
+    </plurals>
+    <plurals name="session_plan_sets">
+        <item quantity="one">%d SET</item>
+        <item quantity="other">%d SETS</item>
+    </plurals>
+
+    <!-- Plate setup: the bar chooser and one plate size's row. -->
+    <string name="plates_bar_other">Other</string>
+    <string name="plates_bar_weight_label">Bar weight</string>
+    <string name="plates_bar_lighter_description">Lighter bar</string>
+    <string name="plates_bar_heavier_description">Heavier bar</string>
+    <!-- %1$s is a plate size with its unit: "25 kg". -->
+    <string name="plates_pairs_fewer_description">Fewer %1$s pairs</string>
+    <string name="plates_pairs_more_description">More %1$s pairs</string>
+    <!-- The word after a pair count in the plate rows ("2 pairs"); the number is its own column. -->
+    <plurals name="plates_pair_word">
+        <item quantity="one">pair</item>
+        <item quantity="other">pairs</item>
+    </plurals>
+    <!-- Footer under the plate list. %1$s is the heaviest load and %2$s the smallest step, each with its unit. -->
+    <string name="plates_rack_heaviest">Heaviest you can load %1$s</string>
+    <string name="plates_rack_footer">Heaviest you can load %1$s · Loads step by %2$s</string>
 </resources>

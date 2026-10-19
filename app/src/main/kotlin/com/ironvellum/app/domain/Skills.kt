@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /**
@@ -759,14 +760,18 @@ object Skills {
      */
     fun isWeighted(def: SkillDef): Boolean = def.name.contains("Weighted") || def.line in GYM_LINES
 
-    fun tierLabel(tier: Int): String = when (tier) {
-        1 -> "I"
-        2 -> "II"
-        3 -> "III"
-        4 -> "IV"
-        5 -> "V"
-        else -> "?"
-    }
+    fun tierLabel(tier: Int): String = Words.text(
+        UiText.res(
+            when (tier) {
+                1 -> R.string.skill_tier_1
+                2 -> R.string.skill_tier_2
+                3 -> R.string.skill_tier_3
+                4 -> R.string.skill_tier_4
+                5 -> R.string.skill_tier_5
+                else -> R.string.skill_tier_unknown
+            },
+        ),
+    )
 
     /**
      * A skill is unlocked when every prerequisite is mastered. This gates NEW

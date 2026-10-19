@@ -22,8 +22,7 @@ data class RestTimer(
 
     /** "1:05": whole seconds rounded up, so the last second reads 0:01, never 0:00 while it runs. */
     fun label(nowMs: Long): String {
-        val seconds = (remainingMs(nowMs) + 999) / 1000
-        return "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
+        return ClockText.minutesSeconds((remainingMs(nowMs) + 999) / 1000)
     }
 
     /** +[seconds] on the time left; a rest that already ran out restarts from now. */
@@ -64,7 +63,7 @@ data class RestTimer(
         ): RestRules.Window = RestRules.window(exerciseName, focus, metric, weighted)
 
         /** "1:30" for [seconds], the same shape as [label]. */
-        fun clock(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
+        fun clock(seconds: Int): String = ClockText.minutesSeconds(seconds.toLong())
 
         /**
          * The rest ticking [setId] to [nowDone] starts, or null when it starts none:

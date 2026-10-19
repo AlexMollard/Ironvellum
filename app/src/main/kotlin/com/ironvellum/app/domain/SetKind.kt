@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /**
@@ -13,21 +15,27 @@ import com.ironvellum.app.data.Words
 enum class SetKind(
     /** The word an archive and a CSV write. Never renamed: old archives read it back. */
     val wire: String,
-    val label: String,
-    /** The letter on the set row's tag; blank for a plain working set. */
-    val tag: String,
+    @StringRes private val labelRes: Int,
+    /** The letter on the set row's tag; none for a plain working set. */
+    @StringRes private val tagRes: Int?,
     /** One line for the explainer sheet. */
-    private val blurbText: () -> String,
+    private val blurbText: UiText,
 ) {
-    WORKING("working", "Working", "", { "A normal set you count: it earns XP and can set ${Words.peak.a}." }),
-    WARMUP("warmup", "Warm-up", "W", { "A lighter set to prepare. It never earns XP, volume or ${Words.peak.a}." }),
-    TOP("top", "Top set", "T", { "The heaviest set of the lift, taken near your limit. It counts as a working set and is the one ${Words.peak.a} is judged on." }),
-    BACKOFF("backoff", "Back-off", "B", { "A lighter set after the top set, for volume. It counts as a working set." }),
-    DROP("drop", "Drop", "D", { "Straight after a set to the limit, cut the load and keep going. It counts as a working set." }),
-    FAILURE("failure", "Failure", "F", { "Taken until no clean rep was left. It counts as a working set." }),
-    REST_PAUSE("rest_pause", "Rest-pause", "R", { "A short breath mid-set, then more reps at the same load. It counts as a working set." });
+    WORKING("working", R.string.setkind_working_label, null, UiText.themed(R.string.setkind_working_blurb, R.string.setkind_working_blurb__t)),
+    WARMUP("warmup", R.string.setkind_warmup_label, R.string.setkind_warmup_tag, UiText.themed(R.string.setkind_warmup_blurb, R.string.setkind_warmup_blurb__t)),
+    TOP("top", R.string.setkind_top_label, R.string.setkind_top_letter, UiText.themed(R.string.setkind_top_blurb, R.string.setkind_top_blurb__t)),
+    BACKOFF("backoff", R.string.setkind_backoff_label, R.string.setkind_backoff_tag, UiText.res(R.string.setkind_backoff_blurb)),
+    DROP("drop", R.string.setkind_drop_label, R.string.setkind_drop_tag, UiText.res(R.string.setkind_drop_blurb)),
+    FAILURE("failure", R.string.setkind_failure_label, R.string.setkind_failure_tag, UiText.res(R.string.setkind_failure_blurb)),
+    REST_PAUSE("rest_pause", R.string.setkind_rest_pause_label, R.string.setkind_rest_pause_tag, UiText.res(R.string.setkind_rest_pause_blurb));
 
-    val blurb: String get() = blurbText()
+    /** The name shown for this kind, in the app's language. */
+    val label: String get() = Words.text(UiText.res(labelRes))
+
+    /** The tag letter, empty for a plain working set. */
+    val tag: String get() = tagRes?.let { Words.text(UiText.res(it)) }.orEmpty()
+
+    val blurb: String get() = Words.text(blurbText)
 
     /** False only for a warm-up. */
     val countsAsWork: Boolean get() = this != WARMUP
