@@ -98,7 +98,7 @@ internal object WidgetFaces {
         val store = (context.applicationContext as com.ironvellum.app.IronvellumApp).appearanceStore
         if (!store.mode.value.isLight(com.ironvellum.app.ui.theme.isSystemDark(context))) {
             val dark = store.palette.value
-            return darkSkin().let { Skin(false, it.ink, it.muted, it.rune, it.panel, dark.primary, dark.primary, dark.secondary, it.onFill, it.tint, it.tintBorder) }
+            return darkSkin().let { Skin(false, it.ink, it.muted, it.rune, it.panel, dark.primary, dark.primary, dark.secondary, it.onFill, dark.panelTint, dark.panelTintBorder) }
         }
         val roles = store.lightPalette.value.lightAccent()
         return Skin(

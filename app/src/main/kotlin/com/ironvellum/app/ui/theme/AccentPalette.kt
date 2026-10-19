@@ -12,7 +12,15 @@ data class AccentPalette(
     /** The deeper end of the accent's ramp: the default's #25986E, else the accent mixed 28% toward black. */
     val deep: Int get() = if (primary == Default.primary) 0xFF25986E.toInt() else mixAccent(primary, 0xFF000000.toInt(), 0.28)
     val muted: Int get() = if (primary == Default.primary) 0xFF6FAE8C.toInt() else mixAccent(primary, 0xFFA3A099.toInt(), 0.5)
+    /**
+     * The accent tint and its border as opaque colours over the dark panel (#171715), for RemoteViews, which cannot
+     * blend. The app draws them as the primary at 10% / 35% over the panel; the default keeps the widget's
+     * hand-tuned #10241C / #1F5C46.
+     */
+    val panelTint: Int get() = if (primary == Default.primary) 0xFF10241C.toInt() else mixAccent(DARK_PANEL, primary, 0.10)
+    val panelTintBorder: Int get() = if (primary == Default.primary) 0xFF1F5C46.toInt() else mixAccent(DARK_PANEL, primary, 0.35)
     companion object {
+        private const val DARK_PANEL = 0xFF171715.toInt()
         val Default = AccentPalette()
         /** Forest and gold, the Vellum default. */
         val LightDefault = AccentPalette(0xFF2F6E4F.toInt(), 0xFF8A5F00.toInt())

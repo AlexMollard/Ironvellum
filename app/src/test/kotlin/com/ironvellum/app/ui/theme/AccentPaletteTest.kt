@@ -32,4 +32,11 @@ class AccentPaletteTest {
         assertEquals(0xFF000000.toInt(), accentForeground(0xFFFFFFFF.toInt()))
         assertEquals(0xFF000000.toInt(), accentForeground(AccentPalette.Default.primary))
     }
+    @Test fun `the dark widget tint follows the primary and the default keeps its emerald`() {
+        assertEquals(0xFF10241C.toInt(), AccentPalette.Default.panelTint)
+        assertEquals(0xFF1F5C46.toInt(), AccentPalette.Default.panelTintBorder)
+        val sapphire = AccentPresets.entries[1].palette
+        assertEquals(0xFF1E252C.toInt(), sapphire.panelTint)
+        assertEquals(0xFF314965.toInt(), sapphire.panelTintBorder)
+    }
 }
