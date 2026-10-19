@@ -788,7 +788,7 @@ class CloudSync(
                         userId = other,
                         displayName = profile?.displayName
                             ?: requesterNames[other]?.takeIf { it.isNotBlank() }
-                            ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
+                            ?: hiddenLifterName(),
                         accepted = row.accepted,
                         // Incoming = they asked us and it is not accepted yet.
                         incoming = row.addresseeId == me.userId && !row.accepted,
@@ -1187,7 +1187,7 @@ class CloudSync(
                 }.decodeList<LikerRowDto>().map { row ->
                     Liker(
                         userId = row.userId,
-                        displayName = row.profile?.displayName ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
+                        displayName = row.profile?.displayName ?: hiddenLifterName(),
                         likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
                         reaction = Reaction.fromWire(row.kind),
                     )
@@ -1390,7 +1390,7 @@ class CloudSync(
                 }.decodeList<BlockDto>().map {
                     BlockedLifter(
                         userId = it.blockedId,
-                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: Words.text(cloudThemed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t)),
+                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: hiddenLifterName(),
                     )
                 }
             }

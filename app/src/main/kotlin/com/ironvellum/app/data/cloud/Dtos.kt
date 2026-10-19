@@ -512,7 +512,7 @@ data class CommentDto(
         id = id,
         sessionId = sessionId,
         userId = userId,
-        authorName = authorName.ifBlank { "Hidden ${Words.lifter.t}" },
+        authorName = authorName.ifBlank { hiddenLifterName() },
         body = body,
         createdAtMs = Instant.parse(createdAt).toEpochMilli(),
     )
@@ -642,7 +642,7 @@ data class InboxRowDto(
      */
     internal fun toInboxItem(): InboxItem? {
         val at = Instant.parse(occurredAt).toEpochMilli()
-        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden ${Words.lifter.t}"
+        val name = actorName?.takeIf { it.isNotBlank() } ?: hiddenLifterName()
         return when (kind) {
             "request" -> InboxItem.FriendRequest(at, actorId, name)
             "accepted" -> InboxItem.RequestAccepted(at, actorId, name)
@@ -768,6 +768,9 @@ data class FriendSession(
     /** When the owner amended the workout; null when never amended. */
     val editedAtMs: Long? = null,
 )
+
+/** The name shown for a lifter whose profile is hidden from the caller, in the current mode and language. */
+internal fun hiddenLifterName(): String = Words.text(UiText.themed(R.string.cloud_hidden_lifter, R.string.cloud_hidden_lifter__t))
 
 data class SyncOutcome(
     val sessions: Int,
