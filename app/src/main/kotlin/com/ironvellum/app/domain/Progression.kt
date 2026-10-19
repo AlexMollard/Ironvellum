@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 enum class TrainingMode {
@@ -163,10 +164,11 @@ object Progression {
         val step = weightStepKg.coerceAtLeast(0.5)
         // A hold's figure is seconds: never quote it as reps.
         val hold = lever == Lever.HOLD
-        fun figure(n: Int) = if (hold) "$n s" else "$n reps"
 
         if (setsDone <= 0 || lastReps == null) {
-            return Recommendation(weight, targetReps, "First attempt — hit ${figure(targetReps)} every set")
+            val reason = if (hold) UiText.res(R.string.progression_first_hold, targetReps)
+            else UiText.plural(R.plurals.progression_first_reps, targetReps)
+            return Recommendation(weight, targetReps, Words.text(reason))
         }
         if (!allSetsAtTarget || setsDone < minSets) {
             // Grinding a load you have already failed three times is how people
@@ -174,11 +176,17 @@ object Progression {
             if (stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight > 0.0) {
                 val deloaded = weight * (1 - DELOAD_FRACTION)
                 val backedOff = worn?.roundKg(deloaded, unit) ?: roundToStep(deloaded, step, unit)
-                val rebuild = if (hold) "rebuild the $targetReps s hold" else "rebuild from ${band.first} reps"
+                val count = stalls + 1
+                val load = Loads.withUnit(backedOff, unit)
+                val reason = if (hold) {
+                    UiText.themedPlural(R.plurals.progression_stalled_hold, R.plurals.progression_stalled_hold__t, count, count, load, targetReps)
+                } else {
+                    UiText.themedPlural(R.plurals.progression_stalled_reps, R.plurals.progression_stalled_reps__t, count, count, load, band.first)
+                }
                 return Recommendation(
                     backedOff,
                     if (hold) targetReps else band.first,
-                    "Stalled ${stalls + 1} ${Words.trial.pl} — deload to ${Loads.withUnit(backedOff, unit)}, $rebuild",
+                    Words.text(reason),
                     deload = true,
                     changed = true,
                 )
@@ -186,7 +194,14 @@ object Progression {
             return Recommendation(
                 weight,
                 targetReps,
-                "Repeat until every one of the $minSets sets reaches ${figure(targetReps)}",
+                Words.text(
+                    UiText.plural(
+                        if (hold) R.plurals.progression_repeat_hold else R.plurals.progression_repeat_reps,
+                        minSets,
+                        minSets,
+                        targetReps,
+                    ),
+                ),
             )
         }
         // Cleared. Where load is not the lever, the cue names what is, and the
@@ -195,31 +210,52 @@ object Progression {
         when (lever) {
             Lever.CONTROL -> return Recommendation(
                 weight, targetReps,
-                listOf(
-                    "${Words.trial.c} cleared — reach a little further before adding reps",
-                    "${Words.trial.c} cleared — slow the way out to 3 s",
-                    "${Words.trial.c} cleared — add 2 reps, same range and pace",
-                )[cue],
+                clearedCue(
+                    cue,
+                    R.string.progression_cleared_control_1 to R.string.progression_cleared_control_1__t,
+                    R.string.progression_cleared_control_2 to R.string.progression_cleared_control_2__t,
+                    R.string.progression_cleared_control_3 to R.string.progression_cleared_control_3__t,
+                ),
                 changed = true,
             )
             Lever.MOBILITY -> return Recommendation(
                 weight, targetReps,
-                listOf(
-                    "${Words.trial.c} cleared — move a little further into the range",
-                    "${Words.trial.c} cleared — hold the end position 2 s longer",
-                    "${Words.trial.c} cleared — go slower into the end range",
-                )[cue],
+                clearedCue(
+                    cue,
+                    R.string.progression_cleared_mobility_1 to R.string.progression_cleared_mobility_1__t,
+                    R.string.progression_cleared_mobility_2 to R.string.progression_cleared_mobility_2__t,
+                    R.string.progression_cleared_mobility_3 to R.string.progression_cleared_mobility_3__t,
+                ),
                 changed = true,
             )
             Lever.SKILL -> return Recommendation(
-                weight, targetReps, "${Words.trial.c} cleared — own this step, then move to the next one", changed = true,
+                weight, targetReps,
+                clearedCue(0, R.string.progression_cleared_skill to R.string.progression_cleared_skill__t),
+                changed = true,
             )
             Lever.HOLD -> {
                 val grown = (lastReps + HOLD_STEP_SECONDS).coerceAtMost(range?.last ?: Int.MAX_VALUE)
                 return if (grown > lastReps) {
-                    Recommendation(weight, grown, "${Words.trial.c} cleared — hold ${grown - lastReps} s longer next ${Words.trial.s}", changed = true)
+                    Recommendation(
+                        weight,
+                        grown,
+                        clearedCue(
+                            0,
+                            R.string.progression_cleared_hold_longer to R.string.progression_cleared_hold_longer__t,
+                            args = arrayOf<Any>(grown - lastReps),
+                        ),
+                        changed = true,
+                    )
                 } else {
-                    Recommendation(weight, lastReps, "${Words.trial.c} cleared — top of your range, hold $lastReps s again")
+                    Recommendation(
+                        weight,
+                        lastReps,
+                        clearedCue(
+                            0,
+                            R.string.progression_cleared_hold_top to R.string.progression_cleared_hold_top__t,
+                            args = arrayOf<Any>(lastReps),
+                        ),
+                    )
                 }
             }
             Lever.LOAD, Lever.REPS_THEN_LOAD -> Unit
@@ -233,13 +269,18 @@ object Progression {
             if (ceiling != null && lastReps >= ceiling) {
                 return Recommendation(
                     weight, lastReps,
-                    "Reps are high enough — add ${Loads.withUnit(worn?.firstStepKg(unit) ?: firstStepKg(unit), unit)} or take a harder variation",
+                    Words.text(
+                        UiText.res(
+                            R.string.progression_reps_high,
+                            Loads.withUnit(worn?.firstStepKg(unit) ?: firstStepKg(unit), unit),
+                        ),
+                    ),
                     changed = true,
                 )
             }
             val climbed = lastReps + REP_STEP
             val nextReps = if (ceiling != null) climbed.coerceAtMost(ceiling) else climbed
-            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", changed = true)
+            return Recommendation(weight, nextReps, Words.text(UiText.res(R.string.progression_climb_reps, nextReps)), changed = true)
         }
         // Null when the vest is full and no belt carries the load on: it holds and reps do the climbing.
         val loaded = if (worn != null) worn.nextKg(weight, unit) else nextLoad(weight, step, unit)
@@ -252,7 +293,7 @@ object Progression {
                 Recommendation(
                     loaded,
                     nextReps,
-                    "Target cleared — add $addedLabel, drop to $nextReps reps",
+                    Words.text(UiText.res(R.string.progression_add_drop, addedLabel, nextReps)),
                     changed = true,
                 )
             }
@@ -264,13 +305,13 @@ object Progression {
                         Recommendation(
                             loaded,
                             targetReps,
-                            "Rep ceiling reached — add $addedLabel, back to $targetReps reps",
+                            Words.text(UiText.res(R.string.progression_ceiling_add, addedLabel, targetReps)),
                             changed = true,
                         )
                     }
                 } else {
                     val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
-                    Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", changed = true)
+                    Recommendation(weight, nextReps, Words.text(UiText.res(R.string.progression_same_load, nextReps)), changed = true)
                 }
         }
     }
@@ -283,11 +324,22 @@ object Progression {
         val top = Loads.withUnit(worn?.vestMaxKg ?: weight, unit)
         if (lastReps >= BODYWEIGHT_REP_CEILING) {
             return Recommendation(
-                weight, lastReps, "Vest full at $top, reps are high enough — take a harder variation", changed = true,
+                weight, lastReps, Words.text(UiText.res(R.string.progression_vest_full_harder, top)), changed = true,
             )
         }
         val nextReps = (lastReps + REP_STEP).coerceAtMost(BODYWEIGHT_REP_CEILING)
-        return Recommendation(weight, nextReps, "Vest full at $top — climb to $nextReps reps", changed = true)
+        return Recommendation(
+            weight,
+            nextReps,
+            Words.text(UiText.res(R.string.progression_vest_full_climb, top, nextReps)),
+            changed = true,
+        )
+    }
+
+    /** The cleared-trial cue at [cue] of [options] (plain and themed wording of each), with [args] filled in. */
+    private fun clearedCue(cue: Int, vararg options: Pair<Int, Int>, args: Array<Any> = emptyArray()): String {
+        val (plain, themed) = options[cue.coerceIn(0, options.lastIndex)]
+        return Words.text(UiText.themed(plain, themed, *args))
     }
 
     /**

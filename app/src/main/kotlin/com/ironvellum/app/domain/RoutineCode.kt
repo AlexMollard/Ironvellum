@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import java.io.ByteArrayOutputStream
 import java.util.Base64
@@ -62,10 +64,12 @@ object RoutineCode {
      */
     fun shareRefusal(workouts: List<SharedWorkout>): String? {
         if (workouts.size > MAX_WORKOUTS) {
-            return "A shared ${Words.cycle.s} holds at most $MAX_WORKOUTS ${Words.rite.pl} and yours has ${workouts.size}. Remove some ${Words.rite.pl}, then share again."
+            return Words.text(UiText.themed(R.string.routinecode_share_too_many_rites, R.string.routinecode_share_too_many_rites__t, MAX_WORKOUTS, workouts.size))
         }
         val long = workouts.firstOrNull { it.entries.size > MAX_ENTRIES } ?: return null
-        return "A shared ${Words.rite.s} holds at most $MAX_ENTRIES exercises and \"${long.name}\" has ${long.entries.size}. Trim it, then share again."
+        return Words.text(
+            UiText.themed(R.string.routinecode_share_too_many_exercises, R.string.routinecode_share_too_many_exercises__t, MAX_ENTRIES, long.name, long.entries.size),
+        )
     }
 
     fun encode(workouts: List<SharedWorkout>): String {
@@ -107,15 +111,15 @@ object RoutineCode {
     }
 
     fun decode(text: String): Result<List<SharedWorkout>> {
-        if (text.length > MAX_TEXT_CHARS) return fail("That text is too long to be ${Words.cycle.a} code.")
+        if (text.length > MAX_TEXT_CHARS) return fail(Msg.TOO_LONG.text)
         val start = text.indexOf(PREFIX)
         if (start < 0) {
             // "IVR2:" from a newer app is a different failure from "not a code".
             val other = Regex("IVR\\d+:").find(text)
             return if (other != null) {
-                fail("This code comes from a different version of Ironvellum. Update the app and try again.")
+                fail(Words.text(UiText.res(R.string.routinecode_other_version)))
             } else {
-                fail("No ${Words.cycle.s} code found. Paste the whole message — it starts with IVR1:")
+                fail(Msg.NOT_FOUND.text)
             }
         }
         // Chat apps put text on both sides; the code is the run of URL-safe
@@ -123,7 +127,7 @@ object RoutineCode {
         var end = start + PREFIX.length
         while (end < text.length && isCodeChar(text[end])) end++
         val body = text.substring(start + PREFIX.length, end)
-        if (body.isEmpty()) return fail("The ${Words.cycle.s} code is empty.")
+        if (body.isEmpty()) return fail(Msg.EMPTY.text)
 
         val packed = try {
             Base64.getUrlDecoder().decode(body)
@@ -132,7 +136,7 @@ object RoutineCode {
         }
         val json = when (val result = inflate(packed)) {
             is Inflated.Ok -> result.text
-            Inflated.TooBig -> return fail("This ${Words.cycle.s} is too large to import.")
+            Inflated.TooBig -> return fail(Msg.TOO_LARGE.text)
             Inflated.Corrupt -> return fail(CORRUPT)
         }
         return try {
@@ -146,7 +150,7 @@ object RoutineCode {
 
     private fun isCodeChar(c: Char) = c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' || c == '-' || c == '_'
 
-    private val CORRUPT: String get() = "The ${Words.cycle.s} code is damaged or cut short. Copy it again and paste the whole thing."
+    private val CORRUPT: String get() = Msg.CORRUPT.text
 
     private fun fail(message: String): Result<List<SharedWorkout>> =
         Result.failure(IllegalArgumentException(message))
@@ -181,31 +185,64 @@ object RoutineCode {
 
     private class CodeException(message: String) : RuntimeException(message)
 
-    private fun bad(what: String): Nothing = throw CodeException("The ${Words.cycle.s} code has $what. Ask for a fresh one.")
+    private fun bad(msg: Msg): Nothing = throw CodeException(msg.text)
+
+    /** Every fixed refusal, a whole sentence each in strings.xml (`routinecode_*`, plain and themed). */
+    private enum class Msg(@StringRes val plain: Int, @StringRes val themed: Int) {
+        TOO_LONG(R.string.routinecode_too_long, R.string.routinecode_too_long__t),
+        NOT_FOUND(R.string.routinecode_not_found, R.string.routinecode_not_found__t),
+        EMPTY(R.string.routinecode_empty, R.string.routinecode_empty__t),
+        TOO_LARGE(R.string.routinecode_too_large, R.string.routinecode_too_large__t),
+        CORRUPT(R.string.routinecode_corrupt, R.string.routinecode_corrupt__t),
+        BAD_LAYOUT(R.string.routinecode_bad_layout, R.string.routinecode_bad_layout__t),
+        BAD_NO_RITES(R.string.routinecode_bad_no_rites, R.string.routinecode_bad_no_rites__t),
+        BAD_UNREADABLE_RITE(R.string.routinecode_bad_unreadable_rite, R.string.routinecode_bad_unreadable_rite__t),
+        BAD_RITE_NO_NAME(R.string.routinecode_bad_rite_no_name, R.string.routinecode_bad_rite_no_name__t),
+        BAD_INVALID_DAY(R.string.routinecode_bad_invalid_day, R.string.routinecode_bad_invalid_day__t),
+        BAD_RITE_NO_EXERCISES(R.string.routinecode_bad_rite_no_exercises, R.string.routinecode_bad_rite_no_exercises__t),
+        BAD_UNREADABLE_EXERCISE(R.string.routinecode_bad_unreadable_exercise, R.string.routinecode_bad_unreadable_exercise__t),
+        BAD_EXERCISE_NO_NAME(R.string.routinecode_bad_exercise_no_name, R.string.routinecode_bad_exercise_no_name__t),
+        BAD_INVALID_LOAD(R.string.routinecode_bad_invalid_load, R.string.routinecode_bad_invalid_load__t),
+        BAD_INVALID_COUNT(R.string.routinecode_bad_invalid_count, R.string.routinecode_bad_invalid_count__t),
+        BAD_TRAILING_DATA(R.string.routinecode_bad_trailing_data, R.string.routinecode_bad_trailing_data__t),
+        BAD_TOO_DEEP(R.string.routinecode_bad_too_deep, R.string.routinecode_bad_too_deep__t),
+        BAD_CUT_OFF_DATA(R.string.routinecode_bad_cut_off_data, R.string.routinecode_bad_cut_off_data__t),
+        BAD_CUT_OFF_TEXT(R.string.routinecode_bad_cut_off_text, R.string.routinecode_bad_cut_off_text__t),
+        BAD_BAD_ESCAPE(R.string.routinecode_bad_bad_escape, R.string.routinecode_bad_bad_escape__t),
+        BAD_UNEXPECTED_CHAR(R.string.routinecode_bad_unexpected_char, R.string.routinecode_bad_unexpected_char__t),
+        BAD_BAD_NUMBER(R.string.routinecode_bad_bad_number, R.string.routinecode_bad_bad_number__t),
+        BAD_UNEXPECTED_WORD(R.string.routinecode_bad_unexpected_word, R.string.routinecode_bad_unexpected_word__t),
+        BAD_MISPLACED_CHAR(R.string.routinecode_bad_misplaced_char, R.string.routinecode_bad_misplaced_char__t),
+        ;
+
+        val text: String get() = Words.text(UiText.themed(plain, themed))
+    }
 
     private fun read(json: String): List<SharedWorkout> {
-        val root = Parser(json).parseDocument() as? Map<*, *> ?: bad("an unreadable layout")
+        val root = Parser(json).parseDocument() as? Map<*, *> ?: bad(Msg.BAD_LAYOUT)
         val version = (root["v"] as? Double)?.toInt()
         if (version != FORMAT) {
-            throw CodeException("This code comes from a different version of Ironvellum. Update the app and try again.")
+            throw CodeException(Words.text(UiText.res(R.string.routinecode_other_version)))
         }
-        val workouts = root["w"] as? List<*> ?: bad("no ${Words.rite.pl}")
-        if (workouts.isEmpty()) bad("no ${Words.rite.pl}")
+        val workouts = root["w"] as? List<*> ?: bad(Msg.BAD_NO_RITES)
+        if (workouts.isEmpty()) bad(Msg.BAD_NO_RITES)
         if (workouts.size > MAX_WORKOUTS) {
-            throw CodeException("This ${Words.cycle.s} has more than $MAX_WORKOUTS ${Words.rite.pl}, which is more than Ironvellum imports.")
+            throw CodeException(Words.text(UiText.themed(R.string.routinecode_too_many_rites, R.string.routinecode_too_many_rites__t, MAX_WORKOUTS)))
         }
         return workouts.map { raw ->
-            val o = raw as? Map<*, *> ?: bad("an unreadable ${Words.rite.s}")
+            val o = raw as? Map<*, *> ?: bad(Msg.BAD_UNREADABLE_RITE)
             val name = (o["n"] as? String)?.trim().orEmpty()
-            if (name.isEmpty()) bad("${Words.rite.a} without a name")
+            if (name.isEmpty()) bad(Msg.BAD_RITE_NO_NAME)
             val day = when (val d = o["d"]) {
                 null -> null
-                is Double -> d.toInt().takeIf { it.toDouble() == d && it in 1..7 } ?: bad("an invalid day")
-                else -> bad("an invalid day")
+                is Double -> d.toInt().takeIf { it.toDouble() == d && it in 1..7 } ?: bad(Msg.BAD_INVALID_DAY)
+                else -> bad(Msg.BAD_INVALID_DAY)
             }
-            val entries = o["e"] as? List<*> ?: bad("${Words.rite.a} without exercises")
+            val entries = o["e"] as? List<*> ?: bad(Msg.BAD_RITE_NO_EXERCISES)
             if (entries.size > MAX_ENTRIES) {
-                throw CodeException("${Words.rite.ca} in this ${Words.cycle.s} has more than $MAX_ENTRIES exercises, which is more than Ironvellum imports.")
+                throw CodeException(
+                    Words.text(UiText.themed(R.string.routinecode_too_many_exercises, R.string.routinecode_too_many_exercises__t, MAX_ENTRIES)),
+                )
             }
             SharedWorkout(
                 name = name.take(NAME_MAX),
@@ -217,16 +254,16 @@ object RoutineCode {
     }
 
     private fun readEntry(raw: Any?): SharedEntry {
-        val a = raw as? List<*> ?: bad("an unreadable exercise")
-        if (a.size != 5) bad("an unreadable exercise")
+        val a = raw as? List<*> ?: bad(Msg.BAD_UNREADABLE_EXERCISE)
+        if (a.size != 5) bad(Msg.BAD_UNREADABLE_EXERCISE)
         val name = (a[0] as? String)?.trim().orEmpty()
-        if (name.isEmpty()) bad("an exercise without a name")
+        if (name.isEmpty()) bad(Msg.BAD_EXERCISE_NO_NAME)
         val sets = wholeIn(a[1], 1..MAX_SETS)
         val reps = wholeIn(a[2], 1..MAX_REPS)
         val weight = when (val w = a[3]) {
             null -> null
-            is Double -> w.takeIf { it.isFinite() && it in 0.0..MAX_WEIGHT_KG } ?: bad("an invalid load")
-            else -> bad("an invalid load")
+            is Double -> w.takeIf { it.isFinite() && it in 0.0..MAX_WEIGHT_KG } ?: bad(Msg.BAD_INVALID_LOAD)
+            else -> bad(Msg.BAD_INVALID_LOAD)
         }
         return SharedEntry(
             exerciseName = name.take(NAME_MAX),
@@ -238,9 +275,9 @@ object RoutineCode {
     }
 
     private fun wholeIn(value: Any?, range: IntRange): Int {
-        val d = value as? Double ?: bad("an invalid set or rep count")
+        val d = value as? Double ?: bad(Msg.BAD_INVALID_COUNT)
         val i = d.toInt()
-        if (i.toDouble() != d || i !in range) bad("an invalid set or rep count")
+        if (i.toDouble() != d || i !in range) bad(Msg.BAD_INVALID_COUNT)
         return i
     }
 
@@ -267,14 +304,14 @@ object RoutineCode {
         fun parseDocument(): Any? {
             val v = parseValue(0)
             skipWs()
-            if (i != s.length) bad("trailing data")
+            if (i != s.length) bad(Msg.BAD_TRAILING_DATA)
             return v
         }
 
         private fun parseValue(depth: Int): Any? {
-            if (depth > 6) bad("nesting that is too deep")
+            if (depth > 6) bad(Msg.BAD_TOO_DEEP)
             skipWs()
-            if (i >= s.length) bad("cut-off data")
+            if (i >= s.length) bad(Msg.BAD_CUT_OFF_DATA)
             return when (s[i]) {
                 '{' -> parseObj(depth)
                 '[' -> parseArr(depth)
@@ -320,12 +357,12 @@ object RoutineCode {
             expect('"')
             val sb = StringBuilder()
             while (true) {
-                if (i >= s.length) bad("cut-off text")
+                if (i >= s.length) bad(Msg.BAD_CUT_OFF_TEXT)
                 val c = s[i++]
                 when (c) {
                     '"' -> return sb.toString()
                     '\\' -> {
-                        if (i >= s.length) bad("cut-off text")
+                        if (i >= s.length) bad(Msg.BAD_CUT_OFF_TEXT)
                         when (val e = s[i++]) {
                             '"', '\\', '/' -> sb.append(e)
                             'n' -> sb.append('\n')
@@ -334,11 +371,11 @@ object RoutineCode {
                             'b' -> sb.append('\b')
                             'f' -> sb.append('\u000c')
                             'u' -> {
-                                if (i + 4 > s.length) bad("cut-off text")
+                                if (i + 4 > s.length) bad(Msg.BAD_CUT_OFF_TEXT)
                                 sb.append(s.substring(i, i + 4).toInt(16).toChar())
                                 i += 4
                             }
-                            else -> bad("a bad escape")
+                            else -> bad(Msg.BAD_BAD_ESCAPE)
                         }
                     }
                     else -> sb.append(c)
@@ -349,12 +386,12 @@ object RoutineCode {
         private fun parseNumber(): Double {
             val start = i
             while (i < s.length && (s[i].isDigit() || s[i] in "+-eE.")) i++
-            if (start == i) bad("an unexpected character")
-            return s.substring(start, i).toDoubleOrNull() ?: bad("a bad number")
+            if (start == i) bad(Msg.BAD_UNEXPECTED_CHAR)
+            return s.substring(start, i).toDoubleOrNull() ?: bad(Msg.BAD_BAD_NUMBER)
         }
 
         private fun literal(text: String, value: Any?): Any? {
-            if (!s.startsWith(text, i)) bad("an unexpected word")
+            if (!s.startsWith(text, i)) bad(Msg.BAD_UNEXPECTED_WORD)
             i += text.length
             return value
         }
@@ -372,7 +409,7 @@ object RoutineCode {
         }
 
         private fun expect(c: Char) {
-            if (i >= s.length || s[i] != c) bad("a misplaced character")
+            if (i >= s.length || s[i] != c) bad(Msg.BAD_MISPLACED_CHAR)
             i++
         }
     }

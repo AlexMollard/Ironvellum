@@ -9,6 +9,15 @@ import java.time.ZoneId
 
 class WorkoutShareTest {
 
+    // The card writes its date and thousands in the default locale: pin English so the expected text is the same on any machine.
+    private val savedLocale = java.util.Locale.getDefault()
+
+    @org.junit.Before
+    fun english() = java.util.Locale.setDefault(java.util.Locale.ENGLISH)
+
+    @org.junit.After
+    fun restoreLocale() = java.util.Locale.setDefault(savedLocale)
+
     private val zone: ZoneId = ZoneId.of("UTC")
     private val started = 1_758_000_000_000L
     private val finished = started + 47 * 60_000L

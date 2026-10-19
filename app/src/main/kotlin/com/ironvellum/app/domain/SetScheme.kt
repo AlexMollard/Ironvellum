@@ -1,11 +1,18 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /** How a lift's sets are laid out in a rite. Stored by [wire]; a word this build does not know reads as Straight. */
-enum class SchemeType(val wire: String, val label: String) {
-    STRAIGHT("straight", "Straight sets"),
-    TOP_BACKOFF("top_backoff", "Top set + back-offs"),
-    DROPS("drops", "Drop sets"),
-    CUSTOM("custom", "Custom");
+enum class SchemeType(val wire: String, @StringRes private val labelRes: Int) {
+    STRAIGHT("straight", R.string.scheme_type_straight),
+    TOP_BACKOFF("top_backoff", R.string.scheme_type_top_backoff),
+    DROPS("drops", R.string.scheme_type_drops),
+    CUSTOM("custom", R.string.scheme_type_custom);
+
+    /** The layout's name as shown. */
+    val label: String get() = Words.text(UiText.res(labelRes))
 
     companion object {
         fun fromWire(wire: String?): SchemeType = entries.firstOrNull { it.wire == wire } ?: STRAIGHT
@@ -212,23 +219,27 @@ object SchemeText {
 
     fun reps(range: IntRange): String = rangeText(range)
 
-    private fun backoffs(n: Int) = if (n == 1) "1 back-off" else "$n back-offs"
+    private fun last(n: Int): UiText = UiText.plural(R.plurals.scheme_drop_last, n)
 
-    private fun times(n: Int) = when (n) {
-        1 -> "once"
-        2 -> "twice"
-        else -> "$n times"
+    private fun times(n: Int): UiText = when (n) {
+        1 -> UiText.res(R.string.scheme_times_once)
+        2 -> UiText.res(R.string.scheme_times_twice)
+        else -> UiText.plural(R.plurals.scheme_times_many, n)
     }
 
     /** The rite row's scheme line, "Top set + 2 back-offs"; null for Straight, whose own sets x reps line says it all. */
     fun summary(scheme: SetScheme, sets: Int): String? = when (scheme.type) {
         SchemeType.STRAIGHT -> null
-        SchemeType.TOP_BACKOFF -> "Top set + ${backoffs(scheme.backoffSets)}"
-        SchemeType.DROPS -> {
-            val which = if (scheme.dropSets == 1) "last set" else "last ${scheme.dropSets} sets"
-            "$sets sets, $which drops ${times(scheme.dropCount)}"
-        }
-        SchemeType.CUSTOM -> "Custom, ${scheme.custom.size} sets"
+        SchemeType.TOP_BACKOFF -> Words.text(UiText.plural(R.plurals.scheme_summary_top_backoffs, scheme.backoffSets))
+        SchemeType.DROPS -> Words.text(
+            UiText.res(
+                R.string.scheme_summary_drops,
+                UiText.plural(R.plurals.scheme_count_sets, sets),
+                last(scheme.dropSets),
+                times(scheme.dropCount),
+            ),
+        )
+        SchemeType.CUSTOM -> Words.text(UiText.plural(R.plurals.scheme_summary_custom, scheme.custom.size))
     }
 
     /**
@@ -242,7 +253,8 @@ object SchemeText {
         fun at(v: Double?) = if (load != null && v != null) " @" + load(v) else ""
         if (scheme.type != SchemeType.TOP_BACKOFF) {
             val repsText = scheme.repsRange(SetKind.WORKING)?.let(::rangeText) ?: reps.toString()
-            return "$sets × $repsText" + (if (hold) "s" else "") + at(kg)
+            val shown = if (hold) Words.text(UiText.res(R.string.scheme_figure_seconds, repsText)) else repsText
+            return "$sets × $shown" + at(kg)
         }
         val fixed = scheme.backoffFixedKg
         val back = "${scheme.backoffSets} × ${rangeText(scheme.backoffReps)}" + if (fixed != null) at(fixed) else " −${scheme.backoffPercent}%"
@@ -251,12 +263,10 @@ object SchemeText {
 
     /** One short clause for the keep-offer's Sets line: "3 straight", "top + 2 back-offs". */
     fun clause(scheme: SetScheme, sets: Int): String = when (scheme.type) {
-        SchemeType.STRAIGHT -> "$sets straight"
-        SchemeType.TOP_BACKOFF -> "top + ${backoffs(scheme.backoffSets)}"
-        SchemeType.DROPS ->
-            (if (scheme.dropSets == 1) "last set" else "last ${scheme.dropSets} sets") +
-                " drops ${times(scheme.dropCount)} (−${scheme.dropPercent}%)"
-        SchemeType.CUSTOM -> "custom ${scheme.custom.size} sets"
+        SchemeType.STRAIGHT -> Words.text(UiText.plural(R.plurals.scheme_clause_straight, sets))
+        SchemeType.TOP_BACKOFF -> Words.text(UiText.plural(R.plurals.scheme_clause_top_backoffs, scheme.backoffSets))
+        SchemeType.DROPS -> Words.text(UiText.res(R.string.scheme_clause_drops, last(scheme.dropSets), times(scheme.dropCount), scheme.dropPercent))
+        SchemeType.CUSTOM -> Words.text(UiText.plural(R.plurals.scheme_clause_custom, scheme.custom.size))
     }
 
     /** The bars of the load-shape mini graphic: one per set (and one for the warm-up ramp when it is on). */

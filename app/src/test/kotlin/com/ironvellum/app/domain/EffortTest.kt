@@ -10,6 +10,15 @@ import org.junit.Test
 /** Effort per set: what is stored, how RIR derives from it, what an import makes of it, and where it is printed. */
 class EffortTest {
 
+    // The card writes its date and thousands in the default locale: pin English so the expected text is the same on any machine.
+    private val savedLocale = java.util.Locale.getDefault()
+
+    @org.junit.Before
+    fun english() = java.util.Locale.setDefault(java.util.Locale.ENGLISH)
+
+    @org.junit.After
+    fun restoreLocale() = java.util.Locale.setDefault(savedLocale)
+
     // ----------------------------------------------------------- storage and derivation
 
     @Test

@@ -1,8 +1,8 @@
 package com.ironvellum.app.ui.onboarding
 
-import androidx.annotation.StringRes
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -72,6 +72,7 @@ import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FirstRun
+import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -479,15 +480,7 @@ class OnboardingViewModel(
 
 
 /** "your name, height and a first weigh-in" - a list a person reads, not "a, b, and c". */
-private fun joinHuman(items: List<String>): String = when (items.size) {
-    0 -> ""
-    1 -> items[0]
-    else -> say(
-        R.string.onboarding_list_last,
-        items.dropLast(1).reduce { head, next -> say(R.string.onboarding_list_join, head, next) },
-        items.last(),
-    )
-}
+private fun joinHuman(items: List<String>): String = ListText.and(items)
 
 /**
  * What sits above Continue on step 1: what is still missing, and what is typed but out of range. An

@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * Energy expenditure estimates from data the app already holds.
  *
@@ -132,7 +135,7 @@ object Energy {
         return EnergyEstimate(
             kcal = bmr.toInt(),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "Katch-McArdle: 370 + 21.6 × ${"%.1f".fmt(lean)} kg lean (${weightKg} kg, ${bodyFatPct}% body fat)",
+            basis = Words.text(UiText.res(R.string.energy_basis_katch, "%.1f".fmt(lean), weightKg, bodyFatPct)),
         )
     }
 
@@ -175,7 +178,7 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(met, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "net MET ${fmtMet(met)} × $bodyKg kg × ${"%.0f".fmt(minutes)} min",
+            basis = Words.text(UiText.res(R.string.energy_basis_activity, fmtMet(met), bodyKg, "%.0f".fmt(minutes))),
         )
     }
 
@@ -226,7 +229,9 @@ object Energy {
             // without it we can only assume moderate resistance per set.
             coarseKcal = metKcal(met, bodyKg, coarseMinutes)
             coarse = true
-            basis = StringBuilder("${untimedSets.size} sets × net MET ${fmtMet(met)} × $bodyKg kg × ${"%.0f".fmt(coarseMinutes)} min")
+            basis = StringBuilder(
+                Words.text(UiText.plural(R.plurals.energy_basis_sets, untimedSets.size, untimedSets.size, fmtMet(met), bodyKg, "%.0f".fmt(coarseMinutes))),
+            )
         }
         val total = timedKcal + coarseKcal
         if (total <= 0) return null
@@ -235,7 +240,7 @@ object Energy {
             confidence = if (coarse) EnergyConfidence.COARSE else EnergyConfidence.ESTIMATED,
             basis = listOfNotNull(
                 basis.toString().ifEmpty { null },
-                "timed sets net MET × $bodyKg kg × ${"%.0f".fmt(timedMinutes)} min".takeIf { timedMinutes > 0.0 },
+                Words.text(UiText.res(R.string.energy_basis_timed_sets, bodyKg, "%.0f".fmt(timedMinutes))).takeIf { timedMinutes > 0.0 },
             ).joinToString("; "),
         )
     }
@@ -247,7 +252,7 @@ object Energy {
      */
     fun stepsKcal(steps: Int, distanceKm: Double?, bodyKg: Double?, heightCm: Double?): EnergyEstimate? {
         if (steps <= 0) {
-            return EnergyEstimate(0, EnergyConfidence.ESTIMATED, "no steps recorded")
+            return EnergyEstimate(0, EnergyConfidence.ESTIMATED, Words.text(UiText.res(R.string.energy_basis_no_steps)))
         }
         if (bodyKg == null || bodyKg <= 0.0) return null
         // Measured distance wins; otherwise the walk is reconstructed from stride.
@@ -267,8 +272,14 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(3.5, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "net MET 2.5 × $bodyKg kg × ${"%.0f".fmt(minutes)} min (${"%.2f".fmt(distanceKm)} km walked" +
-                if (strideDerived) ", stride from height)" else ", measured)",
+            basis = Words.text(
+                UiText.res(
+                    if (strideDerived) R.string.energy_basis_steps_stride else R.string.energy_basis_steps_measured,
+                    bodyKg,
+                    "%.0f".fmt(minutes),
+                    "%.2f".fmt(distanceKm),
+                ),
+            ),
         )
     }
 
@@ -282,7 +293,7 @@ object Energy {
             return EnergyEstimate(
                 kcal = measuredActiveKcal,
                 confidence = EnergyConfidence.MEASURED,
-                basis = "measured active kcal (Health Connect); estimates not added",
+                basis = Words.text(UiText.res(R.string.energy_basis_measured_day)),
             )
         }
         val all = listOfNotNull(stepsEstimate) + sessionEstimates

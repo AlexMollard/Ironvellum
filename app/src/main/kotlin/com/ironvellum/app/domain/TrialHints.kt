@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /**
@@ -27,21 +28,22 @@ object TrialHints {
     ): Map<Long, String> {
         val top = sets.firstOrNull { it.kind == SetKind.TOP } ?: return rangeHints(sets, scheme, hold)
         val out = mutableMapOf<Long, String>()
-        val rep = { reps: Int, kg: Double? -> "$reps × ${figure(kg)}" }
         if (top.isPending) {
-            val beat = lastTop?.let { "Beat ${rep(it.reps, it.weightKg)}" }
             out[top.id] = when {
-                beat != null && wouldPeak -> "$beat · this would be a new ${Words.peak.s}"
-                beat != null -> beat
-                else -> "Your top set: as heavy as it goes with clean reps"
+                lastTop != null && wouldPeak -> Words.text(
+                    UiText.themed(R.string.trialhint_beat_peak, R.string.trialhint_beat_peak__t, lastTop.reps, figure(lastTop.weightKg)),
+                )
+                lastTop != null -> Words.text(UiText.res(R.string.trialhint_beat, lastTop.reps, figure(lastTop.weightKg)))
+                else -> Words.text(UiText.res(R.string.trialhint_top_first))
             }
         }
         sets.filter { it.kind == SetKind.BACKOFF && it.isPending }.forEach { backoff ->
             out[backoff.id] = when {
-                top.isPending -> "Fills from your top set"
+                top.isPending -> Words.text(UiText.res(R.string.trialhint_backoff_fills))
                 scheme.backoffFixedKg == null && lift.bodyweightLift && (top.weightKg ?: 0.0) <= 0.0 ->
-                    "Two fewer reps than your top set"
-                else -> SchemePlan.backoff(top.weightKg, top.reps, scheme, lift).rounding?.note ?: "From your top set"
+                    Words.text(UiText.res(R.string.trialhint_backoff_fewer_reps))
+                else -> SchemePlan.backoff(top.weightKg, top.reps, scheme, lift).rounding?.note
+                    ?: Words.text(UiText.res(R.string.trialhint_backoff_from_top))
             }
         }
         return out + rangeHints(sets, scheme, hold)
@@ -50,7 +52,7 @@ object TrialHints {
     /** "Aim for 10–15 reps" under each working set still to log, when the lift has a range of its own. */
     private fun rangeHints(sets: List<SessionSet>, scheme: SetScheme, hold: Boolean): Map<Long, String> {
         val range = scheme.repsRange(SetKind.WORKING) ?: return emptyMap()
-        val aim = "Aim for ${SchemeText.reps(range)}" + if (hold) " s" else " reps"
+        val aim = Words.text(UiText.res(if (hold) R.string.trialhint_aim_hold else R.string.trialhint_aim_reps, SchemeText.reps(range)))
         return sets.filter { it.kind == SetKind.WORKING && it.isPending }.associate { it.id to aim }
     }
 }

@@ -1,5 +1,7 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -43,8 +45,6 @@ import java.util.Locale
  */
 object WorkoutShare {
 
-    private val dateFormat = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
-
     const val PEAK = "🏆"
     const val HIT = "🟩"
     const val UNDER = "🟨"
@@ -79,11 +79,20 @@ object WorkoutShare {
         unit: LoadUnit = LoadUnit.KG,
         includeEffort: Boolean = false,
         effortScale: EffortScale = EffortScale.RPE,
+        locale: Locale = Locale.getDefault(),
     ): String = buildString {
         val at = session.completedAtMs ?: session.startedAtMs
 
-        append("Ironvellum · ").append(session.title.ifBlank { session.label })
-        append(" · ").append(dateFormat.format(Instant.ofEpochMilli(at).atZone(zone)))
+        val dateFormat = DateTimeFormatter.ofPattern(Words.text(UiText.res(R.string.share_date_pattern)), locale)
+        append(
+            Words.text(
+                UiText.res(
+                    R.string.share_header,
+                    session.title.ifBlank { session.label },
+                    dateFormat.format(Instant.ofEpochMilli(at).atZone(zone)),
+                ),
+            ),
+        )
         append('\n')
 
         val peakByLift = peaks.associateBy { it.liftKey }
@@ -95,7 +104,7 @@ object WorkoutShare {
                 val exercise = exercises[id]
                 val working = group.filter { !it.warmup }.sortedBy { it.setIndex }
                 if (working.isEmpty()) return@mapNotNull null
-                val full = group.first().exerciseName.ifBlank { exercise?.name ?: "Movement" }
+                val full = group.first().exerciseName.ifBlank { exercise?.name ?: Words.text(UiText.res(R.string.share_movement_fallback)) }
                 val peak = peakByLift[Variation.liftKey(full, group.first().modifiers)]
                 val text = movementText(full.trim(), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
                     ?: return@mapNotNull null
@@ -111,14 +120,14 @@ object WorkoutShare {
 
         val workingDone = sets.count { it.done && !it.warmup }
         val footer = buildList {
-            durationMinutes(session)?.takeIf { it > 0 }?.let { add("$it min") }
-            if (workingDone > 0) add(if (workingDone == 1) "1 set" else "$workingDone sets")
-            if (session.xpAwarded > 0) add("+${format(session.xpAwarded)} XP")
-            if (session.strengthScore > 0) add("${format(session.strengthScore)} STR")
+            durationMinutes(session)?.takeIf { it > 0 }?.let { add(Words.text(UiText.res(R.string.share_footer_minutes, it))) }
+            if (workingDone > 0) add(Words.text(UiText.plural(R.plurals.share_footer_sets, workingDone)))
+            if (session.xpAwarded > 0) add(Words.text(UiText.res(R.string.share_footer_xp, format(session.xpAwarded, locale))))
+            if (session.strengthScore > 0) add(Words.text(UiText.res(R.string.share_footer_strength, format(session.strengthScore, locale))))
         }
         if (footer.isNotEmpty()) append('\n').append(footer.joinToString(" · ")).append('\n')
 
-        if (session.note.isNotBlank()) append('\n').append('“').append(session.note.trim()).append('”').append('\n')
+        if (session.note.isNotBlank()) append('\n').append(Words.text(UiText.res(R.string.share_note_quote, session.note.trim()))).append('\n')
     }.trimEnd('\n')
 
     /**
@@ -184,16 +193,18 @@ object WorkoutShare {
             ExerciseMetric.DURATION -> {
                 if (done.isEmpty()) return null
                 val total = done.sumOf { it.durationSec ?: 0 }
-                "$name · " + if (total < 60) "${total}s" else "${(total + 30) / 60} min"
+                "$name · " + Words.text(
+                    if (total < 60) UiText.res(R.string.share_time_seconds, total) else UiText.res(R.string.share_time_minutes, (total + 30) / 60),
+                )
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 if (done.isEmpty()) return null
                 val km = done.sumOf { it.distanceM ?: 0.0 } / 1000.0
                 val secs = done.sumOf { it.durationSec ?: 0 }
-                val distance = if (km > 0.0) trimmed(km) + "km" else ""
-                val time = if (secs > 0) clock(secs) else ""
+                val distance = if (km > 0.0) Words.text(UiText.res(R.string.share_distance_km, trimmed(km))) else ""
+                val time = if (secs > 0) ClockText.elapsed(secs.toLong()) else ""
                 val figure = when {
-                    distance.isNotEmpty() && time.isNotEmpty() -> "$distance in $time"
+                    distance.isNotEmpty() && time.isNotEmpty() -> Words.text(UiText.res(R.string.share_distance_in_time, distance, time))
                     else -> distance + time
                 }.ifEmpty { return null }
                 "$name · $figure"
@@ -202,7 +213,7 @@ object WorkoutShare {
                 if (done.isEmpty()) return null
                 val attempts = done.sumOf { it.reps }
                 val grade = done.firstNotNullOfOrNull { it.grade?.takeIf(String::isNotBlank) }
-                "$name · $attempts ${if (attempts == 1) "attempt" else "attempts"}" + (grade?.let { " · $it" } ?: "")
+                "$name · " + Words.text(UiText.plural(R.plurals.share_attempts, attempts)) + (grade?.let { " · $it" } ?: "")
             }
             ExerciseMetric.REPS, ExerciseMetric.HOLD -> {
                 val hold = holdSet(exercise, working.first())
@@ -233,9 +244,8 @@ object WorkoutShare {
      */
     private fun figures(done: List<Int>, hold: Boolean): String {
         if (done.isEmpty()) return ""
-        val unit = if (hold) "s" else ""
-        return if (done.size >= 3 && done.distinct().size == 1) "${done.size} × ${done.first()}$unit"
-        else done.joinToString("/") + unit
+        val text = if (done.size >= 3 && done.distinct().size == 1) "${done.size} × ${done.first()}" else done.joinToString("/")
+        return if (hold) Words.text(UiText.res(R.string.share_figures_seconds, text)) else text
     }
 
     /**
@@ -251,7 +261,7 @@ object WorkoutShare {
         val loads = done.map { it.weightKg?.takeIf { kg -> kg > 0.0 } ?: 0.0 }
         val top = loads.maxOrNull()?.takeIf { it > 0.0 } ?: return ""
         val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit) else trimmed(top)) + unit.label
-        return if (loads.distinct().size > 1) "top $text" else text
+        return if (loads.distinct().size > 1) Words.text(UiText.res(R.string.share_load_top, text)) else text
     }
 
     /** `  ↳ "note"`: one line, whitespace collapsed, cut to [NOTE_MAX] with an ellipsis. */
@@ -259,22 +269,11 @@ object WorkoutShare {
         val flat = note.trim().replace(Regex("\\s+"), " ")
         if (flat.isEmpty()) return null
         val text = if (flat.length <= NOTE_MAX) flat else flat.take(NOTE_MAX - 1).trimEnd() + "…"
-        return "  ↳ \"$text\""
+        return "  " + Words.text(UiText.res(R.string.share_exercise_note, text))
     }
 
     private fun trimmed(value: Double): String =
         String.format(Locale.ENGLISH, "%.2f", value).trimEnd('0').trimEnd('.')
 
-    private fun clock(totalSeconds: Int): String {
-        val h = totalSeconds / 3600
-        val m = (totalSeconds % 3600) / 60
-        val s = totalSeconds % 60
-        return if (h > 0) {
-            String.format(Locale.ENGLISH, "%d:%02d:%02d", h, m, s)
-        } else {
-            String.format(Locale.ENGLISH, "%d:%02d", m, s)
-        }
-    }
-
-    private fun format(value: Int): String = String.format(Locale.ENGLISH, "%,d", value)
+    private fun format(value: Int, locale: Locale): String = String.format(locale, "%,d", value)
 }

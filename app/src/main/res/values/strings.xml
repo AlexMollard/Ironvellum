@@ -1106,10 +1106,6 @@
     <string name="onboarding_goal_not_saved__t">Your cycle was saved, but your goal could not be remembered</string>
     <string name="onboarding_goal_not_saved_with">Your weekly plan was saved, but your goal could not be remembered: %1$s</string>
     <string name="onboarding_goal_not_saved_with__t">Your cycle was saved, but your goal could not be remembered: %1$s</string>
-    <!-- Joins a list of what is missing, e.g. "a name, height and weight": %1$s is the earlier items, %2$s the last. -->
-    <string name="onboarding_list_last">%1$s and %2$s</string>
-    <!-- Joins the earlier items of that list. -->
-    <string name="onboarding_list_join">%1$s, %2$s</string>
     <string name="onboarding_missing_name">a name</string>
     <string name="onboarding_missing_height">height</string>
     <string name="onboarding_missing_weight">weight</string>
@@ -3045,4 +3041,289 @@
     <!-- Footer under the plate list. %1$s is the heaviest load and %2$s the smallest step, each with its unit. -->
     <string name="plates_rack_heaviest">Heaviest you can load %1$s</string>
     <string name="plates_rack_footer">Heaviest you can load %1$s · Loads step by %2$s</string>
+
+    <!-- Lists a person reads: "a", "a and b", "a, b and c". %1$s is everything before the last item, %2$s the last. -->
+    <string name="list_last">%1$s and %2$s</string>
+    <!-- Joins the leading items of a list: %1$s is what is already joined, %2$s the next item. -->
+    <string name="list_join">%1$s, %2$s</string>
+
+    <!-- Set schemes: the layout names, as the scheme picker and the rite row say them. -->
+    <string name="scheme_type_straight">Straight sets</string>
+    <string name="scheme_type_top_backoff">Top set + back-offs</string>
+    <string name="scheme_type_drops">Drop sets</string>
+    <string name="scheme_type_custom">Custom</string>
+    <!-- A count of sets: "1 set", "3 sets". -->
+    <plurals name="scheme_count_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+    <!-- The rite row's scheme line for a top set with back-offs: "Top set + 2 back-offs". %d is the back-off count. -->
+    <plurals name="scheme_summary_top_backoffs">
+        <item quantity="one">Top set + %d back-off</item>
+        <item quantity="other">Top set + %d back-offs</item>
+    </plurals>
+    <!-- Which sets of a drop scheme drop; %d is how many. -->
+    <plurals name="scheme_drop_last">
+        <item quantity="one">last set</item>
+        <item quantity="other">last %d sets</item>
+    </plurals>
+    <string name="scheme_times_once">once</string>
+    <string name="scheme_times_twice">twice</string>
+    <!-- %d is the number of drops, three or more. -->
+    <plurals name="scheme_times_many">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
+    <!-- The rite row's scheme line for drops: "5 sets, last 2 sets drops twice". %1$s the sets, %2$s which sets drop, %3$s how many times. -->
+    <string name="scheme_summary_drops">%1$s, %2$s drops %3$s</string>
+    <plurals name="scheme_summary_custom">
+        <item quantity="one">Custom, %d set</item>
+        <item quantity="other">Custom, %d sets</item>
+    </plurals>
+    <!-- The keep-offer's Sets line. -->
+    <plurals name="scheme_clause_straight">
+        <item quantity="one">%d straight</item>
+        <item quantity="other">%d straight</item>
+    </plurals>
+    <plurals name="scheme_clause_top_backoffs">
+        <item quantity="one">top + %d back-off</item>
+        <item quantity="other">top + %d back-offs</item>
+    </plurals>
+    <!-- %1$s which sets drop, %2$s how many times, %3$d the percent each drop takes off. -->
+    <string name="scheme_clause_drops">%1$s drops %2$s (−%3$d%%)</string>
+    <plurals name="scheme_clause_custom">
+        <item quantity="one">custom %d set</item>
+        <item quantity="other">custom %d sets</item>
+    </plurals>
+    <!-- Seconds written after a rep figure for a timed hold: "10–15s". %1$s is the figure. -->
+    <string name="scheme_figure_seconds">%1$ss</string>
+
+    <!-- The one line under the Sets sheet's suggested scheme: why it is suggested. -->
+    <string name="scheme_suggestion_mobility">Mobility drill: the same easy sets, never taken heavy or to a drop.</string>
+    <string name="scheme_suggestion_technique">Skill-led: clean, even sets beat a heavy top set here.</string>
+    <string name="scheme_suggestion_technique__t">Technique-led: clean, even sets beat a heavy top set here.</string>
+    <string name="scheme_suggestion_balance">Balance-limited on one side: even sets keep the form, not a heavy top set.</string>
+    <string name="scheme_suggestion_compound">Heavy compound lift: one best set, then lighter work behind it.</string>
+    <string name="scheme_suggestion_isolation">Isolation lift: a drop set finishes the muscle without a heavy load.</string>
+    <string name="scheme_suggestion_steady">Steady, even sets keep this one simple.</string>
+
+    <!-- A back-off the trial planned and rounded onto what the lifter can load. -->
+    <string name="scheme_rounding_vest">Rounded to your vest blocks.</string>
+    <string name="scheme_rounding_belt">Rounded to your belt plates.</string>
+
+    <!-- The muted line under a set to log. %1$d the reps and %2$s the load of the last top set, "80 kg". -->
+    <string name="trialhint_beat">Beat %1$d × %2$s</string>
+    <string name="trialhint_beat_peak">Beat %1$d × %2$s · this would be a new PR</string>
+    <string name="trialhint_beat_peak__t">Beat %1$d × %2$s · this would be a new peak</string>
+    <string name="trialhint_top_first">Your top set: as heavy as it goes with clean reps</string>
+    <string name="trialhint_backoff_fills">Fills from your top set</string>
+    <string name="trialhint_backoff_fewer_reps">Two fewer reps than your top set</string>
+    <string name="trialhint_backoff_from_top">From your top set</string>
+    <!-- %1$s is the rep range, "10–15". -->
+    <string name="trialhint_aim_reps">Aim for %1$s reps</string>
+    <string name="trialhint_aim_hold">Aim for %1$s s</string>
+
+    <!-- The general warm-up before the first set. %1$s is a list of the muscle groups worked: "legs and core". -->
+    <string name="warmup_text_plain">5 min easy cardio, then mobility</string>
+    <string name="warmup_text_for">5 min easy cardio, then mobility for %1$s</string>
+    <string name="warmup_group_pull">pull</string>
+    <string name="warmup_group_push">push</string>
+    <string name="warmup_group_legs">legs</string>
+    <string name="warmup_group_core">core</string>
+    <string name="warmup_group_sport">sport</string>
+    <string name="warmup_group_climbing">climbing</string>
+    <string name="warmup_group_water">water work</string>
+    <string name="warmup_group_cardio">cardio</string>
+    <string name="warmup_group_mobility">mobility</string>
+    <!-- A warm-up exercise's targets: %1$d sets, %2$d the seconds held; %3$s is an optional " · 20 kg". -->
+    <string name="exercise_target_hold">%1$s × %2$s s%3$s</string>
+    <!-- %1$d sets, %2$d minutes. -->
+    <string name="exercise_target_minutes">%1$s × %2$s min</string>
+    <!-- %1$d sets, %2$s the distance in km. -->
+    <string name="exercise_target_km">%1$s × %2$s km</string>
+    <!-- %1$s the sets, %2$d the attempts. -->
+    <plurals name="exercise_target_attempts">
+        <item quantity="one">%1$s × %2$d attempt</item>
+        <item quantity="other">%1$s × %2$d attempts</item>
+    </plurals>
+
+    <!-- Why the next load moved. %1$d is the reps (or seconds) asked for. -->
+    <plurals name="progression_first_reps">
+        <item quantity="one">First attempt — hit %d rep every set</item>
+        <item quantity="other">First attempt — hit %d reps every set</item>
+    </plurals>
+    <string name="progression_first_hold">First attempt — hit %1$d s every set</string>
+    <!-- %1$d the stalled workouts, %2$s the lighter load, %3$d the reps to rebuild from. -->
+    <plurals name="progression_stalled_reps">
+        <item quantity="one">Stalled %1$d workout — deload to %2$s, rebuild from %3$d reps</item>
+        <item quantity="other">Stalled %1$d workouts — deload to %2$s, rebuild from %3$d reps</item>
+    </plurals>
+    <plurals name="progression_stalled_reps__t">
+        <item quantity="one">Stalled %1$d trial — deload to %2$s, rebuild from %3$d reps</item>
+        <item quantity="other">Stalled %1$d trials — deload to %2$s, rebuild from %3$d reps</item>
+    </plurals>
+    <!-- Same for a timed hold: %3$d is the seconds to rebuild. -->
+    <plurals name="progression_stalled_hold">
+        <item quantity="one">Stalled %1$d workout — deload to %2$s, rebuild the %3$d s hold</item>
+        <item quantity="other">Stalled %1$d workouts — deload to %2$s, rebuild the %3$d s hold</item>
+    </plurals>
+    <plurals name="progression_stalled_hold__t">
+        <item quantity="one">Stalled %1$d trial — deload to %2$s, rebuild the %3$d s hold</item>
+        <item quantity="other">Stalled %1$d trials — deload to %2$s, rebuild the %3$d s hold</item>
+    </plurals>
+    <!-- %1$d the sets asked for, %2$d the figure each must reach. -->
+    <plurals name="progression_repeat_reps">
+        <item quantity="one">Repeat until the %1$d set reaches %2$d reps</item>
+        <item quantity="other">Repeat until every one of the %1$d sets reaches %2$d reps</item>
+    </plurals>
+    <plurals name="progression_repeat_hold">
+        <item quantity="one">Repeat until the %1$d set reaches %2$d s</item>
+        <item quantity="other">Repeat until every one of the %1$d sets reaches %2$d s</item>
+    </plurals>
+    <string name="progression_cleared_control_1">Workout cleared — reach a little further before adding reps</string>
+    <string name="progression_cleared_control_1__t">Trial cleared — reach a little further before adding reps</string>
+    <string name="progression_cleared_control_2">Workout cleared — slow the way out to 3 s</string>
+    <string name="progression_cleared_control_2__t">Trial cleared — slow the way out to 3 s</string>
+    <string name="progression_cleared_control_3">Workout cleared — add 2 reps, same range and pace</string>
+    <string name="progression_cleared_control_3__t">Trial cleared — add 2 reps, same range and pace</string>
+    <string name="progression_cleared_mobility_1">Workout cleared — move a little further into the range</string>
+    <string name="progression_cleared_mobility_1__t">Trial cleared — move a little further into the range</string>
+    <string name="progression_cleared_mobility_2">Workout cleared — hold the end position 2 s longer</string>
+    <string name="progression_cleared_mobility_2__t">Trial cleared — hold the end position 2 s longer</string>
+    <string name="progression_cleared_mobility_3">Workout cleared — go slower into the end range</string>
+    <string name="progression_cleared_mobility_3__t">Trial cleared — go slower into the end range</string>
+    <string name="progression_cleared_skill">Workout cleared — own this step, then move to the next one</string>
+    <string name="progression_cleared_skill__t">Trial cleared — own this step, then move to the next one</string>
+    <!-- %1$d is the extra seconds to hold. -->
+    <string name="progression_cleared_hold_longer">Workout cleared — hold %1$d s longer next workout</string>
+    <string name="progression_cleared_hold_longer__t">Trial cleared — hold %1$d s longer next trial</string>
+    <!-- %1$d is the seconds to hold again. -->
+    <string name="progression_cleared_hold_top">Workout cleared — top of your range, hold %1$d s again</string>
+    <string name="progression_cleared_hold_top__t">Trial cleared — top of your range, hold %1$d s again</string>
+    <!-- %1$s is a load to add with its unit: "2.5 kg". -->
+    <string name="progression_reps_high">Reps are high enough — add %1$s or take a harder variation</string>
+    <!-- %1$d is the reps to climb to. -->
+    <string tools:ignore="PluralsCandidate" name="progression_climb_reps">Target cleared — climb to %1$d reps</string>
+    <!-- %1$s the load added, %2$d the reps to drop to. -->
+    <string tools:ignore="PluralsCandidate" name="progression_add_drop">Target cleared — add %1$s, drop to %2$d reps</string>
+    <string tools:ignore="PluralsCandidate" name="progression_ceiling_add">Rep ceiling reached — add %1$s, back to %2$d reps</string>
+    <string tools:ignore="PluralsCandidate" name="progression_same_load">Same load — climb to %1$d reps</string>
+    <!-- %1$s is the vest's top load. -->
+    <string name="progression_vest_full_harder">Vest full at %1$s, reps are high enough — take a harder variation</string>
+    <string tools:ignore="PluralsCandidate" name="progression_vest_full_climb">Vest full at %1$s — climb to %2$d reps</string>
+
+    <!-- The text of a shared workout (pasted into a chat). Dates use the pattern below, in the app's language. -->
+    <!-- %1$s is the workout's name, %2$s the date. -->
+    <string name="share_header">Ironvellum · %1$s · %2$s</string>
+    <!-- A java.time date pattern (DateTimeFormatter): day and short month name, "8 Oct". -->
+    <string name="share_date_pattern">d MMM</string>
+    <!-- The name of a movement logged without one. -->
+    <string name="share_movement_fallback">Movement</string>
+    <!-- A timed movement's total: %1$d seconds when under a minute, else minutes. -->
+    <string name="share_time_seconds">%1$ds</string>
+    <string name="share_time_minutes">%1$d min</string>
+    <!-- A distance in kilometres, "5km"; and a distance with its time, "5km in 25:00". -->
+    <string name="share_distance_km">%1$skm</string>
+    <string name="share_distance_in_time">%1$s in %2$s</string>
+    <!-- %1$d the attempts logged. -->
+    <plurals name="share_attempts">
+        <item quantity="one">%d attempt</item>
+        <item quantity="other">%d attempts</item>
+    </plurals>
+    <!-- Seconds after a list of figures, "6/6/7s"; %1$s is the figures. -->
+    <string name="share_figures_seconds">%1$ss</string>
+    <!-- The load line when the load varied: %1$s is the heaviest, "85kg". -->
+    <string name="share_load_top">top %1$s</string>
+    <!-- Footer figures: minutes, sets, XP earned, strength score. -->
+    <string name="share_footer_minutes">%1$d min</string>
+    <plurals name="share_footer_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+    <string name="share_footer_xp">+%1$s XP</string>
+    <string name="share_footer_strength">%1$s STR</string>
+    <!-- The private note, quoted, and an exercise's note under its lines. %1$s is the lifter's own text. -->
+    <string name="share_note_quote">“%1$s”</string>
+    <string name="share_exercise_note">↳ \"%1$s\"</string>
+
+    <!-- Why a pasted routine code was refused. The whole sentence is written per reason. -->
+    <string name="routinecode_other_version">This code comes from a different version of Ironvellum. Update the app and try again.</string>
+    <string name="routinecode_too_long">That text is too long to be a weekly plan code.</string>
+    <string name="routinecode_too_long__t">That text is too long to be a cycle code.</string>
+    <string name="routinecode_not_found">No weekly plan code found. Paste the whole message — it starts with IVR1:</string>
+    <string name="routinecode_not_found__t">No cycle code found. Paste the whole message — it starts with IVR1:</string>
+    <string name="routinecode_empty">The weekly plan code is empty.</string>
+    <string name="routinecode_empty__t">The cycle code is empty.</string>
+    <string name="routinecode_too_large">This weekly plan is too large to import.</string>
+    <string name="routinecode_too_large__t">This cycle is too large to import.</string>
+    <string name="routinecode_corrupt">The weekly plan code is damaged or cut short. Copy it again and paste the whole thing.</string>
+    <string name="routinecode_corrupt__t">The cycle code is damaged or cut short. Copy it again and paste the whole thing.</string>
+    <!-- %1$d is the most routines a code may hold. -->
+    <string tools:ignore="PluralsCandidate" name="routinecode_too_many_rites">This weekly plan has more than %1$d routines, which is more than Ironvellum imports.</string>
+    <string tools:ignore="PluralsCandidate" name="routinecode_too_many_rites__t">This cycle has more than %1$d rites, which is more than Ironvellum imports.</string>
+    <!-- %1$d is the most exercises a routine may hold. -->
+    <string tools:ignore="PluralsCandidate" name="routinecode_too_many_exercises">A routine in this weekly plan has more than %1$d exercises, which is more than Ironvellum imports.</string>
+    <string tools:ignore="PluralsCandidate" name="routinecode_too_many_exercises__t">A rite in this cycle has more than %1$d exercises, which is more than Ironvellum imports.</string>
+    <!-- Sharing is refused: %1$d the most routines a shared plan holds, %2$d how many this plan has. -->
+    <string tools:ignore="PluralsCandidate" name="routinecode_share_too_many_rites">A shared weekly plan holds at most %1$d routines and yours has %2$d. Remove some routines, then share again.</string>
+    <string tools:ignore="PluralsCandidate" name="routinecode_share_too_many_rites__t">A shared cycle holds at most %1$d rites and yours has %2$d. Remove some rites, then share again.</string>
+    <!-- %1$d the most exercises a shared routine holds, %2$s the routine's own name, %3$d how many it has. -->
+    <string tools:ignore="PluralsCandidate" name="routinecode_share_too_many_exercises">A shared routine holds at most %1$d exercises and \"%2$s\" has %3$d. Trim it, then share again.</string>
+    <string tools:ignore="PluralsCandidate" name="routinecode_share_too_many_exercises__t">A shared rite holds at most %1$d exercises and \"%2$s\" has %3$d. Trim it, then share again.</string>
+    <!-- A pasted code is read but one part is wrong; the sentence names which. -->
+    <string name="routinecode_bad_layout">The weekly plan code has an unreadable layout. Ask for a fresh one.</string>
+    <string name="routinecode_bad_layout__t">The cycle code has an unreadable layout. Ask for a fresh one.</string>
+    <string name="routinecode_bad_no_rites">The weekly plan code has no routines. Ask for a fresh one.</string>
+    <string name="routinecode_bad_no_rites__t">The cycle code has no rites. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unreadable_rite">The weekly plan code has an unreadable routine. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unreadable_rite__t">The cycle code has an unreadable rite. Ask for a fresh one.</string>
+    <string name="routinecode_bad_rite_no_name">The weekly plan code has a routine without a name. Ask for a fresh one.</string>
+    <string name="routinecode_bad_rite_no_name__t">The cycle code has a rite without a name. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_day">The weekly plan code has an invalid day. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_day__t">The cycle code has an invalid day. Ask for a fresh one.</string>
+    <string name="routinecode_bad_rite_no_exercises">The weekly plan code has a routine without exercises. Ask for a fresh one.</string>
+    <string name="routinecode_bad_rite_no_exercises__t">The cycle code has a rite without exercises. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unreadable_exercise">The weekly plan code has an unreadable exercise. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unreadable_exercise__t">The cycle code has an unreadable exercise. Ask for a fresh one.</string>
+    <string name="routinecode_bad_exercise_no_name">The weekly plan code has an exercise without a name. Ask for a fresh one.</string>
+    <string name="routinecode_bad_exercise_no_name__t">The cycle code has an exercise without a name. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_load">The weekly plan code has an invalid load. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_load__t">The cycle code has an invalid load. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_count">The weekly plan code has an invalid set or rep count. Ask for a fresh one.</string>
+    <string name="routinecode_bad_invalid_count__t">The cycle code has an invalid set or rep count. Ask for a fresh one.</string>
+    <string name="routinecode_bad_trailing_data">The weekly plan code has trailing data. Ask for a fresh one.</string>
+    <string name="routinecode_bad_trailing_data__t">The cycle code has trailing data. Ask for a fresh one.</string>
+    <string name="routinecode_bad_too_deep">The weekly plan code has nesting that is too deep. Ask for a fresh one.</string>
+    <string name="routinecode_bad_too_deep__t">The cycle code has nesting that is too deep. Ask for a fresh one.</string>
+    <string name="routinecode_bad_cut_off_data">The weekly plan code has cut-off data. Ask for a fresh one.</string>
+    <string name="routinecode_bad_cut_off_data__t">The cycle code has cut-off data. Ask for a fresh one.</string>
+    <string name="routinecode_bad_cut_off_text">The weekly plan code has cut-off text. Ask for a fresh one.</string>
+    <string name="routinecode_bad_cut_off_text__t">The cycle code has cut-off text. Ask for a fresh one.</string>
+    <string name="routinecode_bad_bad_escape">The weekly plan code has a bad escape. Ask for a fresh one.</string>
+    <string name="routinecode_bad_bad_escape__t">The cycle code has a bad escape. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unexpected_char">The weekly plan code has an unexpected character. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unexpected_char__t">The cycle code has an unexpected character. Ask for a fresh one.</string>
+    <string name="routinecode_bad_bad_number">The weekly plan code has a bad number. Ask for a fresh one.</string>
+    <string name="routinecode_bad_bad_number__t">The cycle code has a bad number. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unexpected_word">The weekly plan code has an unexpected word. Ask for a fresh one.</string>
+    <string name="routinecode_bad_unexpected_word__t">The cycle code has an unexpected word. Ask for a fresh one.</string>
+    <string name="routinecode_bad_misplaced_char">The weekly plan code has a misplaced character. Ask for a fresh one.</string>
+    <string name="routinecode_bad_misplaced_char__t">The cycle code has a misplaced character. Ask for a fresh one.</string>
+
+    <!-- How an energy estimate was reached, shown on tap. Figures are formatted already: %s kg is the body weight, %s min the minutes. -->
+    <!-- %1$s the lean mass, %2$s the body weight, %3$s the body fat percent. -->
+    <string name="energy_basis_katch">Katch-McArdle: 370 + 21.6 × %1$s kg lean (%2$s kg, %3$s%% body fat)</string>
+    <!-- %1$s the net MET, %2$s the body weight in kg, %3$s the minutes. -->
+    <string name="energy_basis_activity">net MET %1$s × %2$s kg × %3$s min</string>
+    <!-- Sets with no timing: %1$d how many, then as above. -->
+    <plurals name="energy_basis_sets">
+        <item quantity="one">%1$d set × net MET %2$s × %3$s kg × %4$s min</item>
+        <item quantity="other">%1$d sets × net MET %2$s × %3$s kg × %4$s min</item>
+    </plurals>
+    <string name="energy_basis_timed_sets">timed sets net MET × %1$s kg × %2$s min</string>
+    <string name="energy_basis_no_steps">no steps recorded</string>
+    <!-- Walking: %1$s the body weight, %2$s the minutes, %3$s the distance in km. -->
+    <string name="energy_basis_steps_stride">net MET 2.5 × %1$s kg × %2$s min (%3$s km walked, stride from height)</string>
+    <string name="energy_basis_steps_measured">net MET 2.5 × %1$s kg × %2$s min (%3$s km walked, measured)</string>
+    <string name="energy_basis_measured_day">measured active kcal (Health Connect); estimates not added</string>
 </resources>

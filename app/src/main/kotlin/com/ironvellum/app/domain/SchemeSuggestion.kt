@@ -1,9 +1,13 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 
 /** The scheme the Sets sheet marks SUGGESTED for a lift, with the one line that says why. */
 data class SuggestedScheme(val type: SchemeType, val reason: String)
+
+private fun reason(@StringRes id: Int, @StringRes themed: Int = id): String = Words.text(UiText.themed(id, themed))
 
 object SchemeSuggestion {
     /**
@@ -19,16 +23,16 @@ object SchemeSuggestion {
         val oneSided = profile?.unilateral == true || profile?.pattern == MovementPattern.LUNGE
         return when {
             MuscleMap.isMobility(exerciseName) ->
-                SuggestedScheme(SchemeType.STRAIGHT, "Mobility drill: the same easy sets, never taken heavy or to a drop.")
+                SuggestedScheme(SchemeType.STRAIGHT, reason(R.string.scheme_suggestion_mobility))
             MuscleMap.isControl(exerciseName) || MuscleMap.isTechnique(exerciseName) ->
-                SuggestedScheme(SchemeType.STRAIGHT, "${Words.technique.c}-led: clean, even sets beat a heavy top set here.")
+                SuggestedScheme(SchemeType.STRAIGHT, reason(R.string.scheme_suggestion_technique, R.string.scheme_suggestion_technique__t))
             bodyweightLift && oneSided ->
-                SuggestedScheme(SchemeType.STRAIGHT, "Balance-limited on one side: even sets keep the form, not a heavy top set.")
+                SuggestedScheme(SchemeType.STRAIGHT, reason(R.string.scheme_suggestion_balance))
             profile?.compound == true ->
-                SuggestedScheme(SchemeType.TOP_BACKOFF, "Heavy compound lift: one best set, then lighter work behind it.")
+                SuggestedScheme(SchemeType.TOP_BACKOFF, reason(R.string.scheme_suggestion_compound))
             !inSuperset && MovementDifficulty.isIsolation(exerciseName) ->
-                SuggestedScheme(SchemeType.DROPS, "Isolation lift: a drop set finishes the muscle without a heavy load.")
-            else -> SuggestedScheme(SchemeType.STRAIGHT, "Steady, even sets keep this one simple.")
+                SuggestedScheme(SchemeType.DROPS, reason(R.string.scheme_suggestion_isolation))
+            else -> SuggestedScheme(SchemeType.STRAIGHT, reason(R.string.scheme_suggestion_steady))
         }
     }
 }

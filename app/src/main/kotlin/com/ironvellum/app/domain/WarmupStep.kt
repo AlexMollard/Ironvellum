@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+
 /**
  * The general warm-up offered before a trial's first set: a few minutes of
  * easy cardio, then mobility for what the trial works, and the rite's own
@@ -25,10 +28,10 @@ object WarmupStep {
             val load = weightKg?.takeIf { it > 0.0 }?.let { " · ${kg(it)}" }.orEmpty()
             return when (metric) {
                 ExerciseMetric.REPS -> "$sets × $reps$load"
-                ExerciseMetric.HOLD -> "$sets × $reps s$load"
-                ExerciseMetric.DURATION -> "$sets × $reps min"
-                ExerciseMetric.DISTANCE_TIME -> "$sets × ${weightKg?.let(kg) ?: "?"} km"
-                ExerciseMetric.ATTEMPTS_GRADE -> "$sets × $reps attempts"
+                ExerciseMetric.HOLD -> Words.text(UiText.res(R.string.exercise_target_hold, sets, reps, load))
+                ExerciseMetric.DURATION -> Words.text(UiText.res(R.string.exercise_target_minutes, sets, reps))
+                ExerciseMetric.DISTANCE_TIME -> Words.text(UiText.res(R.string.exercise_target_km, sets, weightKg?.let(kg) ?: "?"))
+                ExerciseMetric.ATTEMPTS_GRADE -> Words.text(UiText.plural(R.plurals.exercise_target_attempts, reps, sets, reps))
             }
         }
     }
@@ -53,25 +56,25 @@ object WarmupStep {
             .sortedWith(compareByDescending<Map.Entry<MuscleGroup, Int>> { it.value }.thenBy { it.key.ordinal })
             .take(MAX_GROUPS)
             .map { it.key.label() }
-        val mobility = if (worked.isEmpty()) "mobility" else "mobility for ${listAnd(worked)}"
-        return "5 min easy cardio, then $mobility"
+        return Words.text(
+            if (worked.isEmpty()) UiText.res(R.string.warmup_text_plain)
+            else UiText.res(R.string.warmup_text_for, ListText.and(worked)),
+        )
     }
 
-    private fun MuscleGroup.label(): String = when (this) {
-        MuscleGroup.PULL -> "pull"
-        MuscleGroup.PUSH -> "push"
-        MuscleGroup.LEGS -> "legs"
-        MuscleGroup.CORE -> "core"
-        MuscleGroup.SPORT -> "sport"
-        MuscleGroup.CLIMBING -> "climbing"
-        MuscleGroup.WATER -> "water work"
-        MuscleGroup.CARDIO -> "cardio"
-        MuscleGroup.MOBILITY -> "mobility"
-    }
-
-    private fun listAnd(items: List<String>): String = when (items.size) {
-        1 -> items[0]
-        2 -> "${items[0]} and ${items[1]}"
-        else -> items.dropLast(1).joinToString(", ") + " and " + items.last()
-    }
+    private fun MuscleGroup.label(): String = Words.text(
+        UiText.res(
+            when (this) {
+                MuscleGroup.PULL -> R.string.warmup_group_pull
+                MuscleGroup.PUSH -> R.string.warmup_group_push
+                MuscleGroup.LEGS -> R.string.warmup_group_legs
+                MuscleGroup.CORE -> R.string.warmup_group_core
+                MuscleGroup.SPORT -> R.string.warmup_group_sport
+                MuscleGroup.CLIMBING -> R.string.warmup_group_climbing
+                MuscleGroup.WATER -> R.string.warmup_group_water
+                MuscleGroup.CARDIO -> R.string.warmup_group_cardio
+                MuscleGroup.MOBILITY -> R.string.warmup_group_mobility
+            },
+        ),
+    )
 }

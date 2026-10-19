@@ -1,5 +1,8 @@
 package com.ironvellum.app.domain
 
+import androidx.annotation.StringRes
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
 import kotlin.math.floor
 
 /** What the planner needs to know about a lift to round a load the way the lifter can actually load it. */
@@ -20,9 +23,12 @@ data class LiftLoading(
 }
 
 /** What a back-off was rounded to, so the trial can say so: "Rounded to your vest blocks". */
-enum class Rounding(val note: String) {
-    VEST_BLOCKS("Rounded to your vest blocks."),
-    BELT_PLATES("Rounded to your belt plates."),
+enum class Rounding(@StringRes private val noteRes: Int) {
+    VEST_BLOCKS(R.string.scheme_rounding_vest),
+    BELT_PLATES(R.string.scheme_rounding_belt),
+    ;
+
+    val note: String get() = Words.text(UiText.res(noteRes))
 }
 
 /** One set the scheme plans. [reps] is the figure to start on; [range] the band it is planned in, when the scheme has one. */

@@ -1,5 +1,5 @@
 # Hardcoded screen-text literals per file (HardcodedUiLiteralTest). Counts may only go down.
-# Total 1941 in 124 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
+# Total 1838 in 116 files. Regenerate: UPDATE_UI_LITERAL_BASELINE=1.
 main/data/AutoBackup.kt 3
 main/data/CrashJournal.kt 4
 main/data/DbSnapshot.kt 4
@@ -14,7 +14,6 @@ main/data/cloud/CloudSync.kt 11
 main/domain/BodyStats.kt 13
 main/domain/Circles.kt 6
 main/domain/CustomExercises.kt 11
-main/domain/Energy.kt 9
 main/domain/Gacha.kt 10
 main/domain/LiftBoards.kt 75
 main/domain/Measurement.kt 19
@@ -24,22 +23,15 @@ main/domain/ProgramEasing.kt 4
 main/domain/ProgramGenerator.kt 67
 main/domain/ProgramRules.kt 60
 main/domain/ProgramTemplates.kt 186
-main/domain/Progression.kt 21
 main/domain/Rank.kt 1
 main/domain/RankPatterns.kt 13
 main/domain/RestAlert.kt 4
 main/domain/RestRules.kt 14
-main/domain/RoutineCode.kt 37
-main/domain/SchemePlan.kt 2
-main/domain/SchemeSuggestion.kt 6
+main/domain/RoutineCode.kt 1
 main/domain/SessionXp.kt 1
 main/domain/SetKind.kt 7
-main/domain/SetScheme.kt 14
 main/domain/SexHold.kt 1
-main/domain/TrialHints.kt 6
 main/domain/VeilDraw.kt 6
-main/domain/WarmupStep.kt 6
-main/domain/WorkoutShare.kt 3
 main/domain/Xp.kt 7
 main/ui/IronvellumNav.kt 12
 main/ui/components/Celebration.kt 32
