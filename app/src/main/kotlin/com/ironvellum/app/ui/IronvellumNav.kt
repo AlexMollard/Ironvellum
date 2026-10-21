@@ -112,6 +112,8 @@ import com.ironvellum.app.ui.idle.IdleScreen
 import com.ironvellum.app.ui.idle.RateScreen
 import com.ironvellum.app.ui.recap.RecapScreen
 import com.ironvellum.app.ui.recap.RecapShareScreen
+import com.ironvellum.app.ui.recap.ReviewScreen
+import com.ironvellum.app.ui.recap.ReviewShareScreen
 
 /** Ledger back stack flag: open the weigh-in on arrival. */
 private const val LOG_WEIGHT = "log_weight"
@@ -135,6 +137,8 @@ object Routes {
     const val WORKOUT_LOG = "workout_log"
     const val RECAP = "recap/{week}"
     const val RECAP_SHARE = "recap_share/{week}"
+    const val REVIEW = "review/{kind}/{start}"
+    const val REVIEW_SHARE = "review_share/{kind}/{start}"
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val OPTIMISE_RITES = "optimise_rites"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
@@ -158,6 +162,11 @@ object Routes {
     fun recap(week: Long): String = "recap/$week"
 
     fun recapShare(week: Long): String = "recap_share/$week"
+
+    /** The review of the month or year ([kind] "month" or "year") that starts on the epoch day [start], and its share screen. */
+    fun review(kind: String, start: Long): String = "review/$kind/$start"
+
+    fun reviewShare(kind: String, start: Long): String = "review_share/$kind/$start"
 
     /** Exercises, opened on one lift when [name] is given. */
     fun exercises(name: String? = null): String = if (name == null) "exercises" else "exercises?name=${Uri.encode(name)}"
@@ -392,6 +401,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenCrest = { navController.navigate(Routes.collection(CollectionTab.Crests)) { launchSingleTop = true } },
                         onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
+                        onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
                     )
                 }
                 composable(Routes.PRESETS) {
@@ -502,6 +512,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
+                        onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
                         onOpenSettings = { navController.navigate(Routes.settingsSection(it)) },
                     )
                 }
@@ -623,6 +634,30 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 ) { entry ->
                     RecapShareScreen(
                         weekEpochDay = entry.arguments?.getLong("week") ?: 0L,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(
+                    Routes.REVIEW,
+                    arguments = listOf(navArgument("kind") { type = NavType.StringType }, navArgument("start") { type = NavType.LongType }),
+                ) { entry ->
+                    val kind = entry.arguments?.getString("kind") ?: "month"
+                    val start = entry.arguments?.getLong("start") ?: 0L
+                    ReviewScreen(
+                        kind = kind,
+                        startEpochDay = start,
+                        onBack = { navController.popBackStack() },
+                        onShare = { navController.navigate(Routes.reviewShare(kind, start)) },
+                        onOpenWeek = { week -> navController.navigate(Routes.recap(week)) },
+                    )
+                }
+                composable(
+                    Routes.REVIEW_SHARE,
+                    arguments = listOf(navArgument("kind") { type = NavType.StringType }, navArgument("start") { type = NavType.LongType }),
+                ) { entry ->
+                    ReviewShareScreen(
+                        kind = entry.arguments?.getString("kind") ?: "month",
+                        startEpochDay = entry.arguments?.getLong("start") ?: 0L,
                         onBack = { navController.popBackStack() },
                     )
                 }

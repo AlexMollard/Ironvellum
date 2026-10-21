@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -40,6 +41,7 @@ import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.recap.RecapSample
+import com.ironvellum.app.ui.recap.ReviewSample
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -101,6 +103,8 @@ class TodayFitsTest {
         motion: Boolean = false,
         glance: VeilGlance = veil,
         onOpenRecap: (Long) -> Unit = {},
+        onOpenReview: (String, Long) -> Unit = { _, _ -> },
+        onDismissReview: (String) -> Unit = {},
     ) {
         // The ink treatment animates forever, so Compose never idles on its own. The Veil's own motion is
         // off unless a test asks for it: the emulator runs with system animations on, so it would not be.
@@ -113,7 +117,7 @@ class TodayFitsTest {
                         TodayContent(
                             ui = ui, selectedDay = selectedDay, today = today, live = live, liveSets = liveSets,
                             bodyGap = bodyGap, strengthRank = "Iron", rankBreakdown = null, veil = glance,
-                            actions = TodayActions(onOpenRecap = onOpenRecap), nowMs = now, motion = motion,
+                            actions = TodayActions(onOpenRecap = onOpenRecap, onOpenReview = onOpenReview, onDismissReview = onDismissReview), nowMs = now, motion = motion,
                         )
                     }
                 }
@@ -187,6 +191,33 @@ class TodayFitsTest {
         compose.onNodeWithText("Last week").performClick()
         assertEquals(RecapSample.monday.toEpochDay(), opened)
         com.ironvellum.app.ui.ShotRecorder.take(compose, "today_last_week")
+    }
+
+    @Test
+    fun theReviewCardFitsAmongEveryOtherRowOpensTheReviewAndCloses() {
+        var opened = ""
+        var closed = ""
+        show(
+            ui = DashboardUi(presets = listOf(rite(9)), newPeaks = listOf(peak), lastWeek = RecapSample.full(), review = ReviewSample.yearSummary()),
+            selectedDay = 3, live = trial, liveSets = trialSets, bodyGap = BodyGap.BOTH,
+            onOpenReview = { kind, start -> opened = "$kind $start" },
+            onDismissReview = { closed = it },
+        )
+        assertDoesNotScroll()
+        assertInside("2026: 94 trials · 423.0 t")
+        assertInside("Add your height and weight")
+        assertInside("3 inscriptions waiting")
+        compose.onNodeWithText("2026: 94 trials · 423.0 t").performClick()
+        assertEquals("year ${ReviewSample.year.from.toEpochDay()}", opened)
+        compose.onNode(hasContentDescription("Dismiss the review")).performClick()
+        assertEquals("2026", closed)
+        com.ironvellum.app.ui.ShotRecorder.take(compose, "today_review_card")
+    }
+
+    @Test
+    fun withoutAReviewThereIsNoCard() {
+        show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        compose.onAllNodes(hasContentDescription("Dismiss the review")).assertCountEquals(0)
     }
 
     @Test

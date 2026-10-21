@@ -86,6 +86,12 @@ import com.ironvellum.app.domain.PeriodStats
 import com.ironvellum.app.domain.RecapSchedule
 import com.ironvellum.app.domain.WeeklyRecap
 import com.ironvellum.app.ui.recap.RecapText
+import com.ironvellum.app.ui.recap.ReviewTodayCard
+import com.ironvellum.app.ui.recap.routeKind
+import com.ironvellum.app.data.ReviewDismissals
+import com.ironvellum.app.domain.PeriodReview
+import com.ironvellum.app.domain.ReviewSchedule
+import com.ironvellum.app.domain.ReviewSummary
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.LiftRecords
 import com.ironvellum.app.domain.PlayerProfile
@@ -187,6 +193,8 @@ class DashboardUi(
     val newPeaks: List<RepMax.Recent> = emptyList(),
     /** Last week's recap, offered as a link from Monday through Wednesday when that week had workouts; null otherwise. */
     val lastWeek: WeeklyRecap? = null,
+    /** Last month's (in January, last year's) review, offered in the first week of a month; null the rest of the time. */
+    val review: ReviewSummary? = null,
     /** False only for the placeholder shown before the first read lands. */
     val loaded: Boolean = false,
 )
@@ -253,6 +261,17 @@ internal fun lastWeekRecap(
     return WeeklyRecap.build(history, exercises.associateBy { it.id }, plan, start, today, zone)
 }
 
+/** The review Today offers on [today] ([ReviewSchedule.offeredOn]) with its three figures; null outside the window. */
+internal fun reviewOffered(
+    history: List<Pair<WorkoutSession, List<SessionSet>>>,
+    exercises: List<Exercise>,
+    today: LocalDate,
+    zone: ZoneId,
+): ReviewSummary? {
+    val period = ReviewSchedule.offeredOn(today, { PeriodStats.workoutsIn(history, it.from, it.to, zone) }) ?: return null
+    return PeriodReview.summary(history, exercises.associateBy { it.id }, period, zone)
+}
+
 class DashboardViewModel(
     private val repo: Repository,
     /** What the lifter last told the generator; times the plan line. */
@@ -302,6 +321,7 @@ class DashboardViewModel(
             exercises = exercises.associateBy { it.id },
             newPeaks = newPeaks(history, exercises, System.currentTimeMillis()),
             lastWeek = lastWeekRecap(history, exercises, presets, today, zone),
+            review = reviewOffered(history, exercises, today, zone),
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
@@ -475,6 +495,8 @@ fun DashboardScreen(
     onOpenLift: (String) -> Unit = { onOpenLedger() },
     /** The "Last week" link: the recap of the week starting on this epoch day. */
     onOpenRecap: (Long) -> Unit = {},
+    /** The review card: "month" or "year", and the epoch day its period starts on. */
+    onOpenReview: (String, Long) -> Unit = { _, _ -> },
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
             // The saved answers sit behind a Context only a composable can read;
@@ -489,6 +511,7 @@ fun DashboardScreen(
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
     val selectedDay by viewModel.selected.collectAsStateWithLifecycle()
     // A cached process outlives midnight: the lifter opened the app Monday
     // night, Android parked it, and Thursday's open resumed Monday's
@@ -556,6 +579,8 @@ fun DashboardScreen(
             onAddName = onAddName,
             onOpenLift = onOpenLift,
             onOpenRecap = onOpenRecap,
+            onOpenReview = onOpenReview,
+            onDismissReview = { key -> ReviewDismissals.dismiss(appContext, key) },
             onSelectDay = viewModel::selectDay,
             onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
             onBeginOpen = { viewModel.beginOpen(onStartSession) },
@@ -597,6 +622,10 @@ internal class TodayActions(
     val onOpenLift: (String) -> Unit = {},
     /** Last week's recap: the Monday of the week, as an epoch day. */
     val onOpenRecap: (Long) -> Unit = {},
+    /** A month or year review: "month" or "year", and the epoch day its period starts on. */
+    val onOpenReview: (String, Long) -> Unit = { _, _ -> },
+    /** The review's close button: the period's key ([com.ironvellum.app.domain.ReviewPeriod.key]). */
+    val onDismissReview: (String) -> Unit = {},
     val onSelectDay: (Int) -> Unit = {},
     val onBeginPreset: (Long) -> Unit = {},
     val onBeginOpen: () -> Unit = {},
@@ -972,6 +1001,16 @@ private fun TodayDayBody(
                     subline = RecapText.summary(recap).asString(),
                     onClickLabel = stringResource(R.string.recap_open_description),
                     onClick = { actions.onOpenRecap(recap.weekStart.toEpochDay()) },
+                )
+            }
+        }
+        // Read here, not in the view model: a close is Compose state, so the card goes at once.
+        ui.review?.takeIf { it.period.key !in ReviewDismissals.keys }?.let { summary ->
+            add {
+                ReviewTodayCard(
+                    summary = summary,
+                    onOpen = { actions.onOpenReview(summary.period.routeKind, summary.period.from.toEpochDay()) },
+                    onDismiss = { actions.onDismissReview(summary.period.key) },
                 )
             }
         }

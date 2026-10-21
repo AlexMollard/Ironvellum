@@ -54,6 +54,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -102,6 +105,11 @@ import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.WeeklyRecap
 import com.ironvellum.app.ui.recap.RecapText
+import com.ironvellum.app.ui.recap.ReviewText
+import com.ironvellum.app.ui.recap.routeKind
+import com.ironvellum.app.domain.PeriodReview
+import com.ironvellum.app.domain.ReviewSchedule
+import com.ironvellum.app.domain.ReviewSummary
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Energy
 import com.ironvellum.app.domain.EnergyConfidence
@@ -250,6 +258,8 @@ fun StatsScreen(
     onOpenLift: (String) -> Unit,
     // A past week's recap: the Monday of the week, as an epoch day.
     onOpenRecap: (Long) -> Unit,
+    // A month or year review: "month" or "year", and the epoch day its period starts on.
+    onOpenReview: (String, Long) -> Unit,
     // Straight to the page that answers: Health Connect, or height on Profile.
     onOpenSettings: (SettingsSection) -> Unit,
     // Today's "Add reading" opens the weigh-in itself, not just the tab.
@@ -370,6 +380,7 @@ fun StatsScreen(
                         onOpenWorkout = onOpenWorkout,
                         onOpenLift = onOpenLift,
                         onOpenRecap = onOpenRecap,
+                        onOpenReview = onOpenReview,
                     )
                     StatsTab.DAILY -> ActivityTab(
                         days = ui.healthDays,
@@ -503,11 +514,28 @@ private fun pastRecaps(ui: StatsUi, today: LocalDate): List<WeeklyRecap> {
         .map { WeeklyRecap.build(history, ui.exercises, emptyList(), it, today, zone) }
 }
 
-/** The latest finished weeks' recaps, so the Sunday notification is never the only way back to one. */
+/** The finished months and years with workouts, newest first, each with its three figures: the review rows of the Recaps list. */
+private fun pastReviews(ui: StatsUi, today: LocalDate): List<ReviewSummary> {
+    val zone = ZoneId.systemDefault()
+    val history = ui.sessions.map { it to ui.sessionSets[it.id].orEmpty() }
+    return ReviewSchedule.listed(ui.completedDates, today).map { PeriodReview.summary(history, ui.exercises, it, zone) }
+}
+
+/** The latest finished weeks' recaps, so the Sunday notification is never the only way back to one, and the reviews of finished months and years above them. */
 @Composable
-private fun RecapsPanel(recaps: List<WeeklyRecap>, onOpenRecap: (Long) -> Unit) {
+internal fun RecapsPanel(reviews: List<ReviewSummary>, recaps: List<WeeklyRecap>, onOpenRecap: (Long) -> Unit, onOpenReview: (String, Long) -> Unit) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         PanelLabel(stringResource(R.string.recap_list_title), Modifier.padding(start = 16.dp, top = 8.dp))
+        reviews.forEachIndexed { i, review ->
+            if (i > 0) InkDivider()
+            ListRow(
+                label = ReviewText.named(review.period),
+                subline = ReviewText.listLine(review).asString(),
+                onClickLabel = stringResource(R.string.review_open_description),
+                onClick = { onOpenReview(review.period.routeKind, review.period.from.toEpochDay()) },
+            )
+        }
+        if (reviews.isNotEmpty() && recaps.isNotEmpty()) InkDivider()
         recaps.forEachIndexed { i, recap ->
             if (i > 0) InkDivider()
             ListRow(
@@ -535,9 +563,14 @@ private fun TrainingTab(
     onOpenWorkout: (Long) -> Unit,
     onOpenLift: (String) -> Unit,
     onOpenRecap: (Long) -> Unit,
+    onOpenReview: (String, Long) -> Unit,
 ) {
     val nowMs = remember(today) { System.currentTimeMillis() }
     val recaps = remember(ui.sessions, ui.sessionSets, ui.exercises, today) { pastRecaps(ui, today) }
+    // Whole months and years of history: read off the main thread, and the rows join the list when they land.
+    val reviews by produceState(emptyList<ReviewSummary>(), ui.sessions, ui.sessionSets, ui.exercises, today) {
+        value = withContext(Dispatchers.Default) { pastReviews(ui, today) }
+    }
     val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
         LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
     }
@@ -549,7 +582,7 @@ private fun TrainingTab(
         verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
         Spacer(Modifier.height(LedgerSpace.Panel))
-        if (recaps.isNotEmpty()) RecapsPanel(recaps, onOpenRecap)
+        if (recaps.isNotEmpty() || reviews.isNotEmpty()) RecapsPanel(reviews, recaps, onOpenRecap, onOpenReview)
         TrainingCalendar(
             sessions = ui.sessions,
             completedDates = ui.completedDates,
