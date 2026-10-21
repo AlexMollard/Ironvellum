@@ -638,8 +638,6 @@
     <string name="notification_trial_opening__t">Opening the trial…</string>
     <string name="notification_trial_all_done">Every set is done. Finish the workout.</string>
     <string name="notification_trial_all_done__t">Every set is done. Seal the Trial.</string>
-    <!-- %1$s is the next set, for example "Set 3 · 8 reps · 60kg". -->
-    <string name="notification_trial_resting">Rest · then %1$s</string>
     <!-- The next set: %1$d its number among the working sets, %2$d reps or seconds, %3$s the load ("60kg"). A hold set counts seconds. -->
     <plurals name="notification_trial_set_reps"><item quantity="one">Set %1$d · %2$d rep</item><item quantity="other">Set %1$d · %2$d reps</item></plurals>
     <plurals name="notification_trial_set_reps_load"><item quantity="one">Set %1$d · %2$d rep · %3$s</item><item quantity="other">Set %1$d · %2$d reps · %3$s</item></plurals>
@@ -6400,4 +6398,72 @@
     <!-- The saved image's file name: %1$s is the Monday of the week (2026-10-12). -->
     <string name="recap_share_save_name" translatable="false">ironvellum-recap-%1$s.png</string>
     <string name="recap_share_pictures_folder" translatable="false">Pictures/Ironvellum</string>
+    <!-- Live workout: the ongoing notification (Android 16 Live Update, and the notification below it), the Quick Settings tile
+         and the app-icon shortcuts. Nothing here names a concept unless it has a __t twin. -->
+    <!-- The set in hand: %1$d its number among the exercise's working sets, %2$d how many it has, %3$s the figure ("6 reps · 47.5 kg"). -->
+    <string name="live_set_in_hand">Set %1$d of %2$d · %3$s</string>
+    <!-- The rest line: same arguments as live_set_in_hand, but the figure is short ("6 × 47.5 kg"). -->
+    <string name="live_rest_then">Rest · then set %1$d of %2$d · %3$s</string>
+    <plurals name="live_figure_reps"><item quantity="one">%d rep</item><item quantity="other">%d reps</item></plurals>
+    <!-- %1$d reps, %2$s the load with its unit. -->
+    <string name="live_figure_reps_load">%1$d × %2$s</string>
+    <!-- A held set: %1$d seconds. -->
+    <string name="live_figure_hold">%1$ds</string>
+    <!-- Expanded notification before Android 16. %1$s the figure of the last set done, %2$d its number, %3$d how many the exercise has. -->
+    <string name="live_last_set">Last set: %1$s · set %2$d of %3$d</string>
+    <!-- %1$s the next exercise, %2$d sets still to do, %3$s the first one\'s target (reps, or seconds with an s). -->
+    <string name="live_next_up">Next up: %1$s, %2$d × %3$s</string>
+    <!-- Sub-text: %3$s the routine\'s name (the lifter\'s own), %1$d sets done, %2$d in all. -->
+    <plurals name="live_progress_named"><item quantity="one">%3$s · %1$d / %2$d set</item><item quantity="other">%3$s · %1$d / %2$d sets</item></plurals>
+    <!-- The status-bar chip between sets: %1$d the set number, %2$d how many the exercise has. Under 96dp: the system shows what fits. -->
+    <string name="live_chip_set">Set %1$d of %2$d</string>
+    <string name="live_chip_done">Done</string>
+    <string name="live_action_open">Open</string>
+    <string name="live_private_text">Unlock to see your set.</string>
+
+    <!-- Quick Settings tile. Idle: the tile\'s subtitle names today\'s routine (%1$s, the lifter\'s own); live: set and progress. -->
+    <string name="live_tile_label">Workout</string>
+    <string name="live_tile_label__t">Trial</string>
+    <string name="live_tile_idle_today">%1$s today</string>
+    <string name="live_tile_idle_none">Open Today</string>
+    <!-- %1$d the set number, %2$d how many the exercise has, %3$d sets done, %4$d sets in all. -->
+    <string name="live_tile_live_sub">Set %1$d of %2$d · %3$d/%4$d</string>
+    <string name="live_tile_all_done">Every set is done</string>
+    <!-- Tile while resting: %1$s the time left ("1:24"); the subtitle names the set after it. -->
+    <string name="live_tile_rest_label">Rest %1$s</string>
+    <string name="live_tile_rest_sub">Then set %1$d of %2$d</string>
+
+    <!-- App-icon shortcuts (res/xml/shortcuts.xml). A static shortcut can name one string only, so these are the plain wording in both modes. -->
+    <string name="shortcut_start_today_short">Start today</string>
+    <string name="shortcut_start_today_long">Start today\'s workout</string>
+    <string name="shortcut_resume_short">Resume</string>
+    <string name="shortcut_resume_long">Resume the workout</string>
+
+    <!-- Settings > Lock screen and shortcuts -->
+    <string name="settings_section_lock_screen_title">Lock screen and shortcuts</string>
+    <string name="settings_trial_lock_screen_label">Lock screen and shortcuts</string>
+    <string name="settings_summary_lock_screen_lifts_hidden">Lifts hidden</string>
+    <string name="settings_lock_live_label">Live workout update</string>
+    <string name="settings_lock_live_label__t">Live trial update</string>
+    <string name="settings_lock_live_caption">Show the workout as a Live Update: a chip in the status bar and a card on the lock screen.</string>
+    <string name="settings_lock_live_caption__t">Show the trial as a Live Update: a chip in the status bar and a card on the lock screen.</string>
+    <string name="settings_lock_live_blocked">Android has switched this off for the app. Open Android settings to allow it.</string>
+    <string name="settings_lock_live_open_settings">Open Android settings</string>
+    <string name="settings_lock_lifts_label">Show lifts on the lock screen</string>
+    <string name="settings_lock_lifts_caption">Off shows only \"Workout in progress\" until you unlock.</string>
+    <string name="settings_lock_lifts_caption__t">Off shows only \"Trial in progress\" until you unlock.</string>
+    <string name="settings_lock_rest_alert_label">Rest alert</string>
+    <!-- %1$s the rest alert in force ("Vibrate"). -->
+    <string name="settings_lock_rest_alert_caption">%1$s. Changed from the rest settings.</string>
+    <string name="settings_lock_group_quick">QUICK SETTINGS AND SHORTCUTS</string>
+    <string name="settings_lock_tile_label">Quick Settings tile</string>
+    <string name="settings_lock_tile_caption">Start or return to a workout from the pull-down panel.</string>
+    <string name="settings_lock_tile_caption__t">Start or return to a trial from the pull-down panel.</string>
+    <string name="settings_lock_tile_caption_manual">Start or return to a workout from the pull-down panel. Add it from the panel\'s edit button.</string>
+    <string name="settings_lock_tile_caption_manual__t">Start or return to a trial from the pull-down panel. Add it from the panel\'s edit button.</string>
+    <string name="settings_lock_tile_add">Add</string>
+    <string name="settings_lock_tile_added">Added</string>
+    <string name="settings_lock_shortcuts_label">App-icon shortcuts</string>
+    <string name="settings_lock_shortcuts_caption">Long-press the icon: Start today, Resume. Always on.</string>
+    <string name="settings_lock_footer">Live updates need Android 16. On older versions the same information shows in the usual notification.</string>
 </resources>

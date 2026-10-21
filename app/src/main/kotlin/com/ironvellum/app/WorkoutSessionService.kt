@@ -2,7 +2,6 @@ package com.ironvellum.app
 
 import com.ironvellum.app.data.Units
 import android.app.Notification
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -18,7 +17,6 @@ import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.data.TrialPrefs
-import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.UiText
@@ -39,7 +37,7 @@ import kotlinx.coroutines.launch
  * live session — which exercise is next, which set, how many sets are done —
  * so progress is glanceable from the lock screen the way a timer is. While a
  * rest between sets runs it counts that down instead, and buzzes once on the
- * rest channel when it ends.
+ * rest channel when it ends. What it shows is [LiveWorkoutNotification]'s.
  *
  * Started when a session screen opens; it watches the database and stops
  * itself the moment the session is completed or abandoned, so it can never
@@ -116,7 +114,7 @@ class WorkoutSessionService : Service() {
             Notifications.ID_TRIAL,
             // The same trial keeps its last notification and its armed rest: no
             // "Opening the trial" flicker, no gap before the watcher's next emission.
-            lastTrial ?: buildNotification(sessionId, emptyList(), startedAtMs = null, rest = null),
+            lastTrial ?: LiveWorkoutNotification.build(this, sessionId, emptyList(), routine = "", startedAtMs = null, rest = null),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             } else {
@@ -156,7 +154,7 @@ class WorkoutSessionService : Service() {
                         RestClock.cancel(sessionId)
                         return@collect
                     }
-                    val trial = buildNotification(sessionId, sets, session.startedAtMs, rest)
+                    val trial = LiveWorkoutNotification.build(this@WorkoutSessionService, sessionId, sets, session.label, session.startedAtMs, rest)
                     lastTrial = trial
                     post(Notifications.ID_TRIAL, trial)
                     awaitRest(sessionId, rest, sets)
@@ -208,26 +206,6 @@ class WorkoutSessionService : Service() {
         manager.notify(id, notification)
     }
 
-    /** Opens the live trial; with [seal], with its seal prompt showing. */
-    private fun trialIntent(sessionId: Long, seal: Boolean, requestCode: Int): PendingIntent {
-        val intent = Intent(this, MainActivity::class.java)
-            .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_TRIAL)
-            .putExtra(Notifications.EXTRA_SESSION_ID, sessionId)
-            .putExtra(Notifications.EXTRA_SEAL, seal)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return PendingIntent.getActivity(
-            this, requestCode, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
-    /** A button that does something without opening the app. Identity ignores extras, so each action has its own code. */
-    private fun broadcast(action: String, sessionId: Long, setId: Long, requestCode: Int): PendingIntent =
-        PendingIntent.getBroadcast(
-            this, requestCode, TrialActionReceiver.intent(this, action, sessionId, setId),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
     /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
     private fun nextLine(next: SessionSet?, sets: List<SessionSet>): UiText? = next?.let {
         val number = it.workingNumber(sets)
@@ -243,76 +221,6 @@ class WorkoutSessionService : Service() {
         }
     }
 
-    /**
-     * Clock-app style: the chronometer counts up from the trial's start, the
-     * title is the exercise the lifter is on, the text the set in hand, and
-     * the sub-text the progress, so the collapsed row carries all three.
-     * During a rest the chronometer counts that down instead.
-     */
-    private fun buildNotification(sessionId: Long, sets: List<SessionSet>, startedAtMs: Long?, rest: RestTimer?): Notification {
-        val done = sets.count { it.done }
-        val total = sets.count { !it.warmup }
-        val next = Supersets.nextSet(sets)
-        // The exercise the lifter is on now, not the first one of the day.
-        val title = (next ?: sets.firstOrNull())?.exerciseName ?: Words.trial.c
-        val resting = rest != null && !rest.isOver(SystemClock.elapsedRealtime())
-        val body = when {
-            total == 0 -> UiText.themed(R.string.notification_trial_opening, R.string.notification_trial_opening__t)
-            next == null -> UiText.themed(R.string.notification_trial_all_done, R.string.notification_trial_all_done__t)
-            resting -> UiText.res(R.string.notification_trial_resting, nextLine(next, sets)!!)
-            else -> nextLine(next, sets)!!
-        }.asString(this)
-        val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
-            .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.accent(this))
-            .setContentTitle(title)
-            .setContentText(body)
-            .setSubText(
-                UiText.themedPlural(R.plurals.notification_trial_progress, R.plurals.notification_trial_progress__t, total, done, total)
-                    .asString(this),
-            )
-            .setProgress(total.coerceAtLeast(1), done, total == 0)
-            // Public on the lock screen, so the set in hand and the buttons below show
-            // there. It carries only the movement, the set and its figures: never a note.
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSilent(true)
-            .setContentIntent(trialIntent(sessionId, seal = false, requestCode = Notifications.REQUEST_TRIAL))
-        if (resting) {
-            // The chronometer counts toward a wall-clock instant; the rest is
-            // kept in elapsed time, so translate the time left, not the end.
-            val left = rest.remainingMs(SystemClock.elapsedRealtime())
-            builder.setWhen(System.currentTimeMillis() + left)
-                .setShowWhen(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
-        } else if (startedAtMs != null) {
-            builder.setWhen(startedAtMs).setShowWhen(true).setUsesChronometer(true)
-        }
-        // Sealing pays XP, shows the victory and offers to update the rite, and
-        // a hasty seal asks first: none of that can happen in the shade. The
-        // action opens the trial with its seal prompt instead.
-        //
-        // Three actions at most show, so Seal waits for a moment with nothing else
-        // on offer. Set done, Skip rest and +15 s are broadcasts: they run from the
-        // lock screen, and do what the trial screen's buttons do (TrialActionReceiver).
-        if (next != null) {
-            builder.addAction(0, getString(R.string.notification_trial_action_set_done), broadcast(TrialActionReceiver.ACTION_SET_DONE, sessionId, next.id, Notifications.REQUEST_SET_DONE))
-        }
-        if (resting) {
-            builder.addAction(0, getString(R.string.notification_trial_action_skip_rest), broadcast(TrialActionReceiver.ACTION_SKIP_REST, sessionId, -1L, Notifications.REQUEST_SKIP_REST))
-            builder.addAction(
-                0,
-                getString(R.string.notification_trial_action_extend_rest, RestTimer.EXTEND_SECONDS),
-                broadcast(TrialActionReceiver.ACTION_EXTEND_REST, sessionId, -1L, Notifications.REQUEST_EXTEND_REST),
-            )
-        } else if (done > 0) {
-            builder.addAction(0, Words.seal.c, trialIntent(sessionId, seal = true, requestCode = Notifications.REQUEST_SEAL))
-        }
-        return builder.build()
-    }
-
     private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
         val next = Supersets.nextSet(sets)
         // The alert mode picks the channel: vibrate, sound and vibrate, or a silent notice.
@@ -325,7 +233,7 @@ class WorkoutSessionService : Service() {
                     ?: getString(R.string.notification_rest_over_next),
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(trialIntent(sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER))
+            .setContentIntent(LiveWorkoutNotification.trialIntent(this, sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER))
             .setAutoCancel(true)
             // A buzz, not a fixture: gone by the time the next rest could end.
             .setTimeoutAfter(60_000)

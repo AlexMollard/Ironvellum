@@ -29,6 +29,16 @@ class TrialPrefs(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_KEEP_AWAKE, true)
         set(value) = prefs.edit { putBoolean(KEY_KEEP_AWAKE, value) }
 
+    /** On by default: the workout as an Android 16 Live Update (a status-bar chip and a lock-screen card). Below 16 it changes nothing. */
+    var liveUpdate: Boolean
+        get() = prefs.getBoolean(KEY_LIVE_UPDATE, true)
+        set(value) = prefs.edit { putBoolean(KEY_LIVE_UPDATE, value) }
+
+    /** On by default, as the notification always was: the set in hand and its load show on the lock screen. Off shows only "Workout in progress". */
+    var showLiftsOnLock: Boolean
+        get() = prefs.getBoolean(KEY_LIFTS_ON_LOCK, true)
+        set(value) = prefs.edit { putBoolean(KEY_LIFTS_ON_LOCK, value) }
+
     fun restOffFor(exerciseName: String): Boolean = key(exerciseName) in movements()
 
     fun setRestOffFor(exerciseName: String, off: Boolean) {
@@ -52,6 +62,8 @@ class TrialPrefs(private val prefs: SharedPreferences) {
         const val KEY_REST_OFF = "rest_off"
         const val KEY_ALERT = "rest_alert"
         const val KEY_KEEP_AWAKE = "keep_screen_on"
+        const val KEY_LIVE_UPDATE = "live_update"
+        const val KEY_LIFTS_ON_LOCK = "lifts_on_lock"
         const val KEY_OFF_MOVEMENTS = "rest_off_movements"
     }
 }
