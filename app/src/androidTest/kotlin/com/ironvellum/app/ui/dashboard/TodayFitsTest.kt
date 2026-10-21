@@ -39,6 +39,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.ui.recap.RecapSample
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -99,6 +100,7 @@ class TodayFitsTest {
         fontScale: Float = 1f,
         motion: Boolean = false,
         glance: VeilGlance = veil,
+        onOpenRecap: (Long) -> Unit = {},
     ) {
         // The ink treatment animates forever, so Compose never idles on its own. The Veil's own motion is
         // off unless a test asks for it: the emulator runs with system animations on, so it would not be.
@@ -111,7 +113,7 @@ class TodayFitsTest {
                         TodayContent(
                             ui = ui, selectedDay = selectedDay, today = today, live = live, liveSets = liveSets,
                             bodyGap = bodyGap, strengthRank = "Iron", rankBreakdown = null, veil = glance,
-                            actions = TodayActions(), nowMs = now, motion = motion,
+                            actions = TodayActions(onOpenRecap = onOpenRecap), nowMs = now, motion = motion,
                         )
                     }
                 }
@@ -167,6 +169,30 @@ class TodayFitsTest {
         assertInside("more", substring = true)
         assertInside("Movement 1")
         saveShot("today-worst-case")
+    }
+
+    @Test
+    fun theLastWeekLinkFitsAmongEveryOtherRowAndOpensTheRecap() {
+        var opened = -1L
+        show(
+            ui = DashboardUi(presets = listOf(rite(9)), newPeaks = listOf(peak), lastWeek = RecapSample.full()),
+            selectedDay = 3, live = trial, liveSets = trialSets, bodyGap = BodyGap.BOTH,
+            onOpenRecap = { opened = it },
+        )
+        assertDoesNotScroll()
+        assertInside("Last week")
+        assertInside("4 trials · 3 records · +15%")
+        assertInside("Add your height and weight")
+        assertInside("3 inscriptions waiting")
+        compose.onNodeWithText("Last week").performClick()
+        assertEquals(RecapSample.monday.toEpochDay(), opened)
+        com.ironvellum.app.ui.ShotRecorder.take(compose, "today_last_week")
+    }
+
+    @Test
+    fun withoutALastWeekThereIsNoLink() {
+        show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        compose.onAllNodesWithText("Last week").assertCountEquals(0)
     }
 
     @Test

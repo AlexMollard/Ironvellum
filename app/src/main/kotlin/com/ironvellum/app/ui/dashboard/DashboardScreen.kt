@@ -82,6 +82,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.PeriodStats
+import com.ironvellum.app.domain.RecapSchedule
+import com.ironvellum.app.domain.WeeklyRecap
+import com.ironvellum.app.ui.recap.RecapText
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.LiftRecords
 import com.ironvellum.app.domain.PlayerProfile
@@ -181,6 +185,8 @@ class DashboardUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
     /** Lifts whose peak was set lately AND beat an earlier trial: a first trial is not a peak. */
     val newPeaks: List<RepMax.Recent> = emptyList(),
+    /** Last week's recap, offered as a link from Monday through Wednesday when that week had workouts; null otherwise. */
+    val lastWeek: WeeklyRecap? = null,
     /** False only for the placeholder shown before the first read lands. */
     val loaded: Boolean = false,
 )
@@ -233,6 +239,20 @@ internal fun newPeaks(
 ): List<RepMax.Recent> =
     RepMax.recent(history, exercises.associateBy { it.id }, nowMs, withinDays = LiftRecords.RECENT_DAYS, limit = limit)
 
+/** Last week's recap when Today should link to it (see [RecapSchedule.showsOnToday]); null the rest of the week, and for a week with no workouts. */
+internal fun lastWeekRecap(
+    history: List<Pair<WorkoutSession, List<SessionSet>>>,
+    exercises: List<Exercise>,
+    presets: List<WorkoutPreset>,
+    today: LocalDate,
+    zone: ZoneId,
+): WeeklyRecap? {
+    val start = WeeklyRecap.weekStartOf(today).minusDays(7)
+    if (!RecapSchedule.showsOnToday(today, PeriodStats.workoutsIn(history, start, start.plusDays(7), zone))) return null
+    val plan = presets.filter { it.scheduledDay != null }.map { it.toPlanned() }
+    return WeeklyRecap.build(history, exercises.associateBy { it.id }, plan, start, today, zone)
+}
+
 class DashboardViewModel(
     private val repo: Repository,
     /** What the lifter last told the generator; times the plan line. */
@@ -281,6 +301,7 @@ class DashboardViewModel(
             sealedSets = history.filter { it.first.id in sealedIds }.associate { it.first.id to it.second },
             exercises = exercises.associateBy { it.id },
             newPeaks = newPeaks(history, exercises, System.currentTimeMillis()),
+            lastWeek = lastWeekRecap(history, exercises, presets, today, zone),
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
@@ -452,6 +473,8 @@ fun DashboardScreen(
     onAddName: () -> Unit = onOpenSettings,
     /** A fresh peak's row opens that lift. */
     onOpenLift: (String) -> Unit = { onOpenLedger() },
+    /** The "Last week" link: the recap of the week starting on this epoch day. */
+    onOpenRecap: (Long) -> Unit = {},
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
             // The saved answers sit behind a Context only a composable can read;
@@ -532,6 +555,7 @@ fun DashboardScreen(
             onAddBody = { bodyOpen = true },
             onAddName = onAddName,
             onOpenLift = onOpenLift,
+            onOpenRecap = onOpenRecap,
             onSelectDay = viewModel::selectDay,
             onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
             onBeginOpen = { viewModel.beginOpen(onStartSession) },
@@ -571,6 +595,8 @@ internal class TodayActions(
     /** The header asks for a name while the profile still has the default one. */
     val onAddName: () -> Unit = {},
     val onOpenLift: (String) -> Unit = {},
+    /** Last week's recap: the Monday of the week, as an epoch day. */
+    val onOpenRecap: (Long) -> Unit = {},
     val onSelectDay: (Int) -> Unit = {},
     val onBeginPreset: (Long) -> Unit = {},
     val onBeginOpen: () -> Unit = {},
@@ -939,6 +965,16 @@ private fun TodayDayBody(
             add { BodyGapRow(gap, onFix = actions.onAddBody) }
         }
         if (peak != null) add { PeakRow(peak) { actions.onOpenLift(peak.name) } }
+        ui.lastWeek?.let { recap ->
+            add {
+                ListRow(
+                    label = stringResource(R.string.recap_today_label),
+                    subline = RecapText.summary(recap).asString(),
+                    onClickLabel = stringResource(R.string.recap_open_description),
+                    onClick = { actions.onOpenRecap(recap.weekStart.toEpochDay()) },
+                )
+            }
+        }
     }
     val plain: @Composable () -> Unit = {
         if (plainRows.isNotEmpty()) {

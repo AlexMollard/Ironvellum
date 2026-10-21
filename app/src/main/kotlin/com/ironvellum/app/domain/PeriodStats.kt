@@ -57,6 +57,21 @@ data class PeriodStats(
         /** A session longer than a day is a trial left open (and an import carries none): it adds no time. */
         private const val MAX_SESSION_MINUTES = 24L * 60
 
+        private fun within(
+            history: List<Pair<WorkoutSession, List<SessionSet>>>,
+            from: LocalDate,
+            to: LocalDate,
+            zone: ZoneId,
+        ): List<Pair<WorkoutSession, List<SessionSet>>> {
+            val fromMs = from.atStartOfDay(zone).toInstant().toEpochMilli()
+            val toMs = to.atStartOfDay(zone).toInstant().toEpochMilli()
+            return history.filter { (session, _) -> (session.completedAtMs ?: session.startedAtMs) in fromMs until toMs }
+        }
+
+        /** How many workouts fall in [from] until [to]: [of]'s count without the rest of its work. */
+        fun workoutsIn(history: List<Pair<WorkoutSession, List<SessionSet>>>, from: LocalDate, to: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Int =
+            within(history, from, to, zone).size
+
         /**
          * The figures for [from] until [to] over a completed [history] (as `Repository.observeHistory` holds it).
          * [exercises] is the catalogue by id: metrics, and which lifts carry their load on top of the body.
@@ -71,9 +86,7 @@ data class PeriodStats(
             val fromMs = from.atStartOfDay(zone).toInstant().toEpochMilli()
             val toMs = to.atStartOfDay(zone).toInstant().toEpochMilli()
             fun at(session: WorkoutSession) = session.completedAtMs ?: session.startedAtMs
-            val inside = history
-                .filter { (session, _) -> at(session) in fromMs until toMs }
-                .sortedBy { (session, _) -> at(session) }
+            val inside = within(history, from, to, zone).sortedBy { (session, _) -> at(session) }
 
             var sets = 0
             var volume = 0.0

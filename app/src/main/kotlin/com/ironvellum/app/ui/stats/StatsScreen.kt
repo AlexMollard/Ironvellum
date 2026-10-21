@@ -100,6 +100,8 @@ import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.WeeklyRecap
+import com.ironvellum.app.ui.recap.RecapText
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Energy
 import com.ironvellum.app.domain.EnergyConfidence
@@ -246,6 +248,8 @@ fun StatsScreen(
     onOpenMeasurement: (MeasurementSite) -> Unit,
     onOpenWorkout: (Long) -> Unit,
     onOpenLift: (String) -> Unit,
+    // A past week's recap: the Monday of the week, as an epoch day.
+    onOpenRecap: (Long) -> Unit,
     // Straight to the page that answers: Health Connect, or height on Profile.
     onOpenSettings: (SettingsSection) -> Unit,
     // Today's "Add reading" opens the weigh-in itself, not just the tab.
@@ -365,6 +369,7 @@ fun StatsScreen(
                         scroll = trainingScroll,
                         onOpenWorkout = onOpenWorkout,
                         onOpenLift = onOpenLift,
+                        onOpenRecap = onOpenRecap,
                     )
                     StatsTab.DAILY -> ActivityTab(
                         days = ui.healthDays,
@@ -481,6 +486,40 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
     }
 }
 
+/** How many past weeks the Recaps list holds: enough to reach last week's and the ones before, short enough to leave the calendar on screen. */
+private const val RECAP_WEEKS = 4
+
+/** The recaps of the most recent finished weeks that had workouts, newest first. The plan does not change a week's figures, so none is read. */
+private fun pastRecaps(ui: StatsUi, today: LocalDate): List<WeeklyRecap> {
+    val zone = ZoneId.systemDefault()
+    val thisWeek = WeeklyRecap.weekStartOf(today)
+    val history = ui.sessions.map { it to ui.sessionSets[it.id].orEmpty() }
+    return ui.completedDates
+        .map { WeeklyRecap.weekStartOf(it) }
+        .filter { it.isBefore(thisWeek) }
+        .distinct()
+        .sortedDescending()
+        .take(RECAP_WEEKS)
+        .map { WeeklyRecap.build(history, ui.exercises, emptyList(), it, today, zone) }
+}
+
+/** The latest finished weeks' recaps, so the Sunday notification is never the only way back to one. */
+@Composable
+private fun RecapsPanel(recaps: List<WeeklyRecap>, onOpenRecap: (Long) -> Unit) {
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        PanelLabel(stringResource(R.string.recap_list_title), Modifier.padding(start = 16.dp, top = 8.dp))
+        recaps.forEachIndexed { i, recap ->
+            if (i > 0) InkDivider()
+            ListRow(
+                label = stringResource(R.string.recap_week_of, RecapText.shortRange(recap.weekStart, recap.weekEnd)),
+                subline = RecapText.summary(recap, withVolumeWord = true).asString(),
+                onClickLabel = stringResource(R.string.recap_open_description),
+                onClick = { onOpenRecap(recap.weekStart.toEpochDay()) },
+            )
+        }
+    }
+}
+
 /**
  * TRAINING: the calendar leads (the owner opens this tab to see whether he
  * trained), then the records board, then the per-trial strength line, then the
@@ -495,8 +534,10 @@ private fun TrainingTab(
     scroll: androidx.compose.foundation.ScrollState,
     onOpenWorkout: (Long) -> Unit,
     onOpenLift: (String) -> Unit,
+    onOpenRecap: (Long) -> Unit,
 ) {
     val nowMs = remember(today) { System.currentTimeMillis() }
+    val recaps = remember(ui.sessions, ui.sessionSets, ui.exercises, today) { pastRecaps(ui, today) }
     val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
         LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
     }
@@ -508,6 +549,7 @@ private fun TrainingTab(
         verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
         Spacer(Modifier.height(LedgerSpace.Panel))
+        if (recaps.isNotEmpty()) RecapsPanel(recaps, onOpenRecap)
         TrainingCalendar(
             sessions = ui.sessions,
             completedDates = ui.completedDates,
