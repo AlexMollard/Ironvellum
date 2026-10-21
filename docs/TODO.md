@@ -46,6 +46,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] 9 Light theme: System, Dark, Light (47d97395, 384353ba, fbd34fa7)
 - [x] Gate housekeeping: back under 5 minutes (3m36s to 3m58s after an edit), self-healing emulator lock, lint warnings 58 to 44 (be444d0e, d8bd7153)
 - [x] Weekly recap: Sunday 19:00 notification (private on the lock screen), recap screen from Today Mon to Wed and Stats, 1080x1350 share card in the app theme; range aggregation and card renderer are shared with the Month/Year in review
+- [x] Live workout on the lock screen: Android 16 Live Update (chip with set progress or rest countdown, ProgressStyle card), improved notification below 16, Start today / Resume shortcuts, Quick Settings tile, Settings > During a workout > Lock screen and shortcuts; the Live Update itself is not yet seen on an Android 16 device (no API 36 image installed)
 - [ ] Release: version 1.8, changelog, README and store text and screenshots (widgets, light theme)
 - [ ] Owner: push tag `v1.8`
 
