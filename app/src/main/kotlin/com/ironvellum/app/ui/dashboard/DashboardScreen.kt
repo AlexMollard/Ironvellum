@@ -866,11 +866,12 @@ private fun TodayDayBody(
                             if (ofToday) UiText.themedPlural(R.plurals.today_card_live_meta_today, R.plurals.today_card_live_meta_today__t, liveWork.size, liveDone, liveWork.size).asString()
                             else UiText.plural(R.plurals.today_card_live_meta_under_way, liveWork.size, liveDone, liveWork.size).asString(),
                         ),
-                        corner = if (ofToday) ({ RiteGlyph(glyphSets) }) else null,
+                        corner = if (ofToday) ({ RiteGlyph(glyphSets, fit = true) }) else null,
+                        cornerFits = true,
                     )
                     SegmentBar(liveDone, liveWork.size)
                     rows()
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(BUTTON_GAP))
                     IronvellumButton(
                         label = stringResource(R.string.today_continue_button, trial.label),
                         onClick = { actions.onStartSession(trial.id) },
@@ -911,12 +912,13 @@ private fun TodayDayBody(
                             (if (isTodaySelected) UiText.themed(R.string.today_meta_todays, R.string.today_meta_todays__t).asString() else dayLong(selectedDay)) + " · " +
                                 sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))),
                         ),
-                        corner = { RiteGlyph(glyphSets) },
+                        corner = { RiteGlyph(glyphSets, fit = true) },
+                        cornerFits = true,
                     )
                     rows()
                     // Today is where the day's rite is begun: Train only plans it.
                     if (kind == DayKind.BEGIN) {
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(BUTTON_GAP))
                         IronvellumButton(
                             label = stringResource(R.string.today_begin_button, rite.name),
                             onClick = { actions.onBeginPreset(rite.id) },
@@ -1059,10 +1061,13 @@ private val PAIR_GAP = 12.dp
 private val HALF_CHECK_SLOT = 20.dp
 
 /** The gap above the card's exercise block. */
-private val ROWS_TOP_PAD = 10.dp
+private val ROWS_TOP_PAD = 6.dp
+
+/** The gap between the exercise block and the card's button. */
+private val BUTTON_GAP = 8.dp
 
 /** The "+N more" line's least height. */
-private val MORE_LINE = 28.dp
+private val MORE_LINE = 24.dp
 
 /** Clear of the raised Train plate, which stands 10dp above the bar. */
 private val BOTTOM_CLEARANCE = 28.dp

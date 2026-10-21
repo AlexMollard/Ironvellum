@@ -290,6 +290,21 @@ class TodayFitsTest {
     }
 
     @Test
+    fun theGlyphIsNoTallerThanTheWordsBesideIt() {
+        // The long name runs above, so the glyph sits beside the narrator and meta lines only: it ends where they end, give or take the 4dp above the narrator and the meta line's leading (a 78dp glyph ended 30dp+ below).
+        show(
+            ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Deficit Push-up", "Bulgarian Split Squat", "Ab Wheel Rollout")), newPeaks = listOf(peak)),
+            selectedDay = 1, fontScale = 0.9f,
+        )
+        assertDoesNotScroll()
+        val glyph = placed("today-glyph").single().boundsInRoot
+        val meta = compose.onAllNodesWithText("exercises", substring = true, useUnmergedTree = true).fetchSemanticsNodes().first { it.layoutInfo.isPlaced }.boundsInRoot
+        val dp = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        assertTrue("the glyph leaves a band under the meta line: ${glyph.bottom} vs ${meta.bottom}", glyph.bottom <= meta.bottom + 8 * dp)
+        assertTrue("the glyph is back to its full 78dp", glyph.height < 78 * dp)
+    }
+
+    @Test
     fun atTwoHundredPercentNothingPairs() {
         show(
             ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Chin-up", "Row", "Plank"))),

@@ -39,10 +39,13 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle as ComposeTextStyle
@@ -244,10 +247,21 @@ internal fun SealMark(side: Dp, modifier: Modifier = Modifier, earned: Boolean =
  * whose movements the muscle map does not know draws the bare figure.
  */
 @Composable
-internal fun RiteGlyph(sets: Map<Muscle, Double>, modifier: Modifier = Modifier) {
+internal fun RiteGlyph(sets: Map<Muscle, Double>, modifier: Modifier = Modifier, fit: Boolean = false) {
     val figure = BodyFigures.of(LocalBodySex.current)
     val top = sets.values.maxOrNull() ?: 0.0
-    Canvas(modifier.size(GLYPH_WIDTH, GLYPH_HEIGHT).clearAndSetSemantics {}) {
+    // With [fit] the figure takes the height it is offered (up to its own), keeping its proportions.
+    val sized = if (fit) {
+        modifier.layout { measurable, constraints ->
+            val h = minOf(constraints.maxHeight, GLYPH_HEIGHT.roundToPx())
+            val w = h * GLYPH_WIDTH.roundToPx() / GLYPH_HEIGHT.roundToPx()
+            val placeable = measurable.measure(Constraints.fixed(w, h))
+            layout(w, h) { placeable.place(0, 0) }
+        }
+    } else {
+        modifier.size(GLYPH_WIDTH, GLYPH_HEIGHT)
+    }
+    Canvas(sized.clearAndSetSemantics { testTag = "today-glyph" }) {
         // The figure code lays a front and a back slot side by side; asking for twice the width puts the front one in this box.
         val g = FigureGeometry(figure, size.width * 2f, size.height)
         drawFigure(
@@ -421,6 +435,28 @@ private fun RiteTitle(title: String) {
     }
 }
 
+/** The least height a fitted corner glyph is drawn at: below this the figure stops reading as a body. */
+private val GLYPH_MIN_HEIGHT = 44.dp
+
+/**
+ * The header's words with [corner] in the top-right. The corner is measured to the height of the words beside
+ * it (never beyond its own 78dp, never below [GLYPH_MIN_HEIGHT]) so it does not leave a band under them.
+ */
+@Composable
+private fun WordsAndCorner(words: @Composable () -> Unit, corner: @Composable () -> Unit) {
+    Layout(content = { words(); corner() }, modifier = Modifier.fillMaxWidth()) { measurables, constraints ->
+        val gap = 8.dp.roundToPx()
+        val cornerWidth = GLYPH_WIDTH.roundToPx()
+        val wordsP = measurables[0].measure(Constraints(maxWidth = (constraints.maxWidth - gap - cornerWidth).coerceAtLeast(0)))
+        val cornerHeight = wordsP.height.coerceIn(GLYPH_MIN_HEIGHT.roundToPx(), GLYPH_HEIGHT.roundToPx())
+        val cornerP = measurables[1].measure(Constraints(maxWidth = cornerWidth, maxHeight = cornerHeight))
+        layout(constraints.maxWidth, maxOf(wordsP.height, cornerP.height)) {
+            wordsP.placeRelative(0, 0)
+            cornerP.placeRelative(constraints.maxWidth - cornerP.width, 0)
+        }
+    }
+}
+
 /**
  * A rite's header on the day card: its name in tracked display caps, the narrator's one line, a small
  * [meta] line, and [corner] (the muscle glyph or sealed glyph) in the top-right. [lead] sits before the
@@ -434,6 +470,7 @@ internal fun RiteHeader(
     modifier: Modifier = Modifier,
     lead: (@Composable () -> Unit)? = null,
     corner: (@Composable () -> Unit)? = null,
+    cornerFits: Boolean = false,
 ) {
     val measurer = rememberTextMeasurer()
     val base = MaterialTheme.typography.titleMedium.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.SemiBold)
@@ -445,12 +482,8 @@ internal fun RiteHeader(
             constraints.maxWidth - with(androidx.compose.ui.platform.LocalDensity.current) { CORNER_RESERVE.roundToPx() }
         Column(Modifier.fillMaxWidth()) {
             if (titleAbove) RiteTitle(title)
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                if (lead != null) {
-                    lead()
-                    Spacer(Modifier.width(14.dp))
-                }
-                Column(Modifier.weight(1f)) {
+            val words: @Composable (Modifier) -> Unit = { wordsModifier ->
+                Column(wordsModifier) {
                     if (!titleAbove) RiteTitle(title)
                     Text(
                         narrator,
@@ -473,8 +506,19 @@ internal fun RiteHeader(
                         )
                     }
                 }
-                if (corner != null) {
-                    Box(Modifier.padding(start = 8.dp).heightIn(min = 66.dp), contentAlignment = Alignment.TopEnd) { corner() }
+            }
+            if (cornerFits && corner != null && lead == null) {
+                WordsAndCorner(words = { words(Modifier) }, corner = corner)
+            } else {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    if (lead != null) {
+                        lead()
+                        Spacer(Modifier.width(14.dp))
+                    }
+                    words(Modifier.weight(1f))
+                    if (corner != null) {
+                        Box(Modifier.padding(start = 8.dp).heightIn(min = 66.dp), contentAlignment = Alignment.TopEnd) { corner() }
+                    }
                 }
             }
         }

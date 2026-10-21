@@ -306,6 +306,16 @@ class TodayStateTest {
         assertEquals(TodayFit(5, 40, fullVeil = false), fitToday(b))
     }
 
+    @Test
+    fun `the owner's Wednesday at 90 percent text shows two lines now and showed one at two pixels short`() {
+        // Pixels measured on the 1080x2340 emulator: 1380 available, 5 lines of 105/95, a 63 px more line.
+        val now = TodayBudget(available = 1380, chrome = 802, lineCount = 5, rowsTopPad = 16, naturalLine = 105, tightLine = 95, moreLine = 63, veilFull = null, veilCompact = 258)
+        assertEquals(TodayFit(2, 105, fullVeil = false), fitToday(now))
+        // The same page before the header, button gap, more line and Veil gave back 53 px: 188 left for lines, two tight ones need 190.
+        val before = TodayBudget(available = 1380, chrome = 813, lineCount = 5, rowsTopPad = 26, naturalLine = 105, tightLine = 95, moreLine = 74, veilFull = null, veilCompact = 279)
+        assertEquals(TodayFit(1, 105, fullVeil = false), fitToday(before))
+    }
+
     private fun peak(set: SessionSet, addsToBody: Boolean, kind: RepMax.Kind = RepMax.Kind.HEAVIER, was: RepMax.Mark = RepMax.Mark(5, 90.0), hold: Boolean = false) =
         RepMax.Recent(name = set.exerciseName, atMs = 0, hit = RepMax.Hit(set, kind, was), isHold = hold, addsToBody = addsToBody)
 

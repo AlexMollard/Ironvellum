@@ -51,7 +51,8 @@ class WarmupExerciseFlowTest {
         driver.settle()
         driver.click("Save rite")
         driver.awaitAnyText { it == "Begin Heavy Pull" }
-        assertTrue("the rite page lists it under its own Warm-up heading", driver.allText().any { it == "WARM-UP" })
+        // The page reloads the saved rite a beat after its Begin button is back; waiting for the heading, not sampling it, keeps this from racing the reload.
+        driver.awaitAnyText { it == "WARM-UP" }
 
         driver.click("Begin Heavy Pull")
         driver.awaitText("Trial in progress")

@@ -254,7 +254,7 @@ private fun CompactBody(
     animate: Boolean,
 ) {
     TitleRow(
-        modifier = Modifier.heightIn(min = 40.dp),
+        modifier = Modifier.heightIn(min = 36.dp),
         trailing = {
             if (snapshot != null && essence != null) {
                 val essenceRate = stringResource(R.string.today_veil_essence_rate, rateLabel(snapshot.rate.perHour))
@@ -272,7 +272,7 @@ private fun CompactBody(
         },
     )
     // The caption of the full forms rides the bar as its description, so a screen reader still hears the time left.
-    strength?.let { VeilBar(it, phase, animate, Modifier.padding(bottom = 4.dp).semantics { contentDescription = it.caption }) }
+    strength?.let { VeilBar(it, phase, animate, Modifier.semantics { contentDescription = it.caption }) }
 }
 
 /** Title with the rate, the essence as a figure, the bar and what it means. */
