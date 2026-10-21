@@ -112,7 +112,8 @@ data class PeriodReview(
     val previous: PeriodStats?,
     /** The lifter's first workout, when it falls after the period began: the review covers only the time since. */
     val since: LocalDate?,
-    val bestWeek: WeekTotal?,
+    /** The weeks the period owns that held a workout, oldest first ([PeriodStats.weeks]). */
+    val weeks: List<WeekTotal>,
     /** Lifts that gained, the biggest gain first, then lifts first trained in the period. */
     val lifts: List<ReviewLift>,
     /** Hard sets by muscle, the most first; muscles with none are left out. */
@@ -131,6 +132,9 @@ data class PeriodReview(
     /** Workouts a week over the days the lifter was training in the period. */
     val perWeek: Double,
 ) {
+    /** The week the review singles out: the most kilograms moved, then the most workouts, then the earliest. */
+    val bestWeek: WeekTotal? get() = PeriodStats.best(weeks)
+
     val gained: List<ReviewLift> get() = lifts.filter { !it.isNew }
     val newLifts: List<ReviewLift> get() = lifts.filter { it.isNew }
 
@@ -177,6 +181,7 @@ data class PeriodReview(
                 ReviewLift(it.name, it.variation, null, it.e1rmKg, it.series, it.set, it.addsToBody, it.atMs)
             }
 
+            val weeks = PeriodStats.weeks(history, exercises, period.from, period.to, zone)
             val asOf = minOf(today, period.last)
             val streak = Streak.current(dates, asOf)
             val longest = Streak.longest(dates, asOf)
@@ -198,7 +203,7 @@ data class PeriodReview(
                 stats = stats,
                 previous = previous,
                 since = since,
-                bestWeek = PeriodStats.bestWeek(history, exercises, period.from, period.to, zone),
+                weeks = weeks,
                 lifts = gains + fresh,
                 muscles = stats.muscleSets.filterValues { it > 1e-9 }.entries.sortedByDescending { it.value }.map { it.key to it.value },
                 monthWorkouts = if (period.kind == ReviewKind.YEAR) {

@@ -78,18 +78,17 @@ data class PeriodStats(
             within(history, from, to, zone).size
 
         /**
-         * The best whole week (Monday to Sunday) of [from] until [to]: the most kilograms moved, then the most workouts,
-         * then the earliest. A week belongs to the period that holds its Thursday (the ISO rule), so a week straddling
-         * two months is counted once, and its figures are the whole week's, the ones its weekly recap shows. Null when
-         * no workout falls in a week the period owns. One pass over [history], whatever the period's length.
+         * The whole weeks (Monday to Sunday) of [from] until [to] that held a workout, oldest first. A week belongs to the
+         * period that holds its Thursday (the ISO rule), so a week straddling two months is counted once, and its figures
+         * are the whole week's, the ones its weekly recap shows. One pass over [history], whatever the period's length.
          */
-        fun bestWeek(
+        fun weeks(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             exercises: Map<Long, Exercise>,
             from: LocalDate,
             to: LocalDate,
             zone: ZoneId = ZoneId.systemDefault(),
-        ): WeekTotal? {
+        ): List<WeekTotal> {
             val workouts = HashMap<LocalDate, Int>()
             val volume = HashMap<LocalDate, Double>()
             for ((session, sets) in history) {
@@ -100,10 +99,12 @@ data class PeriodStats(
                 workouts.merge(monday, 1, Int::plus)
                 volume.merge(monday, WorkoutShare.totals(sets, exercises).movedKg.toDouble(), Double::plus)
             }
-            return workouts.map { (monday, count) -> WeekTotal(monday, count, volume.getValue(monday)) }
-                .sortedWith(compareByDescending<WeekTotal> { it.volumeKg }.thenByDescending { it.workouts }.thenBy { it.weekStart })
-                .firstOrNull()
+            return workouts.map { (monday, count) -> WeekTotal(monday, count, volume.getValue(monday)) }.sortedBy { it.weekStart }
         }
+
+        /** The best of [weeks]: the most kilograms moved, then the most workouts, then the earliest. Null with no weeks. */
+        fun best(weeks: List<WeekTotal>): WeekTotal? =
+            weeks.sortedWith(compareByDescending<WeekTotal> { it.volumeKg }.thenByDescending { it.workouts }.thenBy { it.weekStart }).firstOrNull()
 
         /**
          * The figures for [from] until [to] over a completed [history] (as `Repository.observeHistory` holds it).

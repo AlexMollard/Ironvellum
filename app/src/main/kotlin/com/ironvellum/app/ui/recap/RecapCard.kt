@@ -78,12 +78,12 @@ object RecapCard {
     const val WIDTH = 1080
     const val HEIGHT = 1350
 
-    private const val EDGE = 4f
-    private const val MARGIN = 76f
-    private const val RIGHT = WIDTH - MARGIN
-    private const val ROW = 104f
-    private const val FOOTER_TOP = 1164f
-    private const val MAX_RECORDS = 3
+    internal const val EDGE = 4f
+    internal const val MARGIN = 76f
+    internal const val RIGHT = WIDTH - MARGIN
+    internal const val ROW = 104f
+    internal const val FOOTER_TOP = 1164f
+    internal const val MAX_RECORDS = 3
 
     private const val ICON_DIAMOND = "M12 2l9 10-9 10L3 12z M12 7l4.5 5-4.5 5-4.5-5z"
 
@@ -163,9 +163,9 @@ object RecapCard {
     /** The PNG bytes of [bitmap]. */
     fun png(bitmap: Bitmap): ByteArray = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
 
-    private fun UiText.resolved(): String = Words.text(this)
+    internal fun UiText.resolved(): String = Words.text(this)
 
-    private fun header(canvas: Canvas, context: Context, fonts: Fonts, palette: RecapCardPalette, range: String) {
+    internal fun header(canvas: Canvas, context: Context, fonts: Fonts, palette: RecapCardPalette, range: String) {
         icon(canvas, ICON_DIAMOND, MARGIN, 76f, 64f, palette.accent, 1.6f)
         canvas.drawText(context.getString(R.string.app_name).uppercase(Locale.getDefault()), MARGIN + 64f + 20f, 120f, text(fonts.semibold, 32f, palette.ink, spacing = 8f))
         canvas.drawText(range.uppercase(Locale.getDefault()), RIGHT, 118f, text(fonts.medium, 30f, palette.muted, spacing = 3f, align = Paint.Align.RIGHT))
@@ -213,7 +213,7 @@ object RecapCard {
     }
 
     /** A material icon (a 24 grid of filled shapes) drawn [size] px square at [x], [y]: the icons the app already uses, not new art. */
-    private fun glyph(canvas: Canvas, icon: ImageVector, x: Float, y: Float, size: Float, color: Int) {
+    internal fun glyph(canvas: Canvas, icon: ImageVector, x: Float, y: Float, size: Float, color: Int) {
         val shape = ComposePath()
         fun add(group: VectorGroup) {
             group.forEach { node ->
@@ -263,15 +263,15 @@ object RecapCard {
         if (minutes >= 60) String.format(Locale.ROOT, "%d:%02d", minutes / 60, minutes % 60) to UiText.res(R.string.recap_card_unit_hours).resolved()
         else minutes.toString() to UiText.res(R.string.recap_card_unit_minutes).resolved()
 
-    private fun fill(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
+    internal fun fill(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
 
-    private fun stroke(color: Int, width: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    internal fun stroke(color: Int, width: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
         style = Paint.Style.STROKE
         strokeWidth = width
     }
 
-    private fun text(face: Typeface, size: Float, color: Int, spacing: Float = 0f, align: Paint.Align = Paint.Align.LEFT) =
+    internal fun text(face: Typeface, size: Float, color: Int, spacing: Float = 0f, align: Paint.Align = Paint.Align.LEFT) =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = face
             textSize = size
@@ -281,7 +281,7 @@ object RecapCard {
         }
 
     /** Chakra Petch, the app's own face, in the three weights it ships. */
-    private class Fonts(context: Context) {
+    internal class Fonts(context: Context) {
         val medium: Typeface = ResourcesCompat.getFont(context, R.font.chakra_petch_medium) ?: Typeface.DEFAULT
         val semibold: Typeface = ResourcesCompat.getFont(context, R.font.chakra_petch_semibold) ?: Typeface.DEFAULT_BOLD
         val bold: Typeface = ResourcesCompat.getFont(context, R.font.chakra_petch_bold) ?: Typeface.DEFAULT_BOLD

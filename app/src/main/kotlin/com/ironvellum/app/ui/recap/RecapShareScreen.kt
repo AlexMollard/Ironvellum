@@ -88,6 +88,37 @@ fun RecapShareScreen(
 
 @Composable
 internal fun RecapShareContent(recap: WeeklyRecap, onBack: () -> Unit) {
+    ShareCardContent(
+        title = stringResource(R.string.recap_share_title),
+        cardKey = recap,
+        saveName = stringResource(R.string.recap_share_save_name, recap.weekStart.toString()),
+        chooserTitle = stringResource(R.string.recap_share_chooser_title),
+        fileName = stringResource(R.string.recap_share_file_name),
+        recordsLabel = stringResource(R.string.recap_share_records_label),
+        recordsCaption = stringResource(R.string.recap_share_records_caption),
+        streakCaption = stringResource(R.string.recap_share_streak_caption),
+        onBack = onBack,
+        render = { context, options, palette -> RecapCard.render(context, recap, options, palette) },
+    )
+}
+
+/**
+ * The share screen of any card: the preview exactly as it will leave the phone, the two parts that can be left off, and
+ * Save or Share. [render] draws the card for the options and palette in force; [cardKey] redraws it when the data changes.
+ */
+@Composable
+internal fun ShareCardContent(
+    title: String,
+    cardKey: Any,
+    saveName: String,
+    chooserTitle: String,
+    fileName: String,
+    recordsLabel: String,
+    recordsCaption: String,
+    streakCaption: String,
+    onBack: () -> Unit,
+    render: (Context, RecapCardOptions, RecapCardPalette) -> Bitmap,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var records by remember { mutableStateOf(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_RECORDS, true)) }
@@ -97,18 +128,15 @@ internal fun RecapShareContent(recap: WeeklyRecap, onBack: () -> Unit) {
     // The card follows the app's theme and accent as they are now, so a change of either redraws it.
     val palette = RecapCardPalette.current()
 
-    val saveName = stringResource(R.string.recap_share_save_name, recap.weekStart.toString())
-    val chooserTitle = stringResource(R.string.recap_share_chooser_title)
-    val fileName = stringResource(R.string.recap_share_file_name)
     val picturesFolder = stringResource(R.string.recap_share_pictures_folder)
     var card by remember { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(recap, options, palette) {
-        card = withContext(Dispatchers.Default) { RecapCard.render(context, recap, options, palette) }
+    LaunchedEffect(cardKey, options, palette) {
+        card = withContext(Dispatchers.Default) { render(context, options, palette) }
     }
 
     Column(Modifier.fillMaxSize()) {
         PushedHeader(
-            title = stringResource(R.string.recap_share_title),
+            title = title,
             onBack = onBack,
             modifier = Modifier.padding(horizontal = 16.dp).padding(top = 20.dp),
         )
@@ -126,8 +154,8 @@ internal fun RecapShareContent(recap: WeeklyRecap, onBack: () -> Unit) {
             }
             InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                 SettingsSwitchRow(
-                    label = stringResource(R.string.recap_share_records_label),
-                    caption = stringResource(R.string.recap_share_records_caption),
+                    label = recordsLabel,
+                    caption = recordsCaption,
                     checked = records,
                     onCheckedChange = {
                         records = it
@@ -137,7 +165,7 @@ internal fun RecapShareContent(recap: WeeklyRecap, onBack: () -> Unit) {
                 InkDivider()
                 SettingsSwitchRow(
                     label = UiText.themed(R.string.recap_share_streak_label, R.string.recap_share_streak_label__t).asString(),
-                    caption = stringResource(R.string.recap_share_streak_caption),
+                    caption = streakCaption,
                     checked = streak,
                     onCheckedChange = {
                         streak = it

@@ -74,7 +74,7 @@ import java.util.Locale
 private val BAR_SCALE = ProgramRules.HEAVY_WEEK
 
 @Composable
-private fun SectionTitle(text: String, trailing: (@Composable () -> Unit)? = null) {
+internal fun SectionTitle(text: String, trailing: (@Composable () -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text, style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp), color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
         trailing?.invoke()
@@ -82,13 +82,13 @@ private fun SectionTitle(text: String, trailing: (@Composable () -> Unit)? = nul
 }
 
 @Composable
-private fun Caption(text: String, modifier: Modifier = Modifier, color: Color = IronvellumColors.InkMuted) {
+internal fun Caption(text: String, modifier: Modifier = Modifier, color: Color = IronvellumColors.InkMuted) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = color, modifier = modifier)
 }
 
 /** A small capitals label: "SETS", "NEXT WEEK". */
 @Composable
-private fun CapsLabel(text: String) {
+internal fun CapsLabel(text: String) {
     Text(
         text.uppercase(LocalConfiguration.current.locales[0]),
         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = IronvellumTracking.InlineLabel),
@@ -153,7 +153,7 @@ internal fun HeroCard(recap: WeeklyRecap) {
 }
 
 @Composable
-private fun Stat(modifier: Modifier, label: String, value: String, unit: String?, delta: Pair<String, Int>?) {
+internal fun Stat(modifier: Modifier, label: String, value: String, unit: String?, delta: Pair<String, Int>?) {
     Column(modifier) {
         CapsLabel(label)
         Row(verticalAlignment = Alignment.Bottom) {
@@ -181,7 +181,7 @@ private fun Stat(modifier: Modifier, label: String, value: String, unit: String?
 }
 
 @Composable
-private fun VolumeBar(label: String, kg: Double, top: Double, fill: Color, valueColor: Color) {
+internal fun VolumeBar(label: String, kg: Double, top: Double, fill: Color, valueColor: Color) {
     Row(Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Caption(label, Modifier.width(76.dp))
         Box(Modifier.weight(1f).height(10.dp).background(IronvellumColors.Rune)) {

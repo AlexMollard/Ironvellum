@@ -6466,4 +6466,117 @@
     <string name="settings_lock_shortcuts_label">App-icon shortcuts</string>
     <string name="settings_lock_shortcuts_caption">Long-press the icon: Start today, Resume. Always on.</string>
     <string name="settings_lock_footer">Live updates need Android 16. On older versions the same information shows in the usual notification.</string>
+
+    <!-- ===== Month and year in review (docs/STRINGS.md). The screen, its share card, the Today card and the Stats list. ===== -->
+    <string name="review_month_title">Month in review</string>
+    <string name="review_year_title">Year in review</string>
+    <!-- Date patterns for java.time.format.DateTimeFormatter, not text. -->
+    <string name="review_pattern_month_year" translatable="false">LLLL yyyy</string>
+    <string name="review_pattern_month" translatable="false">LLLL</string>
+    <string name="review_pattern_year" translatable="false">yyyy</string>
+    <!-- A review that is named: %1$s is the period, "September 2026" or "2026". In the Stats list, and on a year\'s share card (in capitals). -->
+    <string name="review_named">%1$s in review</string>
+
+    <!-- A lifter who started part way through the period. The subtitle under the title: %1$s is the period ("2026"), %2$s a month name ("March") or a day and month ("14 Sep"). -->
+    <string name="review_subtitle_since_month">%1$s, since you started in %2$s</string>
+    <string name="review_subtitle_since_day">%1$s, since you started on %2$s</string>
+    <!-- The same as a sentence on its own, under the headline figure and on the share card. -->
+    <string name="review_since_month">Since you started in %1$s</string>
+    <string name="review_since_day">Since you started on %1$s</string>
+
+    <!-- Volume against the period before: %1$s a signed percent ("+18%"), %2$s the period before ("August", "2025"). -->
+    <string name="review_vs_period">%1$s vs %2$s</string>
+
+    <string name="review_best_week_label">Best week</string>
+    <!-- The best week: %1$s its days ("14–20 Sep"), %2$s its workouts, %3$s its volume ("17,980 kg"). -->
+    <string name="review_best_week_line">%1$s · %2$s · %3$s</string>
+
+    <string name="review_lifts_title">Lifts gained</string>
+    <!-- Beside the title: %1$s is the days the figures cover ("1–30 Sep"). -->
+    <string name="review_lifts_caption">best e1RM, %1$s</string>
+    <!-- A lift\'s best estimated one-rep max before the period and at its end: %1$s a figure ("112.5"), %2$s a load with its unit ("120.0 kg"). -->
+    <string name="review_lift_change">e1RM %1$s → %2$s</string>
+    <!-- A lift first trained in the period has nothing to gain over: %1$s a load with its unit. -->
+    <string name="review_lift_new_sub">e1RM %1$s</string>
+    <string name="review_lift_new_badge">New</string>
+    <plurals name="review_lifts_more"><item quantity="one">and %1$d more lift</item><item quantity="other">and %1$d more lifts</item></plurals>
+
+    <string name="review_muscles_title">Most trained muscles</string>
+    <string name="review_muscles_caption">hard sets</string>
+
+    <string name="review_volume_label">Total volume</string>
+    <!-- Beside the big figure: %1$s is the load unit ("kg"). -->
+    <string name="review_volume_lifted">%1$s lifted</string>
+
+    <string name="review_days_title">Workouts and streak</string>
+    <string name="review_days_title__t">Trials and oath</string>
+    <!-- Beside the title: %1$s is the weekly pace with one decimal ("3.7"). -->
+    <string tools:ignore="PluralsCandidate" name="review_per_week">%1$s a week</string>
+    <plurals name="review_streak_month_end"><item quantity="one">Streak %1$d day at month end</item><item quantity="other">Streak %1$d days at month end</item></plurals>
+    <plurals name="review_streak_month_end__t"><item quantity="one">Oath %1$d day at month end</item><item quantity="other">Oath %1$d days at month end</item></plurals>
+    <plurals name="review_streak_year_end"><item quantity="one">Streak %1$d day at year end</item><item quantity="other">Streak %1$d days at year end</item></plurals>
+    <plurals name="review_streak_year_end__t"><item quantity="one">Oath %1$d day at year end</item><item quantity="other">Oath %1$d days at year end</item></plurals>
+    <string name="review_streak_going_longest">Still going. Longest so far.</string>
+    <string name="review_streak_going">Still going.</string>
+    <string name="review_streak_longest">Longest so far.</string>
+    <!-- One bar of the year\'s twelve: the month and how many workouts it held, for a screen reader. -->
+    <plurals name="review_month_bar_description"><item quantity="one">%1$s: %2$d workout</item><item quantity="other">%1$s: %2$d workouts</item></plurals>
+    <plurals name="review_month_bar_description__t"><item quantity="one">%1$s: %2$d trial</item><item quantity="other">%1$s: %2$d trials</item></plurals>
+
+    <string name="review_skills_title">Skills unlocked</string>
+    <!-- Beside the title: how many skills were claimed, with the period named after it ("2 this month"). -->
+    <string tools:ignore="PluralsCandidate" name="review_skills_count_month">%1$d this month</string>
+    <string tools:ignore="PluralsCandidate" name="review_skills_count_year">%1$d this year</string>
+    <!-- A skill row: %1$s the tier numeral ("II"), %2$s the day it was claimed ("9 Sep"). -->
+    <string name="review_skill_tier">Tier %1$s · %2$s</string>
+    <!-- Experience points a skill paid: an amount, not a count of a noun. -->
+    <string tools:ignore="PluralsCandidate" name="review_skill_xp">+%1$d XP</string>
+
+    <string name="review_weeks_title">The weeks behind it</string>
+    <!-- %1$s is a month name ("September"). -->
+    <string name="review_weeks_caption">Open the weekly recaps for %1$s</string>
+    <string name="review_weeks_hide">Hide the weeks</string>
+
+    <!-- The bottom button: %1$s is "September" or "2026". -->
+    <string name="review_share_button">Share %1$s</string>
+    <string name="review_share_description">Share the review</string>
+    <string name="review_open_description">Open the review</string>
+
+    <!-- The share screen. -->
+    <string name="review_share_title">Share review</string>
+    <string name="review_share_lifts_label">Lifts gained</string>
+    <string name="review_share_lifts_caption">Lift, e1RM before and after</string>
+    <string name="review_share_streak_caption">Days in a row</string>
+    <string name="review_share_chooser_title">Share your review</string>
+    <string name="review_share_file_name" translatable="false">ironvellum-review.png</string>
+    <!-- %1$s is the period, "2026-09" or "2026". -->
+    <string name="review_share_save_name" translatable="false">ironvellum-review-%1$s.png</string>
+
+    <!-- The share card. -->
+    <string name="review_card_this_month">this month</string>
+    <string name="review_card_this_year">this year</string>
+    <!-- Under the workout count: %1$s a signed percent ("+18%"), %2$s the period before ("August", "2025"). -->
+    <string name="review_card_volume_vs">%1$s volume on %2$s</string>
+    <!-- Beside the big volume figure: %1$s is the unit ("t"). -->
+    <string name="review_card_lifted">%1$s lifted</string>
+    <string name="review_card_lifts_title">Lifts gained, e1RM</string>
+    <string name="review_card_new">New</string>
+    <string name="review_card_most_trained">Most trained</string>
+    <!-- The muscle with the most hard sets: %1$s its name, %2$s the sets, which may be fractional ("61", "58.5"). -->
+    <string tools:ignore="PluralsCandidate" name="review_card_muscle_sets">%1$s · %2$s sets</string>
+    <string name="review_card_best_week">Best week</string>
+    <string name="review_card_streak">Streak</string>
+    <string name="review_card_streak__t">Oath</string>
+    <string name="review_card_longest_streak">Longest streak</string>
+    <string name="review_card_longest_streak__t">Longest oath</string>
+
+    <!-- The Today card, in the first week of a month (of a year, in January). -->
+    <string name="review_today_label_month">New · month in review</string>
+    <string name="review_today_label_year">New · year in review</string>
+    <!-- %1$s is "September" or "2026", %2$s a line like "16 workouts · 74.9 t". -->
+    <string name="review_today_title">%1$s: %2$s</string>
+    <string name="review_today_dismiss_description">Dismiss the review</string>
+
+    <!-- The Stats list: a figure and its noun. -->
+    <plurals name="review_lifts_gained_count"><item quantity="one">%1$d lift gained</item><item quantity="other">%1$d lifts gained</item></plurals>
 </resources>
