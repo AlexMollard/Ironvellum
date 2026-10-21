@@ -534,6 +534,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             section = section,
                             onBack = { navController.popBackStack() },
                             viewModel = settingsViewModel(hub),
+                            onOpenSection = { navController.navigate(Routes.settingsSection(it)) },
                         )
                     }
                 }

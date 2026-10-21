@@ -20,6 +20,7 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsSwitchRow
+import com.ironvellum.app.ui.components.SettingsValueRow
 
 /**
  * What a live trial does between sets: whether a rest runs at all, how its end
@@ -28,7 +29,7 @@ import com.ironvellum.app.ui.components.SettingsSwitchRow
  * its rest off from its rite or from its menu in the trial.
  */
 @Composable
-internal fun TrialSettings(onBack: () -> Unit) {
+internal fun TrialSettings(onBack: () -> Unit, onOpenLockScreen: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { TrialPrefs(context) }
     var restOn by remember { mutableStateOf(!prefs.restOff) }
@@ -67,6 +68,14 @@ internal fun TrialSettings(onBack: () -> Unit) {
                     awake = it
                     prefs.keepScreenOn = it
                 },
+            )
+        }
+        // The hub has no row of its own for this page (it is full), so it opens from here.
+        SettingsGroup(null, topSpace = 10.dp, rows = true) {
+            SettingsValueRow(
+                stringResource(R.string.settings_trial_lock_screen_label),
+                SettingsSummaries.lockScreen(prefs.liveUpdate, prefs.showLiftsOnLock),
+                onOpenLockScreen,
             )
         }
     }

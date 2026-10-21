@@ -32,6 +32,7 @@ enum class SettingsSection(val key: String, private val titleText: () -> String)
         "during_trial",
         { Words.text(UiText.themed(R.string.settings_section_during_trial_title, R.string.settings_section_during_trial_title__t)) },
     ),
+    LOCK_SCREEN("lock_screen", { title(R.string.settings_section_lock_screen_title) }),
     ARMOURY("armoury", { Words.armoury.u }),
     SUMMONS("summons", { Words.theSummons.u }),
     HEALTH_CONNECT("health_connect", { title(R.string.settings_section_health_connect_title) }),
@@ -53,12 +54,18 @@ enum class SettingsSection(val key: String, private val titleText: () -> String)
  * screen that commits on leaving (Profile) only has to wrap it once.
  */
 @Composable
-fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, viewModel: SettingsViewModel) {
+fun SettingsSectionScreen(
+    section: SettingsSection,
+    onBack: () -> Unit,
+    viewModel: SettingsViewModel,
+    onOpenSection: (SettingsSection) -> Unit = {},
+) {
     when (section) {
         SettingsSection.PROFILE -> ProfileSettings(viewModel, onBack)
         SettingsSection.APPEARANCE -> AppearanceSettings(viewModel, onBack)
         SettingsSection.TRAINING_MODE -> TrainingModeSettings(viewModel, onBack)
-        SettingsSection.DURING_TRIAL -> TrialSettings(onBack)
+        SettingsSection.DURING_TRIAL -> TrialSettings(onBack, onOpenLockScreen = { onOpenSection(SettingsSection.LOCK_SCREEN) })
+        SettingsSection.LOCK_SCREEN -> LockScreenSettings(onOpenRest = { onOpenSection(SettingsSection.DURING_TRIAL) }, onBack = onBack)
         SettingsSection.ARMOURY -> ArmourySettings(onBack)
         SettingsSection.SUMMONS -> SummonsSettings(onBack)
         SettingsSection.HEALTH_CONNECT -> HealthConnectSettings(viewModel, onBack)

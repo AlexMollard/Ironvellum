@@ -39,6 +39,13 @@ object SettingsSummaries {
         plain(R.string.settings_summary_rest_alert, alert.label.lowercase())
     }
 
+    /** The lock-screen page at a glance: lifts hidden says so, else whether the Live Update is on. */
+    fun lockScreen(liveUpdate: Boolean, liftsShown: Boolean): String = when {
+        !liftsShown -> plain(R.string.settings_summary_lock_screen_lifts_hidden)
+        liveUpdate -> plain(R.string.common_on)
+        else -> plain(R.string.common_off)
+    }
+
     /** "Sam · 180 cm · Male"; a missing height says so, since Today asks for it. */
     fun profile(name: String?, heightCm: Double?, sex: Sex?): String = listOfNotNull(
         name?.trim()?.takeIf { it.isNotEmpty() }?.let(Words::displayName),
