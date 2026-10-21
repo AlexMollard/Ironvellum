@@ -17,6 +17,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -254,6 +255,47 @@ class TodayFitsTest {
         assertInside("3 inscriptions waiting")
         compose.onAllNodesWithText("more", substring = true).assertCountEquals(0)
         saveShot("today-training-full")
+    }
+
+    private fun named(vararg names: String) = WorkoutPreset(
+        id = 1, name = "Back + Chest Volume (dip bars)", scheduledDay = 1,
+        entries = names.mapIndexed { i, n -> PresetEntry(exerciseId = i + 1L, exerciseName = n, targetSets = 3, targetReps = 8, position = i + 1) },
+    )
+
+    /** Where [text] sits on the page: the probes the layout measures with are in the unmerged tree too, but never placed. */
+    private fun top(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().first { it.layoutInfo.isPlaced }.boundsInRoot.top
+
+    @Test
+    fun shortNeighboursShareALineLongNamesDoNotAndEveryExerciseStaysItsOwnNode() {
+        show(
+            ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Deficit Push-up", "Bulgarian Split Squat", "Ab Wheel Rollout"))),
+            selectedDay = 1,
+        )
+        assertDoesNotScroll()
+        // Routine order, left to right then down: two pairs, then three lines of their own.
+        assertEquals(top("Pull-up"), top("Inverted Row"), 0.5f)
+        assertEquals(top("Dip"), top("Push-up"), 0.5f)
+        assertTrue(top("Dip") > top("Pull-up"))
+        assertTrue(top("Deficit Push-up") > top("Dip"))
+        assertTrue(top("Bulgarian Split Squat") > top("Deficit Push-up"))
+        assertTrue(top("Ab Wheel Rollout") > top("Bulgarian Split Squat"))
+        // The card reads as one node; a pair keeps each exercise's name next to its own sets, in order.
+        val reading = compose.onNode(hasText("Pull-up")).fetchSemanticsNode().config[SemanticsProperties.Text].map { it.text }
+        assertEquals(listOf("Pull-up", "3 × 8", "Inverted Row", "3 × 8"), reading.drop(reading.indexOf("Pull-up")).take(4))
+        // All seven fit: no "+N more".
+        compose.onAllNodesWithText("more", substring = true).assertCountEquals(0)
+        // The title is one line: it never wraps into a second.
+        assertTrue("the title wrapped", compose.onAllNodesWithText("BACK + CHEST VOLUME (DIP BARS)", useUnmergedTree = true).fetchSemanticsNodes().first { it.layoutInfo.isPlaced }.boundsInRoot.height < 40 * androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density)
+        saveShot("today-paired-rows")
+    }
+
+    @Test
+    fun atTwoHundredPercentNothingPairs() {
+        show(
+            ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Chin-up", "Row", "Plank"))),
+            selectedDay = 1, fontScale = 2f,
+        )
+        assertTrue("two exercises share a line at 200%", top("Inverted Row") > top("Pull-up"))
     }
 
     @Test

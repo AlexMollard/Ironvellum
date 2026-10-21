@@ -45,6 +45,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle as ComposeTextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.AnnotatedString
@@ -377,6 +380,47 @@ internal fun NameRow(
     }
 }
 
+/** The card title's largest and smallest size: it shrinks from one toward the other to stay on one line. */
+private const val TITLE_MAX_SP = 22f
+private const val TITLE_MIN_SP = 17f
+
+/** The title at [size] sp: the tracking scales with the size, so a shrunk name keeps its proportions. */
+private fun titleStyle(base: ComposeTextStyle, size: Float) =
+    base.copy(fontSize = size.sp, letterSpacing = IronvellumTracking.InlineLabel * (size / TITLE_MAX_SP))
+
+/** Room the glyph beside the title takes: its box (52dp, the sealed stamp 58dp) and the 8dp before it. */
+private val CORNER_RESERVE = 70.dp
+
+/** Beside the glyph the title may shrink this far before it moves above it to take the card's full width. */
+private const val TITLE_BESIDE_MIN_SP = 19f
+
+/**
+ * The rite's name in tracked display caps on ONE line. It starts at [TITLE_MAX_SP] and steps down by half
+ * a point until the whole name fits the width it is given, never below [TITLE_MIN_SP]; the tracking shrinks
+ * with the size. A name that still does not fit at the minimum ends in an ellipsis rather than wrapping.
+ * The line height stays that of the full size, so the header never changes height with the name.
+ */
+@Composable
+private fun RiteTitle(title: String) {
+    val text = title.uppercase()
+    val measurer = rememberTextMeasurer()
+    val base = MaterialTheme.typography.titleMedium.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.SemiBold)
+    fun styleAt(size: Float) = titleStyle(base, size)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val room = constraints.maxWidth
+        var size = TITLE_MAX_SP
+        while (size > TITLE_MIN_SP && measurer.measure(text, styleAt(size), maxLines = 1, softWrap = false).size.width > room) size -= 0.5f
+        Text(
+            text,
+            style = styleAt(size).copy(lineHeight = base.lineHeight),
+            color = IronvellumColors.Ink,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 /**
  * A rite's header on the day card: its name in tracked display caps, the narrator's one line, a small
  * [meta] line, and [corner] (the muscle glyph or sealed glyph) in the top-right. [lead] sits before the
@@ -391,46 +435,48 @@ internal fun RiteHeader(
     lead: (@Composable () -> Unit)? = null,
     corner: (@Composable () -> Unit)? = null,
 ) {
-    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        if (lead != null) {
-            lead()
-            Spacer(Modifier.width(14.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 22.sp,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                color = IronvellumColors.Ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                narrator,
-                style = MaterialTheme.typography.bodySmall,
-                fontStyle = FontStyle.Italic,
-                color = IronvellumColors.Ink.copy(alpha = 0.8f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            if (meta != null) {
-                Text(
-                    meta,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                    // Three lines: "Today's workout · 5 exercises · 18 sets · about 126 min" needs them at 200% text.
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
+    val measurer = rememberTextMeasurer()
+    val base = MaterialTheme.typography.titleMedium.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.SemiBold)
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        // The name sits beside the glyph while it fits there at a good size. Otherwise it takes the card's full
+        // width above the glyph, so a long name stays on one line at a larger size than the narrow column allows.
+        val titleAbove = lead == null && corner != null &&
+            measurer.measure(title.uppercase(), titleStyle(base, TITLE_BESIDE_MIN_SP), maxLines = 1, softWrap = false).size.width >
+            constraints.maxWidth - with(androidx.compose.ui.platform.LocalDensity.current) { CORNER_RESERVE.roundToPx() }
+        Column(Modifier.fillMaxWidth()) {
+            if (titleAbove) RiteTitle(title)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                if (lead != null) {
+                    lead()
+                    Spacer(Modifier.width(14.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    if (!titleAbove) RiteTitle(title)
+                    Text(
+                        narrator,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = IronvellumColors.Ink.copy(alpha = 0.8f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                    if (meta != null) {
+                        Text(
+                            meta,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            // Three lines: "Today's workout · 5 exercises · 18 sets · about 126 min" needs them at 200% text.
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
+                if (corner != null) {
+                    Box(Modifier.padding(start = 8.dp).heightIn(min = 66.dp), contentAlignment = Alignment.TopEnd) { corner() }
+                }
             }
-        }
-        if (corner != null) {
-            Box(Modifier.padding(start = 8.dp).heightIn(min = 66.dp), contentAlignment = Alignment.TopEnd) { corner() }
         }
     }
 }

@@ -64,11 +64,15 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle as ComposeTextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1042,8 +1046,17 @@ private fun TodayDayBody(
     )
 }
 
-/** Beneath this the exercise rows stop tightening and start folding into "+N more". Rows are not tap targets, the card is. */
-private val TIGHT_ROW = 40.dp
+/** An exercise line's height when there is room: one exercise, or two side by side. */
+private val LINE_HEIGHT = 40.dp
+
+/** Beneath this the exercise lines stop tightening and start folding into "+N more". Lines are not tap targets, the card is. */
+private val TIGHT_LINE = 36.dp
+
+/** Space either side of the divider between two exercises sharing a line. */
+private val PAIR_GAP = 12.dp
+
+/** Room the check column takes in a half-width cell when the card has one (a full-width line gives it 26dp). */
+private val HALF_CHECK_SLOT = 20.dp
 
 /** The gap above the card's exercise block. */
 private val ROWS_TOP_PAD = 10.dp
@@ -1087,8 +1100,8 @@ private fun TodayPage(
  * heights to [fitToday] and composes the page once with what fits. The probes sit in slots of their
  * own and are never placed.
  *
- * Degradation, in order: exercise rows tighten from 52dp toward 40dp; the Veil's full form (the hero on
- * a respite day) gives way to the compact one; rows fold into "+N more". Plain rows are never dropped.
+ * Degradation, in order: exercise lines tighten from 40dp toward 36dp; the Veil's full form (the hero on
+ * a respite day) gives way to the compact one; lines fold into "+N more" (N counts exercises). Plain rows are never dropped.
  * Every Veil form carries its reserved inscriptions line, so the probes already include it.
  */
 @Composable
@@ -1099,6 +1112,9 @@ private fun TodayLayout(
     veil: @Composable (full: Boolean, grow: Dp) -> Unit,
     displayed: Boolean,
 ) {
+    val measurer = rememberTextMeasurer()
+    val nameStyle = MaterialTheme.typography.bodyMedium
+    val valueStyle = MaterialTheme.typography.labelMedium
     SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
         val width = constraints.maxWidth
         val bounded = constraints.hasBoundedHeight
@@ -1112,36 +1128,45 @@ private fun TodayLayout(
         val chrome = heightOf("chrome") { TodayPage(card, plain, rows = {}, veil = null) }
         val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false, 0.dp) } }
         val veilFull = heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true, 0.dp) } }
+        // The check column exists only when some exercise has a check to show; until then names run flush left.
+        val gutter = rows.any { it.checked }
         // A row sits inside the page gutter and the card's own padding; only its content height matters here.
         val rowContent =
             if (rows.isEmpty()) 0
-            else heightOf("row") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { ExerciseRow(rows.first(), height = null, divider = false) } }
+            else heightOf("row") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { ExerciseLine(listOf(rows.first()), height = null, divider = false, gutter = gutter) } }
         val moreLine =
             if (rows.isEmpty()) 0
-            else heightOf("more") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { MoreLine(hidden = 1, divider = false) } }
-        val naturalRow = maxOf(ListRowHeight.roundToPx(), rowContent)
-        val tightRow = maxOf(TIGHT_ROW.roundToPx(), rowContent)
+            else heightOf("more") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { MoreLine(hidden = 1, divider = false, gutter = gutter) } }
+        val naturalLine = maxOf(LINE_HEIGHT.roundToPx(), rowContent)
+        val tightLine = maxOf(TIGHT_LINE.roundToPx(), rowContent)
+        // Two exercises share a line only when each passes the character rule AND its real text fits half the
+        // card's inner width: at a large font the same names no longer fit, and the lines fall back to full width.
+        val cardInner = width - (GUTTER * 4).roundToPx()
+        val cellWidth = (cardInner - (PAIR_GAP * 2 + 1.dp).roundToPx()) / 2
+        val lines = packLines(rows) { row ->
+            fitsHalfLine(row) && halfCellNeeds(row, gutter, measurer, nameStyle, valueStyle, this) <= cellWidth
+        }
 
         val fit = fitToday(
             TodayBudget(
                 available = available,
                 chrome = chrome,
-                rowCount = rows.size,
+                lineCount = lines.size,
                 rowsTopPad = ROWS_TOP_PAD.roundToPx(),
-                naturalRow = naturalRow,
-                tightRow = tightRow,
+                naturalLine = naturalLine,
+                tightLine = tightLine,
                 moreLine = moreLine,
                 veilFull = veilFull,
                 veilCompact = veilCompact,
             ),
         )
-        val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
-        val shown = fit?.rows ?: rows.size
+        val lineHeight = (fit?.lineHeight ?: naturalLine).toDp()
+        val shown = fit?.lines ?: lines.size
         val page: @Composable (Dp, Boolean) -> Unit = { grow, live ->
             val contentModifier = if (fit == null) Modifier.verticalScroll(rememberScrollState()) else Modifier
             TodayPage(
                 card = card, plain = plain,
-                rows = { ExerciseBlock(rows, shown, rowHeight, hidden = rows.size - shown) },
+                rows = { ExerciseBlock(lines, shown, lineHeight, hidden = hiddenExercises(lines, shown)) },
                 veil = { veil(fit?.fullVeil ?: true, grow) }, live = live, modifier = contentModifier,
             )
         }
@@ -1273,25 +1298,58 @@ private fun SegmentBar(done: Int, total: Int) {
 }
 
 /**
- * The day's movements: the first [shown] of [rows], each [rowHeight] tall with its hairline inside that
- * height, then a muted "+N more" line for the [hidden] rest. Nothing at all when there is nothing to show.
+ * The day's movements as [lines] (one exercise or two per line): the first [shown] lines, each [lineHeight]
+ * tall with its hairline inside that height, then a muted "+N more" line for the [hidden] exercises on the
+ * rest. Nothing at all when there is nothing to show.
  */
 @Composable
-private fun ExerciseBlock(rows: List<DayRow>, shown: Int, rowHeight: Dp, hidden: Int) {
+private fun ExerciseBlock(lines: List<List<DayRow>>, shown: Int, lineHeight: Dp, hidden: Int) {
     if (shown == 0 && hidden == 0) return
+    val gutter = lines.any { line -> line.any { it.checked } }
     Column(Modifier.fillMaxWidth().padding(top = ROWS_TOP_PAD).testTag("today-rows")) {
-        rows.take(shown).forEachIndexed { index, row -> ExerciseRow(row, rowHeight, divider = index > 0) }
-        if (hidden > 0) MoreLine(hidden, divider = shown > 0)
+        lines.take(shown).forEachIndexed { index, line -> ExerciseLine(line, lineHeight, divider = index > 0, gutter = gutter) }
+        if (hidden > 0) MoreLine(hidden, divider = shown > 0, gutter = gutter)
     }
 }
 
-/** One movement folded to a line: a check when done, a mini bar when part way. [height] null measures its content. */
+/** One line of the card: a single exercise at full width, or two in half-width cells with a divider between. [height] null measures its content. */
 @Composable
-private fun ExerciseRow(row: DayRow, height: Dp?, divider: Boolean) {
+private fun ExerciseLine(line: List<DayRow>, height: Dp?, divider: Boolean, gutter: Boolean) {
     Box(Modifier.fillMaxWidth().then(if (height != null) Modifier.height(height) else Modifier)) {
         if (divider) InkDivider(Modifier.align(Alignment.TopStart))
         Row(Modifier.fillMaxWidth().align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(26.dp)) {
+            if (line.size == 1) {
+                ExerciseCell(line[0], checkSlot = if (gutter) 26.dp else 0.dp, Modifier.weight(1f))
+            } else {
+                ExerciseCell(line[0], checkSlot = if (gutter) HALF_CHECK_SLOT else 0.dp, Modifier.weight(1f).padding(end = PAIR_GAP))
+                Box(Modifier.width(1.dp).height(20.dp).background(IronvellumColors.Rune))
+                ExerciseCell(line[1], checkSlot = if (gutter) HALF_CHECK_SLOT else 0.dp, Modifier.weight(1f).padding(start = PAIR_GAP))
+            }
+        }
+    }
+}
+
+/** What a [row] needs in a half-width cell: its check, name, mini bar and sets text, so a pair only forms when both fit. */
+private fun halfCellNeeds(row: DayRow, gutter: Boolean, measurer: TextMeasurer, nameStyle: ComposeTextStyle, valueStyle: ComposeTextStyle, density: Density): Int = with(density) {
+    fun textWidth(text: String, style: ComposeTextStyle) = measurer.measure(text, style, maxLines = 1, softWrap = false).size.width
+    var needs = textWidth(row.name, nameStyle) + 8.dp.roundToPx() + textWidth(row.value, valueStyle)
+    if (gutter) needs += HALF_CHECK_SLOT.roundToPx()
+    if (row.partly) {
+        val segments = row.total.coerceAtMost(MINI_BAR_SEGMENTS)
+        needs += 8.dp.roundToPx() + (segments * 8 + (segments - 1) * 2).dp.roundToPx()
+    }
+    needs
+}
+
+/**
+ * One movement: a check when done, its name, a mini bar when part way, its sets. Name then sets, in that order,
+ * so the card's merged reading stays one exercise after another whether a line holds one exercise or two.
+ */
+@Composable
+private fun ExerciseCell(row: DayRow, checkSlot: Dp, modifier: Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (checkSlot > 0.dp) {
+            Box(Modifier.width(checkSlot)) {
                 if (row.checked) {
                     Icon(
                         Icons.Filled.Check,
@@ -1301,39 +1359,39 @@ private fun ExerciseRow(row: DayRow, height: Dp?, divider: Boolean) {
                     )
                 }
             }
-            Text(
-                row.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (row.checked) IronvellumColors.InkMuted else IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            if (row.partly) {
-                Row(Modifier.padding(start = 8.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    repeat(row.total.coerceAtMost(MINI_BAR_SEGMENTS)) { segment ->
-                        Box(
-                            Modifier
-                                .size(width = 8.dp, height = 3.dp)
-                                .background(if (segment < row.done) IronvellumColors.Emerald else IronvellumColors.Rune),
-                        )
-                    }
+        }
+        Text(
+            row.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (row.checked) IronvellumColors.InkMuted else IronvellumColors.Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (row.partly) {
+            Row(Modifier.padding(start = 8.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                repeat(row.total.coerceAtMost(MINI_BAR_SEGMENTS)) { segment ->
+                    Box(
+                        Modifier
+                            .size(width = 8.dp, height = 3.dp)
+                            .background(if (segment < row.done) IronvellumColors.Emerald else IronvellumColors.Rune),
+                    )
                 }
             }
-            Text(
-                row.value,
-                style = MaterialTheme.typography.labelMedium,
-                color = IronvellumColors.InkMuted,
-                maxLines = 1,
-                modifier = Modifier.padding(start = 8.dp),
-            )
         }
+        Text(
+            row.value,
+            style = MaterialTheme.typography.labelMedium,
+            color = IronvellumColors.InkMuted,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }
 
-/** "+3 more": the rows that did not fit; the card's own tap opens the rite or trial that lists them. */
+/** "+3 more": the exercises that did not fit; the card's own tap opens the rite or trial that lists them. */
 @Composable
-private fun MoreLine(hidden: Int, divider: Boolean) {
+private fun MoreLine(hidden: Int, divider: Boolean, gutter: Boolean) {
     Box(Modifier.fillMaxWidth().heightIn(min = MORE_LINE), contentAlignment = Alignment.CenterStart) {
         if (divider) InkDivider(Modifier.align(Alignment.TopStart))
         Text(
@@ -1341,7 +1399,7 @@ private fun MoreLine(hidden: Int, divider: Boolean) {
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             maxLines = 1,
-            modifier = Modifier.padding(start = 26.dp),
+            modifier = Modifier.padding(start = if (gutter) 26.dp else 0.dp),
         )
     }
 }

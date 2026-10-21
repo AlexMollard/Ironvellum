@@ -207,51 +207,86 @@ internal fun peakGainText(peak: RepMax.Recent): String {
     }
 }
 
+/** The most characters a name may have to share a line: two names side by side must stay readable. */
+internal const val PAIR_NAME_CHARS = 13
+
+/** The most characters a sets text may have to share a line ("3 × 8–12" is 8, "3 × 6–10 s" is 10). */
+internal const val PAIR_VALUE_CHARS = 9
+
+/** The character rule for a half-width cell: short name, short sets text. The measured width is the second test. */
+internal fun fitsHalfLine(row: DayRow): Boolean = row.name.length <= PAIR_NAME_CHARS && row.value.length <= PAIR_VALUE_CHARS
+
 /**
- * The heights Today has to share, all in pixels. [chrome] is everything but the exercise rows and the
+ * The card's exercises as lines, in routine order. Two consecutive exercises that both pass [fitsHalf] share
+ * a line; any other exercise takes a line of its own. Never reorders: an exercise that cannot pair with its
+ * neighbour stays alone and the next one starts a new line. Greedy from the top, so the same routine always
+ * packs the same way.
+ */
+internal fun packLines(rows: List<DayRow>, fitsHalf: (DayRow) -> Boolean = ::fitsHalfLine): List<List<DayRow>> {
+    val lines = ArrayList<List<DayRow>>(rows.size)
+    var i = 0
+    while (i < rows.size) {
+        if (i + 1 < rows.size && fitsHalf(rows[i]) && fitsHalf(rows[i + 1])) {
+            lines += listOf(rows[i], rows[i + 1])
+            i += 2
+        } else {
+            lines += listOf(rows[i])
+            i += 1
+        }
+    }
+    return lines
+}
+
+/** The exercises behind "+N more": every one on the lines past the first [shown]. */
+internal fun hiddenExercises(lines: List<List<DayRow>>, shown: Int): Int = lines.drop(shown).sumOf { it.size }
+
+/**
+ * The heights Today has to share, all in pixels. [chrome] is everything but the exercise lines and the
  * Veil (header, week rail, card chrome, plain rows, the bottom clearance); [rowsTopPad] is the gap above
- * the exercise block; rows run from [tightRow] to [naturalRow]; [moreLine] is the "+N more" line;
- * [veilFull] is null unless the full form is on offer.
+ * the exercise block; lines run from [tightLine] to [naturalLine]; [moreLine] is the "+N more" line;
+ * [veilFull] is null unless the full form is on offer. [lineCount] counts lines, not exercises: a line
+ * holds one exercise or two.
  */
 internal class TodayBudget(
     val available: Int,
     val chrome: Int,
-    val rowCount: Int,
+    val lineCount: Int,
     val rowsTopPad: Int,
-    val naturalRow: Int,
-    val tightRow: Int,
+    val naturalLine: Int,
+    val tightLine: Int,
     val moreLine: Int,
     val veilFull: Int?,
     val veilCompact: Int,
 )
 
-/** What fits: [rows] exercise rows each [rowHeight] px tall (the rest behind "+N more"), and which Veil form. */
-internal data class TodayFit(val rows: Int, val rowHeight: Int, val fullVeil: Boolean)
+/** What fits: [lines] exercise lines each [lineHeight] px tall (the rest behind "+N more"), and which Veil form. */
+internal data class TodayFit(val lines: Int, val lineHeight: Int, val fullVeil: Boolean)
 
 /**
  * Today's one fitting rule. Degrades in a fixed order: the full Veil is kept only if every exercise
- * row still fits with it (rows tighten from [TodayBudget.naturalRow] toward [TodayBudget.tightRow]
- * first); otherwise the compact Veil, with rows tightening and then truncating behind the "+N more"
- * line, down to none. Null when even that does not fit: the caller scrolls rather than clip.
+ * line still fits with it (lines tighten from [TodayBudget.naturalLine] toward [TodayBudget.tightLine]
+ * first); otherwise the compact Veil, with lines tightening and then truncating behind the "+N more"
+ * line, down to none. Slack goes to more lines before taller ones. Null when even that does not fit:
+ * the caller scrolls rather than clip.
  */
 internal fun fitToday(b: TodayBudget): TodayFit? {
     b.veilFull?.let { full ->
         val room = b.available - b.chrome - full
-        rowsThatFit(b, room, mayTruncate = false)?.let { (rows, height) -> return TodayFit(rows, height, fullVeil = true) }
+        linesThatFit(b, room, mayTruncate = false)?.let { (lines, height) -> return TodayFit(lines, height, fullVeil = true) }
     }
     val room = b.available - b.chrome - b.veilCompact
-    return rowsThatFit(b, room, mayTruncate = true)?.let { (rows, height) -> TodayFit(rows, height, fullVeil = false) }
+    return linesThatFit(b, room, mayTruncate = true)?.let { (lines, height) -> TodayFit(lines, height, fullVeil = false) }
 }
 
-/** Rows shown and their height within [room] px, or null when not even the minimum fits. */
-private fun rowsThatFit(b: TodayBudget, room: Int, mayTruncate: Boolean): Pair<Int, Int>? {
-    if (b.rowCount == 0) return if (room >= 0) 0 to 0 else null
-    val rowsRoom = room - b.rowsTopPad
-    if (rowsRoom >= b.rowCount * b.tightRow) return b.rowCount to minOf(b.naturalRow, rowsRoom / b.rowCount)
-    if (!mayTruncate || rowsRoom < b.moreLine) return null
-    val listRoom = rowsRoom - b.moreLine
-    val shown = listRoom / b.tightRow
-    return shown to if (shown == 0) b.naturalRow else minOf(b.naturalRow, listRoom / shown)
+/** Lines shown and their height within [room] px, or null when not even the minimum fits. */
+private fun linesThatFit(b: TodayBudget, room: Int, mayTruncate: Boolean): Pair<Int, Int>? {
+    if (b.lineCount == 0) return if (room >= 0) 0 to 0 else null
+    val linesRoom = room - b.rowsTopPad
+    if (linesRoom >= b.lineCount * b.tightLine) return b.lineCount to minOf(b.naturalLine, linesRoom / b.lineCount)
+    if (!mayTruncate || linesRoom < b.moreLine) return null
+    val listRoom = linesRoom - b.moreLine
+    val shown = listRoom / b.tightLine
+    return shown to if (shown == 0) b.naturalLine else minOf(b.naturalLine, listRoom / shown)
 }
 
 /** "40" for a whole rate, "12.5" otherwise. */

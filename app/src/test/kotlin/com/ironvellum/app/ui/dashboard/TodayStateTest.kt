@@ -153,13 +153,13 @@ class TodayStateTest {
 
     private fun budget(
         available: Int,
-        rowCount: Int = 6,
+        lineCount: Int = 6,
         veilFull: Int? = null,
         chrome: Int = 400,
         veilCompact: Int = 100,
     ) = TodayBudget(
-        available = available, chrome = chrome, rowCount = rowCount, rowsTopPad = 10,
-        naturalRow = 52, tightRow = 40, moreLine = 28, veilFull = veilFull, veilCompact = veilCompact,
+        available = available, chrome = chrome, lineCount = lineCount, rowsTopPad = 10,
+        naturalLine = 52, tightLine = 40, moreLine = 28, veilFull = veilFull, veilCompact = veilCompact,
     )
 
     @Test
@@ -197,13 +197,13 @@ class TodayStateTest {
         assertNull(fitToday(budget(available = 537)))
         assertNull(fitToday(budget(available = 100)))
         // No rows at all: the chrome and the compact Veil are the whole page.
-        assertNull(fitToday(budget(available = 499, rowCount = 0)))
-        assertEquals(TodayFit(0, 0, fullVeil = false), fitToday(budget(available = 500, rowCount = 0)))
+        assertNull(fitToday(budget(available = 499, lineCount = 0)))
+        assertEquals(TodayFit(0, 0, fullVeil = false), fitToday(budget(available = 500, lineCount = 0)))
     }
 
     @Test
     fun `the full Veil is kept only while it fits, then the compact one`() {
-        val respite = { available: Int -> budget(available, rowCount = 0, veilFull = 220, chrome = 400) }
+        val respite = { available: Int -> budget(available, lineCount = 0, veilFull = 220, chrome = 400) }
         assertEquals(TodayFit(0, 0, fullVeil = true), fitToday(respite(620)))
         assertEquals(TodayFit(0, 0, fullVeil = false), fitToday(respite(619)))
         assertEquals(TodayFit(0, 0, fullVeil = false), fitToday(respite(500)))
@@ -213,18 +213,97 @@ class TodayStateTest {
     @Test
     fun `the full Veil is not worth a dropped row`() {
         // Rows present: the full form is offered only if every row still fits beside it.
-        assertEquals(TodayFit(2, 52, fullVeil = true), fitToday(budget(available = 400 + 220 + 10 + 104, rowCount = 2, veilFull = 220)))
+        assertEquals(TodayFit(2, 52, fullVeil = true), fitToday(budget(available = 400 + 220 + 10 + 104, lineCount = 2, veilFull = 220)))
         // Tightened to the minimum beside the full form is still the full form.
-        assertEquals(TodayFit(2, 40, fullVeil = true), fitToday(budget(available = 400 + 220 + 10 + 80, rowCount = 2, veilFull = 220)))
+        assertEquals(TodayFit(2, 40, fullVeil = true), fitToday(budget(available = 400 + 220 + 10 + 80, lineCount = 2, veilFull = 220)))
         // One px short: the compact form takes over and both rows keep their height.
-        assertEquals(TodayFit(2, 52, fullVeil = false), fitToday(budget(available = 400 + 220 + 10 + 79, rowCount = 2, veilFull = 220)))
+        assertEquals(TodayFit(2, 52, fullVeil = false), fitToday(budget(available = 400 + 220 + 10 + 79, lineCount = 2, veilFull = 220)))
     }
 
     @Test
     fun `a more line larger than a row still folds only what must go`() {
-        val big = TodayBudget(available = 410 + 10 + 3 * 40 - 1, chrome = 410, rowCount = 3, rowsTopPad = 10, naturalRow = 52, tightRow = 40, moreLine = 60, veilFull = null, veilCompact = 0)
+        val big = TodayBudget(available = 410 + 10 + 3 * 40 - 1, chrome = 410, lineCount = 3, rowsTopPad = 10, naturalLine = 52, tightLine = 40, moreLine = 60, veilFull = null, veilCompact = 0)
         // 3 tight rows do not fit, 2 + a 60px line do not either: 1 row and the line
         assertEquals(TodayFit(1, 52, fullVeil = false), fitToday(big))
+    }
+
+    private fun day(name: String, value: String = "3 × 8–12") = DayRow(name = name, value = value, done = 0, total = 3, checked = false)
+
+    private fun names(lines: List<List<DayRow>>) = lines.map { line -> line.map { it.name } }
+
+    @Test
+    fun `neighbours that both fit half a line share one, in routine order`() {
+        val rows = listOf(day("Pull-up", "2 × 6–8"), day("Inverted Row"), day("Dip"), day("Push-up"))
+        assertEquals(listOf(listOf("Pull-up", "Inverted Row"), listOf("Dip", "Push-up")), names(packLines(rows)))
+    }
+
+    @Test
+    fun `a long name or a long sets text takes a line of its own and the next one starts afresh`() {
+        val rows = listOf(
+            day("Dip"), day("Deficit Push-up"), day("Push-up"), day("Chin-up"),
+            day("Tuck Planche", "3 × 6–10 s"), day("Plank"),
+        )
+        // "Deficit Push-up" is 15 characters; "3 × 6–10 s" is 10: both are alone, nothing is pulled past them.
+        assertEquals(
+            listOf(listOf("Dip"), listOf("Deficit Push-up"), listOf("Push-up", "Chin-up"), listOf("Tuck Planche"), listOf("Plank")),
+            names(packLines(rows)),
+        )
+    }
+
+    @Test
+    fun `thirteen characters and nine sets characters is the edge of a half line`() {
+        assertTrue(fitsHalfLine(day("1234567890123", "123456789")))
+        assertFalse(fitsHalfLine(day("12345678901234", "123456789")))
+        assertFalse(fitsHalfLine(day("1234567890123", "1234567890")))
+    }
+
+    @Test
+    fun `an odd count leaves the last exercise alone and nothing is lost or reordered`() {
+        val rows = listOf(day("A"), day("B"), day("C"), day("D"), day("E"))
+        val lines = packLines(rows)
+        assertEquals(listOf(listOf("A", "B"), listOf("C", "D"), listOf("E")), names(lines))
+        assertEquals(rows, lines.flatten())
+        assertEquals(emptyList<List<DayRow>>(), packLines(emptyList()))
+    }
+
+    @Test
+    fun `a measured width can veto a pair the characters allow`() {
+        val rows = listOf(day("Dip"), day("Push-up"), day("Chin-up"))
+        // Only "Dip" fits: at a large font nothing pairs, every exercise is a full line.
+        assertEquals(listOf(listOf("Dip"), listOf("Push-up"), listOf("Chin-up")), names(packLines(rows) { it.name == "Dip" }))
+    }
+
+    @Test
+    fun `the more line counts exercises, not lines`() {
+        val lines = packLines(listOf(day("Dip"), day("Push-up"), day("Deficit Push-up"), day("Chin-up"), day("Row")))
+        // [Dip, Push-up] [Deficit Push-up] [Chin-up, Row]
+        assertEquals(3, lines.size)
+        assertEquals(0, hiddenExercises(lines, 3))
+        assertEquals(2, hiddenExercises(lines, 2))
+        assertEquals(3, hiddenExercises(lines, 1))
+        assertEquals(5, hiddenExercises(lines, 0))
+    }
+
+    @Test
+    fun `the owner's seven exercises are five lines and all fit where seven rows would not`() {
+        val rows = listOf(
+            day("Pull-up", "2 × 6–8"), day("Inverted Row"), day("Dip", "3 × 6–10"), day("Push-up"),
+            day("Deficit Push-up"), day("Bulgarian Split Squat"), day("Ab Wheel Rollout"),
+        )
+        val lines = packLines(rows)
+        assertEquals(5, lines.size)
+        // Room for 5 lines of 40 and the 10 px gap, but not for 7.
+        val room = 400 + 100 + 10 + 5 * 40
+        val b = { count: Int -> TodayBudget(room, 400, count, 10, 40, 36, 28, null, 100) }
+        assertEquals(TodayFit(5, 40, fullVeil = false), fitToday(b(lines.size)))
+        assertTrue("seven full rows must fold something", fitToday(b(rows.size))!!.lines < rows.size)
+    }
+
+    @Test
+    fun `slack under the lines buys another line before it stretches any`() {
+        // 230 for the lines: 7 tight ones (252) do not fit. 230 - 28 for the more line = 202 holds 5 tight lines (180), and the slack stretches them to 40.
+        val b = TodayBudget(available = 100 + 10 + 230, chrome = 0, lineCount = 7, rowsTopPad = 10, naturalLine = 40, tightLine = 36, moreLine = 28, veilFull = null, veilCompact = 100)
+        assertEquals(TodayFit(5, 40, fullVeil = false), fitToday(b))
     }
 
     private fun peak(set: SessionSet, addsToBody: Boolean, kind: RepMax.Kind = RepMax.Kind.HEAVIER, was: RepMax.Mark = RepMax.Mark(5, 90.0), hold: Boolean = false) =
