@@ -33,6 +33,40 @@ object LiftRecords {
     /** Fresh enough to wear the PR tag. */
     const val RECENT_DAYS = 14
 
+    /** One lift's best estimated 1RM within one trial: the set that set it and how the lift is named. */
+    class SessionBest(
+        val display: String,
+        val variation: String,
+        val e1rmKg: Double,
+        val set: SessionSet,
+        val addsToBody: Boolean,
+    )
+
+    /**
+     * Each lift's best estimated 1RM in one trial, by [Variation.liftKey]: the one rule the board and the period
+     * records ([gains]) share, so what counts as a record cannot drift between them. A lift with a top set is a
+     * record on that set alone.
+     */
+    fun sessionBests(sets: List<SessionSet>, exercises: Map<Long, Exercise>): Map<String, SessionBest> {
+        val best = LinkedHashMap<String, SessionBest>()
+        for (set in PeakSets.narrowed(sets)) {
+            val weight = set.weightKg ?: continue
+            if (weight <= 0.0) continue
+            if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue
+            val ex = exercises[set.exerciseId]
+            if ((ex?.metric ?: ExerciseMetric.REPS) != ExerciseMetric.REPS) continue
+            val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
+            if (name.isEmpty()) continue
+            val key = Variation.liftKey(name, set.modifiers)
+            val e1rm = ProgramRules.epley(weight, set.reps)
+            val held = best[key]
+            if (held == null || e1rm > held.e1rmKg) {
+                best[key] = SessionBest(held?.display ?: name, held?.variation ?: Variation.key(set.modifiers), e1rm, set, ex?.isWeighted == false)
+            }
+        }
+        return best
+    }
+
     fun board(
         sessions: List<WorkoutSession>,
         sessionSets: Map<Long, List<SessionSet>>,
@@ -48,31 +82,9 @@ object LiftRecords {
         val byLift = LinkedHashMap<String, Acc>()
         for (session in sessions.sortedBy { it.startedAtMs }) {
             val at = session.completedAtMs ?: session.startedAtMs
-            val best = HashMap<String, Double>()
-            val bestSet = HashMap<String, Pair<SessionSet, Boolean>>()
-            val shown = HashMap<String, String>()
-            val variations = HashMap<String, String>()
-            // A lift with a top set is a record on that set alone.
-            for (set in PeakSets.narrowed(sessionSets[session.id].orEmpty())) {
-                val weight = set.weightKg ?: continue
-                if (weight <= 0.0) continue
-                if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue
-                val ex = exercises[set.exerciseId]
-                if ((ex?.metric ?: ExerciseMetric.REPS) != ExerciseMetric.REPS) continue
-                val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
-                if (name.isEmpty()) continue
-                val key = Variation.liftKey(name, set.modifiers)
-                val e1rm = ProgramRules.epley(weight, set.reps)
-                if (e1rm > (best[key] ?: 0.0)) {
-                    best[key] = e1rm
-                    bestSet[key] = set to (ex?.isWeighted == false)
-                }
-                shown.putIfAbsent(key, name)
-                variations.putIfAbsent(key, Variation.key(set.modifiers))
-            }
-            for ((key, e1rm) in best) {
-                val acc = byLift.getOrPut(key) { Acc(shown.getValue(key), variations.getValue(key)) }
-                acc.perSession += Peak(at, e1rm, bestSet.getValue(key).first, bestSet.getValue(key).second)
+            for ((key, best) in sessionBests(sessionSets[session.id].orEmpty(), exercises)) {
+                val acc = byLift.getOrPut(key) { Acc(best.display, best.variation) }
+                acc.perSession += Peak(at, best.e1rmKg, best.set, best.addsToBody)
             }
         }
         val cutoff = nowMs - windowDays * DAY_MS
@@ -92,6 +104,56 @@ object LiftRecords {
                 bestSetAddsToBody = peak.addsToBody,
             )
         }.sortedByDescending { it.lastAtMs }.take(limit)
+    }
+
+    /** A lift whose best estimated 1RM went up inside a period: the new best, by how much, and the set that made it. */
+    data class RecordGain(
+        val name: String,
+        val variation: String,
+        val e1rmKg: Double,
+        val gainKg: Double,
+        val set: SessionSet,
+        val addsToBody: Boolean,
+        val atMs: Long,
+    ) {
+        val label: String get() = Variation.label(name, variation)
+    }
+
+    /** A rise smaller than this does not print as a gain (it would read "+0.0 kg"). */
+    private const val MIN_GAIN_KG = 0.05
+
+    /**
+     * The lifts that set a new best estimated 1RM in [fromMs, toMs): the period's best beats the best of every trial
+     * before [fromMs]. A lift with nothing before the period is history starting, not a record ([isFresh] says the
+     * same). One row per lift, in the order the bests were set. A recap's "personal records" and any later
+     * month or year review read the period through this, so a "record" means one thing.
+     */
+    fun gains(
+        history: List<Pair<WorkoutSession, List<SessionSet>>>,
+        exercises: Map<Long, Exercise>,
+        fromMs: Long,
+        toMs: Long,
+    ): List<RecordGain> {
+        class Held(val best: SessionBest, val at: Long)
+        val before = HashMap<String, Double>()
+        val inside = LinkedHashMap<String, Held>()
+        for ((session, sets) in history.sortedBy { it.first.completedAtMs ?: it.first.startedAtMs }) {
+            val at = session.completedAtMs ?: session.startedAtMs
+            if (at >= toMs) break
+            for ((key, best) in sessionBests(sets, exercises)) {
+                if (at < fromMs) {
+                    if (best.e1rmKg > (before[key] ?: 0.0)) before[key] = best.e1rmKg
+                } else if (best.e1rmKg > (inside[key]?.best?.e1rmKg ?: 0.0)) {
+                    inside[key] = Held(best, at)
+                }
+            }
+        }
+        return inside.mapNotNull { (key, held) ->
+            val prior = before[key] ?: return@mapNotNull null
+            val gain = held.best.e1rmKg - prior
+            if (gain < MIN_GAIN_KG) return@mapNotNull null
+            RecordGain(held.best.display, held.best.variation, held.best.e1rmKg, gain, held.best.set, held.best.addsToBody, held.at)
+        }.sortedBy { it.atMs }
     }
 
     /**

@@ -245,21 +245,8 @@ class SessionXp private constructor(
         return coverageMuscles.all { MuscleLoad(it, weekly[it] ?: 0.0, 0.0).coverage == Coverage.COVERED }
     }
 
-    private fun logged(session: WorkoutSession, sets: List<SessionSet>): List<LoggedSet> = sets
-        .filter { exercises[it.exerciseId]?.metric?.isStrength != false }
-        .map {
-            LoggedSet(
-                exerciseName = it.exerciseName.ifEmpty { exercises[it.exerciseId]?.name ?: "" },
-                modifiers = it.modifiers,
-                weightKg = it.weightKg,
-                reps = if (exercises[it.exerciseId]?.metric == ExerciseMetric.HOLD) maxOf(1, (it.durationSec ?: 0) / 5) else it.reps,
-                rpe = it.rpe,
-                kind = it.kind,
-                done = it.done,
-                atMs = session.startedAtMs,
-                bodyweight = exercises[it.exerciseId]?.isWeighted == false,
-            )
-        }
+    private fun logged(session: WorkoutSession, sets: List<SessionSet>): List<LoggedSet> =
+        HardSets.logged(session.startedAtMs, sets, exercises)
 
     private companion object {
         const val DAY_MS = 24L * 60 * 60 * 1000

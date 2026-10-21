@@ -33,6 +33,30 @@ object Streak {
     }
 
     /**
+     * The longest chain the dates ever held, by the same rule as [current]: a closed chain spans its first
+     * to its last workout, the live one runs on to [today]. Never less than [current].
+     */
+    fun longest(dates: Set<LocalDate>, today: LocalDate): Int {
+        val sorted = dates.filter { !it.isAfter(today) }.sorted()
+        if (sorted.isEmpty()) return 0
+        var best = 0
+        var start = sorted.first()
+        var end = start
+        for (date in sorted.drop(1) + null) {
+            if (date != null && date.toEpochDay() - end.toEpochDay() <= MAX_GAP_DAYS) {
+                end = date
+                continue
+            }
+            best = maxOf(best, (end.toEpochDay() - start.toEpochDay()).toInt() + 1)
+            if (date != null) {
+                start = date
+                end = date
+            }
+        }
+        return maxOf(best, current(dates, today))
+    }
+
+    /**
      * True on the last day a live oath survives untrained: the last trial was
      * exactly [MAX_GAP_DAYS] days ago, so tomorrow the gap closes the chain.
      * A day already trained, or an oath already broken, is never at risk.

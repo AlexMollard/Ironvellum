@@ -89,10 +89,37 @@ object HardSets {
      * set at exactly seven days is out, one in the future is ignored. Sets
      * of movements without a muscle profile contribute nothing.
      */
-    fun fromLog(sets: List<LoggedSet>, nowMs: Long): Map<Muscle, Double> {
+    fun fromLog(sets: List<LoggedSet>, nowMs: Long): Map<Muscle, Double> =
+        credit(sets) { it.atMs <= nowMs && it.atMs > nowMs - WINDOW_MS }
+
+    /**
+     * Fractional hard sets per muscle for sets logged in [fromMs, toMs): the same rule as [fromLog] over any
+     * period, so a calendar week (whose length is 167 or 169 hours at a clock change) is judged as itself.
+     */
+    fun inRange(sets: List<LoggedSet>, fromMs: Long, toMs: Long): Map<Muscle, Double> =
+        credit(sets) { it.atMs >= fromMs && it.atMs < toMs }
+
+    /** [sets] as [LoggedSet]s stamped [atMs]: holds count five seconds a rep, activities are left out. */
+    fun logged(atMs: Long, sets: List<SessionSet>, exercises: Map<Long, Exercise>): List<LoggedSet> = sets
+        .filter { exercises[it.exerciseId]?.metric?.isStrength != false }
+        .map {
+            LoggedSet(
+                exerciseName = it.exerciseName.ifEmpty { exercises[it.exerciseId]?.name ?: "" },
+                modifiers = it.modifiers,
+                weightKg = it.weightKg,
+                reps = if (exercises[it.exerciseId]?.metric == ExerciseMetric.HOLD) maxOf(1, (it.durationSec ?: 0) / 5) else it.reps,
+                rpe = it.rpe,
+                kind = it.kind,
+                done = it.done,
+                atMs = atMs,
+                bodyweight = exercises[it.exerciseId]?.isWeighted == false,
+            )
+        }
+
+    private inline fun credit(sets: List<LoggedSet>, inWindow: (LoggedSet) -> Boolean): Map<Muscle, Double> {
         val credit = mutableMapOf<Muscle, Double>()
         for (set in sets) {
-            if (set.atMs > nowMs || set.atMs <= nowMs - WINDOW_MS) continue
+            if (!inWindow(set)) continue
             if (!isHard(set.kind, set.rpe, set.done, set.reps, set.weightKg, set.bodyweight)) continue
             val profile = MuscleMap.profile(set.exerciseName, set.modifiers) ?: continue
             for ((muscle, share) in profile.muscles) {
