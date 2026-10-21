@@ -33,6 +33,9 @@
          it mirrors the live session the lifter has open. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Android 16: lets the workout notification ask to be promoted to a Live Update (status-bar chip, lock-screen
+         card). Not a runtime permission; the lifter's own switch is in Android's settings (Settings > Lock screen and shortcuts). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <!--
       Package visibility: without this, getSdkStatus() cannot see the Health
@@ -69,7 +72,24 @@
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
+            <!-- Long-press the icon: Start today, Resume (res/xml/shortcuts.xml). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Quick Settings tile: start today's workout, or return to the one running. Added by the lifter
+             (Settings > Lock screen and shortcuts asks Android to add it). -->
+        <service
+            android:name=".LiveWorkoutTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_workout"
+            android:label="@string/live_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- The trial notification's Set done, Skip rest and +15 s buttons. Broadcasts
              run from the lock screen; not exported, only our own PendingIntents. -->

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon: Start today and Resume. Static, so each label is one string (the plain wording, whatever
+     the Themed names switch says: the launcher reads this file, not the app's words). Both land in MainActivity through
+     the same open_tab extra the widgets use; Resume never begins a workout (Notifications.TAB_RESUME). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start_today"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_start"
+        android:shortcutShortLabel="@string/shortcut_start_today_short"
+        android:shortcutLongLabel="@string/shortcut_start_today_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ironvellum.app"
+            android:targetClass="com.ironvellum.app.MainActivity">
+            <extra android:name="open_tab" android:value="begin" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="resume"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_resume"
+        android:shortcutShortLabel="@string/shortcut_resume_short"
+        android:shortcutLongLabel="@string/shortcut_resume_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.ironvellum.app"
+            android:targetClass="com.ironvellum.app.MainActivity">
+            <extra android:name="open_tab" android:value="resume" />
+        </intent>
+    </shortcut>
+</shortcuts>

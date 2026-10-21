@@ -61,6 +61,7 @@ object Notifications {
     const val REQUEST_EXTEND_REST = 8
     const val REQUEST_RECAP = 9
     const val REQUEST_RECAP_SHARE = 10
+    const val REQUEST_TILE = 11
 
     /** Where a tap lands; read by MainActivity. */
     const val EXTRA_OPEN_TAB = "open_tab"
@@ -78,6 +79,9 @@ object Notifications {
 
     /** The home-screen widgets' button: continue the live trial, or begin today's rite, as Today does. */
     const val TAB_BEGIN = "begin"
+
+    /** The Resume shortcut: the live trial if one is under way, else Today; it never begins one. */
+    const val TAB_RESUME = "resume"
 
     /** With [TAB_BEGIN]: no rite to begin, so begin an empty workout (Today's own link). */
     const val EXTRA_EMPTY = "empty"

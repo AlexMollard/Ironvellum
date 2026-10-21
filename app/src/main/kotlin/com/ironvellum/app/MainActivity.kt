@@ -114,6 +114,7 @@ class MainActivity : ComponentActivity() {
             Notifications.TAB_INBOX -> inboxRequest++
             Notifications.TAB_TODAY -> todayRequest++
             Notifications.TAB_BEGIN -> beginFromWidget(intent.getBooleanExtra(Notifications.EXTRA_EMPTY, false))
+            Notifications.TAB_RESUME -> beginFromWidget(empty = false, start = false)
             Notifications.TAB_HOME -> goTo(Routes.DASHBOARD)
             Notifications.TAB_FORGE -> goTo(Routes.programBuilder("week", null))
             Notifications.TAB_RECAP -> {
@@ -138,15 +139,16 @@ class MainActivity : ComponentActivity() {
     /**
      * The widget's Start, resolved against the state as it is now: the live trial is opened, else today's
      * rite is begun by the same call Today's button makes; anything else (sealed since, day turned over)
-     * just lands on Today.
+     * just lands on Today. With [start] false (the Resume shortcut) nothing is begun: no live trial lands on Today.
      */
-    private fun beginFromWidget(empty: Boolean) {
+    private fun beginFromWidget(empty: Boolean, start: Boolean = true) {
         val repo = (application as IronvellumApp).repository
         lifecycleScope.launch {
             val state = runCatching { loadWidgetState(applicationContext, repo, forTap = true) }.getOrNull()
             val sessionId = runCatching {
                 when {
                     state?.sessionId != null -> state.sessionId
+                    !start -> null
                     empty -> repo.startFreeformSession(Words.openTrial.c)
                     state?.presetId != null -> repo.startSessionFromPreset(state.presetId)
                     else -> null
