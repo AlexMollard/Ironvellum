@@ -20,6 +20,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -159,7 +161,9 @@ internal fun ReviewContent(
  */
 @Composable
 private fun Positions(scroll: ScrollState) {
-    val reached = if (scroll.maxValue <= 0) 2 else minOf(2, (scroll.value * 3f / scroll.maxValue).toInt())
+    val reached by remember {
+        derivedStateOf { if (scroll.maxValue <= 0) 2 else minOf(2, (scroll.value * 3f / scroll.maxValue).toInt()) }
+    }
     Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         repeat(3) { index ->
             Box(

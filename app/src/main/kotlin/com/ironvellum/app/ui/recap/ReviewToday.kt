@@ -46,7 +46,7 @@ fun ReviewTodayCard(summary: ReviewSummary, onOpen: () -> Unit, onDismiss: () ->
     Row(
         modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(vertical = 4.dp)
             .clip(shape)
             .background(IronvellumColors.Emerald.copy(alpha = 0.12f), shape)
             .inkBorder(IronvellumColors.Emerald.copy(alpha = 0.45f), shape, 1.dp),
@@ -55,7 +55,7 @@ fun ReviewTodayCard(summary: ReviewSummary, onOpen: () -> Unit, onDismiss: () ->
         Row(
             Modifier
                 .weight(1f)
-                .heightIn(min = 64.dp)
+                .heightIn(min = 56.dp)
                 .clickable(onClickLabel = stringResource(R.string.review_open_description), role = Role.Button, onClick = onOpen)
                 .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
