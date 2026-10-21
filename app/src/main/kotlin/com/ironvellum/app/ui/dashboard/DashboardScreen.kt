@@ -118,7 +118,7 @@ import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.Xp
-import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.GatedAchievementOverlay
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -598,7 +598,7 @@ fun DashboardScreen(
     val veilGrant by viewModel.pendingVeilGrant.collectAsStateWithLifecycle()
     val wornCrest by viewModel.wornCrest.collectAsStateWithLifecycle()
     val crestsOwned by viewModel.crestsOwned.collectAsStateWithLifecycle()
-    AchievementOverlay(
+    GatedAchievementOverlay(
         pages = deedPages(owed, sex) + veilGrantPages(veilGrant, crestsOwned),
         onDone = { viewModel.celebrationsSeen() },
         wornTitleId = ui.profile?.currentTitleId,

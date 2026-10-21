@@ -95,6 +95,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
 import com.ironvellum.app.ui.components.InkIconButton
+import com.ironvellum.app.ui.components.HoldsCelebration
 import com.ironvellum.app.ui.components.UndoBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -1730,6 +1731,8 @@ fun SessionScreen(
     // in the view model, so a rotation resumes where the lifter was; the
     // session is already completed and paid, whatever the answer.
     completion?.let { result ->
+        // Today's own deed and crest pages wait until this story, routine question included, is over.
+        HoldsCelebration()
         val hasXp = CelebrationFlow.hasXpPage(result)
         val hasLevel = CelebrationFlow.hasLevelUp(result)
         val hasDeeds = CelebrationFlow.deedsOf(result).isNotEmpty()
