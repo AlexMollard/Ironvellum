@@ -14,6 +14,7 @@ import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Reminders
+import com.ironvellum.app.data.WeeklyRecaps
 import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.HealthSyncWorker
 import com.ironvellum.app.data.cloud.CloudSyncWorker
@@ -153,6 +154,7 @@ class IronvellumApp : Application() {
         // Moves an upgraded install off the old periodic job, and books a run
         // for one whose queue was lost; a queued run is kept as it is.
         Reminders.ensureScheduled(this)
+        WeeklyRecaps.ensureScheduled(this)
         TodayWidget.ensureScheduled(this)
         CloudSyncWorker.schedule(this)
         AutoBackup.ensureScheduled(this)

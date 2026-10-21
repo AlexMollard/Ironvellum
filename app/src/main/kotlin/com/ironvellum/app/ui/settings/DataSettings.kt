@@ -215,19 +215,32 @@ internal suspend fun shareExport(
     fileName: String,
     text: String,
     mimeType: String = "application/json",
+) = shareFile(context, title, fileName, text.toByteArray(), mimeType)
+
+/**
+ * [shareExport] for any bytes: the weekly recap's share card travels as a PNG through the same provider and cache
+ * directory. An image also rides as the chooser's clip, so the sheet can preview it.
+ */
+internal suspend fun shareFile(
+    context: Context,
+    title: String,
+    fileName: String,
+    bytes: ByteArray,
+    mimeType: String,
 ) {
     val uri = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "exports").apply { mkdirs() }
         // One name, overwritten: the cache is not an archive, and a stale
         // export left behind is a copy of everything the lifter has done.
         val file = File(dir, fileName)
-        file.writeText(text)
+        file.writeBytes(bytes)
         FileProvider.getUriForFile(context, "${context.packageName}.exports", file)
     }
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_TITLE, fileName)
         putExtra(Intent.EXTRA_STREAM, uri)
+        if (mimeType.startsWith("image/")) clipData = android.content.ClipData.newRawUri(fileName, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, title))

@@ -110,6 +110,8 @@ import com.ironvellum.app.domain.CollectionTab
 import com.ironvellum.app.ui.idle.CollectionScreen
 import com.ironvellum.app.ui.idle.IdleScreen
 import com.ironvellum.app.ui.idle.RateScreen
+import com.ironvellum.app.ui.recap.RecapScreen
+import com.ironvellum.app.ui.recap.RecapShareScreen
 
 /** Ledger back stack flag: open the weigh-in on arrival. */
 private const val LOG_WEIGHT = "log_weight"
@@ -131,6 +133,8 @@ object Routes {
     const val ACCOUNT = "account"
     const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
+    const val RECAP = "recap/{week}"
+    const val RECAP_SHARE = "recap_share/{week}"
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val OPTIMISE_RITES = "optimise_rites"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
@@ -149,6 +153,11 @@ object Routes {
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
 
     fun session(sessionId: Long): String = "session/$sessionId"
+
+    /** The weekly recap of the week whose Monday is the epoch day [week], and its share screen. */
+    fun recap(week: Long): String = "recap/$week"
+
+    fun recapShare(week: Long): String = "recap_share/$week"
 
     /** Exercises, opened on one lift when [name] is given. */
     fun exercises(name: String? = null): String = if (name == null) "exercises" else "exercises?name=${Uri.encode(name)}"
@@ -382,6 +391,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
                         onOpenCrest = { navController.navigate(Routes.collection(CollectionTab.Crests)) { launchSingleTop = true } },
                         onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
+                        onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                     )
                 }
                 composable(Routes.PRESETS) {
@@ -491,6 +501,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
+                        onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                         onOpenSettings = { navController.navigate(Routes.settingsSection(it)) },
                     )
                 }
@@ -592,6 +603,27 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(Routes.ACCOUNT) {
                     AccountSettingsScreen(onBack = { navController.popBackStack() })
+                }
+                composable(
+                    Routes.RECAP,
+                    arguments = listOf(navArgument("week") { type = NavType.LongType }),
+                ) { entry ->
+                    val week = entry.arguments?.getLong("week") ?: 0L
+                    RecapScreen(
+                        weekEpochDay = week,
+                        onBack = { navController.popBackStack() },
+                        onShare = { navController.navigate(Routes.recapShare(week)) },
+                        onBegin = { id -> navController.navigate(Routes.session(id)) },
+                    )
+                }
+                composable(
+                    Routes.RECAP_SHARE,
+                    arguments = listOf(navArgument("week") { type = NavType.LongType }),
+                ) { entry ->
+                    RecapShareScreen(
+                        weekEpochDay = entry.arguments?.getLong("week") ?: 0L,
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable(Routes.WORKOUT_LOG) {
                     WorkoutLogScreen(

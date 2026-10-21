@@ -39,10 +39,14 @@ object Notifications {
     const val CHANNEL_REST_SOUND = "rest_sound"
     const val CHANNEL_REST_SILENT = "rest_silent"
 
+    /** The Sunday weekly recap: a channel of its own, so it can be turned off in the phone's settings without touching the rest. */
+    const val CHANNEL_RECAP = "recap"
+
     const val ID_SUMMONS = 1
     const val ID_TRIAL = 2
     const val ID_ALLIES = 3
     const val ID_REST_OVER = 4
+    const val ID_RECAP = 5
 
     // PendingIntent identity ignores extras: two taps aimed at MainActivity with
     // the same request code would share one PendingIntent, and FLAG_UPDATE_CURRENT
@@ -55,6 +59,8 @@ object Notifications {
     const val REQUEST_SET_DONE = 6
     const val REQUEST_SKIP_REST = 7
     const val REQUEST_EXTEND_REST = 8
+    const val REQUEST_RECAP = 9
+    const val REQUEST_RECAP_SHARE = 10
 
     /** Where a tap lands; read by MainActivity. */
     const val EXTRA_OPEN_TAB = "open_tab"
@@ -64,6 +70,11 @@ object Notifications {
     const val TAB_INBOX = "inbox"
     const val TAB_TODAY = "today"
     const val TAB_TRIAL = "trial"
+
+    /** The weekly recap's screen, for the week whose Monday is [EXTRA_RECAP_WEEK] (an epoch day); with [EXTRA_RECAP_SHARE], its share screen. */
+    const val TAB_RECAP = "recap"
+    const val EXTRA_RECAP_WEEK = "recap_week"
+    const val EXTRA_RECAP_SHARE = "recap_share"
 
     /** The home-screen widgets' button: continue the live trial, or begin today's rite, as Today does. */
     const val TAB_BEGIN = "begin"
@@ -134,6 +145,13 @@ object Notifications {
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .build(),
                     )
+                },
+                NotificationChannel(
+                    CHANNEL_RECAP,
+                    context.getString(R.string.notification_channel_recap_label),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = context.getString(R.string.notification_channel_recap_description)
                 },
                 NotificationChannel(
                     CHANNEL_REST_SILENT,

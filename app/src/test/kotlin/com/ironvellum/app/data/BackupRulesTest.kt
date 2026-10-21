@@ -21,10 +21,10 @@ class BackupRulesTest {
     private val sources = File("src/main/kotlin")
 
     /** Meaningless, or actively wrong, without the database beside it (health_write: the Health Connect grant does not survive a reinstall). */
-    private val dbDependent = setOf("onboarding", "program_answers", "reminders", "auto_backup", "warmup", "inbox_notifier", "warband_payout", "circle_payout", "rank_state", "health_write")
+    private val dbDependent = setOf("onboarding", "program_answers", "reminders", "auto_backup", "warmup", "inbox_notifier", "warband_payout", "circle_payout", "rank_state", "health_write", "weekly_recap")
 
     /** Safe to restore alone: appearance, a custom backend URL/key or a seen-this-hint flag, not training state. */
-    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance", "deeds", "trial_prefs")
+    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance", "deeds", "trial_prefs", "share_card")
 
     @Test
     fun `every prefs file the app opens is classified`() {

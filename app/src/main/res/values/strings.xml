@@ -6205,4 +6205,199 @@
     <!-- Same text when the person has no display name. -->
     <string name="lifter_block_body_unnamed">You and this lifter will no longer see each other\'s workouts, comments or kudos, any alliance ends, and neither of you can send a friend request. Unblock any time under Friends.</string>
     <string name="lifter_block_body_unnamed__t">You and this Ironbound will no longer see each other\'s trials, remarks or tributes, any alliance ends, and neither of you can send an ally request. Unblock any time under Allies.</string>
+
+    <!-- ===== Weekly recap (docs/STRINGS.md). The screen, the Sunday notification, the Today link, the Stats list and the share card. ===== -->
+    <string name="recap_title">Weekly recap</string>
+    <!-- Date patterns for java.time.format.DateTimeFormatter, not text. -->
+    <string name="recap_pattern_day" translatable="false">EEE d</string>
+    <string name="recap_pattern_day_month" translatable="false">EEE d MMM</string>
+    <string name="recap_pattern_day_month_year" translatable="false">EEE d MMM yyyy</string>
+    <string name="recap_pattern_date" translatable="false">d MMM</string>
+    <string name="recap_pattern_date_year" translatable="false">d MMM yyyy</string>
+    <string name="recap_pattern_number" translatable="false">d</string>
+    <!-- A week as a range of days: %1$s the first day, %2$s the last day with its year ("Mon 12 – Sun 18 Oct 2026"). -->
+    <string name="recap_range">%1$s – %2$s</string>
+    <!-- A week in the Stats list: %1$s is the range of days ("12 – 18 Oct"). -->
+    <string name="recap_week_of">Week of %1$s</string>
+    <!-- A week as a tight range: %1$s the first day, %2$s the last day ("5–11 Oct", and on the share card, in capitals, "12–18 Oct 2026"). -->
+    <string name="recap_range_compact">%1$s–%2$s</string>
+
+    <!-- Counts: a number and its noun. -->
+    <plurals name="recap_workouts_count"><item quantity="one">%1$d workout</item><item quantity="other">%1$d workouts</item></plurals>
+    <plurals name="recap_workouts_count__t"><item quantity="one">%1$d trial</item><item quantity="other">%1$d trials</item></plurals>
+    <plurals name="recap_records_count"><item quantity="one">%1$d record</item><item quantity="other">%1$d records</item></plurals>
+    <!-- Only the noun, beside a big figure on the recap screen and the share card. -->
+    <plurals name="recap_hero_unit"><item quantity="one">workout</item><item quantity="other">workouts</item></plurals>
+    <plurals name="recap_hero_unit__t"><item quantity="one">trial</item><item quantity="other">trials</item></plurals>
+    <!-- The streak in days: "Streak 98 days". -->
+    <plurals name="recap_streak_days"><item quantity="one">Streak %1$d day</item><item quantity="other">Streak %1$d days</item></plurals>
+    <plurals name="recap_streak_days__t"><item quantity="one">Oath %1$d day</item><item quantity="other">Oath %1$d days</item></plurals>
+    <plurals name="recap_streak_count"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
+    <!-- Next week's card: %1$d the number of workouts planned (the plural quantity), %2$s the first one's name, %3$s the weekday ("Monday"). -->
+    <plurals name="recap_next_planned"><item quantity="one">%1$d workout planned, starting with %2$s on %3$s.</item><item quantity="other">%1$d workouts planned, starting with %2$s on %3$s.</item></plurals>
+    <plurals name="recap_next_planned__t"><item quantity="one">%1$d trial planned, starting with %2$s on %3$s.</item><item quantity="other">%1$d trials planned, starting with %2$s on %3$s.</item></plurals>
+    <!-- A light week's note: %1$s the workout's name, %2$d the streak in days (the plural quantity). -->
+    <plurals name="recap_light_body"><item quantity="one">One %1$s day kept your streak alive at %2$d day. No comparison bars this week, so a quiet week doesn\'t read as a loss.</item><item quantity="other">One %1$s day kept your streak alive at %2$d days. No comparison bars this week, so a quiet week doesn\'t read as a loss.</item></plurals>
+    <plurals name="recap_light_body__t"><item quantity="one">One %1$s trial kept your oath alive at %2$d day. No comparison bars this week, so a quiet week doesn\'t read as a loss.</item><item quantity="other">One %1$s trial kept your oath alive at %2$d days. No comparison bars this week, so a quiet week doesn\'t read as a loss.</item></plurals>
+
+    <!-- The top card. -->
+    <string name="recap_stat_sets_label">Sets</string>
+    <string name="recap_stat_volume_label">Volume</string>
+    <string name="recap_stat_time_label">Time</string>
+    <!-- Against the week before: %1$d the workouts then, %2$s the range of days ("5–11 Oct"). -->
+    <string tools:ignore="PluralsCandidate" name="recap_vs_last_week">vs %1$d last week (%2$s)</string>
+    <!-- Beside the big figure when the week before was empty. -->
+    <!-- %1$s a signed whole number ("+11", "-3"). -->
+    <string name="recap_sets_delta">%1$s vs last week</string>
+    <!-- %1$s a signed whole percent ("+15%"). -->
+    <string name="recap_percent_delta" translatable="false">%1$s%%</string>
+    <!-- %1$s a signed number of minutes ("+38"). -->
+    <string name="recap_minutes_delta">%1$s min</string>
+    <!-- A duration: whole hours and minutes ("4 h 52"), or minutes alone ("38 min"). -->
+    <string name="recap_time_hours_minutes">%1$d h %2$02d</string>
+    <string name="recap_time_minutes">%1$d min</string>
+    <string name="recap_time_hours_minutes_long">%1$d h %2$02d min</string>
+    <string name="recap_bar_this_week">This week</string>
+    <string name="recap_bar_last_week">Last week</string>
+
+    <!-- Records. %1$d is how many lifts set a new best. -->
+    <string name="recap_records_title">Personal records</string>
+    <string tools:ignore="PluralsCandidate" name="recap_records_new_badge">%1$d NEW</string>
+    <!-- A record's set: %1$s the load, %2$d the reps, %3$s the day ("Mon 12 Oct"). -->
+    <string name="recap_record_set">%1$s × %2$d · %3$s</string>
+    <!-- A record's new estimated one-rep max: %1$s the load with its unit. -->
+    <string name="recap_record_e1rm">e1RM %1$s</string>
+    <string name="recap_best_set_label">Best set of the week</string>
+    <!-- %1$s the lift, %2$s the set ("105 kg × 5"). -->
+    <string name="recap_best_set_line">%1$s · %2$s</string>
+    <!-- A set as lifted: %1$s the load, %2$d the reps. -->
+    <string name="recap_set_figure">%1$s × %2$d</string>
+
+    <!-- Muscles. -->
+    <string name="recap_muscles_title">Muscles hit</string>
+    <!-- %1$d muscles within the plan, %2$d judged. -->
+    <string tools:ignore="PluralsCandidate" name="recap_muscles_on_aim_count">%1$d of %2$d on aim</string>
+    <!-- Under the title, with a plan: %1$d is the weekly minimum of hard sets. -->
+    <string tools:ignore="PluralsCandidate" name="recap_muscles_caption">Hard sets this week. Box is the plan\'s aim, line is the %1$d-set minimum.</string>
+    <!-- Under the title, with no plan to aim at. -->
+    <string tools:ignore="PluralsCandidate" name="recap_muscles_caption_no_plan">Hard sets this week. Line is the %1$d-set minimum.</string>
+    <string name="recap_state_not_trained">Not trained</string>
+    <string name="recap_state_below_minimum">Below minimum</string>
+    <string name="recap_state_under_plan">Under plan</string>
+    <string name="recap_state_on_aim">On aim</string>
+    <!-- A muscle's line: %1$s its state, %2$s the aim ("4–6"). -->
+    <string name="recap_muscle_status_aim">%1$s · aim %2$s</string>
+    <!-- An aim as a range of sets: %1$d to %2$d. -->
+    <string name="recap_aim_range">%1$d–%2$d</string>
+    <!-- The collapsed summary of muscles on aim: %1$d is how many. -->
+    <string tools:ignore="PluralsCandidate" name="recap_on_aim_summary">%1$d on aim</string>
+    <!-- One muscle in that summary: %1$s its name, %2$s its hard sets. -->
+    <string name="recap_muscle_figure">%1$s %2$s</string>
+    <string name="recap_on_aim_expand">Show every muscle on aim</string>
+    <string name="recap_on_aim_collapse">Hide the muscles on aim</string>
+
+    <!-- Streak card. -->
+    <string name="recap_streak_kept">Kept alive.</string>
+    <string name="recap_streak_kept_longest">Kept alive. Longest so far.</string>
+    <string name="recap_streak_train_today">Train today to keep it going.</string>
+    <string name="recap_streak_train_tomorrow">Train by tomorrow to keep it going.</string>
+    <!-- %1$s the last day that keeps it ("Sat 24 Oct"). -->
+    <string name="recap_streak_train_date">Train by %1$s to keep it going.</string>
+    <string name="recap_streak_at_risk_title">Streak at risk</string>
+    <string name="recap_streak_at_risk_title__t">Oath at risk</string>
+    <!-- %1$s the day of the last workout, %2$s when to train again ("today", "by tomorrow", "by Sat 24 Oct"), %3$d the streak in days. -->
+    <string tools:ignore="PluralsCandidate" name="recap_streak_at_risk_body">Your last workout was %1$s. Train %2$s to keep your %3$d-day streak.</string>
+    <string tools:ignore="PluralsCandidate" name="recap_streak_at_risk_body__t">Your last trial was %1$s. Train %2$s to keep your %3$d-day oath.</string>
+    <string name="recap_train_when_today">today</string>
+    <string name="recap_train_when_tomorrow">by tomorrow</string>
+    <string name="recap_train_when_date">by %1$s</string>
+
+    <!-- Next week. -->
+    <string name="recap_next_label">Next week</string>
+    <!-- %1$s the muscles that fell short ("Abs and calves"). -->
+    <string name="recap_next_short">%1$s fell short.</string>
+    <!-- %1$s the weekday ("Thursday"), %2$s the workout\'s name ("Legs"). -->
+    <string name="recap_next_add">%1$s\'s %2$s day is where to add them.</string>
+
+    <!-- Empty and light weeks. -->
+    <string name="recap_empty_none_last">Nothing logged from %1$s to %2$s.</string>
+    <!-- %1$s the first day, %2$s the last day, %3$d the workouts the week before. -->
+    <string tools:ignore="PluralsCandidate" name="recap_empty_body">Nothing logged from %1$s to %2$s. Last week you did %3$d.</string>
+    <string name="recap_empty_note">No records or muscle chart this week. Your next recap arrives the Sunday after your next workout.</string>
+    <string name="recap_empty_note__t">No records or muscle chart this week. Your next recap arrives the Sunday after your next trial.</string>
+    <string name="recap_light_title">A light week still counts.</string>
+    <string name="recap_done_title">Done this week</string>
+    <!-- A lift's work: %1$d sets, %2$d reps each, %3$s the load. -->
+    <string tools:ignore="PluralsCandidate" name="recap_lift_sets_reps_load">%1$d × %2$d at %3$s</string>
+    <string tools:ignore="PluralsCandidate" name="recap_lift_sets_reps">%1$d × %2$d</string>
+    <!-- Sets of different reps: %1$s the sets ("3 sets"), %2$s the top load. -->
+    <string name="recap_lift_sets_top">%1$s, top %2$s</string>
+    <string name="recap_begin_button">Begin %1$s</string>
+
+    <!-- Actions. -->
+    <string name="recap_share_button">Share recap</string>
+    <string name="recap_share_description">Share the recap</string>
+    <string name="recap_open_description">Open the weekly recap</string>
+
+    <!-- The Today link and the Stats list. %1$s is a line like "4 workouts · 3 records · +15%". -->
+    <string name="recap_today_label">Last week</string>
+    <string name="recap_list_title">Recaps</string>
+    <!-- Volume against the week before: %1$s a signed percent ("+15%"). -->
+    <string name="recap_list_volume">%1$s volume</string>
+
+    <!-- The notification. Its channel is listed in the phone\'s settings, where it can be turned off. -->
+    <string name="notification_channel_recap_label">Weekly recap</string>
+    <string name="notification_channel_recap_description">A summary of your week, sent on Sunday evening.</string>
+    <!-- %1$s the week\'s counts ("4 workouts, 3 records"). -->
+    <string name="recap_notify_title">Your week: %1$s</string>
+    <!-- %1$s the volume with its unit, %2$d the change in whole percent. -->
+    <string tools:ignore="PluralsCandidate" name="recap_notify_lifted_up">%1$s lifted, up %2$d%%.</string>
+    <string tools:ignore="PluralsCandidate" name="recap_notify_lifted_down">%1$s lifted, down %2$d%%.</string>
+    <string name="recap_notify_lifted_flat">%1$s lifted.</string>
+    <plurals name="recap_notify_streak"><item quantity="one">Streak at %1$d day.</item><item quantity="other">Streak at %1$d days.</item></plurals>
+    <plurals name="recap_notify_streak__t"><item quantity="one">Oath at %1$d day.</item><item quantity="other">Oath at %1$d days.</item></plurals>
+    <!-- Expanded notification. %1$s the sets ("62 sets"), %2$s the time ("4 h 52 min"). -->
+    <string name="recap_notify_big_totals">%1$s · %2$s</string>
+    <!-- %1$s the lifts that set records, separated by commas. -->
+    <string name="recap_notify_big_records">Records: %1$s</string>
+    <!-- %1$s the next workout\'s name, %2$s its weekday. -->
+    <string name="recap_notify_big_next">Next: %1$s on %2$s</string>
+    <string name="recap_notify_open">Open recap</string>
+    <string name="recap_notify_share">Share</string>
+    <!-- What the lock screen shows: no figures. -->
+    <string name="recap_notify_public_title">Your weekly recap is ready</string>
+    <string name="recap_notify_public_text">Tap to see how the week went.</string>
+
+    <!-- The share screen and the share card. -->
+    <string name="recap_share_title">Share recap</string>
+    <string name="recap_share_records_label">Personal records</string>
+    <string name="recap_share_records_caption">Lift, load and e1RM change</string>
+    <string name="recap_share_streak_label">Streak</string>
+    <string name="recap_share_streak_label__t">Oath</string>
+    <string name="recap_share_streak_caption">Days and the week strip</string>
+    <string name="recap_share_body_label">Body weight and measurements</string>
+    <string name="recap_share_photos_label">Progress photos</string>
+    <string name="recap_share_never">Never on a share card</string>
+    <string name="recap_share_save_button">Save image</string>
+    <string name="recap_share_send_button">Share</string>
+    <string name="recap_share_saved">Saved to Pictures.</string>
+    <string name="recap_share_save_failed">The image could not be saved.</string>
+    <!-- The card follows the app\'s own theme: its alt text for screen readers. -->
+    <string name="recap_share_card_description">Preview of the share card</string>
+    <!-- Under the big figure on the card: %1$d the workouts the week before. -->
+    <string tools:ignore="PluralsCandidate" name="recap_card_up">this week, up from %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="recap_card_down">this week, down from %1$d</string>
+    <string name="recap_card_same">this week, same as last week</string>
+    <string name="recap_card_this_week">this week</string>
+    <string name="recap_card_records_title">New records</string>
+    <!-- Units beside the card's big figures: tonnes, thousands of pounds, hours, minutes. -->
+    <string name="recap_card_unit_tonnes">t</string>
+    <string name="recap_card_unit_klb">k lb</string>
+    <string name="recap_card_unit_hours">h</string>
+    <string name="recap_card_unit_minutes">min</string>
+    <string name="recap_share_chooser_title">Share your week</string>
+    <string name="recap_share_file_name" translatable="false">ironvellum-weekly-recap.png</string>
+    <!-- The saved image's file name: %1$s is the Monday of the week (2026-10-12). -->
+    <string name="recap_share_save_name" translatable="false">ironvellum-recap-%1$s.png</string>
+    <string name="recap_share_pictures_folder" translatable="false">Pictures/Ironvellum</string>
 </resources>

@@ -6,7 +6,7 @@ import android.content.Intent
 import com.ironvellum.app.widget.TodayWidget
 
 /**
- * Re-books the Summons when the wall clock moves under it. WorkManager keeps
+ * Re-books the Summons and the Sunday recap when the wall clock moves under it. WorkManager keeps
  * a delay in elapsed time and listens for neither broadcast, so after a
  * flight or a manual clock change the queued run would land at the old
  * 19:30. Both broadcasts are exempt from the implicit-broadcast limits, so a
@@ -17,6 +17,7 @@ class TimeChangeReceiver : BroadcastReceiver() {
         when (intent.action) {
             Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED -> {
                 Reminders.reschedule(context)
+                WeeklyRecaps.reschedule(context)
                 TodayWidget.onClockChanged(context)
             }
         }

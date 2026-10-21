@@ -116,6 +116,12 @@ class MainActivity : ComponentActivity() {
             Notifications.TAB_BEGIN -> beginFromWidget(intent.getBooleanExtra(Notifications.EXTRA_EMPTY, false))
             Notifications.TAB_HOME -> goTo(Routes.DASHBOARD)
             Notifications.TAB_FORGE -> goTo(Routes.programBuilder("week", null))
+            Notifications.TAB_RECAP -> {
+                val week = intent.getLongExtra(Notifications.EXTRA_RECAP_WEEK, Long.MIN_VALUE)
+                if (week != Long.MIN_VALUE) {
+                    goTo(if (intent.getBooleanExtra(Notifications.EXTRA_RECAP_SHARE, false)) Routes.recapShare(week) else Routes.recap(week))
+                }
+            }
             Notifications.TAB_TRIAL -> {
                 val id = intent.getLongExtra(Notifications.EXTRA_SESSION_ID, -1L)
                 if (id > 0L) {
