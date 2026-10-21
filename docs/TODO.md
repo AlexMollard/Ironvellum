@@ -45,6 +45,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] 8 String extraction into resources, with a lint guard against new literals: strings.xml is translator-ready (positional placeholders, context comments, locale config, docs/TRANSLATING.md), en-XA and ar-XB swept, social, idle/Veil, Cloud and Account messages, data copy and counts-as-plurals moved (phase 8); ratchet 1768 literals in 113 files down to 495 in 54, every one a justified exemption (`justified` in HardcodedUiLiteralTest: exercise and template catalogue names, citations, formats, routes, keys). Rank titles, skill, title, crest, deed and relic catalogue names stay English data for a later step; ar-XB and en-XA layout leftovers are listed in the phase 7 report for 1.9
 - [x] 9 Light theme: System, Dark, Light (47d97395, 384353ba, fbd34fa7)
 - [x] Gate housekeeping: back under 5 minutes (3m36s to 3m58s after an edit), self-healing emulator lock, lint warnings 58 to 44 (be444d0e, d8bd7153)
+- [x] Weekly recap: Sunday 19:00 notification (private on the lock screen), recap screen from Today Mon to Wed and Stats, 1080x1350 share card in the app theme; range aggregation and card renderer are shared with the Month/Year in review
 - [ ] Release: version 1.8, changelog, README and store text and screenshots (widgets, light theme)
 - [ ] Owner: push tag `v1.8`
 
