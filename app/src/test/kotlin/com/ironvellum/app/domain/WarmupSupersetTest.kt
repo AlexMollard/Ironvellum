@@ -46,7 +46,7 @@ class WarmupSupersetTest {
         )
         assertEquals(listOf(0, 0, null), draft.blocks.map { it.supersetGroup })
         assertEquals(listOf(true, false), draft.blocks[0].sets.map { it.warmup })
-        assertTrue("Bench in and out of the superset are not one block", draft.hasRepeatedMovement)
+        assertEquals("Bench in and out of the superset are two blocks", 3, draft.blocks.size)
         assertTrue("a metric change keeps the warm-up", TrialDraft.reshape(draft.blocks[0].sets[0], ExerciseMetric.HOLD).warmup)
         assertFalse("an added set is a working set", draft.addSet(0).blocks[0].sets.last().warmup)
     }

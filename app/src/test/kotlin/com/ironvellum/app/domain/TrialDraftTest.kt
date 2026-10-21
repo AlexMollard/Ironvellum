@@ -70,31 +70,19 @@ class TrialDraftTest {
         assertEquals(listOf("Bench Press", "Plank", "Push-up"), restored.blocks.map { it.exerciseName })
         assertEquals(listOf(8, 6), restored.blocks[0].sets.map { it.reps })
         assertEquals(40, restored.blocks[1].sets.single().durationSec)
-        assertFalse(restored.hasRepeatedMovement)
     }
 
     @Test
-    fun `a movement listed twice in a rite folds into one block`() {
+    fun `a movement listed twice in a rite stays two blocks, whether or not the entries are described alike`() {
         val twice = TrialDraft.of(
             listOf(
                 SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 8, done = true),
                 SessionSet(exerciseId = 2, exerciseName = "Plank", exercisePosition = 1, setIndex = 0, reps = 0, durationSec = 40, done = true),
                 SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 2, setIndex = 0, reps = 5, done = true),
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 3, setIndex = 0, reps = 4, modifiers = "paused", done = true),
             ),
         )
-        assertEquals(listOf(1L, 2L), twice.blocks.map { it.exerciseId })
-        assertEquals(listOf(8, 5), twice.blocks[0].sets.map { it.reps })
-        assertFalse(twice.hasRepeatedMovement)
-    }
-
-    @Test
-    fun `a repeated movement described differently is flagged rather than merged`() {
-        val apart = TrialDraft.of(
-            listOf(
-                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 8, modifiers = "paused", done = true),
-                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 1, setIndex = 0, reps = 5, done = true),
-            ),
-        )
-        assertEquals(2, apart.blocks.size)
-        assertEquals(true, apart.hasRepeatedMovement)
+        assertEquals(listOf(1L, 2L, 1L, 1L), twice.blocks.map { it.exerciseId })
+        assertEquals(listOf(8, 0, 5, 4), twice.blocks.map { it.sets.single().reps })
+        assertEquals(listOf("", "", "", "paused"), twice.blocks.map { it.modifiers })
     }}

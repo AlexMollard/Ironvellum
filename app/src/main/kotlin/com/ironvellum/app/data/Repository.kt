@@ -4,6 +4,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.FavouriteExerciseEntity
+import com.ironvellum.app.domain.BlockKey
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.LoadKit
@@ -176,6 +177,9 @@ internal fun SetLogEntity.setKind(): SetKind = SetKind.fromName(kind)
 
 /** A warm-up is the one kind that is stored unticked and never counts. */
 internal val SetLogEntity.isWarmup: Boolean get() = setKind() == SetKind.WARMUP
+
+/** The block the row belongs to: a rite may name one movement twice, so the movement alone is not enough. */
+internal val SetLogEntity.blockKey: BlockKey get() = BlockKey(exercisePosition, exerciseId)
 
 /**
  * Which set-position record stands as a movement's evidence. [SetRecords.records]
@@ -662,12 +666,14 @@ class Repository(
         // The Forge never makes a superset, but it must not undo the lifter's own: a movement keeps its group
         // from the rite being tempered, and savePreset drops it where the pair is no longer neighbours.
         val kept = presetId?.let { presetDao.presetWithEntries(it) }
-        val keptGroups = kept?.working
-            ?.filter { it.supersetGroup != null }?.associate { it.exerciseId to it.supersetGroup }.orEmpty()
+        // Keyed by (movement, Nth entry of it): a rite may name a movement twice, and each entry keeps its own.
+        val keptEntries = kept?.working?.sortedBy { it.position }?.let { rows -> rows.zip(nthOfMovement(rows.map { it.exerciseId })) }.orEmpty()
+        val keptGroups = keptEntries
+            .filter { (e, _) -> e.supersetGroup != null }.associate { (e, nth) -> (e.exerciseId to nth) to e.supersetGroup }
         // Likewise a lift's set scheme: the Forge tempers loads and counts, it never undoes how a lift is run. The
         // scheme follows the lift and is fitted to the set count the Forge chose.
-        val keptSchemes = kept?.working
-            ?.filter { it.setScheme != null }?.associate { it.exerciseId to SetScheme.decode(it.setScheme) }.orEmpty()
+        val keptSchemes = keptEntries
+            .filter { (e, _) -> e.setScheme != null }.associate { (e, nth) -> (e.exerciseId to nth) to SetScheme.decode(e.setScheme) }
         // The Forge plans the worked exercises only (it never sees a warm-up, [toPlanned] leaves them out), so the
         // rite's warm-ups are carried over as they are, whatever it did to the rest.
         val keptWarmups = kept?.entries?.filter { it.warmup }?.sortedBy { it.position }?.map {
@@ -686,16 +692,21 @@ class Repository(
             name = preset.name,
             note = Evidence.split(preset.note).first,
             scheduledDay = preset.scheduledDay,
-            entries = keptWarmups + preset.entries.map { entry ->
-                PresetDraftEntry(
-                    exerciseId = idByName.getValue(entry.exerciseName),
-                    targetSets = entry.sets,
-                    targetReps = entry.reps,
-                    targetWeightKg = entry.targetWeightKg,
-                    modifiers = entry.modifiers,
-                    supersetGroup = keptGroups[idByName.getValue(entry.exerciseName)],
-                    scheme = keptSchemes[idByName.getValue(entry.exerciseName)]?.fitTo(entry.sets) ?: SetScheme(),
-                )
+            entries = keptWarmups + preset.entries.let { planned ->
+                val ids = planned.map { idByName.getValue(it.exerciseName) }
+                val nth = nthOfMovement(ids)
+                planned.mapIndexed { i, entry ->
+                    val key = ids[i] to nth[i]
+                    PresetDraftEntry(
+                        exerciseId = ids[i],
+                        targetSets = entry.sets,
+                        targetReps = entry.reps,
+                        targetWeightKg = entry.targetWeightKg,
+                        modifiers = entry.modifiers,
+                        supersetGroup = keptGroups[key],
+                        scheme = keptSchemes[key]?.fitTo(entry.sets) ?: SetScheme(),
+                    )
+                }
             },
         )
     }
@@ -975,16 +986,40 @@ class Repository(
      * or a first attempt has nothing to explain). Rebuilt from the rite the
      * trial began from, so an open trial has none.
      */
-    suspend fun trialReasons(sessionId: Long): Map<Long, String> {
+    suspend fun trialReasons(sessionId: Long): Map<BlockKey, String> {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
         val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
         val mode = trainingMode()
-        return pw.working.sortedBy { it.position }.mapNotNull { entry ->
+        val entries = entriesByBlock(sessionDao.setsFor(sessionId), pw.working)
+        return entries.mapNotNull { (block, entry) ->
             // A top scheme's own line says where its top set starts and why, not the straight-set engine's.
             if (SetScheme.decode(entry.setScheme).type == SchemeType.TOP_BACKOFF) return@mapNotNull null
             val recommendation = recommendationFor(entry, exerciseDao.byId(entry.exerciseId), mode)
-            recommendation?.takeIf { it.changed }?.let { entry.exerciseId to it.reason }
+            recommendation?.takeIf { it.changed }?.let { block to it.reason }
         }.toMap()
+    }
+
+    /** For each id, how many of the same id came before it in [ids]: 0 for a movement's first entry, 1 for its second. */
+    private fun nthOfMovement(ids: List<Long>): List<Int> {
+        val seen = mutableMapOf<Long, Int>()
+        return ids.map { id -> seen.getOrDefault(id, 0).also { seen[id] = it + 1 } }
+    }
+
+    /**
+     * The rite entry behind each block of a trial, [entries] being the rite's worked ones: a movement's Nth block (in
+     * trial order) is its Nth entry (in rite order), the rule [RoutineUpdate.propose] reads a finished trial by. Blocks
+     * the rite never named (added mid-trial) have no entry.
+     */
+    private fun entriesByBlock(rows: List<SetLogEntity>, entries: List<PresetEntryEntity>): Map<BlockKey, PresetEntryEntity> {
+        val byMovement = entries.sortedBy { it.position }.groupBy { it.exerciseId }
+        val seen = mutableMapOf<Long, Int>()
+        return buildMap {
+            rows.map { it.blockKey }.distinct().sortedBy { it.position }.forEach { block ->
+                val nth = seen.getOrDefault(block.exerciseId, 0)
+                seen[block.exerciseId] = nth + 1
+                byMovement[block.exerciseId]?.getOrNull(nth)?.let { put(block, it) }
+            }
+        }
     }
 
     private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, isWarmup)
@@ -1005,7 +1040,7 @@ class Repository(
         // A top set and a drop hand nothing on (a top's load is not its back-offs', a drop is a step down from the
         // set before it), and only sets of the same kind follow each other: a back-off never takes the top's load.
         if (after.setKind() == SetKind.TOP || after.setKind() == SetKind.DROP) return
-        val rows = sessionDao.setsFor(after.sessionId).filter { it.exerciseId == after.exerciseId && it.kind == after.kind }
+        val rows = sessionDao.setsFor(after.sessionId).filter { it.blockKey == after.blockKey && it.kind == after.kind }
         carriesFrom(after.carrySet(), rows.map { it.carrySet() }, figures, carryEdits).forEach { carry ->
             val row = rows.first { it.id == carry.id }
             sessionDao.updateSet(
@@ -1111,11 +1146,11 @@ class Repository(
     }
 
     /**
-     * The last top set of each lift in [modifiersByExercise] (exercise id to the modifiers it is done with now),
-     * for the trial's "last top" line: the last one done in the same [Variation]. A lift that never had one is left out.
+     * The last top set of each block in [modifiersByBlock] (the modifiers it is done with now), for the trial's "last
+     * top" line: the last one done by the block's movement in the same [Variation]. A lift that never had one is left out.
      */
-    suspend fun lastTopMarks(modifiersByExercise: Map<Long, String>): Map<Long, TopMark> =
-        modifiersByExercise.mapNotNull { (id, modifiers) -> lastTopMark(id, modifiers)?.let { id to it } }.toMap()
+    suspend fun lastTopMarks(modifiersByBlock: Map<BlockKey, String>): Map<BlockKey, TopMark> =
+        modifiersByBlock.mapNotNull { (block, modifiers) -> lastTopMark(block.exerciseId, modifiers)?.let { block to it } }.toMap()
 
     /**
      * The sets of one lift whose rite entry has a scheme, or a warm-up ramp of its own: the ramp first (unticked, as
@@ -1176,8 +1211,8 @@ class Repository(
      * The scheme a lift's back-offs follow in a trial: the rite entry's own when it is a top scheme (its percent or
      * fixed load), else the plain default, 10% lighter, which is what "Make set 1 a top set" promises.
      */
-    private suspend fun backoffSchemeFor(sessionId: Long, exerciseId: Long): SetScheme =
-        presetScheme(sessionId, exerciseId).takeIf { it.type == SchemeType.TOP_BACKOFF } ?: SetScheme(type = SchemeType.TOP_BACKOFF)
+    private suspend fun backoffSchemeFor(sessionId: Long, block: BlockKey): SetScheme =
+        presetScheme(sessionId, block).takeIf { it.type == SchemeType.TOP_BACKOFF } ?: SetScheme(type = SchemeType.TOP_BACKOFF)
 
     /**
      * After a top set is logged: the back-offs still to do take their load from it, by the lift's percent (or fixed
@@ -1185,12 +1220,12 @@ class Repository(
      * lifter moved by hand on a waiting back-off stays as they set it.
      */
     private suspend fun refillBackoffs(top: SetLogEntity) {
-        val rows = sessionDao.setsFor(top.sessionId).filter { it.exerciseId == top.exerciseId }
+        val rows = sessionDao.setsFor(top.sessionId).filter { it.blockKey == top.blockKey }
         val waiting = rows.filter { it.setKind() == SetKind.BACKOFF && !it.done && it.setIndex > top.setIndex }
         if (waiting.isEmpty()) return
         val exercise = exerciseDao.byId(top.exerciseId) ?: return
         val lift = liftLoadingFor(exercise, loadKit())
-        val backoff = SchemePlan.backoff(top.weightKg, top.reps, backoffSchemeFor(top.sessionId, top.exerciseId), lift)
+        val backoff = SchemePlan.backoff(top.weightKg, top.reps, backoffSchemeFor(top.sessionId, top.blockKey), lift)
         waiting.forEach { row ->
             sessionDao.updateSet(
                 row.copy(
@@ -1206,12 +1241,12 @@ class Repository(
      * rounded to the kit): a trial begins with them planned from the rite's load, which is nothing at all on a lift
      * with no load yet, so they would otherwise stay at 0 whatever the lifter then lifts. A load typed on a drop stays.
      */
-    private suspend fun refillDrops(sessionId: Long, exerciseId: Long) {
-        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId && !it.isWarmup }.sortedBy { it.setIndex }
+    private suspend fun refillDrops(sessionId: Long, block: BlockKey) {
+        val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block && !it.isWarmup }.sortedBy { it.setIndex }
         if (rows.none { it.setKind() == SetKind.DROP && !it.done }) return
-        val exercise = exerciseDao.byId(exerciseId) ?: return
+        val exercise = exerciseDao.byId(block.exerciseId) ?: return
         val lift = liftLoadingFor(exercise, loadKit())
-        val percent = presetScheme(sessionId, exerciseId).takeIf { it.type == SchemeType.DROPS }?.dropPercent
+        val percent = presetScheme(sessionId, block).takeIf { it.type == SchemeType.DROPS }?.dropPercent
             ?: SetScheme.DEFAULT_DROP_PERCENT
         val loads = SchemePlan.dropLoads(
             rows.map { SchemePlan.DropRow(it.setKind() == SetKind.DROP, it.done, it.weightKg, carryEdits.edited(it.id, CarryFigure.LOAD)) },
@@ -1226,9 +1261,9 @@ class Repository(
      * and nothing written, when the lift has fewer than two sets, already has a top set, is a superset's, or the
      * trial is sealed.
      */
-    suspend fun makeTopSet(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+    suspend fun makeTopSet(sessionId: Long, block: BlockKey): Boolean = db.withTransaction {
         if (isSealed(sessionId)) return@withTransaction false
-        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId && !it.isWarmup }.sortedBy { it.setIndex }
+        val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block && !it.isWarmup }.sortedBy { it.setIndex }
         if (rows.size < 2 || rows.any { it.setKind() == SetKind.TOP }) return@withTransaction false
         val top = rows.first().copy(kind = SetKind.TOP.name)
         sessionDao.updateSet(top)
@@ -1247,9 +1282,9 @@ class Repository(
         if (isSealed(parent.sessionId) || parent.isWarmup || parent.supersetGroup != null) return@withTransaction false
         val exercise = exerciseDao.byId(parent.exerciseId) ?: return@withTransaction false
         val lift = liftLoadingFor(exercise, loadKit())
-        val percent = presetScheme(parent.sessionId, parent.exerciseId).takeIf { it.type == SchemeType.DROPS }?.dropPercent
+        val percent = presetScheme(parent.sessionId, parent.blockKey).takeIf { it.type == SchemeType.DROPS }?.dropPercent
             ?: SetScheme.DEFAULT_DROP_PERCENT
-        val rows = sessionDao.setsFor(parent.sessionId).filter { it.exerciseId == parent.exerciseId }
+        val rows = sessionDao.setsFor(parent.sessionId).filter { it.blockKey == parent.blockKey }
         rows.filter { it.setIndex > parent.setIndex }.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + 1)) }
         sessionDao.insertSets(
             listOf(
@@ -1266,10 +1301,11 @@ class Repository(
         true
     }
 
-    /** The lift's own rite scheme in the trial's rite, or Straight when there is none. */
-    private suspend fun presetScheme(sessionId: Long, exerciseId: Long): SetScheme {
+    /** The block's own rite scheme in the trial's rite, or Straight when there is none. */
+    private suspend fun presetScheme(sessionId: Long, block: BlockKey): SetScheme {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return SetScheme()
-        val entry = presetDao.presetWithEntries(presetId)?.working?.firstOrNull { it.exerciseId == exerciseId }
+        val working = presetDao.presetWithEntries(presetId)?.working ?: return SetScheme()
+        val entry = entriesByBlock(sessionDao.setsFor(sessionId), working)[block]
         return SetScheme.decode(entry?.setScheme)
     }
 
@@ -1293,25 +1329,24 @@ class Repository(
         }
     }
 
-    /** The rite scheme of each of [exerciseIds] in the trial's rite, for the trial's labels; a lift with none is left out. */
-    suspend fun trialSchemes(sessionId: Long, exerciseIds: Collection<Long>): Map<Long, SetScheme> {
+    /** The rite scheme of each block of the trial that has one, for the trial's labels; a lift with none is left out. */
+    suspend fun trialSchemes(sessionId: Long): Map<BlockKey, SetScheme> {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
-        val entries = presetDao.presetWithEntries(presetId)?.working.orEmpty()
-        return exerciseIds.mapNotNull { id ->
-            entries.firstOrNull { it.exerciseId == id }?.let { SetScheme.decode(it.setScheme) }
-                ?.takeIf { !it.isStraight || it.workingReps != null }?.let { id to it }
+        val working = presetDao.presetWithEntries(presetId)?.working.orEmpty()
+        return entriesByBlock(sessionDao.setsFor(sessionId), working).mapNotNull { (block, entry) ->
+            SetScheme.decode(entry.setScheme).takeIf { !it.isStraight || it.workingReps != null }?.let { block to it }
         }.toMap()
     }
 
-    /** The rest suggested after a top set of [exerciseId] in the trial: its rite scheme's own, 3:00 by default. */
-    suspend fun restAfterTopSeconds(sessionId: Long, exerciseId: Long): Int =
-        SchemePlan.restAfterTop(presetScheme(sessionId, exerciseId))
+    /** The rest suggested after a top set of [block] in the trial: its rite scheme's own, 3:00 by default. */
+    suspend fun restAfterTopSeconds(sessionId: Long, block: BlockKey): Int =
+        SchemePlan.restAfterTop(presetScheme(sessionId, block))
 
     /** Takes out the Drop sets after [setId] that are still to do ("End drops"), closing the gap in the lift's set numbers. */
     suspend fun endDropsAfter(setId: Long) = db.withTransaction {
         val from = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(from.sessionId)) return@withTransaction
-        val rows = sessionDao.setsFor(from.sessionId).filter { it.exerciseId == from.exerciseId }.sortedBy { it.setIndex }
+        val rows = sessionDao.setsFor(from.sessionId).filter { it.blockKey == from.blockKey }.sortedBy { it.setIndex }
         val gone = rows.filter { it.setIndex > from.setIndex }.takeWhile { it.setKind() == SetKind.DROP }.filter { !it.done }
         gone.forEach { sessionDao.deleteSet(it.id) }
         rows.filter { it.id !in gone.map { g -> g.id } }.forEachIndexed { index, row ->
@@ -1379,7 +1414,7 @@ class Repository(
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
         // A drop still to do follows the load on the set before it, as that load stands now.
         if (!next.isWarmup && (current.weightKg != next.weightKg || current.done != next.done)) {
-            refillDrops(next.sessionId, next.exerciseId)
+            refillDrops(next.sessionId, next.blockKey)
         }
         // A top set that is logged, or has its figures moved while logged, hands its load on to the back-offs still to do.
         if (next.setKind() == SetKind.TOP && next.done && (!current.done || current.weightKg != next.weightKg || current.reps != next.reps)) {
@@ -1421,21 +1456,21 @@ class Repository(
     }
 
     /**
-     * Adds the warm-up ramp ([WarmupRamp]) before [exerciseId]'s first working set in a
+     * Adds the warm-up ramp ([WarmupRamp]) before [block]'s first working set in a
      * live trial and returns the ids it made, lightest first: empty when the movement is
      * not loaded work, has no working load set, already has warm-ups or the trial is
      * sealed. The movement's own sets move down to make room, so the warm-ups sit first
      * and the working sets keep their order. Warm-ups are stored unticked, so they never
      * earn XP; records judge a working set by its place less the warm-ups ahead of it.
      */
-    suspend fun addWarmupRamp(sessionId: Long, exerciseId: Long): List<Long> {
+    suspend fun addWarmupRamp(sessionId: Long, block: BlockKey): List<Long> {
         // Read ahead of the transaction: the gear prefs are a disk read, not a database one.
         val kit = loadKit()
         return db.withTransaction {
             if (isSealed(sessionId)) return@withTransaction emptyList()
-            val exercise = exerciseDao.byId(exerciseId) ?: return@withTransaction emptyList()
+            val exercise = exerciseDao.byId(block.exerciseId) ?: return@withTransaction emptyList()
             val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
-            val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
+            val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }.sortedBy { it.setIndex }
             if (rows.isEmpty() || rows.any { it.isWarmup }) return@withTransaction emptyList()
             val first = rows.first()
             val plan = WarmupRamp.planFor(
@@ -1447,7 +1482,7 @@ class Repository(
             val made = plan.mapIndexed { index, step ->
                 SetLogEntity(
                     sessionId = sessionId,
-                    exerciseId = exerciseId,
+                    exerciseId = block.exerciseId,
                     exercisePosition = first.exercisePosition,
                     setIndex = index,
                     reps = step.reps,
@@ -1471,7 +1506,7 @@ class Repository(
         val first = rows.firstOrNull() ?: return@withTransaction
         if (isSealed(first.sessionId)) return@withTransaction
         rows.forEach { sessionDao.deleteSet(it.id) }
-        sessionDao.setsFor(first.sessionId).filter { it.exerciseId == first.exerciseId }
+        sessionDao.setsFor(first.sessionId).filter { it.blockKey == first.blockKey }
             .sortedBy { it.setIndex }
             .forEachIndexed { index, row -> if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index)) }
     }
@@ -1514,14 +1549,14 @@ class Repository(
         val session = sessionDao.byId(before.sessionId) ?: return
         if (session.completedAtMs != null) return
         if (exerciseDao.byId(before.exerciseId)?.isWeighted != false) return
-        val rows = sessionDao.setsFor(before.sessionId).filter { it.exerciseId == before.exerciseId }
+        val rows = sessionDao.setsFor(before.sessionId).filter { it.blockKey == before.blockKey }
         val current = rows.firstOrNull()?.modifiers ?: return
         val next = modifiersAfterLoadChange(
             current = current,
             becameLoaded = (before.weightKg ?: 0.0) <= 0.0 && (weightKg ?: 0.0) > 0.0,
             anyLoaded = rows.any { (it.weightKg ?: 0.0) > 0.0 },
         )
-        if (next != current) sessionDao.setModifiers(before.sessionId, before.exerciseId, next)
+        if (next != current) sessionDao.setModifiers(before.sessionId, before.exerciseId, before.exercisePosition, next)
     }
 
     /**
@@ -1563,6 +1598,9 @@ class Repository(
      * A movement the session did not start with lands after every other one —
      * a fixed 99 collided, so two added movements shared a position and merged
      * into one block.
+     *
+     * A set goes to one block: the one at [atPosition] when given (a rite may hold the movement twice, and the set
+     * belongs to the block it was added on), else the movement's first.
      */
     suspend fun addExtraSet(
         sessionId: Long,
@@ -1572,9 +1610,12 @@ class Repository(
         modifiers: String,
         /** Seconds, when the movement is a static hold. */
         durationSec: Int? = null,
+        atPosition: Int? = null,
     ): Long = db.withTransaction {
         val rows = sessionDao.setsFor(sessionId)
-        val mine = rows.filter { it.exerciseId == exerciseId }
+        val ofMovement = rows.filter { it.exerciseId == exerciseId }
+        val block = atPosition ?: ofMovement.minOfOrNull { it.exercisePosition }
+        val mine = ofMovement.filter { it.exercisePosition == block }
         val existing = mine.firstOrNull()
         val position = existing?.exercisePosition
             ?: ((rows.maxOfOrNull { it.exercisePosition } ?: -1) + 1)
@@ -1610,20 +1651,20 @@ class Repository(
     }
 
     /**
-     * Links [exerciseId] with the movement after it in a live trial, so the two (or three) are done a set
+     * Links [block] with the one after it in a live trial, so the two (or three) are done a set
      * each in turn. False when there is no next movement, they already are, or a group would pass three.
      */
-    suspend fun linkSupersetWithNext(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+    suspend fun linkSupersetWithNext(sessionId: Long, block: BlockKey): Boolean = db.withTransaction {
         relayout(sessionId) { blocks ->
-            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            val at = blocks.indexOfFirst { it.key == block }
             Supersets.link(blocks.map { it.group }, at, at + 1)
         }
     }
 
-    /** Dissolves the superset holding [exerciseId] in a live trial; the movements keep their places. */
-    suspend fun unlinkSuperset(sessionId: Long, exerciseId: Long) = db.withTransaction {
+    /** Dissolves the superset holding [block] in a live trial; the movements keep their places. */
+    suspend fun unlinkSuperset(sessionId: Long, block: BlockKey) = db.withTransaction {
         relayout(sessionId) { blocks ->
-            val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+            val at = blocks.indexOfFirst { it.key == block }
             if (Supersets.runAt(blocks.map { it.group }, at) == null) {
                 null
             } else {
@@ -1645,9 +1686,9 @@ class Repository(
         )
         val layout = plan(blocks) ?: return false
         layout.order.forEachIndexed { slot, old ->
-            val exerciseId = blocks[old].exerciseId
+            val key = blocks[old].key
             val group = layout.groups[slot]
-            rows.filter { it.exerciseId == exerciseId }.forEach { row ->
+            rows.filter { it.blockKey == key }.forEach { row ->
                 if (row.exercisePosition != slot || row.supersetGroup != group) {
                     sessionDao.updateSet(row.copy(exercisePosition = slot, supersetGroup = group))
                 }
@@ -1666,7 +1707,7 @@ class Repository(
         val set = sessionDao.setById(setId) ?: return@withTransaction null
         val session = sessionDao.byId(set.sessionId) ?: return@withTransaction null
         if (session.completedAtMs != null) return@withTransaction null
-        val siblings = sessionDao.setsFor(set.sessionId).filter { it.exerciseId == set.exerciseId }
+        val siblings = sessionDao.setsFor(set.sessionId).filter { it.blockKey == set.blockKey }
         if (siblings.size <= 1) return@withTransaction null
         sessionDao.deleteSet(setId)
         siblings.asSequence()
@@ -1699,7 +1740,7 @@ class Repository(
         val missing = removed.rows.filter { sessionDao.setById(it.id) == null }
         if (missing.isEmpty()) return@withTransaction false
         sessionDao.insertSets(missing)
-        val mine = sessionDao.setsFor(first.sessionId).filter { it.exerciseId == first.exerciseId }
+        val mine = sessionDao.setsFor(first.sessionId).filter { it.blockKey == first.blockKey }
         val order = restoredIndexes(removed.order, mine.map { it.id to it.setIndex })
         mine.forEach { row ->
             val index = order.getValue(row.id)
@@ -1709,27 +1750,27 @@ class Repository(
     }
 
     /**
-     * Drops every set of one exercise from a live session: the deliberate way
+     * Drops every set of one block from a live session: the deliberate way
      * to take a movement (a one-off added by mistake) back out. Completed
      * sessions are immutable, as in [removeSet].
      */
-    suspend fun removeSessionExercise(sessionId: Long, exerciseId: Long): RemovedSets? = db.withTransaction {
+    suspend fun removeSessionExercise(sessionId: Long, block: BlockKey): RemovedSets? = db.withTransaction {
         val session = sessionDao.byId(sessionId) ?: return@withTransaction null
         if (session.completedAtMs != null) return@withTransaction null
-        val sets = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }
+        val sets = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
         sets.forEach { sessionDao.deleteSet(it.id) }
         if (sets.isEmpty()) null else RemovedSets(sets, sets.associate { it.id to it.setIndex })
     }
 
     /**
-     * Modifiers describe the movement, so editing them applies to every set of
-     * that exercise — including ones already ticked off, which is the point:
-     * you realise mid-session that you were working at a deficit all along.
+     * Modifiers describe the movement as done in one block, so editing them applies to every set of
+     * that block (and not to another block of the same movement) — including ones already ticked off,
+     * which is the point: you realise mid-session that you were working at a deficit all along.
      */
-    suspend fun setExerciseModifiers(sessionId: Long, exerciseId: Long, modifiers: String) {
+    suspend fun setExerciseModifiers(sessionId: Long, block: BlockKey, modifiers: String) {
         val session = sessionDao.byId(sessionId) ?: return
         if (session.completedAtMs != null) return
-        sessionDao.setModifiers(sessionId, exerciseId, modifiers)
+        sessionDao.setModifiers(sessionId, block.exerciseId, block.position, modifiers)
     }
 
     suspend fun abandonSession(sessionId: Long) = sessionDao.deleteAbandoned(sessionId)
@@ -3026,11 +3067,6 @@ class Repository(
         check(completedAt != null) { "${Words.trial.c} $sessionId is still live - edit it on the ${Words.trial.s} screen" }
         require(draft.tickedCount >= 1) {
             "An amended ${Words.trial.s} needs at least one ticked set - delete the ${Words.trial.s} instead"
-        }
-        // One block per movement: the cloud keys sets on (movement, index),
-        // and two blocks of one movement would collide there and in records.
-        require(draft.blocks.map { it.exerciseId }.distinct().size == draft.blocks.size) {
-            "A movement appears in two blocks"
         }
         val catalogue = exerciseDao.observeAll().first()
         val known = catalogue.map { it.id }.toSet()

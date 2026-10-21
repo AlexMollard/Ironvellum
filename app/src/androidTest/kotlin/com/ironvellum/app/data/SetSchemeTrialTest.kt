@@ -113,7 +113,7 @@ class SetSchemeTrialTest {
         // A top set heavier than planned leaves the fixed back-offs alone.
         repo.updateSet(sets[0].id, reps = 3, weightKg = 24.0, done = true)
         assertEquals(listOf(24.0, 15.0, 15.0, 15.0), setsOf(session, pullUp).map { it.weightKg })
-        assertEquals(180, repo.restAfterTopSeconds(session, pullUp))
+        assertEquals(180, repo.restAfterTopSeconds(session, repo.blockOf(session, pullUp)))
         // And ran as written, the trial offers the rite no change but the heavier load.
         setsOf(session, pullUp).drop(1).forEach { repo.updateSet(it.id, 5, 15.0, done = true) }
         repo.completeSession(session)
@@ -160,21 +160,21 @@ class SetSchemeTrialTest {
     fun makingSetOneATopSetTurnsTheRestIntoBackoffsForTodayOnly() = runBlocking {
         val rite = save(row, 3, 8, 60.0, SetScheme())
         val session = repo.startSessionFromPreset(rite)
-        assertTrue(repo.makeTopSet(session, row))
+        assertTrue(repo.makeTopSet(session, repo.blockOf(session, row)))
         val sets = setsOf(session, row)
         assertEquals(listOf(SetKind.TOP, SetKind.BACKOFF, SetKind.BACKOFF), sets.map { it.kind })
         assertEquals(listOf(60.0, 52.5, 52.5), sets.map { it.weightKg })
         // Once only, and the rite stays as it is.
-        assertFalse(repo.makeTopSet(session, row))
+        assertFalse(repo.makeTopSet(session, repo.blockOf(session, row)))
         assertEquals(SetScheme(), repo.observePresets().first().single().entries.single().scheme)
-        assertEquals(180, repo.restAfterTopSeconds(session, row))
+        assertEquals(180, repo.restAfterTopSeconds(session, repo.blockOf(session, row)))
     }
 
     @Test
     fun makingATopSetAfterTheTrialOffersItToTheRiteAsALiftWideChange() = runBlocking {
         val rite = save(row, 3, 8, 60.0, SetScheme())
         val session = repo.startSessionFromPreset(rite)
-        repo.makeTopSet(session, row)
+        repo.makeTopSet(session, repo.blockOf(session, row))
         setsOf(session, row).forEach { repo.updateSet(it.id, it.reps, it.weightKg, done = true) }
         repo.completeSession(session)
         val change = repo.routineUpdateFor(session)!!.changes.single()

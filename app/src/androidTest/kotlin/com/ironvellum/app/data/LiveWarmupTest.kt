@@ -80,7 +80,7 @@ class LiveWarmupTest {
     @Test
     fun theRampGoesInFrontOfTheWorkingSetsUntickedAndUndoTakesItBack() = runBlocking {
         val lift = db.sessionDao().setById(sets[0])!!.exerciseId
-        val made = repo.addWarmupRamp(sessionId, lift)
+        val made = repo.addWarmupRamp(sessionId, repo.blockOf(sessionId, lift))
         assertTrue("a loaded rep movement gets a ramp", made.isNotEmpty())
         val rows = db.sessionDao().setsFor(sessionId).sortedBy { it.setIndex }
         assertEquals((0 until rows.size).toList(), rows.map { it.setIndex })
@@ -90,7 +90,7 @@ class LiveWarmupTest {
         assertEquals(60.0, rows.last().weightKg!!, 0.0)
         assertTrue("every warm-up is lighter than the work", rows.take(made.size).all { it.weightKg!! < 60.0 })
         // A second ask adds nothing: the movement already has its warm-ups.
-        assertTrue(repo.addWarmupRamp(sessionId, lift).isEmpty())
+        assertTrue(repo.addWarmupRamp(sessionId, repo.blockOf(sessionId, lift)).isEmpty())
 
         repo.removeSets(made)
         assertEquals(sets, db.sessionDao().setsFor(sessionId).sortedBy { it.setIndex }.map { it.id })
@@ -100,7 +100,7 @@ class LiveWarmupTest {
     @Test
     fun aRampPaysNothingWhenTheTrialIsSealed() = runBlocking {
         val lift = db.sessionDao().setById(sets[0])!!.exerciseId
-        repo.addWarmupRamp(sessionId, lift)
+        repo.addWarmupRamp(sessionId, repo.blockOf(sessionId, lift))
         repo.updateSet(sets[0], reps = 8, weightKg = 60.0, done = true)
         val workingOnly = db.sessionDao().setsFor(sessionId).filter { it.id == sets[0] }
         val expected = SessionScoring(db.exerciseDao().observeAll().first()).xp(workingOnly, 80.0)

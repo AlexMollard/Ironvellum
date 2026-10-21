@@ -1744,8 +1744,6 @@
     <!-- Accessibility description of the Share chip. -->
     <string name="workoutdetail_share_description">Share this workout</string>
     <string name="workoutdetail_share_description__t">Share this trial</string>
-    <string name="workoutdetail_amend_repeat_error">This workout lists one movement twice with different modifiers, so it cannot be amended.</string>
-    <string name="workoutdetail_amend_repeat_error__t">This trial lists one movement twice with different modifiers, so it cannot be amended.</string>
     <string name="workoutdetail_amend_failed">The workout could not be amended</string>
     <string name="workoutdetail_amend_failed__t">The trial could not be amended</string>
     <string name="workoutdetail_not_amended_title">Not amended</string>

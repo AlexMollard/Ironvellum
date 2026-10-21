@@ -36,6 +36,30 @@ class LiveWorkoutTest {
         assertEquals(4L, c.nextSetId)
     }
 
+    /** Push-up (incline) 3 sets, Dip 3 sets, Push-up (deficit) 3 sets: the same movement in two blocks of the trial. */
+    private fun pushTwice(doneFirst: Int = 0): List<SessionSet> {
+        fun block(position: Int, id: Long, name: String, modifiers: String, done: Int) = (0 until 3).map { i ->
+            SessionSet(
+                id = position * 10L + i + 1, exerciseId = id, exerciseName = name, exercisePosition = position, setIndex = i,
+                reps = 10, weightKg = 10.0, modifiers = modifiers, done = i < done,
+            )
+        }
+        return block(0, 10, "Push-up", "weighted, incline", doneFirst) + block(1, 9, "Dip", "", 0) + block(2, 10, "Push-up", "weighted, deficit", 0)
+    }
+
+    @Test
+    fun aMovementInTwoBlocksCountsEachBlocksOwnSetsAndGetsTwoSegments() {
+        val sets = pushTwice()
+        assertEquals("Set 1 of 3 · 10 reps · 10 kg", content(sets).body.plainText())
+        assertEquals(listOf(3, 3, 3), content(sets).segments)
+        // The first block done: the notification moves on to the Dip, then to the second Push-up at "set 1 of 3".
+        val afterBlocks = pushTwice(doneFirst = 3).map { if (it.exercisePosition == 1) it.copy(done = true) else it }
+        val c = content(afterBlocks)
+        assertEquals("Set 1 of 3 · 10 reps · 10 kg", c.body.plainText())
+        assertEquals(21L, c.nextSetId)
+        assertEquals("the tile counts the block, not both blocks of the movement", "Set 1 of 3 · 6/9", LiveWorkout.tile(null, afterBlocks, null).subtitle.plainText())
+    }
+
     @Test
     fun theChipShowsSetProgressBetweenSetsAndNothingWhileResting() {
         assertEquals("Set 3 of 3", content().chip!!.plainText())

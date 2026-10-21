@@ -46,7 +46,7 @@ object LiveWorkout {
         val allDone = total > 0 && next == null
         val isResting = resting && next != null
 
-        fun count(set: SessionSet) = working.count { it.exerciseId == set.exerciseId }
+        fun count(set: SessionSet) = working.count { it.blockKey == set.blockKey }
         fun loadOf(set: SessionSet) = set.weightKg?.takeIf { it > 0.0 }?.let(load)
         fun holds(set: SessionSet) = set.durationSec != null && set.reps == 0
         fun repsText(set: SessionSet) = UiText.plural(R.plurals.live_figure_reps, set.reps)
@@ -85,7 +85,7 @@ object LiveWorkout {
         val last = working.filter { it.done }.maxWithOrNull(compareBy({ it.exercisePosition }, { it.setIndex }))
             ?.let { UiText.res(R.string.live_last_set, short(it), it.workingNumber(sets), count(it)) }
         val upNext = next?.let { current ->
-            val at = blocks.indexOfFirst { it.exerciseId == current.exerciseId }
+            val at = blocks.indexOfFirst { it.key == current.blockKey }
             blocks.drop(at + 1).firstOrNull { it.hasPending && (it.group == null || it.group != current.supersetGroup) }
         }?.let { block ->
             val first = block.sets.first { it.isPending }
@@ -130,7 +130,7 @@ object LiveWorkout {
         }
         val working = sets.filter { !it.warmup }
         val next = Supersets.nextSet(sets)
-        val of = next?.let { n -> working.count { it.exerciseId == n.exerciseId } }
+        val of = next?.let { n -> working.count { it.blockKey == n.blockKey } }
         return when {
             working.isEmpty() ->
                 Tile(label, UiText.themed(R.string.notification_trial_opening, R.string.notification_trial_opening__t), true)

@@ -318,16 +318,66 @@ class SupersetsTest {
         // Lift 1 still has sets waiting, so nextSet() is lift 1; the lifter went on to the pair 2 and 3.
         val sets = trial(counts = listOf(3, 3, 2), groups = listOf(null, 1, 1))
         val afterRow = sets.tick(sets.first { it.exerciseId == 2L }.id)
-        assertEquals(3L, Supersets.turnAfter(afterRow, 2L))
+        assertEquals(BlockKey(2, 3L), Supersets.turnAfter(afterRow, BlockKey(1, 2L)))
         // And it goes round: after the last member it is the first one again.
-        assertEquals(2L, Supersets.turnAfter(afterRow, 3L))
+        assertEquals(BlockKey(1, 2L), Supersets.turnAfter(afterRow, BlockKey(2, 3L)))
     }
 
     @Test
     fun `no turn when the lift is alone or its partner has nothing left`() {
         val sets = trial(counts = listOf(2, 1, 1), groups = listOf(null, 1, 1))
-        assertNull(Supersets.turnAfter(sets, 1L))
+        assertNull(Supersets.turnAfter(sets, BlockKey(0, 1L)))
         val partnerDone = sets.tick(sets.first { it.exerciseId == 3L }.id)
-        assertNull(Supersets.turnAfter(partnerDone, 2L))
+        assertNull(Supersets.turnAfter(partnerDone, BlockKey(1, 2L)))
+    }
+
+    // ----------------------------------------------------------- one movement in two blocks
+
+    /** Push-up (3 sets, incline) then Dip then Push-up again (3 sets, deficit): the same movement in two blocks. */
+    private fun pushTwice(): List<SessionSet> {
+        fun block(position: Int, id: Long, modifiers: String) = (0 until 3).map { i ->
+            SessionSet(id = nextId++, exerciseId = id, exerciseName = "Lift $id", exercisePosition = position, setIndex = i, reps = 10, modifiers = modifiers)
+        }
+        return block(0, 10, "weighted, incline") + block(1, 9, "") + block(2, 10, "weighted, deficit")
+    }
+
+    @Test
+    fun `a movement the rite names twice is two blocks, each with its own modifiers and sets`() {
+        val blocks = Supersets.blocks(pushTwice())
+        assertEquals(listOf(BlockKey(0, 10L), BlockKey(1, 9L), BlockKey(2, 10L)), blocks.map { it.key })
+        assertEquals(listOf(3, 3, 3), blocks.map { it.sets.size })
+        assertEquals(listOf("weighted, incline", "", "weighted, deficit"), blocks.map { it.sets.first().modifiers })
+    }
+
+    @Test
+    fun `set numbers and counts run within a block, not across the two of one movement`() {
+        val sets = pushTwice()
+        val second = sets.last()
+        assertEquals("the second push-up block starts again at set 1 of 3", 3, second.workingNumber(sets))
+        assertEquals(1, sets[6].workingNumber(sets))
+        assertEquals(3, second.blockIn(sets).size)
+    }
+
+    @Test
+    fun `the trial works the first block through before the second of the same movement`() {
+        var sets = pushTwice()
+        val order = buildList {
+            while (true) {
+                val next = Supersets.nextSet(sets) ?: break
+                add("${next.exercisePosition}.${next.workingNumber(sets)}")
+                sets = sets.tick(next.id)
+            }
+        }
+        assertEquals(listOf("0.1", "0.2", "0.3", "1.1", "1.2", "1.3", "2.1", "2.2", "2.3"), order)
+    }
+
+    @Test
+    fun `a rest follows each block's own sets and the superset round reads blocks, not movements`() {
+        // Push-up (incline) superset-linked with Dip; the second Push-up block is on its own.
+        val sets = pushTwice().map { if (it.exercisePosition <= 1) it.copy(supersetGroup = 1) else it }
+        val firstOfSecond = sets.first { it.exercisePosition == 2 }
+        assertTrue("ticking a set of the lone block is a round on its own", Supersets.completesRound(sets, firstOfSecond.id))
+        val firstOfFirst = sets.first { it.exercisePosition == 0 }
+        assertFalse("its partner has not logged its set yet", Supersets.completesRound(sets, firstOfFirst.id))
     }
 }

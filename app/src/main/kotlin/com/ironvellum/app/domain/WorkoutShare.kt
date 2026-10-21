@@ -96,11 +96,13 @@ object WorkoutShare {
         append('\n')
 
         val peakByLift = peaks.associateBy { it.liftKey }
+        // One entry per block: a movement the rite names twice is two lines, each with its own modifiers and sets.
         val lines = sets
-            .groupBy { it.exerciseId }
+            .groupBy { it.blockKey }
             .entries
-            .sortedBy { (_, group) -> group.minOf { it.exercisePosition } }
-            .mapNotNull { (id, group) ->
+            .sortedBy { (key, _) -> key.position }
+            .mapNotNull { (key, group) ->
+                val id = key.exerciseId
                 val exercise = exercises[id]
                 val working = group.filter { !it.warmup }.sortedBy { it.setIndex }
                 if (working.isEmpty()) return@mapNotNull null

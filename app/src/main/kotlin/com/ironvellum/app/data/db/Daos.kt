@@ -173,8 +173,8 @@ interface SessionDao {
     @Query("DELETE FROM set_logs WHERE id = :id")
     suspend fun deleteSet(id: Long)
 
-    @Query("UPDATE set_logs SET modifiers = :modifiers WHERE sessionId = :sessionId AND exerciseId = :exerciseId")
-    suspend fun setModifiers(sessionId: Long, exerciseId: Long, modifiers: String)
+    @Query("UPDATE set_logs SET modifiers = :modifiers WHERE sessionId = :sessionId AND exerciseId = :exerciseId AND exercisePosition = :position")
+    suspend fun setModifiers(sessionId: Long, exerciseId: Long, position: Int, modifiers: String)
 
     @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exercisePosition, setIndex")
     suspend fun setsFor(sessionId: Long): List<SetLogEntity>

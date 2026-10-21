@@ -5,6 +5,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.blockKey
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.domain.isStrength
@@ -77,7 +78,7 @@ class LiveTrialActions(
         ) ?: return
         // After a top set the rest is the long one the lift's scheme suggests (3:00 by default), and its ceiling at least that.
         if (set.kind == SetKind.TOP) {
-            val ready = repo.restAfterTopSeconds(sessionId, set.exerciseId)
+            val ready = repo.restAfterTopSeconds(sessionId, set.blockKey)
             RestClock.start(sessionId, ready, maxOf(window.max, ready))
             return
         }

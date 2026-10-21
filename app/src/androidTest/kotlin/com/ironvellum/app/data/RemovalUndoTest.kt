@@ -72,7 +72,7 @@ class RemovalUndoTest {
     @Test
     fun undoingARemovedExerciseRestoresEverySet() = runBlocking {
         val before = rows()
-        val removed = repo.removeSessionExercise(sessionId, squat)
+        val removed = repo.removeSessionExercise(sessionId, repo.blockOf(sessionId, squat))
         assertNotNull(removed)
         assertEquals(0, squatRows().size)
 

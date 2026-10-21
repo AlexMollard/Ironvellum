@@ -121,9 +121,22 @@ data class SessionSet(
     val isPending: Boolean get() = !done && !warmup
 }
 
-/** This set's number among its movement's working sets in [all]: warm-ups are not counted, as in the amend editor. */
+/**
+ * One block of a trial: the sets the lifter does of one rite entry, in one place of the order. A rite may name a movement
+ * twice (two push-up entries, each with its own sets, load and modifiers), so the movement alone is not a block's
+ * identity. The pair is: a position alone fails for archives written before positions were exported, which restore every
+ * set at 0, and the movement alone merges the two entries.
+ */
+data class BlockKey(val position: Int, val exerciseId: Long)
+
+val SessionSet.blockKey: BlockKey get() = BlockKey(exercisePosition, exerciseId)
+
+/** The sets of [all] in the same block as this one. */
+fun SessionSet.blockIn(all: List<SessionSet>): List<SessionSet> = all.filter { it.blockKey == blockKey }
+
+/** This set's number among its block's working sets in [all]: warm-ups are not counted, as in the amend editor. */
 fun SessionSet.workingNumber(all: List<SessionSet>): Int =
-    all.count { it.exerciseId == exerciseId && !it.warmup && it.setIndex <= setIndex }
+    all.count { it.blockKey == blockKey && !it.warmup && it.setIndex <= setIndex }
 
 data class WorkoutSession(
     val id: Long = 0,

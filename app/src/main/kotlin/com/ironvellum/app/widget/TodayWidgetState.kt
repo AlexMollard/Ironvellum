@@ -156,7 +156,8 @@ internal fun widgetState(
         },
         presetId = rite?.id.takeIf { kind == DayKind.BEGIN },
         sessionId = live?.id.takeIf { kind == DayKind.LIVE },
-        exercises = shown?.working?.map { it.exerciseId }?.distinct()?.size ?: 0,
+        // Entries, not movements: a rite may name one twice, and the session shows each entry as an exercise of its own.
+        exercises = shown?.working?.size ?: 0,
         sets = shown?.working?.sumOf { it.targetSets } ?: 0,
         streak = Titles.trainingStreakDays(doneDates, today),
         dayOfWeek = day,

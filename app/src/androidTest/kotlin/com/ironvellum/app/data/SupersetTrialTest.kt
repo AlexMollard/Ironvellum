@@ -66,7 +66,7 @@ class SupersetTrialTest {
 
     @Test
     fun linkingWithTheNextExerciseSharesAGroupOnEverySetAndAddedSetsKeepIt() = runBlocking {
-        assertTrue(repo.linkSupersetWithNext(sessionId, a))
+        assertTrue(repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, a)))
         val linked = sets().filter { it.exerciseId == a || it.exerciseId == b }
         assertEquals(1, linked.mapNotNull { it.supersetGroup }.distinct().size)
         assertTrue(linked.all { it.supersetGroup != null })
@@ -75,22 +75,22 @@ class SupersetTrialTest {
         repo.addExtraSet(sessionId, a, 8, 60.0, "")
         assertTrue(sets().filter { it.exerciseId == a }.all { it.supersetGroup == linked.first().supersetGroup })
         // Already together, and a triple takes the third but nothing more.
-        assertFalse(repo.linkSupersetWithNext(sessionId, a))
-        assertTrue(repo.linkSupersetWithNext(sessionId, b))
+        assertFalse(repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, a)))
+        assertTrue(repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, b)))
         assertEquals(1, sets().mapNotNull { it.supersetGroup }.distinct().size)
     }
 
     @Test
     fun unlinkingEndsTheWholeGroupAndLeavesTheOrder() = runBlocking {
-        repo.linkSupersetWithNext(sessionId, a)
-        repo.unlinkSuperset(sessionId, b)
+        repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, a))
+        repo.unlinkSuperset(sessionId, repo.blockOf(sessionId, b))
         assertTrue(sets().all { it.supersetGroup == null })
         assertEquals(listOf(a, b, c), sets().sortedBy { it.exercisePosition }.map { it.exerciseId }.distinct())
     }
 
     @Test
     fun movingASoloExerciseStepsOverAWholeGroup() = runBlocking {
-        repo.linkSupersetWithNext(sessionId, b)
+        repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, b))
         // c is last; a is first. Moving a down steps over the pair b + c.
         repo.moveSessionExercise(sessionId, exercisePosition = 0, up = false)
         assertEquals(listOf(b, c, a), sets().sortedBy { it.exercisePosition }.map { it.exerciseId }.distinct())
@@ -99,7 +99,7 @@ class SupersetTrialTest {
 
     @Test
     fun theLockScreenTicksTheRoundAndRestsOnlyWhenItCloses() = runBlocking {
-        repo.linkSupersetWithNext(sessionId, a)
+        repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, a))
         // A1: mid-round, no rest.
         assertTrue(actions.tickNext())
         assertFalse("a tick mid-round starts no rest", restRunning())
@@ -117,7 +117,7 @@ class SupersetTrialTest {
 
     @Test
     fun aStaleNotificationNamingTheWrongPartnerTicksNothing() = runBlocking {
-        repo.linkSupersetWithNext(sessionId, a)
+        repo.linkSupersetWithNext(sessionId, repo.blockOf(sessionId, a))
         assertTrue(actions.tickNext())
         // The notification was posted before A1 was ticked and still names A2 (the next in order).
         val stale = sets().first { it.exerciseId == a && it.isPending }

@@ -100,7 +100,7 @@ internal fun TrialAmendEditor(
         val metric = exercise?.metric ?: ExerciseMetric.REPS
         val weighted = exercise?.isWeighted ?: false
         val shown = TrialBlock(
-            id = block.exerciseId,
+            exerciseId = block.exerciseId,
             position = blockIdx,
             sets = block.sets.mapIndexed { setIdx, set -> set.asSessionSet(block, blockIdx, setIdx) },
         )
@@ -200,11 +200,8 @@ internal fun TrialAmendEditor(
         // then nothing draws.
         val block = draft.blocks.getOrNull(blockIdx)
         if (block != null) {
-            // A movement already in another block is left out: two blocks of
-            // one movement would collide in the records and on the cloud.
-            val taken = draft.blocks.filterIndexed { i, _ -> i != blockIdx }.map { it.exerciseId }.toSet()
             ExercisePickerSheet(
-                exercises = exercises.values.filter { it.id !in taken },
+                exercises = exercises.values.toList(),
                 onPick = { picked ->
                     onChange { it.swapExercise(blockIdx, exercises[block.exerciseId], picked) }
                     swapFor = null

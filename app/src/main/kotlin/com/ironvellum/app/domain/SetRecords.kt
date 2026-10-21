@@ -41,7 +41,7 @@ object SetRecords {
      * with; a trial with no warm-up keeps its set index exactly.
      */
     fun position(set: SessionSet, siblings: List<SessionSet>): Int =
-        (set.setIndex - siblings.count { it.exerciseId == set.exerciseId && it.warmup && it.setIndex < set.setIndex })
+        (set.setIndex - siblings.count { it.blockKey == set.blockKey && it.warmup && it.setIndex < set.setIndex })
             .coerceAtLeast(0)
 
     /**

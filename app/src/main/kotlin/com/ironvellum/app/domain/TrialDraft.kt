@@ -37,9 +37,6 @@ data class TrialDraft(val blocks: List<Block>) {
 
     val tickedCount: Int get() = blocks.sumOf { b -> b.sets.count { it.done } }
 
-    /** True when two blocks name one movement and cannot be folded: it cannot be saved. */
-    val hasRepeatedMovement: Boolean get() = blocks.map { it.exerciseId }.distinct().size != blocks.size
-
     fun updateSet(block: Int, set: Int, change: (DraftSet) -> DraftSet): TrialDraft =
         replaceBlock(block) { b -> b.copy(sets = b.sets.mapIndexed { i, s -> if (i == set) change(s) else s }) }
 
@@ -117,18 +114,10 @@ data class TrialDraft(val blocks: List<Block>) {
                         },
                     )
                 }
-            // A rite may list one movement twice. The cloud keys sets on
-            // (movement, index), so such entries fold into one block when they
-            // are described alike and in the same superset; [hasRepeatedMovement]
-            // flags the rest.
-            val merged = mutableListOf<Block>()
-            for (b in blocks) {
-                val at = merged.indexOfFirst {
-                    it.exerciseId == b.exerciseId && it.modifiers == b.modifiers && it.supersetGroup == b.supersetGroup
-                }
-                if (at >= 0) merged[at] = merged[at].copy(sets = merged[at].sets + b.sets) else merged += b
-            }
-            return TrialDraft(merged)
+            // A rite may list one movement twice (two push-up entries with their own sets and modifiers): each stays
+            // a block of its own. The cloud keys a set on (movement, index); the push numbers the sets of a repeated
+            // movement apart on the wire (CloudSync.wireSetIndexes), so nothing here has to fold them.
+            return TrialDraft(blocks)
         }
 
         /** One set carried across a metric change: the new metric's figure is always set. */

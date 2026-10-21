@@ -49,7 +49,7 @@ class KeepSwapsTest {
         )
         val sessionId = repo.startSessionFromPreset(presetId)
         // A is swapped for C: removed, then C added and done.
-        repo.removeSessionExercise(sessionId, a)
+        repo.removeSessionExercise(sessionId, repo.blockOf(sessionId, a))
         val extra = repo.addExtraSet(sessionId, c, reps = 12, weightKg = null, modifiers = "")
         repo.updateSet(extra, 12, null, done = true)
         db.sessionDao().setsFor(sessionId).filter { it.exerciseId == b }.forEach { repo.updateSet(it.id, 10, null, done = true) }

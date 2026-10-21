@@ -121,17 +121,21 @@ object Supersets {
 
     // ------------------------------------------------------------- the live trial
 
-    /** One exercise of a live trial: its sets in order and the group number any of them carries. */
+    /** One block of a live trial (one rite entry): its sets in order and the group number any of them carries. */
     class Block(val exerciseId: Long, val position: Int, val sets: List<SessionSet>) {
+        val key: BlockKey get() = BlockKey(position, exerciseId)
         val group: Int? get() = sets.firstNotNullOfOrNull { it.supersetGroup }
         val doneWorking: Int get() = sets.count { it.done && !it.warmup }
         val hasPending: Boolean get() = sets.any { it.isPending }
     }
 
-    /** The exercises of [sets] in trial order: one block per exercise, placed by its first stored position. */
+    /**
+     * The blocks of [sets] in trial order: one per (position, movement), so a movement the rite names twice is two blocks
+     * with sets of their own.
+     */
     fun blocks(sets: List<SessionSet>): List<Block> =
-        sets.groupBy { it.exerciseId }
-            .map { (id, rows) -> Block(id, rows.minOf { it.exercisePosition }, rows.sortedBy { it.setIndex }) }
+        sets.groupBy { it.blockKey }
+            .map { (key, rows) -> Block(key.exerciseId, key.position, rows.sortedBy { it.setIndex }) }
             .sortedBy { it.position }
 
     /**
@@ -151,17 +155,17 @@ object Supersets {
     }
 
     /**
-     * The partner whose turn follows [exerciseId] in its superset, going round the group (the last member hands
-     * back to the first): the exercise id of the next member with a set still to log, or null when [exerciseId] is
+     * The partner whose turn follows [block] in its superset, going round the group (the last member hands
+     * back to the first): the next member with a set still to log, or null when [block] is
      * in no superset or nobody else has a set left. The label "Calf raise next" and the card the trial opens after
      * a tick both read this, so the two can never name different exercises, even when the lifter began the
      * superset out of order and [nextSet] (the first exercise with a set waiting) is somewhere else.
      */
-    fun turnAfter(sets: List<SessionSet>, exerciseId: Long): Long? {
+    fun turnAfter(sets: List<SessionSet>, block: BlockKey): BlockKey? {
         val blocks = blocks(sets)
-        val at = blocks.indexOfFirst { it.exerciseId == exerciseId }
+        val at = blocks.indexOfFirst { it.key == block }
         val run = runAt(blocks.map { it.group }, at) ?: return null
-        return ((at + 1..run.last) + (run.first until at)).firstOrNull { blocks[it].hasPending }?.let { blocks[it].exerciseId }
+        return ((at + 1..run.last) + (run.first until at)).firstOrNull { blocks[it].hasPending }?.let { blocks[it].key }
     }
 
     /**
@@ -172,7 +176,7 @@ object Supersets {
     fun completesRound(sets: List<SessionSet>, setId: Long): Boolean {
         val set = sets.firstOrNull { it.id == setId } ?: return true
         val blocks = blocks(sets)
-        val at = blocks.indexOfFirst { it.exerciseId == set.exerciseId }
+        val at = blocks.indexOfFirst { it.key == set.blockKey }
         val run = runAt(blocks.map { it.group }, at) ?: return true
         val round = set.workingNumber(sets)
         return run.filter { it != at }.all { blocks[it].doneWorking >= round || !blocks[it].hasPending }
@@ -184,7 +188,7 @@ object Supersets {
      */
     fun midRound(sets: List<SessionSet>, next: SessionSet): Boolean {
         val blocks = blocks(sets)
-        val at = blocks.indexOfFirst { it.exerciseId == next.exerciseId }
+        val at = blocks.indexOfFirst { it.key == next.blockKey }
         val run = runAt(blocks.map { it.group }, at) ?: return false
         return run.any { it != at && blocks[it].doneWorking > blocks[at].doneWorking }
     }

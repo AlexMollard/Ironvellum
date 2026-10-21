@@ -199,6 +199,8 @@ import com.ironvellum.app.domain.WornLoad
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.workingNumber
+import com.ironvellum.app.domain.BlockKey
+import com.ironvellum.app.domain.blockKey
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
@@ -308,26 +310,26 @@ class SessionViewModel(
      * progression engine's own reason, for the changes only. History does not
      * change while a trial is live, so it is read once.
      */
-    val reasons: StateFlow<Map<Long, String>> = flow { emit(repo.trialReasons(sessionId)) }
+    val reasons: StateFlow<Map<BlockKey, String>> = flow { emit(repo.trialReasons(sessionId)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** The rite's scheme of each lift in this trial that has one, for the set hints; re-read as lifts come and go. */
-    val schemes: StateFlow<Map<Long, SetScheme>> = repo.observeSessionSets(sessionId)
-        .map { sets -> sets.map { it.exerciseId }.distinct().sorted() }
+    val schemes: StateFlow<Map<BlockKey, SetScheme>> = repo.observeSessionSets(sessionId)
+        .map { sets -> sets.map { it.blockKey }.distinct().sortedBy { it.position } }
         .distinctUntilChanged()
-        .map { ids -> repo.trialSchemes(sessionId, ids) }
+        .map { repo.trialSchemes(sessionId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Each lift's last sealed top set: what a new top set is asked to beat. */
-    val lastTops: StateFlow<Map<Long, TopMark>> = repo.observeSessionSets(sessionId)
-        .map { sets -> sets.groupBy { it.exerciseId }.mapValues { (_, rows) -> rows.first().modifiers } }
+    val lastTops: StateFlow<Map<BlockKey, TopMark>> = repo.observeSessionSets(sessionId)
+        .map { sets -> sets.groupBy { it.blockKey }.mapValues { (_, rows) -> rows.first().modifiers } }
         .distinctUntilChanged()
         .map { modifiers -> repo.lastTopMarks(modifiers) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** "Make set 1 a top set": today only. [onRefused] when the lift cannot take one (see [Repository.makeTopSet]). */
-    fun makeTopSet(exerciseId: Long, onRefused: () -> Unit) {
-        viewModelScope.launchGuarded("make top set") { if (!repo.makeTopSet(sessionId, exerciseId)) onRefused() }
+    fun makeTopSet(block: BlockKey, onRefused: () -> Unit) {
+        viewModelScope.launchGuarded("make top set") { if (!repo.makeTopSet(sessionId, block)) onRefused() }
     }
 
     /** "Add a drop to the last set": today only. [onRefused] in a superset or when there is no set to follow. */
@@ -520,8 +522,8 @@ class SessionViewModel(
     }
 
     /** "Warm up" on an exercise's menu; [onAdded] gets the new sets' ids for the Undo bar, and is not called when none were added. */
-    fun addWarmupRamp(exerciseId: Long, onAdded: (List<Long>) -> Unit) {
-        viewModelScope.launchGuarded("add warm-up ramp") { repo.addWarmupRamp(sessionId, exerciseId).takeIf { it.isNotEmpty() }?.let(onAdded) }
+    fun addWarmupRamp(block: BlockKey, onAdded: (List<Long>) -> Unit) {
+        viewModelScope.launchGuarded("add warm-up ramp") { repo.addWarmupRamp(sessionId, block).takeIf { it.isNotEmpty() }?.let(onAdded) }
     }
 
     /** Undo for the ramp. */
@@ -529,9 +531,9 @@ class SessionViewModel(
         viewModelScope.launchGuarded("remove warm-up ramp") { repo.removeSets(setIds) }
     }
 
-    fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
+    fun addSet(block: BlockKey, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
         viewModelScope.launch {
-            repo.addExtraSet(sessionId, exerciseId, reps, weightKg, modifiers, durationSec)
+            repo.addExtraSet(sessionId, block.exerciseId, reps, weightKg, modifiers, durationSec, atPosition = block.position)
         }
     }
 
@@ -541,8 +543,8 @@ class SessionViewModel(
     }
 
     /** Drops a whole exercise from the live trial: the ✕ on a block's only set. */
-    fun removeExercise(exerciseId: Long, onRemoved: (Repository.RemovedSets) -> Unit) {
-        viewModelScope.launchGuarded("remove exercise") { repo.removeSessionExercise(sessionId, exerciseId)?.let(onRemoved) }
+    fun removeExercise(block: BlockKey, onRemoved: (Repository.RemovedSets) -> Unit) {
+        viewModelScope.launchGuarded("remove exercise") { repo.removeSessionExercise(sessionId, block)?.let(onRemoved) }
     }
 
     /** Undo for either removal above. */
@@ -555,8 +557,8 @@ class SessionViewModel(
         viewModelScope.launchGuarded("change set type") { repo.setKind(setId, kind) }
     }
 
-    fun setModifiers(exerciseId: Long, modifiers: String) {
-        viewModelScope.launch { repo.setExerciseModifiers(sessionId, exerciseId, modifiers) }
+    fun setModifiers(block: BlockKey, modifiers: String) {
+        viewModelScope.launch { repo.setExerciseModifiers(sessionId, block, modifiers) }
     }
 
     /**
@@ -581,8 +583,8 @@ class SessionViewModel(
     }
 
     /** "Superset with <next exercise>" on an exercise's menu. */
-    fun linkWithNext(exerciseId: Long) {
-        viewModelScope.launchGuarded("link superset") { repo.linkSupersetWithNext(sessionId, exerciseId) }
+    fun linkWithNext(block: BlockKey) {
+        viewModelScope.launchGuarded("link superset") { repo.linkSupersetWithNext(sessionId, block) }
     }
 
     /** A chip on the effort strip: rates a logged set, or clears its rating when [rpe] is null. */
@@ -591,8 +593,8 @@ class SessionViewModel(
     }
 
     /** Unlink on a superset's strip. */
-    fun unlink(exerciseId: Long) {
-        viewModelScope.launchGuarded("unlink superset") { repo.unlinkSuperset(sessionId, exerciseId) }
+    fun unlink(block: BlockKey) {
+        viewModelScope.launchGuarded("unlink superset") { repo.unlinkSuperset(sessionId, block) }
     }
 
     /**
@@ -745,24 +747,25 @@ fun SessionScreen(
     var confirmReopen by remember { mutableStateOf(false) }
     var reopenRefusal by remember { mutableStateOf<SealedReopen.Refusal?>(null) }
     var showExercisePicker by remember { mutableStateOf(false) }
-    var editModifiersFor by remember { mutableStateOf<Long?>(null) }
+    // The blocks the sheets below act on are named by their place in the trial: a rite may hold one movement twice.
+    var editModifiersFor by remember { mutableStateOf<Int?>(null) }
     var showRiteMuscles by remember { mutableStateOf(false) }
     var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
-    var platesFor by remember { mutableStateOf<Long?>(null) }
+    var platesFor by remember { mutableStateOf<Int?>(null) }
     var typing by remember { mutableStateOf<Pair<SessionSet, FigureKind>?>(null) }
     var showName by rememberSaveable { mutableStateOf(false) }
     var showNote by rememberSaveable { mutableStateOf(false) }
     // The exercise whose own note is being written.
     var noteForExercise by rememberSaveable { mutableStateOf<Long?>(null) }
-    // The exercise the lifter opened by hand; null follows the next unlogged set.
-    var openOverride by rememberSaveable { mutableStateOf<Long?>(null) }
+    // The block (its position) the lifter opened by hand; null follows the next unlogged set.
+    var openOverride by rememberSaveable { mutableStateOf<Int?>(null) }
     // A logged set opened for editing or un-logging.
     var editingSetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var undo by remember { mutableStateOf<UndoPrompt?>(null) }
     var undoSerial by remember { mutableIntStateOf(0) }
     // An exercise with logged sets asks before it goes; one with none just offers Undo.
-    var confirmRemoveExercise by remember { mutableStateOf<Long?>(null) }
+    var confirmRemoveExercise by remember { mutableStateOf<Int?>(null) }
     // The docked footer's height as drawn, so the Undo bar always sits just above it however tall the rest bar is.
     var footerPx by remember { mutableIntStateOf(0) }
     // The set just logged, whose effort the strip asks for (when Settings turns that on); the next set logged takes it over.
@@ -887,8 +890,8 @@ fun SessionScreen(
     // Render blocks in the rite's saved exercise order: sort explicitly by
     // exercisePosition instead of trusting the query's emission order.
     val blocks = remember(ui.sets) {
-        ui.sets.groupBy { it.exerciseId }
-            .map { (id, sets) -> TrialBlock(id, sets.minOf { it.exercisePosition }, sets.sortedBy { it.setIndex }) }
+        ui.sets.groupBy { it.blockKey }
+            .map { (key, sets) -> TrialBlock(key.exerciseId, key.position, sets.sortedBy { it.setIndex }) }
             .sortedBy { it.position }
     }
     val doneCount = ui.sets.count { it.done }
@@ -904,8 +907,8 @@ fun SessionScreen(
     // The next set is the next in order, or inside a superset the next in the round; the lock-screen
     // "Set done" and the notification take it from the same rule.
     val nextSet = remember(ui.sets) { Supersets.nextSet(ui.sets) }
-    val nextBlock = blocks.firstOrNull { it.id == nextSet?.exerciseId }
-    val openBlock = blocks.firstOrNull { it.id == openOverride } ?: nextBlock ?: blocks.lastOrNull()
+    val nextBlock = blocks.firstOrNull { it.key == nextSet?.blockKey }
+    val openBlock = blocks.firstOrNull { it.position == openOverride } ?: nextBlock ?: blocks.lastOrNull()
     val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextSet
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
@@ -969,13 +972,13 @@ fun SessionScreen(
     // In a superset the card follows the round, so ticking one movement opens its partner, whichever
     // door the tick came through.
     LaunchedEffect(nextSet?.id) {
-        val at = blocks.indexOfFirst { it.id == nextSet?.exerciseId }
+        val at = blocks.indexOfFirst { it.key == nextSet?.blockKey }
         if (nextSet != null && Supersets.runAt(groups, at) != null) openOverride = null
     }
-    LaunchedEffect(openBlock?.id) { editingSetId = null }
+    LaunchedEffect(openBlock?.key) { editingSetId = null }
 
     val seekOpen = remember { BringIntoViewRequester() }
-    LaunchedEffect(openBlock?.id) {
+    LaunchedEffect(openBlock?.key) {
         withFrameNanos { }
         seekOpen.bringIntoView()
     }
@@ -1013,9 +1016,9 @@ fun SessionScreen(
         undoSerial++
         undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // In a superset the round moves to the partner whose turn it is; otherwise the card moves on once its last set is logged.
-        val turn = Supersets.turnAfter(ui.sets, set.exerciseId)
+        val turn = Supersets.turnAfter(ui.sets, set.blockKey)
         if (turn != null) {
-            openOverride = turn
+            openOverride = turn.position
         } else if (openBlock != null && openBlock.sets.none { it.isPending && it.id != set.id }) {
             openOverride = null
         }
@@ -1127,13 +1130,13 @@ fun SessionScreen(
                     val run = supersetRuns.firstOrNull { blockIdx in it }
                     val rail = run?.let { RailPosition.of(blockIdx, it) }
                     // A superset's members share a thin rail in the left gutter, one segment per member.
-                    Column(if (rail != null) Modifier.supersetRail(rail, if (block.id == openBlock?.id) OPEN_TITLE_CENTER else FOLDED_TITLE_CENTER) else Modifier) {
-                    key(block.id) {
+                    Column(if (rail != null) Modifier.supersetRail(rail, if (block.key == openBlock?.key) OPEN_TITLE_CENTER else FOLDED_TITLE_CENTER) else Modifier) {
+                    key(block.key) {
                         val first = block.first
-                        val metric = metricOf(block.id)
-                        val exercise = exercises.firstOrNull { it.id == block.id }
+                        val metric = metricOf(block.exerciseId)
+                        val exercise = exercises.firstOrNull { it.id == block.exerciseId }
                         val weighted = exercise?.isWeighted ?: false
-                        if (block.id == openBlock?.id) {
+                        if (block.key == openBlock?.key) {
                             Spacer(Modifier.height(12.dp))
                             val modifiersEditable = canEditModifiers(
                                 exercise?.let(::applicableModifiers).orEmpty(),
@@ -1148,19 +1151,19 @@ fun SessionScreen(
                                 block = block,
                                 metric = metric,
                                 weighted = weighted,
-                                reference = referenceLine(exercise, metric, lastLogged[block.id], peak),
-                                reason = reasons[block.id],
-                                note = exerciseNotes[block.id],
-                                lastNote = lastNotes[block.id],
-                                onNote = { noteForExercise = block.id },
+                                reference = referenceLine(exercise, metric, lastLogged[block.exerciseId], peak),
+                                reason = reasons[block.key],
+                                note = exerciseNotes[block.exerciseId],
+                                lastNote = lastNotes[block.exerciseId],
+                                onNote = { noteForExercise = block.exerciseId },
                                 modifiersEditable = modifiersEditable,
-                                activeSetId = if (activeSet?.exerciseId == block.id) activeSet.id else null,
+                                activeSetId = if (activeSet?.blockKey == block.key) activeSet.id else null,
                                 editingSetId = editingSetId,
                                 newPeaks = newPeakSetIds(block.sets, metric, peakBook),
                                 canMoveUp = blockIdx > 0,
                                 canMoveDown = blockIdx < blocks.lastIndex,
-                                onInfo = { infoFor = block.id },
-                                onEditModifiers = { editModifiersFor = block.id },
+                                onInfo = { infoFor = block.exerciseId },
+                                onEditModifiers = { editModifiersFor = block.position },
                                 onMove = { up -> viewModel.moveExercise(first.exercisePosition, up) },
                                 onEditLoad = if (metric.isStrength || (metric == ExerciseMetric.DURATION && weighted)) {
                                     { editLoadFor = block.sets.firstOrNull { it.isPending } ?: block.sets.last() }
@@ -1175,7 +1178,7 @@ fun SessionScreen(
                                         kit = ProgramAnswersStore.kit, weighted = weighted, unit = Units.current,
                                     ).isNotEmpty()
                                 ) {
-                                    { viewModel.addWarmupRamp(block.id, ::offerRampUndo) }
+                                    { viewModel.addWarmupRamp(block.key, ::offerRampUndo) }
                                 } else {
                                     null
                                 },
@@ -1197,7 +1200,7 @@ fun SessionScreen(
                                         metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME -> base.durationSec
                                         else -> null
                                     }
-                                    viewModel.addSet(block.id, base.reps, base.weightKg, base.modifiers, copySeconds)
+                                    viewModel.addSet(block.key, base.reps, base.weightKg, base.modifiers, copySeconds)
                                 },
                                 // Removing a block's only set removes the exercise, so a
                                 // one-off added by mistake can be taken back out.
@@ -1205,28 +1208,28 @@ fun SessionScreen(
                                     if (block.sets.size > 1) {
                                         viewModel.removeSet(set.id) { offerRemovedUndo(UiText.res(R.string.session_undo_set_removed), it) }
                                     } else {
-                                        viewModel.removeExercise(block.id) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
+                                        viewModel.removeExercise(block.key) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
                                     }
                                 },
                                 onRemoveExercise = {
                                     if (block.sets.any { it.done && !it.warmup }) {
-                                        confirmRemoveExercise = block.id
+                                        confirmRemoveExercise = block.position
                                     } else {
-                                        viewModel.removeExercise(block.id) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
+                                        viewModel.removeExercise(block.key) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, first.exerciseName), it) }
                                     }
                                 },
-                                onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
+                                onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.position }) else null,
                                 superset = supersetNumbers[blockIdx]?.let { number ->
-                                    SupersetLine(number, Supersets.turnAfter(ui.sets, block.id)?.let { turn -> blocks.firstOrNull { it.id == turn }?.first?.exerciseName })
+                                    SupersetLine(number, Supersets.turnAfter(ui.sets, block.key)?.let { turn -> blocks.firstOrNull { it.key == turn }?.first?.exerciseName })
                                 },
-                                onUnlink = { viewModel.unlink(block.id) },
+                                onUnlink = { viewModel.unlink(block.key) },
                                 supersetWith = blocks.getOrNull(blockIdx + 1)?.takeIf { Supersets.canLink(groups, blockIdx, blockIdx + 1) }
                                     ?.first?.exerciseName,
-                                onSuperset = { viewModel.linkWithNext(block.id) },
+                                onSuperset = { viewModel.linkWithNext(block.key) },
                                 effortSetId = underRowEffort?.id,
                                 onRpe = { set, rpe -> viewModel.setRpe(set.id, rpe) },
                                 hints = if (metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD) {
-                                    val scheme = schemes[block.id]
+                                    val scheme = schemes[block.key]
                                         ?: if (block.sets.any { it.kind == SetKind.TOP }) SetScheme(type = SchemeType.TOP_BACKOFF) else SetScheme.DEFAULT
                                     val lift = LiftLoading(
                                         stepKg = Progression.weightStepKg(exercise?.muscleGroup?.name.orEmpty(), first.exerciseName),
@@ -1238,14 +1241,14 @@ fun SessionScreen(
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
-                                    TrialHints.forLift(block.sets, scheme, lastTops[block.id], wouldPeak, lift, { kg -> kgLabel(kg, weighted) }, hold = metric == ExerciseMetric.HOLD)
+                                    TrialHints.forLift(block.sets, scheme, lastTops[block.key], wouldPeak, lift, { kg -> kgLabel(kg, weighted) }, hold = metric == ExerciseMetric.HOLD)
                                 } else {
                                     emptyMap()
                                 },
                                 onMakeTopSet = run {
                                     val working = block.sets.filter { !it.warmup }
                                     if (metric == ExerciseMetric.REPS && first.supersetGroup == null && working.size >= 2 && working.none { it.kind == SetKind.TOP }) {
-                                        { viewModel.makeTopSet(block.id) { Toast.makeText(screenContext, resText(R.string.session_top_set_refused), Toast.LENGTH_SHORT).show() } }
+                                        { viewModel.makeTopSet(block.key) { Toast.makeText(screenContext, resText(R.string.session_top_set_refused), Toast.LENGTH_SHORT).show() } }
                                     } else {
                                         null
                                     }
@@ -1282,13 +1285,13 @@ fun SessionScreen(
                                 },
                                 done = block.sets.count { it.done },
                                 total = block.sets.count { !it.warmup },
-                                hasNote = exerciseNotes[block.id] != null,
-                                onOpen = { openOverride = block.id },
+                                hasNote = exerciseNotes[block.exerciseId] != null,
+                                onOpen = { openOverride = block.position },
                             )
                             previousFolded = true
                             // The card moved on (its last set, or a superset partner opening), so the question
                             // about the set just logged sits under that set's own exercise, never on another card.
-                            if (underRowEffort != null && underRowEffort.exerciseId == block.id) {
+                            if (underRowEffort != null && underRowEffort.blockKey == block.key) {
                                 EffortStrip(
                                     setLabel = underRowEffort.workingNumber(ui.sets).toString(),
                                     rpe = underRowEffort.rpe,
@@ -1339,7 +1342,7 @@ fun SessionScreen(
                     val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
                     val number = set.workingNumber(ui.sets)
                     // Named only when it is not the card on screen.
-                    if (set.exerciseId != openBlock?.id) {
+                    if (set.blockKey != openBlock?.key) {
                         stringResource(R.string.session_next_line_named, number, set.exerciseName, figure)
                     } else {
                         stringResource(R.string.session_next_line, number, figure)
@@ -1379,7 +1382,8 @@ fun SessionScreen(
                             undo = null
                         }
                         is UndoPrompt.Added -> {
-                            viewModel.removeExercise(prompt.exerciseId) { }
+                            // The movement just added is the last block holding it.
+                            blocks.lastOrNull { it.exerciseId == prompt.exerciseId }?.let { viewModel.removeExercise(it.key) { } }
                             undo = null
                         }
                     }
@@ -1430,8 +1434,8 @@ fun SessionScreen(
         )
     }
 
-    confirmRemoveExercise?.let { exerciseId ->
-        val rows = ui.sets.filter { it.exerciseId == exerciseId }
+    confirmRemoveExercise?.let { position ->
+        val rows = blocks.firstOrNull { it.position == position }?.sets.orEmpty()
         val name = rows.firstOrNull()?.exerciseName
         if (name == null) {
             confirmRemoveExercise = null
@@ -1449,7 +1453,9 @@ fun SessionScreen(
                         danger = true,
                         onClick = {
                             confirmRemoveExercise = null
-                            viewModel.removeExercise(exerciseId) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, name), it) }
+                            blocks.firstOrNull { it.position == position }?.let { b ->
+                                viewModel.removeExercise(b.key) { offerRemovedUndo(UiText.res(R.string.session_undo_exercise_removed, name), it) }
+                            }
                         },
                     )
                 },
@@ -1499,8 +1505,8 @@ fun SessionScreen(
         )
     }
 
-    platesFor?.let { exerciseId ->
-        val sets = ui.sets.filter { it.exerciseId == exerciseId && !it.warmup }
+    platesFor?.let { position ->
+        val sets = blocks.firstOrNull { it.position == position }?.sets.orEmpty().filter { !it.warmup }
         val set = sets.firstOrNull { it.isPending } ?: sets.lastOrNull()
         if (set != null) {
             PlateSheet(
@@ -1526,7 +1532,7 @@ fun SessionScreen(
         // typed wrong on all five ticked sets was five dialogs. A ticked set at
         // a different load was a deliberate change and is left alone.
         val following = ui.sets.filter {
-            it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex &&
+            it.blockKey == target.blockKey && it.setIndex >= target.setIndex &&
                 // A top set's load is not the back-offs' (nor a drop's): the sets that follow are the ones of its own kind.
                 (it.id == target.id || (!it.warmup && it.kind == target.kind && (!it.done || it.weightKg == target.weightKg)))
         }
@@ -1669,14 +1675,15 @@ fun SessionScreen(
             onDismiss = { showRiteMuscles = false },
         )
     }
-    editModifiersFor?.let { exerciseId ->
-        val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
+    editModifiersFor?.let { position ->
+        val block = blocks.firstOrNull { it.position == position }
+        val current = block?.sets?.firstOrNull()
         ModifierPickerDialog(
             exerciseName = current?.exerciseName ?: stringResource(R.string.session_exercise_fallback),
-            applicable = exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
+            applicable = exercises.firstOrNull { it.id == block?.exerciseId }?.let(::applicableModifiers).orEmpty(),
             current = current?.modifiers.orEmpty(),
             onConfirm = { picked ->
-                viewModel.setModifiers(exerciseId, picked)
+                block?.let { viewModel.setModifiers(it.key, picked) }
                 editModifiersFor = null
             },
             onDismiss = { editModifiersFor = null },
@@ -1902,8 +1909,9 @@ private const val TITLE_CAP = 80
 private const val PUBLIC_NOTE_CAP = 500
 
 
-/** One exercise of the live trial: its sets in order, and where the rite put it. */
-internal class TrialBlock(val id: Long, val position: Int, val sets: List<SessionSet>) {
+/** One block of the live trial (one rite entry): its sets in order, and where the rite put it. */
+internal class TrialBlock(val exerciseId: Long, val position: Int, val sets: List<SessionSet>) {
+    val key: BlockKey get() = BlockKey(position, exerciseId)
     val first: SessionSet get() = sets.first()
 }
 
@@ -2375,7 +2383,7 @@ internal fun OpenExerciseCard(
     val first = block.first
     val shape = MaterialTheme.shapes.medium
     // Once working sets are being logged the warm-ups fold into one ticked row, which opens on a tap.
-    var warmupsOpen by remember(first.exerciseId) { mutableStateOf(false) }
+    var warmupsOpen by remember(block.key) { mutableStateOf(false) }
     val foldWarmups = !amend && !warmupsOpen && block.sets.any { it.done && !it.warmup } &&
         block.sets.none { it.warmup && it.id == editingSetId }
     Column(

@@ -226,12 +226,7 @@ class WorkoutDetailViewModel(
     fun startAmend() {
         val sets = ui.value.sets
         if (ui.value.session?.completedAtMs == null || sets.isEmpty()) return
-        val opened = TrialDraft.of(sets)
-        if (opened.hasRepeatedMovement) {
-            _amendError.value = UiText.themed(R.string.workoutdetail_amend_repeat_error, R.string.workoutdetail_amend_repeat_error__t)
-        } else {
-            _draft.value = opened
-        }
+        _draft.value = TrialDraft.of(sets)
     }
 
     fun changeDraft(change: (TrialDraft) -> TrialDraft) {

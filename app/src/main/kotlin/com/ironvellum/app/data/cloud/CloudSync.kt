@@ -14,6 +14,7 @@ import com.ironvellum.app.domain.JoinStatus
 import com.ironvellum.app.domain.isValidInviteCode
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.blockKey
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.WorkoutSession
@@ -304,13 +305,14 @@ class CloudSync(
                     } else {
                         pushedNow += session to sets
                     }
-                    pushable.forEach { set ->
+                    val wireIndex = wireSetIndexes(pushable)
+                    pushable.forEachIndexed { at, set ->
                         setCount++
                         add(
                             SessionSetDto(
                                 sessionId = cloudId,
                                 exerciseName = set.exerciseName,
-                                setIndex = set.setIndex,
+                                setIndex = wireIndex[at],
                                 reps = set.reps,
                                 weightKg = set.weightKg,
                                 modifiers = set.modifiers,
@@ -647,16 +649,17 @@ class CloudSync(
                 }.decodeList<AllySetDto>()
                 // Null positions (rows pushed before schema 20) sort last, then
                 // by name, so the order is stable rather than arrival-dependent.
-                val exercises = sets.groupBy { it.exerciseName }
+                // One exercise per (name, position): a movement the lifter's rite names twice reads as two blocks.
+                val exercises = sets.groupBy { it.exerciseName to it.exercisePosition }
                     .entries
                     .sortedWith(
-                        compareBy<Map.Entry<String, List<AllySetDto>>>(
+                        compareBy<Map.Entry<Pair<String, Int?>, List<AllySetDto>>>(
                             { e -> e.value.mapNotNull { it.exercisePosition }.minOrNull() ?: Int.MAX_VALUE },
-                        ).thenBy { it.key },
+                        ).thenBy { it.key.first },
                     )
-                    .map { (name, rows) ->
+                    .map { (key, rows) ->
                         AllyExercise(
-                            name = name,
+                            name = key.first,
                             sets = rows.sortedBy { it.setIndex }.map {
                                 AllySet(
                                     setIndex = it.setIndex,
@@ -1627,6 +1630,26 @@ class CloudSync(
         }
 
         /**
+         * The set_index each of [sets] (one trial's) is pushed under, in the same order. The cloud keys a set on
+         * (trial, movement name, set_index), and a rite that names one movement twice has two blocks whose sets
+         * both count from 0: pushed as they are, one upsert would carry two rows with one key, which Postgres
+         * refuses for the whole batch. A movement's later block is therefore shifted past the sets before it. A
+         * trial with no repeated movement is untouched (the shift is 0), so nothing already pushed is renumbered.
+         */
+        internal fun wireSetIndexes(sets: List<SessionSet>): List<Int> {
+            val wire = IntArray(sets.size)
+            sets.indices.groupBy { sets[it].exerciseName }.values.forEach { movement ->
+                var next = 0
+                movement.groupBy { sets[it].blockKey }.entries.sortedBy { it.key.position }.forEach { (_, block) ->
+                    val shift = (next - block.minOf { sets[it].setIndex }).coerceAtLeast(0)
+                    block.forEach { wire[it] = sets[it].setIndex + shift }
+                    next = block.maxOf { wire[it] } + 1
+                }
+            }
+            return wire.toList()
+        }
+
+        /**
          * Cloud set rows of the amended trials that the device no longer has.
          * [current] maps each trial's cloud id to the sets just pushed for it;
          * a row is stale when its (movement, index) is not among them. Rows of
@@ -1636,7 +1659,7 @@ class CloudSync(
             current: Map<String, List<SessionSet>>,
             onCloud: List<SessionSetKeyDto>,
         ): List<String> {
-            val keep = current.mapValues { (_, sets) -> sets.map { it.exerciseName to it.setIndex }.toSet() }
+            val keep = current.mapValues { (_, sets) -> sets.map { it.exerciseName }.zip(wireSetIndexes(sets)).toSet() }
             return onCloud
                 .filter { row -> keep[row.sessionId]?.contains(row.exerciseName to row.setIndex) == false }
                 .map { it.id }
