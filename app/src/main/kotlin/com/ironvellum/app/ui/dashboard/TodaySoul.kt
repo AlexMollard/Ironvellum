@@ -154,13 +154,17 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
     }
     val oathKept = UiText.plural(R.plurals.today_oath_kept, days).asString()
     val oathValue = if (next != null) UiText.plural(R.plurals.today_oath_progress, next.first, days, next.first).asString() else oathKept
-    val oathState = if (next != null) UiText.plural(R.plurals.today_oath_state_next, next.first, oathKept, next.first).asString() else oathKept
+    // The line under each bar is not drawn (Today's height goes to the rite); a screen reader still hears it as the bar's state.
+    val oathState = when {
+        next == null -> UiText.res(R.string.today_oath_state_done, oathKept).asString()
+        days == 0 -> UiText.themed(R.string.today_oath_state_begin, R.string.today_oath_state_begin__t, UiText.plural(R.plurals.today_oath_state_next, next.first, oathKept, next.first, next.second.name).asString()).asString()
+        else -> UiText.plural(R.plurals.today_oath_state_next, next.first, oathKept, next.first, next.second.name).asString()
+    }
     Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
         ProgressColumn(
             title = "${ArmyClass.forLevel(progress.level).title} ${progress.level}",
             fraction = if (progress.needed <= 0) 0f else progress.intoLevel.toFloat() / progress.needed,
             value = AnnotatedString(stringResource(R.string.today_level_value, progress.intoLevel, progress.needed)),
-            caption = stringResource(R.string.today_level_caption),
             fill = emeraldRamp(),
             tag = "today-level", barTag = "today-xp-bar", onClickLabel = stringResource(R.string.today_level_explain_label),
             state = stringResource(R.string.today_level_state, progress.intoLevel, progress.needed),
@@ -180,11 +184,6 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
                     addStyle(SpanStyle(color = if (days > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink), at, at + figure.length)
                 }
             },
-            caption = when {
-                days == 0 -> UiText.themed(R.string.today_oath_caption_begin, R.string.today_oath_caption_begin__t).asString()
-                next != null -> stringResource(R.string.today_oath_caption_next, next.second.name)
-                else -> stringResource(R.string.today_oath_caption_done)
-            },
             fill = Metal.Fabled.bounds(),
             tag = "today-oath", barTag = "today-oath-bar", onClickLabel = UiText.themed(R.string.today_oath_explain_label, R.string.today_oath_explain_label__t).asString(),
             state = oathState,
@@ -198,7 +197,6 @@ private fun ProgressColumn(
     title: String,
     fraction: Float,
     value: AnnotatedString,
-    caption: String,
     fill: Brush,
     tag: String,
     barTag: String,
@@ -222,8 +220,6 @@ private fun ProgressColumn(
         Spacer(Modifier.height(6.dp))
         // Two lines: at a large text size a deed's name ("Hundred-Day Promise") would otherwise be cut to its first word.
         Text(value, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(2.dp))
-        Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
     }
 }
 

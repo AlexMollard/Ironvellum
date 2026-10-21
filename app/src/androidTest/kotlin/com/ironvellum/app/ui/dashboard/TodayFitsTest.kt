@@ -138,6 +138,13 @@ class TodayFitsTest {
         assertTrue("\"$text\" starts above the box", bounds.top >= box.top)
     }
 
+    /** The words no longer drawn under a progress bar are still the bar's spoken state. */
+    private fun assertStateInside(tag: String, words: String) {
+        val state = compose.onNodeWithTag(tag).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.StateDescription]
+        assertTrue("\"$state\" should say \"$words\"", state.contains(words))
+        compose.onAllNodesWithText(words, substring = true, useUnmergedTree = true).assertCountEquals(0)
+    }
+
     /** Saves the Today box to the app's external files dir as `<name>.png` for a human to look at; never fails a test. */
     private fun saveShot(name: String) {
         runCatching {
@@ -308,7 +315,7 @@ class TodayFitsTest {
     fun atTwoHundredPercentNothingPairs() {
         show(
             ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Chin-up", "Row", "Plank"))),
-            selectedDay = 1, fontScale = 2f,
+            selectedDay = 1, fontScale = 2f, height = PHONE_CONTENT_HEIGHT_DP * 2, // tall: every line shows, so the test reads the packing, not the fit
         )
         assertTrue("two exercises share a line at 200%", top("Inverted Row") > top("Pull-up"))
     }
@@ -485,7 +492,8 @@ class TodayFitsTest {
         assertEquals(xpBar.top, oathBar.top)
         assertEquals((xpBar.right - xpBar.left).value, (oathBar.right - oathBar.left).value, 0.5f)
         assertInside("10 / 14 days")
-        assertInside("Next: Fortnight Vigil")
+        assertStateInside("today-oath", "Fortnight Vigil")
+        assertStateInside("today-level", "Level progress")
         saveShot("today-oath")
         compose.mainClock.autoAdvance = false
         panel.performClick()
@@ -502,7 +510,7 @@ class TodayFitsTest {
     fun anOathThatHasNotBegunShowsHowToStart() {
         show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
         assertInside("0 / 3 days")
-        assertInside("Seal a trial to begin")
+        assertStateInside("today-oath", "seal a trial to begin")
         compose.onNodeWithTag("today-oath").assertIsDisplayed()
         saveShot("today-oath-empty")
     }
@@ -522,14 +530,14 @@ class TodayFitsTest {
     fun reachingAnOathMilestoneTargetsTheNextExistingDeed() {
         show(ui = DashboardUi(streak = 14, presets = listOf(rite(3, day = 1))), selectedDay = 1)
         assertInside("14 / 30 days")
-        assertInside("Next: Unrelenting Watch")
+        assertStateInside("today-oath", "Unrelenting Watch")
     }
 
     @Test
     fun theFinalOathMilestoneKeepsShowingTheStreak() {
         show(ui = DashboardUi(streak = 105, presets = listOf(rite(3, day = 1))), selectedDay = 1)
         assertInside("105 days kept")
-        assertInside("Milestones complete")
+        assertStateInside("today-oath", "milestones complete")
     }
 
     @Test

@@ -3834,27 +3834,23 @@
     <string name="today_body_gap_add_button">Add</string>
     <!-- Today, level bar figure. %1$d is XP into the level, %2$d XP the level needs. -->
     <string name="today_level_value">%1$d / %2$d XP</string>
-    <!-- Today, caption under the level bar. -->
-    <string name="today_level_caption">Level progress</string>
     <!-- Screen-reader click label of the level bar. -->
     <string name="today_level_explain_label">Explain level and XP</string>
-    <!-- Screen-reader state of the level bar. %1$d is XP into the level, %2$d XP the level needs. -->
-    <string name="today_level_state">%1$d of %2$d XP towards the next level</string>
+    <!-- Screen-reader state of the level bar; the figure's caption is spoken, not drawn. %1$d is XP into the level, %2$d XP the level needs. -->
+    <string name="today_level_state">Level progress: %1$d of %2$d XP towards the next level</string>
     <!-- Today, streak figure while a milestone is ahead. %1$d is the days kept (shown in gold), %2$d the days the next milestone needs. -->
     <!-- The plural quantity is %2$d. -->
     <plurals name="today_oath_progress"><item quantity="one">%1$d / %2$d day</item><item quantity="other">%1$d / %2$d days</item></plurals>
-    <!-- Screen-reader state of the streak bar. %1$s is the days kept (for example 3 days kept), %2$d the days the next milestone needs. -->
+    <!-- Screen-reader state of the streak bar. %1$s is the days kept (for example 3 days kept), %2$d the days the next milestone needs, %3$s its title. -->
     <!-- The plural quantity is %2$d. -->
-    <plurals name="today_oath_state_next"><item quantity="one">%1$s; next milestone at %2$d day</item><item quantity="other">%1$s; next milestone at %2$d days</item></plurals>
-    <!-- Today, caption under the streak bar. %1$s is the name of the next title milestone. -->
-    <string name="today_oath_caption_next">Next: %1$s</string>
-    <!-- Today, caption under the streak bar when every streak milestone is reached. -->
-    <string name="today_oath_caption_done">Milestones complete</string>
+    <plurals name="today_oath_state_next"><item quantity="one">%1$s; next milestone at %2$d day: %3$s</item><item quantity="other">%1$s; next milestone at %2$d days: %3$s</item></plurals>
+    <!-- Screen-reader state of the streak bar when every streak milestone is reached. %1$s is the days kept. -->
+    <string name="today_oath_state_done">%1$s; milestones complete</string>
     <!-- Today, streak figure once every milestone is reached, and the start of its screen-reader state. %1$d is the days kept (shown in gold). -->
     <plurals name="today_oath_kept"><item quantity="one">%1$d day kept</item><item quantity="other">%1$d days kept</item></plurals>
-    <!-- Today, caption under the streak bar before any day is kept. -->
-    <string name="today_oath_caption_begin">Finish a workout to begin</string>
-    <string name="today_oath_caption_begin__t">Seal a trial to begin</string>
+    <!-- Screen-reader state of the streak bar before any day is kept. %1$s is the state without the hint. -->
+    <string name="today_oath_state_begin">%1$s; finish a workout to begin</string>
+    <string name="today_oath_state_begin__t">%1$s; seal a trial to begin</string>
     <!-- Screen-reader click label of the streak bar. -->
     <string name="today_oath_explain_label">Explain streak</string>
     <string name="today_oath_explain_label__t">Explain Oath</string>
