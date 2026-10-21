@@ -23,6 +23,11 @@ data class LiftWork(
     val addsToBody: Boolean,
 )
 
+/** One Monday-to-Sunday week's workouts and kilograms moved: what a period's best week is picked by. */
+data class WeekTotal(val weekStart: LocalDate, val workouts: Int, val volumeKg: Double) {
+    val weekEnd: LocalDate get() = weekStart.plusDays(6)
+}
+
 /**
  * What a stretch of training added up to: workouts, sets, volume, time, the lifts that set new records and the hard
  * sets each muscle took. The weekly recap is the first reader; a month or year in review reads the same
@@ -57,7 +62,7 @@ data class PeriodStats(
         /** A session longer than a day is a trial left open (and an import carries none): it adds no time. */
         private const val MAX_SESSION_MINUTES = 24L * 60
 
-        private fun within(
+        internal fun within(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             from: LocalDate,
             to: LocalDate,
@@ -71,6 +76,34 @@ data class PeriodStats(
         /** How many workouts fall in [from] until [to]: [of]'s count without the rest of its work. */
         fun workoutsIn(history: List<Pair<WorkoutSession, List<SessionSet>>>, from: LocalDate, to: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Int =
             within(history, from, to, zone).size
+
+        /**
+         * The best whole week (Monday to Sunday) of [from] until [to]: the most kilograms moved, then the most workouts,
+         * then the earliest. A week belongs to the period that holds its Thursday (the ISO rule), so a week straddling
+         * two months is counted once, and its figures are the whole week's, the ones its weekly recap shows. Null when
+         * no workout falls in a week the period owns. One pass over [history], whatever the period's length.
+         */
+        fun bestWeek(
+            history: List<Pair<WorkoutSession, List<SessionSet>>>,
+            exercises: Map<Long, Exercise>,
+            from: LocalDate,
+            to: LocalDate,
+            zone: ZoneId = ZoneId.systemDefault(),
+        ): WeekTotal? {
+            val workouts = HashMap<LocalDate, Int>()
+            val volume = HashMap<LocalDate, Double>()
+            for ((session, sets) in history) {
+                val day = Instant.ofEpochMilli(session.completedAtMs ?: session.startedAtMs).atZone(zone).toLocalDate()
+                val monday = day.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+                val thursday = monday.plusDays(3)
+                if (thursday.isBefore(from) || !thursday.isBefore(to)) continue
+                workouts.merge(monday, 1, Int::plus)
+                volume.merge(monday, WorkoutShare.totals(sets, exercises).movedKg.toDouble(), Double::plus)
+            }
+            return workouts.map { (monday, count) -> WeekTotal(monday, count, volume.getValue(monday)) }
+                .sortedWith(compareByDescending<WeekTotal> { it.volumeKg }.thenByDescending { it.workouts }.thenBy { it.weekStart })
+                .firstOrNull()
+        }
 
         /**
          * The figures for [from] until [to] over a completed [history] (as `Repository.observeHistory` holds it).

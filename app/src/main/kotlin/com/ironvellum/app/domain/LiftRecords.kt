@@ -115,6 +115,22 @@ object LiftRecords {
         val set: SessionSet,
         val addsToBody: Boolean,
         val atMs: Long,
+        /** The estimated 1RM before the period, then the best of each trial inside it, oldest first: a sparkline's points. */
+        val series: List<Double> = emptyList(),
+    ) {
+        val label: String get() = Variation.label(name, variation)
+    }
+
+    /** A lift whose first trial fell inside a period: it has a best but nothing before it to be a gain over. */
+    data class NewLift(
+        val name: String,
+        val variation: String,
+        val e1rmKg: Double,
+        val set: SessionSet,
+        val addsToBody: Boolean,
+        val atMs: Long,
+        /** The best of each trial inside the period, oldest first. */
+        val series: List<Double> = emptyList(),
     ) {
         val label: String get() = Variation.label(name, variation)
     }
@@ -122,19 +138,17 @@ object LiftRecords {
     /** A rise smaller than this does not print as a gain (it would read "+0.0 kg"). */
     private const val MIN_GAIN_KG = 0.05
 
-    /**
-     * The lifts that set a new best estimated 1RM in [fromMs, toMs): the period's best beats the best of every trial
-     * before [fromMs]. A lift with nothing before the period is history starting, not a record ([isFresh] says the
-     * same). One row per lift, in the order the bests were set. A recap's "personal records" and any later
-     * month or year review read the period through this, so a "record" means one thing.
-     */
-    fun gains(
+    private class Held(var best: SessionBest, var at: Long, val series: MutableList<Double> = mutableListOf())
+
+    /** What [gains] and [newLifts] both read: each lift's best before [fromMs], and its trials inside [fromMs, toMs). */
+    private class Scan(val before: Map<String, Double>, val inside: Map<String, Held>)
+
+    private fun scan(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         exercises: Map<Long, Exercise>,
         fromMs: Long,
         toMs: Long,
-    ): List<RecordGain> {
-        class Held(val best: SessionBest, val at: Long)
+    ): Scan {
         val before = HashMap<String, Double>()
         val inside = LinkedHashMap<String, Held>()
         for ((session, sets) in history.sortedBy { it.first.completedAtMs ?: it.first.startedAtMs }) {
@@ -143,17 +157,61 @@ object LiftRecords {
             for ((key, best) in sessionBests(sets, exercises)) {
                 if (at < fromMs) {
                     if (best.e1rmKg > (before[key] ?: 0.0)) before[key] = best.e1rmKg
-                } else if (best.e1rmKg > (inside[key]?.best?.e1rmKg ?: 0.0)) {
-                    inside[key] = Held(best, at)
+                } else {
+                    val held = inside.getOrPut(key) { Held(best, at) }
+                    held.series += best.e1rmKg
+                    if (best.e1rmKg > held.best.e1rmKg) {
+                        held.best = best
+                        held.at = at
+                    }
                 }
             }
         }
-        return inside.mapNotNull { (key, held) ->
-            val prior = before[key] ?: return@mapNotNull null
+        return Scan(before, inside)
+    }
+
+    /**
+     * The lifts that set a new best estimated 1RM in [fromMs, toMs): the period's best beats the best of every trial
+     * before [fromMs]. A lift with nothing before the period is history starting, not a record ([isFresh] says the
+     * same): [newLifts] lists those. One row per lift, in the order the bests were set. A recap's "personal records" and
+     * the month and year reviews read the period through this, so a "record" means one thing.
+     */
+    fun gains(
+        history: List<Pair<WorkoutSession, List<SessionSet>>>,
+        exercises: Map<Long, Exercise>,
+        fromMs: Long,
+        toMs: Long,
+    ): List<RecordGain> {
+        val scan = scan(history, exercises, fromMs, toMs)
+        return scan.inside.mapNotNull { (key, held) ->
+            val prior = scan.before[key] ?: return@mapNotNull null
             val gain = held.best.e1rmKg - prior
             if (gain < MIN_GAIN_KG) return@mapNotNull null
-            RecordGain(held.best.display, held.best.variation, held.best.e1rmKg, gain, held.best.set, held.best.addsToBody, held.at)
+            RecordGain(
+                held.best.display, held.best.variation, held.best.e1rmKg, gain, held.best.set, held.best.addsToBody, held.at,
+                listOf(prior) + held.series,
+            )
         }.sortedBy { it.atMs }
+    }
+
+    /**
+     * The lifts first trained inside [fromMs, toMs): they have a best estimated 1RM in the period and none before it,
+     * the same key and the same rule [gains] uses, so a lift is a gain or new, never both. The first trial of an
+     * exercise that carries no load (or a rep count past the cap) has no e1RM and is not here.
+     */
+    fun newLifts(
+        history: List<Pair<WorkoutSession, List<SessionSet>>>,
+        exercises: Map<Long, Exercise>,
+        fromMs: Long,
+        toMs: Long,
+    ): List<NewLift> {
+        val scan = scan(history, exercises, fromMs, toMs)
+        return scan.inside
+            .filterKeys { it !in scan.before }
+            .map { (_, held) ->
+                NewLift(held.best.display, held.best.variation, held.best.e1rmKg, held.best.set, held.best.addsToBody, held.at, held.series.toList())
+            }
+            .sortedBy { it.atMs }
     }
 
     /**
