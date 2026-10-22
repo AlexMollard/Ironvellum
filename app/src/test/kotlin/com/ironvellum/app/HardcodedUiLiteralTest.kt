@@ -47,6 +47,7 @@ class HardcodedUiLiteralTest {
         "main/domain/GearRequirements.kt" to "exercise-name keyed gear data: English data for a later step",
         "main/domain/MovementDifficulty.kt" to "exercise-name keyed difficulty data: English data for a later step",
         "main/domain/BodyShare.kt" to "exercise-name keyed body-share data, the sibling of MovementDifficulty: English data for a later step",
+        "main/domain/FatigueTraits.kt" to "exercise-name keyed fatigue traits (stretch-heavy, heavy whole-body): English data, the sibling of MuscleMap",
         "main/domain/StarterLoads.kt" to "exercise-name keyed starter loads: English data for a later step",
         "main/domain/ExerciseSearch.kt" to "exercise search aliases, matched against English names",
         "main/data/Seed.kt" to "seeded exercise, activity and template rows: stored data, English for a later step",
