@@ -83,11 +83,16 @@ JavaScript would also drift. So:
 - Privacy policy (`docs/PRIVACY.md`) updated for the new uploads (set kind, RPE, imported workouts, the stats
   snapshot) before release.
 
-## Open questions for the owner
+## Owner's answers (2026-10-23)
 
-- Pages hosting: allow GitHub's automatic Pages deploy on this public repo, or host elsewhere?
-- Google sign-in on the web needs a web OAuth client and the site's address on Supabase's redirect allowlist,
-  both in consoles only the owner can reach.
+- **The new uploads are automatic** for signed-in users (set kind, RPE, imported workouts, the stats
+  snapshot), all owner-only, with `docs/PRIVACY.md` updated in the same release. No opt-in switch.
+- **Hosting: GitHub Pages** on this public repository, free. The owner allows GitHub's automatic Pages deploy
+  for it; no other workflow trigger changes. Build with email and password first; Google sign-in on the web
+  follows once the owner has created the web OAuth client and added the site's address to Supabase's redirect
+  list (both free).
+- **Everything stays at no cost.** No paid service, no paid Supabase tier: keep the snapshot small (one row per
+  user, capped like `cloud_archives`) so the shared free project's storage and egress are not strained.
 
 ## Calls made after the builder review (designer's calls, not the owner's)
 
