@@ -122,7 +122,7 @@ private const val LOG_WEIGHT = "log_weight"
 object Routes {
     const val DASHBOARD = "dashboard"
     const val PRESETS = "presets"
-    const val EXERCISES = "exercises?name={name}"
+    const val EXERCISES = "exercises?name={name}&variation={variation}"
     const val STATS = "stats"
     const val TITLES = "titles"
     const val IDLE = "idle"
@@ -170,7 +170,9 @@ object Routes {
     fun reviewShare(kind: String, start: Long): String = "review_share/$kind/$start"
 
     /** Exercises, opened on one lift when [name] is given. */
-    fun exercises(name: String? = null): String = if (name == null) "exercises" else "exercises?name=${Uri.encode(name)}"
+    /** The Explorer, on [name]'s page; [variation] (a [Variation.key], "" for the plain lift) opens it on that variation's chip. */
+    fun exercises(name: String? = null, variation: String? = null): String =
+        if (name == null) "exercises" else "exercises?name=${Uri.encode(name)}${variation?.let { "&variation=${Uri.encode(it)}" }.orEmpty()}"
 
     fun riteDetail(presetId: Long): String = "rite/$presetId"
 
@@ -401,7 +403,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         },
                         onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
                         onOpenCrest = { navController.navigate(Routes.collection(CollectionTab.Crests)) { launchSingleTop = true } },
-                        onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
+                        onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                         onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
                     )
@@ -467,11 +469,15 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(
                     Routes.EXERCISES,
-                    arguments = listOf(navArgument("name") { type = NavType.StringType; nullable = true; defaultValue = null }),
+                    arguments = listOf(
+                        navArgument("name") { type = NavType.StringType; nullable = true; defaultValue = null },
+                        navArgument("variation") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    ),
                 ) { entry ->
                     ExerciseExplorerScreen(
                         onBack = { navController.popBackStack() },
                         initialName = entry.arguments?.getString("name"),
+                        initialVariation = entry.arguments?.getString("variation"),
                         onOpenChronicle = { navController.navigate(Routes.WORKOUT_LOG) },
                     )
                 }
@@ -512,7 +518,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onLogWeightServed = { entry.savedStateHandle[LOG_WEIGHT] = false },
                         onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
-                        onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
+                        onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                         onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
                         onOpenSettings = { navController.navigate(Routes.settingsSection(it)) },

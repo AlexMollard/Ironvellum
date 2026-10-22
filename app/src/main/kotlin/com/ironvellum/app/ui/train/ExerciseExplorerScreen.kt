@@ -109,9 +109,10 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
         ExplorerUi(exercises, sel, history, records)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExplorerUi())
 
-    fun pick(exercise: Exercise) {
+    /** Opens [exercise]'s page, on [variationKey] ([Variation.key]; "" the plain lift) or, when null, on the default one. */
+    fun pick(exercise: Exercise, variationKey: String? = null) {
         selected.value = exercise
-        variation.value = null
+        variation.value = variationKey
     }
 
     /** Shows the movement's history in [key] ([Variation.key]); "" is the plain movement. */
@@ -129,6 +130,7 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 fun ExerciseExplorerScreen(
     onBack: () -> Unit,
     initialName: String? = null,
+    initialVariation: String? = null,
     onOpenChronicle: () -> Unit = {},
     viewModel: ExerciseExplorerViewModel =
         viewModel(factory = viewModelFactory { initializer { ExerciseExplorerViewModel(ironvellumRepository()) } }),
@@ -138,7 +140,7 @@ fun ExerciseExplorerScreen(
     var picked by rememberSaveable { mutableStateOf(initialName == null) }
     androidx.compose.runtime.LaunchedEffect(ui.exercises) {
         if (picked || ui.exercises.isEmpty()) return@LaunchedEffect
-        ui.exercises.firstOrNull { it.name.equals(initialName, ignoreCase = true) }?.let(viewModel::pick)
+        ui.exercises.firstOrNull { it.name.equals(initialName, ignoreCase = true) }?.let { viewModel.pick(it, initialVariation) }
         picked = true
     }
 

@@ -256,7 +256,7 @@ fun StatsScreen(
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
     onOpenWorkout: (Long) -> Unit,
-    onOpenLift: (String) -> Unit,
+    onOpenLift: (name: String, variation: String) -> Unit,
     // A past week's recap: the Monday of the week, as an epoch day.
     onOpenRecap: (Long) -> Unit,
     // A month or year review: "month" or "year", and the epoch day its period starts on.
@@ -454,7 +454,7 @@ fun StatsScreen(
  * Gold appears only on a row whose peak was set in the last fortnight.
  */
 @Composable
-private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (String) -> Unit) {
+private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (name: String, variation: String) -> Unit) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             PanelLabel(UiText.themed(R.string.stats_lift_peaks_label, R.string.stats_lift_peaks_label__t).asString(), Modifier.weight(1f))
@@ -484,7 +484,7 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
                 },
                 sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 onClickLabel = stringResource(R.string.stats_lift_open, record.label),
-                onClick = { onOpenLift(record.name) },
+                onClick = { onOpenLift(record.name, record.variation) },
             )
         }
         // Said once for the board, not on every row that lacks a change.
@@ -563,7 +563,7 @@ private fun TrainingTab(
     onMonth: (Int) -> Unit,
     scroll: androidx.compose.foundation.ScrollState,
     onOpenWorkout: (Long) -> Unit,
-    onOpenLift: (String) -> Unit,
+    onOpenLift: (name: String, variation: String) -> Unit,
     onOpenRecap: (Long) -> Unit,
     onOpenReview: (String, Long) -> Unit,
 ) {

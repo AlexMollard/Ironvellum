@@ -20,7 +20,7 @@ main/domain/RankPatterns.kt 13
 main/domain/RestRules.kt 14
 main/domain/RoutineCode.kt 1
 main/domain/SetKind.kt 7
-main/ui/IronvellumNav.kt 15
+main/ui/IronvellumNav.kt 17
 main/ui/components/CelebrationPages.kt 1
 main/ui/components/Common.kt 4
 main/ui/components/CrestMarks.kt 1

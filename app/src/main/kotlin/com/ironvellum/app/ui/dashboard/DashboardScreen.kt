@@ -501,7 +501,7 @@ fun DashboardScreen(
     /** The header's "Add your name": straight to Settings > Profile, where the name lives. */
     onAddName: () -> Unit = onOpenSettings,
     /** A fresh peak's row opens that lift. */
-    onOpenLift: (String) -> Unit = { onOpenLedger() },
+    onOpenLift: (name: String, variation: String) -> Unit = { _, _ -> onOpenLedger() },
     /** The "Last week" link: the recap of the week starting on this epoch day. */
     onOpenRecap: (Long) -> Unit = {},
     /** The review card: "month" or "year", and the epoch day its period starts on. */
@@ -628,7 +628,7 @@ internal class TodayActions(
     val onAddBody: () -> Unit = {},
     /** The header asks for a name while the profile still has the default one. */
     val onAddName: () -> Unit = {},
-    val onOpenLift: (String) -> Unit = {},
+    val onOpenLift: (name: String, variation: String) -> Unit = { _, _ -> },
     /** Last week's recap: the Monday of the week, as an epoch day. */
     val onOpenRecap: (Long) -> Unit = {},
     /** A month or year review: "month" or "year", and the epoch day its period starts on. */
@@ -1004,7 +1004,7 @@ private fun TodayDayBody(
         bodyGap?.let { gap ->
             add { BodyGapRow(gap, onFix = actions.onAddBody) }
         }
-        if (peak != null) add { PeakRow(peak) { actions.onOpenLift(peak.name) } }
+        if (peak != null) add { PeakRow(peak) { actions.onOpenLift(peak.name, peak.variation) } }
         ui.lastWeek?.let { recap ->
             add {
                 ListRow(
