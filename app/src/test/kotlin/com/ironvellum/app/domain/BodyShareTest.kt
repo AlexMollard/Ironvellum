@@ -101,6 +101,19 @@ class BodyShareTest {
     }
 
     @Test
+    fun `free-standing single-leg work counts the body even when catalogued as weighted`() {
+        // The owner loads split squats with a vest: the working leg moves the body too.
+        val bss = named("Bulgarian Split Squat")
+        assertTrue(BodyShare.addsToBody(bss))
+        assertEquals(0.85, BodyShare.of(bss), 1e-9)
+        assertTrue(BodyShare.addsToBody(named("Dumbbell Lunge")))
+        assertTrue(BodyShare.addsToBody(named("Dumbbell Step-Up")))
+        assertTrue(!BodyShare.addsToBody(named("Barbell Lunge")))
+        assertEquals(0.0, BodyShare.of(named("Barbell Lunge")), 0.0)
+        assertEquals(0.0, BodyShare.of(named("Smith Machine Bulgarian Split Squat")), 0.0)
+    }
+
+    @Test
     fun `every bodyweight movement in the catalogue has a share between 0_1 and 1_0`() {
         val bad = ArrayList<String>()
         var counted = 0

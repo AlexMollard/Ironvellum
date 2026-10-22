@@ -60,9 +60,20 @@ object BodyShare {
 
     class Derived(val share: Double, val basis: Basis)
 
-    /** True when the set's marked load is ADDED to the body (a pull-up's plates), so the body is part of the load. */
-    fun addsToBody(exercise: Exercise): Boolean =
-        !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")
+    /**
+     * True when the set's marked load is ADDED to the body (a pull-up's plates), so the body is part of the load.
+     * Free-standing single-leg work (split squats, lunges, step-ups) counts the body even when the catalogue marks it
+     * weighted: the dumbbells or vest ride on a body the working leg also moves. Bar, Smith and machine versions keep
+     * the gym convention of the marked load only.
+     */
+    fun addsToBody(exercise: Exercise): Boolean {
+        val name = exercise.name.trim().lowercase()
+        if (!exercise.isWeighted || name.startsWith("weighted")) return true
+        return singleLegFamilies.any { it in name } && externalRigs.none { it in name }
+    }
+
+    private val singleLegFamilies = listOf("split squat", "lunge", "step-up")
+    private val externalRigs = listOf("barbell", "smith", "machine", "landmine", "cable")
 
     private class Rule(val share: Double, val matches: (String) -> Boolean)
 
