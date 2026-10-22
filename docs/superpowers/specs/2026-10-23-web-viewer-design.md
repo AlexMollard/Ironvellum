@@ -146,6 +146,10 @@ requests a day, 50 failed circle joins a day, 20 reports a day, blocks enforced 
 
 - **Feed** (`public_feed`): read, react (salute, iron, flame), comment, delete your own comment, see who
   reacted to your workouts.
+- **Feed cards** (second-pass mockups) show the workout's XP, hard sets, PR tags and a small muscle map. What a
+  friend sees must stay friend-safe: a PR tag names the lift and the set as logged (load × reps), never an e1RM,
+  because a bodyweight e1RM reveals body weight. The phone uploads per-session PR lift names and muscle levels
+  (0-3 per muscle) with the session, under the session's own audience; the web computes neither.
 - **Inbox** (`my_inbox`): read. Opening it calls `mark_inbox_seen`, which also clears the phone's unread
   count; that is intended (one inbox, two windows). No push or email notifications: the web refreshes when
   opened and on a slow timer, like the app's 30-minute poll.
