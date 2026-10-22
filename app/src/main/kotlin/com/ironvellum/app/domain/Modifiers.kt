@@ -20,6 +20,8 @@ package com.ironvellum.app.domain
  *
  * A word the name already carries is not offered again: a Paused Bench
  * Press has no "paused", an Archer Push-up neither "archer" nor "one-arm".
+ * Words that rule a modifier out are trimmed too ([notOffered]): a wall
+ * push-up is already the easy form, a walking lunge has no deficit.
  */
 fun applicableModifiers(exercise: Exercise): List<String> {
     if (exercise.metric != ExerciseMetric.REPS || exercise.category.isNotEmpty()) return emptyList()
@@ -48,6 +50,7 @@ fun applicableModifiers(exercise: Exercise): List<String> {
         if (pattern == MovementPattern.LUNGE && "step-up" !in name) offered += "deficit"
         if ("calf raise" in name) offered += "deficit"
     }
+    offered -= notOffered(name, MuscleMap.isTechnique(exercise.name))
     val named = buildSet {
         MODIFIER_ORDER.filterTo(this) { it in name }
         if ("pause" in name) add("paused")
@@ -57,6 +60,37 @@ fun applicableModifiers(exercise: Exercise): List<String> {
     }
     return MODIFIER_ORDER.filter { it in offered && it !in named }
 }
+
+/**
+ * What the pattern rules above would offer but a word in the [name] says makes no sense: a band is
+ * already the load, a wall or knee push-up is already the easy form, a diamond or typewriter push-up's
+ * hand placement is the point, and a lunge that travels or a squat already on a box has no deficit.
+ */
+private fun notOffered(name: String, technique: Boolean): Set<String> = buildSet {
+    val pushUp = "push-up" in name
+    if ("banded" in name) addAll(listOf("assisted", "archer", "one-arm"))
+    if ("walk" in name) add("assisted")
+    if ("lever" in name || "commando" in name) addAll(listOf("archer", "one-arm"))
+    if (pushUp) {
+        if (REGRESSED_PUSH_UPS.any { it in name }) addAll(listOf("archer", "one-arm", "deficit") + ANGLES)
+        if ("wall" in name) add("assisted")
+        if (FIXED_HAND_PUSH_UPS.any { it in name }) addAll(listOf("archer", "one-arm"))
+        if ("hindu" in name || technique) addAll(listOf("deficit") + ANGLES)
+        if ("incline" in name) add("deficit")
+    }
+    if (DEFICIT_NEVER.any { it in name }) add("deficit")
+    val lunge = "lunge" in name || "split squat" in name
+    val deadlift = "deadlift" in name
+    val calf = "calf raise" in name
+    if (!lunge && !deadlift && !calf && !pushUp) add("deficit")
+}
+
+private val REGRESSED_PUSH_UPS = listOf("wall", "knee", "ball")
+private val FIXED_HAND_PUSH_UPS = listOf("diamond", "typewriter", "hindu", "shoulder tap", "explosive")
+private val DEFICIT_NEVER = listOf(
+    "walking", "lateral", "curtsy", "to curl", "front-foot elevated", "side deadlift",
+    "bodyweight deadlift", "volume deadlift", "heavy deadlift", "leg press", "banded", "rocking",
+)
 
 private val ANGLES = listOf("incline", "decline", "elevated")
 

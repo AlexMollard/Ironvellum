@@ -63,6 +63,24 @@ class ModifiersTest {
     }
 
     @Test
+    fun `nothing is offered that the movement's own name rules out`() {
+        assertEquals(listOf("tempo", "paused"), of("Wall Push-up"))
+        assertEquals(listOf("assisted", "tempo", "paused"), of("Knee Push-up"))
+        assertEquals(listOf("assisted", "tempo", "paused"), of("Bosu Ball Push-up"))
+        assertFalse("archer" in of("Diamond Push-up"))
+        assertTrue("deficit" in of("Diamond Push-up"))
+        assertFalse("archer" in of("Front Lever Row"))
+        assertFalse("assisted" in of("Banded Row"))
+        assertFalse("deficit" in of("Walking Lunge"))
+        assertFalse("deficit" in of("Pistol Squat"))
+        assertFalse("deficit" in of("Triple-Bodyweight Deadlift"))
+        assertTrue("deficit" in of("Bulgarian Split Squat"))
+        assertTrue("deficit" in of("Romanian Deadlift"))
+        assertTrue("deficit" in of("Standing Calf Raise"))
+        assertEquals(listOf("assisted", "archer", "one-arm", "incline", "decline", "elevated", "deficit", "tempo", "paused"), of("Push-up"))
+    }
+
+    @Test
     fun `every offered token is one the scoring or muscle code reads`() {
         val bad = catalogue.values.flatMap { e ->
             applicableModifiers(e).filter { MovementDifficulty.modifierFactor(it) == 1.0 }.map { "${e.name}: $it" }
