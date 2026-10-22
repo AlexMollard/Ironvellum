@@ -74,7 +74,7 @@ import com.ironvellum.app.domain.CustomSpec
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
-import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LastLoggedIndex
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.Skills
@@ -94,7 +94,7 @@ internal data class PickerData(
     /** Most-recent-first, from completed workouts; the order is the point. */
     val recentIds: List<Long> = emptyList(),
     val favouriteIds: Set<Long> = emptySet(),
-    val lastLogged: Map<Long, LastLogged> = emptyMap(),
+    val lastLogged: LastLoggedIndex = LastLoggedIndex.EMPTY,
     /** The gear the lifter saved with the program answers; null = none saved. */
     val equipment: Equipment? = null,
 )
@@ -433,7 +433,7 @@ private fun LazyListScope.exerciseRows(
                 if (index > 0) InkDivider()
                 PickerRow(
                     exercise = exercise,
-                    lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
+                    lastLine = data.lastLogged.latest(exercise.id)?.let { lastLoggedLine(it, exercise, now, withVariation = true) },
                     favourite = exercise.id in data.favouriteIds,
                     browse = browse,
                     onPick = onPick,

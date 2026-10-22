@@ -9,6 +9,7 @@ import com.ironvellum.app.domain.MuscleGroup
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -86,10 +87,54 @@ class ExercisePickerLogicTest {
                 set(2, at = 500, kg = null, reps = 12),
             ),
         )
-        assertEquals(70.0, top.getValue(1).weightKg!!, 0.0)
-        assertEquals(6, top.getValue(1).reps)
-        assertEquals(12, top.getValue(2).reps)
+        assertEquals(70.0, top[1, ""]!!.weightKg!!, 0.0)
+        assertEquals(6, top[1, ""]!!.reps)
+        assertEquals(12, top[2, ""]!!.reps)
         assertEquals(2, top.size)
+    }
+
+    @Test
+    fun `last logged is kept per variation and a variation never logged shows nothing`() {
+        fun set(at: Long, kg: Double?, reps: Int, modifiers: String) = LastLogged(1, reps, kg, null, null, null, at, modifiers = modifiers)
+        val top = LastLogged.topSets(
+            listOf(
+                set(3_000, null, 20, ""), // the flat push-up is the more recent
+                set(2_000, null, 12, "deficit"),
+                set(2_000, null, 10, "deficit, tempo"), // tempo does not split: same lift as the deficit above
+                set(1_000, null, 15, "tempo"), // older plain set under another modifier string
+            ),
+        )
+        assertEquals(20, top[1, ""]!!.reps)
+        assertEquals(12, top[1, "deficit"]!!.reps)
+        assertNull("never logged: nothing, not the flat set", top[1, "archer"])
+        assertEquals("the picker line names the most recent variation", 20, top.latest(1)!!.reps)
+        assertNull(top.latest(2))
+    }
+
+    @Test
+    fun `last logged matches the whole combination, in any order`() {
+        fun set(at: Long, reps: Int, modifiers: String) = LastLogged(1, reps, null, null, null, null, at, modifiers = modifiers)
+        val top = LastLogged.topSets(
+            listOf(set(3_000, 8, "deficit"), set(2_000, 6, "deficit, archer"), set(1_000, 5, "archer,tempo,deficit"), set(500, 9, "archer")),
+        )
+        assertEquals(6, top[1, "archer,deficit"]!!.reps)
+        assertEquals("the sorted key is what lookups use", 6, top[1, com.ironvellum.app.domain.Variation.key("deficit, archer")]!!.reps)
+        assertEquals(8, top[1, "deficit"]!!.reps)
+        assertEquals(9, top[1, "archer"]!!.reps)
+        val day = 86_400_000L
+        assertEquals("archer, deficit · 6 × BW · today", lastLoggedLine(top[1, "archer,deficit"]!!.copy(atMs = 100 * day), ex(1, "Push-up"), 100 * day + 1000, ZoneOffset.UTC, withVariation = true))
+    }
+
+    @Test
+    fun `the picker line names a variation but a plain set stays as it was`() {
+        val day = 86_400_000L
+        val now = 100 * day + 12 * 3_600_000L
+        val pushup = ex(1, "Push-up")
+        val deficit = LastLogged(1, 12, null, null, null, null, now - 3 * day, modifiers = "deficit")
+        assertEquals("deficit · 12 × BW · 3d ago", lastLoggedLine(deficit, pushup, now, ZoneOffset.UTC, withVariation = true))
+        assertEquals("12 × BW · 3d ago", lastLoggedLine(deficit, pushup, now, ZoneOffset.UTC))
+        val plain = deficit.copy(modifiers = "")
+        assertEquals("12 × BW · 3d ago", lastLoggedLine(plain, pushup, now, ZoneOffset.UTC, withVariation = true))
     }
 
     @Test

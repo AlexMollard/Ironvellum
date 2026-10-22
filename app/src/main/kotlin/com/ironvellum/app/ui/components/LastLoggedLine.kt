@@ -26,7 +26,12 @@ internal fun lastLoggedLine(
     exercise: Exercise,
     nowMs: Long,
     zone: ZoneId = ZoneId.systemDefault(),
-): String = "${lastLoggedFigure(last, exercise)} · ${lastLoggedAge(last.atMs, nowMs, zone)}"
+    withVariation: Boolean = false,
+): String {
+    // The picker is not about one variation, so it says which one the figure is: "deficit · 3 × 12 · 3d ago".
+    val variation = if (withVariation) last.variation.replace(",", ", ").takeIf { it.isNotEmpty() } else null
+    return listOfNotNull(variation, lastLoggedFigure(last, exercise), lastLoggedAge(last.atMs, nowMs, zone)).joinToString(" · ")
+}
 
 internal fun lastLoggedFigure(last: LastLogged, exercise: Exercise): String {
     val added = !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")

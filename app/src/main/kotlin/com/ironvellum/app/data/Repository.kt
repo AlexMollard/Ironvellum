@@ -6,6 +6,7 @@ import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.FavouriteExerciseEntity
 import com.ironvellum.app.domain.BlockKey
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LastLoggedIndex
 import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.SchemePlan
@@ -961,10 +962,9 @@ class Repository(
         // last set of a trial would be taken for where the lifter had got to.
         // Like with like: an assisted pull-up's history never prescribes the plain pull-up, nor the reverse.
         val variation = Variation.key(entry.modifiers)
-        val history = blockHistory(entry.exerciseId, nth)
+        val history = blockHistory(entry.exerciseId, nth, variation)
             .map { rows ->
                 rows.filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
-                    .filter { Variation.key(it.modifiers) == variation }
                     .sortedBy { it.setIndex }
                     .map { Progression.attemptOf(it.weightKg, it.reps, it.durationSec, hold = lever == Progression.Lever.HOLD) }
             }
@@ -988,12 +988,11 @@ class Repository(
      * Each past trial's sets of the [nth] block of [exerciseId] (0 for the first), newest trial first: the movement's
      * Nth block by position, the rule [entriesByBlock] reads a rite by. A routine that names a movement twice has two
      * histories, not one with the two blocks' sets interleaved. A trial with fewer blocks of it has none to give.
+     * Only sets done in [variation] ([Variation.key]) are read, [SetHistory.DEPTH] of them, so a deficit lift's history
+     * is its own and a long run of the plain lift cannot starve it.
      */
-    private suspend fun blockHistory(exerciseId: Long, nth: Int): List<List<SetLogEntity>> =
-        sessionDao.recentDoneSets(exerciseId).groupBy { it.sessionId }.values.mapNotNull { rows ->
-            val position = rows.map { it.exercisePosition }.distinct().sorted().getOrNull(nth) ?: return@mapNotNull null
-            rows.filter { it.exercisePosition == position }
-        }
+    private suspend fun blockHistory(exerciseId: Long, nth: Int, variation: String): List<List<SetLogEntity>> =
+        SetHistory.blocks(sessionDao.doneSetsNewestFirst(exerciseId), nth, variation)
 
     /** For each block of a trial's [rows], how many blocks of the same movement come before it: 0 for a movement's first. */
     private fun nthOfBlocks(rows: List<SetLogEntity>): Map<BlockKey, Int> {
@@ -1265,8 +1264,8 @@ class Repository(
      */
     private suspend fun lastTopMark(exerciseId: Long, modifiers: String, nth: Int = 0): TopMark? {
         val variation = Variation.key(modifiers)
-        return blockHistory(exerciseId, nth).firstNotNullOfOrNull { rows ->
-            rows.firstOrNull { it.setKind() == SetKind.TOP && Variation.key(it.modifiers) == variation }
+        return blockHistory(exerciseId, nth, variation).firstNotNullOfOrNull { rows ->
+            rows.firstOrNull { it.setKind() == SetKind.TOP }
         }?.let { TopMark(it.reps, it.weightKg) }
     }
 
@@ -2640,11 +2639,11 @@ class Repository(
         sessionDao.observeRecentExerciseIds(limit)
 
     /**
-     * Each exercise's top set from its most recent completed workout (see
-     * [LastLogged]), for the picker's "last time" line. One query, not one
-     * per row; an exercise never logged is simply absent.
+     * Each lift's top set from its most recent completed workout (see
+     * [LastLogged]), per exercise and variation, for the "last time" lines. One query, not one
+     * per row; a lift never logged is simply absent.
      */
-    fun observeLastLogged(): Flow<Map<Long, LastLogged>> =
+    fun observeLastLogged(): Flow<LastLoggedIndex> =
         sessionDao.observeLatestWorkoutSets().map { LastLogged.topSets(it) }
 
     fun observeFavouriteExerciseIds(): Flow<Set<Long>> =
@@ -3914,7 +3913,8 @@ class Repository(
             val mapped = workout.sets.mapNotNull { set ->
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
                 // The set's own note stays a modifier; its RPE is the effort field, not text.
-                val mods = set.notes.trim()
+                // The app's own CSV names the modifiers in a column of their own, and that wins over the note.
+                val mods = set.modifiers.trim().ifEmpty { set.notes.trim() }
                 Triple(set, exerciseId, mods)
             }
             val sessionId = sessionDao.insertSession(
@@ -3932,7 +3932,7 @@ class Repository(
                     imported = true,
                 ),
             )
-            val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second })
+            val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second }, mapped.map { Variation.key(it.third) })
             val setEntities = mapped.zip(placements) { (set, exerciseId, mods), (position, index) ->
                 val kind = SetKind.fromImport(set.setType)
                 SetLogEntity(

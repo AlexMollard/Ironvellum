@@ -17,18 +17,41 @@ data class LastLogged(
     val atMs: Long,
     /** How hard the set was, RPE 5 to 10; null when it was never rated. */
     val rpe: Int? = null,
+    /** The set's modifiers as stored; [variation] is the part that makes it a different lift. */
+    val modifiers: String = "",
 ) {
+    /** [Variation.key] of the set: "" for the plain movement. */
+    val variation: String get() = Variation.key(modifiers)
+
     companion object {
         /**
-         * Collapses the rows the DAO returns (every done set of each
-         * exercise's latest workout) to one top set per exercise. Ordering
-         * by start time first means a stray older row can never win.
+         * Collapses the rows the DAO returns (every done set of each exercise's latest workout in each stored
+         * modifier string) to one top set per lift: the exercise in one [Variation]. Ordering by start time first
+         * means a stray older row can never win, and a deficit set never stands in for a flat one.
          */
-        fun topSets(rows: List<LastLogged>): Map<Long, LastLogged> =
-            rows.groupBy { it.exerciseId }.mapValues { (_, sets) ->
-                sets.maxWith(
-                    compareBy<LastLogged>({ it.atMs }, { it.weightKg ?: 0.0 }, { it.durationSec ?: 0 }, { it.distanceM ?: 0.0 }, { it.reps }),
-                )
-            }
+        fun topSets(rows: List<LastLogged>): LastLoggedIndex =
+            LastLoggedIndex(
+                rows.groupBy { it.exerciseId to it.variation }.mapValues { (_, sets) ->
+                    sets.maxWith(
+                        compareBy<LastLogged>({ it.atMs }, { it.weightKg ?: 0.0 }, { it.durationSec ?: 0 }, { it.distanceM ?: 0.0 }, { it.reps }),
+                    )
+                },
+            )
+    }
+}
+
+/** The last top set of every lift, by exercise and [Variation.key]. A variation never logged is simply absent. */
+class LastLoggedIndex(private val byLift: Map<Pair<Long, String>, LastLogged>) {
+    val size: Int get() = byLift.size
+
+    /** The last top set of [exerciseId] done in [variation]; null when that variation was never logged. */
+    operator fun get(exerciseId: Long, variation: String): LastLogged? = byLift[exerciseId to variation]
+
+    /** The most recent top set of [exerciseId] in whichever variation it was last logged. */
+    fun latest(exerciseId: Long): LastLogged? =
+        byLift.entries.filter { it.key.first == exerciseId }.maxByOrNull { it.value.atMs }?.value
+
+    companion object {
+        val EMPTY = LastLoggedIndex(emptyMap())
     }
 }

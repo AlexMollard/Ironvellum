@@ -192,7 +192,7 @@ class ThreeYearHistoryTimingTest {
         time("firstSessionEpochDay") { assertTrue(repo.firstSessionEpochDay() != null) }
         time("strengthProfile") { repo.strengthProfile() }
         time("addedLoadKg (a mid-trial extra set)") { repo.addedLoadKg(bench, 5) }
-        time("recentDoneSets(bench)") { db.sessionDao().recentDoneSets(bench) }
+        time("doneSetsNewestFirst(bench)") { db.sessionDao().doneSetsNewestFirst(bench) }
         time("observeRecentExerciseIds") { db.sessionDao().observeRecentExerciseIds(30).first() }
         time("observeLatestWorkoutSets") { db.sessionDao().observeLatestWorkoutSets().first() }
         time("observeExerciseSets(bench)") { db.sessionDao().observeExerciseSets(bench).first() }

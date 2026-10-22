@@ -212,12 +212,16 @@ interface SessionDao {
     @Query("DELETE FROM set_logs WHERE sessionId = :id")
     suspend fun deleteSetsFor(id: Long)
 
+    /**
+     * Every done set of the movement in a completed workout, newest first. Not cut here: the depth is per variation,
+     * so the cut is made after the variation filter ([com.ironvellum.app.data.SetHistory.blocks]).
+     */
     @Query(
         "SELECT s.* FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
             "WHERE s.exerciseId = :exerciseId AND s.done = 1 AND x.completedAtMs IS NOT NULL " +
-            "ORDER BY x.startedAtMs DESC, s.id DESC LIMIT 40",
+            "ORDER BY x.startedAtMs DESC, s.id DESC",
     )
-    suspend fun recentDoneSets(exerciseId: Long): List<SetLogEntity>
+    suspend fun doneSetsNewestFirst(exerciseId: Long): List<SetLogEntity>
 
     /**
      * The movements this lifter actually trains, most recently used first.
@@ -236,19 +240,20 @@ interface SessionDao {
 
     /**
      * Every done set of each exercise's most recent completed workout, in
-     * ONE query: the inner join finds each exercise's latest start time once
-     * (a grouped scan), the outer join keeps that workout's sets. The top
-     * set per exercise is picked in Kotlin ([LastLogged.topSets]).
+     * ONE query: the inner join finds the latest start time of each exercise and
+     * stored modifier string once (a grouped scan), the outer join keeps that
+     * workout's sets. The top set per exercise and variation is picked in Kotlin
+     * ([LastLogged.topSets]), which is where a modifier string becomes a variation.
      */
     @Query(
         "SELECT s.exerciseId AS exerciseId, s.reps AS reps, s.weightKg AS weightKg, " +
             "s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade, " +
-            "x.startedAtMs AS atMs, s.rpe AS rpe " +
+            "x.startedAtMs AS atMs, s.rpe AS rpe, s.modifiers AS modifiers " +
             "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
-            "JOIN (SELECT s2.exerciseId AS eid, MAX(x2.startedAtMs) AS latest " +
+            "JOIN (SELECT s2.exerciseId AS eid, s2.modifiers AS mods, MAX(x2.startedAtMs) AS latest " +
             "FROM set_logs s2 JOIN sessions x2 ON s2.sessionId = x2.id " +
-            "WHERE s2.done = 1 AND x2.completedAtMs IS NOT NULL GROUP BY s2.exerciseId) l " +
-            "ON l.eid = s.exerciseId AND l.latest = x.startedAtMs " +
+            "WHERE s2.done = 1 AND x2.completedAtMs IS NOT NULL GROUP BY s2.exerciseId, s2.modifiers) l " +
+            "ON l.eid = s.exerciseId AND l.mods = s.modifiers AND l.latest = x.startedAtMs " +
             "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL",
     )
     fun observeLatestWorkoutSets(): Flow<List<LastLogged>>

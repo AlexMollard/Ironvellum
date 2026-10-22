@@ -187,6 +187,7 @@ import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.LastLoggedIndex
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.RiteSwap
 import com.ironvellum.app.domain.RoutineUpdate
@@ -415,8 +416,8 @@ class SessionViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Each exercise's top set of its last sealed trial, for the info dialog. */
-    val lastLogged: StateFlow<Map<Long, LastLogged>> =
-        repo.observeLastLogged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+    val lastLogged: StateFlow<LastLoggedIndex> =
+        repo.observeLastLogged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LastLoggedIndex.EMPTY)
 
     /**
      * The reader's own bar, for the deeds the victory overlay names: a woman
@@ -1208,7 +1209,7 @@ fun SessionScreen(
                                 block = block,
                                 metric = metric,
                                 weighted = weighted,
-                                reference = referenceLine(exercise, metric, lastLogged[block.exerciseId], peak),
+                                reference = referenceLine(exercise, metric, lastLogged[block.exerciseId, Variation.key(first.modifiers)], peak),
                                 suggestion = suggestions[block.key]?.let { offered ->
                                     SuggestionOffer(
                                         suggestion = offered,
@@ -1769,7 +1770,7 @@ fun SessionScreen(
             ExerciseInfoSheet(
                 exercise = exercise,
                 // Sealed trials only: the live one is never its own "last".
-                lastLine = lastLogged[exerciseId]?.let { lastLoggedLine(it, exercise, System.currentTimeMillis()) },
+                lastLine = lastLogged[exerciseId, Variation.key(current.modifiers)]?.let { lastLoggedLine(it, exercise, System.currentTimeMillis()) },
                 onDismiss = { infoFor = null },
                 onPick = null,
                 modifiers = current.modifiers,
