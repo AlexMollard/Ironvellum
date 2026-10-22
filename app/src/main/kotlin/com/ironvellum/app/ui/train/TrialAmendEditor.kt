@@ -115,7 +115,8 @@ internal fun TrialAmendEditor(
                 // Neither a reference line nor a PEAK tag: the records include
                 // this very trial, so each would compare it to itself.
                 reference = null,
-                reason = null,
+                suggestion = null,
+                savePrompt = null,
                 note = null,
                 lastNote = null,
                 onNote = null,

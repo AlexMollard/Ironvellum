@@ -97,6 +97,11 @@ object Progression {
          * or a repeat is not news and stays quiet.
          */
         val changed: Boolean = false,
+        /**
+         * True when [reason] is advice that moves no figure (a control, mobility or skill cue, "take a harder
+         * variation"): [weightKg] and [reps] are what the lifter last did, not something to start on.
+         */
+        val cueOnly: Boolean = false,
     )
 
     /**
@@ -217,6 +222,7 @@ object Progression {
                     R.string.progression_cleared_control_3 to R.string.progression_cleared_control_3__t,
                 ),
                 changed = true,
+                cueOnly = true,
             )
             Lever.MOBILITY -> return Recommendation(
                 weight, targetReps,
@@ -227,11 +233,13 @@ object Progression {
                     R.string.progression_cleared_mobility_3 to R.string.progression_cleared_mobility_3__t,
                 ),
                 changed = true,
+                cueOnly = true,
             )
             Lever.SKILL -> return Recommendation(
                 weight, targetReps,
                 clearedCue(0, R.string.progression_cleared_skill to R.string.progression_cleared_skill__t),
                 changed = true,
+                cueOnly = true,
             )
             Lever.HOLD -> {
                 val grown = (lastReps + HOLD_STEP_SECONDS).coerceAtMost(range?.last ?: Int.MAX_VALUE)
@@ -276,6 +284,7 @@ object Progression {
                         ),
                     ),
                     changed = true,
+                    cueOnly = true,
                 )
             }
             val climbed = lastReps + REP_STEP
@@ -325,6 +334,7 @@ object Progression {
         if (lastReps >= BODYWEIGHT_REP_CEILING) {
             return Recommendation(
                 weight, lastReps, Words.text(UiText.res(R.string.progression_vest_full_harder, top)), changed = true,
+                cueOnly = true,
             )
         }
         val nextReps = (lastReps + REP_STEP).coerceAtMost(BODYWEIGHT_REP_CEILING)

@@ -83,6 +83,8 @@ import com.ironvellum.app.domain.StarterBasis
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.ProgressionSuggestion
+import com.ironvellum.app.domain.Suggestions
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.WarmupStep
 import com.ironvellum.app.domain.Rank
@@ -921,15 +923,16 @@ class Repository(
         } ?: TrainingMode.STRENGTH
 
     /**
-     * What the progression engine prescribes for [entry], or null for work it
-     * does not progress (a run, yoga, bouldering). Only completed trials feed
-     * it, so while a trial is live this answers the same as it did at the
-     * start; [trialReasons] relies on that.
+     * What the progression engine prescribes for [entry], the [nth] block of its movement in the rite (0 for the
+     * first), or null for work it does not progress (a run, yoga, bouldering). Only completed trials feed it, so
+     * while a trial is live this answers the same as it did at the start; [resolveSuggestions] relies on that.
+     * It only ever becomes a suggestion: a trial starts on the rite's own figures.
      */
     private suspend fun recommendationFor(
         entry: PresetEntryEntity,
         exercise: ExerciseEntity?,
         mode: TrainingMode,
+        nth: Int,
     ): Progression.Recommendation? {
         val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
             .getOrDefault(ExerciseMetric.REPS)
@@ -955,16 +958,14 @@ class Repository(
         // last set of a trial would be taken for where the lifter had got to.
         // Like with like: an assisted pull-up's history never prescribes the plain pull-up, nor the reverse.
         val variation = Variation.key(entry.modifiers)
-        val history = sessionDao.recentDoneSets(entry.exerciseId)
-            .filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
-            .filter { Variation.key(it.modifiers) == variation }
-            .groupBy { it.sessionId }
-            .values
+        val history = blockHistory(entry.exerciseId, nth)
             .map { rows ->
-                rows.sortedBy { it.setIndex }.map {
-                    Progression.attemptOf(it.weightKg, it.reps, it.durationSec, hold = lever == Progression.Lever.HOLD)
-                }
+                rows.filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
+                    .filter { Variation.key(it.modifiers) == variation }
+                    .sortedBy { it.setIndex }
+                    .map { Progression.attemptOf(it.weightKg, it.reps, it.durationSec, hold = lever == Progression.Lever.HOLD) }
             }
+            .filter { it.isNotEmpty() }
         return Progression.fromSessions(
             mode = mode,
             targetReps = entry.targetReps,
@@ -981,23 +982,144 @@ class Repository(
     }
 
     /**
-     * Why a live trial's loads moved, by exercise: the engine's own reason,
-     * only for movements whose prescription changed since last time (a repeat
-     * or a first attempt has nothing to explain). Rebuilt from the rite the
-     * trial began from, so an open trial has none.
+     * Each past trial's sets of the [nth] block of [exerciseId] (0 for the first), newest trial first: the movement's
+     * Nth block by position, the rule [entriesByBlock] reads a rite by. A routine that names a movement twice has two
+     * histories, not one with the two blocks' sets interleaved. A trial with fewer blocks of it has none to give.
      */
-    suspend fun trialReasons(sessionId: Long): Map<BlockKey, String> {
-        val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
-        val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
-        val mode = trainingMode()
-        val entries = entriesByBlock(sessionDao.setsFor(sessionId), pw.working)
-        return entries.mapNotNull { (block, entry) ->
-            // A top scheme's own line says where its top set starts and why, not the straight-set engine's.
-            if (SetScheme.decode(entry.setScheme).type == SchemeType.TOP_BACKOFF) return@mapNotNull null
-            val recommendation = recommendationFor(entry, exerciseDao.byId(entry.exerciseId), mode)
-            recommendation?.takeIf { it.changed }?.let { block to it.reason }
-        }.toMap()
+    private suspend fun blockHistory(exerciseId: Long, nth: Int): List<List<SetLogEntity>> =
+        sessionDao.recentDoneSets(exerciseId).groupBy { it.sessionId }.values.mapNotNull { rows ->
+            val position = rows.map { it.exercisePosition }.distinct().sorted().getOrNull(nth) ?: return@mapNotNull null
+            rows.filter { it.exercisePosition == position }
+        }
+
+    /** For each block of a trial's [rows], how many blocks of the same movement come before it: 0 for a movement's first. */
+    private fun nthOfBlocks(rows: List<SetLogEntity>): Map<BlockKey, Int> {
+        val seen = mutableMapOf<Long, Int>()
+        return rows.map { it.blockKey }.distinct().sortedBy { it.position }.associateWith { block ->
+            seen.getOrDefault(block.exerciseId, 0).also { seen[block.exerciseId] = it + 1 }
+        }
     }
+
+    /**
+     * What the engine would change about [entry], the [nth] block of its movement, as a suggestion against the
+     * figures the rite writes; null when it has nothing to add. A top scheme asks where its top set would start from
+     * the lift's last top set; every other lift asks the engine.
+     */
+    private suspend fun suggestionFor(
+        entry: PresetEntryEntity,
+        exercise: ExerciseEntity?,
+        mode: TrainingMode,
+        nth: Int,
+    ): ProgressionSuggestion? {
+        exercise ?: return null
+        val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
+        val scheme = SetScheme.decode(entry.setScheme)
+        if (metric == ExerciseMetric.REPS && scheme.type == SchemeType.TOP_BACKOFF) {
+            val top = SchemePlan.suggestTop(
+                lastTopMark(entry.exerciseId, entry.modifiers, nth), scheme.topReps, entry.targetWeightKg,
+                nextTopLoad(liftLoadingFor(exercise, loadKit())),
+            )
+            return Suggestions.forTop(entry.targetWeightKg, scheme.topReps.first, top)
+        }
+        val recommendation = recommendationFor(entry, exercise, mode, nth) ?: return null
+        return Suggestions.forRecommendation(entry.targetWeightKg, entry.targetReps, recommendation, hold = metric == ExerciseMetric.HOLD)
+    }
+
+    /** A block's suggestion with the rite entry it was read from. */
+    private class ResolvedSuggestion(val block: BlockKey, val presetId: Long, val entry: PresetEntryEntity, val suggestion: ProgressionSuggestion)
+
+    /** Every block of a live trial that has a suggestion, rebuilt from the rite the trial began from. A sealed trial has none. */
+    private suspend fun resolveSuggestions(sessionId: Long): List<ResolvedSuggestion> {
+        val session = sessionDao.byId(sessionId)?.takeIf { it.completedAtMs == null } ?: return emptyList()
+        val presetId = session.presetId ?: return emptyList()
+        val pw = presetDao.presetWithEntries(presetId) ?: return emptyList()
+        val mode = trainingMode()
+        val rows = sessionDao.setsFor(sessionId)
+        val nth = nthOfBlocks(rows)
+        return entriesByBlock(rows, pw.working).mapNotNull { (block, entry) ->
+            suggestionFor(entry, exerciseDao.byId(entry.exerciseId), mode, nth[block] ?: 0)
+                ?.let { ResolvedSuggestion(block, presetId, entry, it) }
+        }
+    }
+
+    /**
+     * What the progression engine would change for each block of a live trial, by block. A trial starts on exactly the
+     * figures its rite writes; these are offered on the block, never applied ([acceptSuggestion]). Each block reads its
+     * own rite entry and its own history, so a movement named twice has two suggestions.
+     */
+    suspend fun trialSuggestions(sessionId: Long): Map<BlockKey, ProgressionSuggestion> =
+        resolveSuggestions(sessionId).associate { it.block to it.suggestion }
+
+    /** What accepting a suggestion leaves to offer: the rite entry's change to save, or null when the rite holds no such figure. */
+    class SuggestionAccepted(val presetId: Long, val save: RoutineUpdate.Change?)
+
+    /**
+     * Applies [block]'s suggestion to the sets of the block still to log, and to nothing else: a set already ticked
+     * keeps what was done. A top set's back-offs and a drop chain follow the new load as they would have, and a
+     * warm-up ramp not yet used is re-planned from it. Null, and nothing written, when there is no suggestion that
+     * moves a figure, the trial is sealed, or the block has no set left to change.
+     */
+    suspend fun acceptSuggestion(sessionId: Long, block: BlockKey): SuggestionAccepted? = db.withTransaction {
+        if (isSealed(sessionId)) return@withTransaction null
+        val resolved = resolveSuggestions(sessionId).firstOrNull { it.block == block } ?: return@withTransaction null
+        val suggestion = resolved.suggestion
+        if (!suggestion.movesFigures) return@withTransaction null
+        val exercise = exerciseDao.byId(block.exerciseId) ?: return@withTransaction null
+        val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
+        val targets = rows.filter { suggestion.touches(it.asSet()) }
+        if (targets.isEmpty()) return@withTransaction null
+        targets.forEach { row ->
+            sessionDao.updateSet(
+                row.copy(
+                    reps = if (suggestion.hold) row.reps else suggestion.reps,
+                    durationSec = if (suggestion.hold) suggestion.reps else row.durationSec,
+                    // A drop's load follows the set before it (refillDrops below), a back-off's follows its top.
+                    weightKg = if (row.setKind() == SetKind.DROP) row.weightKg else suggestion.weightKg,
+                ),
+            )
+        }
+        sessionDao.setsFor(sessionId).filter { it.blockKey == block && it.setKind() == SetKind.TOP && !it.done }.forEach { refillBackoffs(it) }
+        refillDrops(sessionId, block)
+        if (suggestion.movesLoad) replanWarmups(sessionId, block, exercise)
+        SuggestionAccepted(resolved.presetId, savedFigures(resolved.entry, suggestion))
+    }
+
+    /** The unlogged warm-ups of [block], when nothing is logged yet and the ramp keeps its shape, re-planned from the first working load. */
+    private suspend fun replanWarmups(sessionId: Long, block: BlockKey, exercise: ExerciseEntity) {
+        val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
+        if (rows.any { it.done && !it.isWarmup }) return
+        val warmups = rows.filter { it.isWarmup && !it.done }.sortedBy { it.setIndex }
+        if (warmups.isEmpty()) return
+        val first = rows.filter { !it.isWarmup }.minByOrNull { it.setIndex }?.weightKg
+        val ramp = WarmupRamp.planFor(
+            exercise.name, exercise.muscleGroup, ExerciseMetric.REPS, first,
+            kit = loadKit(), weighted = exercise.isWeighted, unit = Units.current,
+        )
+        if (ramp.size != warmups.size) return
+        warmups.zip(ramp).forEach { (row, step) -> sessionDao.updateSet(row.copy(weightKg = step.weightKg, reps = step.reps)) }
+    }
+
+    /**
+     * The rite entry as accepting [suggestion] would leave it, as a change the existing "update the routine" path
+     * writes ([applyRoutineUpdate]); null when the rite has no figure to take (a top set's reps are a range of the scheme).
+     */
+    private fun savedFigures(entry: PresetEntryEntity, suggestion: ProgressionSuggestion): RoutineUpdate.Change? {
+        val scheme = SetScheme.decode(entry.setScheme)
+        val before = PresetEntry(
+            id = entry.id, exerciseId = entry.exerciseId, targetSets = entry.targetSets, targetReps = entry.targetReps,
+            targetWeightKg = entry.targetWeightKg, modifiers = entry.modifiers, position = entry.position, scheme = scheme,
+        )
+        val after = before.copy(
+            targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) before.targetReps else suggestion.reps,
+            targetWeightKg = if (suggestion.movesLoad) suggestion.weightKg else before.targetWeightKg,
+        )
+        return RoutineUpdate.Change(before, after, isHold = suggestion.hold).takeIf { it.fields.isNotEmpty() }
+    }
+
+    private fun SetLogEntity.asSet() = SessionSet(
+        id = id, exerciseId = exerciseId, exercisePosition = exercisePosition, setIndex = setIndex, reps = reps,
+        weightKg = weightKg, done = done, durationSec = durationSec, kind = setKind(),
+    )
 
     /** For each id, how many of the same id came before it in [ids]: 0 for a movement's first entry, 1 for its second. */
     private fun nthOfMovement(ids: List<Long>): List<Int> {
@@ -1053,6 +1175,11 @@ class Repository(
         }
     }
 
+    /**
+     * Starts a trial from a rite on exactly the figures the rite writes: every set's load, reps, count and scheme.
+     * Nothing the progression engine thinks is applied; what it would change is offered on the block
+     * ([trialSuggestions]) for the lifter to accept.
+     */
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
         claimLiveSession()?.let { return@withTransaction it }
         val pw = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId not found")
@@ -1065,7 +1192,6 @@ class Repository(
                 xpAwarded = 0,
             ),
         )
-        val mode = trainingMode()
         // A warm-up exercise is not a set row: it is ticked in the trial's warm-up step, so it never reaches the log,
         // the score, the records or the progression, and the worked entries are numbered without it.
         val exerciseById = exerciseDao.let { dao -> pw.working.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
@@ -1089,9 +1215,8 @@ class Repository(
                 }
             }
             if (exercise != null && (!scheme.isStraight || scheme.warmupRamp)) {
-                return@flatMapIndexed schemeSets(sessionId, entryPos, entry, exercise, scheme, groups[entryPos], mode)
+                return@flatMapIndexed schemeSets(sessionId, entryPos, entry, exercise, scheme, groups[entryPos])
             }
-            val recommendation = recommendationFor(entry, exercise, mode)
             // Seconds-in-durationSec stays HOLD-only: only a hold's preset
             // target is a duration. An activity entry keeps its own target
             // reps as the logged figure — the honest passthrough, since its
@@ -1104,11 +1229,10 @@ class Repository(
                     exercisePosition = entryPos,
                     setIndex = index,
                     // A hold's prescription is seconds; its reps stay 0.
-                    reps = if (isHold) 0 else (recommendation?.reps ?: entry.targetReps),
-                    // A cleared hold seeds the next trial a few seconds longer.
-                    durationSec = if (isHold) (recommendation?.reps ?: entry.targetReps) else null,
+                    reps = if (isHold) 0 else entry.targetReps,
+                    durationSec = if (isHold) entry.targetReps else null,
                     modifiers = entry.modifiers,
-                    weightKg = recommendation?.weightKg ?: entry.targetWeightKg,
+                    weightKg = entry.targetWeightKg,
                     done = false,
                     supersetGroup = groups[entryPos],
                 )
@@ -1137,26 +1261,34 @@ class Repository(
         lift.worn?.nextKg(from, lift.unit) ?: Progression.nextLoadKg(from, lift.stepKg, lift.unit)
     }
 
-    /** What the lifter's last sealed top set of the lift was: the one a new top set is asked to beat. */
-    private suspend fun lastTopMark(exerciseId: Long, modifiers: String): TopMark? {
+    /**
+     * What the lifter's last sealed top set of the lift was: the one a new top set is asked to beat. Read from the
+     * [nth] block of the movement (0 for the first), so a lift named twice in a rite keeps a mark for each.
+     */
+    private suspend fun lastTopMark(exerciseId: Long, modifiers: String, nth: Int = 0): TopMark? {
         val variation = Variation.key(modifiers)
-        return sessionDao.recentDoneSets(exerciseId)
-            .firstOrNull { it.setKind() == SetKind.TOP && Variation.key(it.modifiers) == variation }
-            ?.let { TopMark(it.reps, it.weightKg) }
+        return blockHistory(exerciseId, nth).firstNotNullOfOrNull { rows ->
+            rows.firstOrNull { it.setKind() == SetKind.TOP && Variation.key(it.modifiers) == variation }
+        }?.let { TopMark(it.reps, it.weightKg) }
     }
 
     /**
      * The last top set of each block in [modifiersByBlock] (the modifiers it is done with now), for the trial's "last
      * top" line: the last one done by the block's movement in the same [Variation]. A lift that never had one is left out.
      */
-    suspend fun lastTopMarks(modifiersByBlock: Map<BlockKey, String>): Map<BlockKey, TopMark> =
-        modifiersByBlock.mapNotNull { (block, modifiers) -> lastTopMark(block.exerciseId, modifiers)?.let { block to it } }.toMap()
+    suspend fun lastTopMarks(modifiersByBlock: Map<BlockKey, String>): Map<BlockKey, TopMark> {
+        val seen = mutableMapOf<Long, Int>()
+        return modifiersByBlock.keys.sortedBy { it.position }.mapNotNull { block ->
+            val nth = seen.getOrDefault(block.exerciseId, 0).also { seen[block.exerciseId] = it + 1 }
+            lastTopMark(block.exerciseId, modifiersByBlock.getValue(block), nth)?.let { block to it }
+        }.toMap()
+    }
 
     /**
      * The sets of one lift whose rite entry has a scheme, or a warm-up ramp of its own: the ramp first (unticked, as
-     * a warm-up always is), then the scheme's sets worked out from the last top set (a top scheme) or the progression
-     * engine's prescription. A top set starts where its last one left off; back-offs start on their figure from it,
-     * and are refilled from the load actually logged ([refillBackoffs]).
+     * a warm-up always is), then the scheme's sets worked out from the entry's own load and reps. A top set starts on
+     * the rite's load; back-offs start on their figure from it, and are refilled from the load actually logged
+     * ([refillBackoffs]). Where the lift's last top set says to start higher, that is a suggestion ([trialSuggestions]).
      */
     private suspend fun schemeSets(
         sessionId: Long,
@@ -1165,23 +1297,15 @@ class Repository(
         exercise: ExerciseEntity,
         scheme: SetScheme,
         group: Int?,
-        mode: TrainingMode,
     ): List<SetLogEntity> {
         val kit = loadKit()
         val lift = liftLoadingFor(exercise, kit)
-        val top = if (scheme.type == SchemeType.TOP_BACKOFF) {
-            SchemePlan.suggestTop(lastTopMark(entry.exerciseId, entry.modifiers), scheme.topReps, entry.targetWeightKg, nextTopLoad(lift))
-        } else {
-            null
-        }
-        val recommendation = if (scheme.type == SchemeType.TOP_BACKOFF) null else recommendationFor(entry, exercise, mode)
         val planned = SchemePlan.plan(
             scheme = scheme,
             entrySets = entry.targetSets,
-            entryReps = recommendation?.reps ?: entry.targetReps,
-            entryKg = recommendation?.weightKg ?: entry.targetWeightKg,
+            entryReps = entry.targetReps,
+            entryKg = entry.targetWeightKg,
             lift = lift,
-            top = top,
         )
         val ramp = if (scheme.warmupRamp) {
             WarmupRamp.planFor(

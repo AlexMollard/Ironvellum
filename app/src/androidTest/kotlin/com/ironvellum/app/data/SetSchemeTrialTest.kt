@@ -3,6 +3,7 @@ package com.ironvellum.app.data
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.domain.LoadKit
+import com.ironvellum.app.domain.ProgressionSuggestion
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SchemeType
 import com.ironvellum.app.domain.SetKind
@@ -123,17 +124,27 @@ class SetSchemeTrialTest {
     }
 
     @Test
-    fun aTopSetStartsWhereTheLastOneLeftOff() = runBlocking {
+    fun aTopSetStartsAsWrittenAndOffersWhereTheLastOneLeftOff() = runBlocking {
         val rite = save(pullUp, 4, 2, 22.0, owners, "weighted")
         val first = repo.startSessionFromPreset(rite)
         setsOf(first, pullUp).forEach { repo.updateSet(it.id, if (it.kind == SetKind.TOP) 4 else 5, it.weightKg, done = true) }
         repo.completeSession(first)
-        // 4 x +22 filled the reps range (2-4): the next top is one step up at the range's floor.
-        val second = setsOf(repo.startSessionFromPreset(rite), pullUp)
+        // 4 x +22 filled the reps range (2-4): the next top could go one step up at the range's floor, but the
+        // trial begins on the rite's own top set.
+        val session = repo.startSessionFromPreset(rite)
+        val second = setsOf(session, pullUp)
         assertEquals(SetKind.TOP, second.first().kind)
         assertEquals(2, second.first().reps)
-        assertTrue(second.first().weightKg!! > 22.0)
-        assertEquals(15.0, second[1].weightKg!!, 0.0)
+        assertEquals(22.0, second.first().weightKg!!, 0.0)
+        val suggestion = repo.trialSuggestions(session).getValue(repo.blockOf(session, pullUp))
+        assertEquals(ProgressionSuggestion.Kind.MORE_LOAD, suggestion.kind)
+        assertTrue(suggestion.weightKg!! > 22.0)
+        assertEquals(2, suggestion.reps)
+        // Accepting moves the top set; the fixed back-offs stay on their own load.
+        repo.acceptSuggestion(session, repo.blockOf(session, pullUp))
+        val accepted = setsOf(session, pullUp)
+        assertEquals(suggestion.weightKg!!, accepted.first().weightKg!!, 0.0)
+        assertEquals(15.0, accepted[1].weightKg!!, 0.0)
     }
 
     @Test
@@ -144,16 +155,25 @@ class SetSchemeTrialTest {
         val first = repo.startSessionFromPreset(rite)
         setsOf(first, row).forEach { repo.updateSet(it.id, 10, it.weightKg, done = true) }
         repo.completeSession(first)
-        // 3 x 10 at the floor of 10-15: the same load, two more reps.
+        // 3 x 10 at the floor of 10-15: the trial begins as written, and offers the same load for two more reps.
         val second = repo.startSessionFromPreset(rite)
-        assertEquals(listOf(12, 12, 12), setsOf(second, row).map { it.reps })
+        assertEquals(listOf(10, 10, 10), setsOf(second, row).map { it.reps })
         assertEquals(listOf(60.0, 60.0, 60.0), setsOf(second, row).map { it.weightKg })
+        val climb = repo.trialSuggestions(second).getValue(repo.blockOf(second, row))
+        assertEquals(ProgressionSuggestion.Kind.MORE_REPS, climb.kind)
+        assertEquals(12, climb.reps)
+        repo.acceptSuggestion(second, repo.blockOf(second, row))
+        assertEquals(listOf(12, 12, 12), setsOf(second, row).map { it.reps })
         setsOf(second, row).forEach { repo.updateSet(it.id, 15, it.weightKg, done = true) }
         repo.completeSession(second)
-        // 3 x 15 is the ceiling: 2.5 kg more, back to the floor.
-        val third = setsOf(repo.startSessionFromPreset(rite), row)
-        assertEquals(listOf(10, 10, 10), third.map { it.reps })
-        assertEquals(listOf(62.5, 62.5, 62.5), third.map { it.weightKg })
+        // 3 x 15 is the ceiling: 2.5 kg more, back to the floor, offered on a trial that begins as written.
+        val third = repo.startSessionFromPreset(rite)
+        assertEquals(listOf(10, 10, 10), setsOf(third, row).map { it.reps })
+        assertEquals(listOf(60.0, 60.0, 60.0), setsOf(third, row).map { it.weightKg })
+        val add = repo.trialSuggestions(third).getValue(repo.blockOf(third, row))
+        assertEquals(ProgressionSuggestion.Kind.MORE_LOAD, add.kind)
+        assertEquals(62.5, add.weightKg!!, 0.0)
+        assertEquals(10, add.reps)
     }
 
     @Test

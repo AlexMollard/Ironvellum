@@ -1545,6 +1545,29 @@
     <string name="session_update_button__t">Update rite</string>
     <string name="session_update_keep_button">Keep routine</string>
     <string name="session_update_keep_button__t">Keep rite</string>
+
+    <!-- The engine's suggestion on an exercise block: the routine's own figures are what the workout starts on. -->
+    <!-- %1$s the load, %2$d the reps. -->
+    <string name="session_suggestion_more_load">Ready for more: %1$s × %2$d</string>
+    <!-- %1$s the load, %2$d the seconds. -->
+    <string name="session_suggestion_more_load_hold">Ready for more: %1$s × %2$d s</string>
+    <string name="session_suggestion_deload">Back off to %1$s × %2$d?</string>
+    <string name="session_suggestion_deload_hold">Back off to %1$s × %2$d s?</string>
+    <plurals name="session_suggestion_more_reps">
+        <item quantity="one">Try %1$d rep</item>
+        <item quantity="other">Try %1$d reps</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="session_suggestion_longer_hold">Try %1$d s holds</string>
+    <string name="session_suggestion_accept_button">Accept</string>
+    <string name="session_suggestion_dismiss_button">Dismiss</string>
+    <!-- %1$s is the exercise name. -->
+    <string name="session_suggestion_accept_description">Accept the suggestion for %1$s</string>
+    <string name="session_suggestion_dismiss_description">Dismiss the suggestion for %1$s</string>
+    <string name="session_suggestion_saved_prompt">Applied to the rest of today\'s workout. Keep it in your routine too?</string>
+    <string name="session_suggestion_saved_prompt__t">Applied to the rest of today\'s trial. Keep it in your rite too?</string>
+    <string name="session_suggestion_save_button">Save to routine</string>
+    <string name="session_suggestion_save_button__t">Save to rite</string>
+    <string name="session_suggestion_skip_button">Not now</string>
     <!-- Left column of a changed figure in that offer. -->
     <string name="session_field_sets">Sets</string>
     <string name="session_field_hold">Hold</string>

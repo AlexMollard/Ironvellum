@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.ProgressionSuggestion
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -97,7 +98,10 @@ class DailyLoopInvariantsTest {
     @Test
     fun repeatedStallsDeloadTheNextSession() = runBlocking {
         val exerciseId = repsExerciseIds(1).first()
-        val preset = savePreset("Stall Pull", listOf(exerciseId))
+        val preset = repo.savePreset(
+            null, "Stall Pull", "", null,
+            listOf(Repository.PresetDraftEntry(exerciseId, targetSets = 3, targetReps = 5, targetWeightKg = 100.0)),
+        )
         val stalls = Progression.STALLS_BEFORE_DELOAD
 
         // Completed sessions at the same load, none clearing the 5-rep target.
@@ -119,11 +123,14 @@ class DailyLoopInvariantsTest {
             repo.completeSession(id)
         }
 
+        // The workout starts on what the routine writes; the deload is offered, not applied.
         val next = repo.startSessionFromPreset(preset)
-        val prescribed = db.sessionDao().setsFor(next).first().weightKg
+        assertEquals(listOf(100.0, 100.0, 100.0), db.sessionDao().setsFor(next).map { it.weightKg })
+        val suggestion = repo.trialSuggestions(next).values.single()
+        assertEquals(ProgressionSuggestion.Kind.DELOAD, suggestion.kind)
         assertTrue(
-            "after $stalls stalled sessions the load must come off, not repeat at 100 kg (got $prescribed)",
-            prescribed != null && prescribed < 100.0,
+            "after $stalls stalled sessions the load must come off, not repeat at 100 kg (got ${suggestion.weightKg})",
+            suggestion.weightKg != null && suggestion.weightKg!! < 100.0,
         )
     }
 

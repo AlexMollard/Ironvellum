@@ -147,6 +147,9 @@ import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.LiveTrialActions
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.TrialPrefs
+import com.ironvellum.app.domain.ProgressionSuggestion
+import com.ironvellum.app.data.SuggestionDismissals
+import kotlinx.coroutines.flow.update
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
@@ -306,13 +309,57 @@ class SessionViewModel(
     val exercises: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /**
-     * Why a movement's load or reps moved since last trial, by exercise: the
-     * progression engine's own reason, for the changes only. History does not
-     * change while a trial is live, so it is read once.
-     */
-    val reasons: StateFlow<Map<BlockKey, String>> = flow { emit(repo.trialReasons(sessionId)) }
+    private val dismissals = SuggestionDismissals(appContext)
+    private val dismissed = MutableStateFlow(dismissals.dismissed(sessionId))
+
+    /** What the progression engine would change per block, read once: history does not change while a trial is live. */
+    private val engineSuggestions: StateFlow<Map<BlockKey, ProgressionSuggestion>> = flow { emit(repo.trialSuggestions(sessionId)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
+     * The suggestions still on offer, by block. The trial starts on the routine's own figures and the engine only
+     * suggests: a suggestion goes once it is accepted or dismissed, once the block's pending sets already carry its
+     * figures, and once the block has nothing left to log.
+     */
+    val suggestions: StateFlow<Map<BlockKey, ProgressionSuggestion>> =
+        combine(engineSuggestions, dismissed, repo.observeSessionSets(sessionId)) { all, gone, sets ->
+            val byBlock = sets.groupBy { it.blockKey }
+            all.filter { (block, suggestion) -> block !in gone && suggestion.stillOffered(byBlock[block].orEmpty()) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** The blocks that just took a suggestion and may keep it in the routine, with the change that would save it. */
+    private val savePrompts = MutableStateFlow<Map<BlockKey, Repository.SuggestionAccepted>>(emptyMap())
+    val savePromptBlocks: StateFlow<Set<BlockKey>> = savePrompts.map { it.keys }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Applies the block's suggestion to its sets still to log, then offers to keep it in the routine. */
+    fun acceptSuggestion(block: BlockKey) {
+        viewModelScope.launchGuarded("accept suggestion") {
+            val accepted = repo.acceptSuggestion(sessionId, block) ?: return@launchGuarded
+            if (accepted.save != null) savePrompts.update { it + (block to accepted) }
+        }
+    }
+
+    /** Hides the block's suggestion for this trial. */
+    fun dismissSuggestion(block: BlockKey) {
+        dismissals.dismiss(sessionId, block)
+        dismissed.update { it + block }
+    }
+
+    /** Writes what the block took into the routine, through the same path as the end-of-workout offer. */
+    fun saveSuggestionToRoutine(block: BlockKey) {
+        val accepted = savePrompts.value[block] ?: return
+        savePrompts.update { it - block }
+        val change = accepted.save ?: return
+        viewModelScope.launchGuarded("save suggestion to ${Words.rite.s}") {
+            withContext(NonCancellable) { repo.applyRoutineUpdate(accepted.presetId, listOf(change)) }
+        }
+    }
+
+    /** "Not now": the routine is left as it is; the end-of-workout offer still has what was done. */
+    fun skipSavingSuggestion(block: BlockKey) {
+        savePrompts.update { it - block }
+    }
 
     /** The rite's scheme of each lift in this trial that has one, for the set hints; re-read as lifts come and go. */
     val schemes: StateFlow<Map<BlockKey, SetScheme>> = repo.observeSessionSets(sessionId)
@@ -738,7 +785,8 @@ fun SessionScreen(
     val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
     val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
-    val reasons by viewModel.reasons.collectAsStateWithLifecycle()
+    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val savePromptBlocks by viewModel.savePromptBlocks.collectAsStateWithLifecycle()
     val schemes by viewModel.schemes.collectAsStateWithLifecycle()
     val lastTops by viewModel.lastTops.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
@@ -1153,7 +1201,21 @@ fun SessionScreen(
                                 metric = metric,
                                 weighted = weighted,
                                 reference = referenceLine(exercise, metric, lastLogged[block.exerciseId], peak),
-                                reason = reasons[block.key],
+                                suggestion = suggestions[block.key]?.let { offered ->
+                                    SuggestionOffer(
+                                        suggestion = offered,
+                                        onAccept = { viewModel.acceptSuggestion(block.key) },
+                                        onDismiss = { viewModel.dismissSuggestion(block.key) },
+                                    )
+                                },
+                                savePrompt = if (block.key in savePromptBlocks) {
+                                    SavePrompt(
+                                        onSave = { viewModel.saveSuggestionToRoutine(block.key) },
+                                        onSkip = { viewModel.skipSavingSuggestion(block.key) },
+                                    )
+                                } else {
+                                    null
+                                },
                                 note = exerciseNotes[block.exerciseId],
                                 lastNote = lastNotes[block.exerciseId],
                                 onNote = { noteForExercise = block.exerciseId },
@@ -2321,7 +2383,10 @@ internal fun OpenExerciseCard(
     metric: ExerciseMetric,
     weighted: Boolean,
     reference: AnnotatedString?,
-    reason: String?,
+    /** The live trial only: what the progression engine would change about this exercise, to accept or dismiss. */
+    suggestion: SuggestionOffer?,
+    /** The live trial only: right after an accept, the offer to keep it in the routine. */
+    savePrompt: SavePrompt?,
     note: String?,
     lastNote: String?,
     onNote: (() -> Unit)?,
@@ -2497,16 +2562,10 @@ internal fun OpenExerciseCard(
                         .padding(vertical = 2.dp),
                 )
             }
-            // Why the load moved, so a deload or a step up is never a
-            // surprise: only where the engine changed the prescription.
-            if (reason != null) {
-                Text(
-                    reason,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
+            // The workout starts on the routine's own figures. Where the engine would have changed them it says
+            // so here, and nothing moves until the lifter accepts.
+            if (suggestion != null) SuggestionCard(suggestion, block.first.exerciseName, weighted)
+            if (savePrompt != null) SavePromptCard(savePrompt)
         }
         // The superset strip's own height already sits above the first row.
         Spacer(Modifier.height(if (superset != null) 0.dp else 8.dp))
@@ -2598,6 +2657,114 @@ private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
         Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f).padding(start = 8.dp))
         Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Emerald, modifier = Modifier.padding(end = 10.dp).size(16.dp))
         Text("▾", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    }
+}
+
+/** What the engine suggests for an exercise, and what accepting or dismissing it does. */
+internal class SuggestionOffer(val suggestion: ProgressionSuggestion, val onAccept: () -> Unit, val onDismiss: () -> Unit)
+
+/** The offer to keep an accepted suggestion in the routine. */
+internal class SavePrompt(val onSave: () -> Unit, val onSkip: () -> Unit)
+
+/** The headline of a suggestion ("Ready for more: 12.5 kg × 8"); null for a cue, whose line is the engine's own advice. */
+@Composable
+private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Boolean): String? {
+    val load = kgLabel(suggestion.weightKg, weighted)
+    return when (suggestion.kind) {
+        ProgressionSuggestion.Kind.MORE_LOAD ->
+            stringResource(if (suggestion.hold) R.string.session_suggestion_more_load_hold else R.string.session_suggestion_more_load, load, suggestion.reps)
+        ProgressionSuggestion.Kind.DELOAD ->
+            stringResource(if (suggestion.hold) R.string.session_suggestion_deload_hold else R.string.session_suggestion_deload, load, suggestion.reps)
+        ProgressionSuggestion.Kind.MORE_REPS -> UiText.plural(R.plurals.session_suggestion_more_reps, suggestion.reps, suggestion.reps).asString()
+        ProgressionSuggestion.Kind.LONGER_HOLD -> stringResource(R.string.session_suggestion_longer_hold, suggestion.reps)
+        ProgressionSuggestion.Kind.CUE -> null
+    }
+}
+
+/** A small text action in a card: 48dp tall, announced with [description]. */
+@Composable
+private fun CardAction(text: String, description: String, color: Color, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .heightIn(min = 48.dp)
+            .clickable(onClickLabel = description, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+/** The engine's suggestion for an exercise: what it would change, why, and Accept / Dismiss. A cue has Dismiss only. */
+@Composable
+private fun SuggestionCard(offer: SuggestionOffer, name: String, weighted: Boolean) {
+    val suggestion = offer.suggestion
+    val headline = suggestionHeadline(suggestion, weighted)
+    val shape = MaterialTheme.shapes.small
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(shape)
+            .background(IronvellumColors.AccentTint)
+            .inkBorder(IronvellumColors.AccentTintBorder, shape, 1.dp)
+            .padding(start = 12.dp, top = 8.dp, end = 4.dp),
+    ) {
+        if (headline != null) {
+            Text(headline, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+        }
+        if (suggestion.reason.isNotBlank()) {
+            Text(
+                suggestion.reason,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 2.dp, end = 8.dp),
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            if (suggestion.movesFigures) {
+                CardAction(
+                    stringResource(R.string.session_suggestion_accept_button),
+                    stringResource(R.string.session_suggestion_accept_description, name),
+                    IronvellumColors.EmeraldBright,
+                    offer.onAccept,
+                )
+            }
+            CardAction(
+                stringResource(R.string.session_suggestion_dismiss_button),
+                stringResource(R.string.session_suggestion_dismiss_description, name),
+                IronvellumColors.InkMuted,
+                offer.onDismiss,
+            )
+        }
+    }
+}
+
+/** After an accept: keep it in the routine too? Inline, never a dialog; "Not now" leaves the end-of-workout offer. */
+@Composable
+private fun SavePromptCard(prompt: SavePrompt) {
+    val shape = MaterialTheme.shapes.small
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(shape)
+            .background(IronvellumColors.AccentTint)
+            .inkBorder(IronvellumColors.AccentTintBorder, shape, 1.dp)
+            .padding(start = 12.dp, top = 8.dp, end = 4.dp),
+    ) {
+        Text(
+            UiText.themed(R.string.session_suggestion_saved_prompt, R.string.session_suggestion_saved_prompt__t).asString(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            val save = UiText.themed(R.string.session_suggestion_save_button, R.string.session_suggestion_save_button__t).asString()
+            CardAction(save, save, IronvellumColors.EmeraldBright, prompt.onSave)
+            val skip = stringResource(R.string.session_suggestion_skip_button)
+            CardAction(skip, skip, IronvellumColors.InkMuted, prompt.onSkip)
+        }
     }
 }
 
