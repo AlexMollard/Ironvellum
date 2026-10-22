@@ -47,8 +47,9 @@ Porting the Kotlin rules (`ProgramRules.epley`, `LiftRecords`, `BodyShare`, `Pea
 JavaScript would also drift. So:
 
 1. **Workouts** come from `sessions` and `session_sets`, which already sync after every workout and backfill
-   history. Add nullable columns to `session_sets`: set kind (with warm-up as a kind), RPE, superset group.
-   Older clients send none; the viewer shows those sets as plain working sets.
+   history. Set kind (with warm-up as a kind), RPE and superset group go in an owner-only side table keyed to
+   `session_sets` (the plan's `session_set_details`): new columns on `session_sets` would be readable by allies
+   through its read policy. Older clients send none; the viewer shows those sets as plain working sets.
 2. **Imported workouts** are pushed too, with audience `private` (owner-only under the existing
    `can_view_session`) and an `imported` flag, so they never appear in friends' feeds or count toward
    anything social they are excluded from today.
