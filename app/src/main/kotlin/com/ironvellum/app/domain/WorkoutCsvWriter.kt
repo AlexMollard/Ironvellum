@@ -16,8 +16,11 @@ import java.time.temporal.TemporalAdjusters
  * carries it, and an `RPE` column after it carries each rated set's effort (whole numbers, always RPE
  * whatever scale the lifter reads); tools that do not know the columns ignore them.
  *
+ * A trailing `Modifiers` column carries each set's modifiers as stored ("deficit", "tempo, paused"), so a deficit and a
+ * flat push-up stay two lifts when the file is read back; [CsvWorkoutReader] reads it when present.
+ *
  * Only the PUBLIC note is written: a CSV is made to be shared, and the private
- * note stays in the JSON archive. Grade and modifiers have no Strong column.
+ * note stays in the JSON archive. Grade has no Strong column.
  *
  * Pure Kotlin so it is unit-testable on the JVM.
  */
@@ -37,7 +40,7 @@ object WorkoutCsvWriter {
     }
 
     const val HEADER =
-        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type,RPE"
+        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type,RPE,Modifiers"
 
     private val DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -80,6 +83,7 @@ object WorkoutCsvWriter {
                             session.note,
                             SetKind.csvType(set.kind),
                             set.rpe?.toString() ?: "",
+                            set.modifiers,
                         )
                     }
                 }

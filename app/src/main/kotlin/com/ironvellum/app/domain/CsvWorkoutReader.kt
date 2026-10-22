@@ -71,6 +71,8 @@ object CsvWorkoutReader {
         val notes: String,
         /** Hevy `superset_id`: shared by the adjacent exercises done as one superset. */
         val supersetGroup: Int? = null,
+        /** The app's own export's `Modifiers` column ("deficit", "tempo, paused"); blank for every other source. */
+        val modifiers: String = "",
     )
 
     data class ParsedWorkout(
@@ -232,6 +234,7 @@ object CsvWorkoutReader {
                 setType = str("Set Type").lowercase().ifBlank { "normal" },
                 rpe = null,
                 notes = "",
+                modifiers = str("Modifiers"),
             )
         }
 
@@ -474,13 +477,16 @@ object CsvWorkoutReader {
      * movement ids of a workout's sets in file order. Each run of one movement
      * is its own block, so a movement done twice stays two blocks; its set
      * numbers count on across both, because the cloud keys a set on
-     * (movement, setIndex) and two blocks numbered from 0 would collide.
+     * (movement, setIndex) and two blocks numbered from 0 would collide. [variations] (a [Variation.key] per set,
+     * when known) also starts a new block where it changes inside a run of one movement.
      */
-    fun blockPlacements(exerciseIds: List<Long>): List<Pair<Int, Int>> {
+    fun blockPlacements(exerciseIds: List<Long>, variations: List<String> = emptyList()): List<Pair<Int, Int>> {
         val nextIndex = HashMap<Long, Int>()
         var position = -1
         return exerciseIds.mapIndexed { i, id ->
-            if (i == 0 || exerciseIds[i - 1] != id) position++
+            // A run of one movement splits where its variation changes: a deficit block is not the flat block.
+            val moved = i == 0 || exerciseIds[i - 1] != id || variations.getOrNull(i) != variations.getOrNull(i - 1)
+            if (moved) position++
             val index = nextIndex.getOrDefault(id, 0)
             nextIndex[id] = index + 1
             position to index

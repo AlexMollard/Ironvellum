@@ -74,7 +74,7 @@ class WorkoutCsvWriterTest {
         val csv = WorkoutCsvWriter.write(listOf(session(1, "2026-10-05T18:00:00") to sets), zone)
         val lines = csv.removePrefix("\uFEFF").trimEnd().split("\r\n")
         assertEquals(WorkoutCsvWriter.HEADER, lines[0])
-        assertEquals(listOf("2026-10-05 18:00:00,Push,1h 0m,Bench Press,1,80,5,,,,,,"), lines.drop(1))
+        assertEquals(listOf("2026-10-05 18:00:00,Push,1h 0m,Bench Press,1,80,5,,,,,,,"), lines.drop(1))
         assertTrue("secret" !in csv)
     }
 
@@ -105,5 +105,51 @@ class WorkoutCsvWriterTest {
         assertEquals(listOf(82.5, 82.5, null, null), w.sets.map { it.weightKg })
         assertEquals(listOf(null, null, 60, 480), w.sets.map { it.durationSec })
         assertEquals(2000.0, w.sets[3].distanceM!!, 0.001)
+    }
+
+    @Test
+    fun theStrongColumnsKeepTheirOrderAndModifiersComeLast() {
+        val strong = "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type,RPE"
+        assertEquals("$strong,Modifiers", WorkoutCsvWriter.HEADER)
+    }
+
+    @Test
+    fun aDeficitAndAFlatPushUpComeBackAsTwoLifts() {
+        val sets = listOf(
+            SessionSet(exerciseId = 1, exerciseName = "Push-up", exercisePosition = 0, setIndex = 0, reps = 20, done = true),
+            SessionSet(exerciseId = 1, exerciseName = "Push-up", exercisePosition = 1, setIndex = 0, reps = 12, modifiers = "deficit, tempo", done = true),
+            SessionSet(exerciseId = 1, exerciseName = "Push-up", exercisePosition = 1, setIndex = 1, reps = 10, modifiers = "deficit, tempo", done = true),
+        )
+        val csv = WorkoutCsvWriter.write(listOf(session(1, "2026-10-05T18:00:00") to sets), zone)
+        val back = CsvWorkoutReader.read(csv).workouts.single().sets
+        assertEquals(listOf("", "deficit, tempo", "deficit, tempo"), back.map { it.modifiers })
+        assertEquals(listOf("", "deficit", "deficit"), back.map { Variation.key(it.modifiers) })
+        // Flat then deficit are one movement in a row; the variation still splits them into two blocks.
+        val placements = CsvWorkoutReader.blockPlacements(listOf(1L, 1L, 1L), back.map { Variation.key(it.modifiers) })
+        assertEquals(listOf(0, 1, 1), placements.map { it.first })
+        assertEquals(listOf(0, 1, 2), placements.map { it.second })
+    }
+
+    @Test
+    fun aCombinationKeepsItsStringAndItsKeyAcrossTheRoundTrip() {
+        val sets = listOf(
+            SessionSet(exerciseId = 1, exerciseName = "Push-up", exercisePosition = 0, setIndex = 0, reps = 8, modifiers = "deficit, archer", done = true),
+            SessionSet(exerciseId = 1, exerciseName = "Push-up", exercisePosition = 1, setIndex = 0, reps = 9, modifiers = "archer,tempo,deficit", done = true),
+        )
+        val csv = WorkoutCsvWriter.write(listOf(session(1, "2026-10-05T18:00:00") to sets), zone)
+        val back = CsvWorkoutReader.read(csv).workouts.single().sets.map { it.modifiers }
+        assertEquals(listOf("deficit, archer", "archer,tempo,deficit"), back)
+        assertEquals(setOf("archer,deficit"), back.map { Variation.key(it) }.toSet())
+        // Same key, so no new block between them: one variation, two blocks only if the exercise changes.
+        assertEquals(listOf(0, 0), CsvWorkoutReader.blockPlacements(listOf(1L, 1L), back.map { Variation.key(it) }).map { it.first })
+    }
+
+    @Test
+    fun aStrongFileWithoutTheModifiersColumnStillImports() {
+        val csv = "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes\n" +
+            "2024-03-01 18:00:00,Push,1h 0m,Bench Press,1,80,5,0,0,\n"
+        val set = CsvWorkoutReader.read(csv).workouts.single().sets.single()
+        assertEquals("", set.modifiers)
+        assertEquals(80.0, set.weightKg!!, 0.0)
     }
 }

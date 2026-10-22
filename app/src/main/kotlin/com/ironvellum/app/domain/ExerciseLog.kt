@@ -197,15 +197,17 @@ object ExerciseLogCalculator {
             }
             built += ExerciseLogSession(head.sessionId, head.startedAtMs, head.title.ifBlank { head.label }, blocks)
         }
+        val mixed = variation == null && variations.size > 1
         return ExerciseLog(
             metric = metric,
             byE1rm = byE1rm,
             sessions = built.reversed(),
             lastAtMs = built.lastOrNull()?.atMs,
-            best = bestSet,
-            bestE1rmKg = bestE1rm,
-            // Variations differ in load: a line through all of them just jumps. One variation draws a line as before.
-            trend = if (variation == null && variations.size > 1) emptyList() else trend,
+            // Variations differ in load: one best, or one line, through all of them mixes lifts, so "All" shows neither.
+            // Each variation (and a lift with one) keeps its own.
+            best = if (mixed) null else bestSet,
+            bestE1rmKg = if (mixed) null else bestE1rm,
+            trend = if (mixed) emptyList() else trend,
             addsToBody = BodyShare.addsToBody(exercise),
             variations = variations,
             selected = variation,

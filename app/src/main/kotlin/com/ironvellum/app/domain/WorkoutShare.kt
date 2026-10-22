@@ -108,7 +108,7 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: Words.text(UiText.res(R.string.share_movement_fallback)) }
                 val peak = peakByLift[Variation.liftKey(full, group.first().modifiers)]
-                val text = movementText(full.trim(), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
+                val text = movementText(Variation.label(full, group.first().modifiers), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
                     ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
                 text to note

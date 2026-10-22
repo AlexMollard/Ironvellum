@@ -115,6 +115,24 @@ class WorkoutShareTest {
         includeNotes = includeNotes,
     )
 
+    @Test
+    fun `a variation is named on its line and the plain lift is not`() {
+        val pushUp = exercise(1, "Push-up")
+        val sets = List(3) { set(1, "Push-up", it, 12, modifiers = "deficit") } +
+            List(3) { set(1, "Push-up", it, 20, position = 1) }
+        val text = card(sets, listOf(pushUp))
+        val lines = text.lines()
+        assertTrue(text, "Push-up · deficit" in lines)
+        assertTrue(text, "Push-up" in lines)
+    }
+
+    @Test
+    fun `every token of a combination is named, sorted, and tempo is left out`() {
+        val pushUp = exercise(1, "Push-up")
+        val text = card(List(3) { set(1, "Push-up", it, 8, modifiers = "tempo, deficit, archer") }, listOf(pushUp))
+        assertTrue(text, "Push-up · archer, deficit" in text.lines())
+    }
+
     /** The approved preview, line for line. */
     @Test
     fun `the card is the approved grid`() {

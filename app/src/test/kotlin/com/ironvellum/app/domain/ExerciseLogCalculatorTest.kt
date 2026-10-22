@@ -284,6 +284,18 @@ class ExerciseLogCalculatorTest {
     }
 
     @Test
+    fun `all shows no best when the variations differ, and each variation still has its own`() {
+        val all = ExerciseLogCalculator.build(pushUp, twoVariations(), weighIns)
+        assertNull("a deficit set must not read as the push-up's best", all.best)
+        assertNull(all.bestE1rmKg)
+        val deficit = ExerciseLogCalculator.build(pushUp, twoVariations(), weighIns, variation = "deficit,elevated")
+        assertTrue(deficit.best != null && deficit.bestE1rmKg != null)
+        // One variation only: All is that variation, so its best stays.
+        val single = ExerciseLogCalculator.build(pushUp, twoVariations().filter { it.modifiers.contains("incline") }, weighIns)
+        assertTrue(single.best != null && single.bestE1rmKg != null)
+    }
+
+    @Test
     fun `a record is judged inside its own variation`() {
         val log = ExerciseLogCalculator.build(pushUp, twoVariations(), weighIns, variation = "deficit,elevated")
         // 30 kg x 8 on day 9 beats 20 kg x 10 on day 5 within the deficit variation, whatever the incline did.
