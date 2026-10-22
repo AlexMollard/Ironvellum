@@ -8,16 +8,19 @@ house commit style, and push it.
 
 Still the owner's call, every time: force-push, history rewrites (`rebase` of
 pushed commits, `filter-repo`, `reset` of pushed work), tags and GitHub
-releases, and changing repository visibility. Pushing no longer triggers billed
-work because every workflow is `workflow_dispatch` only (see below).
+releases, and changing repository visibility. Pushing triggers no workflow:
+every workflow is `workflow_dispatch` only (see below).
 
 ## Tests run locally, never on GitHub Actions
 
-This repository is private, so every runner minute is billed. Measured over the
-8 days to 2026-09-22: 186 automatic runs at ~18 billed minutes each.
+This repository is public on purpose (the owner confirmed it 2026-10-22): F-Droid
+builds from its tags and the README, store text and privacy policy link here.
+Public repositories are not billed for Actions minutes. While it was private,
+186 automatic runs in the 8 days to 2026-09-22 cost ~18 billed minutes each.
 
-`.github/workflows/ci.yml` therefore has **no push or pull_request trigger** —
-it is `workflow_dispatch` only. Do not add one back. `apk.yml` is likewise
+`.github/workflows/ci.yml` still has **no push or pull_request trigger** — it is
+`workflow_dispatch` only, and the local gate below is the check that counts.
+Adding a trigger back is the owner's call, not an agent's. `apk.yml` is likewise
 manual, and exists to hand someone a sideloadable build.
 
 The gate is local and covers all three CI jobs:
