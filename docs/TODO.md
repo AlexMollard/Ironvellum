@@ -48,7 +48,8 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] Weekly recap: Sunday 19:00 notification (private on the lock screen), recap screen from Today Mon to Wed and Stats, 1080x1350 share card in the app theme; range aggregation and card renderer are shared with the Month/Year in review
 - [x] Month / year in review: scrolling story with the best week, lifts gained or new, most trained muscles, volume, calendar (a year: twelve month bars), streak and skills claimed; 1080x1350 share card in the app theme and words; Today card in the first week of a month (a year, in January, replacing December's) with a dismiss; listed in Stats > Training > Recaps; a lifter who started part way through is told "since you started in March" and compared with nothing; no notification
 - [x] Live workout on the lock screen: Android 16 Live Update (chip with set progress or rest countdown, ProgressStyle card), improved notification below 16, Start today / Resume shortcuts, Quick Settings tile, Settings > During a workout > Lock screen and shortcuts; the Live Update itself is not yet seen on an Android 16 device (no API 36 image installed)
-- [ ] Release: version 1.8 (code 9), CHANGELOG, store changelog 9.txt, README, store and privacy text done; store screenshots (widgets, light theme, recap) in progress
+- [x] Release: version 1.8 (code 9), CHANGELOG, store changelog 9.txt, README, store and privacy text, store screenshots 01/05 reshot and 09-11 added (6f38ac2d, fdb7ac4e, fddedb6e)
+- [ ] Owner: a week on the phone first: a locked-screen workout (Live Update), Sunday's recap, heart-rate permission, share card save
 - [ ] Owner: push tag `v1.8`
 
 ### 1.9: translations and Play preparation
