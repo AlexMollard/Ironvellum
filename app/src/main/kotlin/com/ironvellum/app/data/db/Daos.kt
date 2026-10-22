@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.ironvellum.app.domain.ExerciseLogRow
 import com.ironvellum.app.domain.ExerciseSetRow
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.LiftSetRow
@@ -336,6 +337,20 @@ interface SessionDao {
             "WHERE s.exerciseId = :exerciseId ORDER BY x.startedAtMs DESC, s.setIndex ASC",
     )
     fun observeExerciseSets(exerciseId: Long): Flow<List<ExerciseSetRow>>
+
+    /**
+     * The History tab's source: every DONE set of one movement in a COMPLETED trial, newest trial first. Uses the
+     * exerciseId index on set_logs, then one primary-key probe per trial; warm-ups are stored unticked so done=1 drops them.
+     */
+    @Query(
+        "SELECT s.sessionId AS sessionId, x.startedAtMs AS startedAtMs, x.label AS label, x.title AS title, " +
+            "s.exercisePosition AS exercisePosition, s.setIndex AS setIndex, s.reps AS reps, s.weightKg AS weightKg, " +
+            "s.modifiers AS modifiers, s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade, s.kind AS kind " +
+            "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
+            "WHERE s.exerciseId = :exerciseId AND s.done = 1 AND x.completedAtMs IS NOT NULL " +
+            "ORDER BY x.startedAtMs DESC, s.sessionId DESC, s.exercisePosition ASC, s.setIndex ASC",
+    )
+    fun observeExerciseLog(exerciseId: Long): Flow<List<ExerciseLogRow>>
 
     /** Done activity (non-REPS) sets from completed sessions, newest first — the title ledger's source. */
     @Query(

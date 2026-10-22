@@ -4972,6 +4972,36 @@
     <!-- Exercise sheet: names of the two swipeable pages. Keep each to one short word, they are tabs. -->
     <string name="infosheet_page_about">About</string>
     <string name="infosheet_page_form">Form</string>
+    <string name="infosheet_page_history">History</string>
+    <string name="infosheet_page_history__t">Chronicle</string>
+    <!-- Exercise sheet, History page: small upper-case labels over the summary figures. -->
+    <string name="infosheet_history_done_label">TIMES DONE</string>
+    <string name="infosheet_history_last_label">LAST DONE</string>
+    <string name="infosheet_history_best_set_label">BEST SET</string>
+    <string name="infosheet_history_best_hold_label">LONGEST HOLD</string>
+    <string name="infosheet_history_best_e1rm_label">BEST EST. 1RM</string>
+    <!-- History page: label over the trend chart, one figure per workout. -->
+    <string name="infosheet_history_trend_e1rm">ESTIMATED 1RM PER WORKOUT</string>
+    <string name="infosheet_history_trend_e1rm__t">ESTIMATED 1RM PER TRIAL</string>
+    <string name="infosheet_history_trend_reps">BEST REPS PER WORKOUT</string>
+    <string name="infosheet_history_trend_reps__t">BEST REPS PER TRIAL</string>
+    <string name="infosheet_history_trend_hold">LONGEST HOLD PER WORKOUT</string>
+    <string name="infosheet_history_trend_hold__t">LONGEST HOLD PER TRIAL</string>
+    <!-- History page: label over the list of past workouts, newest first. -->
+    <string name="infosheet_history_list_label">PAST WORKOUTS</string>
+    <string name="infosheet_history_list_label__t">PAST TRIALS</string>
+    <!-- History page, never logged: a line, then the plain next step. -->
+    <string name="infosheet_history_empty_title">Not logged yet</string>
+    <string name="infosheet_history_empty_hint">Finish a workout with it and it is listed here.</string>
+    <string name="infosheet_history_empty_hint__t">Seal a trial with it and it is written here.</string>
+    <!-- History page, spoken only: the row's set beat every earlier workout. -->
+    <string name="infosheet_history_record_description">new personal record</string>
+    <string name="infosheet_history_record_description__t">new peak</string>
+    <!-- History page, spoken only: what tapping a row does. -->
+    <string name="infosheet_history_open_label">Open this workout</string>
+    <string name="infosheet_history_open_label__t">Open this trial</string>
+    <!-- History page, spoken only: a whole row. %1$s is the date, %2$s the workout's name, %3$s its sets with their modifiers. -->
+    <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
     <string name="infosheet_last_label">LAST WORKOUT</string>
     <string name="infosheet_last_label__t">LAST TRIAL</string>

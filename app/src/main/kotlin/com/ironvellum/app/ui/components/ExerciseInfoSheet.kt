@@ -29,8 +29,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /**
  * Facts about one exercise, all read from data the app already holds: the
  * muscle profile, how-to guide, gear table, skill tree and ally boards.
- * They sit on two swipeable pages, About (the facts) and Form (how to, cues, mistakes), so
- * none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
+ * They sit on three swipeable pages, About (the facts), Form (how to, cues, mistakes) and History
+ * (what the lifter has logged on it), so none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
@@ -65,8 +65,8 @@ internal fun ExerciseInfoSheet(
             if (onEdit != null) add(InfoAction(stringResource(R.string.infosheet_edit_button), onEdit, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
-        // Two pages: the gear rides on About, and how to, cues and mistakes share Form. The
-        // sheet drops a page with nothing on it.
+        // Three pages: the gear rides on About, how to, cues and mistakes share Form, and History is the
+        // lifter's own sets. The sheet drops a page with nothing on it (History never is: it says "not logged yet").
         pages = listOf(
             InfoPage(stringResource(R.string.infosheet_page_about)) {
                 // The drawing leads: what the movement looks like before anything is said about it.
@@ -99,6 +99,7 @@ internal fun ExerciseInfoSheet(
                 }
             },
             InfoPage(stringResource(R.string.infosheet_page_form)) { formFacts(exercise.name) },
+            InfoPage(Words.text(UiText.themed(R.string.infosheet_page_history, R.string.infosheet_page_history__t))) { historyFacts(exercise, onDismiss) },
         ),
     )
 }

@@ -51,6 +51,8 @@ import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
+import com.ironvellum.app.domain.ExerciseLog
+import com.ironvellum.app.domain.ExerciseLogCalculator
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.ExportReader
@@ -145,6 +147,7 @@ import com.ironvellum.app.domain.Variation
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -153,6 +156,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.firstOrNull
@@ -2292,6 +2296,12 @@ class Repository(
         val bodyweight = stats.firstOrNull()?.weightKg
         ExerciseHistoryCalculator.build(exercise, rows, bodyweight, variation = variation)
     }
+
+    /** The History tab's content for one movement, built off the main thread and rebuilt when its sets change. */
+    fun observeExerciseLog(exercise: Exercise): Flow<ExerciseLog> =
+        sessionDao.observeExerciseLog(exercise.id)
+            .map { rows -> ExerciseLogCalculator.build(exercise, rows) }
+            .flowOn(Dispatchers.Default)
 
 
     /**

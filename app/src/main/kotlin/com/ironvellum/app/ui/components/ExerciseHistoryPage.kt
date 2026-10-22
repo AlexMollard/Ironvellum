@@ -1,0 +1,265 @@
+package com.ironvellum.app.ui.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Units
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseLog
+import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ExerciseLogBlock
+import com.ironvellum.app.domain.ExerciseLogSession
+import com.ironvellum.app.domain.ExerciseLogSet
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.theme.IronvellumColors
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+
+/**
+ * Opens a past workout by id, supplied by the nav host. Null where there is no route to it (a preview, a test host),
+ * and then the history rows are plain text rather than links.
+ */
+val LocalOpenWorkout = compositionLocalOf<((Long) -> Unit)?> { null }
+
+/** Loads one movement's log off the main thread; the sheet is only ever opened on one exercise, so the VM is keyed by it. */
+internal class ExerciseHistoryViewModel(repo: Repository, exercise: Exercise) : ViewModel() {
+    val log: StateFlow<ExerciseLog?> = repo.observeExerciseLog(exercise)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+}
+
+/** The HISTORY page of the exercise sheet: summary, trend, then past workouts newest first. */
+internal fun InfoSheetScope.historyFacts(exercise: Exercise, onDismiss: () -> Unit) {
+    section(null) { ExerciseHistoryPage(exercise, onDismiss) }
+}
+
+@Composable
+private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () -> Unit) {
+    val vm: ExerciseHistoryViewModel = viewModel(
+        key = "exercise-log-${exercise.id}",
+        factory = viewModelFactory { initializer { ExerciseHistoryViewModel(ironvellumRepository(), exercise) } },
+    )
+    val log by vm.log.collectAsStateWithLifecycle()
+    var shown by rememberSaveable { mutableIntStateOf(ExerciseLog.PAGE) }
+    val open = LocalOpenWorkout.current
+    // Nothing until Room has answered: an empty state for a frame would read as "never logged".
+    val current = log ?: return
+    if (current.isEmpty) {
+        Text(
+            stringResource(R.string.infosheet_history_empty_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = IronvellumColors.Ink,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            Words.text(UiText.themed(R.string.infosheet_history_empty_hint, R.string.infosheet_history_empty_hint__t)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = IronvellumColors.InkMuted,
+        )
+        return
+    }
+    val dateFormat = stringResource(R.string.explorer_date_day_month_year)
+    HistorySummary(exercise, current, dateFormat)
+    if (current.trend.size >= 2) {
+        Spacer(Modifier.height(20.dp))
+        HistoryTrend(current, dateFormat)
+    }
+    Spacer(Modifier.height(20.dp))
+    PanelLabel(Words.text(UiText.themed(R.string.infosheet_history_list_label, R.string.infosheet_history_list_label__t)))
+    Spacer(Modifier.height(4.dp))
+    current.visible(shown).forEach { session ->
+        HistoryRow(exercise, session, dateFormat, open?.let { go -> { onDismiss(); go(session.sessionId) } })
+    }
+    if (current.sessions.size > shown) {
+        ShowMoreRow { shown += ExerciseLog.PAGE }
+    }
+}
+
+@Composable
+private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: String) {
+    val hold = exercise.metric == ExerciseMetric.HOLD
+    val judged = exercise.metric == ExerciseMetric.REPS || hold
+    val figures = buildList {
+        add(stringResource(R.string.infosheet_history_done_label) to log.sessions.size.toString())
+        log.lastAtMs?.let { add(stringResource(R.string.infosheet_history_last_label) to formatDate(it, dateFormat)) }
+        if (judged) {
+            log.best?.let { best ->
+                val label = stringResource(if (hold) R.string.infosheet_history_best_hold_label else R.string.infosheet_history_best_set_label)
+                add(label to bestSetText(exercise, best))
+            }
+        }
+        log.bestE1rmKg?.let { add(stringResource(R.string.infosheet_history_best_e1rm_label) to Units.fixed(it, 1)) }
+    }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        figures.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                pair.forEach { (label, value) ->
+                    Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                        PanelLabel(label)
+                        Text(
+                            value,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = IronvellumColors.Ink,
+                        )
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+private fun bestSetText(exercise: Exercise, set: ExerciseLogSet): String =
+    blockLine(exercise, ExerciseLogBlock(0, "", listOf(set), null, false)).text
+
+@Composable
+private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
+    val hold = log.metric == ExerciseMetric.HOLD
+    val title = when {
+        log.byE1rm -> UiText.themed(R.string.infosheet_history_trend_e1rm, R.string.infosheet_history_trend_e1rm__t)
+        hold -> UiText.themed(R.string.infosheet_history_trend_hold, R.string.infosheet_history_trend_hold__t)
+        else -> UiText.themed(R.string.infosheet_history_trend_reps, R.string.infosheet_history_trend_reps__t)
+    }
+    val context = LocalContext.current
+    val values = log.trend.map { it.value }
+    PanelLabel(Words.text(title))
+    TrendChart(
+        values,
+        fromZero = false,
+        modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
+        startLabel = formatDate(log.trend.first().atMs, dateFormat),
+        endLabel = formatDate(log.trend.last().atMs, dateFormat),
+        valueText = {
+            when {
+                log.byE1rm -> Units.fixed(it, 1)
+                hold -> UiText.res(R.string.explorer_set_hold, it.toInt()).asString(context)
+                else -> it.toInt().toString()
+            }
+        },
+        dateText = { formatDate(log.trend[it].atMs, dateFormat) },
+    )
+}
+
+@Composable
+private fun HistoryRow(exercise: Exercise, session: ExerciseLogSession, dateFormat: String, onOpen: (() -> Unit)?) {
+    val date = formatDate(session.atMs, dateFormat)
+    val recordTag = Words.peak.u
+    val recordSpoken = Words.text(UiText.themed(R.string.infosheet_history_record_description, R.string.infosheet_history_record_description__t))
+    val lines = session.blocks.map { block ->
+        val mods = modifierText(block.modifiers)
+        val sets = blockLine(exercise, block).text
+        buildString {
+            if (mods.isNotEmpty()) append(mods).append(": ")
+            append(sets)
+            if (block.record) append(", ").append(recordSpoken)
+        }
+    }
+    val spoken = stringResource(R.string.infosheet_history_row_description, date, session.label, lines.joinToString(". "))
+    val openLabel = Words.text(UiText.themed(R.string.infosheet_history_open_label, R.string.infosheet_history_open_label__t))
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = LedgerSpace.Target)
+            .then(if (onOpen != null) Modifier.clickable(role = Role.Button, onClickLabel = openLabel, onClick = onOpen) else Modifier)
+            .semantics(mergeDescendants = true) { contentDescription = spoken }
+            .padding(vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(
+                date,
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+            )
+            if (session.label.isNotBlank()) {
+                Text(
+                    " · ${session.label}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
+        }
+        session.blocks.forEach { block ->
+            val mods = modifierText(block.modifiers)
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(blockLine(exercise, block), style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                    if (mods.isNotEmpty()) {
+                        Text(mods, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                    }
+                }
+                if (block.record) {
+                    Text(
+                        recordTag,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = IronvellumColors.SovereignGold,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+        }
+    }
+    InkDivider()
+}
+
+@Composable
+private fun ShowMoreRow(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = LedgerSpace.Target)
+            .clickable(role = Role.Button, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.infosheet_show_more_button),
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.SystemGreen,
+        )
+    }
+}

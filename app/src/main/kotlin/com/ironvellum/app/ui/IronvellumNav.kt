@@ -68,6 +68,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.ui.components.LocalOpenWorkout
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.onboarding.OnboardingScreen
 import com.ironvellum.app.ui.onboarding.OnboardingViewModel
@@ -346,6 +347,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
             },
         ) { padding ->
+            androidx.compose.runtime.CompositionLocalProvider(LocalOpenWorkout provides androidx.compose.runtime.remember(navController) { { id: Long -> navController.navigate(Routes.workoutDetail(id)) } }) {
             NavHost(
                 navController = navController,
                 startDestination = Routes.DASHBOARD,
@@ -708,6 +710,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenLifter = { userId, name -> navController.navigate(Routes.lifter(userId, name)) },
                     )
                 }
+            }
             }
         }
         }
