@@ -131,3 +131,46 @@ JavaScript would also drift. So:
 - The snapshot's exact shape and versioning, and how large it may grow.
 - Column names and the set-kind wire values (reuse the export format's `kind` wire values).
 - Which existing synced tables cover level, XP and deeds.
+
+## Phase 2: social and routines (owner-approved 2026-10-23)
+
+The owner wants "everything but editing". Phase 2 is built after phase 1's live acceptance and amends the
+non-goals above: Friends, routines and the weekly plan move in; editing training data stays out.
+
+### Social, with the same interactions as the app
+
+Social data already lives in Supabase and the server is its authority, so acting on it from the web is not
+editing training data. The web uses exactly the tables, views and RPCs the app uses (recon 2026-10-23), so
+every server rule applies unchanged: comment limits (10 a minute, 200 a day, 280 characters), 20 friend
+requests a day, 50 failed circle joins a day, 20 reports a day, blocks enforced in every read.
+
+- **Feed** (`public_feed`): read, react (salute, iron, flame), comment, delete your own comment, see who
+  reacted to your workouts.
+- **Inbox** (`my_inbox`): read. Opening it calls `mark_inbox_seen`, which also clears the phone's unread
+  count; that is intended (one inbox, two windows). No push or email notifications: the web refreshes when
+  opened and on a slow timer, like the app's 30-minute poll.
+- **Allies**: list, find by exact name (`find_hunter`), send, accept, decline and remove requests.
+- **Lifter profiles**: what the app shows a friend, through the same reads (`profiles`, `sessions`,
+  `session_sets` under `can_view_session`). Never anything from the owner-only tables.
+- **Boards**: `leaderboard`, `lift_board`, `shadow_board`, read-only.
+- **Circles**: view your circle, its week and goal; join by code, leave, create; keeper actions (goal, name,
+  rotate code, remove a member) through the same RPCs. The circle bonus XP is still paid out by the phone.
+- **Safety**: block, mute and report from every place a person appears, with the app's reasons.
+- **Crests and titles** shown on profiles use a catalogue generated from the app's code (names, tiers, art if
+  it is vector), like the body map; the web holds no crest logic.
+- Every query that reads other people's data goes through the existing read policies; the phase 1 rule
+  "every query filters on your own user id" applies to the owner-only tables only.
+
+### Routines, weekly plan and custom exercises, view-only
+
+- The snapshot gains a `routines` section written by the phone: each routine's name, note and scheduled
+  day; each entry's exercise, order, target sets, reps and load, modifiers, superset group, warm-up flag and
+  set scheme, with the scheme also as the phone's own one-line summary so the web formats nothing new. Custom
+  exercises with their muscles and gear. The weekly plan is the routines' scheduled days.
+- Owner-only, inside the existing snapshot cap. No new table.
+- The web shows them; no editing, no plan builder, no live logging. A line says "Edit routines in the app".
+
+### Still out
+
+Editing anything the phone owns (workouts, sets, routines, exercises, settings), the plan builder, live
+logging, account settings (display name, visibility), creating an account, crest collecting and the Veil.
