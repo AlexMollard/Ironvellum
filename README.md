@@ -83,9 +83,10 @@ relics and the Veil) keeps its names either way. Every word is defined in
   from the top set and round to the plates you own.
 - **Warm-ups:** ramps for loaded lifts, and warm-up exercises in a routine that
   never count toward your stats.
-- **Over 570 exercises**, each with a line drawing and a swipeable info sheet
-  of the muscles it works, plus your own exercises with their muscles and gear.
-  Records and progression are kept apart per variation.
+- **905 exercises**: 584 movements, each with a line drawing and a swipeable
+  info sheet of the muscles it works, and 321 variations of them (deficit,
+  archer, one-arm, incline, assisted and their combinations), each with its own
+  records and progression. Add your own exercises with their muscles and gear.
 
 ### Training
 
