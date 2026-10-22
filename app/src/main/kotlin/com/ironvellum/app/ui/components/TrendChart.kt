@@ -36,7 +36,6 @@ import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
 import com.ironvellum.app.ui.theme.IronvellumColors
-import java.util.Locale
 
 /**
  * The house trend chart: a flat line over two quiet gridlines, an
@@ -48,9 +47,8 @@ import java.util.Locale
  * instead of by index, for sparse series like weigh-ins. Gold marks only a
  * record ([recordMarker]); a latest value is the plain ink end dot.
  *
- * A measurement chart ([fromZero] false) has no y axis, so [startLabel]/[endLabel] sit alone under it and, by
- * default, its span reads in the middle as bare numbers. A chart given [axisText] draws the top and bottom values
- * with their unit on the left edge instead ("+46 kg" over "+20 kg") and keeps only the two dates below.
+ * A measurement chart ([fromZero] false) draws its top and bottom values on the left edge ("+46 kg" over "+20 kg"),
+ * written by [axisText] or else by [valueText], and keeps only the two dates below.
  *
  * Given [atMs] (the time of each value) the chart also draws a dashed line at the recent average, labelled
  * "2-wk avg 79.6 kg": see [recentAverage] for the window. Volatile series read better against it. With [smooth]
@@ -82,7 +80,7 @@ fun TrendChart(
     dateText: ((index: Int) -> String?)? = null,
     /** Off for sparklines too small to hold a readout. */
     scrub: Boolean = true,
-    /** Writes the highest and lowest value, unit included, on the left edge of a [fromZero] = false chart; null keeps the old middle label. */
+    /** Writes the highest and lowest value, unit included, on the left edge of a [fromZero] = false chart; [valueText] when null. */
     axisText: ((Double) -> String)? = null,
     /** Epoch millis of each value, one per value; draws the recent-average line. Null for a series that is not a timeline. */
     atMs: List<Long>? = null,
@@ -114,7 +112,8 @@ fun TrendChart(
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
-    val axis = if (axisText != null && !fromZero) chartAxisLabels(values, axisText, valueText) else null
+    // Every measurement chart labels its span on the left edge, in the caller's own units when it gave no axisText.
+    val axis = if (!fromZero) chartAxisLabels(values, axisText ?: valueText, valueText) else null
     val axisStyle = MaterialTheme.typography.labelSmall.copy(color = IronvellumColors.InkMuted)
     val axisLayouts = axis?.let { (high, low) -> measurer.measure(high, axisStyle) to measurer.measure(low, axisStyle) }
     val density = LocalDensity.current
@@ -237,9 +236,8 @@ fun TrendChart(
             }
         }
         if (startLabel != null || endLabel != null) {
-            // measurements without an axis get their span in the middle; with one, the axis says it
-            val mid = if (axisText == null && !fromZero && present.size > 1 && present.max() != present.min()) "${chartNum(present.min())}\u2013${chartNum(present.max())}" else null
-            Box(Modifier.padding(start = with(density) { gutterPx.toDp() })) { ChartDates(startLabel, endLabel, mid) }
+            // a measurement's span is on the left-edge axis, so only the dates sit below
+            Box(Modifier.padding(start = with(density) { gutterPx.toDp() })) { ChartDates(startLabel, endLabel) }
         }
     }
 }
@@ -372,10 +370,6 @@ internal fun chartAxisLabels(values: List<Double?>, axisText: (Double) -> String
     return if (top == bottom) fine(high) to fine(low) else top to bottom
 }
 
-/** A whole figure reads as an integer ("70"), anything else with one decimal ("70.5"). */
-private fun chartNum(v: Double) =
-    if (v == Math.rint(v)) String.format(Locale.US, "%d", v.toLong()) else String.format(Locale.US, "%.1f", v)
-
 /** The default readout number: one decimal, "." always. */
 internal fun scrubNumber(v: Double): String = "%.1f".fmt(v)
 
@@ -503,9 +497,9 @@ private fun DrawScope.inkBar(centerX: Float, base: Float, height: Float, width: 
 }
 
 @Composable
-private fun ChartDates(start: String?, end: String?, mid: String? = null) {
+private fun ChartDates(start: String?, end: String?) {
     // One label, not two, when both ends read the same.
-    if (start != null && start == end && mid == null) {
+    if (start != null && start == end) {
         Text(start, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 4.dp))
         return
     }
@@ -514,7 +508,6 @@ private fun ChartDates(start: String?, end: String?, mid: String? = null) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(start.orEmpty(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-        if (mid != null) Text(mid, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
         Text(end.orEmpty(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
     }
 }
