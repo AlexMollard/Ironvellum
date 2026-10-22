@@ -232,6 +232,9 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
             }
         },
         dateText = { formatDate(log.trend[it].atMs, dateFormat) },
+        atMs = log.trend.map { it.atMs },
+        surface = IronvellumColors.VaultHigh,
+        smooth = false,
     )
 }
 

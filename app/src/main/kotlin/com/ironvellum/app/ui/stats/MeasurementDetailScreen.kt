@@ -259,6 +259,7 @@ fun MeasurementDetailScreen(
                                 recordMarker = false,
                                 valueText = { Words.text(UiText.res(R.string.stats_cm_value, "%.1f".fmt(it))) },
                                 dateText = { formatDate(chartEntries[it].takenAtMs, shortPattern) },
+                                atMs = chartEntries.map { it.takenAtMs },
                             )
                         } else {
                             Text(

@@ -371,6 +371,8 @@ private fun ScoreChart(history: ExerciseHistory) {
                 endLabel = formatDate(points.last().atMs, dayMonth),
                 valueText = { if (e1rm) Units.fixed(it, 1) else UiText.res(R.string.explorer_chart_score_value, "%.1f".fmt(it)).asString(context) },
                 dateText = { formatDate(points[it].atMs, dayMonth) },
+                atMs = points.map { it.atMs },
+                smooth = false,
             )
         }
     }

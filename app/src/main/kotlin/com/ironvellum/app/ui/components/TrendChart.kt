@@ -29,6 +29,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.inkDot
@@ -49,6 +51,11 @@ import java.util.Locale
  * A measurement chart ([fromZero] false) has no y axis, so [startLabel]/[endLabel] sit alone under it and, by
  * default, its span reads in the middle as bare numbers. A chart given [axisText] draws the top and bottom values
  * with their unit on the left edge instead ("+46 kg" over "+20 kg") and keeps only the two dates below.
+ *
+ * Given [atMs] (the time of each value) the chart also draws a dashed line at the recent average, labelled
+ * "2-wk avg 79.6 kg": see [recentAverage] for the window. Volatile series read better against it. With [smooth]
+ * (and [atMs]) the bold line is the time-weighted trend ([trendSmooth]) and the readings behind it are a thin faint
+ * line with their dots.
  */
 @Composable
 fun TrendChart(
@@ -77,6 +84,14 @@ fun TrendChart(
     scrub: Boolean = true,
     /** Writes the highest and lowest value, unit included, on the left edge of a [fromZero] = false chart; null keeps the old middle label. */
     axisText: ((Double) -> String)? = null,
+    /** Epoch millis of each value, one per value; draws the recent-average line. Null for a series that is not a timeline. */
+    atMs: List<Long>? = null,
+    /** The average on the line's label when [valueText] is too long for it ("959 strength score"); [valueText] when null. */
+    averageText: ((Double) -> String)? = null,
+    /** What the chart sits on: the average's label is cleared onto it where the line cannot be avoided. */
+    surface: Color = IronvellumColors.Vault,
+    /** Draw the smoothed trend as the main line, the raw readings thin behind it; needs [atMs] and three readings. */
+    smooth: Boolean = true,
 ) {
     val present = values.filterNotNull()
     if (present.isEmpty()) return
@@ -89,7 +104,13 @@ fun TrendChart(
     val gold = IronvellumColors.SovereignGold
     val lastIndex = values.indexOfLast { it != null }
     val bestIndex = values.indexOfLast { it != null && it == present.max() }
-    val spoken = description ?: chartSummary(values, startLabel, endLabel, valueText)
+    val average = remember(values, atMs) { if (atMs != null && atMs.size == values.size) recentAverage(values, atMs) else null }
+    val averageLabel = average?.let { stringResource(R.string.trendchart_recent_avg, (averageText ?: valueText)(it)) }
+    val averageSpoken = average?.let { stringResource(R.string.trendchart_recent_avg_description, valueText(it)) }
+    val trend = remember(values, atMs, smooth) { if (smooth && atMs != null && atMs.size == values.size) trendSmooth(values, atMs) else null }
+    val trendSpoken = trend?.lastOrNull { it != null }?.let { stringResource(R.string.trendchart_trend_description, valueText(it)) }
+    val summary = description ?: chartSummary(values, startLabel, endLabel, valueText)
+    val spoken = listOfNotNull(summary, averageSpoken, trendSpoken).joinToString(" ")
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
@@ -161,33 +182,38 @@ fun TrendChart(
                 if (runStart >= 0) runs += runStart..values.lastIndex
 
                 val w = 2.5.dp.toPx()
-                for (run in runs) {
-                    if (run.first == run.last) {
-                        // an isolated reading has no neighbour to join: a dot, not nothing
-                        inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color)
-                        continue
-                    }
-                    val line = Path().apply {
-                        for (i in run) {
-                            if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
+                // the readings drawn as the main line, or thin and faint with their dots when a trend is the main line
+                val shown = trend ?: values
+                val rawColor = if (trend != null) color.copy(alpha = 0.4f) else color
+                for (series in if (trend != null) listOf(values, trend) else listOf(values)) {
+                    val raw = series === values
+                    val lineColor = if (raw) rawColor else color
+                    val lineWidth = if (raw && trend != null) 1.2.dp.toPx() else w
+                    for (run in runs) {
+                        if (run.first == run.last) {
+                            // an isolated reading has no neighbour to join: a dot, not nothing
+                            inkDot(Offset(xFor(run.first), yFor(series[run.first]!!)), 4f, lineColor)
+                            continue
                         }
+                        val line = Path().apply {
+                            for (i in run) {
+                                if (i == run.first) moveTo(xFor(i), yFor(series[i]!!)) else lineTo(xFor(i), yFor(series[i]!!))
+                            }
+                        }
+                        drawPath(line, color = lineColor, style = Stroke(width = lineWidth, cap = StrokeCap.Round))
                     }
-                    drawPath(line, color = color, style = Stroke(width = w, cap = StrokeCap.Round))
+                    if (raw && trend != null) values.forEachIndexed { i, v -> if (v != null) inkDot(Offset(xFor(i), yFor(v)), 3f, rawColor) }
                 }
 
-                goal?.let { g ->
-                    val y = yFor(g)
-                    var x = 0f
-                    val dash = 10.dp.toPx()
-                    while (x < size.width) {
-                        inkStroke(
-                            Offset(x, y),
-                            Offset((x + dash / 2).coerceAtMost(size.width), y),
-                            IronvellumColors.InkMuted,
-                            1.8f,
-                        )
-                        x += dash
-                    }
+                goal?.let { g -> dashedLine(yFor(g), 1.8f) }
+
+                if (average != null && averageLabel != null) {
+                    val y = yFor(average)
+                    dashedLine(y, 1.6f)
+                    drawAverageLabel(
+                        measurer, axisStyle, averageLabel, y, runs, surface,
+                        points = shown.indices.map { i -> shown[i]?.let { Offset(xFor(i), yFor(it)) } },
+                    )
                 }
 
                 // Markers: the latest point, and a record when asked for. Last
@@ -216,6 +242,119 @@ fun TrendChart(
             Box(Modifier.padding(start = with(density) { gutterPx.toDp() })) { ChartDates(startLabel, endLabel, mid) }
         }
     }
+}
+
+private const val RECENT_AVERAGE_DAYS = 14
+private const val RECENT_AVERAGE_MIN_POINTS = 3
+private const val DAY_MS = 86_400_000L
+
+/**
+ * The mean the recent-average line sits at: the readings dated within [RECENT_AVERAGE_DAYS] days before the newest
+ * one (inclusive), or the last three readings when fewer than three fall in that window. Null with fewer than three
+ * readings in all. A null value is a gap and does not count; [atMs] need not be sorted.
+ */
+internal fun recentAverage(values: List<Double?>, atMs: List<Long>): Double? {
+    val points = values.indices.mapNotNull { i -> values[i]?.let { atMs[i] to it } }.sortedBy { it.first }
+    if (points.size < RECENT_AVERAGE_MIN_POINTS) return null
+    val cutoff = points.last().first - RECENT_AVERAGE_DAYS * DAY_MS
+    val window = points.filter { it.first >= cutoff }
+    return (if (window.size >= RECENT_AVERAGE_MIN_POINTS) window else points.takeLast(RECENT_AVERAGE_MIN_POINTS)).map { it.second }.average()
+}
+
+private const val TREND_HALF_LIFE_DAYS = 7.0
+
+/**
+ * The trend of a series: an exponentially weighted moving average weighted by elapsed time, not point count, so a
+ * long gap pulls the next reading in harder and a same-day pair barely moves it. The first reading seeds it; each
+ * later one moves it by 1 - 0.5^(days since the previous / [halfLifeDays]) of the way. Aligned with [values]: a gap
+ * stays a gap, and the result is null with fewer than three readings. [atMs] need not be sorted.
+ */
+internal fun trendSmooth(values: List<Double?>, atMs: List<Long>, halfLifeDays: Double = TREND_HALF_LIFE_DAYS): List<Double?>? {
+    val order = values.indices.filter { values[it] != null }.sortedBy { atMs[it] }
+    if (order.size < RECENT_AVERAGE_MIN_POINTS) return null
+    val out = MutableList<Double?>(values.size) { null }
+    var level = values[order.first()]!!
+    out[order.first()] = level
+    for (k in 1 until order.size) {
+        val days = (atMs[order[k]] - atMs[order[k - 1]]) / DAY_MS.toDouble()
+        level += (1.0 - Math.pow(0.5, days / halfLifeDays)) * (values[order[k]]!! - level)
+        out[order[k]] = level
+    }
+    return out
+}
+
+/** A dashed horizontal rule across the plot at [y]. */
+private fun DrawScope.dashedLine(y: Float, width: Float) {
+    var x = 0f
+    val dash = 10.dp.toPx()
+    while (x < size.width) {
+        inkStroke(Offset(x, y), Offset((x + dash / 2).coerceAtMost(size.width), y), IronvellumColors.InkMuted, width)
+        x += dash
+    }
+}
+
+/**
+ * Writes [label] against the average line at [y]: above or below it, at the right or left end, whichever of the four
+ * spots the plotted line and the end-point dot stay clear of (the least crossed when none is clear). [points] are
+ * the plotted positions, null for a gap; [runs] the contiguous stretches between gaps. A spot the line still crosses
+ * gets a [surface] backing so the words stay readable.
+ */
+private fun DrawScope.drawAverageLabel(
+    measurer: androidx.compose.ui.text.TextMeasurer,
+    style: androidx.compose.ui.text.TextStyle,
+    label: String,
+    y: Float,
+    runs: List<IntRange>,
+    surface: Color,
+    points: List<Offset?>,
+) {
+    val pad = 4.dp.toPx()
+    val layout = measurer.measure(
+        label, style, overflow = TextOverflow.Ellipsis, maxLines = 1,
+        constraints = Constraints(maxWidth = (size.width - 2 * pad).toInt().coerceAtLeast(0)),
+    )
+    val w = layout.size.width.toFloat()
+    val h = layout.size.height.toFloat()
+    val gap = 3.dp.toPx()
+    val dot = 6.dp.toPx()
+    val lastDot = points.lastOrNull { it != null }
+    fun crossings(left: Float, top: Float): Int {
+        val right = left + w
+        val bottom = top + h
+        var n = 0
+        if (lastDot != null && lastDot.x + dot > left && lastDot.x - dot < right && lastDot.y + dot > top && lastDot.y - dot < bottom) n++
+        for (run in runs) {
+            if (run.first == run.last) {
+                val p = points[run.first]!!
+                if (p.x in left..right && p.y in top..bottom) n++
+                continue
+            }
+            for (i in run.first until run.last) {
+                val a = points[i]!!
+                val b = points[i + 1]!!
+                val x0 = maxOf(minOf(a.x, b.x), left)
+                val x1 = minOf(maxOf(a.x, b.x), right)
+                if (x0 > x1) continue
+                fun at(x: Float) = if (b.x == a.x) a.y else a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x)
+                val lo = minOf(at(x0), at(x1))
+                val hi = maxOf(at(x0), at(x1))
+                if (hi > top && lo < bottom) n++
+            }
+        }
+        return n
+    }
+    // the two ends first, then spots between them: the first clear one wins, ties keep the earlier
+    val xs = listOf(size.width - pad - w, pad, (size.width - w) * 0.75f, (size.width - w) / 2f, (size.width - w) * 0.25f)
+    val ys = listOf(y - gap - h, y + gap)
+    val best = ys.flatMap { top -> xs.map { left -> left to top } }
+        .filter { (_, top) -> top >= 0f && top + h <= size.height }
+        .minByOrNull { (left, top) -> crossings(left, top) }
+        ?: (xs[0] to (y - gap - h).coerceAtLeast(0f))
+    if (crossings(best.first, best.second) > 0) {
+        val margin = 2.dp.toPx()
+        drawRect(surface.copy(alpha = 0.92f), topLeft = Offset(best.first - margin, best.second), size = androidx.compose.ui.geometry.Size(w + 2 * margin, h))
+    }
+    drawText(layout, topLeft = Offset(best.first, best.second))
 }
 
 /**

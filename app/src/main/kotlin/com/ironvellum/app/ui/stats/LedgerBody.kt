@@ -189,6 +189,7 @@ internal fun BodyTab(
                         recordMarker = false,
                         valueText = { Words.text(UiText.res(R.string.stats_weight_value, "%.1f".fmt(it))) },
                         dateText = { shortDay(plot.dates[it]) },
+                        atMs = plot.dates.map { it.toEpochDay() * 86_400_000L },
                     )
                 }
             }

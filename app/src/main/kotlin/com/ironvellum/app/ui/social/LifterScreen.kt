@@ -399,6 +399,9 @@ internal fun LifterScreen(
                             endLabel = chrono.last().completedAtMs?.let { formatDate(it, "d MMM") },
                             valueText = { Words.text(UiText.res(R.string.lifter_strength_value, it)) },
                             dateText = { chrono[it].completedAtMs?.let { ms -> formatDate(ms, "d MMM") } },
+                            atMs = chrono.mapNotNull { it.completedAtMs }.takeIf { it.size == chrono.size },
+                            averageText = { Math.round(it).toString() },
+                            smooth = false,
                         )
                     } else {
                         // A single trial cannot draw a line: say so instead of

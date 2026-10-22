@@ -439,6 +439,7 @@ fun StatsScreen(
             table = if (isBmi) Bands.BMI else Bands.ffmi(ui.sex),
             series = series,
             seriesDates = readings.map { formatDate(it.first.takenAtMs, "d MMM") },
+            seriesAtMs = readings.map { it.first.takenAtMs },
             current = current,
             asOf = if (isBmi) null else ffmiReading?.let { formatDate(it.takenAtMs, "d MMM yyyy") },
             onDismiss = { drill = null },
@@ -613,6 +614,9 @@ private fun TrainingTab(
                     endLabel = day(scored.lastIndex),
                     valueText = { Words.text(UiText.res(R.string.stats_strength_value, "%.0f".fmt(it))) },
                     dateText = ::day,
+                    atMs = scored.map { it.completedAtMs ?: it.startedAtMs },
+                    averageText = { Math.round(it).toString() },
+                    smooth = false,
                 )
                 ChartCaption(
                     UiText.themedPlural(
@@ -642,6 +646,7 @@ private fun StatDrillSheet(
     table: BandTable,
     series: List<Double>,
     seriesDates: List<String>,
+    seriesAtMs: List<Long>,
     current: Double?,
     asOf: String?,
     onDismiss: () -> Unit,
@@ -687,6 +692,8 @@ private fun StatDrillSheet(
                     recordMarker = false,
                     valueText = { "$metric ${formatBodyValue(it)}" },
                     dateText = { seriesDates[it] },
+                    atMs = seriesAtMs,
+                    surface = IronvellumColors.VaultHigh,
                 )
                 ChartCaption(
                     UiText.themedPlural(R.plurals.stats_drill_count, R.plurals.stats_drill_count__t, series.size).asString(),

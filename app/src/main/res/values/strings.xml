@@ -3769,6 +3769,12 @@
     <string name="undobar_button">Undo</string>
     <!-- Chart scrub readout for a day with no value. -->
     <string name="trendchart_no_data">no data</string>
+    <!-- Label on the dashed recent-average line of a trend chart; %1$s is the average with its unit ("79.6 kg"). -->
+    <string name="trendchart_recent_avg">2-wk avg %1$s</string>
+    <!-- Spoken with the chart summary; the average is of the last two weeks, or the last three readings when fewer fall in them. -->
+    <string name="trendchart_recent_avg_description">Recent average %1$s.</string>
+    <!-- Spoken with the chart summary; %1$s is the latest value of the smoothed trend line. -->
+    <string name="trendchart_trend_description">Smoothed trend %1$s.</string>
     <!-- Screen-reader click label of the name block at the top of Today; it opens the Progress (Codex) tab. -->
     <string name="today_codex_open_label">Open the Progress</string>
     <string name="today_codex_open_label__t">Open the Codex</string>
