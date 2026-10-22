@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerScope
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
@@ -54,6 +55,16 @@ fun InkTabbedPager(
             indicatorPosition = { state.currentPage + state.currentPageOffsetFraction },
         )
         if (tabsGap > 0.dp) Spacer(Modifier.height(tabsGap))
-        HorizontalPager(state = state, modifier = Modifier.weight(1f).fillMaxWidth(), pageContent = pageContent)
+        HorizontalPager(
+            state = state,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            // The stock threshold wants the page dragged past halfway, so a thumb that travels a third of the screen
+            // at an ordinary pace snaps back and the swipe reads as dead. A quarter is a deliberate drag.
+            flingBehavior = PagerDefaults.flingBehavior(state = state, snapPositionalThreshold = SNAP_THRESHOLD),
+            pageContent = pageContent,
+        )
     }
 }
+
+/** How far of a page a drag must go, as a fraction, to settle on the next one rather than spring back. */
+private const val SNAP_THRESHOLD = 0.25f

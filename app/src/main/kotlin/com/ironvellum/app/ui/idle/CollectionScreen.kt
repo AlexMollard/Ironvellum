@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,7 +60,7 @@ import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.components.HouseRelicSigil
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.data.cloud.CloudSyncWorker
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.UnheldEdge
 import com.ironvellum.app.ui.components.UnheldGround
@@ -161,7 +160,9 @@ fun CollectionScreen(
     val vault by viewModel.vault.collectAsStateWithLifecycle()
     val crests by viewModel.crests.collectAsStateWithLifecycle()
     val notice by viewModel.notice.collectAsStateWithLifecycle()
-    var tab by rememberSaveable { mutableIntStateOf(initialTab.ordinal) }
+    val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = initialTab.ordinal) { CollectionTab.entries.size }
+    val relicsScroll = rememberScrollState()
+    val crestsScroll = rememberScrollState()
     var openCrest by rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var housesOpen by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val animate = rememberTodayMotion()
@@ -185,28 +186,30 @@ fun CollectionScreen(
 
     Column(Modifier.fillMaxSize()) {
         PushedHeader(stringResource(R.string.idle_collection_title), onBack = onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
-        InkTabs(
+        // Each tab is a swipeable page under the strip, with its own scroll so a swipe never loses the place.
+        InkTabbedPager(
             labels = listOf(
                 stringResource(R.string.idle_collection_tab_relics, vault?.ownedCount ?: 0, vault?.total ?: 16),
                 stringResource(R.string.idle_collection_tab_crests, crests.owned.size, Crests.ALL.size),
             ),
-            selectedIndex = tab,
-            onSelect = { tab = it },
-            fill = true,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-        ) {
-            if (tab == CollectionTab.Relics.ordinal) {
-                RelicsPage(vault, animate, onShowHouses = { housesOpen = true })
-            } else {
-                CrestsPage(crests, animate, onOpen = { openCrest = it })
+            state = pager,
+            modifier = Modifier.weight(1f),
+            tabsModifier = Modifier.padding(horizontal = 16.dp),
+            fillTabs = true,
+        ) { index ->
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(if (index == CollectionTab.Relics.ordinal) relicsScroll else crestsScroll)
+                    .padding(horizontal = 16.dp),
+            ) {
+                if (index == CollectionTab.Relics.ordinal) {
+                    RelicsPage(vault, animate, onShowHouses = { housesOpen = true })
+                } else {
+                    CrestsPage(crests, animate, onOpen = { openCrest = it })
+                }
+                Spacer(Modifier.height(32.dp))
             }
-            Spacer(Modifier.height(32.dp))
         }
     }
     if (housesOpen) HousesSheet { housesOpen = false }
