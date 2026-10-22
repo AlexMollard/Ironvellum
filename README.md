@@ -54,14 +54,15 @@ relics and the Veil) keeps its names either way. Every word is defined in
 ### Getting started
 
 - **Make it yours:** pick plain or themed names, kg or lb and an accent colour
-  before anything else.
+  before anything else. Dark, light or follow the system, and the system
+  font size is respected up to 200%.
 - **Setup** asks who you are, your equipment, what you are chasing and how you
   rate effort (reps left or RPE), then builds an editable weekly plan from the
   real catalogue, starting loaded lifts on sensible weights. Skip it and build
   your own instead.
 - **Today** is one status page: the routine your plan puts on today, your
   level, streak and Strength Rank, and the way into the Veil. Swipe between
-  days.
+  days. The "Today" and "Streak & week" widgets put it on your home screen.
 
 ### Planning
 
@@ -93,6 +94,10 @@ relics and the Veil) keeps its names either way. Every word is defined in
   - A plate calculator that finds every exact build, weighted vest and dip
     belt loads, kg or lb.
   - Notes per exercise, Undo on removal, and continue a workout you left.
+  - Follow it from the lock screen (a Live Update on Android 16), and start
+    or resume it from an app shortcut or a Quick Settings tile.
+- **Progression is a suggestion.** A workout starts on exactly what the
+  routine says; when you are ready for more, accept the suggestion or undo it.
 - **When you finish**, tick which of today's changes go back into the
   routine: loads, reps, added exercises and new supersets. Edit a finished
   workout later, or delete it.
@@ -108,7 +113,15 @@ relics and the Veil) keeps its names either way. Every word is defined in
 - **XP, levels and Strength Rank**, built from your best marks on pull, push
   and legs, with XP earned by effort.
 - **Stats** charts body (weight, body fat, BMI, FFMI), training (lift records
-  and a calendar) and daily measurements. Health Connect reading is optional.
+  and a calendar) and daily measurements, with a recent-average line and a
+  smoothed body-weight trend. Every exercise has a History tab.
+- **Recaps:** a weekly recap every Sunday, and a month and year in review,
+  each with a card to share.
+- **Bodyweight lifts count your body.** An estimated 1RM for push-ups,
+  pull-ups, dips, split squats and the rest includes the share of your body
+  weight the movement lifts.
+- **Health Connect** (optional) reads weight and heart rate, syncs whenever
+  you return to the app, and can save your finished workouts.
 - **125 skills** on progression paths (pull, push, handstand, lever, planche,
   rings, legs, core, mobility and the barbell ladders), each gated on the one
   before it with a written standard, and **105 deeds** to earn.
@@ -130,7 +143,8 @@ Optional, and only with an account.
 
 - Everything is stored on the phone first.
 - Export a full JSON archive or a CSV of your workouts, and import the archive
-  again.
+  again. A weekly automatic backup to a folder you choose keeps the newest
+  five.
 - Import workouts from a Strong, Hevy or FitNotes CSV.
 - Delete your cloud account from inside the app at any time.
 
@@ -173,9 +187,9 @@ Full statement: [PRIVACY.md](PRIVACY.md) and
 
 ## For developers
 
-Kotlin 2.4.20, Jetpack Compose with Material 3, Room 2.8.5, WorkManager,
-Health Connect 1.1.0 (read only), and Supabase 3.8.0 over Ktor 3.5.2. AGP
-9.4.0, minSdk 29, targetSdk 36. The domain layer is pure Kotlin, which is why
+Kotlin 2.4.21, Jetpack Compose with Material 3, Room 2.8.5, WorkManager,
+Health Connect 1.1.0, and Supabase 3.8.0 over Ktor 3.5.2. AGP
+9.4.1, minSdk 29, targetSdk 36. The domain layer is pure Kotlin, which is why
 most of it is covered by fast unit tests. Room is the source of truth; the
 cloud is a backup, never an authority.
 

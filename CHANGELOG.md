@@ -3,6 +3,53 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## 1.8
+
+### Look back
+- A weekly recap every Sunday at 19:00: workouts, records, muscles trained and your streak. The
+  notification shows no numbers on the lock screen. Open it from Today (Monday to Wednesday) or
+  Stats, and share it as an image card.
+- A month and year in review: your best week, lifts gained, most-trained muscles, volume and a
+  calendar, with a share card. It appears on Today in the first week of a month and is listed in
+  Stats > Training > Recaps.
+- Every exercise sheet has a History tab: each past session, your best set and the estimated 1RM
+  trend, filtered by variation.
+- Trend charts draw a dashed recent average over the last two weeks, body weight adds a smoothed
+  trend, and each chart labels its high and low on the left edge.
+
+### Outside the app
+- Home-screen widgets: "Today" and "Streak & week", in two sizes each, on a tinted glass
+  background that follows your theme and accent.
+- A live workout shows on the lock screen and status bar as an Android 16 Live Update, with set
+  progress and the rest countdown. Older Android gets an improved notification.
+- Start today and Resume shortcuts on the app icon, and a Quick Settings tile. Settings > During a
+  workout > Lock screen and shortcuts.
+
+### Training
+- Workouts start on exactly what your routine says. When you are ready for more, the app suggests
+  it, and accepting comes with Undo.
+- The same movement listed twice in a routine stays two exercises, each with its own sets and
+  modifiers.
+- Bodyweight estimated 1RMs count your body weight across the catalogue: push-ups, pull-ups,
+  dips, rows, split squats, lunges, step-ups, calf raises and pistols, with or without a vest.
+- One celebration at a time after a workout: the level-up no longer covers the XP screen.
+- Today's card fits more: short exercises share a line and the routine name stays on one line.
+
+### Health Connect and your data
+- Save finished workouts to Health Connect (opt-in).
+- Health Connect syncs whenever you come back to the app, not only at launch.
+- Resting heart rate is worked out from your heart-rate readings when no resting value is logged.
+  Allow heart rate in Settings > Health Connect.
+- Weekly automatic backup to a folder you choose, keeping the newest five.
+
+### Look and feel
+- A light theme, with a System, Dark or Light choice.
+- The system font size is respected everywhere, up to 200%.
+- Tabs change with a short, slow swipe, and the collection screen swipes too.
+- Tap targets are at least 48dp, and sets with no load read "BW" everywhere.
+- Fast on long histories: rescoring XP over 450 workouts went from 4 s to under 0.1 s.
+- All screen text lives in string resources, ready for translation.
+
 ## 1.7
 
 ### Your words, your setup

@@ -46,11 +46,15 @@ control (`ExportWriter.kt` / `ExportReader.kt`).
 
 ## What the app reads from Health Connect
 
-The app requests seven read-only Health Connect permissions
+The app requests eight read-only Health Connect permissions
 (`AndroidManifest.xml`): steps, distance, active calories burned, sleep,
-resting heart rate, weight, and body fat. Reads happen:
+resting heart rate, heart rate, weight, and body fat. Heart-rate samples are
+only used to work out a resting heart rate for days that have none; the
+samples themselves are not stored. Reads happen:
 
-- on demand from the Settings screen ("Connect & Sync"), and
+- on demand from the Settings screen ("Connect & Sync"),
+- when you return to the app, at most once every five minutes, fetching only
+  what changed since the last read, and
 - once per day via a WorkManager job (`HealthSyncWorker.kt`, 14-day window).
 
 The results are aggregated per day and stored locally in `health_days`. None of

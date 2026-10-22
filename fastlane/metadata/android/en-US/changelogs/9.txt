@@ -1,0 +1,10 @@
+• Weekly recap, plus a month and year in review, with share cards
+• Live workout on the lock screen (Android 16 Live Update)
+• Home-screen widgets: Today, and Streak & week
+• Light theme
+• History tab per exercise; average and trend lines on charts
+• Progression is a suggestion, with Undo
+• Bodyweight 1RMs count your body weight
+• Health Connect: save workouts, sync on return, resting HR
+
+Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md
