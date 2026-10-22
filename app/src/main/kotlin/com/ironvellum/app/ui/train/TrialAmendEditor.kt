@@ -116,7 +116,7 @@ internal fun TrialAmendEditor(
                 // this very trial, so each would compare it to itself.
                 reference = null,
                 suggestion = null,
-                savePrompt = null,
+                applied = null,
                 note = null,
                 lastNote = null,
                 onNote = null,

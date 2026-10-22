@@ -1030,7 +1030,7 @@ class Repository(
     }
 
     /** A block's suggestion with the rite entry it was read from. */
-    private class ResolvedSuggestion(val block: BlockKey, val presetId: Long, val entry: PresetEntryEntity, val suggestion: ProgressionSuggestion)
+    private class ResolvedSuggestion(val block: BlockKey, val suggestion: ProgressionSuggestion)
 
     /** Every block of a live trial that has a suggestion, rebuilt from the rite the trial began from. A sealed trial has none. */
     private suspend fun resolveSuggestions(sessionId: Long): List<ResolvedSuggestion> {
@@ -1042,7 +1042,7 @@ class Repository(
         val nth = nthOfBlocks(rows)
         return entriesByBlock(rows, pw.working).mapNotNull { (block, entry) ->
             suggestionFor(entry, exerciseDao.byId(entry.exerciseId), mode, nth[block] ?: 0)
-                ?.let { ResolvedSuggestion(block, presetId, entry, it) }
+                ?.let { ResolvedSuggestion(block, it) }
         }
     }
 
@@ -1054,16 +1054,15 @@ class Repository(
     suspend fun trialSuggestions(sessionId: Long): Map<BlockKey, ProgressionSuggestion> =
         resolveSuggestions(sessionId).associate { it.block to it.suggestion }
 
-    /** What accepting a suggestion leaves to offer: the rite entry's change to save, or null when the rite holds no such figure. */
-    class SuggestionAccepted(val presetId: Long, val save: RoutineUpdate.Change?)
-
     /**
      * Applies [block]'s suggestion to the sets of the block still to log, and to nothing else: a set already ticked
      * keeps what was done. A top set's back-offs and a drop chain follow the new load as they would have, and a
      * warm-up ramp not yet used is re-planned from it. Null, and nothing written, when there is no suggestion that
-     * moves a figure, the trial is sealed, or the block has no set left to change.
+     * moves a figure, the trial is sealed, or the block has no set left to change. Otherwise the figures of every set
+     * still to log as they were before, for [undoSuggestion]; the end-of-workout offer reads what was done, so it sees
+     * the accepted figures without anything saved here.
      */
-    suspend fun acceptSuggestion(sessionId: Long, block: BlockKey): SuggestionAccepted? = db.withTransaction {
+    suspend fun acceptSuggestion(sessionId: Long, block: BlockKey): List<SetFigures>? = db.withTransaction {
         if (isSealed(sessionId)) return@withTransaction null
         val resolved = resolveSuggestions(sessionId).firstOrNull { it.block == block } ?: return@withTransaction null
         val suggestion = resolved.suggestion
@@ -1072,6 +1071,7 @@ class Repository(
         val rows = sessionDao.setsFor(sessionId).filter { it.blockKey == block }
         val targets = rows.filter { suggestion.touches(it.asSet()) }
         if (targets.isEmpty()) return@withTransaction null
+        val before = rows.filter { !it.done }.map { SetFigures(it.id, it.reps, it.weightKg, it.durationSec) }
         targets.forEach { row ->
             sessionDao.updateSet(
                 row.copy(
@@ -1085,7 +1085,19 @@ class Repository(
         sessionDao.setsFor(sessionId).filter { it.blockKey == block && it.setKind() == SetKind.TOP && !it.done }.forEach { refillBackoffs(it) }
         refillDrops(sessionId, block)
         if (suggestion.movesLoad) replanWarmups(sessionId, block, exercise)
-        SuggestionAccepted(resolved.presetId, savedFigures(resolved.entry, suggestion))
+        before
+    }
+
+    /**
+     * Puts the sets [before] ([acceptSuggestion]) back to the figures they had, hand edits, back-off and drop loads and
+     * the warm-up ramp included. Only a set still to log is touched: one logged since keeps what was logged.
+     */
+    suspend fun undoSuggestion(sessionId: Long, before: List<SetFigures>) = db.withTransaction {
+        if (isSealed(sessionId)) return@withTransaction
+        before.forEach { figures ->
+            val row = sessionDao.setById(figures.id)?.takeIf { it.sessionId == sessionId && !it.done } ?: return@forEach
+            sessionDao.updateSet(row.copy(reps = figures.reps, weightKg = figures.weightKg, durationSec = figures.durationSec))
+        }
     }
 
     /** The unlogged warm-ups of [block], when nothing is logged yet and the ramp keeps its shape, re-planned from the first working load. */
@@ -1101,23 +1113,6 @@ class Repository(
         )
         if (ramp.size != warmups.size) return
         warmups.zip(ramp).forEach { (row, step) -> sessionDao.updateSet(row.copy(weightKg = step.weightKg, reps = step.reps)) }
-    }
-
-    /**
-     * The rite entry as accepting [suggestion] would leave it, as a change the existing "update the routine" path
-     * writes ([applyRoutineUpdate]); null when the rite has no figure to take (a top set's reps are a range of the scheme).
-     */
-    private fun savedFigures(entry: PresetEntryEntity, suggestion: ProgressionSuggestion): RoutineUpdate.Change? {
-        val scheme = SetScheme.decode(entry.setScheme)
-        val before = PresetEntry(
-            id = entry.id, exerciseId = entry.exerciseId, targetSets = entry.targetSets, targetReps = entry.targetReps,
-            targetWeightKg = entry.targetWeightKg, modifiers = entry.modifiers, position = entry.position, scheme = scheme,
-        )
-        val after = before.copy(
-            targetReps = if (scheme.type == SchemeType.TOP_BACKOFF) before.targetReps else suggestion.reps,
-            targetWeightKg = if (suggestion.movesLoad) suggestion.weightKg else before.targetWeightKg,
-        )
-        return RoutineUpdate.Change(before, after, isHold = suggestion.hold).takeIf { it.fields.isNotEmpty() }
     }
 
     private fun SetLogEntity.asSet() = SessionSet(

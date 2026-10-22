@@ -149,6 +149,7 @@ import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.ProgressionSuggestion
 import com.ironvellum.app.data.SuggestionDismissals
+import com.ironvellum.app.data.SuggestionUndos
 import kotlinx.coroutines.flow.update
 import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.data.RestClock
@@ -327,38 +328,45 @@ class SessionViewModel(
             all.filter { (block, suggestion) -> block !in gone && suggestion.stillOffered(byBlock[block].orEmpty()) }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
-    /** The blocks that just took a suggestion and may keep it in the routine, with the change that would save it. */
-    private val savePrompts = MutableStateFlow<Map<BlockKey, Repository.SuggestionAccepted>>(emptyMap())
-    val savePromptBlocks: StateFlow<Set<BlockKey>> = savePrompts.map { it.keys }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    /** What each accepted suggestion changed, by block: kept on the device so Undo outlives the screen. */
+    private val undos = SuggestionUndos(appContext)
+    private val applied = MutableStateFlow(undos.snapshots(sessionId))
 
-    /** Applies the block's suggestion to its sets still to log, then offers to keep it in the routine. */
+    /**
+     * The accepted suggestions still being confirmed, by block: until dismissed or undone, and only while a set the
+     * accept changed is still to log (once they are all logged there is nothing left to undo).
+     */
+    val appliedSuggestions: StateFlow<Map<BlockKey, ProgressionSuggestion>> =
+        combine(engineSuggestions, applied, dismissed, repo.observeSessionSets(sessionId)) { all, taken, gone, sets ->
+            val pending = sets.filter { !it.done }.map { it.id }.toSet()
+            all.filter { (block, _) -> block !in gone && taken[block].orEmpty().any { it.id in pending } }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Applies the block's suggestion to its sets still to log and remembers what they were, for [undoSuggestion]. */
     fun acceptSuggestion(block: BlockKey) {
         viewModelScope.launchGuarded("accept suggestion") {
-            val accepted = repo.acceptSuggestion(sessionId, block) ?: return@launchGuarded
-            if (accepted.save != null) savePrompts.update { it + (block to accepted) }
+            val before = repo.acceptSuggestion(sessionId, block) ?: return@launchGuarded
+            undos.save(sessionId, block, before)
+            applied.update { it + (block to before) }
         }
     }
 
-    /** Hides the block's suggestion for this trial. */
+    /** Hides the block's suggestion, or its confirmation after an accept (the accepted figures stay), for this trial. */
     fun dismissSuggestion(block: BlockKey) {
         dismissals.dismiss(sessionId, block)
         dismissed.update { it + block }
+        undos.clear(sessionId, block)
+        applied.update { it - block }
     }
 
-    /** Writes what the block took into the routine, through the same path as the end-of-workout offer. */
-    fun saveSuggestionToRoutine(block: BlockKey) {
-        val accepted = savePrompts.value[block] ?: return
-        savePrompts.update { it - block }
-        val change = accepted.save ?: return
-        viewModelScope.launchGuarded("save suggestion to ${Words.rite.s}") {
-            withContext(NonCancellable) { repo.applyRoutineUpdate(accepted.presetId, listOf(change)) }
+    /** Puts the block's sets still to log back as they were before the accept; the suggestion is on offer again. */
+    fun undoSuggestion(block: BlockKey) {
+        val before = applied.value[block] ?: return
+        viewModelScope.launchGuarded("undo suggestion") {
+            withContext(NonCancellable) { repo.undoSuggestion(sessionId, before) }
+            undos.clear(sessionId, block)
+            applied.update { it - block }
         }
-    }
-
-    /** "Not now": the routine is left as it is; the end-of-workout offer still has what was done. */
-    fun skipSavingSuggestion(block: BlockKey) {
-        savePrompts.update { it - block }
     }
 
     /** The rite's scheme of each lift in this trial that has one, for the set hints; re-read as lifts come and go. */
@@ -786,7 +794,7 @@ fun SessionScreen(
     val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
-    val savePromptBlocks by viewModel.savePromptBlocks.collectAsStateWithLifecycle()
+    val appliedSuggestions by viewModel.appliedSuggestions.collectAsStateWithLifecycle()
     val schemes by viewModel.schemes.collectAsStateWithLifecycle()
     val lastTops by viewModel.lastTops.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
@@ -1208,13 +1216,12 @@ fun SessionScreen(
                                         onDismiss = { viewModel.dismissSuggestion(block.key) },
                                     )
                                 },
-                                savePrompt = if (block.key in savePromptBlocks) {
-                                    SavePrompt(
-                                        onSave = { viewModel.saveSuggestionToRoutine(block.key) },
-                                        onSkip = { viewModel.skipSavingSuggestion(block.key) },
+                                applied = appliedSuggestions[block.key]?.let { taken ->
+                                    AppliedOffer(
+                                        suggestion = taken,
+                                        onUndo = { viewModel.undoSuggestion(block.key) },
+                                        onDismiss = { viewModel.dismissSuggestion(block.key) },
                                     )
-                                } else {
-                                    null
                                 },
                                 note = exerciseNotes[block.exerciseId],
                                 lastNote = lastNotes[block.exerciseId],
@@ -2385,8 +2392,8 @@ internal fun OpenExerciseCard(
     reference: AnnotatedString?,
     /** The live trial only: what the progression engine would change about this exercise, to accept or dismiss. */
     suggestion: SuggestionOffer?,
-    /** The live trial only: right after an accept, the offer to keep it in the routine. */
-    savePrompt: SavePrompt?,
+    /** The live trial only: after an accept, what it applied, with Undo. */
+    applied: AppliedOffer?,
     note: String?,
     lastNote: String?,
     onNote: (() -> Unit)?,
@@ -2565,7 +2572,7 @@ internal fun OpenExerciseCard(
             // The workout starts on the routine's own figures. Where the engine would have changed them it says
             // so here, and nothing moves until the lifter accepts.
             if (suggestion != null) SuggestionCard(suggestion, block.first.exerciseName, weighted)
-            if (savePrompt != null) SavePromptCard(savePrompt)
+            if (applied != null) AppliedCard(applied, block.first.exerciseName, weighted)
         }
         // The superset strip's own height already sits above the first row.
         Spacer(Modifier.height(if (superset != null) 0.dp else 8.dp))
@@ -2663,8 +2670,8 @@ private fun WarmupFoldRow(count: Int, onOpen: () -> Unit) {
 /** What the engine suggests for an exercise, and what accepting or dismissing it does. */
 internal class SuggestionOffer(val suggestion: ProgressionSuggestion, val onAccept: () -> Unit, val onDismiss: () -> Unit)
 
-/** The offer to keep an accepted suggestion in the routine. */
-internal class SavePrompt(val onSave: () -> Unit, val onSkip: () -> Unit)
+/** An accepted suggestion, confirmed on the block until it is undone or dismissed. */
+internal class AppliedOffer(val suggestion: ProgressionSuggestion, val onUndo: () -> Unit, val onDismiss: () -> Unit)
 
 /** The headline of a suggestion ("Ready for more: 12.5 kg × 8"); null for a cue, whose line is the engine's own advice. */
 @Composable
@@ -2678,6 +2685,17 @@ private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Bool
         ProgressionSuggestion.Kind.MORE_REPS -> UiText.plural(R.plurals.session_suggestion_more_reps, suggestion.reps, suggestion.reps).asString()
         ProgressionSuggestion.Kind.LONGER_HOLD -> stringResource(R.string.session_suggestion_longer_hold, suggestion.reps)
         ProgressionSuggestion.Kind.CUE -> null
+    }
+}
+
+/** The line confirming an accepted suggestion ("Applied: 12.5 kg × 8 for the rest of today"). */
+@Composable
+private fun appliedHeadline(suggestion: ProgressionSuggestion, weighted: Boolean): String {
+    val load = kgLabel(suggestion.weightKg, weighted)
+    return when (suggestion.kind) {
+        ProgressionSuggestion.Kind.MORE_REPS -> UiText.plural(R.plurals.session_suggestion_applied_reps, suggestion.reps, suggestion.reps).asString()
+        ProgressionSuggestion.Kind.LONGER_HOLD -> stringResource(R.string.session_suggestion_applied_longer_hold, suggestion.reps)
+        else -> stringResource(if (suggestion.hold) R.string.session_suggestion_applied_load_hold else R.string.session_suggestion_applied_load, load, suggestion.reps)
     }
 }
 
@@ -2740,9 +2758,9 @@ private fun SuggestionCard(offer: SuggestionOffer, name: String, weighted: Boole
     }
 }
 
-/** After an accept: keep it in the routine too? Inline, never a dialog; "Not now" leaves the end-of-workout offer. */
+/** After an accept: what was applied, with Undo and Dismiss. Inline, never a dialog; Dismiss keeps the figures. */
 @Composable
-private fun SavePromptCard(prompt: SavePrompt) {
+private fun AppliedCard(offer: AppliedOffer, name: String, weighted: Boolean) {
     val shape = MaterialTheme.shapes.small
     Column(
         Modifier
@@ -2754,16 +2772,25 @@ private fun SavePromptCard(prompt: SavePrompt) {
             .padding(start = 12.dp, top = 8.dp, end = 4.dp),
     ) {
         Text(
-            UiText.themed(R.string.session_suggestion_saved_prompt, R.string.session_suggestion_saved_prompt__t).asString(),
+            appliedHeadline(offer.suggestion, weighted),
             style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.Ink,
             modifier = Modifier.padding(end = 8.dp),
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            val save = UiText.themed(R.string.session_suggestion_save_button, R.string.session_suggestion_save_button__t).asString()
-            CardAction(save, save, IronvellumColors.EmeraldBright, prompt.onSave)
-            val skip = stringResource(R.string.session_suggestion_skip_button)
-            CardAction(skip, skip, IronvellumColors.InkMuted, prompt.onSkip)
+            CardAction(
+                stringResource(R.string.session_suggestion_undo_button),
+                stringResource(R.string.session_suggestion_undo_description, name),
+                IronvellumColors.EmeraldBright,
+                offer.onUndo,
+            )
+            CardAction(
+                stringResource(R.string.session_suggestion_dismiss_button),
+                stringResource(R.string.session_suggestion_dismiss_description, name),
+                IronvellumColors.InkMuted,
+                offer.onDismiss,
+            )
         }
     }
 }

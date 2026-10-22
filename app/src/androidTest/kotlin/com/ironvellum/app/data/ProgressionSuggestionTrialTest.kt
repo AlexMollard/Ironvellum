@@ -198,19 +198,114 @@ class ProgressionSuggestionTrialTest {
     }
 
     @Test
-    fun theAcceptedFiguresCanBeKeptInTheRoutineThroughTheUpdatePath() = runBlocking {
+    fun theEndOfWorkoutOfferSeesTheAcceptedFiguresAndKeepsThemInTheRoutine() = runBlocking {
         val rite = rite(entry(row))
         logAll(repo.startSessionFromPreset(rite), reps = 8)
         val session = repo.startSessionFromPreset(rite)
         val key = repo.blockOf(session, row)
         val suggestion = repo.trialSuggestions(session).getValue(key)
-        val accepted = repo.acceptSuggestion(session, key)!!
-        val change = accepted.save!!
-        repo.applyRoutineUpdate(accepted.presetId, listOf(change))
+        assertNotNull(repo.acceptSuggestion(session, key))
+        logAll(session, reps = suggestion.reps)
+        val offer = repo.routineUpdateFor(session)!!
+        repo.applyRoutineUpdate(offer.presetId, offer.changes)
         val written = repo.observePresets().first().single().entries.single()
         assertEquals(suggestion.weightKg!!, written.targetWeightKg!!, 0.0)
         assertEquals(suggestion.reps, written.targetReps)
         assertEquals(3, written.targetSets)
+    }
+
+    private fun figures(rows: List<com.ironvellum.app.data.db.SetLogEntity>) =
+        rows.map { listOf(it.id, it.reps, it.weightKg, it.durationSec, it.done) }
+
+    @Test
+    fun undoPutsEveryUnloggedSetBackAsItWasHandEditsIncluded() = runBlocking {
+        val rite = rite(entry(row))
+        logAll(repo.startSessionFromPreset(rite), reps = 8)
+        val session = repo.startSessionFromPreset(rite)
+        val key = repo.blockOf(session, row)
+        // The lifter has already changed the last set by hand before accepting.
+        val edited = block(session, 0, row).last()
+        repo.updateSet(edited.id, 5, 47.5, done = false)
+        val before = db.sessionDao().setsFor(session)
+
+        val snapshot = repo.acceptSuggestion(session, key)!!
+        assertTrue("accepting changed something", figures(db.sessionDao().setsFor(session)) != figures(before))
+        repo.undoSuggestion(session, snapshot)
+
+        assertEquals(figures(before), figures(db.sessionDao().setsFor(session)))
+        // The block is on offer again, with the original figures.
+        assertTrue(repo.trialSuggestions(session).getValue(key).stillOffered(sets(session).filter { it.blockKey == key }))
+    }
+
+    @Test
+    fun undoPutsATopSetAndItsBackoffsBackAsTheyWere() = runBlocking {
+        val owners = SetScheme(type = SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 2, backoffFixedKg = 15.0, backoffReps = 4..5)
+        val rite = rite(entry(pullUp, 3, 2, 22.0, owners))
+        repeat(2) { logAll(repo.startSessionFromPreset(rite), reps = 40) }
+        val session = repo.startSessionFromPreset(rite)
+        val key = repo.blockOf(session, pullUp)
+        val backoff = block(session, 0, pullUp)[1]
+        repo.updateSet(backoff.id, 6, 17.5, done = false)
+        val before = db.sessionDao().setsFor(session)
+
+        val snapshot = repo.acceptSuggestion(session, key)!!
+        assertTrue(figures(db.sessionDao().setsFor(session)) != figures(before))
+        repo.undoSuggestion(session, snapshot)
+
+        assertEquals(figures(before), figures(db.sessionDao().setsFor(session)))
+        assertEquals(listOf(SetKind.TOP, SetKind.BACKOFF, SetKind.BACKOFF), block(session, 0, pullUp).map { it.kind })
+    }
+
+    @Test
+    fun undoLeavesASetLoggedAfterTheAcceptAlone() = runBlocking {
+        val rite = rite(entry(row))
+        logAll(repo.startSessionFromPreset(rite), reps = 8)
+        val session = repo.startSessionFromPreset(rite)
+        val key = repo.blockOf(session, row)
+        val suggestion = repo.trialSuggestions(session).getValue(key)
+        val snapshot = repo.acceptSuggestion(session, key)!!
+        val first = block(session, 0, row).first()
+        repo.updateSet(first.id, suggestion.reps, suggestion.weightKg, done = true)
+
+        repo.undoSuggestion(session, snapshot)
+
+        val after = block(session, 0, row)
+        assertTrue(after.first().done)
+        assertEquals(suggestion.weightKg!!, after.first().weightKg!!, 0.0)
+        assertEquals(suggestion.reps, after.first().reps)
+        after.drop(1).forEach {
+            assertEquals(60.0, it.weightKg!!, 0.0)
+            assertEquals(8, it.reps)
+        }
+    }
+
+    @Test
+    fun theUndoSnapshotSurvivesAndADismissalKeepsTheAcceptedFigures() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = context.getSharedPreferences("suggestion_undos_test", android.content.Context.MODE_PRIVATE)
+        prefs.edit().clear().commit()
+        try {
+            val rite = rite(entry(row))
+            logAll(repo.startSessionFromPreset(rite), reps = 8)
+            val session = repo.startSessionFromPreset(rite)
+            val key = repo.blockOf(session, row)
+            val suggestion = repo.trialSuggestions(session).getValue(key)
+            val snapshot = repo.acceptSuggestion(session, key)!!
+            SuggestionUndos(prefs).save(session, key, snapshot)
+            SuggestionUndos(prefs).save(session, BlockKey(3, 9), listOf(SetFigures(1, 2, null, 30)))
+            // A new store (a new process) reads the same snapshot back, nulls included.
+            assertEquals(snapshot, SuggestionUndos(prefs).snapshots(session).getValue(key))
+            assertEquals(listOf(SetFigures(1, 2, null, 30)), SuggestionUndos(prefs).snapshots(session).getValue(BlockKey(3, 9)))
+            assertTrue("another trial is untouched", SuggestionUndos(prefs).snapshots(session + 1).isEmpty())
+
+            // Dismiss: the confirmation goes, the accepted figures stay.
+            SuggestionUndos(prefs).clear(session, key)
+            assertFalse(key in SuggestionUndos(prefs).snapshots(session))
+            assertTrue(BlockKey(3, 9) in SuggestionUndos(prefs).snapshots(session))
+            block(session, 0, row).forEach { assertEquals(suggestion.weightKg!!, it.weightKg!!, 0.0) }
+        } finally {
+            prefs.edit().clear().commit()
+        }
     }
 
     @Test

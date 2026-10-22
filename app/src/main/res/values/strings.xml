@@ -1563,11 +1563,18 @@
     <!-- %1$s is the exercise name. -->
     <string name="session_suggestion_accept_description">Accept the suggestion for %1$s</string>
     <string name="session_suggestion_dismiss_description">Dismiss the suggestion for %1$s</string>
-    <string name="session_suggestion_saved_prompt">Applied to the rest of today\'s workout. Keep it in your routine too?</string>
-    <string name="session_suggestion_saved_prompt__t">Applied to the rest of today\'s trial. Keep it in your rite too?</string>
-    <string name="session_suggestion_save_button">Save to routine</string>
-    <string name="session_suggestion_save_button__t">Save to rite</string>
-    <string name="session_suggestion_skip_button">Not now</string>
+    <!-- After an accept: what was applied, with Undo. %1$s the load, %2$d the reps. -->
+    <string tools:ignore="PluralsCandidate" name="session_suggestion_applied_load">Applied: %1$s × %2$d for the rest of today</string>
+    <!-- %1$s the load, %2$d the seconds. -->
+    <string name="session_suggestion_applied_load_hold">Applied: %1$s × %2$d s for the rest of today</string>
+    <plurals name="session_suggestion_applied_reps">
+        <item quantity="one">Applied: %1$d rep for the rest of today</item>
+        <item quantity="other">Applied: %1$d reps for the rest of today</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="session_suggestion_applied_longer_hold">Applied: %1$d s holds for the rest of today</string>
+    <string name="session_suggestion_undo_button">Undo</string>
+    <!-- %1$s is the exercise name. -->
+    <string name="session_suggestion_undo_description">Undo the accepted suggestion for %1$s</string>
     <!-- Left column of a changed figure in that offer. -->
     <string name="session_field_sets">Sets</string>
     <string name="session_field_hold">Hold</string>
