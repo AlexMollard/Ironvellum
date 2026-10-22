@@ -1012,6 +1012,8 @@
     <string name="settings_support_liberapay_row">Donate on Liberapay</string>
     <string name="settings_support_source_row">Source code</string>
     <string name="settings_support_licence_row">Licence</string>
+    <!-- Opens the privacy policy on GitHub. Play requires this link inside the app. -->
+    <string name="settings_support_privacy_row">Privacy policy</string>
     <!-- A licence identifier, not translated. -->
     <string name="settings_support_licence_value">GPL-3.0-or-later</string>
     <string name="settings_support_credits">Chakra Petch font, SIL Open Font License 1.1. Apart from the exercise drawings credited below, artwork is original or generated for Ironvellum, released under the same licence.</string>

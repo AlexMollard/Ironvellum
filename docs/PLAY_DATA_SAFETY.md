@@ -47,11 +47,15 @@ Code references:
 
 ### Fitness info — Health Connect data (NOT collected)
 - The app **reads** steps, distance, active calories, sleep, resting heart
-  rate, weight, body fat from Health Connect (`AM`, 7 `READ_*` data
-  permissions plus `READ_HEALTH_DATA_HISTORY`, which widens step reads to
-  data recorded before the app was installed; `HS`). These reads stay **on
-  the device** (stored in the local `health_days`
-  Room table, `RP.syncHealthHistory`). They are **never uploaded** — the cloud
+  rate, heart rate, weight, body fat from Health Connect (`AM`, 8 `READ_*`
+  data permissions plus `READ_HEALTH_DATA_HISTORY`, which widens step reads to
+  data recorded before the app was installed, and
+  `READ_HEALTH_DATA_IN_BACKGROUND`, which lets the daily worker read; `HS`).
+  Heart-rate samples (1.8) are only reduced to a resting heart rate for days
+  with none (`RestingHr.kt`); the samples are not stored. Reads run from
+  Settings, on return to the app (`HealthResumeSync.kt`, at most every five
+  minutes) and from the daily worker. These reads stay **on the device**
+  (stored in the local `health_days` Room table, `RP.syncHealthHistory`). They are **never uploaded** — the cloud
   schema has no table for them, and `push()` sends none of them.
 - Data Safety: declare as **not collected, not shared**. But you MUST complete
   the **Health apps declaration** and the Health Connect permissions
@@ -144,9 +148,11 @@ Code references:
   owner retains cloud data for inactive accounts is not encoded anywhere; the
   privacy policy currently says "while the project exists". Confirm or amend.
 - **Q5 — Health Connect permissions declaration:** the Google Health Connect
-  API Request form must have been submitted for these seven data types (the
-  history scope needs no separate data type — it widens the steps read), plus
-  the 1.8 write type `WRITE_EXERCISE` (exercise sessions), before shipping;
+  API Request form must have been submitted for these eight data types (the
+  history and background scopes need no separate data type), including heart
+  rate (added in 1.8), plus the 1.8 write type `WRITE_EXERCISE` (exercise
+  sessions), before shipping. The form wants a justification for each
+  permission requested, so say why history and background reads are needed;
   whether it has been is unknown from the repo. Open.
 
 ## Policy sources (checked 2026-09-15)

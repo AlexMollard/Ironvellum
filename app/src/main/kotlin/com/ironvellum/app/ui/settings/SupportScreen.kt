@@ -37,6 +37,8 @@ private object SupportLinks {
         "https://github.com/AlexMollard/Ironvellum/blob/main/COSTS.md"
     const val GITHUB_SPONSORS = "https://github.com/sponsors/AlexMollard"
     const val LIBERAPAY = "https://liberapay.com/AlexMollard"
+    /** The same URL goes in Play Console (docs/RELEASE_CHECKLIST.md section 6). */
+    const val PRIVACY_POLICY = "https://github.com/AlexMollard/Ironvellum/blob/main/PRIVACY.md"
 }
 
 private fun panelTitle(): String =
@@ -97,6 +99,14 @@ fun SupportScreen(onBack: () -> Unit) {
             )
             InkDivider()
             ListRow(stringResource(R.string.settings_support_licence_row), subline = stringResource(R.string.settings_support_licence_value))
+            InkDivider()
+            // Linked in both flavours: Play requires the policy to be reachable from inside the app.
+            ListRow(
+                stringResource(R.string.settings_support_privacy_row),
+                subline = SupportLinks.PRIVACY_POLICY,
+                sublineColor = IronvellumColors.SystemGreen,
+                onClick = { openUrl(SupportLinks.PRIVACY_POLICY) },
+            )
         }
 
         Spacer(Modifier.height(12.dp))
