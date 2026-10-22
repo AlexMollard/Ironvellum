@@ -28,7 +28,7 @@ class WeeklyRecapTest {
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         plan: List<PlannedPreset> = emptyList(),
         today: LocalDate = sunday,
-    ) = WeeklyRecap.build(history, catalogue, plan, monday, today, zone)
+    ) = WeeklyRecap.build(history, catalogue, { 0.0 }, plan, monday, today, zone)
 
     private fun preset(name: String, day: Int?, vararg entries: PlannedEntry) = PlannedPreset(name, "", day, entries.toList())
 
@@ -122,7 +122,7 @@ class WeeklyRecapTest {
         val only = recap(listOf(workout(monday.plusDays(1), bench, 3)))
         assertTrue(only.streak.longest)
         // Last workout exactly 7 days before Sunday: today is the last day it survives.
-        val atRisk = WeeklyRecap.build(listOf(workout(monday.minusDays(1), bench, 3)), catalogue, emptyList(), monday, monday.plusDays(6), zone)
+        val atRisk = WeeklyRecap.build(listOf(workout(monday.minusDays(1), bench, 3)), catalogue, { 0.0 }, emptyList(), monday, monday.plusDays(6), zone)
         assertTrue(atRisk.streak.atRisk)
         assertEquals(monday.plusDays(6), atRisk.streak.trainBy)
     }

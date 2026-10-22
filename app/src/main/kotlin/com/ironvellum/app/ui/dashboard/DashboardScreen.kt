@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.dashboard
 
 import com.ironvellum.app.R
 import androidx.compose.ui.res.stringResource
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import androidx.compose.runtime.SideEffect
@@ -255,6 +256,7 @@ internal fun newPeaks(
 internal fun lastWeekRecap(
     history: List<Pair<WorkoutSession, List<SessionSet>>>,
     exercises: List<Exercise>,
+    bodyweightAt: (Long) -> Double,
     presets: List<WorkoutPreset>,
     today: LocalDate,
     zone: ZoneId,
@@ -262,18 +264,19 @@ internal fun lastWeekRecap(
     val start = WeeklyRecap.weekStartOf(today).minusDays(7)
     if (!RecapSchedule.showsOnToday(today, PeriodStats.workoutsIn(history, start, start.plusDays(7), zone))) return null
     val plan = presets.filter { it.scheduledDay != null }.map { it.toPlanned() }
-    return WeeklyRecap.build(history, exercises.associateBy { it.id }, plan, start, today, zone)
+    return WeeklyRecap.build(history, exercises.associateBy { it.id }, bodyweightAt, plan, start, today, zone)
 }
 
 /** The review Today offers on [today] ([ReviewSchedule.offeredOn]) with its three figures; null outside the window. */
 internal fun reviewOffered(
     history: List<Pair<WorkoutSession, List<SessionSet>>>,
     exercises: List<Exercise>,
+    bodyweightAt: (Long) -> Double,
     today: LocalDate,
     zone: ZoneId,
 ): ReviewSummary? {
     val period = ReviewSchedule.offeredOn(today, { PeriodStats.workoutsIn(history, it.from, it.to, zone) }) ?: return null
-    return PeriodReview.summary(history, exercises.associateBy { it.id }, period, zone)
+    return PeriodReview.summary(history, exercises.associateBy { it.id }, bodyweightAt, period, zone)
 }
 
 class DashboardViewModel(
@@ -299,8 +302,10 @@ class DashboardViewModel(
         repo.observePresets(),
         repo.observeHistory(),
         repo.observeExercises(),
-    ) { profile, presets, history, exercises ->
+        repo.observeStats(),
+    ) { profile, presets, history, exercises, stats ->
         val today = LocalDate.now()
+        val bodyweightAt = SetRecords.bodyweightLookup(stats)
         val zone = ZoneId.systemDefault()
         val doneDates = history
             .map {
@@ -324,8 +329,8 @@ class DashboardViewModel(
             sealedSets = history.filter { it.first.id in sealedIds }.associate { it.first.id to it.second },
             exercises = exercises.associateBy { it.id },
             newPeaks = newPeaks(history, exercises, System.currentTimeMillis()),
-            lastWeek = lastWeekRecap(history, exercises, presets, today, zone),
-            review = reviewOffered(history, exercises, today, zone),
+            lastWeek = lastWeekRecap(history, exercises, bodyweightAt, presets, today, zone),
+            review = reviewOffered(history, exercises, bodyweightAt, today, zone),
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())

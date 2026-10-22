@@ -14,6 +14,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.RecapSchedule
 import com.ironvellum.app.domain.WeeklyRecap
 import com.ironvellum.app.domain.PeriodStats
@@ -54,7 +55,8 @@ object WeeklyRecaps {
         val history = repo.observeHistory().first()
         val exercises = repo.observeExercises().first().associateBy { it.id }
         val plan = repo.observePresets().first().filter { it.scheduledDay != null }.map { it.toPlanned() }
-        return WeeklyRecap.build(history, exercises, plan, weekStart, today, zone)
+        val bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first())
+        return WeeklyRecap.build(history, exercises, bodyweightAt, plan, weekStart, today, zone)
     }
 
     // ---- scheduling ----

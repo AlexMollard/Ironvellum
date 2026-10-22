@@ -265,7 +265,7 @@ class VariationTest {
             1L to listOf(set(1, "Single-Leg Calf Raise", 10, kg = 16.0)),
             2L to listOf(set(2, "Single-Leg Calf Raise", 10, kg = 30.0, modifiers = "weighted, deficit")),
         )
-        val board = LiftRecords.board(sessions, sets, catalogue, nowMs = 30_000)
+        val board = LiftRecords.board(sessions, sets, catalogue, { 0.0 }, nowMs = 30_000)
         assertEquals(setOf("Single-Leg Calf Raise", "Single-Leg Calf Raise · deficit"), board.map { it.label }.toSet())
         assertEquals(16.0 * (1 + 10 / 30.0), board.single { it.variation.isEmpty() }.bestE1rmKg, 1e-9)
     }

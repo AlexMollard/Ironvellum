@@ -27,6 +27,7 @@ class LiftRecordsTest {
         trials.map { it.first },
         trials.associate { it.first.id to it.second },
         listOf(bench, pullUp, run).associateBy { it.id },
+        { 0.0 },
         now,
     )
 
@@ -103,5 +104,59 @@ class LiftRecordsTest {
         val squat = rows.first { it.name == "Bench Press" }
         assertEquals(100.0, squat.bestSet!!.weightKg!!, 0.0)
         assertFalse(squat.bestSetAddsToBody)
+    }
+
+    // ---- a bodyweight lift counts the body ----
+
+    private val pushUp = Exercise(id = 5, name = "Push-up", muscleGroup = MuscleGroup.PUSH, isWeighted = false)
+
+    private fun withBody(kg: Double, vararg trials: Pair<WorkoutSession, List<SessionSet>>) = LiftRecords.board(
+        trials.map { it.first },
+        trials.associate { it.first.id to it.second },
+        listOf(bench, pullUp, pushUp).associateBy { it.id },
+        { kg },
+        now,
+    )
+
+    @Test
+    fun `a weighted push-up record is the total-load estimate shown as added load`() {
+        val rows = withBody(79.8, session(1, 5) to listOf(set(pushUp, 18.0, 12)))
+        // (0.65 x 79.8 + 18) x (1 + 12/30) - 0.65 x 79.8 = 45.95, not the plates' 25.2
+        assertEquals(45.95, rows.single().bestE1rmKg, 0.01)
+        assertTrue(rows.single().bestSetAddsToBody)
+    }
+
+    @Test
+    fun `a heavier set at fewer reps is the better record once the body counts`() {
+        val rows = withBody(
+            79.8,
+            session(1, 20) to listOf(set(pushUp, 18.0, 12)),
+            session(2, 3) to listOf(set(pushUp, 55.0, 3)),
+        )
+        val row = rows.single()
+        assertEquals(55.0, row.bestSet!!.weightKg!!, 0.0)
+        assertEquals(listOf(45.95, 65.69), row.series.map { Math.round(it * 100) / 100.0 })
+        assertTrue(LiftRecords.isFresh(row, now))
+    }
+
+    @Test
+    fun `a barbell lift ignores the body weight`() {
+        val rows = withBody(79.8, session(1, 5) to listOf(set(bench, 100.0, 5)))
+        assertEquals(ProgramRules.epley(100.0, 5), rows.single().bestE1rmKg, 1e-9)
+    }
+
+    @Test
+    fun `gains and new lifts read the same total-load estimate`() {
+        val history = listOf(
+            session(1, 40) to listOf(set(pushUp, 18.0, 12), set(pullUp, 10.0, 8)),
+            session(2, 3) to listOf(set(pushUp, 55.0, 3), set(pullUp, 10.0, 8)),
+        )
+        val catalogue = listOf(pushUp, pullUp).associateBy { it.id }
+        val gains = LiftRecords.gains(history, catalogue, { 79.8 }, now - 10 * day, now)
+        // The push-up improved (45.95 -> 65.69); the pull-up repeated itself and is no gain.
+        assertEquals(listOf("Push-up"), gains.map { it.name })
+        assertEquals(65.69 - 45.95, gains.single().gainKg, 0.01)
+        assertTrue(gains.single().addsToBody)
+        assertTrue(LiftRecords.newLifts(history, catalogue, { 79.8 }, now - 10 * day, now).isEmpty())
     }
 }

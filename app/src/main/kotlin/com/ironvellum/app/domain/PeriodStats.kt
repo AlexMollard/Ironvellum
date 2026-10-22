@@ -109,10 +109,13 @@ data class PeriodStats(
         /**
          * The figures for [from] until [to] over a completed [history] (as `Repository.observeHistory` holds it).
          * [exercises] is the catalogue by id: metrics, and which lifts carry their load on top of the body.
+         * [bodyweightAt] is the lifter's weight at a moment ([SetRecords.bodyweightLookup]; 0 when unknown): a
+         * bodyweight lift's estimated 1RM counts the body ([BodyShare]).
          */
         fun of(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             exercises: Map<Long, Exercise>,
+            bodyweightAt: (Long) -> Double,
             from: LocalDate,
             to: LocalDate,
             zone: ZoneId = ZoneId.systemDefault(),
@@ -136,7 +139,8 @@ data class PeriodStats(
                 val length = ((session.completedAtMs ?: session.startedAtMs) - session.startedAtMs) / 60_000L
                 if (length in 1..MAX_SESSION_MINUTES) minutes += length
                 logged += HardSets.logged(at(session), setList, exercises)
-                for ((key, top) in LiftRecords.sessionBests(setList, exercises)) {
+                val bodyweight = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
+                for ((key, top) in LiftRecords.sessionBests(setList, exercises, bodyweight)) {
                     if (best == null || top.e1rmKg > best.e1rmKg) {
                         best = BestSet(Variation.label(top.display, top.variation), top.set, top.e1rmKg, at(session), top.addsToBody)
                     }
@@ -148,7 +152,7 @@ data class PeriodStats(
                     if (name.isEmpty()) continue
                     val key = Variation.liftKey(name, set.modifiers)
                     work.getOrPut(key) { mutableListOf() } += set
-                    names.putIfAbsent(key, Variation.label(name, Variation.key(set.modifiers)) to (exercises[set.exerciseId]?.isWeighted == false))
+                    names.putIfAbsent(key, Variation.label(name, Variation.key(set.modifiers)) to (exercises[set.exerciseId]?.let(BodyShare::addsToBody) == true))
                 }
             }
 
@@ -159,7 +163,7 @@ data class PeriodStats(
                 sets = sets,
                 volumeKg = volume,
                 minutes = minutes,
-                records = LiftRecords.gains(history, exercises, fromMs, toMs),
+                records = LiftRecords.gains(history, exercises, bodyweightAt, fromMs, toMs),
                 bestSet = best,
                 muscleSets = HardSets.inRange(logged, fromMs, toMs),
                 days = inside.map { (session, _) -> Instant.ofEpochMilli(at(session)).atZone(zone).toLocalDate() }.toSet(),

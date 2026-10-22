@@ -6,6 +6,7 @@ import com.ironvellum.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.inset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -41,6 +45,10 @@ import java.util.Locale
  * reads as missing. [positions] (0..1, one per value) places points by date
  * instead of by index, for sparse series like weigh-ins. Gold marks only a
  * record ([recordMarker]); a latest value is the plain ink end dot.
+ *
+ * A measurement chart ([fromZero] false) has no y axis, so [startLabel]/[endLabel] sit alone under it and, by
+ * default, its span reads in the middle as bare numbers. A chart given [axisText] draws the top and bottom values
+ * with their unit on the left edge instead ("+46 kg" over "+20 kg") and keeps only the two dates below.
  */
 @Composable
 fun TrendChart(
@@ -67,6 +75,8 @@ fun TrendChart(
     dateText: ((index: Int) -> String?)? = null,
     /** Off for sparklines too small to hold a readout. */
     scrub: Boolean = true,
+    /** Writes the highest and lowest value, unit included, on the left edge of a [fromZero] = false chart; null keeps the old middle label. */
+    axisText: ((Double) -> String)? = null,
 ) {
     val present = values.filterNotNull()
     if (present.isEmpty()) return
@@ -83,6 +93,12 @@ fun TrendChart(
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
+    val axis = if (axisText != null && !fromZero) chartAxisLabels(values, axisText, valueText) else null
+    val axisStyle = MaterialTheme.typography.labelSmall.copy(color = IronvellumColors.InkMuted)
+    val axisLayouts = axis?.let { (high, low) -> measurer.measure(high, axisStyle) to measurer.measure(low, axisStyle) }
+    val density = LocalDensity.current
+    // The labels' own width plus a gap: the plot starts after it, and so do the dates.
+    val gutterPx = axisLayouts?.let { (high, low) -> maxOf(high.size.width, low.size.width) + with(density) { 8.dp.toPx() } } ?: 0f
 
     Column(Modifier.fillMaxWidth()) {
         Canvas(
@@ -102,8 +118,8 @@ fun TrendChart(
                     if (scrub) {
                         Modifier.scrubGesture(scrubState) { x, width ->
                             nearestIndex(
-                                List(values.size) { i -> if (values[i] == null) null else trendX(i, values.size, positions, width) },
-                                x,
+                                List(values.size) { i -> if (values[i] == null) null else trendX(i, values.size, positions, width - gutterPx) },
+                                x - gutterPx,
                             )
                         }
                     } else {
@@ -111,88 +127,110 @@ fun TrendChart(
                     },
                 ),
         ) {
-            // inset so the extreme points and their dots sit inside the frame, not on its edge
-            val inset = 6.dp.toPx()
-            // a flat series (every reading equal) rides the middle, not the floor
-            val flat = !fromZero && present.max() == present.min()
-            fun yFor(v: Double): Float =
-                if (flat) size.height / 2f
-                else (inset + (size.height - 2 * inset) * (1.0 - ((v - floor) / span))).toFloat()
-            fun xFor(i: Int): Float = trendX(i, values.size, positions, size.width)
-
-            // two quiet gridlines, a third of the way in from each edge
-            repeat(2) { i ->
-                val y = size.height * (i + 1) / 3f
-                inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f)
+            axisLayouts?.let { (high, low) ->
+                val edge = 6.dp.toPx()
+                drawText(high, topLeft = Offset(0f, (edge - high.size.height / 2f).coerceAtLeast(0f)))
+                drawText(low, topLeft = Offset(0f, (size.height - edge - low.size.height / 2f).coerceAtMost(size.height - low.size.height)))
             }
+            inset(left = gutterPx, top = 0f, right = 0f, bottom = 0f) {
+                // inset so the extreme points and their dots sit inside the frame, not on its edge
+                val inset = 6.dp.toPx()
+                // a flat series (every reading equal) rides the middle, not the floor
+                val flat = !fromZero && present.max() == present.min()
+                fun yFor(v: Double): Float =
+                    if (flat) size.height / 2f
+                    else (inset + (size.height - 2 * inset) * (1.0 - ((v - floor) / span))).toFloat()
+                fun xFor(i: Int): Float = trendX(i, values.size, positions, size.width)
 
-            // contiguous runs between gaps: each is stroked on its own
-            val runs = mutableListOf<IntRange>()
-            var runStart = -1
-            values.forEachIndexed { i, v ->
-                if (v != null && runStart < 0) runStart = i
-                if (v == null && runStart >= 0) {
-                    runs += runStart until i
-                    runStart = -1
+                // two quiet gridlines, a third of the way in from each edge
+                repeat(2) { i ->
+                    val y = size.height * (i + 1) / 3f
+                    inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f)
                 }
-            }
-            if (runStart >= 0) runs += runStart..values.lastIndex
 
-            val w = 2.5.dp.toPx()
-            for (run in runs) {
-                if (run.first == run.last) {
-                    // an isolated reading has no neighbour to join: a dot, not nothing
-                    inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color)
-                    continue
-                }
-                val line = Path().apply {
-                    for (i in run) {
-                        if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
+                // contiguous runs between gaps: each is stroked on its own
+                val runs = mutableListOf<IntRange>()
+                var runStart = -1
+                values.forEachIndexed { i, v ->
+                    if (v != null && runStart < 0) runStart = i
+                    if (v == null && runStart >= 0) {
+                        runs += runStart until i
+                        runStart = -1
                     }
                 }
-                drawPath(line, color = color, style = Stroke(width = w, cap = StrokeCap.Round))
-            }
+                if (runStart >= 0) runs += runStart..values.lastIndex
 
-            goal?.let { g ->
-                val y = yFor(g)
-                var x = 0f
-                val dash = 10.dp.toPx()
-                while (x < size.width) {
-                    inkStroke(
-                        Offset(x, y),
-                        Offset((x + dash / 2).coerceAtMost(size.width), y),
-                        IronvellumColors.InkMuted,
-                        1.8f,
-                    )
-                    x += dash
+                val w = 2.5.dp.toPx()
+                for (run in runs) {
+                    if (run.first == run.last) {
+                        // an isolated reading has no neighbour to join: a dot, not nothing
+                        inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color)
+                        continue
+                    }
+                    val line = Path().apply {
+                        for (i in run) {
+                            if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
+                        }
+                    }
+                    drawPath(line, color = color, style = Stroke(width = w, cap = StrokeCap.Round))
                 }
-            }
 
-            // Markers: the latest point, and a record when asked for. Last
-            // occurrence — a tied record flags the most recent achievement,
-            // not the first time the lifter hit it back in mid-history.
-            if (recordMarker && bestIndex != lastIndex) {
-                inkDot(Offset(xFor(bestIndex), yFor(values[bestIndex]!!)), 5.5f, gold)
-            }
-            val endColor = if (recordMarker && bestIndex == lastIndex) gold else IronvellumColors.Ink
-            inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor)
+                goal?.let { g ->
+                    val y = yFor(g)
+                    var x = 0f
+                    val dash = 10.dp.toPx()
+                    while (x < size.width) {
+                        inkStroke(
+                            Offset(x, y),
+                            Offset((x + dash / 2).coerceAtMost(size.width), y),
+                            IronvellumColors.InkMuted,
+                            1.8f,
+                        )
+                        x += dash
+                    }
+                }
 
-            val at = scrubState.index
-            val atValue = values.getOrNull(at)
-            if (scrub && atValue != null) {
-                drawScrub(
-                    measurer, readoutStyle,
-                    scrubReadout(valueText(atValue), dateText?.invoke(at)),
-                    xFor(at), yFor(atValue), seed = at,
-                )
+                // Markers: the latest point, and a record when asked for. Last
+                // occurrence — a tied record flags the most recent achievement,
+                // not the first time the lifter hit it back in mid-history.
+                if (recordMarker && bestIndex != lastIndex) {
+                    inkDot(Offset(xFor(bestIndex), yFor(values[bestIndex]!!)), 5.5f, gold)
+                }
+                val endColor = if (recordMarker && bestIndex == lastIndex) gold else IronvellumColors.Ink
+                inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor)
+
+                val at = scrubState.index
+                val atValue = values.getOrNull(at)
+                if (scrub && atValue != null) {
+                    drawScrub(
+                        measurer, readoutStyle,
+                        scrubReadout(valueText(atValue), dateText?.invoke(at)),
+                        xFor(at), yFor(atValue), seed = at,
+                    )
+                }
             }
         }
         if (startLabel != null || endLabel != null) {
-            // measurements get their span in the middle, since the chart has no y axis
-            val mid = if (!fromZero && present.size > 1 && present.max() != present.min()) "${chartNum(present.min())}\u2013${chartNum(present.max())}" else null
-            ChartDates(startLabel, endLabel, mid)
+            // measurements without an axis get their span in the middle; with one, the axis says it
+            val mid = if (axisText == null && !fromZero && present.size > 1 && present.max() != present.min()) "${chartNum(present.min())}\u2013${chartNum(present.max())}" else null
+            Box(Modifier.padding(start = with(density) { gutterPx.toDp() })) { ChartDates(startLabel, endLabel, mid) }
         }
     }
+}
+
+/**
+ * The top and bottom of a chart's y axis as (highest, lowest), each written by [axisText]; null when there is no span
+ * to label (fewer than two readings, or all equal). When rounding makes the two read the same, [fine] writes them instead.
+ */
+internal fun chartAxisLabels(values: List<Double?>, axisText: (Double) -> String, fine: (Double) -> String = axisText): Pair<String, String>? {
+    val present = values.filterNotNull()
+    if (present.size < 2) return null
+    val high = present.max()
+    val low = present.min()
+    if (high == low) return null
+    val top = axisText(high)
+    val bottom = axisText(low)
+    return if (top == bottom) fine(high) to fine(low) else top to bottom
 }
 
 /** A whole figure reads as an integer ("70"), anything else with one decimal ("70.5"). */

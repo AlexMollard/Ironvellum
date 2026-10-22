@@ -36,7 +36,7 @@ class PeriodStatsTest {
     private val monday = LocalDate.of(2026, 10, 12)
 
     private fun week(history: List<Pair<WorkoutSession, List<SessionSet>>>, start: LocalDate = monday) =
-        PeriodStats.of(history, catalogue, start, start.plusDays(7), zone)
+        PeriodStats.of(history, catalogue, { 0.0 }, start, start.plusDays(7), zone)
 
     @Test
     fun `counts workouts, done sets, volume and minutes of the range only`() {

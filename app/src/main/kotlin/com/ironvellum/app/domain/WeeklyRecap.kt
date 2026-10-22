@@ -94,13 +94,14 @@ data class WeeklyRecap(
         fun build(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             exercises: Map<Long, Exercise>,
+            bodyweightAt: (Long) -> Double,
             plan: List<PlannedPreset>,
             weekStart: LocalDate,
             today: LocalDate,
             zone: ZoneId = ZoneId.systemDefault(),
         ): WeeklyRecap {
-            val stats = PeriodStats.of(history, exercises, weekStart, weekStart.plusDays(7), zone)
-            val previous = PeriodStats.of(history, exercises, weekStart.minusDays(7), weekStart, zone)
+            val stats = PeriodStats.of(history, exercises, bodyweightAt, weekStart, weekStart.plusDays(7), zone)
+            val previous = PeriodStats.of(history, exercises, bodyweightAt, weekStart.minusDays(7), weekStart, zone)
             val kind = when {
                 stats.workouts == 0 -> RecapKind.EMPTY
                 stats.workouts == 1 && previous.workouts >= 2 -> RecapKind.LIGHT

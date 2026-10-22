@@ -48,6 +48,20 @@ class ExerciseLogSession(val sessionId: Long, val atMs: Long, val label: String,
 class ExerciseLogPoint(val atMs: Long, val value: Double)
 
 /**
+ * One variation of the movement the lifter has used: the splitting modifiers of [Variation.key] ("" for the plain
+ * movement, "deficit,elevated"), when it was last done and in how many trials.
+ */
+class LogVariation(val key: String, val lastAtMs: Long, val sessions: Int) {
+    /** "Deficit \u00b7 elevated", "Incline"; [plain] names the plain movement. The words are the lifter's own modifiers. */
+    fun label(plain: String): String = variationLabel(key, plain)
+}
+
+/** [LogVariation.label] without the object: the first word capitalised, the rest as picked, joined by a middle dot. */
+fun variationLabel(key: String, plain: String): String =
+    key.split(",").filter { it.isNotBlank() }.joinToString(" \u00b7 ") { it.trim() }
+        .replaceFirstChar { it.uppercase() }.ifEmpty { plain }
+
+/**
  * Everything the History tab shows for one movement. [sessions] is newest first; [visible] is the capped view.
  * [best] and [bestE1rmKg] follow the app's rule: a trial's top set alone when it had one, warm-ups never.
  */
@@ -59,8 +73,18 @@ class ExerciseLog(
     val lastAtMs: Long?,
     val best: ExerciseLogSet?,
     val bestE1rmKg: Double?,
-    /** Oldest first; a trend line needs two. */
+    /** Oldest first; a trend line needs two. Empty on "All" when the movement has more than one variation: they differ in load. */
     val trend: List<ExerciseLogPoint>,
+    /** The marked load is ADDED to the body, so an estimated 1RM reads "+46 kg" ([BodyShare.addsToBody]). */
+    val addsToBody: Boolean = false,
+    /** Every variation the lifter has used, the most recent first; the chips are shown when there are two or more. */
+    val variations: List<LogVariation> = emptyList(),
+    /** The variation this log shows, a [Variation.key]; null for all of them. */
+    val selected: String? = null,
+    /** The variation of the most recent block, when there are two or more variations: where the tab opens. */
+    val defaultVariation: String? = null,
+    /** An estimate on a bodyweight lift had no body weight to count (none logged), so it is the added load alone. */
+    val bodyMissing: Boolean = false,
 ) {
     val isEmpty: Boolean get() = sessions.isEmpty()
 
@@ -69,16 +93,59 @@ class ExerciseLog(
     companion object {
         /** Trials drawn before "Show more", and what each tap adds. */
         const val PAGE = 50
+
+        /** The choice that shows every variation at once (a [Variation.key] is never this). */
+        const val ALL = "*"
     }
 }
+
+/** The rows and the weigh-ins an [ExerciseLog] is built from ([ExerciseLogCalculator.build]). */
+class ExerciseLogInputs(val rows: List<ExerciseLogRow>, val bodyweightAt: (Long) -> Double)
 
 /** Pure: turns an exercise's logged rows into the History tab's content. */
 object ExerciseLogCalculator {
 
-    fun build(exercise: Exercise, rows: List<ExerciseLogRow>): ExerciseLog {
+    /**
+     * [bodyweightAt] is the lifter's weight at a moment ([SetRecords.bodyweightLookup]; 0 when none is logged): a
+     * bodyweight lift's estimated 1RM counts the body ([BodyShare]) and falls back to the added load alone without one.
+     * [variation] is the [Variation.key] to show, or null for every variation at once.
+     */
+    fun build(
+        exercise: Exercise,
+        allRows: List<ExerciseLogRow>,
+        bodyweightAt: (Long) -> Double = { 0.0 },
+        variation: String? = null,
+    ): ExerciseLog {
         val metric = exercise.metric
         val judged = metric == ExerciseMetric.REPS || metric == ExerciseMetric.HOLD
-        val byE1rm = metric == ExerciseMetric.REPS && rows.any { e1rmOf(it.weightKg, it.reps) != null }
+
+        // A block's variation is its first set's: the same movement twice in a trial is two blocks.
+        val blockKey = HashMap<Pair<Long, Int>, String>()
+        allRows.groupBy { it.sessionId to it.exercisePosition }.forEach { (id, group) ->
+            blockKey[id] = Variation.key(group.minBy { it.setIndex }.modifiers)
+        }
+        fun variationOf(r: ExerciseLogRow) = blockKey.getValue(r.sessionId to r.exercisePosition)
+
+        val worked = allRows.filter { SetKind.fromName(it.kind) != SetKind.WARMUP }
+        val variations = worked.groupBy(::variationOf).map { (key, group) ->
+            LogVariation(key, group.maxOf { it.startedAtMs }, group.map { it.sessionId }.distinct().size)
+        }.sortedWith(compareByDescending<LogVariation> { it.lastAtMs }.thenBy { it.key })
+        val latest = worked.maxWithOrNull(compareBy({ it.startedAtMs }, { it.sessionId }, { it.exercisePosition }))
+        val defaultVariation = latest?.takeIf { variations.size >= 2 }?.let(::variationOf)
+
+        val rows = if (variation == null) allRows else allRows.filter { variationOf(it) == variation }
+        var bodyMissing = false
+
+        fun e1rmOf(r: ExerciseLogRow): Double? {
+            val kg = r.weightKg ?: return null
+            if (kg <= 0.0 || r.reps < 1 || r.reps > ProgramRules.MAX_E1RM_REPS) return null
+            val setShare = BodyShare.of(exercise, r.modifiers)
+            val body = bodyweightAt(r.startedAtMs).takeIf { it > 0.0 }
+            if (!BodyShare.knowsBody(setShare, body)) bodyMissing = true
+            return BodyShare.e1rmAddedKg(kg, r.reps, setShare, body)
+        }
+
+        val byE1rm = metric == ExerciseMetric.REPS && rows.any { (it.weightKg ?: 0.0) > 0.0 && it.reps in 1..ProgramRules.MAX_E1RM_REPS }
 
         fun setOf(r: ExerciseLogRow) = ExerciseLogSet(
             figure = if (metric == ExerciseMetric.HOLD) (r.durationSec ?: r.reps) else r.reps,
@@ -87,7 +154,7 @@ object ExerciseLogCalculator {
             distanceM = r.distanceM,
             grade = r.grade,
             kind = SetKind.fromName(r.kind),
-            e1rmKg = if (metric == ExerciseMetric.REPS) e1rmOf(r.weightKg, r.reps) else null,
+            e1rmKg = if (metric == ExerciseMetric.REPS) e1rmOf(r) else null,
         )
 
         fun score(s: ExerciseLogSet): Double = if (byE1rm) s.e1rmKg ?: 0.0 else s.figure.toDouble()
@@ -137,15 +204,15 @@ object ExerciseLogCalculator {
             lastAtMs = built.lastOrNull()?.atMs,
             best = bestSet,
             bestE1rmKg = bestE1rm,
-            trend = trend,
+            // Variations differ in load: a line through all of them just jumps. One variation draws a line as before.
+            trend = if (variation == null && variations.size > 1) emptyList() else trend,
+            addsToBody = BodyShare.addsToBody(exercise),
+            variations = variations,
+            selected = variation,
+            defaultVariation = defaultVariation,
+            bodyMissing = bodyMissing && byE1rm,
         )
     }
 
     private class Scored(val block: ExerciseLogBlock, val key: String, val value: Double?)
-
-    private fun e1rmOf(weightKg: Double?, reps: Int): Double? {
-        val kg = weightKg ?: return null
-        if (kg <= 0.0 || reps < 1 || reps > ProgramRules.MAX_E1RM_REPS) return null
-        return ProgramRules.epley(kg, reps)
-    }
 }

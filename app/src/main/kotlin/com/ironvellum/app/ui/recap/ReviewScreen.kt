@@ -36,6 +36,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.PeriodReview
 import com.ironvellum.app.domain.ReviewKind
 import com.ironvellum.app.domain.ReviewPeriod
@@ -59,8 +60,8 @@ class ReviewViewModel(
     val period: ReviewPeriod,
 ) : ViewModel() {
 
-    val ui: StateFlow<ReviewUi> = combine(repo.observeHistory(), repo.observeExercises(), repo.observeSkillPractices()) { history, exercises, practices ->
-        ReviewUi(PeriodReview.build(history, exercises.associateBy { it.id }, practices, period, LocalDate.now()))
+    val ui: StateFlow<ReviewUi> = combine(repo.observeHistory(), repo.observeExercises(), repo.observeSkillPractices(), repo.observeStats()) { history, exercises, practices, stats ->
+        ReviewUi(PeriodReview.build(history, exercises.associateBy { it.id }, SetRecords.bodyweightLookup(stats), practices, period, LocalDate.now()))
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReviewUi())
 }
 

@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.RecapKind
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WeeklyRecap
@@ -57,11 +58,11 @@ class RecapViewModel(
     private val weekStart: LocalDate,
 ) : ViewModel() {
 
-    val ui: StateFlow<RecapUi> = combine(repo.observeHistory(), repo.observeExercises(), repo.observePresets()) { history, exercises, presets ->
+    val ui: StateFlow<RecapUi> = combine(repo.observeHistory(), repo.observeExercises(), repo.observePresets(), repo.observeStats()) { history, exercises, presets, stats ->
         val today = LocalDate.now()
         val plan = presets.filter { it.scheduledDay != null }.map { it.toPlanned() }
         RecapUi(
-            recap = WeeklyRecap.build(history, exercises.associateBy { it.id }, plan, weekStart, today),
+            recap = WeeklyRecap.build(history, exercises.associateBy { it.id }, SetRecords.bodyweightLookup(stats), plan, weekStart, today),
             todayRite = presets.firstOrNull { it.scheduledDay == today.dayOfWeek.value },
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecapUi())

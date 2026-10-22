@@ -445,22 +445,12 @@ object MovementDifficulty {
     }
 
     /**
-     * The share of the body a bodyweight movement actually moves, 1.0 for most (a pull-up, a dip, a squat lift
-     * the whole body). A push-up is the exception the app prices: the hands carry about two thirds of the body, so
-     * "10% lighter" than a push-up with 10 kg on the back is taken off that share plus the 10 kg, not off the body
-     * and the 10 kg. A push-up is a horizontal press by its name and its profile; the technique rungs (one-arm,
-     * 90-degree, planche) are left at 1.0.
-     * shortcut: one share for the whole family, incline and decline included; per-angle shares if the load model needs them.
+     * The share of the body a bodyweight movement actually moves, 1.0 for a pull-up or a dip, about two thirds for a
+     * push-up, less for a lunge or a plank: [BodyShare] holds the table and says where each number comes from. The
+     * set schemes read it ("10% lighter" than a push-up with 10 kg on the back is taken off that share plus the
+     * 10 kg), and so do the estimated 1RMs of the History tab, the records board and the recaps.
      */
-    fun bodyShare(exerciseName: String): Double {
-        val pushUp = "push-up" in key(exerciseName) &&
-            MuscleMap.profile(exerciseName)?.pattern == MovementPattern.HORIZONTAL_PUSH &&
-            !MuscleMap.isTechnique(exerciseName)
-        return if (pushUp) PUSH_UP_BODY_SHARE else 1.0
-    }
-
-    /** About two thirds of the body rests on the hands in a push-up. */
-    const val PUSH_UP_BODY_SHARE = 0.65
+    fun bodyShare(exerciseName: String, modifiers: String = ""): Double = BodyShare.of(exerciseName, modifiers)
 
     /**
      * Whether one logged set is a hold. The exercise's metric decides; the

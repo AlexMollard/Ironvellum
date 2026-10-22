@@ -23,9 +23,11 @@ data class LiftRecord(
 }
 
 /**
- * The Ledger's lift-records board. Estimated one-rep maxes of the MARKED load
- * (a pull-up's added kilos, not bodyweight plus them), by the same Epley rule
- * and 12-rep cap the strength profile and the lift boards use. Pure.
+ * The Ledger's lift-records board. Estimated one-rep maxes by the same Epley rule and 12-rep cap the strength
+ * profile and the lift boards use. A barbell or machine lift is judged on its marked load. A bodyweight lift is
+ * judged on the TOTAL it moved (its [BodyShare] of the body weight at the time, plus the added kilos) and shown as
+ * the ADDED-load equivalent, so a pull-up's "+46 kg" reads on the scale of its plates ([BodyShare.e1rmAddedKg]).
+ * Records already awarded are never re-read: only the figures shown and the comparisons made from now on. Pure.
  */
 object LiftRecords {
     private const val DAY_MS = 24L * 60 * 60 * 1000
@@ -45,9 +47,10 @@ object LiftRecords {
     /**
      * Each lift's best estimated 1RM in one trial, by [Variation.liftKey]: the one rule the board and the period
      * records ([gains]) share, so what counts as a record cannot drift between them. A lift with a top set is a
-     * record on that set alone.
+     * record on that set alone. [bodyweightKg] is the lifter's weight at the time of the trial (null when unknown:
+     * a bodyweight lift then falls back to its added load alone).
      */
-    fun sessionBests(sets: List<SessionSet>, exercises: Map<Long, Exercise>): Map<String, SessionBest> {
+    fun sessionBests(sets: List<SessionSet>, exercises: Map<Long, Exercise>, bodyweightKg: Double?): Map<String, SessionBest> {
         val best = LinkedHashMap<String, SessionBest>()
         for (set in PeakSets.narrowed(sets)) {
             val weight = set.weightKg ?: continue
@@ -58,10 +61,11 @@ object LiftRecords {
             val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
             if (name.isEmpty()) continue
             val key = Variation.liftKey(name, set.modifiers)
-            val e1rm = ProgramRules.epley(weight, set.reps)
+            val share = ex?.let { BodyShare.of(it, set.modifiers) } ?: 0.0
+            val e1rm = BodyShare.e1rmAddedKg(weight, set.reps, share, bodyweightKg)
             val held = best[key]
             if (held == null || e1rm > held.e1rmKg) {
-                best[key] = SessionBest(held?.display ?: name, held?.variation ?: Variation.key(set.modifiers), e1rm, set, ex?.isWeighted == false)
+                best[key] = SessionBest(held?.display ?: name, held?.variation ?: Variation.key(set.modifiers), e1rm, set, ex?.let(BodyShare::addsToBody) == true)
             }
         }
         return best
@@ -71,6 +75,7 @@ object LiftRecords {
         sessions: List<WorkoutSession>,
         sessionSets: Map<Long, List<SessionSet>>,
         exercises: Map<Long, Exercise>,
+        bodyweightAt: (Long) -> Double,
         nowMs: Long,
         windowDays: Int = 90,
         limit: Int = 8,
@@ -82,7 +87,8 @@ object LiftRecords {
         val byLift = LinkedHashMap<String, Acc>()
         for (session in sessions.sortedBy { it.startedAtMs }) {
             val at = session.completedAtMs ?: session.startedAtMs
-            for ((key, best) in sessionBests(sessionSets[session.id].orEmpty(), exercises)) {
+            val bodyweight = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
+            for ((key, best) in sessionBests(sessionSets[session.id].orEmpty(), exercises, bodyweight)) {
                 val acc = byLift.getOrPut(key) { Acc(best.display, best.variation) }
                 acc.perSession += Peak(at, best.e1rmKg, best.set, best.addsToBody)
             }
@@ -146,6 +152,7 @@ object LiftRecords {
     private fun scan(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         exercises: Map<Long, Exercise>,
+        bodyweightAt: (Long) -> Double,
         fromMs: Long,
         toMs: Long,
     ): Scan {
@@ -154,7 +161,8 @@ object LiftRecords {
         for ((session, sets) in history.sortedBy { it.first.completedAtMs ?: it.first.startedAtMs }) {
             val at = session.completedAtMs ?: session.startedAtMs
             if (at >= toMs) break
-            for ((key, best) in sessionBests(sets, exercises)) {
+            val bodyweight = bodyweightAt(session.startedAtMs).takeIf { it > 0.0 }
+            for ((key, best) in sessionBests(sets, exercises, bodyweight)) {
                 if (at < fromMs) {
                     if (best.e1rmKg > (before[key] ?: 0.0)) before[key] = best.e1rmKg
                 } else {
@@ -179,10 +187,11 @@ object LiftRecords {
     fun gains(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         exercises: Map<Long, Exercise>,
+        bodyweightAt: (Long) -> Double,
         fromMs: Long,
         toMs: Long,
     ): List<RecordGain> {
-        val scan = scan(history, exercises, fromMs, toMs)
+        val scan = scan(history, exercises, bodyweightAt, fromMs, toMs)
         return scan.inside.mapNotNull { (key, held) ->
             val prior = scan.before[key] ?: return@mapNotNull null
             val gain = held.best.e1rmKg - prior
@@ -202,10 +211,11 @@ object LiftRecords {
     fun newLifts(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         exercises: Map<Long, Exercise>,
+        bodyweightAt: (Long) -> Double,
         fromMs: Long,
         toMs: Long,
     ): List<NewLift> {
-        val scan = scan(history, exercises, fromMs, toMs)
+        val scan = scan(history, exercises, bodyweightAt, fromMs, toMs)
         return scan.inside
             .filterKeys { it !in scan.before }
             .map { (_, held) ->

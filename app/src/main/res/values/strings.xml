@@ -5010,6 +5010,12 @@
     <string name="infosheet_history_open_label__t">Open this trial</string>
     <!-- History page, spoken only: a whole row. %1$s is the date, %2$s the workout's name, %3$s its sets with their modifiers. -->
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
+    <!-- History page: the chips above the summary that pick which variation (incline, deficit...) the page shows. -->
+    <string name="infosheet_history_variation_all">All</string>
+    <!-- The chip for the movement done with none of the variation modifiers. -->
+    <string name="infosheet_history_variation_plain">Standard</string>
+    <!-- Under the summary of a bodyweight lift, when no body weight is logged so the estimate cannot count the body. -->
+    <string name="infosheet_history_body_missing">The estimate counts the added load only. Log your body weight and it counts your body too.</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
     <string name="infosheet_last_label">LAST WORKOUT</string>
     <string name="infosheet_last_label__t">LAST TRIAL</string>

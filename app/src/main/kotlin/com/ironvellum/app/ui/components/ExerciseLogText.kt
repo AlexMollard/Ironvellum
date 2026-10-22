@@ -27,6 +27,13 @@ private fun loadText(exercise: Exercise, kg: Double?): String =
         (if (addsToBody(exercise)) "+" else "") + Units.withUnit(kg)
     }
 
+/**
+ * An estimated 1RM in the lifter's unit: "+46 kg" for a bodyweight lift (an added-load equivalent, like the plates
+ * that are loaded), "120 kg" for a bar. [decimals] 0 for an axis label, 1 for a figure.
+ */
+internal fun e1rmText(kg: Double, addsToBody: Boolean, decimals: Int): String =
+    (if (addsToBody) "+" else "") + Units.fixed(kg, decimals)
+
 /** One set's own figure with no load: "12", or "45 s" for a hold. */
 private fun figureText(exercise: Exercise, set: ExerciseLogSet): String = when (exercise.metric) {
     ExerciseMetric.REPS -> set.figure.toString()

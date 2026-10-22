@@ -155,29 +155,30 @@ data class PeriodReview(
         fun build(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             exercises: Map<Long, Exercise>,
+            bodyweightAt: (Long) -> Double,
             practices: List<SkillPractice>,
             period: ReviewPeriod,
             today: LocalDate,
             zone: ZoneId = ZoneId.systemDefault(),
         ): PeriodReview {
-            val stats = PeriodStats.of(history, exercises, period.from, period.to, zone)
+            val stats = PeriodStats.of(history, exercises, bodyweightAt, period.from, period.to, zone)
             val dates = history.map { (session, _) -> dayOf(session, zone) }.toSet()
             val first = dates.minOrNull()
             val since = first?.takeIf { it.isAfter(period.from) }
 
             val before = period.previous
             val previous = if (first != null && !first.isAfter(before.from)) {
-                PeriodStats.of(history, exercises, before.from, before.to, zone).takeIf { it.workouts > 0 }
+                PeriodStats.of(history, exercises, bodyweightAt, before.from, before.to, zone).takeIf { it.workouts > 0 }
             } else {
                 null
             }
 
             val fromMs = startMs(period.from, zone)
             val toMs = startMs(period.to, zone)
-            val gains = LiftRecords.gains(history, exercises, fromMs, toMs).sortedByDescending { it.gainKg }.map {
+            val gains = LiftRecords.gains(history, exercises, bodyweightAt, fromMs, toMs).sortedByDescending { it.gainKg }.map {
                 ReviewLift(it.name, it.variation, it.e1rmKg - it.gainKg, it.e1rmKg, it.series, it.set, it.addsToBody, it.atMs)
             }
-            val fresh = LiftRecords.newLifts(history, exercises, fromMs, toMs).map {
+            val fresh = LiftRecords.newLifts(history, exercises, bodyweightAt, fromMs, toMs).map {
                 ReviewLift(it.name, it.variation, null, it.e1rmKg, it.series, it.set, it.addsToBody, it.atMs)
             }
 
@@ -224,6 +225,7 @@ data class PeriodReview(
         fun summary(
             history: List<Pair<WorkoutSession, List<SessionSet>>>,
             exercises: Map<Long, Exercise>,
+            bodyweightAt: (Long) -> Double,
             period: ReviewPeriod,
             zone: ZoneId = ZoneId.systemDefault(),
         ): ReviewSummary {
@@ -234,7 +236,7 @@ data class PeriodReview(
                 period = period,
                 workouts = inside.size,
                 volumeKg = inside.sumOf { (_, sets) -> WorkoutShare.totals(sets, exercises).movedKg.toDouble() },
-                liftsGained = LiftRecords.gains(history, exercises, fromMs, toMs).size + LiftRecords.newLifts(history, exercises, fromMs, toMs).size,
+                liftsGained = LiftRecords.gains(history, exercises, bodyweightAt, fromMs, toMs).size + LiftRecords.newLifts(history, exercises, bodyweightAt, fromMs, toMs).size,
             )
         }
     }

@@ -1307,7 +1307,7 @@ fun SessionScreen(
                                         unit = Units.current,
                                         bodyweightKg = bodyweight,
                                         bodyweightLift = !weighted,
-                                        bodyShare = MovementDifficulty.bodyShare(first.exerciseName),
+                                        bodyShare = MovementDifficulty.bodyShare(first.exerciseName, first.modifiers),
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()

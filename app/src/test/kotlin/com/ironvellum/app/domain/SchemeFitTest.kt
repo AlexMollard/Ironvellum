@@ -52,9 +52,8 @@ class SchemeFitTest {
         assertEquals(0.65, MovementDifficulty.bodyShare("Archer Push-up"), 1e-9)
         assertEquals(1.0, MovementDifficulty.bodyShare("Pull-up"), 1e-9)
         assertEquals(1.0, MovementDifficulty.bodyShare("Dip"), 1e-9)
-        assertEquals(1.0, MovementDifficulty.bodyShare("Pike Push-up"), 1e-9)
+        assertEquals(0.75, MovementDifficulty.bodyShare("Pike Push-up"), 1e-9)
         assertEquals(1.0, MovementDifficulty.bodyShare("One-Arm Push-up"), 1e-9)
-        assertEquals(1.0, MovementDifficulty.bodyShare("Back Squat"), 1e-9)
     }
 
     @Test

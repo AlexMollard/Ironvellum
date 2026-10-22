@@ -51,8 +51,7 @@ import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
-import com.ironvellum.app.domain.ExerciseLog
-import com.ironvellum.app.domain.ExerciseLogCalculator
+import com.ironvellum.app.domain.ExerciseLogInputs
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.ExportReader
@@ -2289,14 +2288,18 @@ class Repository(
     ) { rows, exercises, stats ->
         val exercise = exercises.firstOrNull { it.id == exerciseId }?.toDomain() ?: return@combine null
         val bodyweight = stats.firstOrNull()?.weightKg
-        ExerciseHistoryCalculator.build(exercise, rows, bodyweight, variation = variation)
+        val readings = stats.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+        ExerciseHistoryCalculator.build(exercise, rows, bodyweight, variation = variation, bodyweightAt = SetRecords.bodyweightLookup(readings))
     }
 
-    /** The History tab's content for one movement, built off the main thread and rebuilt when its sets change. */
-    fun observeExerciseLog(exercise: Exercise): Flow<ExerciseLog> =
-        sessionDao.observeExerciseLog(exercise.id)
-            .map { rows -> ExerciseLogCalculator.build(exercise, rows) }
-            .flowOn(Dispatchers.Default)
+    /**
+     * What the History tab builds one movement's content from: its done sets and the weigh-ins, rebuilt when either
+     * changes. The tab builds the log itself because the variation it shows is its own choice.
+     */
+    fun observeExerciseLog(exercise: Exercise): Flow<ExerciseLogInputs> =
+        combine(sessionDao.observeExerciseLog(exercise.id), observeStats()) { rows, stats ->
+            ExerciseLogInputs(rows, SetRecords.bodyweightLookup(stats))
+        }
 
 
     /**

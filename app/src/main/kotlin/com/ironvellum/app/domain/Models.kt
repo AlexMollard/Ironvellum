@@ -324,6 +324,9 @@ object ExerciseHistoryCalculator {
      *
      * The summary is of ONE [Variation] of the movement, so an assisted pull-up and a pull-up never share a
      * best, a chart or a total: [variation] when the rows hold it, else the plain movement, else the latest used.
+     *
+     * [bodyweightAt], when given, is the lifter's weight at a moment (0 when unknown) and sets each set's body weight;
+     * otherwise [bodyweightKg] stands for every set. A bodyweight lift's estimated 1RM counts the body ([BodyShare]).
      */
     fun build(
         exercise: Exercise,
@@ -331,6 +334,7 @@ object ExerciseHistoryCalculator {
         bodyweightKg: Double?,
         nowMs: Long = System.currentTimeMillis(),
         variation: String? = null,
+        bodyweightAt: ((Long) -> Double)? = null,
     ): ExerciseHistory {
         val variations = allRows.groupBy { Variation.key(it.modifiers) }.entries
             .sortedWith(compareByDescending<Map.Entry<String, List<ExerciseSetRow>>> { it.key.isEmpty() }.thenByDescending { e -> e.value.maxOf { it.atMs } })
@@ -375,7 +379,8 @@ object ExerciseHistoryCalculator {
         fun e1rmOf(r: ExerciseSetRow): Double? {
             val kg = r.weightKg ?: return null
             if (kg <= 0.0 || r.reps < 1 || r.reps > ProgramRules.MAX_E1RM_REPS) return null
-            return ProgramRules.epley(kg, r.reps)
+            val bodyKg = bodyweightAt?.invoke(r.atMs)?.takeIf { it > 0.0 } ?: bodyweightKg
+            return BodyShare.e1rmAddedKg(kg, r.reps, BodyShare.of(exercise, r.modifiers), bodyKg)
         }
         val entries = rows.map { r ->
             val figure = figureOf(r)

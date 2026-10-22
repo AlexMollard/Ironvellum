@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,10 +38,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseLog
+import com.ironvellum.app.domain.ExerciseLogCalculator
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ExerciseLogBlock
 import com.ironvellum.app.domain.ExerciseLogSession
@@ -49,8 +51,12 @@ import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -59,10 +65,28 @@ import kotlinx.coroutines.flow.stateIn
  */
 val LocalOpenWorkout = compositionLocalOf<((Long) -> Unit)?> { null }
 
-/** Loads one movement's log off the main thread; the sheet is only ever opened on one exercise, so the VM is keyed by it. */
+/**
+ * Loads one movement's log off the main thread; the sheet is only ever opened on one exercise, so the VM is keyed by it.
+ * The log shows ONE variation (the incline and the deficit push-up differ by kilos, so one line through both only
+ * jumps): the lifter's pick, else the variation of the most recent block, else every variation when there is one.
+ */
 internal class ExerciseHistoryViewModel(repo: Repository, exercise: Exercise) : ViewModel() {
-    val log: StateFlow<ExerciseLog?> = repo.observeExerciseLog(exercise)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    private val picked = MutableStateFlow<String?>(null)
+
+    val log: StateFlow<ExerciseLog?> = combine(repo.observeExerciseLog(exercise), picked) { inputs, pick ->
+        val all = ExerciseLogCalculator.build(exercise, inputs.rows, inputs.bodyweightAt)
+        val shown = when {
+            all.variations.size < 2 || pick == ExerciseLog.ALL -> null
+            pick != null && all.variations.any { it.key == pick } -> pick
+            else -> all.defaultVariation
+        }
+        if (shown == null) all else ExerciseLogCalculator.build(exercise, inputs.rows, inputs.bodyweightAt, shown)
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Shows [variation] (a [com.ironvellum.app.domain.Variation.key]), or every one for [ExerciseLog.ALL]. */
+    fun pick(variation: String) {
+        picked.value = variation
+    }
 }
 
 /** The HISTORY page of the exercise sheet: summary, trend, then past workouts newest first. */
@@ -96,7 +120,19 @@ private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () ->
         return
     }
     val dateFormat = stringResource(R.string.explorer_date_day_month_year)
+    if (current.variations.size >= 2) {
+        VariationChips(current, vm::pick)
+        Spacer(Modifier.height(8.dp))
+    }
     HistorySummary(exercise, current, dateFormat)
+    if (current.bodyMissing) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.infosheet_history_body_missing),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
     if (current.trend.size >= 2) {
         Spacer(Modifier.height(20.dp))
         HistoryTrend(current, dateFormat)
@@ -125,7 +161,7 @@ private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: Str
                 add(label to bestSetText(exercise, best))
             }
         }
-        log.bestE1rmKg?.let { add(stringResource(R.string.infosheet_history_best_e1rm_label) to Units.fixed(it, 1)) }
+        log.bestE1rmKg?.let { add(stringResource(R.string.infosheet_history_best_e1rm_label) to e1rmText(it, log.addsToBody, 1)) }
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         figures.chunked(2).forEach { pair ->
@@ -143,6 +179,19 @@ private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: Str
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
+        }
+    }
+}
+
+/** One chip per variation the lifter has used, after "All"; the shown one is marked. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VariationChips(log: ExerciseLog, onPick: (String) -> Unit) {
+    val plain = stringResource(R.string.infosheet_history_variation_plain)
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        FilterChip(stringResource(R.string.infosheet_history_variation_all), log.selected == null) { onPick(ExerciseLog.ALL) }
+        log.variations.forEach { v ->
+            FilterChip(v.label(plain), log.selected == v.key) { onPick(v.key) }
         }
     }
 }
@@ -169,9 +218,17 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
         endLabel = formatDate(log.trend.last().atMs, dateFormat),
         valueText = {
             when {
-                log.byE1rm -> Units.fixed(it, 1)
+                log.byE1rm -> e1rmText(it, log.addsToBody, 1)
                 hold -> UiText.res(R.string.explorer_set_hold, it.toInt()).asString(context)
                 else -> it.toInt().toString()
+            }
+        },
+        // The top and bottom of the line, with their unit, on the left edge: "+46 kg" over "+20 kg".
+        axisText = {
+            when {
+                log.byE1rm -> e1rmText(it, log.addsToBody, 0)
+                hold -> UiText.res(R.string.explorer_set_hold, it.toInt()).asString(context)
+                else -> UiText.plural(R.plurals.victory_totals_reps, it.toInt(), it.toInt().toString()).asString(context)
             }
         },
         dateText = { formatDate(log.trend[it].atMs, dateFormat) },

@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.settings.SettingsSection
@@ -511,14 +512,14 @@ private fun pastRecaps(ui: StatsUi, today: LocalDate): List<WeeklyRecap> {
         .distinct()
         .sortedDescending()
         .take(RECAP_WEEKS)
-        .map { WeeklyRecap.build(history, ui.exercises, emptyList(), it, today, zone) }
+        .map { WeeklyRecap.build(history, ui.exercises, SetRecords.bodyweightLookup(ui.stats), emptyList(), it, today, zone) }
 }
 
 /** The finished months and years with workouts, newest first, each with its three figures: the review rows of the Recaps list. */
 private fun pastReviews(ui: StatsUi, today: LocalDate): List<ReviewSummary> {
     val zone = ZoneId.systemDefault()
     val history = ui.sessions.map { it to ui.sessionSets[it.id].orEmpty() }
-    return ReviewSchedule.listed(ui.completedDates, today).map { PeriodReview.summary(history, ui.exercises, it, zone) }
+    return ReviewSchedule.listed(ui.completedDates, today).map { PeriodReview.summary(history, ui.exercises, SetRecords.bodyweightLookup(ui.stats), it, zone) }
 }
 
 /** The latest finished weeks' recaps, so the Sunday notification is never the only way back to one, and the reviews of finished months and years above them. */
@@ -566,13 +567,13 @@ private fun TrainingTab(
     onOpenReview: (String, Long) -> Unit,
 ) {
     val nowMs = remember(today) { System.currentTimeMillis() }
-    val recaps = remember(ui.sessions, ui.sessionSets, ui.exercises, today) { pastRecaps(ui, today) }
+    val recaps = remember(ui.sessions, ui.sessionSets, ui.exercises, ui.stats, today) { pastRecaps(ui, today) }
     // Whole months and years of history: read off the main thread, and the rows join the list when they land.
-    val reviews by produceState(emptyList<ReviewSummary>(), ui.sessions, ui.sessionSets, ui.exercises, today) {
+    val reviews by produceState(emptyList<ReviewSummary>(), ui.sessions, ui.sessionSets, ui.exercises, ui.stats, today) {
         value = withContext(Dispatchers.Default) { pastReviews(ui, today) }
     }
-    val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
-        LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
+    val records = remember(ui.sessions, ui.sessionSets, ui.exercises, ui.stats, today) {
+        LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, SetRecords.bodyweightLookup(ui.stats), nowMs)
     }
     Column(
         Modifier

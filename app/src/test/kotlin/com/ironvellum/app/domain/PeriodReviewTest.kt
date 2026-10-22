@@ -43,7 +43,7 @@ class PeriodReviewTest {
         practices: List<SkillPractice> = emptyList(),
         now: LocalDate = today,
         at: ZoneId = zone,
-    ) = PeriodReview.build(history, catalogue, practices, period, now, at)
+    ) = PeriodReview.build(history, catalogue, { 0.0 }, practices, period, now, at)
 
     // ---- periods ----
 
@@ -314,7 +314,7 @@ class PeriodReviewTest {
         )
         val review = review(history)
         assertTrue(review.muscles.zipWithNext().all { (a, b) -> a.second >= b.second })
-        val summary = PeriodReview.summary(history, catalogue, september, zone)
+        val summary = PeriodReview.summary(history, catalogue, { 0.0 }, september, zone)
         assertEquals(review.stats.workouts, summary.workouts)
         assertEquals(review.stats.volumeKg, summary.volumeKg, 1e-9)
         assertEquals(review.lifts.size, summary.liftsGained)

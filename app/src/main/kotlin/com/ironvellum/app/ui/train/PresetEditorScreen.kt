@@ -722,7 +722,7 @@ fun PresetEditorScreen(
                     unit = Units.current,
                     bodyweightKg = ui.bodyweightKg,
                     bodyweightLift = exercise?.isWeighted == false,
-                    bodyShare = MovementDifficulty.bodyShare(entry.exerciseName),
+                    bodyShare = MovementDifficulty.bodyShare(entry.exerciseName, entry.modifiers),
                 ),
                 worn = worn,
                 inSuperset = entry.supersetGroup != null,
