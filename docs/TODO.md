@@ -52,12 +52,16 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] Owner: a week on the phone first: a locked-screen workout (Live Update), Sunday's recap, heart-rate permission, share card save
 - [x] Owner: push tag `v1.8`
 
-### 1.9: translations and Play preparation
-- [ ] Progress photos (approved for 1.8, moved 2026-10-22): needs a schema change and a backup format with images
-- [ ] Invite translators onto the 1.8 string resources (pick the platform, e.g. Weblate)
+### 1.9: Play preparation, photos, translations (owner agreed 2026-10-22, built in this order)
+- [ ] 1 Play-ready code: in-app privacy policy link (GitHub URL of PRIVACY.md), PLAY_DATA_SAFETY.md updated for heart rate and WRITE_EXERCISE, signed `play` release AAB once the keystore exists, release-build frame stats on the phone
+- [ ] 2 Progress photos, on the phone and in the folder backup, never the cloud:
+  - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout
+  - weekly poses: front, side and back on a day you pick (Sunday by default), separate from the workout photo, compared week to week in Stats > Body
+- [ ] 3 Translations by Haiku agents, back-translated and checked by Sonnet, plus the long-text layout sweep: Spanish, German, French, Portuguese (BR), Japanese, Korean, Chinese (Simplified). Arabic waits for the RTL leftovers
+- [ ] 4 Upkeep: Gradle 9.8, WorkManager 2.12, Ktor 3.6; gate back under 5 minutes and the instrumented flake found
 - [ ] Owner: Play developer account ($25, identity check)
 - [ ] Owner: release signing keystore
-- [ ] Owner: privacy policy at a public URL, and an in-app link to it
+- [ ] Owner: confirm the public privacy policy URL (default: PRIVACY.md on GitHub)
 - [ ] Owner: Play health-data declaration, including the 1.8 write permission
 - [ ] Owner: Google sign-in OAuth consent screen out of Testing
 - [ ] Play store listing
