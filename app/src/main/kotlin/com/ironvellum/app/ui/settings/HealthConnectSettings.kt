@@ -61,7 +61,13 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
     var permitted by remember { mutableStateOf<Boolean?>(null) }
     var refused by remember { mutableStateOf(false) }
     var missing by remember { mutableStateOf(false) }
-    val recheck: () -> Unit = { scope.launch { permitted = writeBack.permitted() } }
+    var heartRateMissing by remember { mutableStateOf(false) }
+    val recheck: () -> Unit = {
+        scope.launch {
+            permitted = writeBack.permitted()
+            heartRateMissing = viewModel.heartRateMissing()
+        }
+    }
     LaunchedEffect(Unit) { recheck() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { recheck() }
     val saveLauncher = rememberLauncherForActivityResult(
@@ -127,6 +133,10 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
                         stringResource(R.string.settings_health_distance_total, "%.0f".fmt(healthDays.sumOf { it.distanceKm })),
                     ).joinToString(" · "),
                 )
+            }
+            if (heartRateMissing) {
+                Spacer(Modifier.height(4.dp))
+                SettingsCaption(stringResource(R.string.settings_health_heart_rate_missing), IronvellumColors.Caution)
             }
             sync.message?.let {
                 Spacer(Modifier.height(4.dp))

@@ -17,6 +17,13 @@ import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.data.WeeklyRecaps
 import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.HealthSyncWorker
+import com.ironvellum.app.data.HealthChangeSource
+import com.ironvellum.app.data.HealthResumeSync
+import com.ironvellum.app.data.PrefsTokenStore
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
+import android.util.Log
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.InboxWorker
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +49,16 @@ class IronvellumApp : Application() {
         Repository(
             database, healthSync, PrefsHighestBandStore(this), writeBack = healthWriteBack,
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
+        )
+    }
+
+    /** Foreground sync: the start-up sync and every return to the app go through it, so they never double up. */
+    val healthResume: HealthResumeSync by lazy {
+        HealthResumeSync(
+            source = HealthChangeSource(this, healthSync),
+            store = PrefsTokenStore(this),
+            importDays = { days -> repository.syncHealthHistory(days) },
+            log = { Log.i("HealthResume", it.toString()) },
         )
     }
 
@@ -126,7 +143,7 @@ class IronvellumApp : Application() {
                     }
                 }
             }
-            runCatching { repository.syncHealthHistory() }
+            runCatching { healthResume.startup(90) }
             // Titles used to be awarded only at the moment a workout finished,
             // so anything satisfied by imported health data stayed locked.
             runCatching { repository.reconcileTitles() }
@@ -151,6 +168,13 @@ class IronvellumApp : Application() {
                     }
             }
         }
+        // Built now, so its throttle clock starts with the process and the first ON_START rides on the start-up sync.
+        healthResume
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_START) appScope.launch { runCatching { healthResume.onResume() } }
+            },
+        )
         HealthSyncWorker.schedule(this)
         // Moves an upgraded install off the old periodic job, and books a run
         // for one whose queue was lost; a queued run is kept as it is.

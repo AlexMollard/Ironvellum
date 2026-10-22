@@ -950,6 +950,7 @@
     <string name="settings_data_restore_keep_button">Keep local data</string>
     <string name="settings_health_intro">Reads body, activity and sleep data. Writes only what you turn on below.</string>
     <string name="settings_health_connect_button">Connect &amp; Sync</string>
+    <string name="settings_health_heart_rate_missing">Heart rate is not shared with Ironvellum, so resting heart rate stays empty. Connect &amp; Sync asks for it.</string>
     <!-- Health Connect reading: %1$d is today's steps, %2$s the time Health Connect last updated them (e.g. 14:05). -->
     <plurals name="settings_health_steps_today"><item quantity="one">%1$d step today</item><item quantity="other">%1$d steps today</item></plurals>
     <plurals name="settings_health_steps_today_as_of"><item quantity="one">%1$d step today (as of %2$s)</item><item quantity="other">%1$d steps today (as of %2$s)</item></plurals>

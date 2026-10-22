@@ -12,6 +12,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -80,7 +81,10 @@ private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
     HealthPermission.getReadPermission(SleepSessionRecord::class),
     HealthPermission.getReadPermission(RestingHeartRateRecord::class),
+    HealthPermission.getReadPermission(HeartRateRecord::class),
 )
+
+private val HEART_RATE_READ = HealthPermission.getReadPermission(HeartRateRecord::class)
 
 /** Asked on top of [HEALTH_PERMISSIONS]; a declined history grant must not
  * make a working sync report "not connected", and its absence hides data
@@ -632,6 +636,14 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
             _cloud.value = CloudUi()
         }
     }
+
+    /**
+     * True when Health Connect is connected but the heart-rate read is not granted: resting heart rate is derived
+     * from it, so the Health Connect page says so. A page note, never a prompt.
+     */
+    suspend fun heartRateMissing(): Boolean =
+        readHealthLink() == HealthLink.CONNECTED &&
+            HEART_RATE_READ !in runCatching { healthSync.grantedPermissions() }.getOrDefault(emptySet())
 
     /** Re-reads device support and the grant; the hub calls it on every visit. */
     fun refreshHealthLink() {

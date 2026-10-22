@@ -7,7 +7,9 @@ import com.ironvellum.app.R
 import com.ironvellum.app.domain.UiText
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
@@ -19,6 +21,7 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.ironvellum.app.domain.HealthDay
+import com.ironvellum.app.domain.RestingHr
 import com.ironvellum.app.domain.SleepMath
 import com.ironvellum.app.domain.SleepSpan
 import java.time.Duration
@@ -178,7 +181,8 @@ class HealthSync(private val context: Context) {
         // platform, so the daily worker was throwing seven SecurityExceptions
         // per run against a service that can never answer it. A PARTIAL grant
         // still proceeds — each metric is isolated, so the ones allowed read.
-        if (grantedPermissions().isEmpty()) {
+        val granted = grantedPermissions()
+        if (granted.isEmpty()) {
             return HistoryRead(problems = listOf(UiText.res(R.string.health_permissions_missing)))
         }
         val client = HealthConnectClient.getOrCreate(context)
@@ -237,7 +241,7 @@ class HealthSync(private val context: Context) {
                 .mapValues { it.value.toLong() }
         }.onFailure { note(metricName(R.string.health_metric_sleep), it) }.getOrDefault(emptyMap())
 
-        val restingHrByDate: Map<LocalDate, Int> = runCatching {
+        val recordedRestingHr: Map<LocalDate, Int> = runCatching {
             client.readRecords(
                 ReadRecordsRequest(
                     recordType = RestingHeartRateRecord::class,
@@ -247,6 +251,19 @@ class HealthSync(private val context: Context) {
                 .groupBy { it.time.atZone(zone).toLocalDate() }
                 .mapValues { (_, samples) -> samples.map { it.beatsPerMinute }.average().toInt() }
         }.onFailure { note(metricName(R.string.health_metric_resting_hr), it) }.getOrDefault(emptyMap())
+
+        // Samsung Health writes heart-rate samples, not a resting figure: derive one for the days that have no
+        // record of their own. Skipped without the grant so a missing permission is not reported as a failure
+        // on every sync (Settings shows it instead).
+        val derivedRestingHr: Map<LocalDate, Int> =
+            if (HealthPermission.getReadPermission(HeartRateRecord::class) !in granted) {
+                emptyMap()
+            } else {
+                runCatching { RestingHr.derive(heartRateWindows(client, from, to), zone) }
+                    .onFailure { note(metricName(R.string.health_metric_heart_rate), it) }
+                    .getOrDefault(emptyMap())
+            }
+        val restingHrByDate = RestingHr.merge(recordedRestingHr, derivedRestingHr)
 
         // Only days with real signal: fabricating empty rows made the sync
         // report "90 days" while every screen showed nothing.
@@ -336,6 +353,31 @@ class HealthSync(private val context: Context) {
     }
 
     /**
+     * Every heart-rate sample between [from] and [to], bucketed into 30-minute windows. Read as records, not as
+     * aggregateGroupByDuration: Health Connect does not split a record across duration buckets (a record of 18
+     * samples came back as one bucket holding all 18), and Samsung Health writes long records.
+     */
+    private suspend fun heartRateWindows(client: HealthConnectClient, from: Instant, to: Instant): List<RestingHr.Window> {
+        val samples = mutableListOf<RestingHr.Sample>()
+        var pageToken: String? = null
+        do {
+            val page = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = HeartRateRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(from, to),
+                    pageSize = HR_PAGE_SIZE,
+                    pageToken = pageToken,
+                ),
+            )
+            page.records.forEach { record ->
+                record.samples.forEach { if (it.time >= from && it.time < to) samples += RestingHr.Sample(it.time, it.beatsPerMinute) }
+            }
+            pageToken = page.pageToken
+        } while (pageToken != null)
+        return RestingHr.windows(samples)
+    }
+
+    /**
      * Health Connect hands back a Double widened from whatever the source app
      * stored. Samsung Health's 79.1 kg arrived as 79.0999984741211 and was
      * written to the stat history verbatim, so the figure was wrong on disk,
@@ -348,6 +390,8 @@ class HealthSync(private val context: Context) {
         Math.round(value * 10.0) / 10.0
 
     private companion object {
+        const val HR_PAGE_SIZE = 5000
+
         /** Stages inside a sleep session that are not sleep. */
         val AWAKE_STAGES = setOf(
             SleepSessionRecord.STAGE_TYPE_AWAKE,

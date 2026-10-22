@@ -31,6 +31,7 @@
     <exclude domain="sharedpref" path="circle_payout.xml" />
     <exclude domain="sharedpref" path="rank_state.xml" />
     <exclude domain="sharedpref" path="health_write.xml" />
+    <exclude domain="sharedpref" path="health_resume.xml" />
     <exclude domain="sharedpref" path="weekly_recap.xml" />
     <exclude domain="sharedpref" path="suggestion_dismissals.xml" />
     <!-- The cloud sign-in: supabase-kt keeps its access and refresh token here (its default
