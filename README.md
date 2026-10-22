@@ -48,6 +48,11 @@ relics and the Veil) keeps its names either way. Every word is defined in
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/07-plan-builder.png" width="24%" alt="The plan builder: a proposed weekly plan with loads" />
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/08-veil.png" width="24%" alt="The Veil: essence, the strongest relic and the collection" />
 </p>
+<p align="center">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/09-weekly-recap.png" width="24%" alt="The weekly recap: workouts, sets, volume and time against last week, and new PRs" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/10-widgets.png" width="24%" alt="The Today and Streak and week widgets on the home screen" />
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/11-light.png" width="24%" alt="A lift page in the light theme, with the two-week average line" />
+</p>
 
 ## Features
 
