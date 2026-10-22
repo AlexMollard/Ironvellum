@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Debug builds only: lets HealthSeedReceiver put test samples into Health Connect on the emulator. -->
+    <!-- Debug builds only: lets HealthSeedReceiver put test samples into Health Connect on the emulator.
+         DUMP is held by adb's shell, never by an installed app, so only `adb shell am broadcast` can reach it. -->
     <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_HEART_RATE" />
 
     <application>
         <receiver
             android:name="com.ironvellum.app.debug.HealthSeedReceiver"
-            android:exported="true" />
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 </manifest>
