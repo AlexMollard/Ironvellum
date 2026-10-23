@@ -142,7 +142,7 @@ Train, Progress, Friends.
 | Term | Plain (default) | Means | Use |
 |---|---|---|---|
 | **Codex** | progress | Tab holding Deeds, Paths and Journal | nav tab, "6 deeds · 1 technique" |
-| **Deed** (both modes) | same (plain: no plain word) | An achievement with a written bar | "DEED EARNED", "EARNED 12", "earned 3 Sep 2026", dashboard "DEEDS 5/105" |
+| **Deed** (both modes) | same (plain: no plain word) | An achievement with a written bar | "DEED EARNED", "EARNED 12", "earned 3 Sep 2026", dashboard "DEEDS 5/121" |
 | **Title** | same | The name a deed grants, worn on the folio | "you may wear *First Mark*", "Wear title", "NO TITLE WORN" |
 | **Wear** | same | Putting on a title or crest | "Wear", "WORN", "TAP TO WEAR" |
 | **Rarity** | same | Common · Rare · Fabled · Masterwork, for deeds and inscriptions | as listed |

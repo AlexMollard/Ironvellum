@@ -115,6 +115,17 @@ object DeedLadders {
         is TitleRule.SessionReps ->
             Family("reps-trial:" + rule.names.sorted().joinToString(","), "${movement(rule.names)} reps in one ${Words.trial.s}")
         is TitleRule.LongestHold -> Family("hold", "Longest hold")
+        // Variation deeds that differ in what they name are different ladders, like the lifts above.
+        is TitleRule.MovedOffEasier -> Family("moved-off:" + rule.names.sorted().joinToString(","), "Moved off the easier version")
+        TitleRule.BeatAssisted -> Family("beat-assisted", "Past your assisted best")
+        is TitleRule.VariationSet -> Family(
+            "variation-set:" + listOf(rule.names, rule.anyOf, rule.allOf).joinToString("|") { it.sorted().joinToString(",") },
+            "Variation sets",
+        )
+        TitleRule.DeficitBeatsStandard -> Family("deficit-beats-standard", "Deficit past the standard lift")
+        is TitleRule.DistinctVariations -> Family("variations", "Variations logged")
+        is TitleRule.EveryFace -> Family("faces:" + rule.name, "Every variation of the ${rule.name}")
+        is TitleRule.HarderInOneSet -> Family("harder-in-one-set", "Harder modifiers in one set")
     }
 
     /** How much of the metric the rule asks for; only comparable within one family. */
@@ -146,5 +157,11 @@ object DeedLadders {
         is TitleRule.LiftMultiple -> rule.male
         is TitleRule.SessionReps -> rule.count.toDouble()
         is TitleRule.LongestHold -> rule.seconds.toDouble()
+        is TitleRule.MovedOffEasier -> rule.lifts.toDouble()
+        TitleRule.BeatAssisted, TitleRule.DeficitBeatsStandard -> 1.0
+        is TitleRule.VariationSet -> rule.reps.toDouble()
+        is TitleRule.DistinctVariations -> rule.count.toDouble()
+        is TitleRule.EveryFace -> rule.tokens.size.toDouble()
+        is TitleRule.HarderInOneSet -> rule.count.toDouble()
     }
 }

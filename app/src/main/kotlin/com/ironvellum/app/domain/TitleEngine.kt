@@ -60,6 +60,30 @@ sealed interface TitleRule {
     data class SessionReps(val names: Set<String>, val count: Int) : TitleRule
     /** Longest single static hold, in seconds. */
     data class LongestHold(val seconds: Int) : TitleRule
+
+    // ---- variation deeds ----
+    // Read through [VariationDeeds]: what is easier, harder or standard is [Variation]'s rule, not a second list.
+
+    /**
+     * Movements (any when [names] is empty) done standard after an easier version (assisted, incline) of the same
+     * movement was logged earlier: [lifts] different ones.
+     */
+    data class MovedOffEasier(val names: Set<String>, val lifts: Int) : TitleRule
+    /** A standard set whose reps beat the best assisted set's reps of the same movement. */
+    data object BeatAssisted : TitleRule
+    /**
+     * One set of [names] carrying a splitting modifier from [anyOf] (any when empty) and every one of [allOf],
+     * [reps] or more times. Modifiers are the ones picked for the set plus the ones the movement's name says.
+     */
+    data class VariationSet(val names: Set<String>, val anyOf: Set<String>, val allOf: Set<String>, val reps: Int) : TitleRule
+    /** A deficit variation's best estimated 1RM beats the standard lift's best. */
+    data object DeficitBeatsStandard : TitleRule
+    /** How many different variations of any lift were ever logged. */
+    data class DistinctVariations(val count: Int) : TitleRule
+    /** Every one of [tokens] logged at least once as the single modifier of [name]: each face the lift offers. */
+    data class EveryFace(val name: String, val tokens: Set<String>) : TitleRule
+    /** One set carrying [count] harder modifiers ([Variation.HARDER]). */
+    data class HarderInOneSet(val count: Int) : TitleRule
 }
 
 
@@ -559,6 +583,130 @@ object Titles {
             TitleRule.LongestHold(240),
             TitleRarity.Rare,
         ),
+        // ---- Variation deeds ----
+        // Recognition only, like the strength milestones. A variation is the splitting modifiers of Variation:
+        // easier is assisted or incline, harder is archer, one-arm, decline, elevated or deficit. Appended, so
+        // no earlier deed moves.
+        // Unbound: moving off the easier version.
+        TitleDef(
+            "cast_off_the_crutch",
+            "Cast Off the Crutch",
+            "Do a standard pull-up, chin-up or dip after logging it assisted.",
+            TitleRule.MovedOffEasier(setOf("pull-up", "chin-up", "dip"), lifts = 1),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "level_ground",
+            "Level Ground",
+            "Do a flat push-up after logging it incline.",
+            TitleRule.MovedOffEasier(setOf("push-up"), lifts = 1),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "off_the_leash",
+            "Off the Leash",
+            "Move off the easier version of 3 different lifts.",
+            TitleRule.MovedOffEasier(emptySet(), lifts = 3),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "no_hand_beneath",
+            "No Hand Beneath",
+            "Do more standard reps in one set than your best assisted set of the same lift.",
+            TitleRule.BeatAssisted,
+            TitleRarity.Epic,
+        ),
+        // The Harder Road.
+        TitleDef(
+            "below_the_floor",
+            "Below the Floor",
+            "Log your first deficit set.",
+            TitleRule.VariationSet(emptySet(), setOf("deficit"), emptySet(), reps = 1),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "headlong",
+            "Headlong",
+            "Log a decline or feet-elevated push-up set.",
+            TitleRule.VariationSet(setOf("push-up"), setOf("decline", "elevated"), emptySet(), reps = 1),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "bowstring",
+            "Bowstring",
+            "Do 5 reps of an archer pull-up or push-up in one set.",
+            TitleRule.VariationSet(
+                setOf("pull-up", "push-up", "archer pull-up", "archer push-up"), setOf("archer"), emptySet(), reps = 5,
+            ),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "half_the_hands",
+            "Half the Hands",
+            "Log your first one-arm set.",
+            TitleRule.VariationSet(emptySet(), setOf("one-arm"), emptySet(), reps = 1),
+            TitleRarity.Epic,
+        ),
+        TitleDef(
+            "the_long_way_down",
+            "The Long Way Down",
+            "Reach a higher estimated 1-rep max with a deficit than on the standard lift.",
+            TitleRule.DeficitBeatsStandard,
+            TitleRarity.Rare,
+        ),
+        // Many Roads.
+        TitleDef(
+            "curious_iron",
+            "Curious Iron",
+            "Log 5 different variations.",
+            TitleRule.DistinctVariations(5),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "many_roads",
+            "Many Roads",
+            "Log 15 different variations.",
+            TitleRule.DistinctVariations(15),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "cartographer",
+            "Cartographer",
+            "Log 40 different variations.",
+            TitleRule.DistinctVariations(40),
+            TitleRarity.Epic,
+        ),
+        TitleDef(
+            "every_face_of_the_stone",
+            "Every Face of the Stone",
+            "Log all 7 variations of the push-up, each at least once.",
+            TitleRule.EveryFace("push-up", Variation.TOKENS),
+            TitleRarity.Masterwork,
+        ),
+        // Burdens.
+        TitleDef(
+            "twofold_burden",
+            "Twofold Burden",
+            "Carry two harder modifiers in one set.",
+            TitleRule.HarderInOneSet(2),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "threefold_burden",
+            "Threefold Burden",
+            "Carry three harder modifiers in one set.",
+            TitleRule.HarderInOneSet(3),
+            TitleRarity.Epic,
+        ),
+        TitleDef(
+            "the_unkind_angle",
+            "The Unkind Angle",
+            "Do 5 reps of an archer, deficit, feet-elevated push-up in one set.",
+            TitleRule.VariationSet(
+                setOf("push-up", "archer push-up"), emptySet(), setOf("archer", "deficit", "elevated"), reps = 5,
+            ),
+            TitleRarity.Masterwork,
+        ),
     ) }
 
     fun byId(id: String): TitleDef? = ALL.firstOrNull { it.id == id }
@@ -605,6 +753,8 @@ object Titles {
         // Normalised exercise name -> best rep total inside one session.
         val bestSessionReps: Map<String, Int> = emptyMap(),
         val bestHoldSeconds: Int = 0,
+        // The variation deeds' facts: what the logged sets say about easier, harder and standard versions.
+        val variations: VariationDeeds.Facts = VariationDeeds.Facts(),
     )
 
     private val RUN_NAMES = setOf("run", "running", "trail running", "treadmill")
@@ -753,6 +903,7 @@ object Titles {
             bestLiftMultiple = liftMultiples,
             bestSessionReps = bestSessionReps,
             bestHoldSeconds = bestHoldSeconds,
+            variations = VariationDeeds.facts(history, exercises, bodyweightAt),
         )
     }
 
@@ -815,7 +966,36 @@ object Titles {
         is TitleRule.SessionReps ->
             rule.names.any { (ledger.bestSessionReps[normaliseName(it)] ?: 0) >= rule.count }
         is TitleRule.LongestHold -> ledger.bestHoldSeconds >= rule.seconds
+        is TitleRule.MovedOffEasier -> movedOff(rule, ledger) >= rule.lifts
+        TitleRule.BeatAssisted -> ledger.variations.beatAssisted
+        is TitleRule.VariationSet -> bestVariationReps(rule, ledger) >= rule.reps
+        TitleRule.DeficitBeatsStandard -> ledger.variations.deficitBeatsStandard
+        is TitleRule.DistinctVariations -> ledger.variations.distinctVariations >= rule.count
+        is TitleRule.EveryFace -> facesLogged(rule, ledger) >= rule.tokens.size
+        is TitleRule.HarderInOneSet -> ledger.variations.mostHarder >= rule.count
     }
+
+    /** How many of the movements [rule] names (any, when it names none) were moved off the easier version. */
+    private fun movedOff(rule: TitleRule.MovedOffEasier, ledger: Ledger): Int {
+        val names = rule.names.map(::normaliseName)
+        return ledger.variations.movedOff.count { names.isEmpty() || it in names }
+    }
+
+    /** The most reps one set reached that [rule] accepts: its movement, a modifier of anyOf and all of allOf. */
+    private fun bestVariationReps(rule: TitleRule.VariationSet, ledger: Ledger): Int {
+        val names = rule.names.map(::normaliseName)
+        return ledger.variations.setBests
+            .filter { best ->
+                (names.isEmpty() || best.name in names) &&
+                    (rule.anyOf.isEmpty() || best.tokens.any { it in rule.anyOf }) &&
+                    best.tokens.containsAll(rule.allOf)
+            }
+            .maxOfOrNull { it.reps } ?: 0
+    }
+
+    /** How many of [rule]'s modifiers were logged as the one modifier of its movement. */
+    private fun facesLogged(rule: TitleRule.EveryFace, ledger: Ledger): Int =
+        (ledger.variations.facesLogged[normaliseName(rule.name)] ?: emptySet()).count { it in rule.tokens }
 
     /** How far along a rule is: current value, target, and the unit's name. */
     data class Progress(
@@ -906,6 +1086,21 @@ object Titles {
         }
         is TitleRule.LongestHold ->
             Progress(ledger.bestHoldSeconds.toLong(), rule.seconds.toLong(), "seconds in one hold")
+        // Each current is clamped to its target: a count that reaches it is the deed won, never a bar full unearned.
+        is TitleRule.MovedOffEasier ->
+            Progress(movedOff(rule, ledger).coerceAtMost(rule.lifts).toLong(), rule.lifts.toLong(), "lifts moved off the easier version")
+        TitleRule.BeatAssisted ->
+            Progress(if (ledger.variations.beatAssisted) 1L else 0L, 1, "standard sets past your assisted best")
+        is TitleRule.VariationSet ->
+            Progress(bestVariationReps(rule, ledger).coerceAtMost(rule.reps).toLong(), rule.reps.toLong(), if (rule.reps == 1) "sets" else "reps in one set")
+        TitleRule.DeficitBeatsStandard ->
+            Progress(if (ledger.variations.deficitBeatsStandard) 1L else 0L, 1, "deficit lifts past the standard one")
+        is TitleRule.DistinctVariations ->
+            Progress(ledger.variations.distinctVariations.coerceAtMost(rule.count).toLong(), rule.count.toLong(), "variations")
+        is TitleRule.EveryFace ->
+            Progress(facesLogged(rule, ledger).toLong(), rule.tokens.size.toLong(), "variations of the ${rule.name}")
+        is TitleRule.HarderInOneSet ->
+            Progress(ledger.variations.mostHarder.coerceAtMost(rule.count).toLong(), rule.count.toLong(), "harder modifiers in one set")
     }
 
     /** Rule family, for grouping the codex by the kind of deed it demands. */
@@ -919,7 +1114,10 @@ object Titles {
         is TitleRule.SleepMinutesInNight -> "Recovery"
         is TitleRule.SkillsMastered, is TitleRule.PracticeAttempts -> "Mastery"
         is TitleRule.TrainingStreak -> Words.trial.cpl
-        is TitleRule.LiftMultiple, is TitleRule.SessionReps, is TitleRule.LongestHold -> "Strength"
+        is TitleRule.LiftMultiple, is TitleRule.SessionReps, is TitleRule.LongestHold,
+        is TitleRule.MovedOffEasier, TitleRule.BeatAssisted, is TitleRule.VariationSet,
+        TitleRule.DeficitBeatsStandard, is TitleRule.DistinctVariations, is TitleRule.EveryFace,
+        is TitleRule.HarderInOneSet -> "Strength"
         is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
         is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,
         is TitleRule.HardestGrade, is TitleRule.SportSessions -> "Activities"

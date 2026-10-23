@@ -130,7 +130,7 @@ relics and the Veil) keeps its names either way. Every word is defined in
   you return to the app, and can save your finished workouts.
 - **125 skills** on progression paths (pull, push, handstand, lever, planche,
   rings, legs, core, mobility and the barbell ladders), each gated on the one
-  before it with a written standard, and **105 deeds** to earn.
+  before it with a written standard, and **121 deeds** to earn.
 - **Share a workout** as plain text in the shape of a Wordle grid: a row per
   movement, a square per set, a trophy on a record set. No link, no image.
 - **The Veil** is an idle layer: workouts leave echoes, echoes gather essence

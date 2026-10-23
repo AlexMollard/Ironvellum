@@ -4674,6 +4674,9 @@
     <plurals name="deeds_togo_attempts"><item quantity="one">%1$s attempt to go</item><item quantity="other">%1$s attempts to go</item></plurals>
     <plurals name="deeds_togo_activities"><item quantity="one">%1$s activity to go</item><item quantity="other">%1$s activities to go</item></plurals>
     <plurals name="deeds_togo_grades"><item quantity="one">%1$s grade to go</item><item quantity="other">%1$s grades to go</item></plurals>
+    <plurals name="deeds_togo_lifts"><item quantity="one">%1$s lift to go</item><item quantity="other">%1$s lifts to go</item></plurals>
+    <plurals name="deeds_togo_variations"><item quantity="one">%1$s variation to go</item><item quantity="other">%1$s variations to go</item></plurals>
+    <plurals name="deeds_togo_modifiers"><item quantity="one">%1$s modifier to go</item><item quantity="other">%1$s modifiers to go</item></plurals>
     <string name="deeds_togo_strength">%1$s strength to go</string>
     <string name="deeds_togo_km">%1$s km to go</string>
     <string name="deeds_togo_kcal">%1$s kcal to go</string>

@@ -111,6 +111,12 @@ internal fun toGoText(rule: TitleRule, amount: Long, figure: String): String {
         is TitleRule.LongestHold -> UiText.res(R.string.deeds_togo_seconds, figure)
         is TitleRule.LiftMultiple -> UiText.res(R.string.deeds_togo_percent, figure)
         is TitleRule.HardestGrade -> UiText.plural(R.plurals.deeds_togo_grades, count, figure)
+        is TitleRule.MovedOffEasier, TitleRule.DeficitBeatsStandard -> UiText.plural(R.plurals.deeds_togo_lifts, count, figure)
+        TitleRule.BeatAssisted -> UiText.plural(R.plurals.deeds_togo_sets, count, figure)
+        is TitleRule.VariationSet ->
+            if (rule.reps == 1) UiText.plural(R.plurals.deeds_togo_sets, count, figure) else UiText.plural(R.plurals.deeds_togo_reps, count, figure)
+        is TitleRule.DistinctVariations, is TitleRule.EveryFace -> UiText.plural(R.plurals.deeds_togo_variations, count, figure)
+        is TitleRule.HarderInOneSet -> UiText.plural(R.plurals.deeds_togo_modifiers, count, figure)
     }
     return Words.text(text)
 }

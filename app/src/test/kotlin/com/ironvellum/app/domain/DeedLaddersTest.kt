@@ -89,6 +89,9 @@ class DeedLaddersTest {
     }
 
     private companion object {
-        const val EXPECTED_LADDERS = 31
+        // 31 before the variation deeds. They add 13: three move-off ladders (named lifts, push-up, any lift),
+        // past-assisted, five variation sets (floor, headlong, bowstring, one-arm, unkind angle), deficit,
+        // variations logged (3 rungs), every face and harder-in-one-set (2 rungs).
+        const val EXPECTED_LADDERS = 44
     }
 }

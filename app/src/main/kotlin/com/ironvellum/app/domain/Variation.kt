@@ -35,6 +35,12 @@ object Variation {
     fun eases(modifiers: String): Boolean =
         key(modifiers).split(",").any { it.isNotEmpty() && MovementDifficulty.modifierFactor(it) < 1.0 }
 
+    /**
+     * The splitting modifiers that make a lift HARDER: the tokens that are not [eases] (archer, one-arm, decline,
+     * elevated, deficit). Derived from the factors like [eases], so the two can never overlap or leave a gap.
+     */
+    val HARDER: Set<String> = TOKENS.filter { MovementDifficulty.modifierFactor(it) >= 1.0 }.toSet()
+
     /** The key a movement's history is kept under: its lowercased, trimmed name, then the variation when it has one. */
     fun liftKey(exerciseName: String, modifiers: String): String {
         val name = exerciseName.lowercase().trim()
