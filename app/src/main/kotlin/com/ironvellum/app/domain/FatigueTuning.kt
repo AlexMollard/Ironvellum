@@ -40,9 +40,9 @@ object FatigueTuning {
     /** History a report needs: the residual window plus the novelty look-back. */
     const val HISTORY_DAYS = WINDOW_DAYS + NOVELTY_WINDOW_DAYS
 
-    const val HALF_LIFE_FAST_H = 18.0
-    const val HALF_LIFE_MEDIUM_H = 24.0
-    const val HALF_LIFE_SLOW_H = 36.0
+    const val HALF_LIFE_FAST_H = 12.0
+    const val HALF_LIFE_MEDIUM_H = 18.0
+    const val HALF_LIFE_SLOW_H = 24.0
 
     /** A session dose to one muscle above [BIG_SESSION_DOSE] stretches that session's half-life by [BIG_SESSION_STRETCH]. */
     const val BIG_SESSION_DOSE = 10.0

@@ -69,7 +69,7 @@ class FatigueFootprintTest {
         val bench = footprint("Bench Press")
         assertEquals(Muscle.MID_CHEST, bench.lead)
         assertEquals(FatigueLevel.MODERATE, bench.typicalLevel)
-        assertEquals(Math.round(36 * Math.log(2.7 / 2.1) / Math.log(2.0)).toInt(), bench.lightInHours)
+        assertEquals(Math.round(24 * Math.log(2.7 / 2.1) / Math.log(2.0)).toInt(), bench.lightInHours)
         // 0.9 x 3 = 2.7 for a plain lift; a calf-sized dose that starts below the threshold has no light-in.
         val shares = CustomExercises.shares(emptyList(), listOf(Muscle.CALVES))
         CustomExercises.sync(listOf(CustomExercises.Row("My Calf", MuscleGroup.LEGS, "", emptySet(), shares)))

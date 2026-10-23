@@ -13,7 +13,7 @@ class PlanFatigueTest {
 
     private val H = 3_600_000L
     private val UTC = ZoneId.of("UTC")
-    private val SLOW = 36.0
+    private val SLOW = 24.0
 
     private fun at(zone: ZoneId, y: Int, mo: Int, d: Int, h: Int, min: Int = 0): Long =
         ZonedDateTime.of(y, mo, d, h, min, 0, 0, zone).toInstant().toEpochMilli()
@@ -84,7 +84,7 @@ class PlanFatigueTest {
 
     @Test
     fun `a day note appears when the muscle is still moderate at 08 00`() {
-        // Quads at 6 residual, 36 h half-life: Friday 08:00 is 20 h away, so about 4.1 left: High.
+        // Quads at 6 residual, 24 h half-life: Friday 08:00 is 20 h away, so about 3.4 left: Moderate.
         val r = report(now, contribution(Muscle.QUADS, 6.0, now = now))
         val notes = PlanFatigue.dayNotes(day(5, squats()), r, UTC)
         assertEquals(1, notes.count { it.muscle == Muscle.QUADS })

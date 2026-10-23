@@ -39,17 +39,17 @@ class MuscleFatigueTest {
     fun `decay halves at the half life`() {
         val report = estimate(session(1, 0, set("Bench Press")))
         assertEquals(1.26, report.residual(Muscle.MID_CHEST), 1e-9)
-        assertEquals(0.882 / 2, report.residual(Muscle.FRONT_DELTS, NOW + 24 * H), 1e-9)
-        assertEquals(1.26 / 2, report.residual(Muscle.MID_CHEST, NOW + 36 * H), 1e-9)
+        assertEquals(0.882 / 2, report.residual(Muscle.FRONT_DELTS, NOW + 18 * H), 1e-9)
+        assertEquals(1.26 / 2, report.residual(Muscle.MID_CHEST, NOW + 24 * H), 1e-9)
     }
 
     @Test
     fun `classes decay at their own rates`() {
-        val report = estimate(session(1, 18, set("Standing Calf Raise"), set("Back Squat")))
+        val report = estimate(session(1, 12, set("Standing Calf Raise"), set("Back Squat")))
         val calves = report.only(Muscle.CALVES, 1).dose
         val quads = report.only(Muscle.QUADS, 1).dose
         assertEquals(calves * 0.5, report.residual(Muscle.CALVES), 1e-9)
-        assertEquals(quads * Math.pow(0.5, 18.0 / 36.0), report.residual(Muscle.QUADS), 1e-9)
+        assertEquals(quads * Math.pow(0.5, 12.0 / 24.0), report.residual(Muscle.QUADS), 1e-9)
     }
 
     @Test
@@ -106,11 +106,11 @@ class MuscleFatigueTest {
     fun `big session stretches the half life by a quarter`() {
         val prior = arrayOf(session(1, 10 * 24, set("Bench Press")), session(2, 5 * 24, set("Bench Press")))
         val eleven = estimate(*prior, session(3, 24, *sets(11, rpe = 10)))
-        assertEquals(36.0 * 1.25, eleven.only(Muscle.MID_CHEST, 3).halfLifeHours, 1e-9)
-        assertEquals("front delts got 7.7, not big", 24.0, eleven.only(Muscle.FRONT_DELTS, 3).halfLifeHours, 1e-9)
+        assertEquals(24.0 * 1.25, eleven.only(Muscle.MID_CHEST, 3).halfLifeHours, 1e-9)
+        assertEquals("front delts got 7.7, not big", 18.0, eleven.only(Muscle.FRONT_DELTS, 3).halfLifeHours, 1e-9)
         val ten = estimate(*prior, session(3, 24, *sets(10, rpe = 10)))
-        assertEquals("exactly 10.0 is not above 10", 36.0, ten.only(Muscle.MID_CHEST, 3).halfLifeHours, 1e-9)
-        assertEquals("the other session keeps its own", 36.0, eleven.only(Muscle.MID_CHEST, 2).halfLifeHours, 1e-9)
+        assertEquals("exactly 10.0 is not above 10", 24.0, ten.only(Muscle.MID_CHEST, 3).halfLifeHours, 1e-9)
+        assertEquals("the other session keeps its own", 24.0, eleven.only(Muscle.MID_CHEST, 2).halfLifeHours, 1e-9)
     }
 
     @Test
@@ -118,16 +118,16 @@ class MuscleFatigueTest {
         val one = session(1, 24, set("Standing Calf Raise"))
         val fresh = FatigueModel.estimate(listOf(one), NOW, NOW - 7 * 7 * DAY)
         assertTrue(fresh.newLifter)
-        assertEquals(18.0 * 1.2, fresh.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
+        assertEquals(12.0 * 1.2, fresh.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
         val exactly = FatigueModel.estimate(listOf(one), NOW, NOW - 8 * 7 * DAY)
         assertFalse(exactly.newLifter)
-        assertEquals(18.0, exactly.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
+        assertEquals(12.0, exactly.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
     }
 
     @Test
     fun `big session and new lifter stretches multiply`() {
         val report = FatigueModel.estimate(listOf(session(1, 24, *sets(11, rpe = 10))), NOW, NOW - 7 * DAY)
-        assertEquals(36.0 * 1.25 * 1.2, report.only(Muscle.MID_CHEST, 1).halfLifeHours, 1e-9)
+        assertEquals(24.0 * 1.25 * 1.2, report.only(Muscle.MID_CHEST, 1).halfLifeHours, 1e-9)
     }
 
     @Test

@@ -46,7 +46,7 @@ class FatigueInputTest {
         assertEquals(NOW, sessions.single().atMs)
         val report = FatigueModel.estimate(sessions, NOW, NOW - 400 * DAY)
         assertEquals(1.8 * 1.4, report.residual(Muscle.MID_CHEST), 1e-9)
-        assertEquals("decays from now, not from the start", 1.8 * 1.4 / 2, report.residual(Muscle.MID_CHEST, NOW + 36 * H), 1e-9)
+        assertEquals("decays from now, not from the start", 1.8 * 1.4 / 2, report.residual(Muscle.MID_CHEST, NOW + 24 * H), 1e-9)
     }
 
     @Test

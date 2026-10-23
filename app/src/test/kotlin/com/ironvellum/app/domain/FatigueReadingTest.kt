@@ -14,7 +14,7 @@ class FatigueReadingTest {
     private val H = 3_600_000L
     private val UTC = ZoneId.of("UTC")
     private val NOW = 1_000L * 24 * H
-    private val SLOW = 36.0
+    private val SLOW = 24.0
 
     private fun at(zone: String, y: Int, mo: Int, d: Int, h: Int, min: Int = 0): Long =
         ZonedDateTime.of(y, mo, d, h, min, 0, 0, ZoneId.of(zone)).toInstant().toEpochMilli()
@@ -78,7 +78,7 @@ class FatigueReadingTest {
 
     @Test
     fun `shares use current residual not dose`() {
-        val older = contribution(dose = 10.0, ageMs = 72 * H, name = "Old", id = 1)
+        val older = contribution(dose = 10.0, ageMs = 48 * H, name = "Old", id = 1)
         val newer = contribution(dose = 4.0, name = "New", id = 2)
         val reading = report(older, newer).reading(Muscle.QUADS, UTC)
         assertEquals(listOf("New", "Old"), reading.causes.map { it.exerciseName })
@@ -101,7 +101,7 @@ class FatigueReadingTest {
     @Test
     fun `light by is the solved crossing`() {
         val one = report(contribution(dose = 6.0))
-        val expected = NOW + (36.0 * Math.log(6.0 / 2.1) / Math.log(2.0) * H).toLong()
+        val expected = NOW + (24.0 * Math.log(6.0 / 2.1) / Math.log(2.0) * H).toLong()
         assertEquals(expected.toDouble(), one.firstBelowMs(Muscle.QUADS, FatigueTuning.LIGHT_BELOW)!!.toDouble(), 60_000.0)
 
         val half = contribution(dose = 3.0, id = 1)

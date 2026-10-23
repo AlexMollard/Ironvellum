@@ -6716,11 +6716,11 @@
     <string name="fatigue_explainer_count_new">New to you. A lift you have not done in 3 weeks counts about 40% more, and soreness is more likely.</string>
     <string name="fatigue_explainer_pace_title">Then it wears off at a muscle\'s own pace</string>
     <string name="fatigue_explainer_fast_label">Fast</string>
-    <string name="fatigue_explainer_fast_value">Calves, forearms, abs, side and rear delts: light in about a day and a half</string>
+    <string name="fatigue_explainer_fast_value">Calves, forearms, abs, side and rear delts: light in about a day</string>
     <string name="fatigue_explainer_medium_label">Medium</string>
-    <string name="fatigue_explainer_medium_value">Biceps, triceps, lats, upper back, front delts: light in about 2 days</string>
+    <string name="fatigue_explainer_medium_value">Biceps, triceps, lats, upper back, front delts: light in about a day and a half</string>
     <string name="fatigue_explainer_slow_label">Slow</string>
-    <string name="fatigue_explainer_slow_value">Quads, hamstrings, glutes, chest, lower back: light in about 3 days</string>
+    <string name="fatigue_explainer_slow_value">Quads, hamstrings, glutes, chest, lower back: light in about 2 days</string>
     <string name="fatigue_explainer_pace_note">A very big session, or your first 8 weeks of training, stretch these times.</string>
     <string name="fatigue_explainer_levels_title">The five levels</string>
     <string name="fatigue_explainer_cant_title">It can\'t measure you</string>
