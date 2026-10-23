@@ -3,7 +3,10 @@ package com.ironvellum.app.ui.program
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.domain.FatigueModel
 import com.ironvellum.app.domain.FatigueSession
@@ -87,6 +90,19 @@ class MuscleBreakdownTest {
         driver.awaitText("What it came from")
         driver.click("Bench Press · deficit, incline")
         assertEquals(listOf("Bench Press" to "deficit,incline"), opened)
+    }
+
+    @Test
+    fun lightingAMuscleMovesNothingUnderTheFigure() {
+        val selection = show(session(1, 20, "Back Squat", "", 5))
+        driver.awaitText("MOST WORKED")
+        fun tops() = listOf("Estimated from your last 7 days", "MOST WORKED").map {
+            compose.onAllNodesWithText(it).onFirst().fetchSemanticsNode().boundsInRoot.top
+        }
+        val before = tops()
+        light(selection, Muscle.QUADS)
+        driver.awaitText("What it came from")
+        assertEquals(before, tops())
     }
 
     @Test

@@ -96,6 +96,7 @@ internal fun CoverageFigure(
         modifier.semantics { contentDescription = description },
         interactive = interactive,
         decor = look,
+        selectedLine = false,
     ) { WeekLegend(states.values.toSet()) }
 }
 
@@ -198,6 +199,8 @@ internal fun FigureBlock(
     interactive: Boolean = true,
     quietKey: Boolean = false,
     decor: ((Muscle) -> RegionLook)? = null,
+    /** False where a sheet names the lit muscle, so lighting one adds nothing under the figure and nothing below it moves. */
+    selectedLine: Boolean = true,
     key: @Composable () -> Unit,
 ) {
     val quiet = if (quietKey) Modifier.clearAndSetSemantics {} else Modifier
@@ -213,7 +216,7 @@ internal fun FigureBlock(
                 }
             }
         }
-        if (interactive && selection.value != null) SelectedMuscleLine(selection.value, lineFor)
+        if (interactive && selectedLine && selection.value != null) SelectedMuscleLine(selection.value, lineFor)
         FlowRow(
             Modifier.fillMaxWidth().padding(top = 6.dp).then(quiet),
             // From the page margin, wrapping at the margin: centred keys started off it and crowded three to a row.

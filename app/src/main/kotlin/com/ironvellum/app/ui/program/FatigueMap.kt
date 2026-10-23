@@ -102,6 +102,7 @@ internal fun FatigueMap(
         { muscleLine(it, levelWord(levels[it] ?: FatigueLevel.FRESH)) },
         modifier.semantics { contentDescription = description },
         decor = look,
+        selectedLine = false,
     ) {
         FatigueLevel.entries.forEach { FatigueLegendKey(it) }
     }
