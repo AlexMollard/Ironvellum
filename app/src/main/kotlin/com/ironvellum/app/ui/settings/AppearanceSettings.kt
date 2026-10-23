@@ -233,7 +233,7 @@ private fun AccentPreview(palette: AccentPalette) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.settings_appearance_preview_action), style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Emerald)
+            Text(stringResource(R.string.settings_appearance_preview_action), style = MaterialTheme.typography.labelLarge, color = IronvellumColors.EmeraldText)
         }
         Column(Modifier.weight(1f)) {
             Text(UiText.themed(R.string.settings_appearance_preview_record, R.string.settings_appearance_preview_record__t).asString(), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)

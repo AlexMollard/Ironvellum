@@ -15,6 +15,7 @@ import android.text.style.TypefaceSpan
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.createBitmap
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
@@ -24,6 +25,7 @@ import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.dashboard.DayKind
+import com.ironvellum.app.ui.theme.LightPaper
 import com.ironvellum.app.ui.theme.lightAccent
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -102,7 +104,7 @@ internal object WidgetFaces {
         }
         val roles = store.lightPalette.value.lightAccent()
         return Skin(
-            true, 0xFF1F1C17.toInt(), 0xFF5F594D.toInt(), 0xFFD8CFBE.toInt(), 0xFFFBF8F2.toInt(),
+            true, LightPaper.Ink.toArgb(), LightPaper.InkMuted.toArgb(), LightPaper.Rune.toArgb(), LightPaper.Vault.toArgb(),
             roles.fill, roles.text, roles.reward, com.ironvellum.app.ui.theme.lightAccentForeground(roles.fill), roles.tint, roles.border,
         )
     }

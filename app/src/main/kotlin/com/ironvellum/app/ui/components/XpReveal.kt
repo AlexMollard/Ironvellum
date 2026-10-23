@@ -257,7 +257,7 @@ internal fun XpRevealPanel(
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
                 style = TextStyle(fontFeatureSettings = "tnum"),
-                color = IronvellumColors.Emerald,
+                color = IronvellumColors.EmeraldText,
                 maxLines = 1,
             )
             Text(
@@ -308,7 +308,7 @@ internal fun XpRevealPanel(
             Text(
                 caption,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (current >= 0) IronvellumColors.Emerald else Dim,
+                color = if (current >= 0) IronvellumColors.EmeraldText else Dim,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).clearAndSetSemantics { },

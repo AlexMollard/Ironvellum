@@ -3851,7 +3851,7 @@ private fun LiveGainTag(gain: LiveGain, motion: Boolean, onGone: (serial: Int) -
             style = style,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
-            color = IronvellumColors.Emerald,
+            color = IronvellumColors.EmeraldText,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
@@ -3861,7 +3861,7 @@ private fun LiveGainTag(gain: LiveGain, motion: Boolean, onGone: (serial: Int) -
             style = style,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
-            color = IronvellumColors.Emerald,
+            color = IronvellumColors.EmeraldText,
             maxLines = 1,
             softWrap = false,
         )
@@ -3878,7 +3878,7 @@ private fun XpChip(xp: Int) {
         style = MaterialTheme.typography.labelLarge,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.SemiBold,
-        color = IronvellumColors.Emerald,
+        color = IronvellumColors.EmeraldText,
         maxLines = 1,
         modifier = Modifier
             .padding(end = 8.dp)

@@ -588,7 +588,7 @@ internal fun DeedsPage(
                 onPrimary = onContinue,
                 link = if (target == null) null else if (worn) stringResource(R.string.celebration_deed_wearing_link) else stringResource(R.string.celebration_deed_wear_button),
                 linkOn = !worn,
-                linkColor = if (worn) IronvellumColors.Emerald else IronvellumColors.SystemGreen,
+                linkColor = if (worn) IronvellumColors.EmeraldText else IronvellumColors.SystemGreen,
                 onLink = {
                     if (target != null) {
                         onWear(target.id)

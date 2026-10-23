@@ -185,7 +185,7 @@ class RecapScreenTest {
     fun theShareCardIs1080By1350AndFollowsTheTheme() {
         mode(themed = false)
         val dark = RecapCardPalette(0xFF0C0C0B.toInt(), 0xFFE8E8E4.toInt(), 0xFFA3A099.toInt(), 0xFF32302B.toInt(), 0xFF34D399.toInt(), 0xFF34D399.toInt(), 0xFF0C0C0B.toInt(), 0xFFF2C14E.toInt())
-        val light = RecapCardPalette(0xFFF3EEE3.toInt(), 0xFF1F1C17.toInt(), 0xFF5F594D.toInt(), 0xFFD6CDBA.toInt(), 0xFF2F6E4F.toInt(), 0xFF2F6E4F.toInt(), 0xFFFBF8F2.toInt(), 0xFF8A5F00.toInt())
+        val light = RecapCardPalette(0xFFF2E8D8.toInt(), 0xFF241B15.toInt(), 0xFF65584C.toInt(), 0xFFD4C9B8.toInt(), 0xFF208046.toInt(), 0xFF208046.toInt(), 0xFFFEFBF5.toInt(), 0xFF9B5900.toInt())
         val onDark = RecapCard.render(context, RecapSample.full(), palette = dark)
         val onLight = RecapCard.render(context, RecapSample.full(), palette = light)
         assertEquals(1080, onDark.width)

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.ui.components.animatorsOn
+import com.ironvellum.app.ui.theme.DarkPaper
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.RarityTint
@@ -141,7 +142,8 @@ private class SealPaths(val geometry: SealGeometry, category: String?) {
 }
 
 /** The seal's own dark ground, so the tier's tint reads the same over any panel. */
-private val SealGround get() = IronvellumColors.PlateGround
+// A seal is enamel: its ground and metal are the dark theme's in either theme (on Vellum only its words darken).
+private val SealGround get() = DarkPaper.PlateGround
 
 private const val STAMP_MS = 300
 
@@ -163,10 +165,10 @@ internal fun DeedSeal(
     stampIn: Boolean = false,
 ) {
     val paths = remember(rarity, category) { SealPaths(sealGeometry(rarity), category) }
-    val tint = if (earned) RarityTint.of(rarity) else IronvellumColors.InkMuted
+    val tint = if (earned) RarityTint.enamel(rarity) else DarkPaper.InkMuted
     val prism = earned && rarity == TitleRarity.Masterwork
     val motion = animatorsOn(LocalContext.current)
-    val still = remember(rarity, earned) { if (earned) Metal.of(rarity).span(64f) else SolidColor(tint) }
+    val still = remember(rarity, earned) { if (earned) Metal.of(rarity).span(64f, enamel = true) else SolidColor(tint) }
     val drift = rememberPrismDrift(64f, prism && motion)
     val stamp = remember { Animatable(if (stampIn && motion) 1.08f else 1f) }
     val haptics = LocalHapticFeedback.current
@@ -177,7 +179,7 @@ internal fun DeedSeal(
         }
     }
     Canvas(modifier.size(size).graphicsLayer { scaleX = stamp.value; scaleY = stamp.value }) {
-        val metal = drift?.let { Metal.Masterwork.span(64f, it.value) } ?: still
+        val metal = drift?.let { Metal.Masterwork.span(64f, it.value, enamel = true) } ?: still
         scale(this.size.minDimension / 64f, Offset.Zero) { drawSeal(paths, tint, metal, prism) }
     }
 }
@@ -197,7 +199,7 @@ private fun DrawScope.drawSeal(p: SealPaths, tint: Color, metal: Brush, prism: B
     p.glyph?.let { glyph ->
         val g = p.geometry.glyphSize
         translate((64f - g) / 2f, (64f - g) / 2f) {
-            scale(g / 24f, Offset.Zero) { drawPath(glyph, SolidColor(if (prism) RarityTint.Prismatic else tint), style = stroke(1.8f)) }
+            scale(g / 24f, Offset.Zero) { drawPath(glyph, SolidColor(if (prism) RarityTint.PrismaticDark else tint), style = stroke(1.8f)) }
         }
     }
 }

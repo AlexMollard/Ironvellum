@@ -676,7 +676,7 @@ private fun SetChip(set: AllySet) {
                 if (set.done) "\u25C6 ${set.setIndex + 1}" else "\u25C7 ${set.setIndex + 1}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
-                color = if (set.done) IronvellumColors.Emerald else IronvellumColors.InkMuted,
+                color = if (set.done) IronvellumColors.EmeraldText else IronvellumColors.InkMuted,
                 letterSpacing = IronvellumTracking.InlineLabel,
                 maxLines = 1,
                 softWrap = false,

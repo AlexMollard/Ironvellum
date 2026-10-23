@@ -38,7 +38,9 @@ class ThemeContrastTest {
             assertText("$label InkMuted", c.InkMuted, bg, bgName)
             assertText("$label DangerRed", c.DangerRed, bg, bgName)
             assertText("$label Caution", c.Caution, bg, bgName)
-            assertText("$label Emerald", c.Emerald, bg, bgName)
+            assertText("$label EmeraldText", c.EmeraldText, bg, bgName)
+            // The fill is a graphic (a button, a bar, a switch), not text: 3:1, as WCAG asks of a UI component.
+            assertText("$label Emerald", c.Emerald, bg, bgName, 3.0)
             assertText("$label EmeraldBright", c.EmeraldBright, bg, bgName)
             assertText("$label SystemGreen", c.SystemGreen, bg, bgName)
             assertText("$label SovereignGold", c.SovereignGold, bg, bgName)
@@ -97,7 +99,9 @@ class ThemeContrastTest {
     }
 
     @Test fun `a colour that already reads is not deepened`() {
-        AccentPresets.light.forEach { assertEquals(it.palette.primary, deepenForLight(it.palette.primary)) }
+        // A preset's reward reads on the page as it is; the forest fill is a fill (4.08:1 on the page), its text is the shade.
+        AccentPresets.light.forEach { assertEquals(it.palette.secondary, deepenForLight(it.palette.secondary)) }
+        AccentPresets.light.drop(1).forEach { assertEquals(it.palette.primary, deepenForLight(it.palette.primary)) }
         assertNotEquals(0xFFF2C14E.toInt(), deepenForLight(0xFFF2C14E.toInt()))
     }
 
@@ -109,6 +113,68 @@ class ThemeContrastTest {
             assertTrue("${preset.name}: hue gap $gap", gap >= 35)
         }
         assertEquals(AccentPalette.LightDefault, AccentPresets.light[0].palette)
+    }
+
+    @Test fun `the approved Vellum rebuild tokens are exactly the approved hexes`() {
+        IronvellumColors.light = true
+        IronvellumColors.lightAccents = AccentPalette.LightDefault
+        val c = IronvellumColors
+        assertEquals(0xFFF2E8D8.toInt(), c.Abyss.toArgb())
+        assertEquals(0xFFFEFBF5.toInt(), c.Vault.toArgb())
+        assertEquals(0xFFF6F0E5.toInt(), c.VaultHigh.toArgb())
+        assertEquals(0xFFD4C9B8.toInt(), c.Rune.toArgb())
+        assertEquals(0xFFAA9C8A.toInt(), c.Bracket.toArgb())
+        assertEquals(0xFF241B15.toInt(), c.Ink.toArgb())
+        assertEquals(0xFF65584C.toInt(), c.InkMuted.toArgb())
+        assertEquals(0xFF208046.toInt(), c.Emerald.toArgb())
+        assertEquals(0xFF176938.toInt(), c.EmeraldText.toArgb())
+        assertEquals(0xFFCFEED6.toInt(), c.AccentTint.toArgb())
+        assertEquals(0xFF85BA92.toInt(), c.AccentTintBorder.toArgb())
+        assertEquals(0xFFBE2323.toInt(), c.DangerRed.toArgb())
+    }
+
+    @Test fun `on Vellum the card is plainly lighter than the page and the raised sheet sits between`() {
+        IronvellumColors.light = true
+        val c = IronvellumColors
+        val cardOnPage = contrastRatio(c.Vault.toArgb(), c.Abyss.toArgb())
+        val raisedOnPage = contrastRatio(c.VaultHigh.toArgb(), c.Abyss.toArgb())
+        // Measured 1.17:1 (it was 1.07:1 before the rebuild: F3EEE3 against FBF8F2); the raised sheet is 1.07:1.
+        assertTrue("card on page is $cardOnPage:1", cardOnPage >= 1.15)
+        assertTrue("raised on page is $raisedOnPage:1", raisedOnPage > 1.05 && raisedOnPage < cardOnPage)
+        assertTrue(contrastRatio(c.Rune.toArgb(), c.Vault.toArgb()) > 1.3)
+    }
+
+    @Test fun `every Vellum preset reads on page and card, with light text on its fill`() {
+        IronvellumColors.light = true
+        val rows = StringBuilder()
+        AccentPresets.light.forEach { preset ->
+            IronvellumColors.lightAccents = preset.palette
+            val c = IronvellumColors
+            val onFill = contrastRatio(c.OnEmerald.toArgb(), c.Emerald.toArgb())
+            assertEquals("text on ${preset.name}'s fill is the card colour", c.Vault.toArgb(), c.OnEmerald.toArgb())
+            assertTrue("${preset.name}: card text on fill $onFill", onFill >= 4.5)
+            listOf("page" to c.Abyss, "card" to c.Vault).forEach { (bgName, bg) ->
+                assertText("${preset.name} EmeraldText", c.EmeraldText, bg, bgName)
+                assertText("${preset.name} SovereignGold", c.SovereignGold, bg, bgName)
+            }
+            assertEquals("${preset.name} on-gold", true, contrastRatio(c.OnGold.toArgb(), c.SovereignGold.toArgb()) >= 4.5)
+            rows.appendLine("${preset.name}: card-on-fill ${"%.2f".format(onFill)}, text/page ${"%.2f".format(contrastRatio(c.EmeraldText.toArgb(), c.Abyss.toArgb()))}")
+        }
+        println(rows)
+    }
+
+    @Test fun `light rarity words are the darkened set and read on page and card`() {
+        IronvellumColors.light = true
+        assertEquals(0xFF555F69.toInt(), RarityTint.Iron.toArgb())
+        assertEquals(0xFF944D24.toInt(), RarityTint.Bronze.toArgb())
+        assertEquals(0xFF6646A8.toInt(), RarityTint.Prismatic.toArgb())
+    }
+
+    @Test fun `a saved pre-rebuild preset maps onto its replacement and a custom hex stays`() {
+        assertEquals(AccentPresets.light[1].palette.primary, AccentPalette.fromLegacyLight(0xFF8E2F2B.toInt()))
+        assertEquals(AccentPresets.light[3].palette.secondary, AccentPalette.fromLegacyLight(0xFF1B6A72.toInt()))
+        assertEquals(AccentPalette.LightDefault.primary, AccentPalette.fromLegacyLight(0xFF2F6E4F.toInt()))
+        assertEquals(0xFF123456.toInt(), AccentPalette.fromLegacyLight(0xFF123456.toInt()))
     }
 
     @Test fun `dark values are exactly what they were`() {

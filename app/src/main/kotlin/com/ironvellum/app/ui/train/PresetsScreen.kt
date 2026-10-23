@@ -333,7 +333,7 @@ fun PresetsScreen(
                         modifier = Modifier.weight(1f),
                     )
                     if (sealed) {
-                        Text(stringResource(R.string.presets_sealed_mark), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Emerald)
+                        Text(stringResource(R.string.presets_sealed_mark), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.EmeraldText)
                     }
                     Text(
                         when {

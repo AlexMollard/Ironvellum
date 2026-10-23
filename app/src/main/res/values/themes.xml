@@ -23,6 +23,6 @@
     <style name="Theme.Ironvellum.Light" parent="Theme.Ironvellum">
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#FBF8F2</item>
+        <item name="android:windowBackground">#FEFBF5</item>
     </style>
 </resources>

@@ -809,7 +809,7 @@ private fun IronvellumBottomBar(
             ) {
                 destinations.forEach { destination ->
                     val selected = currentRoute == destination.route
-                    val tint = if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted
+                    val tint = if (selected) IronvellumColors.EmeraldText else IronvellumColors.InkMuted
                     // The dot is the whole signal, so the slot's description
                     // carries the count for a screen reader; with nothing
                     // unread it stays plain "Allies", which is how tests find

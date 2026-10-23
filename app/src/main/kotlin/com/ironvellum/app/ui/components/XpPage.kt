@@ -217,7 +217,7 @@ private fun TotalBlock(counted: Int, size: Int, caption: String, spoken: String)
             fontWeight = FontWeight.Bold,
             fontSize = size.sp,
             style = TextStyle(fontFeatureSettings = "tnum"),
-            color = IronvellumColors.Emerald,
+            color = IronvellumColors.EmeraldText,
             maxLines = 1,
         )
         Text(
@@ -298,7 +298,7 @@ private fun FillingContent(
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 26.sp,
-                    color = if (XpReveal.isLift(line)) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+                    color = if (XpReveal.isLift(line)) IronvellumColors.EmeraldText else IronvellumColors.SovereignGold,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

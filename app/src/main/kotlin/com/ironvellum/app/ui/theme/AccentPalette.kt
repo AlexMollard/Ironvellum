@@ -4,8 +4,30 @@ import androidx.annotation.StringRes
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.UiText
+import androidx.compose.ui.graphics.toArgb
 import kotlin.math.pow
 import kotlin.math.roundToInt
+
+// The Vellum presets (option B), each hex the sRGB of the OKLCH in its comment.
+private const val LIGHT_FOREST = 0xFF208046.toInt() // oklch(.53 .125 152)
+private const val LIGHT_OXBLOOD = 0xFFA03E43.toInt() // oklch(.50 .13 20)
+private const val LIGHT_INK_BLUE = 0xFF2E64A6.toInt() // oklch(.50 .12 255)
+private const val LIGHT_COPPER = 0xFFA34D16.toInt() // oklch(.52 .13 48)
+
+// shortcut: the approved gold (oklch .56 .13 68, #A56300) reads 3.95:1 on the page and gold is text as well as a
+// fill; the same hue and chroma at L .528 is the smallest drop that reaches 4.5:1. Back to .56 for a fill-only gold.
+private const val LIGHT_GOLD = 0xFF9B5900.toInt() // oklch(.528 .13 68)
+private const val LIGHT_TEAL = 0xFF007176.toInt() // oklch(.50 .085 200), Copper's reward: copper sits too near gold
+
+/** The colours the Vellum presets saved before the rebuild, and what replaced each. */
+private val LEGACY_LIGHT = mapOf(
+    0xFF2F6E4F.toInt() to LIGHT_FOREST,
+    0xFF8E2F2B.toInt() to LIGHT_OXBLOOD,
+    0xFF2F4C7A.toInt() to LIGHT_INK_BLUE,
+    0xFFA9542A.toInt() to LIGHT_COPPER,
+    0xFF8A5F00.toInt() to LIGHT_GOLD,
+    0xFF1B6A72.toInt() to LIGHT_TEAL,
+)
 
 /** Device-local accent roles; paper, ink and danger retain their own colours. */
 data class AccentPalette(
@@ -27,7 +49,13 @@ data class AccentPalette(
         private const val DARK_PANEL = 0xFF171715.toInt()
         val Default = AccentPalette()
         /** Forest and gold, the Vellum default. */
-        val LightDefault = AccentPalette(0xFF2F6E4F.toInt(), 0xFF8A5F00.toInt())
+        val LightDefault = AccentPalette(LIGHT_FOREST, LIGHT_GOLD)
+
+        /**
+         * A Vellum colour saved before the 2026-10-23 rebuild, as the preset colour that replaced it; anything else
+         * (a custom hex) is returned as it was. Keeps a saved preset selected after the update.
+         */
+        fun fromLegacyLight(colour: Int): Int = LEGACY_LIGHT[colour] ?: colour
     }
 }
 
@@ -46,15 +74,15 @@ object AccentPresets {
     )
 
     /**
-     * The Vellum (light) presets, from the approved mockups. Each reward colour is a deep shade that reads 4.5:1 on
-     * the page: gold for the three that sit apart from it, and a teal for Copper, whose orange-brown (hue 20) sits
-     * 21 degrees from the gold's (hue 41) and would read as the same colour.
+     * The Vellum (light) presets, rebuilt as option B. Each reward colour reads 4.5:1 on the page: gold for the three
+     * that sit apart from it, and a teal for Copper, whose orange-brown (hue 48) sits 20 degrees from the gold's
+     * (hue 68) and would read as the same colour.
      */
     val light = listOf(
         AccentPreset(R.string.accent_forest_gold, AccentPalette.LightDefault),
-        AccentPreset(R.string.accent_oxblood_gold, AccentPalette(0xFF8E2F2B.toInt(), 0xFF8A5F00.toInt())),
-        AccentPreset(R.string.accent_ink_gold, AccentPalette(0xFF2F4C7A.toInt(), 0xFF8A5F00.toInt())),
-        AccentPreset(R.string.accent_copper_teal, AccentPalette(0xFFA9542A.toInt(), 0xFF1B6A72.toInt())),
+        AccentPreset(R.string.accent_oxblood_gold, AccentPalette(LIGHT_OXBLOOD, LIGHT_GOLD)),
+        AccentPreset(R.string.accent_ink_gold, AccentPalette(LIGHT_INK_BLUE, LIGHT_GOLD)),
+        AccentPreset(R.string.accent_copper_teal, AccentPalette(LIGHT_COPPER, LIGHT_TEAL)),
     )
 
     fun forTheme(light: Boolean) = if (light) this.light else entries
@@ -63,16 +91,20 @@ object AccentPresets {
 /** The roles one accent pair plays on Vellum paper: the button fill, the text shade, the today-box tint and its border. */
 internal class LightAccent(val fill: Int, val text: Int, val tint: Int, val border: Int, val reward: Int)
 
-private val LIGHT_PAGE = 0xFFF3EEE3.toInt()
-private val LIGHT_PANEL = 0xFFFBF8F2.toInt()
-private val LIGHT_INK = 0xFF1F1C17.toInt()
+private val LIGHT_PAGE = LightPaper.Abyss.toArgb()
+private val LIGHT_PANEL = LightPaper.Vault.toArgb()
+private val LIGHT_INK = LightPaper.Ink.toArgb()
 
-/** Deep text shade, tint and tint border the mockups give each light preset, by the preset's fill. */
+/**
+ * Text shade, tint and tint border of each light preset, by the preset's fill, in the accent's own hue: the text
+ * shade is about 0.07 darker than the fill (forest's is the approved green, oklch .46 .11), the tint is oklch
+ * (.92 .04 h) and the border (.74 .08 h).
+ */
 private val LIGHT_SHADES = mapOf(
-    0xFF2F6E4F.toInt() to intArrayOf(0xFF255A40.toInt(), 0xFFDCE8DF.toInt(), 0xFF8FB39E.toInt()),
-    0xFF8E2F2B.toInt() to intArrayOf(0xFF7A2622.toInt(), 0xFFF0DCD6.toInt(), 0xFFC99A92.toInt()),
-    0xFF2F4C7A.toInt() to intArrayOf(0xFF263F66.toInt(), 0xFFDCE3EE.toInt(), 0xFF95A8C6.toInt()),
-    0xFFA9542A.toInt() to intArrayOf(0xFF8C4220.toInt(), 0xFFF3E0D2.toInt(), 0xFFD3A487.toInt()),
+    LIGHT_FOREST to intArrayOf(0xFF176938.toInt(), 0xFFCFEED6.toInt(), 0xFF85BA92.toInt()),
+    LIGHT_OXBLOOD to intArrayOf(0xFF833035.toInt(), 0xFFFEDBDA.toInt(), 0xFFD99796.toInt()),
+    LIGHT_INK_BLUE to intArrayOf(0xFF225088.toInt(), 0xFFD3E7FF.toInt(), 0xFF89AEDD.toInt()),
+    LIGHT_COPPER to intArrayOf(0xFF863D0E.toInt(), 0xFFFCDDCE.toInt(), 0xFFD59C7F.toInt()),
 )
 
 /** WCAG contrast of two opaque colours. */
@@ -107,7 +139,9 @@ fun deepenForLight(colour: Int): Int {
 
 internal fun AccentPalette.lightAccent(): LightAccent {
     val shades = LIGHT_SHADES[primary]
-    val fill = deepenForLight(primary)
+    // A preset's fill is exact (forest's reads 4.08:1 on the page by design: it is a fill, and its text is the shade
+    // below); only a custom colour is deepened until it reads.
+    val fill = if (shades != null) primary else deepenForLight(primary)
     val text = shades?.get(0) ?: mixAccent(fill, 0xFF000000.toInt(), 0.2)
     return LightAccent(
         fill = fill,

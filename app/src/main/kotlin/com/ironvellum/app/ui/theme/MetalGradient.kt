@@ -46,6 +46,9 @@ class Metal internal constructor(
     /** The ramp in force: the dark one, or its deeper Vellum shades. */
     private val colors: List<Color> get() = if (IronvellumColors.light) lightColors() else darkColors()
 
+    /** The ramp for [enamel] art (a deed seal on its dark ground): the dark ramp whatever the theme. */
+    private fun colorsFor(enamel: Boolean): List<Color> = if (enamel) darkColors() else colors
+
     /** Stops as a Brush across the box it is drawn in, corner to corner, at [alpha] of their strength. */
     fun bounds(alpha: Float = 1f): Brush = Brush.linearGradient(colorStops = stops(alpha))
 
@@ -53,8 +56,8 @@ class Metal internal constructor(
      * Stops as a Brush across a square of [extent] units at [origin], slid [shift] units along the diagonal.
      * Repeated, so a prism shifted over 0..[extent] wraps without a jump.
      */
-    fun span(extent: Float, shift: Float = 0f, origin: Offset = Offset.Zero): Brush = Brush.linearGradient(
-        colorStops = stops(),
+    fun span(extent: Float, shift: Float = 0f, origin: Offset = Offset.Zero, enamel: Boolean = false): Brush = Brush.linearGradient(
+        colorStops = stops(1f, enamel),
         start = Offset(origin.x + shift, origin.y + shift),
         end = Offset(origin.x + shift + extent, origin.y + shift + extent),
         tileMode = TileMode.Repeated,
@@ -63,17 +66,20 @@ class Metal internal constructor(
     /** The tone the metal is named by: a thin line or a glyph that cannot carry a gradient. */
     val tone: Color get() = colors[if (prism) 0 else 1]
 
-    private fun stops(alpha: Float = 1f): Array<Pair<Float, Color>> =
-        Array(colors.size) { at[it] to colors[it].let { c -> if (alpha == 1f) c else c.copy(alpha = c.alpha * alpha) } }
+    private fun stops(alpha: Float = 1f, enamel: Boolean = false): Array<Pair<Float, Color>> {
+        val ramp = colorsFor(enamel)
+        return Array(ramp.size) { at[it] to ramp[it].let { c -> if (alpha == 1f) c else c.copy(alpha = c.alpha * alpha) } }
+    }
 
     companion object {
         // The Vellum ramps are the same three steps in deeper shades: a lighter tone, the tier's tint, a darker one.
-        val Common = Metal({ listOf(Color(0xFFA9AEB5), RarityTint.Iron, Color(0xFF6F747B)) }, { listOf(Color(0xFF7C838B), RarityTint.Iron, Color(0xFF454A50)) }, FlatAt)
-        val Rare = Metal({ listOf(Color(0xFFE0A877), RarityTint.Bronze, Color(0xFFA86F44)) }, { listOf(Color(0xFFB07A48), RarityTint.Bronze, Color(0xFF6A4118)) }, FlatAt)
-        val Fabled = Metal({ listOf(Color(0xFFE8C672), RarityTint.Gold, Color(0xFFB88A30)) }, { listOf(Color(0xFFA17A12), RarityTint.Gold, Color(0xFF574000)) }, FlatAt)
+        val Common = Metal({ listOf(Color(0xFFA9AEB5), RarityTint.IronDark, Color(0xFF6F747B)) }, { listOf(Color(0xFF7C838B), RarityTint.Iron, Color(0xFF454A50)) }, FlatAt)
+        val Rare = Metal({ listOf(Color(0xFFE0A877), RarityTint.BronzeDark, Color(0xFFA86F44)) }, { listOf(Color(0xFFB07A48), RarityTint.Bronze, Color(0xFF6A4118)) }, FlatAt)
+        val Fabled = Metal({ listOf(Color(0xFFE8C672), RarityTint.GoldDark, Color(0xFFB88A30)) }, { listOf(Color(0xFFA17A12), RarityTint.Gold, Color(0xFF574000)) }, FlatAt)
         val Masterwork = Metal(
-            { listOf(RarityTint.Prismatic, Color(0xFF9DD5F0), Color(0xFFF0B6E4), RarityTint.Prismatic) },
-            { listOf(RarityTint.Prismatic, Color(0xFF2F78A0), Color(0xFFA23C86), RarityTint.Prismatic) },
+            { listOf(RarityTint.PrismaticDark, Color(0xFF9DD5F0), Color(0xFFF0B6E4), RarityTint.PrismaticDark) },
+            // violet, sky oklch(.50 .10 230), rose oklch(.50 .14 335)
+            { listOf(RarityTint.Prismatic, Color(0xFF006D91), Color(0xFF913F82), RarityTint.Prismatic) },
             PrismAt,
             prism = true,
         )

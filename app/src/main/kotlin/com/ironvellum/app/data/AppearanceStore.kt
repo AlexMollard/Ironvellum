@@ -93,7 +93,7 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
     private fun readPair(primaryKey: String, secondaryKey: String, fallback: AccentPalette) = AccentPalette(
         read(primaryKey, fallback.primary),
         read(secondaryKey, fallback.secondary),
-    )
+    ).let { if (primaryKey == "light_primary") AccentPalette(AccentPalette.fromLegacyLight(it.primary), AccentPalette.fromLegacyLight(it.secondary)) else it }
 
     private fun read(key: String, fallback: Int): Int =
         runCatching { prefs.getString(key, null)?.let(::parseAccentHex) }.getOrNull() ?: fallback

@@ -113,35 +113,40 @@ internal object DarkPaper : Paper {
     override val Scrim = Color.Black.copy(alpha = 0.6f)
 }
 
-/** Vellum: warm parchment paper, the approved light theme (2026-10-16). */
+/**
+ * Vellum, rebuilt (owner-approved 2026-10-23, option B): warm parchment layered in three steps, so a card is plainly
+ * lighter than the page and a raised sheet sits between them. Each hex is the sRGB of the OKLCH (L, C, h) in its comment.
+ */
 internal object LightPaper : Paper {
-    override val Abyss = Color(0xFFF3EEE3)
-    override val Vault = Color(0xFFFBF8F2)
-    override val VaultHigh = Color(0xFFECE6D8)
-    override val Ink = Color(0xFF1F1C17)
-    override val InkMuted = Color(0xFF5F594D)
-    override val Rune = Color(0xFFD8CFBE)
-    override val Bracket = Color(0xFFA89E8A)
-    override val DangerRed = Color(0xFFC62828)
-    override val Caution = Color(0xFF9C5500)
+    override val Abyss = Color(0xFFF2E8D8) // oklch(.935 .024 82) page
+    override val Vault = Color(0xFFFEFBF5) // oklch(.988 .008 85) card
+    override val VaultHigh = Color(0xFFF6F0E5) // oklch(.958 .016 84) card-high
+    override val Ink = Color(0xFF241B15) // oklch(.23 .018 55)
+    override val InkMuted = Color(0xFF65584C) // oklch(.47 .025 65)
+    override val Rune = Color(0xFFD4C9B8) // oklch(.84 .026 78) line
+    override val Bracket = Color(0xFFAA9C8A) // oklch(.70 .03 75)
+    override val DangerRed = Color(0xFFBE2323) // oklch(.52 .19 27)
+    // shortcut: the approved caution (oklch .56 .16 34, #C0482D) reads 4.12:1 on the page; this is the same hue and
+    // chroma at L .538, the smallest drop that reaches 4.5:1. Back to .56 if caution stops carrying text.
+    override val Caution = Color(0xFFB84026) // oklch(.538 .16 34) red-orange, away from gold
     override val Wells = WellTones(
-        top = Color(0xFFF1EBDD), bottom = Color(0xFFE8E1D1),
-        disabledTop = Color(0xFFE6DFCF), disabledBottom = Color(0xFFDDD5C3),
-        quietTop = Color(0xFFF3EEE3), quietBottom = Color(0xFFEDE7D9),
-        readout = Color(0xFFEDE7D9), flat = Color(0xFFEDE7D9),
+        top = Color(0xFFF8F4EC), bottom = Color(0xFFF4EEE1), // oklch(.968 .012 84), (.95 .018 83)
+        disabledTop = Color(0xFFEAE2D4), disabledBottom = Color(0xFFE2D9CB), // oklch(.915 .02 82), (.89 .022 80)
+        quietTop = Color(0xFFF5F0E6), quietBottom = Color(0xFFF1EADE), // oklch(.955 .014 84), (.94 .018 83)
+        readout = Color(0xFFF2ECE1), flat = Color(0xFFF2ECE1), // oklch(.945 .016 83)
     )
-    override val PlateGround = Color(0xFFF8F4EA)
-    override val PlateEdge = Color(0xFFE3DBC9)
-    override val PlateDeep = Color(0xFFF3EEE3)
-    override val Silhouette = Color(0xFFC9BFAA)
-    override val SilhouetteGround = Color(0xFFEFE9DC)
-    override val UnheldName = Color(0xFF6E685B)
-    override val UnheldNameBright = Color(0xFF4A453B)
-    override val RingTick = Color(0xFF9A907C)
-    override val FillGlow = Color(0xFFDCE8DF)
-    override val LevelGlow = Color(0xFFF1E3B8)
-    override val OnGoldFill = Color(0xFFFBF8F2)
-    override val Scrim = Color(0xFF1F1C17).copy(alpha = 0.4f)
+    override val PlateGround = Color(0xFFFAF6EE) // oklch(.975 .012 85)
+    override val PlateEdge = Color(0xFFDFD6C8) // oklch(.88 .022 80)
+    override val PlateDeep = Color(0xFFF2E8D8) // the page, as a crest mark's infill
+    override val Silhouette = Color(0xFFC7BCAC) // oklch(.80 .026 78)
+    override val SilhouetteGround = Color(0xFFF2ECE1) // oklch(.945 .016 84)
+    override val UnheldName = Color(0xFF6E6155) // oklch(.50 .025 65)
+    override val UnheldNameBright = Color(0xFF51453C) // oklch(.40 .022 62)
+    override val RingTick = Color(0xFFA39684) // oklch(.68 .03 76)
+    override val FillGlow = Color(0xFFCFEED6) // oklch(.92 .045 152) the accent tint
+    override val LevelGlow = Color(0xFFF4DFB4) // oklch(.91 .06 85) a gold wash
+    override val OnGoldFill = Color(0xFFFEFBF5) // the card colour
+    override val Scrim = Color(0xFF241B15).copy(alpha = 0.4f)
 }
 
 object IronvellumColors {
@@ -167,6 +172,8 @@ object IronvellumColors {
     val Emerald get() = if (light) Color(lightRoles.fill) else Color(darkAccents.primary) // XP and success
     val EmeraldBright get() = if (light) Color(lightRoles.text) else Color(darkAccents.bright)
     val EmeraldDeep get() = if (light) Color(lightRoles.text) else Color(darkAccents.deep)
+    /** The accent as text or a glyph: its text shade on Vellum (the fill is under 4.5:1 on the page), the accent itself in dark. */
+    val EmeraldText get() = if (light) Color(lightRoles.text) else Color(darkAccents.primary)
     val SystemGreen get() = if (light) Color(lightRoles.text) else Color(darkAccents.muted) // muted green accent
     val SovereignGold get() = if (light) Color(lightRoles.reward) else Color(darkAccents.secondary) // earned moments only
     /** Text on an Emerald fill. */
