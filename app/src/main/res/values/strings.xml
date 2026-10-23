@@ -6649,12 +6649,19 @@
     <!-- The Stats list: a figure and its noun. -->
     <plurals name="review_lifts_gained_count"><item quantity="one">%1$d lift gained</item><item quantity="other">%1$d lifts gained</item></plurals>
 
-    <!-- Train > Muscles: the tabs, the Fatigue | Coverage switch and the caption under the fatigue map. -->
-    <string name="fatigue_tab_plan">Plan</string>
-    <string name="fatigue_tab_muscles">Muscles</string>
+    <!-- The Muscles screen: its title and its one tab row, Fatigue | Coverage, then the caption under the fatigue map. -->
+    <string name="muscles_title">Muscles</string>
     <string name="fatigue_switch_fatigue">Fatigue</string>
     <string name="fatigue_switch_coverage">Coverage</string>
     <string name="fatigue_window_caption">Estimated from your last 7 days</string>
+
+    <!-- Train's "Muscles right now" card. %1$s of the week line is the coverage summary, e.g. "1 heavy · 2 muscles need more sets". -->
+    <string name="muscles_now_title">Muscles right now</string>
+    <string name="muscles_now_rested">No muscle looks worked</string>
+    <string name="muscles_now_week">This week: %1$s</string>
+    <!-- Screen-reader actions: the card opens Muscles, its last line opens Muscles on Coverage. -->
+    <string name="muscles_now_open_hint">Show muscle fatigue</string>
+    <string name="muscles_now_coverage_hint">Show weekly coverage</string>
 
     <!-- Fatigue map. The five levels say how worked a muscle is; High is hatched and Very high cross-hatched on the figure. -->
     <string name="fatigue_level_fresh">Fresh</string>

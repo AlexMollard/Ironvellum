@@ -23,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
@@ -80,6 +79,9 @@ import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.program.MusclesNowCard
+import com.ironvellum.app.ui.program.MuscleFatigueViewModel
+import com.ironvellum.app.ui.program.MusclesView
 import com.ironvellum.app.ui.dashboard.trialLength
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
@@ -200,15 +202,20 @@ fun PresetsScreen(
     onQuickSession: (Long) -> Unit,
     onOpenExercises: () -> Unit,
     onOpenLog: () -> Unit,
-    onOpenCoverage: () -> Unit,
+    onOpenMuscles: (MusclesView) -> Unit,
     onOpenWorkout: (Long) -> Unit = {},
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory {
             val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
             initializer { PresetsViewModel(ironvellumRepository(), appContext) }
         }),
+    fatigueModel: MuscleFatigueViewModel =
+        viewModel(factory = viewModelFactory {
+            initializer { MuscleFatigueViewModel(ironvellumRepository()) }
+        }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val fatigue by fatigueModel.ui.collectAsStateWithLifecycle()
     val live by viewModel.live.collectAsStateWithLifecycle()
     var showNewChooser by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
@@ -218,6 +225,7 @@ fun PresetsScreen(
     var shareRefusal by remember { mutableStateOf<String?>(null) }
 
     val zone = java.time.ZoneId.systemDefault()
+    val coverageLine = remember(ui.plannedPresets) { coverageHeadline(coverageTally(ProgramRules.coverage(ui.plannedPresets))) }
     val todayDate = LocalDate.now()
     val today = todayDate.dayOfWeek.value
     val todayStart = todayDate.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -269,6 +277,14 @@ fun PresetsScreen(
                     onForge = { showNewChooser = true },
                 )
             }
+            MusclesNowCard(
+                ui = fatigue,
+                coverageLine = if (ui.plannedPresets.isEmpty()) null else stringResource(R.string.muscles_now_week, coverageLine),
+                zone = zone,
+                onOpen = { onOpenMuscles(MusclesView.FATIGUE) },
+                onOpenCoverage = { onOpenMuscles(MusclesView.COVERAGE) },
+                modifier = Modifier.padding(top = SECTION_GAP),
+            )
             if (ui.presets.isNotEmpty()) {
             Spacer(Modifier.height(SECTION_GAP))
             val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
@@ -364,20 +380,9 @@ fun PresetsScreen(
             val trials = ui.history.filter { it.first.completedAtMs != null }
                 .sortedByDescending { it.first.completedAtMs }
                 .take(recentRows)
-            val coverageLine = remember(ui.plannedPresets) { coverageHeadline(coverageTally(ProgramRules.coverage(ui.plannedPresets))) }
-            // The ways out: what the cycle covers, the catalogue, the record. Rows
-            // rather than buttons, so nothing here competes with Begin.
+            // The ways out: the catalogue and the record. Rows rather than buttons, so
+            // nothing here competes with Begin. Coverage is on the Muscles card above.
             InkRowPanel(Modifier.fillMaxWidth()) {
-                WayOutRow(
-                    icon = Icons.Outlined.AccessibilityNew,
-                    label = stringResource(R.string.presets_coverage_label),
-                    detail = when {
-                        ui.plannedPresets.isEmpty() -> UiText.themed(R.string.presets_no_cycle_title, R.string.presets_no_cycle_title__t).asString()
-                        else -> coverageLine
-                    },
-                    onClick = onOpenCoverage,
-                )
-                InkDivider()
                 WayOutRow(icon = Icons.Outlined.FitnessCenter, label = stringResource(R.string.presets_exercises_label), onClick = onOpenExercises)
                 // The recent trials card links the same chronicle from its header,
                 // so the row only stands when that card does not.

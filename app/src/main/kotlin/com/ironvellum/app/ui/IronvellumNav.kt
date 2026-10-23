@@ -101,7 +101,8 @@ import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
 import com.ironvellum.app.ui.train.TrainScreen
-import com.ironvellum.app.ui.train.TrainTabMemory
+import com.ironvellum.app.ui.program.MusclesScreen
+import com.ironvellum.app.ui.program.MusclesView
 import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
@@ -141,6 +142,7 @@ object Routes {
     const val REVIEW = "review/{kind}/{start}"
     const val REVIEW_SHARE = "review_share/{kind}/{start}"
     const val MUSCLE_COVERAGE = "muscle_coverage"
+    const val MUSCLES = "muscles?view={view}"
     const val OPTIMISE_RITES = "optimise_rites"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val LIFTER = "hunter/{userId}?name={name}"
@@ -153,6 +155,8 @@ object Routes {
 
     fun programBuilder(mode: String, presetId: Long? = null): String =
         if (presetId == null) "program_builder?mode=$mode" else "program_builder?mode=$mode&presetId=$presetId"
+
+    fun muscles(view: MusclesView = MusclesView.FATIGUE): String = "muscles?view=${view.arg}"
 
     fun presetEditor(presetId: Long? = null): String =
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
@@ -419,9 +423,23 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.exercises()) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
+                        onOpenMuscles = { view -> navController.navigate(Routes.muscles(view)) },
+                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
+                    )
+                }
+                composable(
+                    Routes.MUSCLES,
+                    arguments = listOf(navArgument("view") { type = NavType.StringType; defaultValue = MusclesView.FATIGUE.arg }),
+                ) { entry ->
+                    MusclesScreen(
+                        initialView = MusclesView.of(entry.arguments?.getString("view")),
+                        onBack = { navController.popBackStack() },
+                        onGenerateSession = { navController.navigate(Routes.programBuilder("session")) },
+                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
+                        // The saved rites live on Train, which is underneath.
+                        onOpenRites = { if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS) },
                         onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
                         onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
-                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     )
                 }
                 composable(
@@ -435,11 +453,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                     )
                 }
-                // Coverage lives in Train > Muscles now; a stored link to the old screen lands there.
+                // Coverage lives on the Muscles screen now; a stored link to the old screen lands there.
                 composable(Routes.MUSCLE_COVERAGE) {
                     LaunchedEffect(Unit) {
-                        TrainTabMemory.openCoverage()
-                        navController.navigate(Routes.PRESETS) {
+                        navController.navigate(Routes.muscles(MusclesView.COVERAGE)) {
                             popUpTo(Routes.MUSCLE_COVERAGE) { inclusive = true }
                             launchSingleTop = true
                         }
@@ -462,11 +479,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         mode = entry.arguments?.getString("mode") ?: "week",
                         presetId = entry.arguments?.getLong("presetId")?.takeIf { it > 0 },
                         onDone = { navController.popBackStack() },
-                        // Train is the page that holds Muscles; it is usually just underneath.
-                        onOpenFatigue = {
-                            TrainTabMemory.openFatigue()
-                            if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS)
-                        },
+                        onOpenFatigue = { navController.navigate(Routes.muscles(MusclesView.FATIGUE)) },
                     )
                 }
                 composable(
