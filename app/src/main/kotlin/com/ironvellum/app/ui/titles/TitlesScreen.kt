@@ -389,7 +389,7 @@ fun TitlesScreen(
         // A path drilled into does not stop the swipe: the tabs stay live there too, and a swipe
         // is the same move as tapping one. PATHS reopens on that path when swiped back to.
         InkTabbedPager(
-            labels = listOf(Words.deed.upl, Words.paths.u, Words.journal.u),
+            labels = listOf(Words.deed.upl, Words.paths.u, Words.text(UiText.themed(R.string.titles_tab_journal, R.string.titles_tab_journal__t))),
             state = pager,
             modifier = Modifier.weight(1f),
             tabsModifier = Modifier.padding(horizontal = 16.dp),

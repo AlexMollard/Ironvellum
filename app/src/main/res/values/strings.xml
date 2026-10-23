@@ -6776,4 +6776,8 @@
     <string name="fatigue_footprint_compare_long">%1$s works the same muscle without loading it long, so the same sets leave less behind.</string>
     <!-- %1$s the name of another exercise for the same muscle. -->
     <string name="fatigue_footprint_compare_heavy">%1$s works the same muscle without the whole-body load, so the same sets leave less behind.</string>
+
+    <!-- Progress tab label for the skill-attempt log; the themed name stays Journal. Words.journal keeps "practice log" for the sentences built from it. -->
+    <string name="titles_tab_journal">SKILL PRACTICE</string>
+    <string name="titles_tab_journal__t">JOURNAL</string>
 </resources>
