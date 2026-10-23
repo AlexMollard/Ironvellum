@@ -43,6 +43,9 @@ object TestProfile {
         FirstRunPrefs.setWelcomeSeen(app)
         FirstRunPrefs.setVeilIntroSeen(app)
         FirstRunPrefs.setNotificationsAsked(app)
+        // Skipping setup (OnboardingBackTest) leaves the sex marked unset in prefs and in a process-wide flow, which
+        // relabels Today's rank chip "Add sex in Profile" for every test that runs after it in the same process.
+        FirstRunPrefs.setSexUnset(app, false)
         runBlocking {
             val repo = app.repository
             repo.ensureSeeded()
