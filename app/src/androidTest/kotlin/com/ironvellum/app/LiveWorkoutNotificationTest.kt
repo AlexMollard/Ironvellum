@@ -127,9 +127,21 @@ class LiveWorkoutNotificationTest {
         assertEquals("Seal", build(live = false).actions.last().title.toString())
     }
 
+    private fun waitUntil(what: String, timeoutMs: Long = 5_000, condition: () -> Boolean) {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs
+        while (!condition()) {
+            assertTrue("timed out waiting: $what", SystemClock.elapsedRealtime() < deadline)
+            Thread.sleep(50)
+        }
+    }
+
     @Test
     fun itPostsOnTheWorkoutChannelAsOneOngoingNotification() {
+        // This is the first test of a fresh install: the permission grant above reaches the notification
+        // service asynchronously, and notify() only queues the post. Wait for both, then assert as before.
+        waitUntil("notifications are enabled for the app") { manager.areNotificationsEnabled() }
         manager.notify(Notifications.ID_TRIAL, build(live = true))
+        waitUntil("the notification is in the tray") { manager.activeNotifications.any { it.id == Notifications.ID_TRIAL } }
         val posted = manager.activeNotifications.filter { it.id == Notifications.ID_TRIAL }
         assertEquals(1, posted.size)
         assertEquals(Notifications.CHANNEL_TRIAL, posted.single().notification.channelId)
