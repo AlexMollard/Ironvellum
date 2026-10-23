@@ -146,6 +146,17 @@ The phase 1 screens were redrawn in the app's own look. What that adds to scope:
 - **Workout rows** carry a muscle strip and PR tags; **Workouts** gains a month summary.
 - Metal-rimmed plates, gold XP and the app's deed seals throughout; your plate in the sidebar.
 
+## Themes (owner requirement 2026-10-23)
+
+The web supports the app's themes exactly. Mockups: WebOverviewVellum, WebOverviewCopper.
+
+- Theme mode System, Dark or Light (Vellum); every accent preset for dark and for Vellum, with the same derived
+  shades; plain or themed names.
+- The web follows the phone by default: the snapshot carries the phone's theme mode, accent and names choice.
+  An Appearance menu (Aa) overrides it per browser, never uploaded, with "Match my phone" to go back.
+- Nothing is retyped: the accent table is generated from `AccentPalette.kt` and the themed words from
+  `strings.xml` (`key` / `key__t`), both checked for drift in the gate.
+
 ## Phase 2: social and routines (owner-approved 2026-10-23)
 
 The owner wants "everything but editing". Phase 2 is built after phase 1's live acceptance and amends the
