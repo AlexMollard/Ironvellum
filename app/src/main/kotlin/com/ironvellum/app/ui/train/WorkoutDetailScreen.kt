@@ -68,6 +68,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.Energy
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.Variation
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.Exercise
@@ -735,12 +736,14 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
             "${doneWorking.size}/${working.size}",
             summary,
         ).joinToString(" · ")
+        // The movement as History and the share text name it: "Pull-up · archer" ([Variation.label]).
+        val heading = Variation.label(first.exerciseName, first.modifiers)
         val expanded = groupIndex in open
         val toggle = { open = if (expanded) open - groupIndex else open + groupIndex }
         if (expanded) {
             Spacer(Modifier.height(10.dp))
             InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
-                ExerciseRow(first.exerciseName, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), true, 0.dp, toggle)
+                ExerciseRow(heading, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), true, 0.dp, toggle)
                 // Warm-ups read as such and working sets count from 1 after them.
                 var number = 0
                 groupSets.forEach { set ->
@@ -760,7 +763,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
             Spacer(Modifier.height(10.dp))
         } else {
             if (groupIndex > 0 && (groupIndex - 1) !in open) InkDivider()
-            ExerciseRow(first.exerciseName, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), false, 4.dp, toggle)
+            ExerciseRow(heading, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), false, 4.dp, toggle)
         }
     }
 }
