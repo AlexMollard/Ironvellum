@@ -7,6 +7,10 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.ui.FlowDriver
 import com.ironvellum.app.ui.TestProfile
@@ -80,5 +84,16 @@ class MusclesScreenTest {
         driver.click("Fatigue")
         driver.awaitText("Estimated from your last 7 days")
         assertEquals(2, tabCount())
+    }
+
+    /** A drag across the figure, where the body map takes taps, still moves the page: Fatigue to Coverage and back. */
+    @Test
+    fun swipingTheMapMovesBetweenThePages() {
+        show(MusclesView.FATIGUE)
+        driver.awaitText("Estimated from your last 7 days")
+        compose.onRoot().performTouchInput { swipeLeft() }
+        driver.awaitText("This week, Monday to Sunday")
+        compose.onRoot().performTouchInput { swipeRight() }
+        driver.awaitText("Estimated from your last 7 days")
     }
 }

@@ -5,16 +5,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
 import com.ironvellum.app.ui.components.PushedHeader
 
 /** The two pages of the Muscles screen, and the route argument that names the one a link opens on. */
@@ -30,7 +27,7 @@ enum class MusclesView(val arg: String) {
 
 /**
  * Muscles: its own screen, opened from Train's "Muscles right now" card. Its only tab row is
- * Fatigue | Coverage over two maps of the same body figure; [initialView] is where a link lands.
+ * Fatigue | Coverage over two maps of the same body figure, each a page that swipes; [initialView] is where a link lands.
  */
 @Composable
 internal fun MusclesScreen(
@@ -41,22 +38,25 @@ internal fun MusclesScreen(
     onOpenRites: () -> Unit,
     onOptimise: () -> Unit,
 ) {
-    var view by rememberSaveable { mutableStateOf(initialView) }
+    val pager = rememberPagerState(initialPage = initialView.ordinal) { MusclesView.entries.size }
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
             PushedHeader(stringResource(R.string.muscles_title), onBack)
-            InkTabs(
-                labels = listOf(stringResource(R.string.fatigue_switch_fatigue), stringResource(R.string.fatigue_switch_coverage)),
-                selectedIndex = view.ordinal,
-                onSelect = { view = MusclesView.entries[it] },
-                fill = true,
-            )
         }
-        Spacer(Modifier.height(8.dp))
-        when (view) {
-            MusclesView.FATIGUE -> FatiguePane()
-            MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise)
+        // Each view is a swipeable page under the strip; a page adds its own gutter so a swipe is not clipped.
+        InkTabbedPager(
+            labels = listOf(stringResource(R.string.fatigue_switch_fatigue), stringResource(R.string.fatigue_switch_coverage)),
+            state = pager,
+            modifier = Modifier.weight(1f),
+            tabsModifier = Modifier.padding(horizontal = 16.dp),
+            tabsGap = 8.dp,
+            fillTabs = true,
+        ) { page ->
+            when (MusclesView.entries[page]) {
+                MusclesView.FATIGUE -> FatiguePane()
+                MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise)
+            }
         }
     }
 }
