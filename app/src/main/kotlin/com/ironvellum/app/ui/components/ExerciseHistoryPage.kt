@@ -187,7 +187,7 @@ private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: Str
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VariationChips(log: ExerciseLog, onPick: (String) -> Unit) {
-    val plain = stringResource(R.string.infosheet_history_variation_plain)
+    val plain = stringResource(R.string.common_variation_standard)
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         FilterChip(stringResource(R.string.infosheet_history_variation_all), log.selected == null) { onPick(ExerciseLog.ALL) }
         log.variations.forEach { v ->

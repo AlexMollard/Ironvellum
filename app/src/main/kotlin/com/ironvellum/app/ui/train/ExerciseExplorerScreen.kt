@@ -244,14 +244,14 @@ internal fun trialsPerWeek(trials: Int, firstMs: Long?, nowMs: Long): Double? {
 private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
 
 /**
- * Which variation of the movement the page is about, when it was logged in more than one: "Plain", "deficit".
+ * Which variation of the movement the page is about, when it was logged in more than one: "Standard", "deficit".
  * Everything below follows the picked one alone, so an assisted set never reads as the pull-up's peak.
  */
 @Composable
 private fun VariationChips(variations: List<String>, shown: String, onPick: (String) -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
         variations.forEach { key ->
-            val label = if (key.isEmpty()) stringResource(R.string.explorer_variation_plain) else key.replace(",", ", ")
+            val label = if (key.isEmpty()) stringResource(R.string.common_variation_standard) else key.replace(",", ", ")
             InkChip(
                 label = if (key == shown) stringResource(R.string.explorer_variation_selected, label) else label,
                 clickLabel = stringResource(R.string.explorer_variation_show, label),

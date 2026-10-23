@@ -2040,8 +2040,8 @@
     <string name="explorer_empty">Your history holds no sets for this yet. Finish a workout with it and they appear.</string>
     <string name="explorer_empty__t">The Chronicle holds no sets for this yet. Seal a trial with it and they appear.</string>
     <string name="explorer_recent_title">Recent sets</string>
-    <!-- Exercise explorer: the variation chip when the movement was logged without a variation. -->
-    <string name="explorer_variation_plain">Plain</string>
+    <!-- The word for a movement done with none of the variation modifiers (Pull-up, not Pull-up assisted). One string for every screen. -->
+    <string name="common_variation_standard">Standard</string>
     <!-- Exercise explorer: the selected variation chip. %1$s is the variation. -->
     <string name="explorer_variation_selected" translatable="false">● %1$s</string>
     <!-- Accessibility: action label of a variation chip. %1$s is the variation. -->
@@ -5056,8 +5056,6 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <!-- History page: the chips above the summary that pick which variation (incline, deficit...) the page shows. -->
     <string name="infosheet_history_variation_all">All</string>
-    <!-- The chip for the movement done with none of the variation modifiers. -->
-    <string name="infosheet_history_variation_plain">Standard</string>
     <!-- Under the summary of a bodyweight lift, when no body weight is logged so the estimate cannot count the body. -->
     <string name="infosheet_history_body_missing">The estimate counts the added load only. Log your body weight and it counts your body too.</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
