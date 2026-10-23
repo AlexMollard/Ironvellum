@@ -277,7 +277,7 @@ data class ExerciseSetEntry(
     val done: Boolean,
     val score: Double,
     val kind: SetKind = SetKind.WORKING,
-    /** Epley estimate of the marked load; null for a hold, an unloaded set or one past [ProgramRules.MAX_E1RM_REPS] reps. */
+    /** Epley estimate of the marked load; null for a hold, or an unloaded set; reps past [ProgramRules.MAX_E1RM_REPS] count as 12. */
     val e1rmKg: Double? = null,
 )
 
@@ -378,7 +378,7 @@ object ExerciseHistoryCalculator {
         val byE1rm = !isHold && exercise.metric.isStrength && rows.any { it.done && (it.weightKg ?: 0.0) > 0.0 }
         fun e1rmOf(r: ExerciseSetRow): Double? {
             val kg = r.weightKg ?: return null
-            if (kg <= 0.0 || r.reps < 1 || r.reps > ProgramRules.MAX_E1RM_REPS) return null
+            if (kg <= 0.0 || r.reps < 1) return null
             val bodyKg = bodyweightAt?.invoke(r.atMs)?.takeIf { it > 0.0 } ?: bodyweightKg
             return BodyShare.e1rmAddedKg(kg, r.reps, BodyShare.of(exercise, r.modifiers), bodyKg)
         }

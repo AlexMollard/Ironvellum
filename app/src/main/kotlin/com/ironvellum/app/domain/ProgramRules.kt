@@ -184,16 +184,23 @@ object ProgramRules {
 
     // ----------------------------------------------------------------- loads
 
-    /** Reps above 12 stop flattering the Epley estimate (LeSuer 1997). */
+    /** Reps above 12 stop flattering the Epley estimate (LeSuer 1997): the e1RM counts them as 12 ([e1rm]). */
     const val MAX_E1RM_REPS = 12
 
     /**
      * Epley estimate of a one-rep max from [loadKg] for [reps]. The one copy:
      * the strength profile, the lift boards and the Ledger's records board
-     * all read it, so they cannot disagree. Callers bound [reps] themselves
-     * ([MAX_E1RM_REPS]).
+     * all read it, so they cannot disagree. Unbounded: an estimate of a one-rep
+     * max goes through [e1rm], which clamps the reps.
      */
     fun epley(loadKg: Double, reps: Int): Double = loadKg * (1.0 + reps / 30.0)
+
+    /**
+     * The estimated one-rep max of [reps] at [loadKg]: Epley with the reps clamped to [MAX_E1RM_REPS], so a set past
+     * the cap counts as if it were 12 reps at that load (7.5 kg x 14 beats 5 kg x 12 rather than being dropped).
+     * The one rule every record, chart, PR tag, board and deed reads; a set with fewer than one rep has none.
+     */
+    fun e1rm(loadKg: Double, reps: Int): Double = epley(loadKg, reps.coerceIn(1, MAX_E1RM_REPS))
 
     /** Accuracy of the Epley inversion degrades past ~10 reps (LeSuer 1997). */
     const val MAX_WORKING_REPS = 10
@@ -201,15 +208,15 @@ object ProgramRules {
     /**
      * Best estimated one-rep max per movement, in the MARKED kilos the lifter
      * logs, from working sets with real load and an honest rep count
-     * (weight > 0, 1..12 reps - Epley with the rep term capped at 12, the
+     * (weight > 0, 1 or more reps - Epley with the rep term clamped at 12, the
      * same convention TitleEngine uses, LeSuer 1997).
      */
     fun strengthProfile(lifts: List<LoggedLift>): StrengthProfile {
         val best = mutableMapOf<String, Double>()
         for (lift in lifts) {
             if (lift.weightKg <= 0.0) continue
-            if (lift.reps < 1 || lift.reps > MAX_E1RM_REPS) continue
-            val e1rm = epley(lift.weightKg, lift.reps)
+            if (lift.reps < 1) continue
+            val e1rm = e1rm(lift.weightKg, lift.reps)
             val key = lift.exerciseName.trim().lowercase()
             if (e1rm > (best[key] ?: 0.0)) best[key] = e1rm
         }

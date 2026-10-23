@@ -822,7 +822,7 @@ object Titles {
         // The marked kilo is the load the deed is about (bar load for the
         // free-weight band; machines pass through loadFactor like every other
         // consumer). Epley converts any honest set to an estimated 1RM, with
-        // the rep term capped at 12 because extrapolating beyond that flatters
+        // the rep term clamped at 12 (ProgramRules.e1rm) because extrapolating beyond that flatters
         // volume into imaginary strength. Assisted machines are excluded:
         // their marked kilo SUBTRACTS load, so counting it would award deeds
         // for doing less. Bodyweight-rep moves (unweighted pull-ups) mark no
@@ -850,9 +850,10 @@ object Titles {
                 ) {
                     val bodyweight = bodyweightAt(session.startedAtMs)
                     if (bodyweight > 0.0) {
-                        val e1rm = (set.weightKg ?: 0.0).coerceAtLeast(0.0) *
-                            MovementDifficulty.loadFactor(exercise.name) *
-                            (1.0 + minOf(set.reps, 12) / 30.0)
+                        val e1rm = ProgramRules.e1rm(
+                            (set.weightKg ?: 0.0).coerceAtLeast(0.0) * MovementDifficulty.loadFactor(exercise.name),
+                            set.reps,
+                        )
                         val multiple = e1rm / bodyweight
                         if (multiple > (liftMultiples[name] ?: 0.0)) liftMultiples[name] = multiple
                     }

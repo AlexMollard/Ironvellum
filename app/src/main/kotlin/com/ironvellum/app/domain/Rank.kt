@@ -200,7 +200,7 @@ object Rank {
         if (step >= LiftBoards.MAX_STEP) return null
         return lifts
             .map { s ->
-                val needed = LiftBoards.ratioForStep(s.lift, sex, step + 1) * s.bodyweightKg / ProgramRules.epley(1.0, s.reps)
+                val needed = LiftBoards.ratioForStep(s.lift, sex, step + 1) * s.bodyweightKg / ProgramRules.e1rm(1.0, s.reps)
                 s to roundUpTenth(needed - s.movedKg)
             }
             .minByOrNull { it.second }

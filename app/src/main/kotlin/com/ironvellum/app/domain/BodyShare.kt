@@ -223,7 +223,7 @@ object BodyShare {
      */
     fun e1rmAddedKg(addedKg: Double, reps: Int, share: Double, bodyweightKg: Double?): Double {
         val body = if (share > 0.0 && bodyweightKg != null && bodyweightKg > 0.0) share * bodyweightKg else 0.0
-        return ProgramRules.epley(body + addedKg, reps) - body
+        return ProgramRules.e1rm(body + addedKg, reps) - body
     }
 
     /** True when [e1rmAddedKg] had a body to work with, so a figure on a bodyweight lift can be trusted. */

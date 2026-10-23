@@ -105,9 +105,13 @@ class LiftBoardsTest {
     }
 
     @Test
-    fun setsAboveTwelveRepsAreExcludedButTwelveCounts() {
-        assertTrue(marks(listOf(workout(1, set("Back Squat", 13, 150.0)))).isEmpty())
-        assertEquals(Lift.SQUAT, marks(listOf(workout(1, set("Back Squat", 12, 150.0)))).single().lift)
+    fun setsAboveTwelveRepsCountAsTwelve() {
+        // Was: dropped past 12. A set past the cap now counts as 12 reps at its load (ProgramRules.e1rm).
+        val thirteen = marks(listOf(workout(1, set("Back Squat", 13, 150.0)))).single()
+        val twelve = marks(listOf(workout(1, set("Back Squat", 12, 150.0)))).single()
+        assertEquals(Lift.SQUAT, thirteen.lift)
+        assertEquals(twelve.step, thirteen.step)
+        assertEquals(twelve.step, marks(listOf(workout(1, set("Back Squat", 30, 150.0)))).single().step)
     }
 
     @Test
@@ -376,7 +380,12 @@ class LiftBoardsTest {
             SessionSet(exerciseId = 1, exerciseName = name, setIndex = 0, reps = reps, weightKg = 20.0, modifiers = mods, done = done)
         assertNull(LiftBoards.tieredScore(s("Bench Press", done = false), 80.0, Sex.MALE))
         assertNull(LiftBoards.tieredScore(s("Pull-up", mods = "assisted"), 80.0, Sex.MALE))
-        assertNull(LiftBoards.tieredScore(s("Bench Press", reps = 13), 80.0, Sex.MALE))
+        // Reps past 12 count as 12 rather than dropping the set.
+        assertEquals(
+            LiftBoards.tieredScore(s("Bench Press", reps = 12), 80.0, Sex.MALE)!!.ratio,
+            LiftBoards.tieredScore(s("Bench Press", reps = 13), 80.0, Sex.MALE)!!.ratio,
+            1e-9,
+        )
         assertNull(LiftBoards.tieredScore(s("Bench Press"), 0.0, Sex.MALE))
         assertNull(LiftBoards.tieredScore(s("Incline Bench Press"), 80.0, Sex.MALE))
     }

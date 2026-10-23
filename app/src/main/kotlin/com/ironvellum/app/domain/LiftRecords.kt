@@ -23,7 +23,7 @@ data class LiftRecord(
 }
 
 /**
- * The Ledger's lift-records board. Estimated one-rep maxes by the same Epley rule and 12-rep cap the strength
+ * The Ledger's lift-records board. Estimated one-rep maxes by the same Epley rule and 12-rep clamp the strength
  * profile and the lift boards use. A barbell or machine lift is judged on its marked load. A bodyweight lift is
  * judged on the TOTAL it moved (its [BodyShare] of the body weight at the time, plus the added kilos) and shown as
  * the ADDED-load equivalent, so a pull-up's "+46 kg" reads on the scale of its plates ([BodyShare.e1rmAddedKg]).
@@ -55,7 +55,7 @@ object LiftRecords {
         for (set in PeakSets.narrowed(sets)) {
             val weight = set.weightKg ?: continue
             if (weight <= 0.0) continue
-            if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue
+            if (set.reps < 1) continue
             val ex = exercises[set.exerciseId]
             if ((ex?.metric ?: ExerciseMetric.REPS) != ExerciseMetric.REPS) continue
             val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
@@ -206,7 +206,7 @@ object LiftRecords {
     /**
      * The lifts first trained inside [fromMs, toMs): they have a best estimated 1RM in the period and none before it,
      * the same key and the same rule [gains] uses, so a lift is a gain or new, never both. The first trial of an
-     * exercise that carries no load (or a rep count past the cap) has no e1RM and is not here.
+     * exercise that carries no load has no e1RM and is not here.
      */
     fun newLifts(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,

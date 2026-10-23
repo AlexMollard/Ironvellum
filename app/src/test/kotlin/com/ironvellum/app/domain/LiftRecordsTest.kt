@@ -40,14 +40,28 @@ class LiftRecordsTest {
     }
 
     @Test
-    fun `sets past twelve reps, undone sets, unloaded sets and timed work do not count`() {
+    fun `undone sets, unloaded sets and timed work do not count`() {
         val rows = board(
             session(1, 5) to listOf(
-                set(bench, 60.0, 13), set(bench, 90.0, 5, done = false), set(bench, null, 8),
+                set(bench, 90.0, 5, done = false), set(bench, null, 8),
                 set(bench, 0.0, 8), set(run, 10.0, 1),
             ),
         )
         assertTrue(rows.isEmpty())
+    }
+
+    @Test
+    fun `a set past twelve reps counts as twelve so 7_5 kg x 14 beats 5 kg x 12`() {
+        val light = board(session(1, 5) to listOf(set(bench, 5.0, 12))).single().bestE1rmKg
+        val more = board(session(1, 5) to listOf(set(bench, 7.5, 14))).single().bestE1rmKg
+        assertEquals(5.0 * (1 + 12 / 30.0), light, 1e-9)
+        assertEquals(7.5 * (1 + 12 / 30.0), more, 1e-9)
+        assertTrue(more > light)
+        // The rep term stops at 12: 30 reps is 12 reps.
+        assertEquals(more, board(session(1, 5) to listOf(set(bench, 7.5, 30))).single().bestE1rmKg, 1e-9)
+        // Within one trial the heavier-but-longer set is the record.
+        val both = board(session(1, 5) to listOf(set(bench, 5.0, 12), set(bench, 7.5, 14))).single()
+        assertEquals(more, both.bestE1rmKg, 1e-9)
     }
 
     @Test

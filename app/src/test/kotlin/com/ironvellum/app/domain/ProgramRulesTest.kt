@@ -120,17 +120,25 @@ class ProgramRulesTest {
     // -------------------------------------------------------------- loads
 
     @Test
+    fun `an e1rm clamps reps to twelve and a set past it counts as twelve`() {
+        assertEquals(ProgramRules.e1rm(7.5, 12), ProgramRules.e1rm(7.5, 14), 1e-9)
+        assertEquals(ProgramRules.e1rm(7.5, 12), ProgramRules.e1rm(7.5, 30), 1e-9)
+        assertTrue(ProgramRules.e1rm(7.5, 14) > ProgramRules.e1rm(5.0, 12))
+        assertEquals(ProgramRules.epley(100.0, 5), ProgramRules.e1rm(100.0, 5), 1e-9)
+    }
+
+    @Test
     fun `strength profile keeps the best capped e1rm per lift`() {
         val profile = ProgramRules.strengthProfile(
             listOf(
                 LoggedLift("Bench Press", 75.0, 10), // e1RM 100.0
                 LoggedLift("Bench Press", 60.0, 8), // e1RM 76 - loses
-                LoggedLift("Bench Press", 200.0, 20), // 20 reps: beyond Epley validity
+                LoggedLift("Bench Press", 90.0, 20), // 20 reps count as 12: e1RM 126, past the 100 above
                 LoggedLift("Back Squat", 0.0, 5), // no load: not a lift
                 LoggedLift("back squat", 100.0, 5), // same lift, case-insensitive
             ),
         )
-        assertEquals(100.0, profile.bestE1rmKg["bench press"]!!, 1e-9)
+        assertEquals(126.0, profile.bestE1rmKg["bench press"]!!, 1e-9)
         assertEquals(116.67, profile.bestE1rmKg["back squat"]!!, 0.01)
     }
 

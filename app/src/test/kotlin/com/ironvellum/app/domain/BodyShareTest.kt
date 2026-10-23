@@ -145,4 +145,11 @@ class BodyShareTest {
             .map { it.name }
         assertTrue("movements with no profile and no rule: $groupOnly", groupOnly.isEmpty())
     }
+
+    @Test
+    fun `an added-load e1rm counts reps past twelve as twelve`() {
+        assertEquals(BodyShare.e1rmAddedKg(10.0, 12, 0.6, 80.0), BodyShare.e1rmAddedKg(10.0, 14, 0.6, 80.0), 1e-9)
+        assertEquals(BodyShare.e1rmAddedKg(10.0, 12, 0.0, null), BodyShare.e1rmAddedKg(10.0, 30, 0.0, null), 1e-9)
+        assertTrue(BodyShare.e1rmAddedKg(7.5, 14, 0.0, null) > BodyShare.e1rmAddedKg(5.0, 12, 0.0, null))
+    }
 }

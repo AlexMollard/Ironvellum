@@ -138,14 +138,14 @@ object ExerciseLogCalculator {
 
         fun e1rmOf(r: ExerciseLogRow): Double? {
             val kg = r.weightKg ?: return null
-            if (kg <= 0.0 || r.reps < 1 || r.reps > ProgramRules.MAX_E1RM_REPS) return null
+            if (kg <= 0.0 || r.reps < 1) return null
             val setShare = BodyShare.of(exercise, r.modifiers)
             val body = bodyweightAt(r.startedAtMs).takeIf { it > 0.0 }
             if (!BodyShare.knowsBody(setShare, body)) bodyMissing = true
             return BodyShare.e1rmAddedKg(kg, r.reps, setShare, body)
         }
 
-        val byE1rm = metric == ExerciseMetric.REPS && rows.any { (it.weightKg ?: 0.0) > 0.0 && it.reps in 1..ProgramRules.MAX_E1RM_REPS }
+        val byE1rm = metric == ExerciseMetric.REPS && rows.any { (it.weightKg ?: 0.0) > 0.0 && it.reps >= 1 }
 
         fun setOf(r: ExerciseLogRow) = ExerciseLogSet(
             figure = if (metric == ExerciseMetric.HOLD) (r.durationSec ?: r.reps) else r.reps,

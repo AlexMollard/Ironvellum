@@ -185,13 +185,13 @@ object LiftBoards {
     /** [set] scored on its TIERED board; null when it does not qualify for one. */
     internal fun tieredScore(set: SessionSet, bodyweight: Double, sex: Sex): TieredScore? {
         if (!set.done || offBoard(set) || bodyweight <= 0.0) return null
-        // Epley's rep term stops being honest past 12 (ProgramRules.MAX_E1RM_REPS).
-        if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) return null
+        // Reps past 12 count as 12 ([ProgramRules.e1rm]).
+        if (set.reps < 1) return null
         val lift = LIFT_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: return null
         val added = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
         val load = if (lift in BODYWEIGHT_LIFTS) bodyweight + added else added
         if (load <= 0.0) return null
-        val ratio = ProgramRules.epley(load, set.reps) / bodyweight
+        val ratio = ProgramRules.e1rm(load, set.reps) / bodyweight
         return TieredScore(lift, stepFor(lift, sex, ratio), set.exerciseName, set.reps, load, bodyweight, ratio)
     }
 
