@@ -132,6 +132,20 @@ JavaScript would also drift. So:
 - Column names and the set-kind wire values (reuse the export format's `kind` wire values).
 - Which existing synced tables cover level, XP and deeds.
 
+## Second-pass mockups (owner-approved 2026-10-23)
+
+The phase 1 screens were redrawn in the app's own look. What that adds to scope:
+
+- **Exercise line art** from the `art/` submodule (Open-Exercise-Art SVGs, drawn in `currentColor`) on the lift
+  page, workout detail and lists, bundled into the site with a visible CC BY-SA 4.0 credit (the sign-in page and
+  an About line). Custom exercises without art show a plain placeholder.
+- **Muscles right now** (Overview) and a **Fatigue | Coverage** switch (Trends): the phone's muscle fatigue
+  reading (levels, top causes, light-by day) rides in the snapshot. The web draws it; it never estimates.
+- **Bodyweight variations get an e1RM** in workout detail and the lift page, from the snapshot (owner-only).
+- **Variations side by side** on the lift page: best e1RM, best set and last done per variation.
+- **Workout rows** carry a muscle strip and PR tags; **Workouts** gains a month summary.
+- Metal-rimmed plates, gold XP and the app's deed seals throughout; your plate in the sidebar.
+
 ## Phase 2: social and routines (owner-approved 2026-10-23)
 
 The owner wants "everything but editing". Phase 2 is built after phase 1's live acceptance and amends the
