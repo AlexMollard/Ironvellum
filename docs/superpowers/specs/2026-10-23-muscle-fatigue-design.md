@@ -192,3 +192,23 @@ place so they can be tuned. They are not derived from the user's data.
 - Which lifts count as "heavy whole-body" (start from barbell squat/front squat/deadlift/RDL/good morning
   patterns in `MuscleMap`), and which profiles need `stretchBias` added.
 - How the tab state is remembered across visits.
+
+## Changes after the owner tried it on the phone (2026-10-23)
+
+Mockups: the "One tab row per screen" row on the canvas (TrainMusclesCard, MusclesScreenFatigue,
+MusclesScreenCoverage).
+
+1. **Faster recovery.** The owner's lower chest, trained Wednesday, read "fresh by Monday": too slow. Most
+   research on trained lifters puts full recovery at 48 to 72 hours. Half-lives become **Fast 12 h, Medium 18 h,
+   Slow 24 h** (were 18, 24, 36). The big-session (+25%) and new-lifter (+20%) stretches stay. A typical chest
+   day (about 6 hard sets near failure) is then light again in about a day and a half and fresh in under three.
+   The explainer's "light in about" days follow the new numbers.
+2. **One tab row per screen** (owner rule). Train loses its Plan | Muscles tabs and is the old Plan content plus
+   a **Muscles right now** card: a small fatigue figure, the top three worked muscles with level and light/fresh
+   day, and one coverage line ("This week: 2 muscles short, 1 heavy"). Tapping it opens **Muscles**, its own
+   screen, whose only tab row is **Fatigue | Coverage**. Links that opened Muscles on Coverage still do.
+3. **Coverage shows done and planned on one map**, replacing the Planned | Last 7 days tabs. For the current week
+   (Monday to Sunday): **Done** (4+ hard sets already), **Planned** (the plan's remaining days take it to 4+,
+   hatched), **Short** (even with the plan, under 4), **Heavy** (20+ by Sunday), **None**. Rows show "16 done +
+   6 planned" with a two-part bar, sorted heavy, short, on track; covered muscles fold away. Coverage is restyled
+   to match the fatigue screen.
