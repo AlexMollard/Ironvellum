@@ -64,4 +64,18 @@ class AmendedPushTest {
         assertEquals(listOf("r3", "r4"), stale)
         assertTrue("a trial not being pushed is never touched", "r5" !in stale)
     }
+
+    @Test
+    fun `a trial whose sets moved to a dedicated exercise re-pushes and its old rows go`() {
+        val pushed = mapOf(session.id to CloudSync.pushFingerprint(session, sets))
+        val moved = sets.map { it.copy(exerciseName = "Weighted Bench Press") }
+        val converted = session.copy(editedAtMs = 1_790_000_000_000)
+        assertEquals(1, CloudSync.pendingForPush(listOf(converted to moved), pushed).size)
+        val onCloud = listOf(
+            SessionSetKeyDto("r1", "cloud-a", "Bench Press", 0),
+            SessionSetKeyDto("r2", "cloud-a", "Bench Press", 1),
+            SessionSetKeyDto("r3", "cloud-a", "Weighted Bench Press", 0),
+        )
+        assertEquals(listOf("r1", "r2"), CloudSync.staleSetRowIds(mapOf("cloud-a" to moved), onCloud))
+    }
 }

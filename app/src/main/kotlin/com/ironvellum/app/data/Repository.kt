@@ -122,6 +122,7 @@ import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.TwinConversion
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.data.cloud.WireLimits
@@ -2335,6 +2336,71 @@ class Repository(
         val names = exercises.associate { it.id to it.name }
         sessions.map { it.toHistoryRow(names) }
     }.distinctUntilChanged()
+
+    // ------------------------------------------------------- dedicated-exercise convert
+
+    /** What converting would move now, for the confirm screen and the one-time card ([TwinConversion]). */
+    fun observeTwinMoves(): Flow<List<TwinConversion.Move>> = combine(observeHistory(), observeExercises()) { history, exercises ->
+        TwinConversion.plan(
+            history.flatMap { (session, sets) ->
+                sets.map { TwinConversion.Row(session.id, it.exercisePosition, it.exerciseId, it.weightKg, it.modifiers, it.warmup) }
+            },
+            exercises,
+        )
+    }.distinctUntilChanged()
+
+    /** What [convertTwins] did. */
+    data class TwinConvertResult(val groups: List<TwinConversion.Group>, val sets: Int, val sessions: Int)
+
+    /**
+     * Moves every past set logged as a base exercise with a modifier or load onto its dedicated exercise
+     * ([TwinConversion]), keeping the other modifiers. The whole archive is handed to [backup] first, and a failure
+     * there stops everything. Then ONE transaction writes every group, or none: a throw rolls it all back.
+     *
+     * Each touched trial gets `editedAtMs` = [nowMs], so cloud sync re-uploads it and its amended-trial pass deletes
+     * the rows under the old names, and `sealedXp` = what it was sealed at ([sealedBase]), so being marked amended
+     * changes neither what an amendment may raise nor whether it can be reopened. Stored XP and strength scores are
+     * left as they were paid; records, history, fatigue and deeds read the sets, so they follow.
+     *
+     * [afterGroup] is a test seam, called with the number of groups written so far inside the transaction.
+     */
+    suspend fun convertTwins(
+        backup: suspend (String) -> Unit,
+        nowMs: Long = System.currentTimeMillis(),
+        afterGroup: (Int) -> Unit = {},
+    ): TwinConvertResult {
+        if (twinMovesNow().isEmpty()) return TwinConvertResult(emptyList(), 0, 0)
+        backup(exportJson())
+        val result = db.withTransaction {
+            val moves = twinMovesNow()
+            val groups = TwinConversion.groups(moves)
+            groups.forEachIndexed { index, group ->
+                moves.filter { it.from == group.from && it.to == group.to }.forEach { move ->
+                    sessionDao.setsFor(move.block.sessionId)
+                        .filter { it.exercisePosition == move.block.position && it.exerciseId == move.block.exerciseId }
+                        .forEach { sessionDao.updateSet(it.copy(exerciseId = move.toId, modifiers = move.modifiers)) }
+                }
+                afterGroup(index + 1)
+            }
+            val touched = moves.map { it.block.sessionId }.distinct()
+            touched.forEach { id ->
+                val session = sessionDao.byId(id) ?: return@forEach
+                sessionDao.updateSession(session.copy(editedAtMs = nowMs, sealedXp = sealedBase(session)))
+            }
+            TwinConvertResult(groups, moves.sumOf { it.sets }, touched.size) to touched
+        }
+        result.second.forEach { writeBackSaved(it) }
+        return result.first
+    }
+
+    private suspend fun twinMovesNow(): List<TwinConversion.Move> {
+        val rows = sessionDao.completedSessions().flatMap { session ->
+            sessionDao.setsFor(session.id).map {
+                TwinConversion.Row(session.id, it.exercisePosition, it.exerciseId, it.weightKg, it.modifiers, it.isWarmup)
+            }
+        }
+        return TwinConversion.plan(rows, exerciseDao.observeAll().first().syncCustomExercises().map { it.toDomain() })
+    }
 
     /** One completed session with its sets, as [observeHistory] holds it; null while it is live or gone. */
     fun observeWorkout(sessionId: Long): Flow<Pair<WorkoutSession, List<SessionSet>>?> = combine(

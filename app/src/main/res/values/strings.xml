@@ -6850,4 +6850,25 @@
     <!-- Live trial, when some sets are ticked. %1$s is the base exercise's name. -->
     <string name="twin_switch_split_note">Sets you have ticked stay as %1$s. The rest become a block of their own.</string>
     <string name="twin_switch_unlink_note">This exercise is in a full superset, so the superset is dissolved to make room.</string>
+
+    <!-- Move past sets onto dedicated exercises: the confirm screen, Settings > Data and the History card. -->
+    <string name="twinconvert_title">Move past sets</string>
+    <string name="twinconvert_intro">These past sets were logged as an exercise with a modifier or load that has an exercise of its own. Moving them puts your records, history and fatigue on the right exercise.</string>
+    <string name="twinconvert_empty">Nothing to move. Every past set is already on the exercise it belongs to.</string>
+    <!-- %1$s is the exercise the sets were logged as, %2$s the exercise they move to. -->
+    <string name="twinconvert_group">%1$s → %2$s</string>
+    <!-- %1$s is a set count ("14 sets"), %2$s a day count ("3 days"). -->
+    <string name="twinconvert_group_count">%1$s · %2$s</string>
+    <string name="twinconvert_note">A full backup is saved on this phone first, and in your backup folder if you set one. Other modifiers stay on the sets. Stored XP and strength scores stay as they were paid.</string>
+    <plurals name="twinconvert_button"><item quantity="one">Move %1$d set</item><item quantity="other">Move %1$d sets</item></plurals>
+    <string name="twinconvert_running">Moving…</string>
+    <string name="twinconvert_done">Moved %1$s over %2$s.</string>
+    <string name="twinconvert_failed">Nothing was moved: %1$s</string>
+    <string name="twinconvert_card_title">Some past sets can move to their own exercises</string>
+    <plurals name="twinconvert_card_body"><item quantity="one">%1$d set was logged as a base exercise with a modifier or load. Review it and move it in one step.</item><item quantity="other">%1$d sets were logged as a base exercise with a modifier or load. Review them and move them in one step.</item></plurals>
+    <string name="twinconvert_card_review">Review</string>
+    <string name="twinconvert_card_dismiss">Not now</string>
+    <!-- Settings > Data row. -->
+    <string name="settings_data_twin_label">Move past sets to their own exercises</string>
+    <string name="settings_data_twin_caption">Sets logged as Pull-up with weight, or Push-up with incline, move to Weighted Pull-up, Incline Push-up and the like.</string>
 </resources>

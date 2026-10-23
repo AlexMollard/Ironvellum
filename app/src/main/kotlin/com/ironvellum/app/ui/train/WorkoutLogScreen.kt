@@ -24,6 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,6 +44,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
@@ -57,6 +62,9 @@ import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.metricTotals
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.settings.TwinConvertCard
+import com.ironvellum.app.ui.settings.TwinConvertOverlay
+import com.ironvellum.app.ui.settings.rememberTwinConvertViewModel
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.time.Instant
 import java.time.YearMonth
@@ -95,6 +103,16 @@ fun WorkoutLogScreen(
         viewModel(factory = viewModelFactory { initializer { WorkoutLogViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val twinConvert = rememberTwinConvertViewModel()
+    val twinGroups by twinConvert.groups.collectAsStateWithLifecycle()
+    val trialPrefs = remember { TrialPrefs(context) }
+    var cardDone by remember { mutableStateOf(trialPrefs.convertCardDone) }
+    var reviewing by remember { mutableStateOf(false) }
+    if (reviewing) {
+        TwinConvertOverlay(twinConvert, onDismiss = { reviewing = false })
+        return
+    }
 
     if (ui.history.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -137,6 +155,22 @@ fun WorkoutLogScreen(
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(start = 2.dp, top = 4.dp),
             )
+            if (twinGroups.isNotEmpty() && !cardDone) {
+                Spacer(Modifier.height(12.dp))
+                TwinConvertCard(
+                    sets = twinGroups.sumOf { it.sets },
+                    onReview = {
+                        trialPrefs.convertCardDone = true
+                        cardDone = true
+                        twinConvert.reset()
+                        reviewing = true
+                    },
+                    onDismiss = {
+                        trialPrefs.convertCardDone = true
+                        cardDone = true
+                    },
+                )
+            }
         }
 
         // Month groups, newest first: observeHistory is already newest-first,

@@ -16,6 +16,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -51,6 +52,9 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val twinConvert = rememberTwinConvertViewModel()
+    val twinGroups by twinConvert.groups.collectAsStateWithLifecycle()
+    var convertOpen by remember { mutableStateOf(false) }
     val exportArchiveTitle = stringResource(R.string.settings_data_export_archive_title)
     // The file is always kg, which its reader assumes; say so when the screen is in lb.
     val csvUnitNote = if (Units.current == LoadUnit.LB) stringResource(R.string.settings_data_csv_unit_note) else null
@@ -126,6 +130,16 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 },
             )
             InkDivider()
+            ListRow(
+                stringResource(R.string.settings_data_twin_label),
+                subline = stringResource(R.string.settings_data_twin_caption),
+                value = if (twinGroups.isEmpty()) null else pluralStringResource(R.plurals.common_sets_count, twinGroups.sumOf { it.sets }, twinGroups.sumOf { it.sets }),
+                onClick = {
+                    twinConvert.reset()
+                    convertOpen = true
+                },
+            )
+            InkDivider()
             if (importUi.importing) {
                 InkSpinner(Modifier.padding(16.dp))
             } else {
@@ -153,6 +167,8 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption(it.asString())
         }
     }
+
+    if (convertOpen) TwinConvertOverlay(twinConvert, onDismiss = { convertOpen = false })
 
     importReview?.let { review ->
         ImportReviewOverlay(
