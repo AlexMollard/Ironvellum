@@ -19,6 +19,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,12 +33,14 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.CauseShare
 import com.ironvellum.app.domain.DayNames
+import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FatigueReading
 import com.ironvellum.app.domain.LightBy
 import com.ironvellum.app.domain.SorenessNote
 import com.ironvellum.app.domain.SorenessReason
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Variation
+import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoSheet
@@ -68,13 +72,13 @@ internal fun sorenessLine(note: SorenessNote): String {
 /**
  * One muscle's breakdown: its level, a bar and a row for each source with its rough share, the soreness note
  * when there is one, when it is back to light, and the way to the estimate's explanation. A cause row opens
- * that lift's page, on the variation the set was logged with.
+ * that lift's exercise sheet (with its own history), on the variation the set was logged with.
  */
 @Composable
 internal fun MuscleBreakdownSheet(
     reading: FatigueReading,
     nowMs: Long,
-    onOpenLift: (name: String, variation: String) -> Unit,
+    onOpenExercise: (name: String, modifiers: String) -> Unit,
     onExplain: () -> Unit,
     onDismiss: () -> Unit,
     zone: ZoneId = ZoneId.systemDefault(),
@@ -91,7 +95,7 @@ internal fun MuscleBreakdownSheet(
             section(t(R.string.fatigue_breakdown_causes_title)) {
                 ShareBar(reading)
                 reading.causes.forEachIndexed { index, cause ->
-                    CauseRow(cause, SEGMENT_ALPHAS[index], nowMs, zone) { onOpenLift(cause.exerciseName, Variation.key(cause.modifiers)) }
+                    CauseRow(cause, SEGMENT_ALPHAS[index], nowMs, zone) { onOpenExercise(cause.exerciseName, cause.modifiers) }
                 }
                 if (reading.otherPercent > 0) OtherRow(reading.otherPercent)
             }
@@ -183,6 +187,20 @@ private fun shareText(percent: Int): String = t(R.string.fatigue_share_percent, 
 /** "Tuesday", or "Today" for a session today. */
 private fun sessionDay(atMs: Long, nowMs: Long, zone: ZoneId, locale: Locale = Locale.getDefault()): String =
     dayWord(atMs, nowMs, zone, locale).replaceFirstChar { it.titlecase(locale) }
+
+/**
+ * The exercise sheet for a lift named in a breakdown: the one the rest of the app opens, with its About, Form,
+ * History and Fatigue pages. Gone at once when the catalogue has no exercise of that name.
+ */
+@Composable
+internal fun ExerciseInspection(exercises: List<Exercise>, name: String, modifiers: String, onDismiss: () -> Unit) {
+    val exercise = remember(exercises, name) { exercises.firstOrNull { it.name == name } }
+    if (exercise == null) {
+        LaunchedEffect(name) { onDismiss() }
+        return
+    }
+    ExerciseInfoSheet(exercise = exercise, lastLine = null, onDismiss = onDismiss, onPick = null, modifiers = modifiers)
+}
 
 /** A string resource as the sheet content builders need it: they are not composable, so no stringResource. */
 private fun t(@StringRes id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))

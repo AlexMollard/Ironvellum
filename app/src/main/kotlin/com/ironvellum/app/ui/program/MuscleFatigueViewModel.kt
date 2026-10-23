@@ -20,8 +20,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-/** [report] is null until the first read finishes; [hasHistory] is false only before any workout was started. */
-data class FatigueUi(val report: FatigueReport? = null, val hasHistory: Boolean = false, val loaded: Boolean = false)
+/**
+ * [report] is null until the first read finishes; [hasHistory] is false only before any workout was started.
+ * [exercises] is the catalogue, so a cause in the breakdown can open its exercise sheet.
+ */
+data class FatigueUi(
+    val report: FatigueReport? = null,
+    val hasHistory: Boolean = false,
+    val loaded: Boolean = false,
+    val exercises: List<Exercise> = emptyList(),
+)
 
 /**
  * The fatigue report for the Muscles tab, from local history plus the live workout. Recomputed when the log
@@ -53,6 +61,6 @@ class MuscleFatigueViewModel(
     ) { history, exercises, live, now ->
         val sessions = FatigueInput.sessions(history, live, exercises, now)
         val first = FatigueInput.firstWorkoutMs(history, live?.first)
-        FatigueUi(report = FatigueModel.estimate(sessions, now, first), hasHistory = first != null, loaded = true)
+        FatigueUi(report = FatigueModel.estimate(sessions, now, first), hasHistory = first != null, loaded = true, exercises = exercises.values.toList())
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FatigueUi())
 }

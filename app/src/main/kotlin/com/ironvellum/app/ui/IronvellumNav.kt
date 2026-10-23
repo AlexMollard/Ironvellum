@@ -439,7 +439,6 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         // The saved rites live on Train, which is underneath.
                         onOpenRites = { if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS) },
                         onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
-                        onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
                     )
                 }
                 composable(

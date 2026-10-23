@@ -40,7 +40,7 @@ class MusclesScreenTest {
                 IronvellumTheme {
                     MusclesScreen(
                         initialView = view, onBack = onBack, onGenerateSession = {}, onOpenRite = {},
-                        onOpenRites = {}, onOptimise = {}, onOpenLift = { _, _ -> },
+                        onOpenRites = {}, onOptimise = {},
                     )
                 }
             }

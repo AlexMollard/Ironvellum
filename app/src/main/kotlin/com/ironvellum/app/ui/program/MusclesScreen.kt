@@ -40,7 +40,6 @@ internal fun MusclesScreen(
     onOpenRite: (Long) -> Unit,
     onOpenRites: () -> Unit,
     onOptimise: () -> Unit,
-    onOpenLift: (name: String, variation: String) -> Unit,
 ) {
     var view by rememberSaveable { mutableStateOf(initialView) }
     Column(Modifier.fillMaxSize()) {
@@ -56,7 +55,7 @@ internal fun MusclesScreen(
         }
         Spacer(Modifier.height(8.dp))
         when (view) {
-            MusclesView.FATIGUE -> FatiguePane(onOpenLift)
+            MusclesView.FATIGUE -> FatiguePane()
             MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise)
         }
     }

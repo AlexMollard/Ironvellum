@@ -8,10 +8,12 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FatigueModel
 import com.ironvellum.app.domain.FatigueSession
 import com.ironvellum.app.domain.LoggedSet
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.FlowDriver
 import com.ironvellum.app.ui.TestProfile
@@ -43,21 +45,23 @@ class MuscleBreakdownTest {
     private fun session(id: Long, hoursAgo: Long, name: String, mods: String, count: Int) =
         FatigueSession(id, now - hoursAgo * hour, sets(name, mods, count, now - hoursAgo * hour))
 
-    private val opened = mutableListOf<Pair<String, String>>()
+    private val catalogue = listOf(
+        Exercise(name = "Bench Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true),
+        Exercise(name = "Dip", muscleGroup = MuscleGroup.PUSH, isWeighted = false),
+    )
 
     @Before
     fun setUp() {
         TestProfile.ensureSetUp()
-        opened.clear()
         driver.takeTheClock()
     }
 
     private fun show(vararg sessions: FatigueSession): androidx.compose.runtime.MutableState<Muscle?> {
         val selection = mutableStateOf<Muscle?>(null)
-        val ui = FatigueUi(FatigueModel.estimate(sessions.toList(), now, long), hasHistory = true, loaded = true)
+        val ui = FatigueUi(FatigueModel.estimate(sessions.toList(), now, long), hasHistory = true, loaded = true, exercises = catalogue)
         compose.activityRule.scenario.onActivity {
             it.setContent {
-                IronvellumTheme { FatigueContent(ui, selection, ZoneId.of("UTC")) { n, v -> opened += n to v } }
+                IronvellumTheme { FatigueContent(ui, selection, ZoneId.of("UTC")) }
             }
         }
         driver.settle()
@@ -84,12 +88,15 @@ class MuscleBreakdownTest {
     }
 
     @Test
-    fun aCauseRowOpensTheLiftOnItsVariation() {
+    fun aCauseRowOpensTheExerciseSheetWithItsOwnHistory() {
         val selection = show(session(1, 20, "Bench Press", "incline, deficit", 4))
         light(selection, Muscle.UPPER_CHEST)
         driver.awaitText("What it came from")
         driver.click("Bench Press · deficit, incline")
-        assertEquals(listOf("Bench Press" to "deficit,incline"), opened)
+        // The exercise sheet the rest of the app opens: its pages are About, Form, History (Chronicle) and Fatigue.
+        driver.awaitText("Form")
+        val text = driver.allText()
+        assertTrue(text.toString(), text.any { it == "About" } && text.any { it == "History" || it == "Chronicle" } && text.any { it == "Fatigue" })
     }
 
     @Test

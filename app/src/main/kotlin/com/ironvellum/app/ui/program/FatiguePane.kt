@@ -61,14 +61,13 @@ import kotlinx.coroutines.launch
 /** Train > Muscles > Fatigue: the map, what it is based on, and the muscles worked most. */
 @Composable
 internal fun FatiguePane(
-    onOpenLift: (name: String, variation: String) -> Unit,
     viewModel: MuscleFatigueViewModel =
         viewModel(factory = viewModelFactory {
             initializer { MuscleFatigueViewModel(ironvellumRepository()) }
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault(), onOpenLift)
+    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault())
 }
 
 /** The pane for a given [ui]: stateless, so a test or a preview can hand it any report. */
@@ -77,7 +76,6 @@ internal fun FatigueContent(
     ui: FatigueUi,
     selection: MutableState<Muscle?>,
     zone: ZoneId,
-    onOpenLift: (name: String, variation: String) -> Unit = { _, _ -> },
 ) {
     val report = ui.report
     // Blank for the first read: a moment of nothing is better than a flash of an all-fresh figure.
@@ -86,20 +84,20 @@ internal fun FatigueContent(
     val scope = rememberCoroutineScope()
     val worked = remember(report, zone) { report.mostWorked(zone) }
     var explain by rememberSaveable { mutableStateOf(false) }
-    // A lit muscle opens its breakdown; closing the sheet clears the light, and so does leaving for a lift page.
+    // The cause the lifter tapped, as (name, modifiers): its exercise sheet opens over the breakdown, which stays lit under it.
+    var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
+    // A lit muscle opens its breakdown; closing the sheet clears the light.
     selection.value?.let { muscle ->
         MuscleBreakdownSheet(
             reading = remember(report, muscle, zone) { report.reading(muscle, zone) },
             nowMs = report.nowMs,
-            onOpenLift = { name, variation ->
-                selection.value = null
-                onOpenLift(name, variation)
-            },
+            onOpenExercise = { name, modifiers -> inspected = name to modifiers },
             onExplain = { explain = true },
             onDismiss = { selection.value = null },
             zone = zone,
         )
     }
+    inspected?.let { (name, modifiers) -> ExerciseInspection(ui.exercises, name, modifiers) { inspected = null } }
     if (explain) FatigueExplainerSheet { explain = false }
     Column(
         Modifier
