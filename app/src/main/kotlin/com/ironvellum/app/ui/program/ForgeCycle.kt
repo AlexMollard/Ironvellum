@@ -38,6 +38,7 @@ import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
+import com.ironvellum.app.domain.PlanFatigue
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
@@ -73,7 +74,8 @@ internal val ARMOURY_REQUIRED: String
 private val STEP_LABEL_RES = listOf(R.string.forge_step_goal, R.string.forge_step_kit, R.string.forge_step_focus)
 
 @Composable
-internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
+internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit, onOpenFatigue: () -> Unit = {}) {
+    val fatigue = rememberFatigueReport()
     val catalogue by vm.catalogue.collectAsStateWithLifecycle()
     val presets by vm.presets.collectAsStateWithLifecycle()
     val saving by vm.saving.collectAsStateWithLifecycle()
@@ -196,6 +198,8 @@ internal fun ForgeCycleScreen(vm: ProgramBuilderViewModel, onDone: () -> Unit) {
             onTryAgain = vm::retry,
             onApply = apply,
             onReplace = { confirmReplace = true },
+            fatigue = fatigue,
+            onOpenFatigue = onOpenFatigue,
         )
         ForgePhase.DAY -> if (dayPreset != null) {
             ForgeDayPage(
@@ -625,6 +629,9 @@ internal fun ForgePlanPage(
     onTryAgain: () -> Unit,
     onApply: () -> Unit,
     onReplace: () -> Unit,
+    /** The fatigue estimate, or null before it is read; only ever shown as a hint, never applied to [plan]. */
+    fatigue: com.ironvellum.app.domain.FatigueReport? = null,
+    onOpenFatigue: () -> Unit = {},
 ) {
     val hasPlan = plan?.presets?.isNotEmpty() == true
     // A refusal that left no proposal: the generator failed, as distinct from a save that did.
@@ -655,6 +662,11 @@ internal fun ForgePlanPage(
                     ForgeCaption(stringResource(R.string.forge_plan_intro))
                     Spacer(Modifier.height(8.dp))
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = onCoverage)
+                    // What is still recovering, under the coverage chip: a hint, the plan above is untouched.
+                    val rightNow = remember(fatigue) { fatigue?.let { PlanFatigue.rightNow(it, java.time.ZoneId.systemDefault()) } }
+                    if (fatigue != null && rightNow != null) {
+                        RightNowLine(rightNow, fatigue.nowMs, java.time.ZoneId.systemDefault(), onOpenFatigue)
+                    }
                     if (savedRites > 0) {
                         ForgeCaption(UiText.themedPlural(R.plurals.forge_coverage_includes, R.plurals.forge_coverage_includes__t, savedRites).asString())
                     }
@@ -671,6 +683,7 @@ internal fun ForgePlanPage(
                             showNote = false,
                             folded = true,
                             startOpen = presetIndex == 0,
+                            fatigueNotes = fatigue?.let { dayNoteLines(preset, it, java.time.ZoneId.systemDefault()) }.orEmpty(),
                         )
                     }
                     // Routine-wide advice, said once for the whole cycle.

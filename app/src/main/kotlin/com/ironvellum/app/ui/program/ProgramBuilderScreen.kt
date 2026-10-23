@@ -59,6 +59,7 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
+import com.ironvellum.app.domain.PlanFatigue
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.Improvement
@@ -657,6 +658,7 @@ fun ProgramBuilderScreen(
     mode: String,
     presetId: Long?,
     onDone: () -> Unit,
+    onOpenFatigue: () -> Unit = {},
     viewModel: ProgramBuilderViewModel =
         viewModel(
             key = "program_builder_${mode}_$presetId",
@@ -730,9 +732,10 @@ fun ProgramBuilderScreen(
 
     // Forge a cycle is the three-step form, the proposal and the day page; every other mode keeps its one page.
     if (mode == "week") {
-        ForgeCycleScreen(viewModel, onDone)
+        ForgeCycleScreen(viewModel, onDone, onOpenFatigue)
         return
     }
+    val fatigue = rememberFatigueReport()
 
     // Something to lose: answers moved off the first proposal's, or its days edited.
     val answers = viewModel.answersNow()
@@ -979,10 +982,16 @@ fun ProgramBuilderScreen(
                                 }
                             },
                             onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },
+                            fatigueNotes = fatigue?.let { dayNoteLines(preset, it, java.time.ZoneId.systemDefault()) }.orEmpty(),
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     CoverageChip(remember(coveragePresets) { coverageTally(coveragePresets) }, onOpen = { coverageOpen = true })
+                    // What is still recovering, under the coverage chip: a hint, the plan above is untouched.
+                    val rightNow = remember(fatigue) { fatigue?.let { PlanFatigue.rightNow(it, java.time.ZoneId.systemDefault()) } }
+                    if (fatigue != null && rightNow != null) {
+                        RightNowLine(rightNow, fatigue.nowMs, java.time.ZoneId.systemDefault(), onOpenFatigue)
+                    }
                     if (presets.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
                         Caption(UiText.themedPlural(R.plurals.builder_volume_existing, R.plurals.builder_volume_existing__t, presets.size).asString())

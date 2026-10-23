@@ -58,6 +58,7 @@ object FatigueTuning {
     const val SORENESS_TO_H = 72.0
 
     /** MuscleMap: a share from here up is main work, which a deficit stretches. */
+    const val TRAINS_SHARE = 0.5                          // MuscleMap doc: 0.5+ is "trains the muscle"
     const val MAIN_SHARE = 0.7
 
     /** The exercise fatigue page: this many hard sets, this many reps left. */

@@ -6728,4 +6728,16 @@
     <string name="fatigue_explainer_soreness__t">Soreness isn\'t proof a trial worked, and no soreness isn\'t proof it didn\'t.</string>
     <string name="fatigue_explainer_estimate">Treat every level as a rough estimate. The numbers behind it are starting guesses, not fitted to you, and nothing leaves your device.</string>
     <string name="fatigue_explainer_done_button">Got it</string>
+
+    <!-- Plan builder: "Muscles right now" under the coverage chip, and the quiet per-day note. -->
+    <!-- %1$s is a list of muscles, e.g. "Quads and hamstrings". -->
+    <string name="fatigue_right_now_title">%1$s still recovering</string>
+    <!-- %1$s is a list of levels, e.g. "Very high and High"; %2$s a weekday or "today". -->
+    <string name="fatigue_right_now_subtitle">%1$s · from %2$s\'s session</string>
+    <string name="fatigue_right_now_link">Muscles ›</string>
+    <string name="fatigue_right_now_hint">Open Muscles, Fatigue</string>
+    <!-- %1$s a muscle, %2$s its level, %3$s the weekday of the planned day. -->
+    <string name="fatigue_day_note">%1$s: %2$s by %3$s · estimate</string>
+    <string name="fatigue_plan_unchanged">Fatigue is a hint, never a block. Nothing in your plan changed.</string>
+    <string name="fatigue_plan_unchanged__t">Fatigue is a hint, never a block. Nothing in your cycle changed.</string>
 </resources>

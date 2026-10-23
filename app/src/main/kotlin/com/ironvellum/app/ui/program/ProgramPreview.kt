@@ -126,6 +126,8 @@ fun ProposedDay(
     folded: Boolean = false,
     /** A folded day opens on arrival: first-run's review opens its first day so the exercises are in view. */
     startOpen: Boolean = !folded,
+    /** Quiet lines under the day's title: muscles it trains that are still worked, from the fatigue estimate. */
+    fatigueNotes: List<String> = emptyList(),
 ) {
     // The open row is remembered by the entry it is, not its position: removing an exercise above it
     // would otherwise slide the open card onto its neighbour.
@@ -213,6 +215,9 @@ fun ProposedDay(
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
+            }
+            fatigueNotes.forEach { line ->
+                Text(line, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
             }
             Spacer(Modifier.height(4.dp))
             preset.entries.forEachIndexed { entryIndex, entry ->
