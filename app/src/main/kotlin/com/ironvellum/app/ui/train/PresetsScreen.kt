@@ -80,13 +80,14 @@ import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.program.MusclesNowCard
+import com.ironvellum.app.ui.program.MuscleCoverageViewModel
 import com.ironvellum.app.ui.program.MuscleFatigueViewModel
+import com.ironvellum.app.ui.program.rememberDismissedHeavy
+import com.ironvellum.app.ui.program.weekLine
 import com.ironvellum.app.ui.program.MusclesView
 import com.ironvellum.app.ui.dashboard.trialLength
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
-import com.ironvellum.app.ui.program.coverageHeadline
-import com.ironvellum.app.ui.program.coverageTally
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -213,9 +214,15 @@ fun PresetsScreen(
         viewModel(factory = viewModelFactory {
             initializer { MuscleFatigueViewModel(ironvellumRepository()) }
         }),
+    coverageModel: MuscleCoverageViewModel =
+        viewModel(factory = viewModelFactory {
+            initializer { MuscleCoverageViewModel(ironvellumRepository()) }
+        }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val fatigue by fatigueModel.ui.collectAsStateWithLifecycle()
+    val coverage by coverageModel.ui.collectAsStateWithLifecycle()
+    val dismissedHeavy = rememberDismissedHeavy()
     val live by viewModel.live.collectAsStateWithLifecycle()
     var showNewChooser by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
@@ -225,7 +232,7 @@ fun PresetsScreen(
     var shareRefusal by remember { mutableStateOf<String?>(null) }
 
     val zone = java.time.ZoneId.systemDefault()
-    val coverageLine = remember(ui.plannedPresets) { coverageHeadline(coverageTally(ProgramRules.coverage(ui.plannedPresets))) }
+    val coverageLine = remember(coverage.week, dismissedHeavy.value) { weekLine(coverage.week.tally(dismissedHeavy.value)) }
     val todayDate = LocalDate.now()
     val today = todayDate.dayOfWeek.value
     val todayStart = todayDate.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -279,7 +286,7 @@ fun PresetsScreen(
             }
             MusclesNowCard(
                 ui = fatigue,
-                coverageLine = if (ui.plannedPresets.isEmpty()) null else stringResource(R.string.muscles_now_week, coverageLine),
+                coverageLine = if (!coverage.week.hasAnything()) null else stringResource(R.string.muscles_now_week, coverageLine),
                 zone = zone,
                 onOpen = { onOpenMuscles(MusclesView.FATIGUE) },
                 onOpenCoverage = { onOpenMuscles(MusclesView.COVERAGE) },

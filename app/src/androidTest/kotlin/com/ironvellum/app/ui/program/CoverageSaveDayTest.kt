@@ -90,6 +90,12 @@ class CoverageSaveDayTest {
 
     private fun shot(name: String) = ShotRecorder.take(compose, name)
 
+    /** Monday of this week: the whole plan is still to come, whatever day the suite runs on. */
+    private fun mondayVm() = com.ironvellum.app.ui.program.MuscleCoverageViewModel(
+        app.repository,
+        nowMs = { java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).atTime(8, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() },
+    )
+
     private fun fixture(name: String, day: Int?): Long =
         runBlocking { app.repository.savePlannedPreset(null, PlannedPreset(name, "", day, listOf(press))) }
 
@@ -122,7 +128,7 @@ class CoverageSaveDayTest {
         host {
             var page by remember { mutableStateOf("coverage") }
             if (page == "coverage") {
-                MuscleCoverageScreen(onBack = {}, onGenerateSession = { page = "builder" })
+                MuscleCoverageScreen(onBack = {}, onGenerateSession = { page = "builder" }, viewModel = remember { mondayVm() })
             } else {
                 ProgramBuilderScreen("session", null, onDone = { page = "coverage" })
             }
@@ -173,7 +179,7 @@ class CoverageSaveDayTest {
         host {
             MuscleCoverageScreen(
                 onBack = {}, onGenerateSession = {},
-                onOpenRite = { openedRite = it }, onOpenRites = { openedList++ },
+                onOpenRite = { openedRite = it }, onOpenRites = { openedList++ }, viewModel = remember { mondayVm() },
             )
         }
         driver.awaitText("1 rite has no day, so it isn't counted")

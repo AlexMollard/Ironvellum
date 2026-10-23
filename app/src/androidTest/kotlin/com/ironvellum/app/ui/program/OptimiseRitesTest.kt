@@ -83,6 +83,11 @@ class OptimiseRitesTest {
         driver.takeTheClock()
     }
 
+    private fun mondayVm() = com.ironvellum.app.ui.program.MuscleCoverageViewModel(
+        app.repository,
+        nowMs = { java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).atTime(8, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() },
+    )
+
     private fun replaceRites(week: List<PlannedPreset>) = runBlocking {
         val repo = app.repository
         repo.observePresets().first().forEach { repo.deletePreset(it.id) }
@@ -105,7 +110,7 @@ class OptimiseRitesTest {
                     var page by remember { mutableStateOf(start) }
                     Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss).statusBarsPadding()) {
                         if (page == "coverage") {
-                            MuscleCoverageScreen(onBack = {}, onGenerateSession = {}, onOptimise = { page = "optimise" })
+                            MuscleCoverageScreen(onBack = {}, onGenerateSession = {}, onOptimise = { page = "optimise" }, viewModel = remember { mondayVm() })
                         } else {
                             OptimiseScreen(onBack = { page = "coverage" }, onForgeCycle = {})
                         }

@@ -91,6 +91,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -99,29 +100,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Weekly muscle coverage: the routine-level heat map. The cycle reads the
- * scheduled presets, the last 7 days read what was actually logged, and both go
- * through [ProgramRules.weeklyVolume] so the two views count identically.
+ * Weekly muscle coverage on one map: this Monday-to-Sunday week, what is done (hard sets already logged) and what
+ * the plan's remaining days still hold. The sets are counted by [HardSets] (logged) and [ProgramRules.coverage]
+ * (planned), one rule each, combined in [WeekCoverage].
  */
 
-enum class CoverageView(@StringRes private val labelRes: Int) {
-    CYCLE(R.string.coverage_view_planned),
-    LOGGED(R.string.coverage_view_last7),
-    ;
-
-    val label: String get() = Words.text(UiText.res(labelRes))
-}
-
 data class CoverageUi(
+    val week: WeekCoverage = WeekCoverage(),
+    /** The plan's remaining days as presets: what the rest of the week trains. */
     val plannedPresets: List<PlannedPreset> = emptyList(),
-    val loggedPresets: List<PlannedPreset> = emptyList(),
-    /** Done sets this week whose movement has no MuscleMap profile. */
-    val unattributedLoggedSets: Int = 0,
-    /** Preset sets with no profile (planned view honesty count). */
-    val unattributedPlannedSets: Int = 0,
+    /** This week's hard sets so far, as one pseudo-rite, so a lit muscle can say what it was done with. */
+    val donePresets: List<PlannedPreset> = emptyList(),
+    /** Hard sets, done or planned, whose movement has no MuscleMap profile, so the map cannot count them. */
+    val unattributedSets: Int = 0,
     val hasAnyPreset: Boolean = false,
-    val hasLoggedWeek: Boolean = false,
-    /** Saved rites with no day, which the planned view leaves out ([uncountedRoutine]): id and name. */
+    /** Saved rites with no day, which the week leaves out ([uncountedRoutine]): id and name. */
     val uncountedRites: List<Pair<Long, String>> = emptyList(),
 )
 
@@ -129,10 +122,11 @@ data class CoverageUi(
 internal fun unattributedSets(presets: List<PlannedPreset>): Int =
     presets.sumOf { p -> p.entries.sumOf { e -> if (MuscleMap.profile(e.exerciseName) == null) e.sets else 0 } }
 
-/** What the Cycle page reads for a cycle that is not saved yet: the builder's proposal, as the caller's data. */
+/** What the page reads for a cycle that is not saved yet: the builder's proposal, with nothing done. */
 internal fun previewCoverage(presets: List<PlannedPreset>): CoverageUi = CoverageUi(
+    week = plannedOnlyWeek(presets),
     plannedPresets = presets,
-    unattributedPlannedSets = unattributedSets(presets),
+    unattributedSets = unattributedSets(presets),
     hasAnyPreset = presets.isNotEmpty(),
 )
 
@@ -159,54 +153,29 @@ internal fun rememberDismissedHeavy(): MutableState<Set<Muscle>> {
 
 class MuscleCoverageViewModel(
     private val repo: Repository,
+    /** The clock the week is cut from; a test pins it to a Monday so the plan's whole week is still to come. */
+    private val nowMs: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
     val ui: StateFlow<CoverageUi> = combine(
         repo.observePresets(),
         repo.observeHistory(),
-    ) { presets, history ->
-        // Scheduled days are the routine; with none scheduled, the whole
-        // board is the routine. The builder's preview reads the same rule.
-        val scheduled = scheduledRoutine(presets) { it.scheduledDay }
-        val plannedPresets = scheduled.map { it.toPlanned() }
-
-        val cutoff = Instant.now().minus(java.time.Duration.ofDays(7)).toEpochMilli()
-        val recent = history.filter { (session, _) -> session.startedAtMs >= cutoff }
-        // Done sets grouped per movement and modifiers, then read through
-        // the SAME rule as the plan, so the two views can be
-        // compared - a feet-elevated push-up credits the upper chest here too.
-        val loggedSets = recent.flatMap { (_, sets) -> sets.filter { it.done } }
-        val byExercise = loggedSets.groupBy { it.exerciseName to it.modifiers }
-        val loggedPresets = if (byExercise.isEmpty()) {
-            emptyList()
-        } else {
-            listOf(
-                PlannedPreset(
-                    name = Words.text(UiText.res(R.string.coverage_view_last7)),
-                    note = "",
-                    scheduledDay = null,
-                    entries = byExercise.map { (key, sets) ->
-                        PlannedEntry(
-                            exerciseName = key.first,
-                            sets = sets.size,
-                            // Coverage only counts sets; the average reps
-                            // here is display filler for the data class.
-                            reps = if (sets.isEmpty()) 10 else sets.sumOf { it.reps } / sets.size,
-                            targetWeightKg = null,
-                            modifiers = key.second,
-                        )
-                    },
-                ),
-            )
-        }
-
+        repo.observeExercises(),
+    ) { presets, history, exercises ->
+        val now = nowMs()
+        val zone = ZoneId.systemDefault()
+        val byId = exercises.associateBy { it.id }
+        val (from, to) = weekBounds(now, zone)
+        val today = Instant.ofEpochMilli(now).atZone(zone).dayOfWeek.value
+        val remaining = remainingRites(presets, history, today, from)
+        val done = doneInWeek(history, byId, from, to)
+        val doneRite = doneRite(history, byId, from, to)
         CoverageUi(
-            plannedPresets = plannedPresets,
-            loggedPresets = loggedPresets,
-            unattributedLoggedSets = unattributedSets(loggedPresets),
-            unattributedPlannedSets = unattributedSets(plannedPresets),
+            week = weekCoverage(done.sets, done.maxSession, remaining),
+            plannedPresets = remaining,
+            donePresets = doneRite,
+            unattributedSets = unattributedSets(remaining) + unattributedSets(doneRite),
             hasAnyPreset = presets.isNotEmpty(),
-            hasLoggedWeek = loggedSets.isNotEmpty(),
             uncountedRites = uncountedRoutine(presets) { it.scheduledDay }.map { it.id to it.name },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoverageUi())
@@ -236,8 +205,8 @@ fun MuscleCoverageScreen(
 }
 
 /**
- * Coverage with no screen chrome: the Planned | Last 7 days pager, its pages and the dock. Muscles hosts it
- * under its Fatigue | Coverage switch.
+ * Coverage with no screen chrome: the one week map, its rows and the dock. Muscles hosts it under its
+ * Fatigue | Coverage tab row, which is the screen's only one.
  */
 @Composable
 internal fun MuscleCoverageContent(
@@ -252,49 +221,28 @@ internal fun MuscleCoverageContent(
     modifier: Modifier = Modifier,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    val pager = rememberPagerState { CoverageView.entries.size }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     val dismissed = rememberDismissedHeavy()
-    // One lit muscle per page, kept when the lifter swipes away and back: the cycle and the last 7 days are
-    // two different weeks, so each remembers what it was showing. Held here because the pager drops pages
-    // it is not near.
-    val lit = CoverageView.entries.associateWith { view ->
-        rememberSaveable(key = "lit-${view.name}") { mutableStateOf<Muscle?>(null) }
-    }
-
-    // The dock reads the page that is open, so it is worked out here and not inside the pager.
-    val view = CoverageView.entries[pager.currentPage]
-    val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val tally = remember(presets, view, dismissed.value) {
-        coverageMapModel(presets, pooled = view == CoverageView.LOGGED, dismissed = dismissed.value).tally
-    }
-    val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
+    val lit = rememberSaveable(key = "lit-week") { mutableStateOf<Muscle?>(null) }
+    // The dock reads the same week the page does, so it is worked out here and not inside the page.
+    val tally = remember(ui.week, dismissed.value) { ui.week.tally(dismissed.value) }
+    val empty = !ui.week.hasAnything()
 
     Column(modifier.fillMaxSize()) {
-        // The switch comes first: drawn after the empty check, an empty last-7-days view hid it and the
-        // lifter could not get back to the cycle.
-        InkTabbedPager(
-            labels = CoverageView.entries.map { it.label },
-            state = pager,
+        CoveragePage(
+            ui = ui,
+            lit = lit,
+            openExercise = openExercise,
+            onOpenExercise = { openExercise = it },
+            dismissed = dismissed.value,
+            onDismiss = { dismissed.value = dismissed.value + it },
+            onOpenUncounted = {
+                // One rite goes straight to it; several go to the list that holds them all.
+                ui.uncountedRites.singleOrNull()?.let { (id, _) -> onOpenRite(id) } ?: onOpenRites()
+            },
             modifier = Modifier.weight(1f),
-            tabsModifier = Modifier.padding(horizontal = 16.dp),
-            tabsGap = 12.dp,
-        ) { page ->
-            CoveragePage(
-                view = CoverageView.entries[page],
-                ui = ui,
-                lit = lit.getValue(CoverageView.entries[page]),
-                openExercise = openExercise,
-                onOpenExercise = { openExercise = it },
-                dismissed = dismissed.value,
-                onDismiss = { dismissed.value = dismissed.value + it },
-                onOpenUncounted = {
-                    // One rite goes straight to it; several go to the list that holds them all.
-                    ui.uncountedRites.singleOrNull()?.let { (id, _) -> onOpenRite(id) } ?: onOpenRites()
-                },
-            )
-        }
-        val actions = dockActions(tally, planned = view == CoverageView.CYCLE, hasRites = ui.hasAnyPreset)
+        )
+        val actions = dockActions(tally, planned = true, hasRites = ui.hasAnyPreset)
         if (!empty && actions.any) {
             CoverageDock(
                 headline = coverageHeadline(tally),
@@ -306,9 +254,8 @@ internal fun MuscleCoverageContent(
 }
 
 /**
- * Coverage of the cycle the builder is proposing, before it is saved: the Cycle page's own content
- * ([CoveragePage]) fed the proposal instead of the saved rites. No Forge dock and no Last 7 days tab:
- * the lifter is already forging.
+ * Coverage of the cycle the builder is proposing, before it is saved: the page's own content ([CoveragePage]) fed
+ * the proposal with nothing done, so it reads Planned, Short and Heavy. No Forge dock: the lifter is already forging.
  */
 @Composable
 internal fun CoveragePreviewScreen(
@@ -317,7 +264,7 @@ internal fun CoveragePreviewScreen(
 ) {
     val ui = remember(presets) { previewCoverage(presets) }
     val dismissed = rememberDismissedHeavy()
-    val tally = remember(presets, dismissed.value) { coverageTally(presets, dismissed.value) }
+    val tally = remember(ui, dismissed.value) { ui.week.tally(dismissed.value) }
     val lit = rememberSaveable(key = "lit-preview") { mutableStateOf<Muscle?>(null) }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize()) {
@@ -339,7 +286,6 @@ internal fun CoveragePreviewScreen(
         }
         Box(Modifier.weight(1f)) {
             CoveragePage(
-                view = CoverageView.CYCLE,
                 ui = ui,
                 lit = lit,
                 openExercise = openExercise,
@@ -399,10 +345,9 @@ private fun CoverageDock(headline: String, onForge: (() -> Unit)?, onOptimise: (
     }
 }
 
-/** One view's page: its own scroll and numbers, both read through the same rules. */
+/** The week's page: its own scroll, the one map, the rows that need a look and the folded covered ones. */
 @Composable
 internal fun CoveragePage(
-    view: CoverageView,
     ui: CoverageUi,
     lit: MutableState<Muscle?>,
     openExercise: String?,
@@ -410,12 +355,13 @@ internal fun CoveragePage(
     dismissed: Set<Muscle>,
     onDismiss: (Muscle) -> Unit,
     onOpenUncounted: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
-    val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val model = remember(presets, view, dismissed) { coverageMapModel(presets, pooled = view == CoverageView.LOGGED, dismissed = dismissed) }
-    val loads = model.loads
-    val tally = model.tally
-    // Each exercise once, in routine order, keyed with its modifiers because
+    val week = ui.week
+    val states = remember(week, dismissed) { week.states(dismissed) }
+    val tally = remember(week, dismissed) { week.tally(dismissed) }
+    val presets = remember(ui) { ui.plannedPresets + ui.donePresets }
+    // Each exercise once, planned then done, keyed with its modifiers because
     // a deficit push-up works the chest differently from a flat one.
     val exercisesInView = remember(presets) {
         presets.flatMap { it.entries }
@@ -423,27 +369,22 @@ internal fun CoveragePage(
             .distinct()
             .mapNotNull { (name, modifiers) -> MuscleMap.profile(name, modifiers)?.let { Triple(name, modifiers, it.muscles) } }
     }
-    val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
-    val unattributed = if (view == CoverageView.CYCLE) ui.unattributedPlannedSets else ui.unattributedLoggedSets
+    val empty = !week.hasAnything()
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
-    var coveredOpen by rememberSaveable(view.name) { mutableStateOf(false) }
-    var byExerciseOpen by rememberSaveable(view.name) { mutableStateOf(false) }
-    var whyOpen by rememberSaveable(view.name) { mutableStateOf(false) }
+    var coveredOpen by rememberSaveable { mutableStateOf(false) }
+    var byExerciseOpen by rememberSaveable { mutableStateOf(false) }
+    var whyOpen by rememberSaveable { mutableStateOf(false) }
 
     Column(
-        Modifier
+        modifier
             .fillMaxSize()
             .verticalScroll(scroll)
             .padding(horizontal = 16.dp),
     ) {
         if (empty) {
             Text(
-                if (view == CoverageView.CYCLE) {
-                    UiText.themed(R.string.coverage_empty_cycle, R.string.coverage_empty_cycle__t).asString()
-                } else {
-                    UiText.themed(R.string.coverage_empty_logged, R.string.coverage_empty_logged__t).asString()
-                },
+                UiText.themed(R.string.coverage_empty_cycle, R.string.coverage_empty_cycle__t).asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(top = 8.dp),
@@ -453,12 +394,19 @@ internal fun CoveragePage(
         }
 
         CoverageMap(
-            loads = loads,
+            week = week,
             dismissed = dismissed,
             selection = lit,
-            unattributed = unattributed,
+            unattributed = ui.unattributedSets,
         )
-        if (view == CoverageView.CYCLE && ui.uncountedRites.isNotEmpty()) {
+        Text(
+            stringResource(R.string.coverage_week_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        )
+        if (ui.uncountedRites.isNotEmpty()) {
             UncountedRitesLine(ui.uncountedRites.size, onOpenUncounted)
         }
         Spacer(Modifier.height(12.dp))
@@ -467,14 +415,13 @@ internal fun CoveragePage(
         // train it, and clearing brings it back.
         val litMuscle = lit.value
         if (litMuscle != null) {
-            val litLoad = loads[litMuscle]
-            if (litLoad != null && tally.states[litMuscle] == CoverageState.HEAVY) {
-                HeavyNote(litMuscle, litLoad) { onDismiss(litMuscle) }
+            if (states[litMuscle] == WeekState.HEAVY) {
+                HeavyNote(litMuscle, week.of(litMuscle).load) { onDismiss(litMuscle) }
             }
             MuscleFilter(
                 muscle = litMuscle,
                 rites = remember(presets, litMuscle) { ritesTraining(presets, litMuscle) },
-                byRite = view == CoverageView.CYCLE,
+                byRite = true,
                 onClear = { lit.value = null },
             )
         } else {
@@ -484,15 +431,14 @@ internal fun CoveragePage(
                 scope.launch { scroll.animateScrollTo(0) }
                 Unit
             }
-            // The muscles that need a look come first; the covered ones fold away.
-            val needing = remember(loads, tally) { attentionOrder(loads, tally) }
-            val covered = tally.covered
+            // The muscles that need a look come first (heavy, short, on track); the done ones fold away.
+            val rows = remember(week, states) { weekRows(week, states) }
             InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                needing.forEachIndexed { index, muscle ->
+                rows.needing.forEachIndexed { index, muscle ->
                     if (index > 0) InkDivider()
-                    CoverageRow(muscle, loads[muscle], tally.states.getValue(muscle)) { pick(muscle) }
+                    WeekRow(muscle, week.of(muscle), states.getValue(muscle)) { pick(muscle) }
                 }
-                if (needing.isEmpty()) {
+                if (rows.needing.isEmpty()) {
                     Text(
                         stringResource(R.string.coverage_covered_empty),
                         style = MaterialTheme.typography.bodyMedium,
@@ -500,8 +446,8 @@ internal fun CoveragePage(
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
                 }
-                if (covered.isNotEmpty()) {
-                    if (needing.isNotEmpty()) InkDivider()
+                if (rows.covered.isNotEmpty()) {
+                    if (rows.needing.isNotEmpty()) InkDivider()
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -517,9 +463,9 @@ internal fun CoveragePage(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        CoverageMark(CoverageState.COVERED)
+                        WeekSwatch(WeekState.DONE, size = 20.dp)
                         Text(
-                            UiText.plural(R.plurals.coverage_covered_count, covered.size).asString(),
+                            UiText.plural(R.plurals.coverage_week_covered_count, rows.covered.size).asString(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = IronvellumColors.Ink,
                             modifier = Modifier.weight(1f),
@@ -532,9 +478,9 @@ internal fun CoveragePage(
                         )
                     }
                     if (coveredOpen) {
-                        covered.forEach { muscle ->
+                        rows.covered.forEach { muscle ->
                             InkDivider()
-                            CoverageRow(muscle, loads[muscle], CoverageState.COVERED) { pick(muscle) }
+                            WeekRow(muscle, week.of(muscle), WeekState.DONE) { pick(muscle) }
                         }
                     }
                 }

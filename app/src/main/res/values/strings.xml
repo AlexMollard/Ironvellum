@@ -2108,7 +2108,6 @@
     <string name="presets_sealed_mark" translatable="false">✓</string>
     <string name="presets_row_under_way">Under way</string>
     <string name="presets_row_today">Today</string>
-    <string name="presets_coverage_label">Weekly coverage</string>
     <string name="presets_no_cycle_title">No weekly plan yet</string>
     <string name="presets_no_cycle_title__t">No cycle yet</string>
     <string name="presets_exercises_label">Exercises</string>
@@ -2900,10 +2899,44 @@
     <string name="coverage_state_below_minimum">Below minimum</string>
     <string name="coverage_state_covered">Covered</string>
     <string name="coverage_state_heavy">Heavy</string>
-    <!-- Muscle coverage: the two pages of the screen, as tab labels. The second is also the name of the pooled week. -->
-    <string name="coverage_view_planned">Planned</string>
-    <string name="coverage_view_last7">Last 7 days</string>
     <string name="coverage_screen_title">Weekly coverage</string>
+    <!-- Muscle coverage, one week on one map: the five states. Heavy is coverage_state_heavy. -->
+    <string name="coverage_week_state_done">Done</string>
+    <string name="coverage_week_state_planned">Planned</string>
+    <string name="coverage_week_state_short">Short</string>
+    <string name="coverage_week_state_none">None</string>
+    <!-- Legend range for Planned. %1$d is the weekly floor, so it reads "to 4+". -->
+    <string name="coverage_week_legend_to">to %1$d+</string>
+    <string name="coverage_week_caption">This week, Monday to Sunday: done so far, plus what your plan still has</string>
+    <string name="coverage_week_caption__t">This week, Monday to Sunday: done so far, plus what your cycle still has</string>
+    <!-- A muscle's sets for the week. %1$s and %2$s are numbers as written ("16", "3.5"). -->
+    <string name="coverage_week_sets_done">%1$s done</string>
+    <string name="coverage_week_sets_planned">%1$s planned</string>
+    <string name="coverage_week_sets_both">%1$s done + %2$s planned</string>
+    <!-- Under a muscle's name. %1$s is the week's total sets, %2$s the last day of the week ("Sunday"). -->
+    <string name="coverage_week_row_heavy">Heavy: %1$s by %2$s</string>
+    <string name="coverage_week_row_on_track">On track: %1$s by %2$s</string>
+    <string name="coverage_week_row_done">Done: %1$s</string>
+    <string name="coverage_week_row_none">Not trained</string>
+    <string name="coverage_week_row_short_nothing">Short: nothing planned</string>
+    <plurals name="coverage_week_row_short_by">
+        <item quantity="one">Short by %1$s set</item>
+        <item quantity="other">Short by %1$s sets</item>
+    </plurals>
+    <!-- The folded row of muscles that already have their sets. %1$d is how many. -->
+    <plurals name="coverage_week_covered_count">
+        <item quantity="one">Covered already · %1$d muscle</item>
+        <item quantity="other">Covered already · %1$d muscles</item>
+    </plurals>
+    <!-- Train's one coverage line, after "This week: ". -->
+    <plurals name="coverage_week_line_short">
+        <item quantity="one">%1$d muscle short</item>
+        <item quantity="other">%1$d muscles short</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="coverage_week_line_heavy">%1$d heavy</string>
+    <string name="coverage_week_line_on_track">on track</string>
+    <!-- The name of this week's logged sets when a lit muscle lists what trains it. -->
+    <string name="coverage_week_done_rite">Done this week</string>
     <string name="coverage_preview_title">Coverage of this weekly plan</string>
     <string name="coverage_preview_title__t">Coverage of this cycle</string>
     <string name="coverage_hint_caption">A hint only. Saving is never blocked.</string>
@@ -2913,8 +2946,6 @@
     <string name="coverage_dock_forge_button__t">Forge a rite</string>
     <string name="coverage_empty_cycle">No routines are written yet. Build a weekly plan and it will be mapped here.</string>
     <string name="coverage_empty_cycle__t">No rites are written yet. Forge a cycle and it will be mapped here.</string>
-    <string name="coverage_empty_logged">Your history is blank for the last 7 days. Finish a workout and it is mapped here.</string>
-    <string name="coverage_empty_logged__t">The Chronicle is blank for the last 7 days. Seal a trial and it is mapped here.</string>
     <!-- Muscle coverage: honesty note under the figure. %d is the number of sets whose exercise has no muscle profile. -->
     <plurals name="coverage_unattributed_sets">
         <item quantity="one">%1$d set not counted: no muscle data for that exercise.</item>

@@ -200,7 +200,7 @@ class ForgeV2Test {
         content { CoveragePreviewScreen(heavy) {} }
         driver.awaitText("Coverage of this cycle")
         // Not colour alone: every row carries its state as text on the node.
-        assertTrue(stateNodes("Not trained").fetchSemanticsNodes().isNotEmpty())
+        assertTrue(stateNodes("None").fetchSemanticsNodes().isNotEmpty())
         val before = stateNodes("Heavy").fetchSemanticsNodes().size
         assertTrue("a 60-set pull day is heavy", before > 0)
         shot("coverage-heavy")

@@ -11,23 +11,24 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.theme.IronvellumColors
 
-/** What the Coverage map draws: the loads and the one tally every summary on the page reads. */
-internal data class CoverageMapModel(val loads: Map<Muscle, MuscleLoad>, val tally: CoverageTally)
+/** What the Coverage map draws: the week and the one tally every summary on the page reads. */
+internal data class CoverageMapModel(val week: WeekCoverage, val tally: CoverageTally)
 
 /**
- * The single rule from presets to map state. Setup's preview, the plan builder's preview and Muscles >
- * Coverage all go through it, so the three cannot disagree about a muscle.
+ * The single rule from a week to map state. Muscles > Coverage reads the real week; setup's and the plan builder's
+ * previews have no "done" yet, so they read [plannedOnlyWeek] of the proposal (the Planned state, no Done key in the
+ * legend). Both go through here, so the three cannot disagree about a muscle.
  */
-internal fun coverageMapModel(presets: List<PlannedPreset>, pooled: Boolean, dismissed: Set<Muscle>): CoverageMapModel {
-    val loads = loadsOf(presets, pooled)
-    return CoverageMapModel(loads, coverageTally(loads, dismissed))
-}
+internal fun coverageMapModel(week: WeekCoverage, dismissed: Set<Muscle>): CoverageMapModel =
+    CoverageMapModel(week, week.tally(dismissed))
+
+internal fun coverageMapModel(presets: List<PlannedPreset>, dismissed: Set<Muscle>): CoverageMapModel =
+    coverageMapModel(plannedOnlyWeek(presets), dismissed)
 
 /**
  * The one Coverage map: the body figure with its legend, then the line owning up to sets the map cannot
@@ -35,7 +36,7 @@ internal fun coverageMapModel(presets: List<PlannedPreset>, pooled: Boolean, dis
  */
 @Composable
 internal fun CoverageMap(
-    loads: Map<Muscle, MuscleLoad>,
+    week: WeekCoverage,
     dismissed: Set<Muscle>,
     selection: MutableState<Muscle?>,
     unattributed: Int,
@@ -45,7 +46,7 @@ internal fun CoverageMap(
 ) {
     Column(modifier) {
         CoverageFigure(
-            loads = loads,
+            week = week,
             dismissed = dismissed,
             modifier = Modifier.fillMaxWidth(),
             figureHeight = figureHeight,

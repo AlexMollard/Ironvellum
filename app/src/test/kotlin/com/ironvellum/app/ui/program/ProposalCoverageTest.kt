@@ -32,6 +32,7 @@ class ProposalCoverageTest {
         // The page: what CoveragePreviewScreen reads from the same proposal as caller data.
         val ui = previewCoverage(sample)
         val page = coverageTally(loadsOf(ui.plannedPresets))
+        assertEquals(chip, ui.week.tally())
 
         assertEquals(chip, page)
         assertEquals(coverageHeadline(chip), coverageHeadline(page))
@@ -48,7 +49,8 @@ class ProposalCoverageTest {
         val ui = previewCoverage(sample)
         assertTrue(ui.hasAnyPreset)
         assertEquals(sample, ui.plannedPresets)
-        assertTrue(ui.loggedPresets.isEmpty())
+        assertTrue(ui.donePresets.isEmpty())
+        assertTrue("nothing is done in a proposal", ui.week.muscles.values.all { it.done == 0.0 })
     }
 
     @Test

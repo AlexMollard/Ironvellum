@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -58,47 +57,46 @@ internal enum class RegionDecor { NONE, HATCH, CROSS_HATCH, DASHED }
 internal data class RegionLook(val fill: Color, val decor: RegionDecor, val ink: Color)
 
 /**
- * The figure's look for a coverage state. Covered is a solid fill; below the minimum is a faint fill with
- * diagonal hatching; heavy is a faint amber fill, cross-hatched and outlined; not trained is bare paper with
- * a dashed outline. The four differ by pattern, never only by hue.
+ * The figure's look for a week state, so a state never rests on colour alone: done is a solid fill, planned a faint
+ * fill with diagonal hatching, short a faint amber fill with a dashed outline, heavy a faint amber fill, cross-hatched
+ * and outlined, none bare paper with a dashed outline.
  */
-internal fun regionLook(state: CoverageState): RegionLook = when (state) {
-    CoverageState.NOT_TRAINED -> RegionLook(IronvellumColors.Rune, RegionDecor.DASHED, IronvellumColors.InkMuted)
-    CoverageState.BELOW_MINIMUM ->
-        RegionLook(IronvellumColors.Emerald.copy(alpha = 0.18f), RegionDecor.HATCH, IronvellumColors.Emerald)
-    CoverageState.COVERED -> RegionLook(IronvellumColors.Emerald.copy(alpha = FULL_ALPHA), RegionDecor.NONE, IronvellumColors.Emerald)
-    CoverageState.HEAVY ->
-        RegionLook(IronvellumColors.Caution.copy(alpha = 0.22f), RegionDecor.CROSS_HATCH, IronvellumColors.Caution)
+internal fun weekLook(state: WeekState): RegionLook = when (state) {
+    WeekState.DONE -> RegionLook(IronvellumColors.Emerald.copy(alpha = FULL_ALPHA), RegionDecor.NONE, IronvellumColors.Emerald)
+    WeekState.PLANNED -> RegionLook(IronvellumColors.Emerald.copy(alpha = 0.30f), RegionDecor.HATCH, IronvellumColors.Emerald)
+    WeekState.SHORT -> RegionLook(IronvellumColors.Caution.copy(alpha = 0.20f), RegionDecor.DASHED, IronvellumColors.Caution)
+    WeekState.HEAVY -> RegionLook(IronvellumColors.Caution.copy(alpha = 0.22f), RegionDecor.CROSS_HATCH, IronvellumColors.Caution)
+    WeekState.NONE -> RegionLook(IronvellumColors.Rune, RegionDecor.DASHED, IronvellumColors.InkMuted)
 }
 
 /** A muscle the page does not judge (the neck): bare paper, no pattern. */
 private val UNJUDGED_LOOK = RegionLook(IronvellumColors.Rune, RegionDecor.NONE, IronvellumColors.InkMuted)
 
 /**
- * Front and back figures side by side in ONE Canvas of fixed [figureHeight], each judged muscle drawn in its
- * coverage state ([regionLook]) with a legend beneath. One Canvas with an explicit height is deliberate: a
- * per-figure RowScope weight inside a Column was ignored by Compose and the second figure was clipped away.
+ * Front and back figures side by side in ONE Canvas of fixed [figureHeight], each judged muscle drawn in its week
+ * state ([weekLook]) with a legend of the states present beneath. One Canvas with an explicit height is deliberate:
+ * a per-figure RowScope weight inside a Column was ignored by Compose and the second figure was clipped away.
  */
 @Composable
 internal fun CoverageFigure(
-    loads: Map<Muscle, MuscleLoad>,
+    week: WeekCoverage,
     dismissed: Set<Muscle>,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 320.dp,
     selection: MutableState<Muscle?> = rememberMuscleSelection(),
     interactive: Boolean = true,
 ) {
-    val tally = remember(loads, dismissed) { coverageTally(loads, dismissed) }
-    val description = coverageSummary(tally)
+    val states = remember(week, dismissed) { week.states(dismissed) }
+    val description = coverageSummary(remember(week, dismissed) { week.tally(dismissed) })
     val figure = BodyFigures.of(LocalBodySex.current)
-    val look = { muscle: Muscle -> tally.states[muscle]?.let(::regionLook) ?: UNJUDGED_LOOK }
+    val look = { muscle: Muscle -> states[muscle]?.let(::weekLook) ?: UNJUDGED_LOOK }
     FigureBlock(
         figure, figureHeight, { look(it).fill }, selection,
-        { coverageMuscleLine(it, loads[it], it in dismissed) },
+        { weekMuscleLine(it, week.of(it), states[it]) },
         modifier.semantics { contentDescription = description },
         interactive = interactive,
         decor = look,
-    ) { CoverageLegend(showHeavy = tally.heavy.isNotEmpty()) }
+    ) { WeekLegend(states.values.toSet()) }
 }
 
 /** How much of a muscle one exercise works, in the words the figure's legend uses. */

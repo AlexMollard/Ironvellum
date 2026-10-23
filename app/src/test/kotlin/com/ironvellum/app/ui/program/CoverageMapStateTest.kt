@@ -19,15 +19,15 @@ class CoverageMapStateTest {
 
     @Test
     fun `previewAndMusclesShareOneStateRule`() {
-        val preview = coverageMapModel(previewCoverage(week).plannedPresets, pooled = false, dismissed = emptySet())
-        val muscles = coverageMapModel(week, pooled = false, dismissed = emptySet())
+        val preview = coverageMapModel(previewCoverage(week).plannedPresets, dismissed = emptySet())
+        val muscles = coverageMapModel(week, dismissed = emptySet())
         assertEquals(preview, muscles)
         assertEquals(coverageTally(week), muscles.tally)
     }
 
     @Test
     fun `states cover trained below untrained and heavy`() {
-        val tally = coverageMapModel(week, pooled = false, dismissed = emptySet()).tally
+        val tally = coverageMapModel(week, dismissed = emptySet()).tally
         assertEquals(CoverageState.HEAVY, tally.states[Muscle.MID_CHEST])
         assertEquals(CoverageState.NOT_TRAINED, tally.states[Muscle.CALVES])
         assertTrue(tally.heavy.isNotEmpty())
@@ -35,14 +35,8 @@ class CoverageMapStateTest {
 
     @Test
     fun `a dismissed heavy flag reads as covered`() {
-        val tally = coverageMapModel(week, pooled = false, dismissed = setOf(Muscle.MID_CHEST)).tally
+        val tally = coverageMapModel(week, dismissed = setOf(Muscle.MID_CHEST)).tally
         assertEquals(CoverageState.COVERED, tally.states[Muscle.MID_CHEST])
     }
 
-    @Test
-    fun `a pooled week never flags heavy from one session`() {
-        val one = listOf(week[0].copy(entries = listOf(PlannedEntry("Bench Press", sets = 12, reps = 8, targetWeightKg = null))))
-        val pooled = coverageMapModel(one, pooled = true, dismissed = emptySet()).tally
-        assertEquals(CoverageState.COVERED, pooled.states[Muscle.MID_CHEST])
-    }
 }

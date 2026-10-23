@@ -54,11 +54,11 @@ class CoverageMapParityTest {
         driver.settle()
         val preview = summaries().single()
 
-        val model = coverageMapModel(plan, pooled = false, dismissed = emptySet())
+        val model = coverageMapModel(plan, dismissed = emptySet())
         compose.activityRule.scenario.onActivity {
             it.setContent {
                 IronvellumTheme {
-                    CoverageMap(model.loads, emptySet(), mutableStateOf<Muscle?>(null), unattributed = 0)
+                    CoverageMap(model.week, emptySet(), mutableStateOf<Muscle?>(null), unattributed = 0)
                 }
             }
         }
