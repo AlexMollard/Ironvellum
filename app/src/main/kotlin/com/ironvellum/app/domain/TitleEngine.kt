@@ -836,7 +836,9 @@ object Titles {
                 val exercise = exercises[set.exerciseId] ?: continue
                 if (!metricOf(set).isStrength) continue
                 val name = normaliseName(exercise.name)
-                repsThisSession[name] = (repsThisSession[name] ?: 0) + set.reps
+                // Reps of an easier version (assisted, incline) are not the movement's reps: the rep deeds ask for
+                // the pull-up or push-up itself, as the strength deeds below do ([Variation.eases]).
+                if (!Variation.eases(set.modifiers)) repsThisSession[name] = (repsThisSession[name] ?: 0) + set.reps
                 if (exercise.metric == ExerciseMetric.HOLD) {
                     val held = set.durationSec ?: 0
                     if (held > bestHoldSeconds) bestHoldSeconds = held
