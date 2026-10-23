@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -80,7 +79,6 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.TabTitle
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.dashboard.trialLength
 import com.ironvellum.app.ui.ironvellumRepository
@@ -252,16 +250,11 @@ fun PresetsScreen(
                 }
                 .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(12.dp))
+            // The title, the Begin chip and the tabs are TrainScreen's; this is the Plan tab under them.
             val context = androidx.compose.ui.platform.LocalContext.current
             val share = {
                 shareRefusal = null
                 viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
-            }
-            // The title's row is a fixed height: the chip leaves (a trial is under way) and the title stays put.
-            TabTitle(stringResource(R.string.presets_title)) {
-                // No second trial while one is under way.
-                if (focus !is TrainFocus.Live) InkChip(Words.openTrial.s.replaceFirstChar { it.uppercase() }, UiText.themed(R.string.presets_begin_open_description, R.string.presets_begin_open_description__t).asString(), Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = GROUP_GAP))

@@ -40,6 +40,8 @@ object TestProfile {
             .targetContext.applicationContext as IronvellumApp
         // The suite is written against the dark theme; a fresh install follows the phone, so pin it.
         app.appearanceStore.setMode(com.ironvellum.app.ui.theme.ThemeMode.DARK)
+        // Train remembers its tab while the process lives, and the suite is one process: start every test on Plan.
+        com.ironvellum.app.ui.train.TrainTabMemory.reset()
         FirstRunPrefs.setWelcomeSeen(app)
         FirstRunPrefs.setVeilIntroSeen(app)
         FirstRunPrefs.setNotificationsAsked(app)

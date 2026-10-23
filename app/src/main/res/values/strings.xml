@@ -6648,4 +6648,11 @@
 
     <!-- The Stats list: a figure and its noun. -->
     <plurals name="review_lifts_gained_count"><item quantity="one">%1$d lift gained</item><item quantity="other">%1$d lifts gained</item></plurals>
+
+    <!-- Train > Muscles: the tabs, the Fatigue | Coverage switch and the caption under the fatigue map. -->
+    <string name="fatigue_tab_plan">Plan</string>
+    <string name="fatigue_tab_muscles">Muscles</string>
+    <string name="fatigue_switch_fatigue">Fatigue</string>
+    <string name="fatigue_switch_coverage">Coverage</string>
+    <string name="fatigue_window_caption">Estimated from your last 7 days</string>
 </resources>

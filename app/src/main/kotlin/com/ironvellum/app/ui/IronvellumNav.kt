@@ -100,11 +100,11 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.CappedFontScale
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
-import com.ironvellum.app.ui.train.PresetsScreen
+import com.ironvellum.app.ui.train.TrainScreen
+import com.ironvellum.app.ui.train.TrainTabMemory
 import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
-import com.ironvellum.app.ui.program.MuscleCoverageScreen
 import com.ironvellum.app.ui.program.OptimiseScreen
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.domain.CollectionTab
@@ -409,7 +409,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     )
                 }
                 composable(Routes.PRESETS) {
-                    PresetsScreen(
+                    TrainScreen(
                         onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onNew = { navController.navigate(Routes.presetEditor()) },
                         onGenerate = { mode, presetId ->
@@ -419,7 +419,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.exercises()) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
-                        onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
+                        onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     )
                 }
@@ -434,19 +434,15 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                     )
                 }
+                // Coverage lives in Train > Muscles now; a stored link to the old screen lands there.
                 composable(Routes.MUSCLE_COVERAGE) {
-                    MuscleCoverageScreen(
-                        onBack = { navController.popBackStack() },
-                        // "session" mode builds one workout aimed at the
-                        // muscles this map just showed as neglected.
-                        onGenerateSession = { navController.navigate(Routes.programBuilder("session")) },
-                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
-                        // Train is the page that lists the rites; it is usually just underneath.
-                        onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
-                        onOpenRites = {
-                            if (!navController.popBackStack(Routes.PRESETS, inclusive = false)) navController.navigate(Routes.PRESETS)
-                        },
-                    )
+                    LaunchedEffect(Unit) {
+                        TrainTabMemory.openCoverage()
+                        navController.navigate(Routes.PRESETS) {
+                            popUpTo(Routes.MUSCLE_COVERAGE) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 }
                 composable(Routes.OPTIMISE_RITES) {
                     OptimiseScreen(

@@ -115,11 +115,12 @@ class FontScaleSweepTest {
         back()
         screen("train-log") { driver.click("All") }
         back()
+        // Coverage is a view inside Train now (Muscles), so the way back is the Plan tab, not a back press.
         screen("train-coverage") {
             driver.click("Weekly coverage")
             driver.awaitText("FRONT")
         }
-        back()
+        driver.click("Plan")
         screen("train-exercises") {
             driver.click("Exercises")
             driver.awaitText("Search exercises")
