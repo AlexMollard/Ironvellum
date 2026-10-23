@@ -508,7 +508,7 @@ Starts after Task 15's live acceptance. Every table, view, RPC and column below 
 Decisions made here (designer's calls, recorded for the owner):
 1. **Friend-safe card fields: columns on `sessions`, not a side table.** `sessions_read` is `can_view_session(user_id, audience)`, which is exactly the audience the card must obey ("under the session's own audience"). One nullable `feed_card jsonb` column inherits that policy, rides the existing `public_feed` scan of `sessions` (no extra join per feed row), needs no new policy to get wrong, and is ignored by older clients. A side table would need its own policy duplicating `can_view_session` plus a join per row. Cost: up to 2 KiB more per session row, bounded by a check constraint. One column instead of several keeps the shape versionable (`v`) and the check simple. The column is owner-writable through the existing `sessions_write`.
 2. **Social actions use the app's own calls verbatim** (insert into `friendships`, upsert `session_likes`, insert `session_comments`, RPCs for inbox and circles); no new server function is added in phase 2.
-3. **Feed and Boards "Allies | Everyone" filter** is on the mockups; the phone has none. The web adds it as a client filter by the accepted-ally id set (a filter by key, no new read), defaulting to Everyone, which is what the phone shows. Web-only convenience; drop it if the owner prefers strict phone parity.
+3. **Boards "Allies | Everyone" filter** (owner, 2026-10-23: Boards only, not Feed; the Feed mockup's control is dropped). The phone has none. The web adds it as a client filter by the accepted-ally id set (a filter by key, no new read), defaulting to Everyone, which is what the phone shows. The figures cut elsewhere in this plan are accepted by the owner (2026-10-23).
 
 ---
 
@@ -566,7 +566,7 @@ The card is built from the same ledger pass as the snapshot (no second history w
 ### Task 18: Friends shell, social data layer, server messages
 
 **Files:**
-- Create: `web/src/screens/friends/index.js` (sub-tabs Feed, Inbox, Allies, Boards, Circle at `#/friends/<tab>`, an Allies | Everyone control where the mockup has one), `web/src/data/socialSource.js` (the interface below, `createSupabaseSocial(client, userId)` and `createFakeSocial(script)`), `web/src/explain.js`, `web/src/components/{personRow,safetyMenu,reasonDialog,hiddenName}.js`, `web/test/helpers/fakeClient.js` (a recording fake of the supabase-js PostgREST builder and `rpc`, scripted per call with data or `{code, message}` errors), `web/test/friends.test.js`, `web/test/explain.test.js`
+- Create: `web/src/screens/friends/index.js` (sub-tabs Feed, Inbox, Allies, Boards, Circle at `#/friends/<tab>`, an Allies | Everyone control on Boards only), `web/src/data/socialSource.js` (the interface below, `createSupabaseSocial(client, userId)` and `createFakeSocial(script)`), `web/src/explain.js`, `web/src/components/{personRow,safetyMenu,reasonDialog,hiddenName}.js`, `web/test/helpers/fakeClient.js` (a recording fake of the supabase-js PostgREST builder and `rpc`, scripted per call with data or `{code, message}` errors), `web/test/friends.test.js`, `web/test/explain.test.js`
 - Modify: `web/src/shell.js` (un-hide Friends and the Inbox button; the badge reads `Inbox.unread`), `web/src/router.js`, `web/src/schema.js` consumers (Friends says `needs schema 31` on an older backend)
 
 **Interfaces:**

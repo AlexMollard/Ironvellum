@@ -157,6 +157,15 @@ The web supports the app's themes exactly. Mockups: WebOverviewVellum, WebOvervi
 - Nothing is retyped: the accent table is generated from `AccentPalette.kt` and the themed words from
   `strings.xml` (`key` / `key__t`), both checked for drift in the gate.
 
+## Light theme (owner decision 2026-10-23)
+
+The owner chose **B, Vellum rebuilt** (canvas row "Light theme rebuild") for both the app and the web: keep the
+parchment, layer it (cards clearly lighter than the page, visible borders), lift the accent (forest about
+oklch 0.53 / 0.125 / 152), keep gold for rewards only, move caution to red-orange (hue about 35), and build
+the data-viz tints from the vivid accent. Oxblood, Ink and Copper are rebuilt the same way. All text 4.5:1.
+It is designed on the app first (mockups of the main light screens before any build); the web's generated
+palette then follows the app.
+
 ## Phase 2: social and routines (owner-approved 2026-10-23)
 
 The owner wants "everything but editing". Phase 2 is built after phase 1's live acceptance and amends the
