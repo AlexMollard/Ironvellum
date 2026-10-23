@@ -6842,4 +6842,12 @@
     <!-- Progress tab label for the skill-attempt log; the themed name stays Journal. Words.journal keeps "practice log" for the sentences built from it. -->
     <string name="titles_tab_journal">SKILL PRACTICE</string>
     <string name="titles_tab_journal__t">JOURNAL</string>
+
+    <!-- Prompt when a modifier or load makes a base exercise a dedicated one. %1$s is the dedicated exercise's name. -->
+    <string name="twin_switch_prompt">%1$s is its own exercise, with its own art and form guide. Switch to it?</string>
+    <string name="twin_switch_button">Switch</string>
+    <string name="twin_keep_button">Keep as is</string>
+    <!-- Live trial, when some sets are ticked. %1$s is the base exercise's name. -->
+    <string name="twin_switch_split_note">Sets you have ticked stay as %1$s. The rest become a block of their own.</string>
+    <string name="twin_switch_unlink_note">This exercise is in a full superset, so the superset is dissolved to make room.</string>
 </resources>

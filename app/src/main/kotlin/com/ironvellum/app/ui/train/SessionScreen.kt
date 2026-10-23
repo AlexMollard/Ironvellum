@@ -186,6 +186,7 @@ import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ExerciseTwins
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.LastLoggedIndex
 import com.ironvellum.app.domain.isStrength
@@ -250,6 +251,7 @@ import com.ironvellum.app.domain.modifierChips
 import com.ironvellum.app.domain.modifierTokens
 import com.ironvellum.app.domain.toggleModifier
 import com.ironvellum.app.ui.components.ModifierChipGrid
+import com.ironvellum.app.ui.components.TwinSwitchDialog
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
@@ -618,6 +620,11 @@ class SessionViewModel(
         viewModelScope.launch { repo.setExerciseModifiers(sessionId, block, modifiers) }
     }
 
+    /** "Switch" on the dedicated-exercise prompt: the block's unticked sets become [twinId], recorded with [modifiers]. */
+    fun switchToTwin(block: BlockKey, twinId: Long, modifiers: String) {
+        viewModelScope.launchGuarded("switch to the dedicated exercise") { repo.switchBlockToTwin(sessionId, block, twinId, modifiers) }
+    }
+
     /**
      * A movement added mid-session starts at a sane default: ten reps, or a
      * [DEFAULT_HOLD_SECONDS] hold. Adding a hold with "10 reps" is how the
@@ -970,6 +977,30 @@ fun SessionScreen(
     val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextSet
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
+    // A modifier or load just made a block a dedicated exercise ([ExerciseTwins]): Switch or Keep as is waits here.
+    var twinPrompt by remember { mutableStateOf<TwinTrialPrompt?>(null) }
+    val seenModifiers = remember { mutableMapOf<BlockKey, String>() }
+    LaunchedEffect(blocks, exercises) {
+        val names = exercises.mapTo(HashSet()) { it.name.trim().lowercase() }
+        blocks.forEachIndexed { at, block ->
+            val now = block.first.modifiers
+            // First sight of a block is no change: a rite that starts weighted is not asked about.
+            val before = seenModifiers.put(block.key, now) ?: return@forEachIndexed
+            if (before == now || twinPrompt != null || block.sets.none { it.isPending }) return@forEachIndexed
+            val base = exercises.firstOrNull { it.id == block.exerciseId } ?: return@forEachIndexed
+            val res = ExerciseTwins.steer(base.name, before, now, !base.isWeighted, trialPrefs.twinKept) { it.trim().lowercase() in names }
+                ?: return@forEachIndexed
+            val twin = exercises.firstOrNull { it.name.equals(res.twin.dedicated, ignoreCase = true) } ?: return@forEachIndexed
+            twinPrompt = TwinTrialPrompt(
+                block = block.key,
+                baseName = base.name,
+                twin = twin,
+                res = res,
+                split = block.sets.any { it.done && !it.warmup },
+                fullSuperset = (Supersets.runAt(groups, at)?.count() ?: 0) >= Supersets.MAX_SIZE,
+            )
+        }
+    }
     val supersetNumbers = remember(groups) { Supersets.numbers(groups) }
     // The logged set whose effort is being asked, while it is still logged and counted.
     val effortSet = effortFor?.let { id -> ui.sets.firstOrNull { it.id == id } }?.takeIf { it.done && !it.warmup }
@@ -1746,6 +1777,24 @@ fun SessionScreen(
             onDismiss = { showRiteMuscles = false },
         )
     }
+    twinPrompt?.let { prompt ->
+        TwinSwitchDialog(
+            twinName = prompt.twin.name,
+            notes = buildList {
+                if (prompt.split) add(stringResource(R.string.twin_switch_split_note, prompt.baseName))
+                if (prompt.split && prompt.fullSuperset) add(stringResource(R.string.twin_switch_unlink_note))
+            },
+            onSwitch = {
+                viewModel.switchToTwin(prompt.block, prompt.twin.id, prompt.res.modifiers)
+                twinPrompt = null
+            },
+            onKeep = {
+                trialPrefs.keepTwin(prompt.res.keepKey(prompt.baseName))
+                twinPrompt = null
+            },
+            onDismiss = { twinPrompt = null },
+        )
+    }
     editModifiersFor?.let { position ->
         val block = blocks.firstOrNull { it.position == position }
         val current = block?.sets?.firstOrNull()
@@ -1981,6 +2030,16 @@ private const val TITLE_CAP = 80
 
 private const val PUBLIC_NOTE_CAP = 500
 
+
+/** The prompt owed after a modifier or load made [block] the dedicated exercise [twin]; [split] when ticked sets stay behind. */
+private class TwinTrialPrompt(
+    val block: BlockKey,
+    val baseName: String,
+    val twin: Exercise,
+    val res: ExerciseTwins.Resolution,
+    val split: Boolean,
+    val fullSuperset: Boolean,
+)
 
 /** One block of the live trial (one rite entry): its sets in order, and where the rite put it. */
 internal class TrialBlock(val exerciseId: Long, val position: Int, val sets: List<SessionSet>) {

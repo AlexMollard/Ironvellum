@@ -77,6 +77,7 @@ import com.ironvellum.app.domain.DayNames
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ExerciseTwins
 import com.ironvellum.app.domain.LiftLoading
 import com.ironvellum.app.domain.ListText
 import com.ironvellum.app.domain.LoadKit
@@ -111,6 +112,7 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.StepperRow
 import com.ironvellum.app.ui.components.TextAction
+import com.ironvellum.app.ui.components.TwinSwitchDialog
 import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.WholeStepper
 import com.ironvellum.app.ui.components.formatSteppedFigure
@@ -353,6 +355,22 @@ internal fun EditorEntry.followingLoad(before: EditorEntry, exercises: List<Exer
     return if (next == modifiers) this else copy(modifiers = next)
 }
 
+/**
+ * The dedicated exercise [after] has just become by an edit of [before] (a modifier set, or a load that tagged it
+ * "weighted"), when the lifter has not already kept it as is ([kept]); see [ExerciseTwins.steer]. Null for a change of
+ * exercise, which is a deliberate pick, and for anything that adds no modifier.
+ */
+internal fun twinPromptFor(before: EditorEntry, after: EditorEntry, exercises: List<Exercise>, kept: Set<String>): ExerciseTwins.Resolution? {
+    if (before.exerciseId != after.exerciseId) return null
+    val base = exercises.firstOrNull { it.id == after.exerciseId } ?: return null
+    val names = exercises.mapTo(HashSet()) { it.name.trim().lowercase() }
+    return ExerciseTwins.steer(base.name, before.modifiers, after.modifiers, !base.isWeighted, kept) { it.trim().lowercase() in names }
+}
+
+/** [entry] switched to the dedicated exercise [res] names: its exercise replaced, the modifiers the name carries dropped. */
+internal fun EditorEntry.switchedTo(twin: Exercise, res: ExerciseTwins.Resolution): EditorEntry =
+    copy(exerciseId = twin.id, exerciseName = twin.name, modifiers = res.modifiers)
+
 /** Whether every warm-up comes before every worked entry, as a saved rite lists them. */
 internal fun List<EditorEntry>.warmupsFirst(): Boolean = indexOfFirst { !it.warmup }.let { firstWorked -> firstWorked < 0 || drop(firstWorked).none { it.warmup } }
 
@@ -524,6 +542,9 @@ fun PresetEditorScreen(
     var linking by remember { mutableStateOf<Int?>(null) }
     // The entry whose "Sets for" sheet is open.
     var setting by remember { mutableStateOf<Int?>(null) }
+    // A modifier or load just made entry (index, as edited) a dedicated exercise: the prompt waits for Switch or Keep.
+    var twinPrompt by remember { mutableStateOf<Triple<Int, EditorEntry, ExerciseTwins.Resolution>?>(null) }
+    val trialPrefs = TrialPrefs(LocalContext.current)
 
     // Back used to drop every edit without a word; with anything changed it
     // asks first.
@@ -545,6 +566,34 @@ fun PresetEditorScreen(
             was == null || was == index -> null
             was > index -> was - 1
             else -> was
+        }
+    }
+
+    fun update(index: Int, edited: EditorEntry) {
+        val before = ui.entries.getOrNull(index)
+        viewModel.updateEntry(index, edited)
+        if (before == null) return
+        val after = edited.followingLoad(before, ui.exercises)
+        twinPromptFor(before, after, ui.exercises, trialPrefs.twinKept)?.let { twinPrompt = Triple(index, after, it) }
+    }
+
+    twinPrompt?.let { (index, entry, res) ->
+        val twin = ui.exercises.firstOrNull { it.name.equals(res.twin.dedicated, ignoreCase = true) }
+        if (twin == null) {
+            twinPrompt = null
+        } else {
+            TwinSwitchDialog(
+                twinName = twin.name,
+                onSwitch = {
+                    viewModel.updateEntry(index, entry.switchedTo(twin, res))
+                    twinPrompt = null
+                },
+                onKeep = {
+                    trialPrefs.keepTwin(res.keepKey(ui.exercises.first { it.id == entry.exerciseId }.name))
+                    twinPrompt = null
+                },
+                onDismiss = { twinPrompt = null },
+            )
         }
     }
 
@@ -606,7 +655,7 @@ fun PresetEditorScreen(
                             // The toggle sits in the open card, so the open row follows the entry to its new place.
                             onWarmup = { on -> open = viewModel.setWarmup(index, on) },
                             onToggle = { open = if (open == index) null else index },
-                            onEntry = { viewModel.updateEntry(index, it) },
+                            onEntry = { update(index, it) },
                             onChange = { swapping = index },
                             onRemove = { remove(index) },
                             onMove = { move(index, it) },
@@ -727,7 +776,7 @@ fun PresetEditorScreen(
                 worn = worn,
                 inSuperset = entry.supersetGroup != null,
                 onDone = {
-                    viewModel.updateEntry(index, it)
+                    update(index, it)
                     setting = null
                 },
                 onDismiss = { setting = null },

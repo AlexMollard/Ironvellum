@@ -56,6 +56,18 @@ class TrialPrefs(private val prefs: SharedPreferences) {
     // A copy: the set the preferences hand back must never be edited in place.
     private fun movements(): Set<String> = prefs.getStringSet(KEY_OFF_MOVEMENTS, emptySet())?.toSet().orEmpty()
 
+    /** The "Keep as is" answers to the dedicated-exercise prompt, one [com.ironvellum.app.domain.ExerciseTwins.keepKey] each. */
+    val twinKept: Set<String> get() = prefs.getStringSet(KEY_TWIN_KEPT, emptySet())?.toSet().orEmpty()
+
+    fun keepTwin(keepKey: String) {
+        prefs.edit { putStringSet(KEY_TWIN_KEPT, twinKept + keepKey) }
+    }
+
+    /** True once the one-time card offering to convert past sets onto dedicated exercises was shown and closed or acted on. */
+    var convertCardDone: Boolean
+        get() = prefs.getBoolean(KEY_CONVERT_CARD_DONE, false)
+        set(value) = prefs.edit { putBoolean(KEY_CONVERT_CARD_DONE, value) }
+
     private fun key(name: String) = name.trim().lowercase()
 
     private companion object {
@@ -65,5 +77,7 @@ class TrialPrefs(private val prefs: SharedPreferences) {
         const val KEY_LIVE_UPDATE = "live_update"
         const val KEY_LIFTS_ON_LOCK = "lifts_on_lock"
         const val KEY_OFF_MOVEMENTS = "rest_off_movements"
+        const val KEY_TWIN_KEPT = "twin_kept"
+        const val KEY_CONVERT_CARD_DONE = "convert_card_done"
     }
 }

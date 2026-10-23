@@ -1932,6 +1932,61 @@ class Repository(
         sessionDao.setModifiers(sessionId, block.exerciseId, block.position, modifiers)
     }
 
+    /** How [switchBlockToTwin] went. */
+    enum class TwinSwitch {
+        /** Nothing moved: sealed trial, unknown exercise, or no set left to move. */
+        NONE,
+
+        /** No set of the block was ticked, so the whole block became the twin in place. */
+        MOVED,
+
+        /** Ticked sets stayed as they were; the unticked ones are a new block of the twin right after. */
+        SPLIT,
+
+        /** As [SPLIT], and the block's superset was full, so it was dissolved to make room. */
+        SPLIT_UNLINKED,
+    }
+
+    /**
+     * "Switch" on the dedicated-exercise prompt in a live trial: the unticked working sets of [block] become the
+     * exercise [twinId], recorded with [modifiers] (the block's modifiers less the ones the twin's name carries).
+     * Ticked sets keep their exercise and modifiers, so what was done stays as it was logged. A block with no ticked
+     * set moves whole, warm-ups included, in place. Otherwise the block splits: the moved sets become a block of the
+     * twin at the next position (later blocks shift down one, set numbers restart at 1 in both), and the warm-ups
+     * stay with the ticked sets. A superset holds three at most, so a full one is dissolved first.
+     */
+    suspend fun switchBlockToTwin(sessionId: Long, block: BlockKey, twinId: Long, modifiers: String): TwinSwitch = db.withTransaction {
+        if (isSealed(sessionId) || twinId == block.exerciseId || exerciseDao.byId(twinId) == null) return@withTransaction TwinSwitch.NONE
+        var rows = sessionDao.setsFor(sessionId)
+        val mine = rows.filter { it.blockKey == block }.sortedBy { it.setIndex }
+        if (mine.isEmpty()) return@withTransaction TwinSwitch.NONE
+        if (mine.none { it.done && !it.isWarmup }) {
+            mine.forEach { sessionDao.updateSet(it.copy(exerciseId = twinId, modifiers = modifiers)) }
+            return@withTransaction TwinSwitch.MOVED
+        }
+        val moving = mine.filter { !it.done && !it.isWarmup }
+        if (moving.isEmpty()) return@withTransaction TwinSwitch.NONE
+
+        val blocks = Supersets.blocks(
+            rows.map { SessionSet(id = it.id, exerciseId = it.exerciseId, exercisePosition = it.exercisePosition, setIndex = it.setIndex, reps = it.reps, done = it.done, kind = it.setKind(), supersetGroup = it.supersetGroup) },
+        )
+        val at = blocks.indexOfFirst { it.key == block }
+        val full = (Supersets.runAt(blocks.map { it.group }, at)?.count() ?: 0) >= Supersets.MAX_SIZE
+        if (full) {
+            relayout(sessionId) { current -> Supersets.Layout(current.indices.toList(), Supersets.unlink(current.map { it.group }, at)) }
+            rows = sessionDao.setsFor(sessionId)
+        }
+        val position = rows.first { it.id == mine.first().id }.exercisePosition
+        val movingIds = moving.map { it.id }.toSet()
+        rows.filter { it.exercisePosition > position }.forEach { sessionDao.updateSet(it.copy(exercisePosition = it.exercisePosition + 1)) }
+        val staying = rows.filter { it.exercisePosition == position && it.exerciseId == block.exerciseId && it.id !in movingIds }.sortedBy { it.setIndex }
+        staying.forEachIndexed { index, row -> if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index)) }
+        rows.filter { it.id in movingIds }.sortedBy { it.setIndex }.forEachIndexed { index, row ->
+            sessionDao.updateSet(row.copy(exerciseId = twinId, exercisePosition = position + 1, setIndex = index, modifiers = modifiers))
+        }
+        if (full) TwinSwitch.SPLIT_UNLINKED else TwinSwitch.SPLIT
+    }
+
     suspend fun abandonSession(sessionId: Long) = sessionDao.deleteAbandoned(sessionId)
 
     data class CompletionResult(
