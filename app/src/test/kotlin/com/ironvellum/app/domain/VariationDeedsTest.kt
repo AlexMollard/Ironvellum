@@ -3,6 +3,7 @@ package com.ironvellum.app.domain
 import com.ironvellum.app.data.Seed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -101,9 +102,9 @@ class VariationDeedsTest {
         assertTrue("a later trial counts", earned("cast_off_the_crutch", ledger(listOf(set(dip, 8, "assisted")), listOf(set(dip, 1)))))
         assertTrue("tempo does not split the lift", earned("cast_off_the_crutch", ledger(listOf(set(chinUp, 5, "assisted")), listOf(set(chinUp, 1, "tempo")))))
         assertFalse("before is not after", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 3), set(pullUp, 5, "assisted", index = 1)))))
-        assertFalse("never assisted", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 3)))))
         assertFalse("assisted only", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 5, "assisted")))))
-        assertFalse("a different lift", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 5, "assisted"), set(chinUp, 3, index = 1)))))
+        assertFalse("a standard set of the same lift before an assisted one does not count once assisted is logged",
+            earned("cast_off_the_crutch", ledger(listOf(set(chinUp, 3), set(chinUp, 5, "assisted", index = 1)))))
         assertFalse("a harder variation is not the standard lift", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 5, "assisted"), set(pullUp, 3, "archer", index = 1)))))
         assertFalse("not done", earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 5, "assisted"), set(pullUp, 3, index = 1, done = false)))))
         assertFalse("a push-up is not on that list", earned("cast_off_the_crutch", ledger(listOf(set(pushUp, 5, "incline"), set(pushUp, 3, index = 1)))))
@@ -121,7 +122,7 @@ class VariationDeedsTest {
     fun `level ground needs a flat push-up after an incline one`() {
         assertTrue(earned("level_ground", ledger(listOf(set(pushUp, 10, "incline"), set(pushUp, 8, index = 1)))))
         assertFalse(earned("level_ground", ledger(listOf(set(pushUp, 8), set(pushUp, 10, "incline", index = 1)))))
-        assertFalse("decline is harder, not easier", earned("level_ground", ledger(listOf(set(pushUp, 10, "decline"), set(pushUp, 8, index = 1)))))
+        assertFalse("decline is harder, not easier, so it does not make incline logged", earned("level_ground", ledger(listOf(set(pushUp, 10, "incline"), set(pushUp, 8, "incline", index = 1)))))
         assertFalse("incline alone", earned("level_ground", ledger(listOf(set(pushUp, 10, "incline")))))
         assertFalse("a pull-up is not a push-up", earned("level_ground", ledger(listOf(set(pullUp, 5, "assisted"), set(pullUp, 3, index = 1)))))
     }
@@ -151,9 +152,60 @@ class VariationDeedsTest {
         assertTrue("the best assisted set is the bar", earned("no_hand_beneath", ledger(listOf(set(pullUp, 5, "assisted"), set(pullUp, 8, "assisted", index = 1), set(pullUp, 9, index = 2)))))
         assertFalse("a tie is not beating it", earned("no_hand_beneath", ledger(listOf(set(pullUp, 8, "assisted"), set(pullUp, 8, index = 1)))))
         assertFalse("fewer", earned("no_hand_beneath", ledger(listOf(set(pullUp, 8, "assisted"), set(pullUp, 5, index = 1)))))
-        assertFalse("no assisted set to beat", earned("no_hand_beneath", ledger(listOf(set(pullUp, 9)))))
-        assertFalse("another lift", earned("no_hand_beneath", ledger(listOf(set(pullUp, 8, "assisted"), set(chinUp, 12, index = 1)))))
-        assertFalse("incline is easier but not assisted", earned("no_hand_beneath", ledger(listOf(set(pushUp, 8, "incline"), set(pushUp, 12, index = 1)))))
+        assertFalse("assisted logged and not beaten on its own lift", earned("no_hand_beneath", ledger(listOf(set(pullUp, 8, "assisted"), set(pullUp, 5, index = 1), set(chinUp, 12, "assisted", position = 1)))))
+    }
+
+    // ------------------------------------------------------------ an easier version never logged is moved past
+
+    @Test
+    fun `standard dips with no assisted history earn both dip deeds dated to the first standard dip`() {
+        val l = ledger(listOf(set(dip, 6)), listOf(set(dip, 8)))
+        assertTrue(earned("cast_off_the_crutch", l))
+        assertTrue(earned("no_hand_beneath", l))
+        assertEquals(1_000L, Titles.earnedAtMs(Titles.byId("cast_off_the_crutch")!!, l))
+        assertEquals(1_000L, Titles.earnedAtMs(Titles.byId("no_hand_beneath")!!, l))
+        assertFalse("one lift is not three", earned("off_the_leash", l))
+        assertNull("a deed with no history to date it", Titles.earnedAtMs(Titles.byId("below_the_floor")!!, l))
+    }
+
+    @Test
+    fun `weighted and harder sets count as standard or harder`() {
+        assertTrue(earned("cast_off_the_crutch", ledger(listOf(set(dip, 5, weightKg = 20.0)))))
+        assertTrue(earned("cast_off_the_crutch", ledger(listOf(set(pullUp, 3, "archer")))))
+        assertTrue(earned("level_ground", ledger(listOf(set(pushUp, 8, "decline")))))
+        assertTrue(earned("no_hand_beneath", ledger(listOf(set(pullUp, 3, "one-arm")))))
+        val l = ledger(listOf(set(pullUp, 5, "tempo")), listOf(set(pullUp, 3, "archer")))
+        assertEquals("the first such set: tempo is the standard lift", 1_000L, Titles.earnedAtMs(Titles.byId("cast_off_the_crutch")!!, l))
+    }
+
+    @Test
+    fun `a lifter with assisted history but no standard set earns neither`() {
+        val l = ledger(listOf(set(dip, 8, "assisted")), listOf(set(dip, 10, "assisted")))
+        assertFalse(earned("cast_off_the_crutch", l))
+        assertFalse(earned("no_hand_beneath", l))
+        assertFalse("incline logged: a flat push-up is still owed", earned("level_ground", ledger(listOf(set(pushUp, 10, "incline")))))
+        assertFalse("an easier set is never the standard one", earned("level_ground", ledger(listOf(set(pushUp, 10, "incline"), set(pushUp, 12, "assisted", index = 1)))))
+    }
+
+    @Test
+    fun `a lifter who logged the easier version keeps the old dated rule`() {
+        val l = ledger(listOf(set(pullUp, 5, "assisted")), listOf(set(pullUp, 3)), listOf(set(pullUp, 9)))
+        assertTrue(earned("cast_off_the_crutch", l))
+        assertEquals("the first standard set after the assisted one", 1_000L + 86_400_000L, Titles.earnedAtMs(Titles.byId("cast_off_the_crutch")!!, l))
+        assertEquals("the first standard set above the assisted best", 1_000L + 2 * 86_400_000L, Titles.earnedAtMs(Titles.byId("no_hand_beneath")!!, l))
+        val standardFirst = ledger(listOf(set(pullUp, 9)), listOf(set(pullUp, 5, "assisted")))
+        assertFalse("assisted logged later still means the old rule", earned("cast_off_the_crutch", standardFirst))
+    }
+
+    @Test
+    fun `a lift with no easier version never earns the easier-version deeds`() {
+        val l = ledger(listOf(set(deadlift, 5, weightKg = 100.0), set(plank, 30, index = 1)))
+        assertFalse(earned("cast_off_the_crutch", l))
+        assertFalse(earned("no_hand_beneath", l))
+        assertFalse(earned("off_the_leash", l))
+        val three = ledger(listOf(set(pullUp, 3), set(dip, 5, position = 1), set(pushUp, 8, position = 2)))
+        assertTrue("three lifts with an easier version, none logged easier", earned("off_the_leash", three))
+        assertEquals(1_000L, Titles.earnedAtMs(Titles.byId("off_the_leash")!!, three))
     }
 
     // ------------------------------------------------------------ the harder road
@@ -297,7 +349,8 @@ class VariationDeedsTest {
     fun `one hard set earns every deed it satisfies at once`() {
         val one = ledger(listOf(set(pushUp, 5, "archer, deficit, elevated")))
         assertEquals(
-            setOf("below_the_floor", "headlong", "bowstring", "twofold_burden", "threefold_burden", "the_unkind_angle"),
+            // A harder push-up with no easier one ever logged is moved past it, so the two easier-version deeds join.
+            setOf("level_ground", "no_hand_beneath", "below_the_floor", "headlong", "bowstring", "twofold_burden", "threefold_burden", "the_unkind_angle"),
             ids(one).intersect(newIds.toSet()),
         )
     }

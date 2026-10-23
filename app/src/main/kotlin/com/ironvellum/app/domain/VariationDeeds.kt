@@ -13,10 +13,21 @@ data class VariationSetBest(val name: String, val tokens: Set<String>, val reps:
 object VariationDeeds {
 
     data class Facts(
-        /** Movements (normalised) a standard set was logged on after an easier (assisted, incline) set of the same movement. */
+        /**
+         * Movements (normalised) moved off the easier version: a standard set was logged after an easier (assisted,
+         * incline) set of the same movement, or, for a movement whose easier version was never logged and exists, a
+         * standard-or-harder set was logged at all.
+         */
         val movedOff: Set<String> = emptySet(),
-        /** A standard set with more reps than the best assisted set of the same movement. */
+        /** When each of [movedOff] was first moved off: the start of the session of the set that did it. */
+        val movedOffAtMs: Map<String, Long> = emptyMap(),
+        /**
+         * A standard set with more reps than the best assisted set of the same movement, or, for a movement never
+         * logged assisted where assisted exists, a standard-or-harder set at all.
+         */
         val beatAssisted: Boolean = false,
+        /** When [beatAssisted] was first true: the start of the session of the earliest set that did it. */
+        val beatAssistedAtMs: Long? = null,
         /** Best reps per movement and per set of splitting modifiers it carried; sets carrying none are not listed. */
         val setBests: List<VariationSetBest> = emptyList(),
         /** A deficit variation's best estimated 1RM beats the standard lift's. */
@@ -45,9 +56,13 @@ object VariationDeeds {
         bodyweightAt: ((Long) -> Double)?,
     ): Facts {
         val easierSeen = HashSet<String>()
-        val movedOff = LinkedHashSet<String>()
+        val movedOff = LinkedHashMap<String, Long>()
         val assistedReps = HashMap<String, Int>()
         val standardReps = HashMap<String, Int>()
+        // Sets that are standard-or-harder, first and every plain one, for the movements whose easier version exists.
+        val firstUpwards = HashMap<String, Long>()
+        val firstUpwardsEasing = HashMap<String, Long>()
+        val plainSets = HashMap<String, MutableList<Pair<Long, Int>>>()
         val bests = LinkedHashMap<Pair<String, Set<String>>, Int>()
         val variations = HashSet<String>()
         val faces = HashMap<String, MutableSet<String>>()
@@ -71,6 +86,13 @@ object VariationDeeds {
                     if (',' !in key) faces.getOrPut(name) { HashSet() } += key
                 }
                 val carried = carried(exercise.name, set.modifiers)
+                val upwards = !Variation.eases(set.modifiers) && carried.none { it in EASIER }
+                if (upwards) {
+                    // Standard or harder (weighted and the harder modifiers too), on a movement with an easier version.
+                    val applicable = applicableModifiers(exercise)
+                    if ("assisted" in applicable) firstUpwards.putIfAbsent(name, session.startedAtMs)
+                    if ("assisted" in applicable || "incline" in applicable) firstUpwardsEasing.putIfAbsent(name, session.startedAtMs)
+                }
                 if (carried.isNotEmpty()) {
                     bests.merge(name to carried, set.reps, { a, b -> maxOf(a, b) })
                     mostHarder = maxOf(mostHarder, carried.count { it in Variation.HARDER })
@@ -78,16 +100,30 @@ object VariationDeeds {
                 if (Variation.eases(set.modifiers)) {
                     easierSeen += name
                 } else if (key.isEmpty() && name in easierSeen) {
-                    movedOff += name
+                    movedOff.putIfAbsent(name, session.startedAtMs)
                 }
-                if (key.isEmpty()) standardReps.merge(name, set.reps, { a, b -> maxOf(a, b) })
+                if (key.isEmpty()) {
+                    standardReps.merge(name, set.reps, { a, b -> maxOf(a, b) })
+                    plainSets.getOrPut(name) { ArrayList() } += session.startedAtMs to set.reps
+                }
                 if ("assisted" in key.split(",")) assistedReps.merge(name, set.reps, { a, b -> maxOf(a, b) })
             }
         }
 
+        // An easier version never logged is moved past: the first standard-or-harder set of the movement says so.
+        firstUpwardsEasing.forEach { (name, at) -> if (name !in easierSeen) movedOff.putIfAbsent(name, at) }
+        // Beating the assisted best: the first standard set above it, or, with no assisted set ever, the first set up.
+        val beatAt = HashMap<String, Long>()
+        assistedReps.forEach { (name, reps) ->
+            if (reps > 0) plainSets[name]?.firstOrNull { it.second > reps }?.let { beatAt[name] = it.first }
+        }
+        firstUpwards.forEach { (name, at) -> if (name !in assistedReps) beatAt.putIfAbsent(name, at) }
+
         return Facts(
-            movedOff = movedOff,
-            beatAssisted = assistedReps.any { (name, reps) -> reps > 0 && (standardReps[name] ?: 0) > reps },
+            movedOff = movedOff.keys,
+            movedOffAtMs = movedOff,
+            beatAssisted = beatAt.isNotEmpty(),
+            beatAssistedAtMs = beatAt.values.minOrNull(),
             setBests = bests.map { (k, reps) -> VariationSetBest(k.first, k.second, reps) },
             deficitBeatsStandard = deficitBeatsStandard(e1rmByLift),
             distinctVariations = variations.size,

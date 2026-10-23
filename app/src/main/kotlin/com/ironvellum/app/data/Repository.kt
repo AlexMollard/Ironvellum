@@ -2000,7 +2000,7 @@ class Repository(
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
-        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+        titleDao.insertAll(unlockRows(newly, ledger, now))
         settleNewTitles(newly)
 
         // A level-up from ANY source banks inscriptions — workout XP included.
@@ -2687,7 +2687,7 @@ class Repository(
         // Insert and equip together: a crash between them left the titles held
         // but nothing worn, and the unlock never came round again.
         db.withTransaction {
-            titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+            titleDao.insertAll(unlockRows(newly, ledger, now))
             settleNewTitles(newly)
         }
         // Every earned title gets its moment: reconciliation runs before any UI
@@ -2695,6 +2695,10 @@ class Repository(
         _pendingCelebrations.value = _pendingCelebrations.value + newly
         return newly
     }
+
+    /** The unlock rows for [newly]: a deed the history can date is dated to the set that earned it, the rest to [now]. */
+    private fun unlockRows(newly: List<TitleDef>, ledger: Titles.Ledger, now: Long): List<TitleUnlockEntity> =
+        newly.map { TitleUnlockEntity(it.id, Titles.earnedAtMs(it, ledger)?.coerceAtMost(now) ?: now) }
 
     /**
      * The one worn-title rule for every path that unlocks deeds: the lifter's
@@ -2968,7 +2972,7 @@ class Repository(
             bodyweightAt = bodyweightLookup(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
-        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+        titleDao.insertAll(unlockRows(newly, ledger, now))
         settleNewTitles(newly)
         SkillClaimResult(
             skill = def,
@@ -3172,7 +3176,7 @@ class Repository(
                 bodyweightAt = bodyweightLookup(),
             )
             Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet()).also { found ->
-                titleDao.insertAll(found.map { TitleUnlockEntity(it.id, nowMs) })
+                titleDao.insertAll(unlockRows(found, ledger, nowMs))
                 settleNewTitles(found)
             }
         } else {
@@ -3987,7 +3991,7 @@ class Repository(
             bodyweightAt = bodyweightLookup(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
-        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, System.currentTimeMillis()) })
+        titleDao.insertAll(unlockRows(newly, ledger, System.currentTimeMillis()))
         settleNewTitles(newly)
 
         MergeResult(

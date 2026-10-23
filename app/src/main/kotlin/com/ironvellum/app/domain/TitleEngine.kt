@@ -592,28 +592,28 @@ object Titles {
         TitleDef(
             "cast_off_the_crutch",
             "Cast Off the Crutch",
-            "Do a standard pull-up, chin-up or dip after logging it assisted.",
+            "Do a standard pull-up, chin-up or dip after logging it assisted, or do one without ever having logged it assisted.",
             TitleRule.MovedOffEasier(setOf("pull-up", "chin-up", "dip"), lifts = 1),
             TitleRarity.Common,
         ),
         TitleDef(
             "level_ground",
             "Level Ground",
-            "Do a flat push-up after logging it incline.",
+            "Do a flat push-up after logging it incline, or do one without ever having logged it incline or assisted.",
             TitleRule.MovedOffEasier(setOf("push-up"), lifts = 1),
             TitleRarity.Common,
         ),
         TitleDef(
             "off_the_leash",
             "Off the Leash",
-            "Move off the easier version of 3 different lifts.",
+            "Move off the easier version of 3 different lifts: do one standard after logging it easier, or do one never having logged it easier.",
             TitleRule.MovedOffEasier(emptySet(), lifts = 3),
             TitleRarity.Rare,
         ),
         TitleDef(
             "no_hand_beneath",
             "No Hand Beneath",
-            "Do more standard reps in one set than your best assisted set of the same lift.",
+            "Do more standard reps in one set than your best assisted set of the same lift, or do the lift standard without ever having logged it assisted.",
             TitleRule.BeatAssisted,
             TitleRarity.Epic,
         ),
@@ -1135,6 +1135,24 @@ object Titles {
         is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
         is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,
         is TitleRule.HardestGrade, is TitleRule.SportSessions -> "Activities"
+    }
+
+    /**
+     * When the history first satisfied [def], for the deeds that can say (the easier-version deeds: the start of the
+     * session of the set that did it); null for every other deed, which is dated by the moment it is noticed.
+     */
+    fun earnedAtMs(def: TitleDef, ledger: Ledger): Long? {
+        val facts = ledger.variations
+        return when (val rule = def.rule) {
+            is TitleRule.MovedOffEasier -> {
+                val names = rule.names.map(::normaliseName)
+                facts.movedOffAtMs
+                    .filterKeys { names.isEmpty() || it in names }
+                    .values.sorted().getOrNull(rule.lifts - 1)
+            }
+            TitleRule.BeatAssisted -> facts.beatAssistedAtMs
+            else -> null
+        }
     }
 
     /** Returns definitions whose rules are met and that are not in [already]. */
