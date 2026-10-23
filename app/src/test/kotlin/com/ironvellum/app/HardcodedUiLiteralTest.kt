@@ -55,6 +55,7 @@ class HardcodedUiLiteralTest {
         "main/domain/CsvWorkoutReader.kt" to "parses other apps' CSV headers",
         "main/domain/WorkoutCsvWriter.kt" to "writes Strong's CSV header",
         "main/domain/ImportAliases.kt" to "maps other apps' exercise names on import",
+        "main/domain/ExerciseTwins.kt" to "the table of dedicated exercises and the base each is: exercise names, English data like Seed",
         "main/domain/ExportReader.kt" to "reads archive JSON keys",
         "main/domain/ExportWriter.kt" to "writes archive JSON keys",
         "main/domain/Skills.kt" to "skill names and descriptions: data, deferred with title/skill names (owner, 2026-10-16)",

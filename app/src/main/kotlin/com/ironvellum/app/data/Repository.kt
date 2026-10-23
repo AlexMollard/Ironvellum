@@ -54,6 +54,7 @@ import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
 import com.ironvellum.app.domain.ExerciseLogInputs
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ExerciseTwins
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.ExportReader
 import com.ironvellum.app.domain.ExportWriter
@@ -201,6 +202,43 @@ internal fun techniqueEvidence(records: List<SetRecords.Record>, skill: Skills.S
         !skill.standard.contains("bodyweight", ignoreCase = true) &&
         Skills.loadBar(skill.name) == null
     return if (countOnly) records.maxWith(compareBy({ it.reps }, { it.score })) else records.maxBy { it.score }
+}
+
+/**
+ * What [Repository.observeSkillTrainingEvidence] reads: the best set per normalised name, from [history], for the
+ * skills tree. An easier version (assisted, incline) does not show the technique; a harder one still does.
+ *
+ * A dedicated exercise is also its base done with its modifier or load ([ExerciseTwins]), so the sets logged that way
+ * count for it: Pull-up with added load is judged against the Weighted Pull-up bar, Push-up with archer counts for
+ * Archer Push-up. The twin form is read from [ExerciseTwins.twinned] sets and merged with the plain read, so the base
+ * movement keeps the evidence it always had.
+ */
+internal fun skillTrainingEvidence(
+    history: List<Pair<WorkoutSession, List<SessionSet>>>,
+    bodyweightAt: (Long) -> Double,
+    exercises: List<Exercise>,
+): Map<String, SkillTrainingEvidence> {
+    val metricByName = exercises.associate { Titles.normaliseName(it.name) to it.metric }
+    val weightedByName = exercises.associate { Titles.normaliseName(it.name) to it.isWeighted }
+    val skillByName = Skills.ALL.associateBy { Titles.normaliseName(it.name) }
+    fun recordsOf(sessions: List<Pair<WorkoutSession, List<SessionSet>>>) =
+        SetRecords.records(sessions, bodyweightAt) { set -> metricByName[Titles.normaliseName(set.exerciseName)] }.values
+    val twinned = ExerciseTwins.twinned(
+        history,
+        isBodyweight = { weightedByName[Titles.normaliseName(it)] == false },
+        exists = { Titles.normaliseName(it) in metricByName },
+    )
+    return (recordsOf(history) + recordsOf(twinned))
+        .filter { !Variation.eases(it.variation) }
+        .groupBy { Titles.normaliseName(it.exerciseName) }
+        .mapValues { (name, records) ->
+            val top = techniqueEvidence(records, skillByName[name])
+            SkillTrainingEvidence(
+                value = top.reps,
+                weightKg = top.weightKg,
+                achievedAtMs = top.achievedAtMs,
+            )
+        }
 }
 
 class Repository(
@@ -2895,24 +2933,7 @@ class Repository(
      */
     fun observeSkillTrainingEvidence(): Flow<Map<String, SkillTrainingEvidence>> =
         combine(observeHistory(), observeStats(), observeExercises()) { history, stats, exercises ->
-            val bodyweightAt = SetRecords.bodyweightLookup(stats)
-            val metricByName = exercises.associate { Titles.normaliseName(it.name) to it.metric }
-            val skillByName = Skills.ALL.associateBy { Titles.normaliseName(it.name) }
-            val best = SetRecords.records(history, bodyweightAt) { set ->
-                metricByName[Titles.normaliseName(set.exerciseName)]
-            }
-            // An easier version (assisted, incline) does not show the technique; a harder one still does.
-            best.values
-                .filter { !Variation.eases(it.variation) }
-                .groupBy { Titles.normaliseName(it.exerciseName) }
-                .mapValues { (name, records) ->
-                    val top = techniqueEvidence(records, skillByName[name])
-                    SkillTrainingEvidence(
-                        value = top.reps,
-                        weightKg = top.weightKg,
-                        achievedAtMs = top.achievedAtMs,
-                    )
-                }
+            skillTrainingEvidence(history, SetRecords.bodyweightLookup(stats), exercises)
         }
 
     /**

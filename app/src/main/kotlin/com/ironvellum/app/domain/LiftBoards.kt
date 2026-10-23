@@ -256,14 +256,27 @@ object LiftBoards {
 
     /** Every board [exerciseName] counts toward: its TIERED lift, and each LADDER rung it is. Empty when none. */
     fun boardsFor(exerciseName: String): List<BoardEntry> {
-        val name = Titles.normaliseName(exerciseName)
+        val names = countsAs(Titles.normaliseName(exerciseName))
         return buildList {
-            LIFT_BY_NAME[name]?.let { add(BoardEntry(it, null, 0)) }
-            for ((lift, rungs) in LADDERS) {
-                val index = rungs.indexOfFirst { Titles.normaliseName(it.exercise) == name }
-                if (index >= 0) add(BoardEntry(lift, index + 1, rungs.size))
+            for (name in names) {
+                LIFT_BY_NAME[name]?.let { add(BoardEntry(it, null, 0)) }
+                for ((lift, rungs) in LADDERS) {
+                    val index = rungs.indexOfFirst { Titles.normaliseName(it.exercise) == name }
+                    if (index >= 0) add(BoardEntry(lift, index + 1, rungs.size))
+                }
             }
-        }
+        }.distinct()
+    }
+
+    /**
+     * The names whose boards a set of [name] counts toward: itself, and, for a dedicated twin ([ExerciseTwins]) that
+     * is no easier than its base, the base too. A pull-up done weighted counted as a pull-up before it had its own
+     * exercise, and still does once logged as one.
+     */
+    private fun countsAs(name: String): List<String> {
+        val twin = ExerciseTwins.forDedicated(name)
+        val easier = twin == null || twin.absorbs.flatten().any { MovementDifficulty.modifierFactor(it) < 1.0 }
+        return if (easier) listOf(name) else listOf(name) + twin!!.bases.map { Titles.normaliseName(it) }
     }
 
     /** Headline for a step: the tier name on TIERED boards, the rung's exercise on LADDER boards. */
@@ -339,10 +352,10 @@ object LiftBoards {
             for (set in sets) {
                 if (!set.done) continue
                 if (offBoard(set)) continue
-                val name = Titles.normaliseName(set.exerciseName)
+                val names = countsAs(Titles.normaliseName(set.exerciseName))
 
                 for (lift in LADDERS.keys) {
-                    val step = rungCleared(lift, name, set.reps, set.durationSec)
+                    val step = names.maxOf { rungCleared(lift, it, set.reps, set.durationSec) }
                     if (step > 0) record(lift, step, workoutAt, isRecent)
                 }
             }
