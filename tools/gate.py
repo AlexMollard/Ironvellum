@@ -33,6 +33,7 @@ import contextlib
 import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -93,6 +94,35 @@ def counts(pattern: str) -> tuple[int, int]:
         total += int(root.get("tests", 0))
         failed += int(root.get("failures", 0)) + int(root.get("errors", 0))
     return total, failed
+
+
+FIRST_ATTEMPT = os.path.join(ROOT, ".tmp", "gate-first-attempt")
+
+
+def failing_tests(directory: str) -> list[str]:
+    """class.method of every failed or errored test in the result XML files under a directory."""
+    names = []
+    for path in sorted(glob.glob(os.path.join(directory, "**", "*.xml"), recursive=True)):
+        try:
+            suite = ET.parse(path).getroot()
+        except ET.ParseError:
+            continue
+        for case in suite.iter("testcase"):
+            if case.find("failure") is not None or case.find("error") is not None:
+                names.append(f"{case.get('classname')}.{case.get('name')}")
+    return names
+
+
+def keep_first_attempt(results: str, destination: str = FIRST_ATTEMPT) -> list[str]:
+    """Copy the first instrumented attempt's results (test XML, logcat) aside and name the failing tests.
+
+    The retry reruns the suite into the same results directory and overwrites them, so without this copy a
+    failure that the retry hides can never be explained afterwards.
+    """
+    shutil.rmtree(destination, ignore_errors=True)
+    if os.path.isdir(results):
+        shutil.copytree(results, destination)
+    return failing_tests(destination)
 
 
 UPTIME_LIMIT = 30 * 60  # seconds an emulator may stay up before the gate cold boots it
@@ -397,6 +427,7 @@ def main() -> int:
 
     failures = []
     retried = False
+    first_failed: list[str] = []
     with device.emulator_lock(f"gate.py {args.flavour}") if serial else contextlib.nullcontext():
         ready: dict[str, bool] = {}
         booting = None
@@ -420,6 +451,12 @@ def main() -> int:
         inst_bad = bool(serial) and (dropped or any(t.startswith(":app:connected") for t in failed_tasks(log2)))
         if inst_bad:
             retried = True
+            first = keep_first_attempt(
+                os.path.join(ROOT, f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}"))
+            print(f"-- first attempt failed: {len(first)} test(s) failing (results kept in .tmp/gate-first-attempt)")
+            first_failed = first
+            for name in first:
+                print(f"   FAILED {name}")
             retry_instrumented(serial, fl)
         elif code2 and not others:
             failures.append("gradle")  # a non-zero exit with no failed task named: say so rather than pass
@@ -449,6 +486,8 @@ def main() -> int:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
         if retried:
             print("  retried       the instrumented suite ran twice: the first run failed or lost the device")
+            for name in first_failed:
+                print(f"                first attempt failed: {name}  (results in .tmp/gate-first-attempt)")
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
