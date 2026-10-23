@@ -4826,9 +4826,21 @@
     <string name="skilldetail_chip_xp">+%1$d XP</string>
     <string name="skilldetail_chip_mastered">Mastered</string>
     <string name="skilldetail_chip_locked">Locked</string>
+    <!-- A prerequisite that a harder claim marked passed: stands as mastered, paid its XP, quieter than a claim. -->
+    <string name="skilldetail_chip_passed">Passed</string>
+    <!-- About page of a passed skill. %1$s is the harder skill whose claim implies it. -->
+    <string name="skilldetail_passed_by">Passed: implied by %1$s</string>
+    <string name="skilldetail_passed_hint">Mark it as mastered yourself any time. It pays nothing more.</string>
+    <string name="skilldetail_passed_hint__t">Claim it yourself any time. It pays nothing more.</string>
+    <!-- About page of a skill not yet mastered. %1$d is how many skills it builds on that this also marks passed, %2$d the XP the whole claim pays. -->
+    <plurals name="skilldetail_claim_passes"><item quantity="one">Mastering it also marks %1$d skill it builds on as passed. In all it pays %2$d XP.</item><item quantity="other">Mastering it also marks %1$d skills it builds on as passed. In all it pays %2$d XP.</item></plurals>
+    <plurals name="skilldetail_claim_passes__t"><item quantity="one">Claiming it also marks %1$d technique it builds on as passed. In all it pays %2$d XP.</item><item quantity="other">Claiming it also marks %1$d techniques it builds on as passed. In all it pays %2$d XP.</item></plurals>
     <!-- Question over the sheet before giving a mastered skill back. %1$d is the XP taken back. -->
     <string name="skilldetail_unclaim_question">Give the skill back? The %1$d XP is removed too.</string>
     <string name="skilldetail_unclaim_question__t">Give the technique back? The %1$d XP is removed too.</string>
+    <!-- As above when giving it back also reverts skills it passed. %1$d is the XP taken back, %2$d how many skills go back. -->
+    <plurals name="skilldetail_unclaim_question_passes"><item quantity="one">Give the skill back? The %1$d XP is removed too, with the %2$d skill it passed.</item><item quantity="other">Give the skill back? The %1$d XP is removed too, with the %2$d skills it passed.</item></plurals>
+    <plurals name="skilldetail_unclaim_question_passes__t"><item quantity="one">Give the technique back? The %1$d XP is removed too, with the %2$d technique it passed.</item><item quantity="other">Give the technique back? The %1$d XP is removed too, with the %2$d techniques it passed.</item></plurals>
     <string name="skilldetail_keep_button">Keep it</string>
     <!-- Button: %1$d is the XP taken back. The minus sign is U+2212. -->
     <string name="skilldetail_unclaim_button">Unclaim −%1$d XP</string>
@@ -4880,6 +4892,7 @@
     <!-- Screen reader text of a tree node, read as comma separated parts. -->
     <string name="skilltree_row_tier">tier %1$s</string>
     <string name="skilltree_row_mastered">mastered</string>
+    <string name="skilltree_row_passed">passed, implied by a harder skill</string>
     <string name="skilltree_row_available">available, next</string>
     <string name="skilltree_row_standard">standard %1$s</string>
     <string name="skilltree_row_locked_needs">locked, needs %1$s</string>

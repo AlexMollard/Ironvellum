@@ -147,6 +147,8 @@ class IronvellumApp : Application() {
             runCatching { healthResume.startup(90) }
             // Titles used to be awarded only at the moment a workout finished,
             // so anything satisfied by imported health data stayed locked.
+            // Prerequisites of claims made before skills could be passed: marked and paid once, then a no-op.
+            runCatching { repository.reconcileSkillPasses() }
             runCatching { repository.reconcileTitles() }
             // The Veil's one-time catch-up for levels that never paid out. Guarded
             // by a stored version, so every launch after the first is a no-op.

@@ -2879,6 +2879,7 @@ class Repository(
                     claimed = it.claimed,
                     value = it.value,
                     weightKg = it.weightKg,
+                    passed = it.passed,
                 )
             }
         }
@@ -2935,32 +2936,34 @@ class Repository(
     /**
      * Claiming mastery: awards skill XP, may level you up and unlock titles.
      * Level-up inscriptions are banked here, in the claim's own transaction.
+     *
+     * A claim needs no prerequisite standing first: every skill it stands on, across lines, that is not already
+     * claimed or passed is marked passed and paid its claim XP, so the claim opens whatever those open
+     * ([Skills.claimPlan]). A skill that is itself passed is claimed for real and pays nothing more.
      */
     suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown ${Words.technique.s} $skillName")
-        check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
-        // The prerequisite check lives here, not just in the UI: this call mints
-        // tier x 120 XP — 600 at the top of the tree — and an import restore or
-        // any future non-UI caller must not walk through a check the interface
-        // merely holds shut.
-        val mastered = skillPracticeDao.observeAll().first()
-            .filter { it.claimed }
-            .map { it.skillName }
-            .toSet()
-        check(Skills.unlocked(def, mastered)) {
-            "${def.prerequisites.filterNot { it in mastered }.joinToString()} not mastered — " +
-                "$skillName stays locked until it is"
-        }
+        val existing = skillPracticeDao.claim(skillName)
+        check(existing == null || existing.passed) { "$skillName already mastered" }
+        val rows = observeSkillPractices().first()
+        val standingBefore = rows.filter { it.claimed }.mapTo(HashSet()) { it.skillName }
+        val plan = Skills.claimPlan(skillName, rows)
         val now = System.currentTimeMillis()
-        // The claim row records what it paid in `value` (unused on claims),
-        // so an unclaim refunds exactly that even after the skill re-tiers.
-        skillPracticeDao.insert(
-            SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true, value = def.xp),
-        )
+        if (existing != null) {
+            // Passed becomes claimed: the row, its date and what it paid stay, so a later unclaim refunds the same.
+            skillPracticeDao.setPassed(skillName, false)
+        } else {
+            // The claim row records what it paid in `value` (unused on claims),
+            // so an unclaim refunds exactly that even after the skill re-tiers.
+            skillPracticeDao.insert(
+                SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true, value = def.xp),
+            )
+        }
+        plan.passes.forEach { insertPassed(it, now) }
         val before = profileDao.get() ?: error("Profile missing")
         val levelBefore = Xp.levelFor(before.totalXp)
-        val newTotal = before.totalXp + def.xp
-        profileDao.addXp(def.xp.toLong())
+        val newTotal = before.totalXp + plan.xp
+        profileDao.addXp(plan.xp.toLong())
         bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
         val ledger = Titles.ledgerOf(
             totalXp = newTotal,
@@ -2974,15 +2977,50 @@ class Repository(
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(unlockRows(newly, ledger, now))
         settleNewTitles(newly)
+        val standingAfter = standingBefore + skillName + plan.passes.map { it.name }
         SkillClaimResult(
             skill = def,
-            xpAwarded = def.xp,
+            xpAwarded = plan.xp,
             levelBefore = levelBefore,
             levelAfter = Xp.levelFor(newTotal),
             totalXp = newTotal,
             newTitles = newly,
-            unlockedNext = Skills.unlockedBy(skillName, mastered),
+            // Open now and not before, whatever line they sit on: a dependant of a skill this claim passed counts.
+            unlockedNext = Skills.ALL.filter {
+                it.name !in standingAfter && Skills.unlocked(it, standingAfter) && !Skills.unlocked(it, standingBefore)
+            },
+            passed = plan.passes,
         )
+    }
+
+    /** A prerequisite marked passed: a claim row the lifter did not make, stamped with the XP it pays. */
+    private suspend fun insertPassed(def: Skills.SkillDef, now: Long) {
+        skillPracticeDao.insert(
+            SkillPracticeEntity(skillName = def.name, practicedAtMs = now, claimed = true, value = def.xp, passed = true),
+        )
+    }
+
+    /**
+     * Marks passed, and pays, every prerequisite the real claims on the ledger imply and nothing yet holds: the
+     * one-time catch-up for claims made before passing existed, and a repair after a restore. Idempotent, because
+     * what it adds is exactly what it then no longer finds missing. Returns the skills it passed.
+     */
+    suspend fun reconcileSkillPasses(): List<Skills.SkillDef> {
+        val owed = db.withTransaction {
+            val rows = observeSkillPractices().first()
+            val real = rows.filter { it.claimed && !it.passed }.map { it.skillName }
+            val owed = Skills.owedPasses(real, rows.filter { it.claimed }.mapTo(HashSet()) { it.skillName })
+            if (owed.isNotEmpty()) {
+                val now = System.currentTimeMillis()
+                owed.forEach { insertPassed(it, now) }
+                val levelBefore = Xp.levelFor(profileDao.get()?.totalXp ?: 0L)
+                profileDao.addXp(owed.sumOf { it.xp }.toLong())
+                bankLevelRolls(levelBefore, Xp.levelFor(profileDao.get()?.totalXp ?: 0L))
+            }
+            owed
+        }
+        if (owed.isNotEmpty()) reconcileTitles()
+        return owed
     }
 
     /**
@@ -2997,26 +3035,35 @@ class Repository(
      * refused rather than clamped: a clamped refund followed by a full reclaim
      * was an XP farm. Rolls and titles the claim already granted are
      * deliberately kept: a title once earned is not taken back.
+     *
+     * The skills this claim passed revert with it, and are refunded what they paid, unless another real claim still
+     * implies them ([Skills.unclaimPlan]); the whole refund is checked against the ledger first, so one refusal covers
+     * the lot. A claim that is itself still implied stands down to passed and refunds nothing.
      */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
         Skills.forName(skillName) ?: error("Unknown ${Words.technique.s} $skillName")
         val claim = skillPracticeDao.claim(skillName) ?: return@withTransaction
+        // A passed skill is not the lifter's to give back: it reverts with the claim that implies it.
+        if (claim.passed) return@withTransaction
         // A claimed skill that others REQUIRE cannot stand down while they
         // stand on it: dropping Dead Hang would leave Scapular Pull claimed
         // with its own floor gone, and the tree's invariant quietly broken.
-        val dependents = skillPracticeDao.observeAll().first()
-            .filter { it.claimed && Skills.forName(it.skillName)?.prerequisites?.contains(skillName) == true }
+        val rows = observeSkillPractices().first()
+        val dependents = rows
+            .filter { it.claimed && !it.passed && Skills.forName(it.skillName)?.prerequisites?.contains(skillName) == true }
             .map { it.skillName }
         check(dependents.isEmpty()) {
             "$skillName is still required by ${dependents.joinToString()} - unclaim those first"
         }
-        val refund = Skills.claimRefund(skillName, claim.value)
+        val plan = Skills.unclaimPlan(skillName, rows) ?: return@withTransaction
         val total = profileDao.get()?.totalXp ?: 0L
-        check(total >= refund) {
-            "$skillName paid $refund XP but only $total XP is left - it stays ${Words.claimed.s}"
+        check(total >= plan.refund) {
+            val also = if (plan.reverts.isEmpty()) "" else " and the ${plan.reverts.size} it passed"
+            "$skillName$also paid ${plan.refund} XP but only $total XP is left - it stays ${Words.claimed.s}"
         }
-        skillPracticeDao.deleteClaims(skillName)
-        profileDao.addXp(-refund.toLong())
+        if (plan.staysPassed) skillPracticeDao.setPassed(skillName, true) else skillPracticeDao.deleteClaims(skillName)
+        plan.reverts.forEach { skillPracticeDao.deleteClaims(it) }
+        profileDao.addXp(-plan.refund.toLong())
     }
 
     /**
@@ -3394,7 +3441,7 @@ class Repository(
         }
         val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
         val skills = skillPracticeDao.observeAll().first().map {
-            SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg)
+            SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg, it.passed)
         }
         val healthDays = healthDayDao.observeAll().first().map {
             HealthDay(
@@ -3725,6 +3772,7 @@ class Repository(
                             claimed = it.claimed,
                             value = it.value,
                             weightKg = it.weightKg,
+                            passed = it.passed,
                         ),
                     )
                 }

@@ -3,10 +3,96 @@ package com.ironvellum.app.domain
 import com.ironvellum.app.data.Seed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SkillsTest {
+
+    private fun claimed(name: String, passed: Boolean = false) =
+        SkillPractice(name, 1L, claimed = true, value = Skills.forName(name)!!.xp, passed = passed)
+
+    private val belowWeightedPullUp = listOf("Dead Hang", "Scapular Pull", "Australian Pull-up", "Negative Pull-up", "Pull-up")
+
+    @Test
+    fun `the closure of a skill is every prerequisite across lines and nothing else`() {
+        assertEquals(belowWeightedPullUp.toSet(), Skills.prerequisiteClosure("Weighted Pull-up"))
+        val tuck = Skills.prerequisiteClosure("Tuck Front Lever")
+        assertTrue("crosses onto the Core line", "Hollow Hold" in tuck)
+        assertTrue("and down the Pull line", "Pull-up" in tuck && "Dead Hang" in tuck)
+        assertTrue("Front Row Hold" in tuck)
+        assertFalse("not itself", "Tuck Front Lever" in tuck)
+        assertEquals(emptySet<String>(), Skills.prerequisiteClosure("Dead Hang"))
+    }
+
+    @Test
+    fun `claiming Weighted Pull-up with nothing claimed passes the line beneath it for the sum of their XP`() {
+        val plan = Skills.claimPlan("Weighted Pull-up", emptyList())
+        assertEquals(belowWeightedPullUp, plan.passes.map { it.name })
+        assertEquals(belowWeightedPullUp.sumOf { Skills.forName(it)!!.xp } + Skills.forName("Weighted Pull-up")!!.xp, plan.xp)
+        assertEquals(1 * 120 + 1 * 120 + 2 * 120 + 2 * 120 + 3 * 120 + 4 * 120, plan.xp)
+        val standing = (plan.passes.map { it.name } + "Weighted Pull-up").toSet()
+        assertTrue("Archer Pull-up opens", Skills.unlocked(Skills.forName("Archer Pull-up")!!, standing))
+        assertFalse(Skills.unlocked(Skills.forName("Archer Pull-up")!!, emptySet()))
+    }
+
+    @Test
+    fun `a claim passes only what is not already claimed or passed`() {
+        val rows = listOf(claimed("Dead Hang"), claimed("Scapular Pull"), claimed("Australian Pull-up", passed = true))
+        val plan = Skills.claimPlan("Pull-up", rows)
+        assertEquals(listOf("Negative Pull-up"), plan.passes.map { it.name })
+        assertEquals(Skills.forName("Negative Pull-up")!!.xp + Skills.forName("Pull-up")!!.xp, plan.xp)
+    }
+
+    @Test
+    fun `claiming a passed skill pays nothing more and passes nothing`() {
+        val rows = belowWeightedPullUp.map { claimed(it, passed = true) } + claimed("Weighted Pull-up")
+        val plan = Skills.claimPlan("Pull-up", rows)
+        assertTrue(plan.wasPassed)
+        assertEquals(0, plan.xp)
+        assertTrue(plan.passes.isEmpty())
+    }
+
+    @Test
+    fun `unclaiming reverts what it passed, except what another claim still implies`() {
+        val rows = belowWeightedPullUp.map { claimed(it, passed = true) } +
+            claimed("Weighted Pull-up") + claimed("Archer Pull-up") +
+            claimed("One-Arm Hang", passed = false)
+        // Archer Pull-up (claimed) still implies the whole line, so nothing reverts.
+        val keep = Skills.unclaimPlan("Weighted Pull-up", rows)!!
+        assertTrue(keep.reverts.isEmpty())
+        assertEquals(Skills.forName("Weighted Pull-up")!!.xp, keep.refund)
+        // Without it the line goes, but Dead Hang stays: One-Arm Hang, a real claim, stands on it.
+        val without = rows.filterNot { it.skillName == "Archer Pull-up" }
+        val plan = Skills.unclaimPlan("Weighted Pull-up", without)!!
+        assertEquals(listOf("Scapular Pull", "Australian Pull-up", "Negative Pull-up", "Pull-up"), plan.reverts)
+        assertFalse(plan.staysPassed)
+        assertEquals(
+            Skills.forName("Weighted Pull-up")!!.xp + plan.reverts.sumOf { Skills.forName(it)!!.xp },
+            plan.refund,
+        )
+    }
+
+    @Test
+    fun `a real claim still implied by another stands down to passed with no refund`() {
+        val rows = listOf(claimed("Dead Hang"), claimed("Scapular Pull", passed = true), claimed("Weighted Pull-up")) +
+            listOf("Australian Pull-up", "Negative Pull-up", "Pull-up").map { claimed(it, passed = true) }
+        val plan = Skills.unclaimPlan("Dead Hang", rows)!!
+        assertTrue(plan.staysPassed)
+        assertEquals(0, plan.refund)
+        assertTrue(plan.reverts.isEmpty())
+        assertNull("a passed skill is not the lifter's to give back", Skills.unclaimPlan("Scapular Pull", rows))
+        assertEquals("Weighted Pull-up", Skills.impliedBy("Scapular Pull", rows))
+    }
+
+    @Test
+    fun `the backfill owes exactly the prerequisites no row holds`() {
+        val rows = listOf(claimed("Weighted Pull-up"), claimed("Pull-up"))
+        val owed = Skills.owedPasses(rows.map { it.skillName }, rows.map { it.skillName }.toSet())
+        assertEquals(listOf("Dead Hang", "Scapular Pull", "Australian Pull-up", "Negative Pull-up"), owed.map { it.name })
+        val after = rows + owed.map { claimed(it.name, passed = true) }
+        assertTrue(Skills.owedPasses(after.filter { !it.passed }.map { it.skillName }, after.map { it.skillName }.toSet()).isEmpty())
+    }
 
     /**
      * A prerequisite nobody can ever master would strand the rest of its line.

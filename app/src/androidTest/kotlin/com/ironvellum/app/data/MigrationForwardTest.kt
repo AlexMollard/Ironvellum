@@ -1144,4 +1144,29 @@ class MigrationForwardTest {
             assertTrue(plan("SELECT MIN(startedAtMs) FROM sessions").contains("index_sessions_startedAtMs"))
         }
     }
+
+    /**
+     * Schema 44 -> 45, passed skills: a skill row gains a flag. Every row that was there was made by the lifter, so
+     * each reads not passed, claims and practice attempts alike, and the claim's XP stamp survives.
+     */
+    @Test
+    fun upgradeTo45LeavesEverySkillRowNotPassed() = runTest {
+        helper.createDatabase(dbName, 44).use { old ->
+            old.execSQL("INSERT INTO skill_practices (id, skillName, practicedAtMs, claimed, value, weightKg) VALUES (1, 'Pull-up', 1000, 1, 360, NULL)")
+            old.execSQL("INSERT INTO skill_practices (id, skillName, practicedAtMs, claimed, value, weightKg) VALUES (2, 'Dead Hang', 2000, 0, 45, NULL)")
+        }
+        helper.runMigrationsAndValidate(dbName, 45, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT skillName, claimed, value, passed FROM skill_practices ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("Pull-up", c.getString(0))
+                assertEquals(1, c.getInt(1))
+                assertEquals(360, c.getInt(2))
+                assertEquals(0, c.getInt(3))
+                assertTrue(c.moveToNext())
+                assertEquals("Dead Hang", c.getString(0))
+                assertEquals(0, c.getInt(1))
+                assertEquals(0, c.getInt(3))
+            }
+        }
+    }
 }

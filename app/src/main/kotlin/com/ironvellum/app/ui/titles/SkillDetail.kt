@@ -111,9 +111,18 @@ import com.ironvellum.app.ui.components.termsIn
 @Composable
 fun SkillDetailSheet(
     skill: Skills.SkillDef,
+    /** Claimed by the lifter. A passed skill is not: it stands as mastered but was marked by a harder claim. */
     mastered: Boolean,
     unlocked: Boolean,
     entries: List<SkillPractice>,
+    /** Marked passed by a harder claim ([impliedBy]); claiming it for real pays nothing more. */
+    passed: Boolean = false,
+    impliedBy: String? = null,
+    /** How many skills claiming this one also marks passed, and the XP the whole claim pays. */
+    claimPasses: Int = 0,
+    claimXp: Int = skill.xp,
+    /** How many skills giving this one back also reverts (they are refunded inside [refundXp]). */
+    unclaimReverts: Int = 0,
     /** Best set of this movement from real logged sessions; null when never trained. */
     training: SkillTrainingEvidence? = null,
     /** The published female bar, when this lifter's profile says it applies. */
@@ -187,7 +196,7 @@ fun SkillDetailSheet(
             else -> UiText.res(R.string.skilldetail_standard_to_go, SkillGuidance.withUnit(skill.target - bestOverall, skill)).asString()
         }
     }
-    val summary: (@Composable ColumnScope.() -> Unit)? = if (mastered) {
+    val summary: (@Composable ColumnScope.() -> Unit)? = if (mastered || passed) {
         null
     } else if (hasEvidence) {
         {
@@ -238,9 +247,15 @@ fun SkillDetailSheet(
     val attemptsTitle = UiText.res(R.string.skilldetail_attempts_title).asString()
     val beforeTitle = UiText.themed(R.string.skilldetail_before_title, R.string.skilldetail_before_title__t).asString()
     val lockedUntil = UiText.res(R.string.skilldetail_locked_until, skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")).asString()
+    val passedByLine = UiText.res(R.string.skilldetail_passed_by, impliedBy ?: skill.name).asString()
+    val passedHint = UiText.themed(R.string.skilldetail_passed_hint, R.string.skilldetail_passed_hint__t).asString()
+    val claimPassesLine = UiText.themedPlural(
+        R.plurals.skilldetail_claim_passes, R.plurals.skilldetail_claim_passes__t, claimPasses, claimPasses, claimXp,
+    ).asString()
     val attemptTimePattern = UiText.res(R.string.skilldetail_attempt_time_pattern).asString()
     val attemptRows = recent.map { entry ->
         formatDate(entry.practicedAtMs, attemptTimePattern) to when {
+            entry.passed -> UiText.res(R.string.skilldetail_chip_passed).asString()
             entry.claimed -> Words.claimed.u
             entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${Units.withUnit(entry.weightKg)}"
             else -> SkillGuidance.withUnit(entry.value, skill)
@@ -255,13 +270,21 @@ fun SkillDetailSheet(
             add(InfoChip(UiText.res(R.string.skilldetail_chip_tier, Skills.tierLabel(skill.tier)).asString(), IronvellumColors.SystemGreen))
             add(InfoChip(skill.line))
             // A mastered technique shows what the claim paid, which is what giving it back removes.
-            if (hasEvidence || mastered) add(InfoChip(UiText.res(R.string.skilldetail_chip_xp, if (mastered) refundXp else skill.xp).asString(), IronvellumColors.SovereignGold))
+            if (hasEvidence || mastered || passed) add(InfoChip(UiText.res(R.string.skilldetail_chip_xp, if (mastered) refundXp else skill.xp).asString(), IronvellumColors.SovereignGold))
             if (mastered) add(InfoChip(UiText.res(R.string.skilldetail_chip_mastered).asString(), IronvellumColors.SovereignGold))
+            else if (passed) add(InfoChip(UiText.res(R.string.skilldetail_chip_passed).asString()))
             else if (!unlocked) add(InfoChip(UiText.res(R.string.skilldetail_chip_locked).asString(), IronvellumColors.DangerRed))
         },
         // Fixed in the header, so the question stays on screen whichever page is open.
         subtitle = if (mastered && confirmUnclaim) {
-            UiText.themed(R.string.skilldetail_unclaim_question, R.string.skilldetail_unclaim_question__t, refundXp).asString()
+            if (unclaimReverts > 0) {
+                UiText.themedPlural(
+                    R.plurals.skilldetail_unclaim_question_passes, R.plurals.skilldetail_unclaim_question_passes__t,
+                    unclaimReverts, refundXp, unclaimReverts,
+                ).asString()
+            } else {
+                UiText.themed(R.string.skilldetail_unclaim_question, R.string.skilldetail_unclaim_question__t, refundXp).asString()
+            }
         } else {
             null
         },
@@ -275,11 +298,19 @@ fun SkillDetailSheet(
                 InfoAction(trainLabel, onTrain, quiet = true),
                 InfoAction(UiText.res(R.string.skilldetail_give_back_button).asString(), { confirmUnclaim = true }, danger = true),
             )
+            passed -> listOf(
+                InfoAction(trainLabel, onTrain, quiet = true),
+                InfoAction(Words.claim.c, onClaim, quiet = true),
+            )
             unlocked -> listOf(
                 InfoAction(trainLabel, onTrain, quiet = true),
                 InfoAction(Words.claim.c, onClaim, gold = cleared, quiet = !cleared),
             )
-            else -> listOf(InfoAction(trainLabel, onTrain, quiet = true))
+            // Locked skills can be claimed too: it passes everything beneath them.
+            else -> listOf(
+                InfoAction(trainLabel, onTrain, quiet = true),
+                InfoAction(Words.claim.c, onClaim, quiet = true),
+            )
         },
         pages = listOf(
             InfoPage(aboutLabel, summary) {
@@ -293,6 +324,7 @@ fun SkillDetailSheet(
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             val plateState = when {
                                 mastered -> ArtState.MASTERED
+                                passed -> ArtState.PASSED
                                 unlocked -> ArtState.OPEN
                                 else -> ArtState.LOCKED
                             }
@@ -341,8 +373,15 @@ fun SkillDetailSheet(
                         }
                     }
                 }
-                if (!mastered && !unlocked) {
+                if (passed) {
+                    text(null, passedByLine, IronvellumColors.InkMuted)
+                    text(null, passedHint, IronvellumColors.InkMuted)
+                }
+                if (!mastered && !passed && !unlocked) {
                     text(null, lockedUntil, IronvellumColors.InkMuted)
+                }
+                if (!mastered && claimPasses > 0) {
+                    text(null, claimPassesLine, IronvellumColors.InkMuted)
                 }
             },
             InfoPage(logLabel) {

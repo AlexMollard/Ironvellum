@@ -213,6 +213,11 @@ data class SkillPractice(
     /** Seconds held, reps completed, or metres travelled. */
     val value: Int = 0,
     val weightKg: Double? = null,
+    /**
+     * A claim row the lifter did not make: a prerequisite of a harder claim, marked passed and paid its claim XP
+     * ([claimed] is true too, so it stands as mastered for unlocking). A real claim of it clears the flag.
+     */
+    val passed: Boolean = false,
 )
 
 data class SkillClaimResult(
@@ -223,6 +228,8 @@ data class SkillClaimResult(
     val totalXp: Long,
     val newTitles: List<TitleDef>,
     val unlockedNext: List<Skills.SkillDef>,
+    /** The prerequisites this claim marked passed, each paid its claim XP inside [xpAwarded]. */
+    val passed: List<Skills.SkillDef> = emptyList(),
 )
 
 data class UnlockedTitle(

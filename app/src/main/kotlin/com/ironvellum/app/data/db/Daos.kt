@@ -434,6 +434,10 @@ interface SkillPracticeDao {
     @Query("DELETE FROM skill_practices WHERE skillName = :name AND claimed = 1")
     suspend fun deleteClaims(name: String)
 
+    /** A passed skill claimed for real, or a claim that is still implied by another one standing down to passed. */
+    @Query("UPDATE skill_practices SET passed = :passed WHERE skillName = :name AND claimed = 1")
+    suspend fun setPassed(name: String, passed: Boolean)
+
     @Insert
     suspend fun insert(practice: SkillPracticeEntity)
 

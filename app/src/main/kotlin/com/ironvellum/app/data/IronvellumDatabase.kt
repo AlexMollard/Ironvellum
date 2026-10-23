@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 44
+        const val VERSION = 45
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -660,6 +660,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Passed skills: a claim row gains a flag for a prerequisite marked passed by a harder claim. Every existing
+         * row was made by the lifter, which the default says, and no row is rewritten; the prerequisites owed to
+         * claims already made are marked by the repository's reconcile, which pays their XP and banks any level.
+         */
+        private val MIGRATION_44_45 = object : Migration(44, 45) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE skill_practices ADD COLUMN passed INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -694,6 +705,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_41_42,
             MIGRATION_42_43,
             MIGRATION_43_44,
+            MIGRATION_44_45,
         )
 
         const val NAME = "ironvellum.db"

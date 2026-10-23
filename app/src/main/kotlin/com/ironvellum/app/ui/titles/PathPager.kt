@@ -64,6 +64,8 @@ internal fun PathPager(
     line: String,
     onLine: (String) -> Unit,
     mastered: Set<String>,
+    /** The part of [mastered] a harder claim passed, drawn quieter than a claim. */
+    passed: Set<String>,
     onSelect: (String) -> Unit,
     onOpenPrerequisite: (String) -> Unit,
     focus: String?,
@@ -115,6 +117,7 @@ internal fun PathPager(
                 SkillTreeGraph(
                     line = pageLine,
                     mastered = mastered,
+                    passed = passed,
                     onSelect = onSelect,
                     modifier = Modifier.fillMaxWidth(),
                     best = best,

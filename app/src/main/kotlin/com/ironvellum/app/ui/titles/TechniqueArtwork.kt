@@ -32,14 +32,19 @@ internal fun techniqueDrawing(name: String): ArtRef? = ExerciseArtIndex.forTechn
 internal fun techniqueCaption(name: String): String? = ExerciseArtIndex.shows(name)?.let { "Shown: $it" }
 
 /** Where a technique stands for the lifter, as its art shows it: earned, open to claim, or out of reach. */
-internal enum class ArtState { MASTERED, OPEN, LOCKED }
+internal enum class ArtState { MASTERED, PASSED, OPEN, LOCKED }
 
 /** The state's own metal at [alpha]: the gold ramp earned, the emerald ramp open, Iron locked. The same ring the tree draws. */
 internal fun artBrush(state: ArtState, alpha: Float = 1f): Brush = when (state) {
     ArtState.MASTERED -> Metal.Fabled.bounds(alpha)
+    // Passed is the earned gold, quieter: the same ramp at a little over half strength.
+    ArtState.PASSED -> Metal.Fabled.bounds(alpha * PASSED_RING)
     ArtState.OPEN -> emeraldRamp(alpha)
     ArtState.LOCKED -> Metal.Common.bounds(alpha)
 }
+
+/** How much of the gold ramp a passed technique's ring and wash keep. */
+private const val PASSED_RING = 0.55f
 
 /** A locked technique's drawing is dimmed, so the art says "not yet" in the tree and the sheet alike. */
 internal fun artAlpha(state: ArtState): Float = if (state == ArtState.LOCKED) 0.5f else 1f

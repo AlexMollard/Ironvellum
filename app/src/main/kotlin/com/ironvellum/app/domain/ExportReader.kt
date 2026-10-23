@@ -197,6 +197,7 @@ object ExportReader {
         claimed = o.bool("claimed") ?: false,
         value = o.int("value") ?: 0,
         weightKg = o.dbl("weightKg"),
+        passed = o.bool("passed") ?: false,
     )
 
     private fun readHealthDay(o: Obj) = HealthDay(

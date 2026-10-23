@@ -13,12 +13,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * `claimSkill` mints tier-scaled XP, so the prerequisite rule cannot live only
- * in the skill tree UI where the button is greyed out — an import restore or
- * any future caller would walk straight through and mint, say, 600 XP for a
- * tier V with nothing mastered. These tests pin the repository-side gate: a
- * locked skill refuses AND pays nothing, a root skill pays, and the gate opens
- * the moment its prerequisite is claimed.
+ * `claimSkill` mints tier-scaled XP, so what a claim pays cannot live only in
+ * the skill tree UI. A skill whose prerequisites are not mastered can be
+ * claimed, and then marks every one of them passed and pays for each: nothing
+ * is minted that the climb to it would not have paid, and nothing is paid
+ * twice. These tests pin that ledger arithmetic; SkillPassedTest pins the rest
+ * of passing.
  */
 @RunWith(AndroidJUnit4::class)
 class SkillPrerequisiteGateTest {
@@ -46,25 +46,18 @@ class SkillPrerequisiteGateTest {
     private val root = Skills.forName("Dead Hang")!!
 
     @Test
-    fun claimingASkillWhosePrerequisiteIsUnmetThrowsAndPaysNothing() = runBlocking {
-        val xpBefore = db.profileDao().get()!!.totalXp
+    fun claimingASkillWhosePrerequisiteIsUnmetPassesItAndPaysForBoth() = runBlocking {
+        val claim = repo.claimSkill(locked.name)
 
-        val refused = runCatching { repo.claimSkill(locked.name) }
-        assertTrue(
-            "claiming ${locked.name} with nothing mastered must not succeed",
-            refused.isFailure,
-        )
-        // The exception is not the point — the empty-handed ledger is.
+        assertEquals(locked.xp + root.xp, claim.xpAwarded)
+        assertEquals(listOf(root.name), claim.passed.map { it.name })
         assertEquals(
-            "a refused claim must mint no XP",
-            xpBefore,
+            "the claim pays its own XP and its prerequisite's",
+            (locked.xp + root.xp).toLong(),
             db.profileDao().get()!!.totalXp,
         )
-        assertEquals(
-            "a refused claim must not record mastery",
-            null,
-            db.skillPracticeDao().claim(locked.name),
-        )
+        assertTrue(db.skillPracticeDao().claim(root.name)!!.passed)
+        assertTrue(!db.skillPracticeDao().claim(locked.name)!!.passed)
     }
 
     @Test
@@ -189,9 +182,6 @@ class SkillPrerequisiteGateTest {
             "Bridge is still missing, so the handstand claim opens nothing that needs it",
             handstand.unlockedNext.none { it.name == "Handstand-to-Bridge" },
         )
-        val xpBefore = db.profileDao().get()!!.totalXp
-        assertTrue(runCatching { repo.claimSkill("Handstand-to-Bridge") }.isFailure)
-        assertEquals("a refused claim mints nothing", xpBefore, db.profileDao().get()!!.totalXp)
 
         val bridge = repo.claimSkill("Bridge")
         assertTrue(bridge.unlockedNext.any { it.name == "Handstand-to-Bridge" })

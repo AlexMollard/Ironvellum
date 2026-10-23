@@ -85,7 +85,10 @@ internal val LockedRowBg get() = IronvellumColors.Vault
 internal val LockedGlyph get() = IronvellumColors.Rune
 
 /** What a node is, in shape, glyph and badge as well as colour. */
-private enum class NodeState { MASTERED, NEXT, LOCKED }
+private enum class NodeState { MASTERED, PASSED, NEXT, LOCKED }
+
+/** A passed skill's name and glyph: the earned gold, quieter. */
+private val PassedInk get() = IronvellumColors.SovereignGold.copy(alpha = 0.7f)
 
 /**
  * One path as a node graph: game-style discs in tier rows, each carrying the
@@ -99,6 +102,8 @@ fun SkillTreeGraph(
     mastered: Set<String>,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** The part of [mastered] that a harder claim passed: it unlocks like a claim but is drawn quieter. */
+    passed: Set<String> = emptySet(),
     /** Best logged effort per technique, for the "best 40/60s" cue read out on open nodes. */
     best: Map<String, SkillGuidance.Effort> = emptyMap(),
     /** The lifter, so a load-bearing standard is judged against their bodyweight. */
@@ -247,6 +252,7 @@ fun SkillTreeGraph(
             layout.nodes.forEach { node ->
                 val skill = node.skill
                 val isMastered = skill.name in mastered
+                val isPassed = isMastered && skill.name in passed
                 val unlocked = Skills.unlocked(skill, mastered)
                 val needs = skill.firstUnmetPrerequisite(mastered)
                 val cue = if (isMastered) null else SkillGuidance.progressCue(skill, best[skill.name], bodyweightKg, female)
@@ -261,11 +267,12 @@ fun SkillTreeGraph(
                     SkillNode(
                         skill = skill,
                         state = when {
+                            isPassed -> NodeState.PASSED
                             isMastered -> NodeState.MASTERED
                             unlocked -> NodeState.NEXT
                             else -> NodeState.LOCKED
                         },
-                        description = rowDescription(skill, isMastered, unlocked, needs, cue),
+                        description = rowDescription(skill, isMastered, unlocked, needs, cue, isPassed),
                         width = cellW,
                         lines = levelLines[node.level],
                         labelSize = labelSize,
@@ -339,11 +346,12 @@ internal fun rowDescription(
     unlocked: Boolean,
     needs: String?,
     cue: String?,
+    passed: Boolean = false,
 ): String = buildList {
     add(skill.name)
     add(Words.text(UiText.res(R.string.skilltree_row_tier, Skills.tierLabel(skill.tier))))
     when {
-        mastered -> add(Words.text(UiText.res(R.string.skilltree_row_mastered)))
+        mastered -> add(Words.text(UiText.res(if (passed) R.string.skilltree_row_passed else R.string.skilltree_row_mastered)))
         unlocked -> {
             add(Words.text(UiText.res(R.string.skilltree_row_available)))
             add(Words.text(UiText.res(R.string.skilltree_row_standard, skill.standard)))
@@ -397,6 +405,7 @@ private fun SkillNode(
             val drawing = techniqueDrawing(skill.name)
             val art = when (state) {
                 NodeState.MASTERED -> ArtState.MASTERED
+                NodeState.PASSED -> ArtState.PASSED
                 NodeState.NEXT -> ArtState.OPEN
                 NodeState.LOCKED -> ArtState.LOCKED
             }
@@ -423,6 +432,7 @@ private fun SkillNode(
                         family = glyphFamily(skill),
                         color = when (state) {
                             NodeState.MASTERED -> IronvellumColors.SovereignGold
+                            NodeState.PASSED -> PassedInk
                             NodeState.NEXT -> IronvellumColors.Ink
                             NodeState.LOCKED -> LockedGlyph
                         },
@@ -444,9 +454,13 @@ private fun SkillNode(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        if (state == NodeState.MASTERED) Icons.Filled.Check else Icons.Filled.Lock,
+                        if (state == NodeState.MASTERED || state == NodeState.PASSED) Icons.Filled.Check else Icons.Filled.Lock,
                         contentDescription = null,
-                        tint = if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        tint = when (state) {
+                            NodeState.MASTERED -> IronvellumColors.SovereignGold
+                            NodeState.PASSED -> PassedInk
+                            else -> IronvellumColors.InkMuted
+                        },
                         modifier = Modifier.size(12.dp),
                     )
                 }
@@ -477,6 +491,7 @@ private fun SkillNode(
             fontWeight = if (state == NodeState.NEXT) FontWeight.Bold else FontWeight.Normal,
             color = when (state) {
                 NodeState.MASTERED -> IronvellumColors.SovereignGold
+                NodeState.PASSED -> PassedInk
                 NodeState.NEXT -> IronvellumColors.Ink
                 NodeState.LOCKED -> IronvellumColors.InkMuted
             },

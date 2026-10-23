@@ -85,8 +85,10 @@ import kotlinx.coroutines.launch
 data class TitlesUi(
     val unlocked: Map<String, Long> = emptyMap(),
     val currentTitleId: String? = null,
-    /** Mastery is only ever an explicit claim. */
+    /** Every skill that stands as mastered: the lifter's own claims and the prerequisites they passed. */
     val claimedSkills: Set<String> = emptySet(),
+    /** The part of [claimedSkills] that a harder claim passed; the lifter did not claim these. */
+    val passedSkills: Set<String> = emptySet(),
     val practiceCounts: Map<String, Int> = emptyMap(),
     /** Every logged entry, newest first — practice reps and mastery claims. */
     val log: List<SkillPractice> = emptyList(),
@@ -151,6 +153,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
             unlocked = unlocked.associate { it.titleId to it.unlockedAtMs },
             currentTitleId = profile?.currentTitleId,
             claimedSkills = claimed.map { it.skillName }.toSet(),
+            passedSkills = claimed.filter { it.passed }.map { it.skillName }.toSet(),
             practiceCounts = practices.filterNot { it.claimed }
                 .groupingBy { it.skillName }.eachCount(),
             log = practices.sortedByDescending { it.practicedAtMs },
@@ -275,6 +278,7 @@ fun TitlesScreen(
     val sexUnset by com.ironvellum.app.data.FirstRunPrefs.sexUnsetFlow(androidx.compose.ui.platform.LocalContext.current.applicationContext).collectAsStateWithLifecycle()
     val claimResult by viewModel.claim.collectAsStateWithLifecycle()
     val mastered = ui.claimedSkills
+    val passed = ui.passedSkills
     // Saveable like openLine: a rotation must not drop the lifter off their tab,
     // out of the technique sheet or the rite picker.
     // The pager state is saveable and carries the open tab.
@@ -309,9 +313,16 @@ fun TitlesScreen(
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
             val entries = remember(ui.log, name) { ui.log.filter { it.skillName == name } }
+            val claimPlan = Skills.claimPlan(name, ui.log)
+            val unclaimPlan = Skills.unclaimPlan(name, ui.log)
             SkillDetailSheet(
                 skill = def,
-                mastered = name in mastered,
+                mastered = name in mastered && name !in passed,
+                passed = name in passed,
+                impliedBy = if (name in passed) Skills.impliedBy(name, ui.log) else null,
+                claimPasses = claimPlan.passes.size,
+                claimXp = claimPlan.xp,
+                unclaimReverts = unclaimPlan?.reverts?.size ?: 0,
                 unlocked = Skills.unlocked(def, mastered),
                 entries = entries,
                 training = ui.training[Titles.normaliseName(name)],
@@ -320,7 +331,7 @@ fun TitlesScreen(
                 masteredSkills = mastered,
                 bodyweightKg = ui.bodyweightKg,
                 female = ui.sex == Sex.FEMALE,
-                refundXp = Skills.claimRefund(name, entries.firstOrNull { it.claimed }?.value ?: 0),
+                refundXp = unclaimPlan?.refund ?: Skills.claimRefund(name, entries.firstOrNull { it.claimed }?.value ?: 0),
                 onLogPractice = { value, load ->
                     viewModel.practice(name, value, load)
                     openSkill = null
@@ -448,6 +459,7 @@ fun TitlesScreen(
                                 line = line,
                                 onLine = { openLine = it },
                                 mastered = mastered,
+                                passed = passed,
                                 onSelect = { openSkill = it },
                                 onOpenPrerequisite = jumpTo,
                                 focus = focusSkill,

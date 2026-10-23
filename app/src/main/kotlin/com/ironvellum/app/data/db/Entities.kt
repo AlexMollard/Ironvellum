@@ -194,6 +194,11 @@ data class SkillPracticeEntity(
     val value: Int = 0,
     /** Added load, when the attempt was weighted. */
     val weightKg: Double? = null,
+    /**
+     * A claim row (claimed = 1) made by a harder claim rather than by the lifter: the prerequisite is passed, paid
+     * its claim XP in [value], and stands as mastered until it is claimed for real or the claim implying it goes.
+     */
+    val passed: Boolean = false,
 )
 
 @Entity(tableName = "title_unlocks")

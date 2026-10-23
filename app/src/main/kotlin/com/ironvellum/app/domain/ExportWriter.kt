@@ -381,6 +381,7 @@ object ExportWriter {
             append(",\"claimed\":").append(skill.claimed)
             append(",\"value\":").append(skill.value)
             append(",\"weightKg\":").appendNullable(skill.weightKg) { append(it) }
+            if (skill.passed) append(",\"passed\":true")
             append("}")
         }
         append("]")

@@ -192,11 +192,12 @@ fun SkillJournal(
                     subline = formatDate(entry.practicedAtMs, "HH:mm") +
                         (def?.let { " · ${it.line} · ${Skills.tierLabel(it.tier)}" } ?: ""),
                     value = when {
+                        entry.passed -> UiText.res(R.string.skilldetail_chip_passed).asString()
                         entry.claimed -> Words.claimed.c
                         entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @ ${Units.withUnit(entry.weightKg)}"
                         else -> def?.let { SkillGuidance.withUnit(entry.value, it) } ?: "${entry.value}"
                     },
-                    valueColor = if (entry.claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    valueColor = if (entry.claimed && !entry.passed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     onClickLabel = UiText.res(R.string.titles_open_description, entry.skillName).asString(),
                     onClick = { onSelect(entry.skillName) },
                 )

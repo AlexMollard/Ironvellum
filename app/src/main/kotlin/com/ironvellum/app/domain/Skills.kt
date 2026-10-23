@@ -794,6 +794,64 @@ object Skills {
         return dependantsOf(name).filter { it.name !in after && unlocked(it, after) }
     }
 
+    /** Every skill [name] stands on, transitively and across lines: its prerequisites, theirs, and so on. */
+    fun prerequisiteClosure(name: String): Set<String> {
+        val seen = LinkedHashSet<String>()
+        val pending = ArrayDeque(forName(name)?.prerequisites.orEmpty())
+        while (pending.isNotEmpty()) {
+            val next = pending.removeFirst()
+            if (seen.add(next)) pending.addAll(forName(next)?.prerequisites.orEmpty())
+        }
+        return seen
+    }
+
+    /** The skills a claim of any of [roots] implies and [standing] does not yet hold, in catalogue order. */
+    fun owedPasses(roots: Collection<String>, standing: Set<String>): List<SkillDef> {
+        val implied = roots.flatMapTo(HashSet()) { prerequisiteClosure(it) }
+        return ALL.filter { it.name in implied && it.name !in standing }
+    }
+
+    /** The first real claim, in catalogue order, whose prerequisites include [name]: what "Passed: implied by" names. */
+    fun impliedBy(name: String, rows: List<SkillPractice>): String? {
+        val real = rows.filter { it.claimed && !it.passed }.mapTo(HashSet()) { it.skillName }
+        return ALL.firstOrNull { it.name in real && name in prerequisiteClosure(it.name) }?.name
+    }
+
+    /**
+     * What claiming [name] does to the ledger [rows]: the prerequisites it marks passed (none already claimed or
+     * passed), and the XP the whole claim pays. A skill already passed is claimed for nothing: its XP was paid.
+     */
+    data class ClaimPlan(val passes: List<SkillDef>, val xp: Int, val wasPassed: Boolean)
+
+    fun claimPlan(name: String, rows: List<SkillPractice>): ClaimPlan {
+        val def = forName(name) ?: return ClaimPlan(emptyList(), 0, false)
+        val held = rows.filter { it.claimed }
+        val wasPassed = held.any { it.skillName == name && it.passed }
+        val passes = owedPasses(listOf(name), held.mapTo(HashSet()) { it.skillName })
+        return ClaimPlan(passes, (if (wasPassed) 0 else def.xp) + passes.sumOf { it.xp }, wasPassed)
+    }
+
+    /**
+     * What unclaiming [name] does: the passed skills no remaining real claim implies revert (and are refunded what
+     * they paid), and [name] itself stays passed when a remaining claim still implies it, otherwise it is refunded
+     * too. [refund] is the whole XP to take back. Null when [name] is not a real claim.
+     */
+    data class UnclaimPlan(val reverts: List<String>, val refund: Int, val staysPassed: Boolean)
+
+    fun unclaimPlan(name: String, rows: List<SkillPractice>): UnclaimPlan? {
+        val held = rows.filter { it.claimed }
+        val own = held.firstOrNull { it.skillName == name && !it.passed } ?: return null
+        val implied = held.filter { !it.passed && it.skillName != name }
+            .flatMapTo(HashSet()) { prerequisiteClosure(it.skillName) }
+        val passedBy = held.filter { it.passed }.associateBy { it.skillName }
+        val reverts = prerequisiteClosure(name).filter { it in passedBy && it !in implied }
+            .sortedBy { n -> ALL.indexOfFirst { it.name == n } }
+        val staysPassed = name in implied
+        val refund = (if (staysPassed) 0 else claimRefund(name, own.value)) +
+            reverts.sumOf { claimRefund(it, passedBy.getValue(it).value) }
+        return UnclaimPlan(reverts, refund, staysPassed)
+    }
+
     /**
      * Tier each skill sat at when it was last claimable at a different tier.
      * Claims made before the claim row recorded what it paid were paid at

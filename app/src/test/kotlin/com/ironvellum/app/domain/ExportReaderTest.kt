@@ -44,6 +44,7 @@ class ExportReaderTest {
         skills = listOf(
             SkillPractice(skillName = "handstand", practicedAtMs = 400, claimed = true, value = 30, weightKg = null),
             SkillPractice(skillName = "pistol squat", practicedAtMs = 500, claimed = false, value = 5, weightKg = 8.0),
+            SkillPractice(skillName = "Pull-up", practicedAtMs = 600, claimed = true, value = 360, passed = true),
         ),
         healthDays = listOf(
             HealthDay(date = LocalDate.of(2026, 9, 10), steps = 9000, distanceKm = 6.5, activeKcal = 320, sleepMinutes = 460, restingHr = 58),
@@ -134,6 +135,8 @@ class ExportReaderTest {
             listOf(
                 SkillPractice(skillName = "handstand", practicedAtMs = 400, claimed = true, value = 30, weightKg = null),
                 SkillPractice(skillName = "pistol squat", practicedAtMs = 500, claimed = false, value = 5, weightKg = 8.0),
+                // A passed row survives a backup and a restore: it is the one that says the XP was paid.
+                SkillPractice(skillName = "Pull-up", practicedAtMs = 600, claimed = true, value = 360, passed = true),
             ),
             archive.skills,
         )
