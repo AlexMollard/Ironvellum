@@ -9,7 +9,9 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
@@ -134,7 +136,8 @@ class CappedListsHoldAtScaleTest {
             onTrain <= CAP_CEILING,
         )
 
-        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
+        // The page scrolls and Recent workouts sit at its foot, where the test's touch does not land, so ask for the click.
+        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // A lazy list composes only the viewport, so counting once would say

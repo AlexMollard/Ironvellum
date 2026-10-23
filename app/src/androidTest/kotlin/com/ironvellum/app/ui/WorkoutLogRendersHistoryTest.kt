@@ -6,7 +6,9 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
@@ -88,7 +90,8 @@ class WorkoutLogRendersHistoryTest {
     fun theLogListsACompletedSessionUnderItsMonth() {
         compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
+        // The page scrolls and Recent workouts sit at its foot, where the test's touch does not land, so ask for the click.
+        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         awaitHistory()
 
@@ -117,7 +120,8 @@ class WorkoutLogRendersHistoryTest {
 
         compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
+        // The page scrolls and Recent workouts sit at its foot, where the test's touch does not land, so ask for the click.
+        compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         awaitHistory()
 
