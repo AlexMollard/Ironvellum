@@ -5,15 +5,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.ui.components.InkSegmented
-import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.train.MusclesView
 import com.ironvellum.app.ui.train.TrainTabMemory
 
@@ -42,15 +39,4 @@ internal fun MusclesScreen(
             MusclesView.COVERAGE -> MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise)
         }
     }
-}
-
-/** Filled in by the next task: for now the caption the pane will end with. */
-@Composable
-private fun FatiguePane() {
-    Text(
-        stringResource(R.string.fatigue_window_caption),
-        style = MaterialTheme.typography.bodySmall,
-        color = IronvellumColors.InkMuted,
-        modifier = Modifier.padding(horizontal = 16.dp),
-    )
 }

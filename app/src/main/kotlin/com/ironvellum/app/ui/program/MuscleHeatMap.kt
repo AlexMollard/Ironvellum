@@ -294,7 +294,7 @@ internal fun DrawScope.drawFigure(
  * The pattern a state carries inside its region: hatching clipped to the muscle, a dashed outline, or a solid
  * heavy outline. Built from paths only, so the ruled-drawing scan stays honest.
  */
-private fun DrawScope.drawDecor(region: Path, look: RegionLook) {
+internal fun DrawScope.drawDecor(region: Path, look: RegionLook) {
     val width = 1.dp.toPx()
     if (look.decor == RegionDecor.DASHED) {
         drawPath(

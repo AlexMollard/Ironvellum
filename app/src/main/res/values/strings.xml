@@ -6655,4 +6655,32 @@
     <string name="fatigue_switch_fatigue">Fatigue</string>
     <string name="fatigue_switch_coverage">Coverage</string>
     <string name="fatigue_window_caption">Estimated from your last 7 days</string>
+
+    <!-- Fatigue map. The five levels say how worked a muscle is; High is hatched and Very high cross-hatched on the figure. -->
+    <string name="fatigue_level_fresh">Fresh</string>
+    <string name="fatigue_level_light">Light</string>
+    <string name="fatigue_level_moderate">Moderate</string>
+    <string name="fatigue_level_high">High</string>
+    <string name="fatigue_level_very_high">Very high</string>
+    <!-- Screen-reader summary of the Fatigue figure. %1$s lists the levels, e.g. "very high: quads; high: hamstrings". -->
+    <string name="fatigue_summary">Muscle fatigue, an estimate: %1$s</string>
+    <!-- %1$s is a level in lower case, %2$s the muscles at that level. -->
+    <string name="fatigue_summary_level">%1$s: %2$s</string>
+    <string name="fatigue_summary_none">no muscle is worked</string>
+    <string name="fatigue_most_worked_title">Most worked</string>
+    <!-- Most worked row, the top cause of a muscle's fatigue. %1$d is a percent rounded to 5, %2$s a weekday or "today", %3$s the lift. -->
+    <string name="fatigue_cause_line">about %1$d%% from %2$s\'s %3$s</string>
+    <!-- The same when one session is all of it. %1$s is a weekday or "today", %2$s the lift. -->
+    <string name="fatigue_cause_line_only">from %1$s\'s %2$s</string>
+    <string name="fatigue_day_today">today</string>
+    <string name="fatigue_fresh_by_today">Fresh later today</string>
+    <string name="fatigue_fresh_by_tomorrow">Fresh by tomorrow</string>
+    <!-- %1$s is a short weekday, like Mon. -->
+    <string name="fatigue_fresh_by_weekday">Fresh by %1$s</string>
+    <string name="fatigue_fresh_by_over_week">Fresh in over a week</string>
+    <!-- Screen-reader action on a Most worked row. %1$s is the muscle. -->
+    <string name="fatigue_row_open_hint">Show where %1$s fatigue comes from</string>
+    <string name="fatigue_empty_new">Log a workout and your muscles will show up here.</string>
+    <string name="fatigue_empty_new__t">Log a trial and your muscles will show up here.</string>
+    <string name="fatigue_empty_rested">No muscle looks worked right now. Everything reads as fresh.</string>
 </resources>
