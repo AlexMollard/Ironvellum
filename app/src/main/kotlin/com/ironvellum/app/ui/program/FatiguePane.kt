@@ -88,7 +88,7 @@ internal fun FatigueContent(
     var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
     // A lit muscle opens its breakdown; closing the sheet clears the light.
     selection.value?.let { muscle ->
-        MuscleBreakdownSheet(
+        FatigueBreakdownSheet(
             reading = remember(report, muscle, zone) { report.reading(muscle, zone) },
             nowMs = report.nowMs,
             onOpenExercise = { name, modifiers -> inspected = name to modifiers },

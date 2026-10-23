@@ -2985,7 +2985,9 @@
     <string name="coverage_by_exercise_show_hint">Show the muscles each exercise works</string>
     <string name="coverage_why_title">Why effort, not set counts</string>
     <!-- Muscle coverage: header over the narrowed list. %1$s is a muscle name. -->
-    <string name="coverage_filter_title">Trains %1$s</string>
+    <string name="coverage_breakdown_subtitle">This week, Monday to Sunday</string>
+    <string name="coverage_breakdown_sets_title">Hard sets this week</string>
+    <string name="coverage_breakdown_sources_title">What trains it</string>
     <string name="coverage_filter_empty">Nothing in this view trains it.</string>
     <!-- Muscle coverage: spoken hints on an exercise row. %1$s is an exercise name. -->
     <string name="coverage_exercise_hide_hint">Hide muscles for %1$s</string>

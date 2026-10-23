@@ -29,7 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -375,37 +374,5 @@ internal fun CoverageExplainer(tally: CoverageTally, onSeeMuscles: () -> Unit, o
             )
         }
         IronvellumButton(label = stringResource(R.string.coverage_explainer_done_button), onClick = onDone, quiet = true, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-/** What a lit heavy muscle adds to the page: why it is flagged, the paper, and a way to dismiss the flag. */
-@Composable
-internal fun HeavyNote(muscle: Muscle, load: MuscleLoad, onDismiss: () -> Unit) {
-    val (reason, paper) = heavyReason(load)
-    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CoverageMark(CoverageState.HEAVY)
-            Text(
-                stringResource(R.string.coverage_heavy_note_title, muscle.label, hardSetsWeekLabel(load.weekly)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                modifier = Modifier.semantics { heading() },
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(reason, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-        Text(
-            paper.label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        IronvellumButton(
-            label = stringResource(R.string.coverage_heavy_dismiss_button, muscle.label),
-            onClick = onDismiss,
-            quiet = true,
-            modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
-        )
     }
 }

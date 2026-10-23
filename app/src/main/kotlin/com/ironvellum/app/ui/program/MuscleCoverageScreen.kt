@@ -21,7 +21,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -64,6 +63,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.DismissedHeavyStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.MuscleMap
@@ -81,14 +81,10 @@ import com.ironvellum.app.ui.components.InkTabbedPager
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
-import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.PushedHeader
-import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -116,6 +112,8 @@ data class CoverageUi(
     val hasAnyPreset: Boolean = false,
     /** Saved rites with no day, which the week leaves out ([uncountedRoutine]): id and name. */
     val uncountedRites: List<Pair<Long, String>> = emptyList(),
+    /** The catalogue, so a source row in a muscle's breakdown can open its exercise sheet. */
+    val exercises: List<Exercise> = emptyList(),
 )
 
 /** Sets whose exercise has no MuscleMap profile, so the heat map cannot count them. */
@@ -177,6 +175,7 @@ class MuscleCoverageViewModel(
             unattributedSets = unattributedSets(remaining) + unattributedSets(doneRite),
             hasAnyPreset = presets.isNotEmpty(),
             uncountedRites = uncountedRoutine(presets) { it.scheduledDay }.map { it.id to it.name },
+            exercises = exercises,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoverageUi())
 }
@@ -375,6 +374,30 @@ internal fun CoveragePage(
     var coveredOpen by rememberSaveable { mutableStateOf(false) }
     var byExerciseOpen by rememberSaveable { mutableStateOf(false) }
     var whyOpen by rememberSaveable { mutableStateOf(false) }
+    var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
+
+    // A lit muscle opens its breakdown, the same sheet Fatigue uses; closing it clears the light.
+    lit.value?.let { muscle ->
+        val state = states[muscle]
+        CoverageBreakdownSheet(
+            muscle = muscle,
+            week = week.of(muscle),
+            state = state,
+            done = ui.donePresets,
+            planned = ui.plannedPresets,
+            onOpenExercise = ui.exercises.takeIf { it.isNotEmpty() }?.let { _ -> { name: String, modifiers: String -> inspected = name to modifiers } },
+            onDismissHeavy = if (state == WeekState.HEAVY) {
+                {
+                    onDismiss(muscle)
+                    lit.value = null
+                }
+            } else {
+                null
+            },
+            onDismiss = { lit.value = null },
+        )
+    }
+    inspected?.let { (name, modifiers) -> ExerciseInspection(ui.exercises, name, modifiers) { inspected = null } }
 
     Column(
         modifier
@@ -411,123 +434,108 @@ internal fun CoveragePage(
         }
         Spacer(Modifier.height(12.dp))
 
-        // The one place a lit muscle narrows anything: the list gives way to the rites and exercises that
-        // train it, and clearing brings it back.
-        val litMuscle = lit.value
-        if (litMuscle != null) {
-            if (states[litMuscle] == WeekState.HEAVY) {
-                HeavyNote(litMuscle, week.of(litMuscle).load) { onDismiss(litMuscle) }
+        // A row does what tapping the muscle on the figure does, so the page scrolls up to show it lit.
+        val pick = { muscle: Muscle ->
+            lit.value = muscle
+            scope.launch { scroll.animateScrollTo(0) }
+            Unit
+        }
+        // The muscles that need a look come first (heavy, short, on track); the done ones fold away.
+        val rows = remember(week, states) { weekRows(week, states) }
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
+            rows.needing.forEachIndexed { index, muscle ->
+                if (index > 0) InkDivider()
+                WeekRow(muscle, week.of(muscle), states.getValue(muscle)) { pick(muscle) }
             }
-            MuscleFilter(
-                muscle = litMuscle,
-                rites = remember(presets, litMuscle) { ritesTraining(presets, litMuscle) },
-                byRite = true,
-                onClear = { lit.value = null },
-            )
-        } else {
-            // A row does what tapping the muscle on the figure does, so the page scrolls up to show it lit.
-            val pick = { muscle: Muscle ->
-                lit.value = muscle
-                scope.launch { scroll.animateScrollTo(0) }
-                Unit
+            if (rows.needing.isEmpty()) {
+                Text(
+                    stringResource(R.string.coverage_covered_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier.padding(vertical = 16.dp),
+                )
             }
-            // The muscles that need a look come first (heavy, short, on track); the done ones fold away.
-            val rows = remember(week, states) { weekRows(week, states) }
-            InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                rows.needing.forEachIndexed { index, muscle ->
-                    if (index > 0) InkDivider()
-                    WeekRow(muscle, week.of(muscle), states.getValue(muscle)) { pick(muscle) }
-                }
-                if (rows.needing.isEmpty()) {
+            if (rows.covered.isNotEmpty()) {
+                if (rows.needing.isNotEmpty()) InkDivider()
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = ListRowHeight)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(
+                                if (coveredOpen) R.string.coverage_covered_hide_hint else R.string.coverage_covered_show_hint,
+                            ),
+                            onClick = { coveredOpen = !coveredOpen },
+                        )
+                        .semantics { stateDescription = Words.text(UiText.res(if (coveredOpen) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    WeekSwatch(WeekState.DONE, size = 20.dp)
                     Text(
-                        stringResource(R.string.coverage_covered_empty),
+                        UiText.plural(R.plurals.coverage_week_covered_count, rows.covered.size).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
-                        modifier = Modifier.padding(vertical = 16.dp),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        if (coveredOpen) "⌃" else "›",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.clearAndSetSemantics {},
                     )
                 }
-                if (rows.covered.isNotEmpty()) {
-                    if (rows.needing.isNotEmpty()) InkDivider()
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = ListRowHeight)
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = stringResource(
-                                    if (coveredOpen) R.string.coverage_covered_hide_hint else R.string.coverage_covered_show_hint,
-                                ),
-                                onClick = { coveredOpen = !coveredOpen },
-                            )
-                            .semantics { stateDescription = Words.text(UiText.res(if (coveredOpen) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)) },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        WeekSwatch(WeekState.DONE, size = 20.dp)
-                        Text(
-                            UiText.plural(R.plurals.coverage_week_covered_count, rows.covered.size).asString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = IronvellumColors.Ink,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            if (coveredOpen) "⌃" else "›",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = IronvellumColors.InkMuted,
-                            modifier = Modifier.clearAndSetSemantics {},
-                        )
-                    }
-                    if (coveredOpen) {
-                        rows.covered.forEach { muscle ->
-                            InkDivider()
-                            WeekRow(muscle, week.of(muscle), WeekState.DONE) { pick(muscle) }
-                        }
+                if (coveredOpen) {
+                    rows.covered.forEach { muscle ->
+                        InkDivider()
+                        WeekRow(muscle, week.of(muscle), WeekState.DONE) { pick(muscle) }
                     }
                 }
             }
+        }
 
-            if (exercisesInView.isNotEmpty()) {
+        if (exercisesInView.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            InkDivider()
+            ListRow(
+                label = stringResource(R.string.coverage_by_exercise_label),
+                value = if (byExerciseOpen) stringResource(R.string.coverage_by_exercise_hide_value) else null,
+                onClickLabel = stringResource(
+                    if (byExerciseOpen) R.string.coverage_by_exercise_hide_hint else R.string.coverage_by_exercise_show_hint,
+                ),
+                onClick = { byExerciseOpen = !byExerciseOpen },
+            )
+            InkDivider()
+            if (byExerciseOpen) {
                 Spacer(Modifier.height(8.dp))
-                InkDivider()
-                ListRow(
-                    label = stringResource(R.string.coverage_by_exercise_label),
-                    value = if (byExerciseOpen) stringResource(R.string.coverage_by_exercise_hide_value) else null,
-                    onClickLabel = stringResource(
-                        if (byExerciseOpen) R.string.coverage_by_exercise_hide_hint else R.string.coverage_by_exercise_show_hint,
-                    ),
-                    onClick = { byExerciseOpen = !byExerciseOpen },
-                )
-                InkDivider()
-                if (byExerciseOpen) {
-                    Spacer(Modifier.height(8.dp))
-                    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        exercisesInView.forEachIndexed { index, (name, modifiers, shares) ->
-                            if (index > 0) InkDivider()
-                            val key = "$name|$modifiers"
-                            ExerciseRow(
-                                name = name,
-                                modifiers = modifiers,
-                                shares = shares,
-                                open = openExercise == key,
-                                onToggle = { onOpenExercise(if (openExercise == key) null else key) },
-                            )
-                        }
+                InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                    exercisesInView.forEachIndexed { index, (name, modifiers, shares) ->
+                        if (index > 0) InkDivider()
+                        val key = "$name|$modifiers"
+                        ExerciseRow(
+                            name = name,
+                            modifiers = modifiers,
+                            shares = shares,
+                            open = openExercise == key,
+                            onToggle = { onOpenExercise(if (openExercise == key) null else key) },
+                        )
                     }
                 }
             }
+        }
 
-            Spacer(Modifier.height(4.dp))
-            Disclosure(stringResource(R.string.coverage_why_title), whyOpen) { whyOpen = !whyOpen }
-            if (whyOpen) {
-                CoverageExplainer(
-                    tally = tally,
-                    onSeeMuscles = {
-                        whyOpen = false
-                        scope.launch { scroll.animateScrollTo(0) }
-                    },
-                    onDone = { whyOpen = false },
-                )
-            }
+        Spacer(Modifier.height(4.dp))
+        Disclosure(stringResource(R.string.coverage_why_title), whyOpen) { whyOpen = !whyOpen }
+        if (whyOpen) {
+            CoverageExplainer(
+                tally = tally,
+                onSeeMuscles = {
+                    whyOpen = false
+                    scope.launch { scroll.animateScrollTo(0) }
+                },
+                onDone = { whyOpen = false },
+            )
         }
         Spacer(Modifier.height(20.dp))
     }
@@ -564,100 +572,6 @@ private fun UncountedRitesLine(count: Int, onOpen: () -> Unit) {
             color = IronvellumColors.InkMuted,
             modifier = Modifier.clearAndSetSemantics {},
         )
-    }
-}
-
-/** One exercise's credit to a muscle: its name, MAIN or ASSIST, and sets times share. */
-@Composable
-private fun CreditRow(credit: ProgramRules.MuscleCredit) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                credit.exerciseName,
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (credit.modifiers.isNotBlank()) {
-                Text(
-                    credit.modifiers.split(",").joinToString(" · ") { it.trim() },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        Text(
-            shareLevel(credit.share).label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Text(
-            "${credit.sets} × ${trimSets(credit.share)} = ${trimSets(credit.credited)}",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(96.dp),
-        )
-    }
-}
-
-/**
- * What a lit muscle narrows the page to: every rite that trains it with its sets, and under each the
- * exercises behind that number. The LAST 7 DAYS page has no rites (its week is one pooled list), so there
- * [byRite] is false and the exercises stand alone.
- */
-@Composable
-private fun MuscleFilter(
-    muscle: Muscle,
-    rites: List<RiteContribution>,
-    byRite: Boolean,
-    onClear: () -> Unit,
-) {
-    // The way back sits beside the heading, in reach the moment the page narrows, not past a long list.
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        SectionHeader(stringResource(R.string.coverage_filter_title, muscle.label), Modifier.weight(1f))
-        NavChip(stringResource(R.string.common_clear).uppercase(), Icons.Filled.Close, onClick = onClear, modifier = Modifier.padding(bottom = 4.dp))
-    }
-    if (rites.isEmpty()) {
-        Text(
-            stringResource(R.string.coverage_filter_empty),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-    } else if (byRite) {
-        rites.forEach { rite ->
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    rite.rite,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.Ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    riteSetsLabel(rite.credited),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-            Column(Modifier.fillMaxWidth().padding(start = 12.dp)) {
-                rite.exercises.forEach { CreditRow(it) }
-            }
-        }
-    } else {
-        rites.flatMap { it.exercises }.sortedByDescending { it.credited }.forEach { CreditRow(it) }
     }
 }
 
