@@ -5820,6 +5820,16 @@
     <!-- Leaderboard tab: the two or three boards in the segmented control (short). -->
     <string name="acct_board_training">Training</string>
     <string name="acct_board_lifts">Lifts</string>
+    <!-- Boards tab: the one-line glance under each board card. -->
+    <string name="acct_boards_glance_place">Your place: %1$d of %2$d</string>
+    <!-- %1$s is the name of the leader, %2$s their figure ("1,234 XP"). -->
+    <string name="acct_boards_glance_top">Top: %1$s, %2$s</string>
+    <string name="acct_boards_glance_lifts">Tiers lift by lift, this week or all time</string>
+    <string name="acct_boards_glance_loading">Loading standings</string>
+    <string name="acct_boards_glance_failed">Could not load. Open to retry.</string>
+    <string name="acct_boards_glance_empty">No standings yet</string>
+    <!-- Accessibility: %1$s is the name of the board. -->
+    <string name="acct_boards_open_description">Open %1$s board</string>
     <!-- Ranking metrics: the picker rows and the value in the Ranked by row (short). -->
     <string name="acct_metric_xp">XP</string>
     <string name="acct_metric_level">Level</string>

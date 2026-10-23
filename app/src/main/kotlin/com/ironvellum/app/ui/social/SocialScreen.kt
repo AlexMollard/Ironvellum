@@ -64,6 +64,7 @@ fun SocialScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     onOpenAccount: () -> Unit,
+    onOpenBoard: (BoardKind) -> Unit,
     inboxRequest: Int = 0,
 ) {
     val app = LocalContext.current.applicationContext as IronvellumApp
@@ -186,7 +187,7 @@ fun SocialScreen(
                         // Only once the page has settled: a peek mid-swipe must not read the inbox.
                         active = settledTab == GuildTab.INBOX,
                     )
-                    GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenLifter)
+                    GuildTab.BOARD -> LeaderboardScreen(onOpenBoard = onOpenBoard)
                     GuildTab.ALLIES -> AccountScreen(
                         onBack = { scope.launch { pager.animateScrollToPage(GuildTab.FEED.ordinal) } },
                         onOpenLifter = onOpenLifter,

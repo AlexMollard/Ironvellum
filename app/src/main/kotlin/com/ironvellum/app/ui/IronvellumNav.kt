@@ -103,6 +103,8 @@ import com.ironvellum.app.ui.train.ExerciseExplorerScreen
 import com.ironvellum.app.ui.train.TrainScreen
 import com.ironvellum.app.ui.program.MusclesScreen
 import com.ironvellum.app.ui.program.MusclesView
+import com.ironvellum.app.ui.social.BoardKind
+import com.ironvellum.app.ui.social.BoardScreen
 import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
@@ -143,6 +145,7 @@ object Routes {
     const val REVIEW_SHARE = "review_share/{kind}/{start}"
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val MUSCLES = "muscles?view={view}"
+    const val BOARD = "board/{board}"
     const val OPTIMISE_RITES = "optimise_rites"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val LIFTER = "hunter/{userId}?name={name}"
@@ -157,6 +160,8 @@ object Routes {
         if (presetId == null) "program_builder?mode=$mode" else "program_builder?mode=$mode&presetId=$presetId"
 
     fun muscles(view: MusclesView = MusclesView.FATIGUE): String = "muscles?view=${view.arg}"
+
+    fun board(kind: BoardKind): String = "board/${kind.arg}"
 
     fun presetEditor(presetId: Long? = null): String =
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
@@ -619,7 +624,18 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             navController.navigate(Routes.comments(sessionId, ownerId, headline))
                         },
                         onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
+                        onOpenBoard = { kind -> navController.navigate(Routes.board(kind)) },
                         inboxRequest = inboxRequest,
+                    )
+                }
+                composable(
+                    Routes.BOARD,
+                    arguments = listOf(navArgument("board") { type = NavType.StringType; defaultValue = BoardKind.Training.arg }),
+                ) { entry ->
+                    BoardScreen(
+                        kind = BoardKind.of(entry.arguments?.getString("board")),
+                        onBack = { navController.popBackStack() },
+                        onOpenFriend = { userId, name -> navController.navigate(Routes.lifter(userId, name)) },
                     )
                 }
                 composable(Routes.SIGN_IN) {

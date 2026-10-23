@@ -29,6 +29,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +48,9 @@ import com.ironvellum.app.domain.ExerciseSearch
 import com.ironvellum.app.domain.LiftGroup
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPickerSheet
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -128,13 +131,17 @@ data class LiftsBoardUi(
     val loaded: Boolean = false,
 )
 
-/** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
-private enum class Board(private val labelText: () -> String) {
-    Training({ Words.text(UiText.res(R.string.acct_board_training)) }),
-    Lifts({ Words.text(UiText.res(R.string.acct_board_lifts)) }),
-    Muster({ Words.theVeil.c });
+/** The boards behind the Boards tab, each on its own screen; the muster roll is deliberately a separate board, not a metric. */
+enum class BoardKind(val arg: String, private val labelText: () -> String) {
+    Training("training", { Words.text(UiText.res(R.string.acct_board_training)) }),
+    Lifts("lifts", { Words.text(UiText.res(R.string.acct_board_lifts)) }),
+    Muster("muster", { Words.theVeil.c });
 
     val label: String get() = labelText()
+
+    companion object {
+        fun of(arg: String?): BoardKind = entries.firstOrNull { it.arg == arg } ?: Training
+    }
 }
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
@@ -281,8 +288,93 @@ class LeaderboardViewModel(
 
 }
 
+/**
+ * The Boards tab: one card per board with a one-line glance (your place, or who leads), each opening its own
+ * screen ([BoardScreen]). The Veil's card is offered only once the cloud actually has the muster board.
+ */
 @Composable
 fun LeaderboardScreen(
+    onOpenBoard: (BoardKind) -> Unit,
+    viewModel: LeaderboardViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { LeaderboardViewModel(ironvellumCloudSync(), ironvellumAccount(), ironvellumRepository()) }
+        },
+    ),
+) {
+    val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val muster by viewModel.muster.collectAsStateWithLifecycle()
+    BoardCards(ui, muster, onOpenBoard)
+}
+
+/** The cards themselves, stateless so a test can hand them any standings. */
+@Composable
+internal fun BoardCards(ui: LeaderboardUi, muster: MusterBoardUi, onOpenBoard: (BoardKind) -> Unit) {
+    // SocialScreen owns the margins, the top gap and the signed-out screen, so
+    // every tab starts its content at the same spot under the pills.
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        InkRowPanel(Modifier.fillMaxWidth()) {
+            BoardKind.entries.filter { it != BoardKind.Muster || muster.available }.forEachIndexed { index, kind ->
+                if (index > 0) InkDivider()
+                ListRow(
+                    label = kind.label,
+                    subline = when (kind) {
+                        BoardKind.Training -> trainingGlance(ui)
+                        BoardKind.Lifts -> stringResource(R.string.acct_boards_glance_lifts)
+                        BoardKind.Muster -> musterGlance(muster, ui.myUserId)
+                    },
+                    onClickLabel = stringResource(R.string.acct_boards_open_description, kind.label),
+                    onClick = { onOpenBoard(kind) },
+                )
+            }
+        }
+        Spacer(Modifier.height(28.dp))
+    }
+}
+
+/** Your place on the XP board, or who leads it when you are not on it. */
+@Composable
+private fun trainingGlance(ui: LeaderboardUi): String {
+    if (ui.rows.isEmpty()) return glanceWithout(ui.loading, ui.error != null)
+    val sorted = remember(ui.rows) { sortRows(ui.rows, BoardMetric.Xp) }
+    val mine = sorted.indexOfFirst { it.userId == ui.myUserId }
+    return if (mine >= 0) {
+        stringResource(R.string.acct_boards_glance_place, mine + 1, sorted.size)
+    } else {
+        stringResource(R.string.acct_boards_glance_top, sorted.first().displayName, BoardMetric.Xp.format(sorted.first()))
+    }
+}
+
+/** Your place on the muster roll, or who leads it when you are not on it. */
+@Composable
+private fun musterGlance(muster: MusterBoardUi, myUserId: String?): String {
+    if (muster.rows.isEmpty()) return glanceWithout(muster.loading, muster.error != null)
+    val mine = muster.rows.indexOfFirst { it.userId == myUserId }
+    return if (mine >= 0) {
+        stringResource(R.string.acct_boards_glance_place, mine + 1, muster.rows.size)
+    } else {
+        val top = muster.rows.first()
+        stringResource(R.string.acct_boards_glance_top, top.displayName, stringResource(R.string.always_acct_essence_value, formatEssence(top.essence)))
+    }
+}
+
+@Composable
+private fun glanceWithout(loading: Boolean, failed: Boolean): String = stringResource(
+    when {
+        loading -> R.string.acct_boards_glance_loading
+        failed -> R.string.acct_boards_glance_failed
+        else -> R.string.acct_boards_glance_empty
+    },
+)
+
+/** One board on its own screen, with a way back to the cards. The lift and muster boards load when it opens. */
+@Composable
+fun BoardScreen(
+    kind: BoardKind,
+    onBack: () -> Unit,
     onOpenFriend: (userId: String, displayName: String) -> Unit,
     viewModel: LeaderboardViewModel = viewModel(
         factory = viewModelFactory {
@@ -294,93 +386,86 @@ fun LeaderboardScreen(
     val muster by viewModel.muster.collectAsStateWithLifecycle()
     val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
-    var board by remember { mutableStateOf(Board.Training) }
-    // The ranking metric is picked from a row under the board picker, on Training only.
+    // The ranking metric is picked from a row above the board, on Training only.
     var metric by remember { mutableStateOf(BoardMetric.Xp) }
     var pickingMetric by remember { mutableStateOf(false) }
 
-    // SocialScreen owns the margins, the top gap and the signed-out screen, so
-    // every tab starts its content at the same spot under the pills.
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        // The picker sits above every state, so a lifter with an empty or
-        // failed Training board can still reach Lifts. The Veil is offered
-        // only once the cloud actually has the muster board.
-        InkSegmented(
-            options = Board.entries.filter { it != Board.Muster || muster.available }.map { it to it.label },
-            selected = board,
-            onPick = {
-                board = it
-                if (it == Board.Muster) viewModel.loadMuster()
-                if (it == Board.Lifts) viewModel.loadLifts()
-            },
-        )
-        if (board == Board.Training) {
+    LaunchedEffect(kind) {
+        if (kind == BoardKind.Muster) viewModel.loadMuster()
+        if (kind == BoardKind.Lifts) viewModel.loadLifts()
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        PushedHeader(kind.label, onBack, Modifier.padding(horizontal = 16.dp).padding(top = 20.dp))
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+        ) {
+            if (kind == BoardKind.Training) {
+                Spacer(Modifier.height(12.dp))
+                ListRow(
+                    label = stringResource(R.string.acct_ranked_by_label),
+                    value = metric.label,
+                    onClickLabel = stringResource(R.string.acct_ranked_by_change_description),
+                    onClick = { pickingMetric = true },
+                )
+                InkDivider()
+            }
             Spacer(Modifier.height(12.dp))
-            ListRow(
-                label = stringResource(R.string.acct_ranked_by_label),
-                value = metric.label,
-                onClickLabel = stringResource(R.string.acct_ranked_by_change_description),
-                onClick = { pickingMetric = true },
-            )
-            InkDivider()
-        }
-        Spacer(Modifier.height(12.dp))
-        when {
-            // Three separate boards behind one tab: training measures what a
-            // lifter lifted, lifts ranks tiers per lift, the muster roll
-            // measures the vault.
-            board == Board.Lifts -> LiftsBoard(
-                ui = lifts,
-                myUserId = ui.myUserId,
-                equippedFrame = equippedFrame,
-                onRefresh = { viewModel.loadLifts(force = true) },
-                onOpenFriend = onOpenFriend,
-            )
-            board == Board.Muster && muster.available -> MusterBoard(
-                ui = muster,
-                myUserId = ui.myUserId,
-                equippedFrame = equippedFrame,
-                onRefresh = { viewModel.loadMuster(force = true) },
-            )
-            ui.loading && ui.rows.isEmpty() -> LoadingLine()
-            ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
-            ui.rows.isEmpty() -> ErrorPanel(onRefresh = viewModel::load)
-            else -> {
-                // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
-                // The gesture needs content to grab: in the empty/error states there is nothing to
-                // pull (or the list just failed), so those states keep an explicit retry link.
-                val pullState = remember { PullToRefreshState() }
-                PullToRefreshBox(
-                    isRefreshing = ui.loading,
-                    onRefresh = { viewModel.load() },
-                    state = pullState,
-                    modifier = Modifier.fillMaxWidth(),
-                    indicator = {
-                        // House palette: dark vault plate with emerald stroke instead of default Material.
-                        PullToRefreshDefaults.Indicator(
-                            state = pullState,
-                            isRefreshing = ui.loading,
-                            modifier = Modifier.align(Alignment.TopCenter),
-                            containerColor = IronvellumColors.VaultHigh,
-                            color = IronvellumColors.EmeraldBright,
-                        )
-                    },
-                ) {
-                    // PullToRefreshBox's content slot is a Box: emitted straight
-                    // into it, every row stacks at the same origin, so the podium
-                    // vanished under the pinned self-row. A Column restores flow.
-                    Column(Modifier.fillMaxWidth()) {
-                        Board(ui, metric, viewModel::load, onOpenFriend, equippedFrame)
+            when {
+                // Three separate boards: training measures what a lifter lifted, lifts ranks tiers per lift,
+                // the muster roll measures the vault.
+                kind == BoardKind.Lifts -> LiftsBoard(
+                    ui = lifts,
+                    myUserId = ui.myUserId,
+                    equippedFrame = equippedFrame,
+                    onRefresh = { viewModel.loadLifts(force = true) },
+                    onOpenFriend = onOpenFriend,
+                )
+                kind == BoardKind.Muster -> MusterBoard(
+                    ui = muster,
+                    myUserId = ui.myUserId,
+                    equippedFrame = equippedFrame,
+                    onRefresh = { viewModel.loadMuster(force = true) },
+                )
+                ui.loading && ui.rows.isEmpty() -> LoadingLine()
+                ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
+                ui.rows.isEmpty() -> ErrorPanel(onRefresh = viewModel::load)
+                else -> {
+                    // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
+                    // The gesture needs content to grab: in the empty/error states there is nothing to
+                    // pull (or the list just failed), so those states keep an explicit retry link.
+                    val pullState = remember { PullToRefreshState() }
+                    PullToRefreshBox(
+                        isRefreshing = ui.loading,
+                        onRefresh = { viewModel.load() },
+                        state = pullState,
+                        modifier = Modifier.fillMaxWidth(),
+                        indicator = {
+                            // House palette: dark vault plate with emerald stroke instead of default Material.
+                            PullToRefreshDefaults.Indicator(
+                                state = pullState,
+                                isRefreshing = ui.loading,
+                                modifier = Modifier.align(Alignment.TopCenter),
+                                containerColor = IronvellumColors.VaultHigh,
+                                color = IronvellumColors.EmeraldBright,
+                            )
+                        },
+                    ) {
+                        // PullToRefreshBox's content slot is a Box: emitted straight
+                        // into it, every row stacks at the same origin, so the podium
+                        // vanished under the pinned self-row. A Column restores flow.
+                        Column(Modifier.fillMaxWidth()) {
+                            Board(ui, metric, viewModel::load, onOpenFriend, equippedFrame)
+                        }
                     }
                 }
             }
+            Spacer(Modifier.height(28.dp))
         }
-
-        Spacer(Modifier.height(28.dp))
     }
 
     if (pickingMetric) {
