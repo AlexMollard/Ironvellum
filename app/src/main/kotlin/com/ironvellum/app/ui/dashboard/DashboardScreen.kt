@@ -739,7 +739,7 @@ internal fun TodayContent(
                         }
                     },
                 )
-                profile?.currentTitleId?.let { Titles.byId(it)?.name }?.let { worn ->
+                Titles.displayName(profile?.currentTitleId)?.let { worn ->
                     WornTitle(worn)
                 }
             }

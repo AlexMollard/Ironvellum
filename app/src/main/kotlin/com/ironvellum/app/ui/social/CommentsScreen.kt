@@ -505,7 +505,7 @@ private fun WorkoutHeaderPanel(
             IdentityRow(
                 displayName = owner.name,
                 userId = owner.userId,
-                wornTitle = owner.titleId?.let { Titles.byId(it)?.name },
+                wornTitle = Titles.displayName(owner.titleId),
                 level = owner.level,
                 size = IdentitySize.Standard,
                 isMe = isMe,

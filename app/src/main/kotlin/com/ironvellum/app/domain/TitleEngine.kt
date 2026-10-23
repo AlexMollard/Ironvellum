@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import java.time.Instant
@@ -710,6 +711,16 @@ object Titles {
     ) }
 
     fun byId(id: String): TitleDef? = ALL.firstOrNull { it.id == id }
+
+    /**
+     * The name to show for a deed id that came from elsewhere (a friend's worn deed, the leaderboard): null for no
+     * deed, the deed's name when this build knows it, else a neutral fallback, so an id a newer version added never
+     * renders as nothing. Every place that resolves a cloud id reads this, not [byId].
+     */
+    fun displayName(id: String?): String? = when {
+        id.isNullOrBlank() -> null
+        else -> byId(id)?.name ?: Words.text(UiText.res(R.string.always_deed_unknown_name))
+    }
 
     /** The worn title's rarity, or null for a null/unknown id. */
     fun rarityOf(titleId: String?): TitleRarity? = titleId?.let { id -> byId(id)?.rarity }

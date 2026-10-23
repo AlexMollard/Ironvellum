@@ -248,6 +248,8 @@
     <string name="always_deed_cpl">Deeds</string>
     <string name="always_deed_upl">DEEDS</string>
     <string name="always_deed_a">a deed</string>
+    <!-- Shown where a friend or the leaderboard names a worn deed this version does not know (a newer version added it). -->
+    <string name="always_deed_unknown_name">A deed from a newer version</string>
     <!-- path -->
     <string name="concept_path_s">skill tree</string>
     <string name="concept_path_s__t">path</string>

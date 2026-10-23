@@ -950,7 +950,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
         IdentityRow(
             displayName = acct.displayName,
             userId = acct.userId,
-            wornTitle = titleId?.let { Titles.byId(it)?.name },
+            wornTitle = Titles.displayName(titleId),
             level = profile?.let { Xp.progress(it.totalXp).level },
             size = IdentitySize.Profile,
             isMe = true,
@@ -1185,7 +1185,7 @@ private fun AlliesPanel(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                friend.currentTitleId?.let { Titles.byId(it)?.name }?.let {
+                Titles.displayName(friend.currentTitleId)?.let {
                     Text(
                         it,
                         style = MaterialTheme.typography.bodySmall,

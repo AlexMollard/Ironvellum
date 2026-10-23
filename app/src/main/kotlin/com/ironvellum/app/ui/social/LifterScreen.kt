@@ -162,7 +162,7 @@ internal class LifterViewModel(
             val ally = rows.firstOrNull { it.userId == userId }
             val titleId = ally?.currentTitleId
             _ui.value = _ui.value.copy(
-                wornTitle = titleId?.let { Titles.byId(it)?.name },
+                wornTitle = Titles.displayName(titleId),
                 wornTitleId = titleId,
                 wornCrestId = ally?.crestId,
             )

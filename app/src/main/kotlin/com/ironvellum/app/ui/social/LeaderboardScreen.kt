@@ -182,7 +182,7 @@ private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<Lead
 
 /** Worn title name resolved locally from the id; null when bare so callers omit the segment cleanly. */
 private fun wornTitle(currentTitleId: String?): String? =
-    currentTitleId?.let { Titles.byId(it)?.name }
+    Titles.displayName(currentTitleId)
 
 class LeaderboardViewModel(
     private val cloudSync: CloudSync,

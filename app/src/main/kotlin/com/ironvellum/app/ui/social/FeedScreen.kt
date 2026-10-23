@@ -541,7 +541,7 @@ private fun FeedCard(
             IdentityRow(
                 displayName = entry.displayName,
                 userId = entry.userId,
-                wornTitle = entry.currentTitleId?.let { Titles.byId(it)?.name },
+                wornTitle = Titles.displayName(entry.currentTitleId),
                 level = entry.level,
                 size = IdentitySize.Card,
                 isMe = isMe,
