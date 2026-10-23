@@ -15,6 +15,7 @@ import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseGuides
+import com.ironvellum.app.domain.FatigueFootprints
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.LiftKind
@@ -24,13 +25,17 @@ import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.program.ExerciseMuscles
+import com.ironvellum.app.ui.program.FootprintBody
+import com.ironvellum.app.ui.program.FootprintExplainLink
+import com.ironvellum.app.ui.program.FootprintTypical
+import com.ironvellum.app.ui.program.whyLines
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
  * Facts about one exercise, all read from data the app already holds: the
  * muscle profile, how-to guide, gear table, skill tree and ally boards.
- * They sit on three swipeable pages, About (the facts), Form (how to, cues, mistakes) and History
- * (what the lifter has logged on it), so none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
+ * They sit on four swipeable pages, About (the facts), Form (how to, cues, mistakes), History
+ * (what the lifter has logged on it) and Fatigue (where its fatigue lands), so none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
@@ -65,8 +70,8 @@ internal fun ExerciseInfoSheet(
             if (onEdit != null) add(InfoAction(stringResource(R.string.infosheet_edit_button), onEdit, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
-        // Three pages: the gear rides on About, how to, cues and mistakes share Form, and History is the
-        // lifter's own sets. The sheet drops a page with nothing on it (History never is: it says "not logged yet").
+        // Four pages: the gear rides on About, how to, cues and mistakes share Form, History is the
+        // lifter's own sets and Fatigue is the movement's derived footprint. The sheet drops a page with nothing on it (History never is: it says "not logged yet").
         pages = listOf(
             InfoPage(stringResource(R.string.infosheet_page_about)) {
                 // The drawing leads: what the movement looks like before anything is said about it.
@@ -100,6 +105,7 @@ internal fun ExerciseInfoSheet(
             },
             InfoPage(stringResource(R.string.infosheet_page_form)) { formFacts(exercise.name) },
             InfoPage(Words.text(UiText.themed(R.string.infosheet_page_history, R.string.infosheet_page_history__t))) { historyFacts(exercise, onDismiss) },
+            InfoPage(stringResource(R.string.infosheet_page_fatigue)) { fatigueFacts(exercise.name, modifiers) },
         ),
     )
 }
@@ -134,6 +140,21 @@ internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", sh
         text(Words.text(UiText.res(R.string.infosheet_section_muscles)), Lines.noMuscleData, IronvellumColors.InkMuted)
     }
 }
+
+/**
+ * The FATIGUE page: where the movement's fatigue lands, what three hard sets at one rep left typically do and why
+ * this lift leaves what it does. All derived by [FatigueFootprints] from the same dose rule the Muscles tab uses;
+ * a movement with no muscle profile has no page.
+ */
+internal fun InfoSheetScope.fatigueFacts(name: String, modifiers: String = "") {
+    val footprint = FatigueFootprints.of(name, modifiers) ?: return
+    section(Words.text(UiText.res(R.string.fatigue_footprint_title))) { FootprintBody(footprint) }
+    section(null) { FootprintTypical(footprint) }
+    text(Words.text(UiText.res(R.string.fatigue_footprint_why_title)), whyLines(footprint).joinToString(" "), collapseAfterLines = WHY_LINES)
+    section(null) { FootprintExplainLink() }
+}
+
+private const val WHY_LINES = 8
 
 private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return

@@ -6740,4 +6740,40 @@
     <string name="fatigue_day_note">%1$s: %2$s by %3$s · estimate</string>
     <string name="fatigue_plan_unchanged">Fatigue is a hint, never a block. Nothing in your plan changed.</string>
     <string name="fatigue_plan_unchanged__t">Fatigue is a hint, never a block. Nothing in your cycle changed.</string>
+
+    <!-- Exercise info sheet: the fourth page, an exercise's fatigue footprint. -->
+    <string name="infosheet_page_fatigue">Fatigue</string>
+    <string name="fatigue_footprint_title">Fatigue footprint · estimate</string>
+    <string name="fatigue_footprint_where">Where the fatigue lands</string>
+    <string name="fatigue_band_strong">Strong</string>
+    <string name="fatigue_band_medium">Medium</string>
+    <string name="fatigue_band_light">Light</string>
+    <string name="fatigue_tag_stretch_heavy">Stretch-heavy</string>
+    <string name="fatigue_tag_heavy_whole_body">Heavy whole-body</string>
+    <!-- The footprint is worked out for three hard sets at one rep left (FatigueTuning.FOOTPRINT_SETS, FOOTPRINT_RIR): change the words with the constants. -->
+    <string name="fatigue_footprint_typical_head">Three hard sets, one rep left</string>
+    <!-- %1$s the lead muscle, %2$s its level in lower case, %3$s a duration such as "13 hours" or "3 days". -->
+    <string name="fatigue_footprint_typical">Typically %1$s %2$s, back to light in about %3$s.</string>
+    <!-- %1$s the lead muscle, %2$s its level in lower case. -->
+    <string name="fatigue_footprint_typical_short">Typically %1$s %2$s.</string>
+    <string name="fatigue_footprint_typical_note">Less if you stop three or more reps short. More the first time you do it, or after three weeks off it.</string>
+    <plurals name="fatigue_footprint_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="fatigue_footprint_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <!-- %1$s a muscle, %2$s its band (Strong, Medium or Light). Read by a screen reader for one muscle of the footprint figure. -->
+    <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <string name="fatigue_footprint_why_title">Why it leaves this much behind</string>
+    <string name="fatigue_footprint_why_long">It loads the muscle while it is long and stretched, which tends to leave more behind than the same sets worked short.</string>
+    <string name="fatigue_footprint_why_heavy">It is a heavy whole-body lift: the load runs through the spine and the legs, so the same hard sets leave more behind.</string>
+    <string name="fatigue_footprint_why_both">It loads the muscle while it is long and stretched, and it is a heavy whole-body lift, so the same hard sets leave more behind than most.</string>
+    <string name="fatigue_footprint_why_neither">Nothing about this lift loads the muscle long or runs a heavy load through the whole body, so the same hard sets leave about what its muscle shares say.</string>
+    <!-- %1$s the name of another exercise for the same muscle. -->
+    <string name="fatigue_footprint_compare_long">%1$s works the same muscle without loading it long, so the same sets leave less behind.</string>
+    <!-- %1$s the name of another exercise for the same muscle. -->
+    <string name="fatigue_footprint_compare_heavy">%1$s works the same muscle without the whole-body load, so the same sets leave less behind.</string>
 </resources>
