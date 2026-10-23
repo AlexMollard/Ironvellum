@@ -6683,4 +6683,49 @@
     <string name="fatigue_empty_new">Log a workout and your muscles will show up here.</string>
     <string name="fatigue_empty_new__t">Log a trial and your muscles will show up here.</string>
     <string name="fatigue_empty_rested">No muscle looks worked right now. Everything reads as fresh.</string>
+
+    <!-- Muscle breakdown sheet. -->
+    <string name="fatigue_breakdown_subtitle">Last 7 days, an estimate</string>
+    <string name="fatigue_breakdown_causes_title">What it came from</string>
+    <string name="fatigue_breakdown_none">Nothing in the last 7 days is adding to this muscle.</string>
+    <!-- A share of the muscle's fatigue, rounded to the nearest 5. %1$d is the percent. -->
+    <string name="fatigue_share_percent">about %1$d%%</string>
+    <string name="fatigue_other_label">Other sources</string>
+    <!-- Screen-reader action on a cause row. %1$s is the lift. -->
+    <string name="fatigue_cause_open_hint">Open %1$s</string>
+    <string name="fatigue_soreness_title">Soreness likely</string>
+    <!-- %1$s is the lift (with its variation), %2$s the muscle in lower case. -->
+    <string name="fatigue_soreness_new_stretch">%1$s was new to you and loads the stretched %2$s.</string>
+    <string name="fatigue_soreness_new">%1$s was new to you, so the %2$s may be sorer than usual.</string>
+    <string name="fatigue_soreness_stretch">%1$s loads the %2$s while it is stretched, which is often sorer.</string>
+    <string name="fatigue_light_by_today">Back to light later today</string>
+    <string name="fatigue_light_by_tomorrow">Back to light by tomorrow</string>
+    <!-- %1$s is a weekday, like Saturday. -->
+    <string name="fatigue_light_by_weekday">Back to light by %1$s</string>
+    <string name="fatigue_light_by_over_week">Back to light in over a week</string>
+
+    <!-- How fatigue is estimated sheet. -->
+    <string name="fatigue_explainer_link">How this is estimated ›</string>
+    <string name="fatigue_explainer_title">How fatigue is estimated</string>
+    <string name="fatigue_explainer_intro">It adds up the hard sets you logged and works out how tired each muscle probably is. It never changes your plan.</string>
+    <string name="fatigue_explainer_intro__t">It adds up the hard sets you logged and works out how tired each muscle probably is. It never changes your cycle.</string>
+    <string name="fatigue_explainer_counts_title">Four things count</string>
+    <string name="fatigue_explainer_count_share">How much each muscle does. A squat loads the quads most, the glutes and back less.</string>
+    <string name="fatigue_explainer_count_effort">How close to failure. Only hard sets count: a set to failure counts a little extra and one with 3 reps left counts less.</string>
+    <string name="fatigue_explainer_count_kind">The kind of lift. Lifts that load a muscle long count about a third more, and heavy whole-body lifts about a fifth more.</string>
+    <string name="fatigue_explainer_count_new">New to you. A lift you have not done in 3 weeks counts about 40% more, and soreness is more likely.</string>
+    <string name="fatigue_explainer_pace_title">Then it wears off at a muscle\'s own pace</string>
+    <string name="fatigue_explainer_fast_label">Fast</string>
+    <string name="fatigue_explainer_fast_value">Calves, forearms, abs, side and rear delts: light in about a day and a half</string>
+    <string name="fatigue_explainer_medium_label">Medium</string>
+    <string name="fatigue_explainer_medium_value">Biceps, triceps, lats, upper back, front delts: light in about 2 days</string>
+    <string name="fatigue_explainer_slow_label">Slow</string>
+    <string name="fatigue_explainer_slow_value">Quads, hamstrings, glutes, chest, lower back: light in about 3 days</string>
+    <string name="fatigue_explainer_pace_note">A very big session, or your first 8 weeks of training, stretch these times.</string>
+    <string name="fatigue_explainer_levels_title">The five levels</string>
+    <string name="fatigue_explainer_cant_title">It can\'t measure you</string>
+    <string name="fatigue_explainer_soreness">Soreness isn\'t proof a workout worked, and no soreness isn\'t proof it didn\'t.</string>
+    <string name="fatigue_explainer_soreness__t">Soreness isn\'t proof a trial worked, and no soreness isn\'t proof it didn\'t.</string>
+    <string name="fatigue_explainer_estimate">Treat every level as a rough estimate. The numbers behind it are starting guesses, not fitted to you, and nothing leaves your device.</string>
+    <string name="fatigue_explainer_done_button">Got it</string>
 </resources>

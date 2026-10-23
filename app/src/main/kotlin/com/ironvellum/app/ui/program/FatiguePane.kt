@@ -21,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -43,6 +46,7 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.Variation
 import com.ironvellum.app.domain.mostWorked
+import com.ironvellum.app.domain.reading
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
@@ -57,24 +61,46 @@ import kotlinx.coroutines.launch
 /** Train > Muscles > Fatigue: the map, what it is based on, and the muscles worked most. */
 @Composable
 internal fun FatiguePane(
+    onOpenLift: (name: String, variation: String) -> Unit,
     viewModel: MuscleFatigueViewModel =
         viewModel(factory = viewModelFactory {
             initializer { MuscleFatigueViewModel(ironvellumRepository()) }
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault())
+    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault(), onOpenLift)
 }
 
 /** The pane for a given [ui]: stateless, so a test or a preview can hand it any report. */
 @Composable
-internal fun FatigueContent(ui: FatigueUi, selection: MutableState<Muscle?>, zone: ZoneId) {
+internal fun FatigueContent(
+    ui: FatigueUi,
+    selection: MutableState<Muscle?>,
+    zone: ZoneId,
+    onOpenLift: (name: String, variation: String) -> Unit = { _, _ -> },
+) {
     val report = ui.report
     // Blank for the first read: a moment of nothing is better than a flash of an all-fresh figure.
     if (!ui.loaded || report == null) return
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
     val worked = remember(report, zone) { report.mostWorked(zone) }
+    var explain by rememberSaveable { mutableStateOf(false) }
+    // A lit muscle opens its breakdown; closing the sheet clears the light, and so does leaving for a lift page.
+    selection.value?.let { muscle ->
+        MuscleBreakdownSheet(
+            reading = remember(report, muscle, zone) { report.reading(muscle, zone) },
+            nowMs = report.nowMs,
+            onOpenLift = { name, variation ->
+                selection.value = null
+                onOpenLift(name, variation)
+            },
+            onExplain = { explain = true },
+            onDismiss = { selection.value = null },
+            zone = zone,
+        )
+    }
+    if (explain) FatigueExplainerSheet { explain = false }
     Column(
         Modifier
             .fillMaxSize()

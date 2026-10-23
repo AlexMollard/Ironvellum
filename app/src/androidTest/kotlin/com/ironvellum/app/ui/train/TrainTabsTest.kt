@@ -34,7 +34,7 @@ class TrainTabsTest {
                 IronvellumTheme {
                     TrainScreen(
                         onOpenRite = {}, onNew = {}, onGenerate = { _, _ -> }, onStartSession = {},
-                        onQuickSession = {}, onOpenExercises = {}, onOpenLog = {}, onOptimise = {},
+                        onQuickSession = {}, onOpenExercises = {}, onOpenLog = {}, onOptimise = {}, onOpenLift = { _, _ -> },
                     )
                 }
             }

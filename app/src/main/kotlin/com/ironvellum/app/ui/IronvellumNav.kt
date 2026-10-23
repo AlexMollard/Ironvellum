@@ -420,6 +420,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenExercises = { navController.navigate(Routes.exercises()) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                         onOptimise = { navController.navigate(Routes.OPTIMISE_RITES) },
+                        onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     )
                 }

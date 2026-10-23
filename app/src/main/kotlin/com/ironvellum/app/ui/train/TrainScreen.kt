@@ -41,6 +41,7 @@ fun TrainScreen(
     onOpenExercises: () -> Unit,
     onOpenLog: () -> Unit,
     onOptimise: () -> Unit,
+    onOpenLift: (name: String, variation: String) -> Unit,
     onOpenWorkout: (Long) -> Unit = {},
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory {
@@ -90,6 +91,7 @@ fun TrainScreen(
                     onOpenRite = onOpenRite,
                     onOpenRites = { TrainTabMemory.tab = TrainTab.PLAN },
                     onOptimise = onOptimise,
+                    onOpenLift = onOpenLift,
                 )
             }
         }
