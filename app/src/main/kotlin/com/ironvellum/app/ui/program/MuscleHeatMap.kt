@@ -190,7 +190,7 @@ fun RiteMuscleMap(
  * and labels from TalkBack where the muscle nodes and the caller's summary already say it all.
  */
 @Composable
-private fun FigureBlock(
+internal fun FigureBlock(
     figure: BodyFigure,
     height: Dp,
     fill: (Muscle) -> Color,

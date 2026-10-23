@@ -212,6 +212,7 @@ class MuscleCoverageViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoverageUi())
 }
 
+/** The coverage content on its own page: a pushed header over [MuscleCoverageContent]. */
 @Composable
 fun MuscleCoverageScreen(
     onBack: () -> Unit,
@@ -223,6 +224,32 @@ fun MuscleCoverageScreen(
         viewModel(factory = viewModelFactory {
             initializer { MuscleCoverageViewModel(ironvellumRepository()) }
         }),
+) {
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(20.dp))
+            PushedHeader(stringResource(R.string.coverage_screen_title), onBack)
+            Spacer(Modifier.height(12.dp))
+        }
+        MuscleCoverageContent(onGenerateSession, onOpenRite, onOpenRites, onOptimise, viewModel, Modifier.weight(1f))
+    }
+}
+
+/**
+ * Coverage with no screen chrome: the Planned | Last 7 days pager, its pages and the dock. Muscles hosts it
+ * under its Fatigue | Coverage switch.
+ */
+@Composable
+internal fun MuscleCoverageContent(
+    onGenerateSession: () -> Unit,
+    onOpenRite: (Long) -> Unit = {},
+    onOpenRites: () -> Unit = {},
+    onOptimise: () -> Unit = {},
+    viewModel: MuscleCoverageViewModel =
+        viewModel(factory = viewModelFactory {
+            initializer { MuscleCoverageViewModel(ironvellumRepository()) }
+        }),
+    modifier: Modifier = Modifier,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val pager = rememberPagerState { CoverageView.entries.size }
@@ -239,16 +266,11 @@ fun MuscleCoverageScreen(
     val view = CoverageView.entries[pager.currentPage]
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
     val tally = remember(presets, view, dismissed.value) {
-        coverageTally(loadsOf(presets, pooled = view == CoverageView.LOGGED), dismissed.value)
+        coverageMapModel(presets, pooled = view == CoverageView.LOGGED, dismissed = dismissed.value).tally
     }
     val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
 
-    Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(20.dp))
-            PushedHeader(stringResource(R.string.coverage_screen_title), onBack)
-            Spacer(Modifier.height(12.dp))
-        }
+    Column(modifier.fillMaxSize()) {
         // The switch comes first: drawn after the empty check, an empty last-7-days view hid it and the
         // lifter could not get back to the cycle.
         InkTabbedPager(
@@ -390,8 +412,9 @@ internal fun CoveragePage(
     onOpenUncounted: () -> Unit = {},
 ) {
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val loads = remember(presets, view) { loadsOf(presets, pooled = view == CoverageView.LOGGED) }
-    val tally = remember(loads, dismissed) { coverageTally(loads, dismissed) }
+    val model = remember(presets, view, dismissed) { coverageMapModel(presets, pooled = view == CoverageView.LOGGED, dismissed = dismissed) }
+    val loads = model.loads
+    val tally = model.tally
     // Each exercise once, in routine order, keyed with its modifiers because
     // a deficit push-up works the chest differently from a flat one.
     val exercisesInView = remember(presets) {
@@ -429,20 +452,12 @@ internal fun CoveragePage(
             return@Column
         }
 
-        CoverageFigure(
+        CoverageMap(
             loads = loads,
             dismissed = dismissed,
-            modifier = Modifier.fillMaxWidth(),
-            figureHeight = 260.dp,
             selection = lit,
+            unattributed = unattributed,
         )
-        if (unattributed > 0) {
-            Text(
-                UiText.plural(R.plurals.coverage_unattributed_sets, unattributed).asString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
         if (view == CoverageView.CYCLE && ui.uncountedRites.isNotEmpty()) {
             UncountedRitesLine(ui.uncountedRites.size, onOpenUncounted)
         }
