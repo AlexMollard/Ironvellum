@@ -146,6 +146,10 @@ class PresetsViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
+    /** The catalogue, for the exercise sheet a rite's movement opens. */
+    val exercises: StateFlow<List<com.ironvellum.app.domain.Exercise>> = repo.observeExercises()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /** The unfinished session: its preset's button reads Continue. */
     val live: StateFlow<com.ironvellum.app.domain.WorkoutSession?> = repo.observeLiveSession()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

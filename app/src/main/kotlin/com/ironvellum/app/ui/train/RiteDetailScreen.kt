@@ -51,6 +51,7 @@ import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.ExerciseInspection
 import com.ironvellum.app.ui.program.RiteMusclesSheet
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -76,6 +77,9 @@ fun RiteDetailScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val live by viewModel.live.collectAsStateWithLifecycle()
+    val exercises by viewModel.exercises.collectAsStateWithLifecycle()
+    // The movement the lifter tapped, as (name, modifiers): its exercise sheet opens over the page.
+    var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
     val preset = ui.presets.firstOrNull { it.id == presetId }
     var showMuscles by rememberSaveable { mutableStateOf(false) }
 
@@ -138,11 +142,11 @@ fun RiteDetailScreen(
                 Spacer(Modifier.height(SECTION_GAP))
                 if (preset.warmups.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.ritedetail_warmup_header))
-                    EntryRows(preset.warmups)
+                    EntryRows(preset.warmups) { inspected = it.exerciseName to it.modifiers }
                     Spacer(Modifier.height(SECTION_GAP))
                 }
                 SectionHeader(stringResource(R.string.ritedetail_movements_header))
-                EntryRows(preset.working)
+                EntryRows(preset.working) { inspected = it.exerciseName to it.modifiers }
                 // Where the rite lands, drawn on the page rather than behind a
                 // button; each muscle's exact set count is one tap further.
                 val sets = remember(preset) {
@@ -174,6 +178,7 @@ fun RiteDetailScreen(
         }
     }
 
+    inspected?.let { (name, modifiers) -> ExerciseInspection(exercises, name, modifiers) { inspected = null } }
     if (showMuscles && preset != null) {
         RiteMusclesSheet(title = preset.name, entries = preset.toPlanned().entries, onDismiss = { showMuscles = false })
     }
@@ -181,7 +186,7 @@ fun RiteDetailScreen(
 
 /** One panel of a rite's entries, each with its figure and the scheme and modifiers under it. */
 @Composable
-private fun EntryRows(entries: List<com.ironvellum.app.domain.PresetEntry>) {
+private fun EntryRows(entries: List<com.ironvellum.app.domain.PresetEntry>, onOpen: (com.ironvellum.app.domain.PresetEntry) -> Unit) {
     InkRowPanel(Modifier.fillMaxWidth()) {
         entries.forEachIndexed { index, entry ->
             if (index > 0) InkDivider()
@@ -192,6 +197,8 @@ private fun EntryRows(entries: List<com.ironvellum.app.domain.PresetEntry>) {
                     hold = MovementDifficulty.isHoldByName(entry.exerciseName),
                 ),
                 wrapValue = true,
+                onClickLabel = stringResource(R.string.session_info_description, entry.exerciseName),
+                onClick = { onOpen(entry) },
                 subline = listOfNotNull(
                     com.ironvellum.app.domain.SchemeText.summary(entry.scheme, entry.targetSets),
                     entry.modifiers.takeIf { it.isNotBlank() }?.split(",")?.joinToString(" · ") { it.trim() },

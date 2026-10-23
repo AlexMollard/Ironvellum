@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -531,6 +532,8 @@ fun PresetEditorScreen(
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
     var adding by remember { mutableStateOf(false) }
     var swapping by remember { mutableStateOf<Int?>(null) }
+    // The movement whose exercise sheet is open, as (name, modifiers).
+    var inspected by remember { mutableStateOf<Pair<String, String>?>(null) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var pickingDay by remember { mutableStateOf(false) }
@@ -651,6 +654,7 @@ fun PresetEditorScreen(
                             supersetNumber = numbers[index],
                             partners = supersetPartners(ui.entries, index),
                             onSuperset = { linking = index },
+                            onInfo = if (entry.exerciseName.isNotBlank()) ({ inspected = entry.exerciseName to entry.modifiers }) else null,
                             onSets = if (metric == ExerciseMetric.REPS && entry.exerciseName.isNotBlank() && !entry.warmup) ({ setting = index }) else null,
                             // The toggle sits in the open card, so the open row follows the entry to its new place.
                             onWarmup = { on -> open = viewModel.setWarmup(index, on) },
@@ -738,6 +742,7 @@ fun PresetEditorScreen(
         )
     }
 
+    inspected?.let { (name, modifiers) -> com.ironvellum.app.ui.program.ExerciseInspection(ui.exercises, name, modifiers) { inspected = null } }
     swapping?.let { index ->
         val entry = ui.entries.getOrNull(index)
         if (entry == null) {
@@ -960,6 +965,8 @@ private fun EntryItem(
     /** "With Bench press" for the superset it is in; null when it is in none. */
     partners: String?,
     onSuperset: () -> Unit,
+    /** Opens the exercise's own sheet (About, Form, History); null until a movement is picked. */
+    onInfo: (() -> Unit)?,
     /** Marks the entry as a warm-up exercise, or as worked again. */
     onWarmup: (Boolean) -> Unit,
     /** Opens the "Sets for" sheet; null for a movement whose sets are not reps (a hold, a run). */
@@ -1022,6 +1029,16 @@ private fun EntryItem(
                     }
                 }
             }
+            if (onInfo != null) {
+                Box(
+                    Modifier
+                        .size(48.dp)
+                        .clickable(onClickLabel = stringResource(R.string.session_info_description, name), role = Role.Button, onClick = onInfo),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Info, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(22.dp))
+                }
+            }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
         }
         InkDivider()
@@ -1033,6 +1050,7 @@ private fun EntryItem(
         onFold = onToggle,
         leading = { ReorderHandle(name, onDragStart, onDragStep, onMove) },
         actions = {
+            if (onInfo != null) TextAction(stringResource(R.string.preseteditor_info_button), onInfo)
             TextAction(stringResource(R.string.preseteditor_change_exercise), onChange)
             TextAction(stringResource(R.string.preseteditor_remove_exercise), onRemove)
         },

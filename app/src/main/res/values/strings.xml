@@ -2221,6 +2221,8 @@
     <!-- Accessibility: action label that folds an open exercise card. %1$s is the exercise name. -->
     <string name="preseteditor_fold_description">Fold %1$s</string>
     <string name="preseteditor_change_exercise">Change exercise</string>
+    <!-- Train > routine editor: opens the exercise sheet for the movement on an open entry card. -->
+    <string name="preseteditor_info_button">Info</string>
     <string name="preseteditor_remove_exercise">Remove exercise</string>
     <string name="preseteditor_set_scheme_label">Set scheme</string>
     <string name="preseteditor_set_scheme_straight">Straight</string>
