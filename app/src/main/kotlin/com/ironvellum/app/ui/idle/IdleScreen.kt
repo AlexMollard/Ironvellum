@@ -106,6 +106,7 @@ import com.ironvellum.app.ui.components.rarityWord
 import com.ironvellum.app.ui.dashboard.EssenceFigure
 import com.ironvellum.app.ui.dashboard.VeilMotes
 import com.ironvellum.app.ui.dashboard.rememberTodayMotion
+import com.ironvellum.app.ui.dashboard.rememberTodayResumed
 import com.ironvellum.app.ui.dashboard.rememberVeilNow
 import com.ironvellum.app.ui.dashboard.rememberVeilPhase
 import com.ironvellum.app.ui.dashboard.veilMotes
@@ -343,7 +344,7 @@ fun IdleScreen(
 
     // The ticker and motes move under the same gate as the Veil on Today: resumed, animators on, not a preview.
     val animate = rememberTodayMotion()
-    val now = rememberVeilNow(System.currentTimeMillis(), animate, TICK_MS)
+    val now = rememberVeilNow(System.currentTimeMillis(), rememberTodayResumed(), TICK_MS)
 
     val snapshot = ui.snapshot
     val inputs = ui.inputs

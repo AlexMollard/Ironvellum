@@ -320,6 +320,29 @@ class TodayFitsTest {
         assertTrue("two exercises share a line at 200%", top("Inverted Row") > top("Pull-up"))
     }
 
+    /** The essence figure Today's Veil shows, read off its text. */
+    private fun shownEssence(): Long = placed("veil-essence").single()
+        .config[SemanticsProperties.Text].joinToString("").replace(",", "").toLong()
+
+    /** Animations off (battery saver, Remove animations) freeze the effects, not the count: the clock still runs. */
+    @Test
+    fun theVeilKeepsCountingWithAnimationsOff() {
+        // 100 essence a second, 600 ms short of nine hours since the last collection: a second later the
+        // strength caption has dropped an hour (16 h left to 15 h) and the essence has climbed by about a hundred.
+        val fast = VeilGlance(
+            IdleSnapshot(IdleState(essence = 1_000, figures = 0, relicMultiplier = 1.0, lastCollectedAtMs = now - 9 * hour + 600), IdleRate(360_000.0, 1.0, 1.0)),
+            inscriptions = 0,
+        )
+        show(ui = DashboardUi(presets = listOf(rite(9, day = 3))), selectedDay = 2, motion = false, glance = fast)
+        val before = shownEssence()
+        assertInside("16 h left at full strength")
+        Thread.sleep(1_200)
+        compose.mainClock.advanceTimeBy(3_100)
+        val after = shownEssence()
+        assertTrue("the essence stood still at $before with animators off, now $after", after >= before + 50)
+        assertInside("15 h left at full strength")
+    }
+
     @Test
     fun aRespiteDayShowsTheFullVeil() {
         show(ui = DashboardUi(presets = listOf(rite(9, day = 3))), selectedDay = 2, bodyGap = BodyGap.WEIGHT)

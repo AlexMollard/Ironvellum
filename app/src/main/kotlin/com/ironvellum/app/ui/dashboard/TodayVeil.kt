@@ -91,7 +91,8 @@ import kotlin.math.sin
  * period in play divides that loop, so it wraps without a jump. It exists only in the one live instance
  * of the section and only while Today is on screen and animations are on: the layout's measuring probes
  * never run it, and with motion off (animations disabled, the app in the background, a preview) nothing
- * animates and the figures hold still.
+ * animates. The figures are not motion: the essence and the strength bar follow the wall clock whenever
+ * the screen is the resumed one, animators or not.
  */
 
 /** Which face the Veil wears: the respite hero, the full section, or the one-line form. */
@@ -110,12 +111,21 @@ internal val LocalTodayMotion = compositionLocalOf { false }
  */
 @Composable
 internal fun rememberTodayMotion(): Boolean {
-    if (LocalInspectionMode.current) return false
+    val resumed = rememberTodayResumed()
     val context = LocalContext.current
+    return resumed && remember(resumed) { animatorsOn(context) }
+}
+
+/**
+ * Whether this screen is the resumed one and not a preview: what the Veil's figures need to keep counting,
+ * with the animators on or off (see [rememberTodayMotion] for what the animator switch gates).
+ */
+@Composable
+internal fun rememberTodayResumed(): Boolean {
+    if (LocalInspectionMode.current) return false
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     val state by owner.lifecycle.currentStateAsState()
-    val resumed = state.isAtLeast(Lifecycle.State.RESUMED)
-    return resumed && remember(resumed) { animatorsOn(context) }
+    return state.isAtLeast(Lifecycle.State.RESUMED)
 }
 
 /** How often the live essence is recomputed from the domain accrual. */
@@ -151,7 +161,7 @@ internal fun VeilSection(
 ) {
     val animate = LocalTodayLive.current && LocalTodayMotion.current
     // The accrual is recomputed against the wall clock, offset so a caller's fixed `nowMs` stays consistent.
-    val now = rememberVeilNow(nowMs, animate, TICK_MS)
+    val now = rememberVeilNow(nowMs, LocalTodayLive.current && rememberTodayResumed(), TICK_MS)
     val phase = rememberVeilPhase(animate)
 
     val snapshot = veil?.snapshot

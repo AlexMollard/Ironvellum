@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
@@ -69,20 +70,22 @@ internal fun rememberVeilPhase(animate: Boolean): State<Float> =
     }
 
 /**
- * The wall clock the live essence is recomputed against, every [tickMs] while [animate]; otherwise the
- * caller's [nowMs] unchanged. Offset so a caller's fixed [nowMs] stays consistent.
+ * The wall clock the live essence is recomputed against, every [tickMs] while [live]; otherwise the
+ * caller's [nowMs] unchanged. Offset so a caller's fixed [nowMs] stays consistent. [live] is "the screen
+ * is the resumed one", never the animator scale: the figures must keep counting for a lifter who has
+ * animations off, only the effects (flash, "+N", motes) follow that switch.
  */
 @Composable
-internal fun rememberVeilNow(nowMs: Long, animate: Boolean, tickMs: Long): Long {
+internal fun rememberVeilNow(nowMs: Long, live: Boolean, tickMs: Long): Long {
     val skew = remember { nowMs - System.currentTimeMillis() }
-    val ticking by produceState(nowMs, animate) {
-        if (!animate) return@produceState
+    val ticking by produceState(nowMs, live) {
+        if (!live) return@produceState
         while (true) {
             value = System.currentTimeMillis() + skew
             delay(tickMs)
         }
     }
-    return if (animate) ticking else nowMs
+    return if (live) ticking else nowMs
 }
 
 /**
@@ -119,6 +122,7 @@ internal fun EssenceFigure(
             fontWeight = FontWeight.Bold,
             color = flash,
             maxLines = 1,
+            modifier = Modifier.testTag("veil-essence"),
         )
         if (bump.value < 1f) {
             Text(
