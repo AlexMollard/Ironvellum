@@ -6,6 +6,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.sqrt
 
 /** The table of dedicated exercises that are a base plus a modifier or load, held to the real catalogue. */
 class ExerciseTwinsTest {
@@ -143,5 +144,22 @@ class ExerciseTwinsTest {
         // Keeping weighted does not keep archer.
         assertNotNull(ExerciseTwins.steer("Pull-up", "weighted", "weighted, archer", true, setOf(prompt.keepKey("Pull-up")), exists))
         assertTrue(prompt.keepKey("Pull-up") == "pull-up|weighted")
+    }
+
+    @Test
+    fun `a twin is never priced below its base with the modifier`() {
+        // Prices are whole tiers (a doubling each), so "below" means more than half a tier under the product.
+        // An easier twin (incline) is a rung of the skill tree on its own and is priced as that rung.
+        val under = ExerciseTwins.ALL.values.flatMap { twin ->
+            twin.bases.flatMap { base ->
+                twin.absorbs.mapNotNull { tokens ->
+                    val factor = MovementDifficulty.modifierFactor(tokens.joinToString(", "))
+                    val floor = MovementDifficulty.intensity(base) * factor
+                    val priced = MovementDifficulty.intensity(twin.dedicated)
+                    if (factor < 1.0 || priced * sqrt(2.0) + 1e-9 >= floor) null else "${twin.dedicated} $priced < $base x $tokens $floor"
+                }
+            }
+        }
+        assertEquals(emptyList<String>(), under)
     }
 }
