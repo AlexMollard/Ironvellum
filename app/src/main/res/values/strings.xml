@@ -874,6 +874,10 @@
     <string name="settings_training_effort_caption">After a set, rate how hard it was. Optional, one tap.</string>
     <!-- Settings > Training mode: %1$s is the one-line hint for the RPE scale. -->
     <string name="settings_training_effort_rir_hint">%1$s RIR counts those reps instead.</string>
+    <string name="settings_training_experience_title">How long you have lifted</string>
+    <string name="settings_training_experience_caption">Under 2 months slows the recovery times in the muscle fatigue estimate for your first weeks of lifting.</string>
+    <string name="lifting_experience_new">Under 2 months</string>
+    <string name="lifting_experience_longer">Longer</string>
     <!-- Settings > Appearance (phase 4) -->
     <string name="common_cancel">Cancel</string>
     <string name="common_apply">Apply</string>
@@ -1199,8 +1203,8 @@
     <string name="onboarding_step_plan_title">Your weekly plan</string>
     <string name="onboarding_step_plan_title__t">Your cycle</string>
     <string name="onboarding_step_profile_prose">Your sex, height and weight scale every number Ironvellum shows you.</string>
-    <string name="onboarding_step_training_prose">Answer five things and get a weekly plan built for you.</string>
-    <string name="onboarding_step_training_prose__t">Answer five things and get a cycle built for you.</string>
+    <string name="onboarding_step_training_prose">Answer six things and get a weekly plan built for you.</string>
+    <string name="onboarding_step_training_prose__t">Answer six things and get a cycle built for you.</string>
     <string name="onboarding_step_plan_prose">Built from your answers. Tap a day to open it, an exercise to adjust it.</string>
     <string name="onboarding_back_chip">BACK</string>
     <string name="onboarding_back_to_preferences">Back to your preferences</string>
@@ -1233,6 +1237,8 @@
     <string name="onboarding_training_effort_label">How you rate effort</string>
     <string name="onboarding_effort_rir">RIR (reps left)</string>
     <string name="onboarding_effort_rpe">RPE (how hard)</string>
+    <string name="onboarding_training_experience_label">How long you have been lifting</string>
+    <string name="onboarding_training_experience_caption">Under 2 months slows the muscle fatigue estimate a little while you start out. Change it in Settings.</string>
     <string name="onboarding_training_armoury_label">Your equipment</string>
     <string name="onboarding_training_armoury_label__t">Your armoury</string>
     <string name="onboarding_plan_loading">Consulting the catalogue…</string>
@@ -6764,7 +6770,7 @@
     <string name="fatigue_explainer_medium_value">Biceps, triceps, lats, upper back, front delts: light in about a day and a half</string>
     <string name="fatigue_explainer_slow_label">Slow</string>
     <string name="fatigue_explainer_slow_value">Quads, hamstrings, glutes, chest, lower back: light in about 2 days</string>
-    <string name="fatigue_explainer_pace_note">A very big session, or your first 8 weeks of training, stretch these times.</string>
+    <string name="fatigue_explainer_pace_note">A very big session, or your first 2 months of lifting if you said so in Settings, stretch these times.</string>
     <string name="fatigue_explainer_levels_title">The five levels</string>
     <string name="fatigue_explainer_cant_title">It can\'t measure you</string>
     <string name="fatigue_explainer_soreness">Soreness isn\'t proof a workout worked, and no soreness isn\'t proof it didn\'t.</string>

@@ -34,7 +34,7 @@ class FatigueInputTest {
     fun `no history gives an empty report and a new lifter`() {
         assertTrue(FatigueInput.sessions(emptyList(), null, emptyMap(), NOW).isEmpty())
         assertNull(FatigueInput.firstWorkoutMs(emptyList(), null))
-        val report = FatigueModel.estimate(emptyList(), NOW, null)
+        val report = FatigueModel.estimate(emptyList(), NOW, null, LiftingExperience.UNDER_TWO_MONTHS)
         assertTrue(report.newLifter)
         Muscle.entries.forEach { assertEquals(0.0, report.residual(it), 0.0) }
     }
@@ -62,7 +62,7 @@ class FatigueInputTest {
     fun `a live only lifter is new`() {
         val live = WorkoutSession(id = 9, label = "Live", startedAtMs = NOW - H)
         assertEquals(live.startedAtMs, FatigueInput.firstWorkoutMs(emptyList(), live))
-        val report = FatigueModel.estimate(FatigueInput.sessions(emptyList(), live to listOf(benchSet()), exercises, NOW), NOW, live.startedAtMs)
+        val report = FatigueModel.estimate(FatigueInput.sessions(emptyList(), live to listOf(benchSet()), exercises, NOW), NOW, live.startedAtMs, LiftingExperience.UNDER_TWO_MONTHS)
         assertTrue(report.newLifter)
     }
 

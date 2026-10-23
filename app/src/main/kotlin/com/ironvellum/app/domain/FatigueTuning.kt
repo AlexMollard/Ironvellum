@@ -48,7 +48,7 @@ object FatigueTuning {
     const val BIG_SESSION_DOSE = 10.0
     const val BIG_SESSION_STRETCH = 1.25
 
-    /** A lifter whose first workout is under [NEW_LIFTER_WEEKS] weeks old recovers [NEW_LIFTER_STRETCH] times slower. */
+    /** A lifter who said they are new, and whose first workout is under [NEW_LIFTER_WEEKS] weeks old, recovers [NEW_LIFTER_STRETCH] times slower. */
     const val NEW_LIFTER_WEEKS = 8L
     const val NEW_LIFTER_STRETCH = 1.2
 

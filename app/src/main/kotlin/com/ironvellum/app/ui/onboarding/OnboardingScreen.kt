@@ -58,6 +58,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.LiftingExperienceSetting
 import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
@@ -69,6 +70,7 @@ import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.EffortScale
+import com.ironvellum.app.domain.LiftingExperience
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FirstRun
@@ -579,6 +581,8 @@ fun OnboardingScreen(
     var tier by rememberSaveable { mutableStateOf(VolumeLevel.LOW) }
     // RIR is the default for a fresh install; it is written to the effort setting at Continue.
     var effortScale by rememberSaveable { mutableStateOf(EffortScale.RIR) }
+    // How long they have lifted; written to the setting at Continue, so skipping setup leaves it unanswered (experienced).
+    var experience by rememberSaveable { mutableStateOf(LiftingExperience.LONGER) }
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -730,6 +734,8 @@ fun OnboardingScreen(
                         onTier = { tier = it },
                         effortScale = effortScale,
                         onEffortScale = { effortScale = it },
+                        experience = experience,
+                        onExperience = { experience = it },
                     )
                     else -> ProposalStep(
                         viewModel = viewModel,
@@ -779,6 +785,7 @@ fun OnboardingScreen(
                 primary = stringResource(R.string.common_continue),
                 onPrimary = {
                     EffortSetting.setScale(appContext.applicationContext, effortScale)
+                    LiftingExperienceSetting.set(appContext.applicationContext, experience)
                     step = 2
                 },
                 primaryEnabled = equipment != null,
@@ -1100,6 +1107,8 @@ private fun TrainingStep(
     onTier: (VolumeLevel) -> Unit,
     effortScale: EffortScale,
     onEffortScale: (EffortScale) -> Unit,
+    experience: LiftingExperience,
+    onExperience: (LiftingExperience) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         FieldLabel(stringResource(R.string.onboarding_training_split_label))
@@ -1153,6 +1162,18 @@ private fun TrainingStep(
             onPick = onEffortScale,
         )
         FieldCaption(Effort.hint(effortScale))
+
+        Spacer(Modifier.height(12.dp))
+        FieldLabel(stringResource(R.string.onboarding_training_experience_label))
+        InkSegmented(
+            options = listOf(
+                LiftingExperience.UNDER_TWO_MONTHS to stringResource(R.string.lifting_experience_new),
+                LiftingExperience.LONGER to stringResource(R.string.lifting_experience_longer),
+            ),
+            selected = experience,
+            onPick = onExperience,
+        )
+        FieldCaption(stringResource(R.string.onboarding_training_experience_caption))
 
         // Last: it is the longest question and the one Continue waits for.
         Spacer(Modifier.height(12.dp))

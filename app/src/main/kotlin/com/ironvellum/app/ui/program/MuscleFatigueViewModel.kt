@@ -2,14 +2,18 @@ package com.ironvellum.app.ui.program
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ironvellum.app.data.LiftingExperienceSetting
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FatigueInput
 import com.ironvellum.app.domain.FatigueModel
 import com.ironvellum.app.domain.FatigueReport
+import com.ironvellum.app.domain.LiftingExperience
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -40,6 +44,7 @@ class MuscleFatigueViewModel(
     repo: Repository,
     nowMs: () -> Long = System::currentTimeMillis,
     tickMs: Long = 60_000L,
+    experience: Flow<LiftingExperience> = snapshotFlow { LiftingExperienceSetting.answer },
 ) : ViewModel() {
 
     private val liveFlow = repo.observeLiveSession().flatMapLatest { session ->
@@ -58,9 +63,10 @@ class MuscleFatigueViewModel(
         repo.observeExercises().map { list -> list.associateBy(Exercise::id) },
         liveFlow,
         ticker,
-    ) { history, exercises, live, now ->
+        experience,
+    ) { history, exercises, live, now, said ->
         val sessions = FatigueInput.sessions(history, live, exercises, now)
         val first = FatigueInput.firstWorkoutMs(history, live?.first)
-        FatigueUi(report = FatigueModel.estimate(sessions, now, first), hasHistory = first != null, loaded = true, exercises = exercises.values.toList())
+        FatigueUi(report = FatigueModel.estimate(sessions, now, first, said), hasHistory = first != null, loaded = true, exercises = exercises.values.toList())
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FatigueUi())
 }

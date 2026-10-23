@@ -82,6 +82,7 @@ class IronvellumApp : Application() {
         com.ironvellum.app.data.Units.init(this) // And the load unit, before any screen or notification prints a load.
         com.ironvellum.app.data.ReviewDismissals.init(this) // Which reviews were closed on Today, before it draws.
         com.ironvellum.app.data.EffortSetting.init(this) // And whether effort is asked for, before the trial screen reads it.
+        com.ironvellum.app.data.LiftingExperienceSetting.init(this) // And how long they have lifted, before the fatigue estimate reads it.
         // Which vocabulary to print, decided before the database file or any screen exists: a lifter who already has a database keeps
         // the themed names, a fresh install starts plain. Must run before DbSnapshot or Room can create the file.
         Words.init(

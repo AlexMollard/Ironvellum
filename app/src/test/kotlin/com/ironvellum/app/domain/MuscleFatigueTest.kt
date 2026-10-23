@@ -26,7 +26,7 @@ class MuscleFatigueTest {
 
     @Test
     fun `empty history is all fresh`() {
-        val report = FatigueModel.estimate(emptyList(), NOW, null)
+        val report = FatigueModel.estimate(emptyList(), NOW, null, LiftingExperience.UNDER_TWO_MONTHS)
         assertEquals(27, report.contributions.size)
         for (muscle in Muscle.entries) {
             assertEquals(0.0, report.residual(muscle), 0.0)
@@ -116,24 +116,53 @@ class MuscleFatigueTest {
     @Test
     fun `new lifter stretches the half life by a fifth`() {
         val one = session(1, 24, set("Standing Calf Raise"))
-        val fresh = FatigueModel.estimate(listOf(one), NOW, NOW - 7 * 7 * DAY)
+        val fresh = FatigueModel.estimate(listOf(one), NOW, NOW - 7 * 7 * DAY, LiftingExperience.UNDER_TWO_MONTHS)
         assertTrue(fresh.newLifter)
         assertEquals(12.0 * 1.2, fresh.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
-        val exactly = FatigueModel.estimate(listOf(one), NOW, NOW - 8 * 7 * DAY)
-        assertFalse(exactly.newLifter)
+        val exactly = FatigueModel.estimate(listOf(one), NOW, NOW - 8 * 7 * DAY, LiftingExperience.UNDER_TWO_MONTHS)
+        assertFalse("the slowdown ends by itself at 8 weeks", exactly.newLifter)
         assertEquals(12.0, exactly.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
     }
 
     @Test
+    fun `unanswered is experienced whatever the first workout says`() {
+        val one = session(1, 24, set("Standing Calf Raise"))
+        for (first in listOf(null, NOW - 3 * DAY, NOW - 7 * 7 * DAY, OLD)) {
+            val report = FatigueModel.estimate(listOf(one), NOW, first)
+            assertFalse("first workout $first", report.newLifter)
+            assertEquals(12.0, report.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
+        }
+    }
+
+    @Test
+    fun `saying longer is experienced too`() {
+        val report = FatigueModel.estimate(listOf(session(1, 24, set("Standing Calf Raise"))), NOW, NOW - 3 * DAY, LiftingExperience.LONGER)
+        assertFalse(report.newLifter)
+    }
+
+    @Test
+    fun `under two months with a recent first workout is a new lifter`() {
+        val report = FatigueModel.estimate(listOf(session(1, 24, set("Standing Calf Raise"))), NOW, NOW - 3 * DAY, LiftingExperience.UNDER_TWO_MONTHS)
+        assertTrue(report.newLifter)
+        assertEquals(12.0 * 1.2, report.only(Muscle.CALVES, 1).halfLifeHours, 1e-9)
+    }
+
+    @Test
+    fun `under two months with a first workout over eight weeks ago is not`() {
+        val report = FatigueModel.estimate(listOf(session(1, 24, set("Standing Calf Raise"))), NOW, NOW - 9 * 7 * DAY, LiftingExperience.UNDER_TWO_MONTHS)
+        assertFalse(report.newLifter)
+    }
+
+    @Test
     fun `big session and new lifter stretches multiply`() {
-        val report = FatigueModel.estimate(listOf(session(1, 24, *sets(11, rpe = 10))), NOW, NOW - 7 * DAY)
+        val report = FatigueModel.estimate(listOf(session(1, 24, *sets(11, rpe = 10))), NOW, NOW - 7 * DAY, LiftingExperience.UNDER_TWO_MONTHS)
         assertEquals(24.0 * 1.25 * 1.2, report.only(Muscle.MID_CHEST, 1).halfLifeHours, 1e-9)
     }
 
     @Test
     fun `an imported only lifter is new`() {
         val imported = session(1, 21 * 24, set("Bench Press"))
-        assertTrue(FatigueModel.estimate(listOf(imported), NOW, imported.atMs).newLifter)
+        assertTrue(FatigueModel.estimate(listOf(imported), NOW, imported.atMs, LiftingExperience.UNDER_TWO_MONTHS).newLifter)
     }
 
     @Test

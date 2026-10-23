@@ -43,10 +43,18 @@ object FatigueModel {
     /**
      * The fatigue report at [nowMs]. [sessions] must cover the 28 days before it; only sessions in
      * `(now - 7 days, now]` are kept as contributions, the older ones feed novelty alone. [firstWorkoutMs] is the
-     * earliest workout of any origin; null (nothing logged) counts as a new lifter.
+     * earliest workout of any origin. A new lifter is one who said so ([LiftingExperience.UNDER_TWO_MONTHS]) and whose
+     * first workout is under [FatigueTuning.NEW_LIFTER_WEEKS] weeks old (null, nothing logged, counts), so the
+     * slowdown ends by itself. Unanswered is experienced: the first workout in the app proves nothing about the lifter.
      */
-    fun estimate(sessions: List<FatigueSession>, nowMs: Long, firstWorkoutMs: Long?): FatigueReport {
-        val newLifter = firstWorkoutMs == null || firstWorkoutMs > nowMs - FatigueTuning.NEW_LIFTER_WEEKS * 7 * MS_PER_DAY
+    fun estimate(
+        sessions: List<FatigueSession>,
+        nowMs: Long,
+        firstWorkoutMs: Long?,
+        experience: LiftingExperience = LiftingExperience.UNANSWERED,
+    ): FatigueReport {
+        val newLifter = experience == LiftingExperience.UNDER_TWO_MONTHS &&
+            (firstWorkoutMs == null || firstWorkoutMs > nowMs - FatigueTuning.NEW_LIFTER_WEEKS * 7 * MS_PER_DAY)
         val exposures = exposureIndex(sessions)
         val windowStart = nowMs - FatigueTuning.WINDOW_DAYS * MS_PER_DAY
         val byMuscle = Muscle.entries.associateWith { ArrayList<FatigueContribution>() }

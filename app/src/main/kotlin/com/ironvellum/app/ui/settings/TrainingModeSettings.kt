@@ -18,10 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.LiftingExperienceSetting
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.WarmupStore
 import com.ironvellum.app.domain.Effort
 import com.ironvellum.app.domain.EffortScale
+import com.ironvellum.app.domain.LiftingExperience
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
@@ -100,5 +102,17 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
         )
         Spacer(Modifier.height(8.dp))
         SettingsCaption(stringResource(R.string.settings_training_effort_rir_hint, Effort.hint(EffortScale.RPE)))
+        SectionHeader(stringResource(R.string.settings_training_experience_title), topPadding = 16.dp)
+        InkSegmented(
+            options = listOf(
+                LiftingExperience.UNDER_TWO_MONTHS to stringResource(R.string.lifting_experience_new),
+                LiftingExperience.LONGER to stringResource(R.string.lifting_experience_longer),
+            ),
+            // Unanswered reads as the longer answer: that is what the estimate does with it.
+            selected = if (LiftingExperienceSetting.answer == LiftingExperience.UNDER_TWO_MONTHS) LiftingExperience.UNDER_TWO_MONTHS else LiftingExperience.LONGER,
+            onPick = { LiftingExperienceSetting.set(context.applicationContext, it) },
+        )
+        Spacer(Modifier.height(8.dp))
+        SettingsCaption(stringResource(R.string.settings_training_experience_caption))
     }
 }
