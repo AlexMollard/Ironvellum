@@ -2,7 +2,10 @@ package com.ironvellum.app.ui.train
 
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
+import com.ironvellum.app.data.FatigueAdviceSetting
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.levelAt
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.GearRequirements
@@ -110,6 +113,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.ui.program.rememberFatigueReport
 import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -1833,8 +1837,18 @@ fun SessionScreen(
     }
 
     if (showExercisePicker) {
+        // Every muscle's level right now, from the report that already holds this workout; none with the advice off.
+        val fatigueReport = rememberFatigueReport()
+        val fatigue = remember(fatigueReport, FatigueAdviceSetting.enabled) {
+            if (FatigueAdviceSetting.enabled && fatigueReport != null) {
+                Muscle.entries.associateWith { fatigueReport.levelAt(it, fatigueReport.nowMs) }
+            } else {
+                emptyMap()
+            }
+        }
         ExercisePickerSheet(
             exercises = exercises,
+            fatigue = fatigue,
             onPick = { exercise ->
                 viewModel.addExercise(exercise.id, exercise.metric == ExerciseMetric.HOLD)
                 showExercisePicker = false

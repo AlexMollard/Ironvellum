@@ -4,7 +4,10 @@ import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.FatigueAdvice
+import com.ironvellum.app.domain.FatigueLevel
 import com.ironvellum.app.domain.LastLogged
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleGroup
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
@@ -169,5 +172,68 @@ class ExercisePickerLogicTest {
             listOf(9L),
             buildPickerView(list, "", PickerFilters(), null, emptyList(), setOf(9L)).let { v -> v.yours.map { it.id }.intersect(v.favourites.map { it.id }.toSet()).toList() },
         )
+    }
+
+    // ------------------------------------------------------------------------------ fatigue (live picker)
+
+    private val push = listOf(
+        ex(1, "Bench Press", MuscleGroup.PUSH, weighted = true),
+        ex(2, "Overhead Press", MuscleGroup.PUSH, weighted = true),
+        ex(3, "Lateral Raise", MuscleGroup.PUSH, weighted = true),
+        ex(4, "Back Squat", MuscleGroup.LEGS, weighted = true),
+    )
+
+    /** Every muscle fresh, except the chest of the bench press at [level]. */
+    private fun tiredBench(level: FatigueLevel): Map<Muscle, FatigueLevel> {
+        val chest = FatigueAdvice.mainMuscles("Bench Press")
+        val untouched = FatigueAdvice.mainMuscles("Lateral Raise") + FatigueAdvice.mainMuscles("Overhead Press") + FatigueAdvice.mainMuscles("Back Squat")
+        return Muscle.entries.associateWith { if (it in chest && it !in untouched) level else FatigueLevel.FRESH }
+    }
+
+    private fun order(query: String, levels: Map<Muscle, FatigueLevel>) =
+        buildPickerView(push, query, PickerFilters(), null, emptyList(), emptySet(), levels).grouped.flatMap { it.second }.map { it.name }
+
+    @Test
+    fun `with no query a tired exercise sinks below fresher ones and the rest keep their order`() {
+        val plain = order("", emptyMap())
+        val tired = order("", tiredBench(FatigueLevel.HIGH))
+        assertEquals("Bench Press", tired.last())
+        assertEquals(plain.filter { it != "Bench Press" }, tired.filter { it != "Bench Press" })
+        assertTrue("it moved", plain.last() != "Bench Press")
+    }
+
+    @Test
+    fun `a more tired muscle sinks lower than a less tired one`() {
+        val chest = FatigueAdvice.mainMuscles("Bench Press")
+        val shoulders = FatigueAdvice.mainMuscles("Lateral Raise")
+        val levels = Muscle.entries.associateWith {
+            when (it) {
+                in shoulders -> FatigueLevel.HIGH
+                in chest -> FatigueLevel.VERY_HIGH
+                else -> FatigueLevel.FRESH
+            }
+        }
+        val names = order("", levels)
+        assertTrue(names.indexOf("Lateral Raise") < names.indexOf("Bench Press"))
+    }
+
+    @Test
+    fun `with a query the match ranking wins and fatigue does not reorder`() {
+        val levels = tiredBench(FatigueLevel.VERY_HIGH)
+        assertEquals(order("press", emptyMap()), order("press", levels))
+    }
+
+    @Test
+    fun `no map, or an empty one, leaves the order exactly as it was`() {
+        val levels = tiredBench(FatigueLevel.HIGH)
+        assertEquals(order("", emptyMap()), buildPickerView(push, "", PickerFilters(), null, emptyList(), emptySet()).grouped.flatMap { it.second }.map { it.name })
+        assertTrue(FatigueAdvice.worstIn("Bench Press", emptyMap()) == null)
+        assertTrue(FatigueAdvice.worstIn("Bench Press", levels)!!.second == FatigueLevel.HIGH)
+    }
+
+    @Test
+    fun `favourites stay pinned above fatigue order`() {
+        val view = buildPickerView(push, "", PickerFilters(), null, emptyList(), setOf(1L), tiredBench(FatigueLevel.VERY_HIGH))
+        assertEquals(listOf(1L), view.favourites.map { it.id })
     }
 }

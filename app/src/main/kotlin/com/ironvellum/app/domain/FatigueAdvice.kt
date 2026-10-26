@@ -23,6 +23,14 @@ object FatigueAdvice {
         muscles.maxWithOrNull(compareBy<Muscle> { report.residual(it, atMs) }.thenByDescending { it.ordinal })
             ?.let { it to report.levelAt(it, atMs) }
 
+    /**
+     * The worst level among the main muscles of [name] in [levels] (the picker's map: every muscle's level right now), with
+     * the muscle that holds it; null when the movement is unknown or [levels] is empty. Ties go to the earlier muscle.
+     */
+    fun worstIn(name: String, levels: Map<Muscle, FatigueLevel>): Pair<Muscle, FatigueLevel>? =
+        mainMuscles(name).mapNotNull { muscle -> levels[muscle]?.let { muscle to it } }
+            .maxWithOrNull(compareBy<Pair<Muscle, FatigueLevel>> { it.second }.thenByDescending { it.first.ordinal })
+
     /** A working exercise of a routine that leans on [muscle], its worst main muscle, which is at [level] (High or above). */
     data class Lean(val entry: PresetEntry, val muscle: Muscle, val level: FatigueLevel)
 

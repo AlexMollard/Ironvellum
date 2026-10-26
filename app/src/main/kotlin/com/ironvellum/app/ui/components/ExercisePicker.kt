@@ -76,7 +76,12 @@ import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLoggedIndex
 import com.ironvellum.app.domain.MovementDifficulty
+import com.ironvellum.app.domain.FatigueAdvice
+import com.ironvellum.app.domain.FatigueLevel
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleGroup
+import com.ironvellum.app.ui.program.FatigueSwatch
+import com.ironvellum.app.ui.program.levelWord
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -194,10 +199,10 @@ private fun CustomExerciseHost(
 }
 
 @Composable
-private fun pickerView(exercises: List<Exercise>, controls: PickerControls, data: PickerData): PickerView {
+private fun pickerView(exercises: List<Exercise>, controls: PickerControls, data: PickerData, levels: Map<Muscle, FatigueLevel> = emptyMap()): PickerView {
     val favourites = controls.layoutFavourites ?: data.favouriteIds
-    return remember(exercises, controls.query, controls.filters, data, favourites) {
-        buildPickerView(exercises, controls.query, controls.filters, data.equipment, data.recentIds, favourites)
+    return remember(exercises, controls.query, controls.filters, data, favourites, levels) {
+        buildPickerView(exercises, controls.query, controls.filters, data.equipment, data.recentIds, favourites, levels)
     }
 }
 
@@ -227,12 +232,14 @@ fun ExercisePickerSheet(
     title: String = stringResource(R.string.picker_title_default),
     defaultMyGear: Boolean = true,
     topContent: (LazyListScope.() -> Unit)? = null,
+    /** Every muscle's fatigue level right now, from the live workout only; empty (the default) draws the picker as it was. */
+    fatigue: Map<Muscle, FatigueLevel> = emptyMap(),
 ) {
     val vm = rememberPickerViewModel()
     val data by vm.data.collectAsStateWithLifecycle()
     val controls = remember { PickerControls(defaultMyGear) }
     ReleaseLayoutFavourites(exercises, controls)
-    val view = pickerView(exercises, controls, data)
+    val view = pickerView(exercises, controls, data, fatigue)
     // Only computed when the list is already empty: a second catalogue pass,
     // run with MY GEAR off, is what proves the gear filter did the emptying.
     val gearHidAll = view.count == 0 &&
@@ -261,11 +268,22 @@ fun ExercisePickerSheet(
             PickerFilterBar(exercises, controls, data.equipment)
             Spacer(Modifier.height(12.dp))
         }
+        if (fatigue.isNotEmpty() && controls.query.isBlank()) {
+            item(key = "fatigue_note") {
+                Text(
+                    stringResource(R.string.picker_fatigue_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+        }
         exerciseRows(
             view, data, controls.query, gearHidAll, browse = false, onPick,
             { id, favourite -> controls.setFavourite(vm, data, id, favourite) },
             onNew = { controls.form = FormRequest(null, it) },
             onEdit = { controls.form = FormRequest(it, "") },
+            fatigue = fatigue,
         )
     }
     CustomExerciseHost(exercises, controls, vm, onCreated = onPick)
@@ -421,6 +439,7 @@ private fun LazyListScope.exerciseRows(
     onFavourite: (Long, Boolean) -> Unit,
     onNew: (String) -> Unit,
     onEdit: (Exercise) -> Unit,
+    fatigue: Map<Muscle, FatigueLevel> = emptyMap(),
 ) {
     val now = System.currentTimeMillis()
     // One Vault card per section, its rows divided by InkDivider. Each row is its own lazy item drawing its slice of
@@ -439,6 +458,7 @@ private fun LazyListScope.exerciseRows(
                     onPick = onPick,
                     onFavourite = { onFavourite(exercise.id, it) },
                     onEdit = { onEdit(exercise) },
+                    tired = FatigueAdvice.worstIn(exercise.name, fatigue)?.takeIf { FatigueAdvice.triggers(it.second) },
                 )
             }
         }
@@ -591,6 +611,7 @@ private fun PickerRow(
     onPick: (Exercise) -> Unit,
     onFavourite: (Boolean) -> Unit,
     onEdit: () -> Unit,
+    tired: Pair<Muscle, FatigueLevel>? = null,
 ) {
     val skill = Skills.forName(exercise.name)
     var showInfo by remember { mutableStateOf(false) }
@@ -636,6 +657,19 @@ private fun PickerRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (tired != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FatigueSwatch(tired.second)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.picker_row_tired, tired.first.label, levelWord(tired.second)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
             if (lastLine != null) {
                 Text(
                     stringResource(R.string.picker_row_last, lastLine),

@@ -6929,6 +6929,9 @@
     <string name="fatigue_adjust_group_description">%1$s: choose Keep, Lighten or Swap</string>
 
     <!-- Today's rest panel. -->
+    <!-- A picker row leaning on a tired muscle: %1$s the muscle ("Lower chest"), %2$s its level ("High"). -->
+    <string name="picker_row_tired">%1$s %2$s</string>
+    <string name="picker_fatigue_note">Fresh muscles first · from your fatigue right now</string>
     <string name="fatigue_rest_title">Most of today\'s muscles are still High</string>
     <!-- %1$s a muscle name, %2$s when it is fresh: "Quads Wed". -->
     <string name="fatigue_rest_level_item">%1$s %2$s</string>

@@ -3,7 +3,10 @@ package com.ironvellum.app.ui.components
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseSearch
+import com.ironvellum.app.domain.FatigueAdvice
+import com.ironvellum.app.domain.FatigueLevel
 import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleGroup
 
 /** What the picker's chips currently narrow the catalogue by. */
@@ -52,6 +55,7 @@ internal fun buildPickerView(
     equipment: Equipment?,
     recentIds: List<Long>,
     favouriteIds: Set<Long>,
+    levels: Map<Muscle, FatigueLevel> = emptyMap(),
 ): PickerView {
     val gear = if (filters.myGear) equipment else null
     val searching = query.isNotBlank()
@@ -68,6 +72,8 @@ internal fun buildPickerView(
         compareBy<Pair<Exercise, Int>>(
             { it.first.id !in favouriteIds },
             { if (searching) it.second else 0 },
+            // Fresh muscles first, unless a search is ranking by match; the rest of the order is as it was.
+            { if (searching) 0 else FatigueAdvice.worstIn(it.first.name, levels)?.second?.ordinal ?: 0 },
             { if (searching) 0 else it.first.muscleGroup.ordinal },
             { it.first.name },
         ),
