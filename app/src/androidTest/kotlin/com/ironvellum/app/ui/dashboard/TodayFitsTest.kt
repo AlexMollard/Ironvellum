@@ -106,6 +106,7 @@ class TodayFitsTest {
         onOpenRecap: (Long) -> Unit = {},
         onOpenReview: (String, Long) -> Unit = { _, _ -> },
         onDismissReview: (String) -> Unit = {},
+        report: com.ironvellum.app.domain.FatigueReport? = null,
     ) {
         // The ink treatment animates forever, so Compose never idles on its own. The Veil's own motion is
         // off unless a test asks for it: the emulator runs with system animations on, so it would not be.
@@ -119,6 +120,7 @@ class TodayFitsTest {
                             ui = ui, selectedDay = selectedDay, today = today, live = live, liveSets = liveSets,
                             bodyGap = bodyGap, strengthRank = "Iron", rankBreakdown = null, veil = glance,
                             actions = TodayActions(onOpenRecap = onOpenRecap, onOpenReview = onOpenReview, onDismissReview = onDismissReview), nowMs = now, motion = motion,
+                            report = report,
                         )
                     }
                 }
@@ -583,6 +585,71 @@ class TodayFitsTest {
         assertTrue("nothing to scroll", range.maxValue() > 0f)
         compose.onNodeWithText("Inscribe (3)").assertExists()
         compose.onNodeWithText("Add your height and weight").assertExists()
+    }
+
+    // ------------------------------------------------------------------------------------- fatigue advice
+
+    /** A Monday rite of real lifts, so the muscles they lean on are known. */
+    private fun fatigueRite(vararg lifts: String) = WorkoutPreset(
+        id = 1, name = "Push Strength", scheduledDay = 1,
+        entries = lifts.mapIndexed { i, l -> PresetEntry(id = i + 1L, exerciseId = i + 1L, exerciseName = l, targetSets = 3, targetReps = 8, position = i) },
+    )
+
+    private fun tiredReport(muscles: Collection<com.ironvellum.app.domain.Muscle>, dose: Double = 4.0) = com.ironvellum.app.domain.FatigueReport(
+        nowMs = now, newLifter = false,
+        contributions = muscles.associateWith {
+            listOf(com.ironvellum.app.domain.FatigueContribution(it, 1, now, "Weighted Dip", "", "weighted dip", dose, 0.0, false, false, 24.0))
+        },
+    )
+
+    @Test
+    fun theAdjustLineTakesRoomFromTheExerciseRowsAndNothingScrolls() {
+        val lifts = arrayOf("Bench Press", "Overhead Press", "Back Squat", "Barbell Row", "Pull-up", "Bicep Curl", "Lateral Raise", "Romanian Deadlift", "Plank")
+        show(
+            ui = DashboardUi(presets = listOf(fatigueRite(*lifts)), newPeaks = listOf(peak)),
+            selectedDay = 1, report = tiredReport(listOf(com.ironvellum.app.domain.Muscle.MID_CHEST)),
+        )
+        assertDoesNotScroll()
+        assertInside("Mid chest is still High")
+        assertInside("Adjust")
+        assertInside("Begin Push Strength")
+        assertInside("The Veil")
+        assertInside("more", substring = true)
+        // The exercise that leans on the muscle carries its name.
+        compose.onAllNodesWithText("Mid chest").assertCountEquals(1)
+        saveShot("today-adjust-fits")
+    }
+
+    @Test
+    fun aWornOutDayShowsTheRestPanelInsteadOfTheBeginButton() {
+        val rite = fatigueRite("Bench Press", "Overhead Press", "Lateral Raise")
+        val worn = (rite.entries.flatMap { com.ironvellum.app.domain.FatigueAdvice.mainMuscles(it.exerciseName) }).toSet()
+        show(ui = DashboardUi(presets = listOf(rite)), selectedDay = 1, report = tiredReport(worn, dose = 5.0))
+        assertDoesNotScroll()
+        assertInside("Most of today's muscles are still High")
+        assertInside("Rest today")
+        assertInside("Begin Push Strength anyway")
+        compose.onAllNodesWithText("Begin Push Strength").assertCountEquals(0)
+        compose.onAllNodesWithText("Mid chest is still High").assertCountEquals(0)
+        saveShot("today-rest-fits")
+    }
+
+    @Test
+    fun withFatigueAdviceOffTodayLooksAsItDid() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val before = com.ironvellum.app.data.FatigueAdviceSetting.enabled
+        com.ironvellum.app.data.FatigueAdviceSetting.setEnabled(context, false)
+        try {
+            show(
+                ui = DashboardUi(presets = listOf(fatigueRite("Bench Press", "Overhead Press"))),
+                selectedDay = 1, report = tiredReport(listOf(com.ironvellum.app.domain.Muscle.MID_CHEST), dose = 9.0),
+            )
+            compose.onAllNodesWithText("is still", substring = true).assertCountEquals(0)
+            compose.onAllNodesWithText("Adjust").assertCountEquals(0)
+            assertInside("Begin Push Strength")
+        } finally {
+            com.ironvellum.app.data.FatigueAdviceSetting.setEnabled(context, before)
+        }
     }
 
     private companion object {

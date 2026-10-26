@@ -137,6 +137,22 @@ import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.components.FirstUseLine
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.toPlanned
+import androidx.compose.runtime.LaunchedEffect
+import com.ironvellum.app.data.FatigueAdviceDismissals
+import com.ironvellum.app.data.FatigueAdviceSetting
+import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.data.requestFor
+import com.ironvellum.app.domain.EntryAdjust
+import com.ironvellum.app.domain.FatigueAdvice
+import com.ironvellum.app.domain.FatigueReport
+import com.ironvellum.app.domain.FatigueSwap
+import com.ironvellum.app.domain.PresetEntry
+import com.ironvellum.app.domain.SessionOverride
+import com.ironvellum.app.ui.program.FatigueSwatch
+import com.ironvellum.app.ui.program.rememberFatigueReport
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.CappedFontScale
@@ -444,6 +460,43 @@ class DashboardViewModel(
     fun beginPreset(presetId: Long, onStarted: (Long) -> Unit) {
         viewModelScope.launchGuarded("begin ${Words.rite.s}") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
+
+    /** Begins [presetId] with today's [override] (Adjust on Today); the rite itself is not edited. */
+    fun beginAdjusted(presetId: Long, override: SessionOverride, onStarted: (Long) -> Unit) {
+        viewModelScope.launchGuarded("begin ${Words.rite.s}") { onStarted(repo.startSessionFromPreset(presetId, override)) }
+    }
+
+    /**
+     * The stand-in for each exercise in [leans], by routine entry id ([FatigueSwap.choose]); an exercise with none is
+     * left out. Empty until the lifter has told the app their gear, since a stand-in must be one they can do.
+     */
+    suspend fun fatigueSwaps(
+        context: android.content.Context,
+        leans: List<FatigueAdvice.Lean>,
+        routine: List<PresetEntry>,
+        report: FatigueReport,
+        atMs: Long,
+    ): Map<Long, EntryAdjust.Swap> = withContext(Dispatchers.Default) {
+        val answers = ProgramAnswersStore.get(context)
+        val equipment = answers?.equipment ?: ProgramAnswersStore.equipment.value ?: return@withContext emptyMap()
+        val sex = repo.observeBodyProfile().first().second
+        val request = answers.requestFor(equipment, sex, ui.value.presets.size)
+        val strength = repo.strengthProfile().copy(starter = repo.starterBasis(sex, request.volume))
+        val catalogue = repo.observeExercises().first()
+        val since = report.nowMs - RECENT_DAYS * 24L * 3_600_000L
+        val recent = repo.observeHistory().first()
+            .filter { (session, _) -> (session.completedAtMs ?: session.startedAtMs) >= since }
+            .flatMap { (_, sets) -> sets.filter { it.done }.map { it.exerciseName.trim().lowercase() } }
+            .toSet()
+        leans.mapNotNull { lean ->
+            FatigueSwap.choose(lean.entry, routine, report, atMs, catalogue, request, strength, recent)?.let { lean.entry.id to it }
+        }.toMap()
+    }
+
+    private companion object {
+        /** A lift done within this many days counts as recent when a swap is a tie. */
+        const val RECENT_DAYS = 28L
+    }
 }
 
 /**
@@ -563,6 +616,8 @@ fun DashboardScreen(
         }
     }
 
+    val fatigueReport = rememberFatigueReport()
+    val fatigueDismissals = remember(appContext) { FatigueAdviceDismissals(appContext) }
     TodayContent(
         ui = ui,
         selectedDay = selectedDay,
@@ -574,6 +629,8 @@ fun DashboardScreen(
         sexUnset = sexUnset,
         rankBreakdown = rankBreakdown,
         veil = veil,
+        report = fatigueReport,
+        fatigueDismissals = fatigueDismissals,
         actions = TodayActions(
             onStartSession = onStartSession,
             onOpenRite = onOpenRite,
@@ -593,6 +650,8 @@ fun DashboardScreen(
             onSelectDay = viewModel::selectDay,
             onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
             onBeginOpen = { viewModel.beginOpen(onStartSession) },
+            onBeginAdjusted = { presetId, override -> viewModel.beginAdjusted(presetId, override, onStartSession) },
+            swapsFor = { leans, routine, report, atMs -> viewModel.fatigueSwaps(appContext, leans, routine, report, atMs) },
         ),
     )
 
@@ -638,6 +697,10 @@ internal class TodayActions(
     val onSelectDay: (Int) -> Unit = {},
     val onBeginPreset: (Long) -> Unit = {},
     val onBeginOpen: () -> Unit = {},
+    /** Adjust today: begins the rite with this workout's changes. */
+    val onBeginAdjusted: (Long, SessionOverride) -> Unit = { _, _ -> },
+    /** The stand-ins the adjust sheet offers, by routine entry id: the leaning exercises, the routine, the report and when it is read. */
+    val swapsFor: suspend (List<FatigueAdvice.Lean>, List<PresetEntry>, FatigueReport, Long) -> Map<Long, EntryAdjust.Swap> = { _, _, _, _ -> emptyMap() },
 )
 
 /**
@@ -661,6 +724,10 @@ internal fun TodayContent(
     nowMs: Long = System.currentTimeMillis(),
     /** Whether the Veil may move; tests hand in false to keep Compose idle. */
     motion: Boolean = rememberTodayMotion(),
+    /** The fatigue estimate Today's advice reads; null shows none (and every test that does not ask for it). */
+    report: FatigueReport? = null,
+    /** "Not today" for the advice; null when there is nowhere to keep it. */
+    fatigueDismissals: FatigueAdviceDismissals? = null,
 ) {
     var rankOpen by remember { mutableStateOf(false) }
     var oathOpen by remember { mutableStateOf(false) }
@@ -794,7 +861,7 @@ internal fun TodayContent(
                             Modifier.fillMaxSize().then(swipe.content(page)).testTag("today-day-page-$day")
                                 .then(if (active) Modifier else Modifier.clearAndSetSemantics {}),
                         ) {
-                            TodayDayBody(ui, day, today, live, liveSets, bodyGap, veil, actions, nowMs, active)
+                            TodayDayBody(ui, day, today, live, liveSets, bodyGap, veil, actions, nowMs, active, report, fatigueDismissals)
                         }
                     }
                 }
@@ -819,6 +886,8 @@ private fun TodayDayBody(
     pageActions: TodayActions,
     nowMs: Long,
     displayed: Boolean,
+    report: FatigueReport?,
+    dismissals: FatigueAdviceDismissals?,
 ) {
     val actions = if (displayed) pageActions else TodayActions()
     val selectedPreset = ui.presets.firstOrNull { it.scheduledDay == selectedDay }
@@ -835,10 +904,19 @@ private fun TodayDayBody(
     val liveWork = liveSets.filter { !it.warmup }
     val liveDone = liveWork.count { it.done }
     val sealedSets = sealedTrial?.let { ui.sealedSets[it.id].orEmpty() }.orEmpty()
+    // What fatigue says about this day's rite: null when nothing, the setting is off, or "not today" was said.
+    val zone = remember { ZoneId.systemDefault() }
+    val adviceOn = FatigueAdviceSetting.enabled
+    val notToday = selectedPreset != null && dismissals?.isNotToday(today, selectedPreset.id) == true
+    val advice = remember(kind, selectedPreset, ui.presets, ui.weekDone, report, selectedDay, adviceOn, notToday) {
+        todayAdvice(kind, selectedPreset, ui.presets, ui.weekDone.values, report, selectedDay, zone, adviceOn, notToday)
+    }
+    var adjustOpen by remember { mutableStateOf(false) }
+    var adjustSwaps by remember { mutableStateOf<Map<Long, EntryAdjust.Swap>?>(null) }
     val cardRows: List<DayRow> = when (kind) {
         DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)
         DayKind.SEALED -> trialRows(sealedSets, ui.exercises, sealed = true)
-        DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries)
+        DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries, advice?.tags.orEmpty())
         DayKind.RESPITE, DayKind.NO_CYCLE -> emptyList()
     }
 
@@ -920,15 +998,41 @@ private fun TodayDayBody(
                         corner = { RiteGlyph(glyphSets, fit = true) },
                         cornerFits = true,
                     )
+                    // Fatigue, above the exercise lines: the line to adjust, or on a worn-out day the panel to rest.
+                    if (advice != null && report != null) {
+                        when (val a = advice.advice) {
+                            is FatigueAdvice.Today.Adjust -> FatigueAdviceLine(
+                                title = adjustTitle(advice, a),
+                                sub = adjustSub(advice, a, report, zone),
+                                level = a.level,
+                                onAdjust = if (kind == DayKind.BEGIN) ({ adjustOpen = true }) else null,
+                                modifier = Modifier.padding(top = 10.dp),
+                            )
+                            is FatigueAdvice.Today.Rest -> FatigueRestPanel(
+                                title = stringResource(R.string.fatigue_rest_title),
+                                sub = restSub(a, report, zone),
+                                fresh = restFresh(a, report, zone),
+                                doLabel = advice.other?.let { stringResource(R.string.fatigue_rest_do_button, it.name) },
+                                onDo = { advice.other?.let { actions.onBeginPreset(it.id) } },
+                                onRest = { dismissals?.dismissToday(today, rite.id) },
+                                modifier = Modifier.padding(top = 10.dp),
+                            )
+                            FatigueAdvice.Today.None -> Unit
+                        }
+                    }
                     rows()
                     // Today is where the day's rite is begun: Train only plans it.
                     if (kind == DayKind.BEGIN) {
                         Spacer(Modifier.height(BUTTON_GAP))
-                        IronvellumButton(
-                            label = stringResource(R.string.today_begin_button, rite.name),
-                            onClick = { actions.onBeginPreset(rite.id) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        if (advice?.advice is FatigueAdvice.Today.Rest) {
+                            QuietLink(stringResource(R.string.fatigue_rest_anyway, rite.name), { actions.onBeginPreset(rite.id) })
+                        } else {
+                            IronvellumButton(
+                                label = stringResource(R.string.today_begin_button, rite.name),
+                                onClick = { actions.onBeginPreset(rite.id) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
                 DayKind.RESPITE -> {
@@ -1051,6 +1155,36 @@ private fun TodayDayBody(
             VeilSection(veil, form, nowMs, actions.onOpenGarrison, onOpenCrest = actions.onOpenCrest, firstRun = firstRun, grow = grow)
         },
     )
+
+    // The adjust sheet lives out here, not in the card: the card is composed more than once to be measured.
+    val adjust = advice?.advice as? FatigueAdvice.Today.Adjust
+    if (adjustOpen && displayed && adjust != null && report != null && selectedPreset != null) {
+        LaunchedEffect(Unit) { adjustSwaps = actions.swapsFor(advice.leans, selectedPreset.entries, report, advice.atMs) }
+        adjustSwaps?.let { swaps ->
+            AdjustDialog(
+                rite = selectedPreset,
+                advice = advice,
+                adjust = adjust,
+                report = report,
+                zone = zone,
+                swaps = swaps,
+                onBegin = { override ->
+                    adjustOpen = false
+                    adjustSwaps = null
+                    actions.onBeginAdjusted(selectedPreset.id, override)
+                },
+                onNotToday = {
+                    dismissals?.dismissToday(today, selectedPreset.id)
+                    adjustOpen = false
+                    adjustSwaps = null
+                },
+                onDismiss = {
+                    adjustOpen = false
+                    adjustSwaps = null
+                },
+            )
+        }
+    }
 }
 
 /** An exercise line's height when there is room: one exercise, or two side by side. */
@@ -1387,6 +1521,13 @@ private fun ExerciseCell(row: DayRow, checkSlot: Dp, modifier: Modifier) {
                             .background(if (segment < row.done) IronvellumColors.Emerald else IronvellumColors.Rune),
                     )
                 }
+            }
+        }
+        row.fatigue?.let { tag ->
+            Row(Modifier.padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FatigueSwatch(tag.level)
+                Spacer(Modifier.width(4.dp))
+                Text(tag.muscle.label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.Caution, maxLines = 1)
             }
         }
         Text(

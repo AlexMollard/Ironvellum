@@ -6883,4 +6883,61 @@
     <!-- Settings > Data row. -->
     <string name="settings_data_twin_label">Move past sets to their own exercises</string>
     <string name="settings_data_twin_caption">Sets logged as Pull-up with weight, or Push-up with incline, move to Weighted Pull-up, Incline Push-up and the like.</string>
+    <!-- Fatigue advice: one switch in Settings > Training for the suggestions that read the fatigue estimate. -->
+    <string name="settings_training_fatigue_advice_label">Fatigue advice</string>
+    <string name="settings_training_fatigue_advice_caption">When a muscle is still tired, Today offers to go easier, the exercise picker marks tired muscles, and Optimise flags routines that keep starting tired. Nothing changes unless you tap it.</string>
+    <string name="settings_training_fatigue_advice_caption__t">When a muscle is still tired, Today offers to go easier, the exercise picker marks tired muscles, and Optimise flags rites that keep starting tired. Nothing changes unless you tap it.</string>
+
+    <!-- Today's adjust line. %1$s a muscle, %2$s its level word (High, Very high). -->
+    <string name="fatigue_advice_title_now">%1$s is still %2$s</string>
+    <string name="fatigue_advice_title_projected">%1$s is likely still %2$s</string>
+    <plurals name="fatigue_advice_leans">
+        <item quantity="one">%1$d exercise leans on it</item>
+        <item quantity="other">%1$d exercises lean on it</item>
+    </plurals>
+    <string name="fatigue_advice_projected">Projected</string>
+    <!-- Two parts of one quiet line, joined with a middle dot. -->
+    <string name="fatigue_advice_sub">%1$s · %2$s</string>
+    <string name="fatigue_advice_adjust_button">Adjust</string>
+    <string name="fatigue_advice_adjust_description">Adjust today\'s workout. %1$s</string>
+    <string name="fatigue_advice_adjust_description__t">Adjust today\'s trial. %1$s</string>
+
+    <!-- The adjust sheet. %1$s a muscle, %2$s its level, %3$s the day of the session behind it, %4$s the routine. -->
+    <string name="fatigue_adjust_title">Adjust today</string>
+    <string name="fatigue_adjust_caption">%1$s is still %2$s from %3$s. Only today\'s workout changes; %4$s stays as it is.</string>
+    <string name="fatigue_adjust_caption__t">%1$s is still %2$s from %3$s. Only today\'s trial changes; %4$s stays as it is.</string>
+    <string name="fatigue_adjust_keep">Keep</string>
+    <plurals name="fatigue_adjust_keep_caption">
+        <item quantity="one">%1$d set as planned</item>
+        <item quantity="other">%1$d sets as planned</item>
+    </plurals>
+    <string name="fatigue_adjust_lighten">Lighten</string>
+    <plurals name="fatigue_adjust_lighten_caption">
+        <item quantity="one">%1$d set, one more rep in reserve</item>
+        <item quantity="other">%1$d sets, one more rep in reserve</item>
+    </plurals>
+    <!-- %1$s the exercise swapped in. -->
+    <string name="fatigue_adjust_swap">Swap for %1$s</string>
+    <!-- %1$s the muscles the stand-in works, %2$s the tired muscle, lower case. -->
+    <string name="fatigue_adjust_swap_spares">%1$s; spares %2$s</string>
+    <string name="fatigue_adjust_swap_light">%1$s; %2$s only lightly</string>
+    <plurals name="fatigue_adjust_begin_changes">
+        <item quantity="one">Begin with %1$d change</item>
+        <item quantity="other">Begin with %1$d changes</item>
+    </plurals>
+    <string name="fatigue_adjust_not_today">Not today</string>
+    <string name="fatigue_adjust_group_description">%1$s: choose Keep, Lighten or Swap</string>
+
+    <!-- Today's rest panel. -->
+    <string name="fatigue_rest_title">Most of today\'s muscles are still High</string>
+    <!-- %1$s a muscle name, %2$s when it is fresh: "Quads Wed". -->
+    <string name="fatigue_rest_level_item">%1$s %2$s</string>
+    <string name="fatigue_rest_fresh_item">%1$s %2$s</string>
+    <string name="fatigue_rest_fresh_line">Fresh by %1$s</string>
+    <string name="fatigue_fresh_word_today">later today</string>
+    <string name="fatigue_fresh_word_tomorrow">tomorrow</string>
+    <string name="fatigue_fresh_word_over_week">over a week</string>
+    <string name="fatigue_rest_do_button">Do %1$s</string>
+    <string name="fatigue_rest_rest_button">Rest today</string>
+    <string name="fatigue_rest_anyway">Begin %1$s anyway</string>
 </resources>

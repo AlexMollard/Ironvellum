@@ -7,11 +7,8 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.requestFor
 import com.ironvellum.app.domain.PlannedPreset
-import com.ironvellum.app.domain.ProgramRequest
-import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
 import kotlinx.coroutines.Dispatchers
@@ -71,18 +68,7 @@ internal class OptimiseViewModel(
             val answers = ProgramAnswersStore.get(appContext)
             val equipment = answers?.equipment ?: ProgramAnswersStore.equipment.value ?: return@mapLatest OptimiseState.NeedsArmoury
             val strength = repo.strengthProfile().copy(starter = repo.starterBasis(sex, answers?.volume ?: VolumeLevel.STANDARD))
-            val request = ProgramRequest(
-                focus = answers?.focus ?: TrainingFocus.GENERAL,
-                volume = answers?.volume ?: VolumeLevel.STANDARD,
-                equipment = equipment,
-                daysPerWeek = answers?.daysPerWeek ?: saved.size.coerceIn(1, 6),
-                priorities = answers?.priorities.orEmpty(),
-                sex = sex,
-                split = answers?.split ?: TrainingSplit.forDays(answers?.daysPerWeek ?: saved.size.coerceIn(1, 6)),
-                compoundOnly = answers?.compoundOnly ?: false,
-                maxExercises = answers?.maxExercises ?: ProgramRules.DEFAULT_MAX_EXERCISES,
-                sessionMinutes = answers?.sessionMinutes ?: ProgramRules.DEFAULT_SESSION_MINUTES,
-            )
+            val request = answers.requestFor(equipment, sex, saved.size)
             OptimiseState.Ready(buildReport(OptimiseInput(saved, request, catalogue, strength)))
         }.flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OptimiseState.Loading)

@@ -104,18 +104,20 @@ internal data class DayRow(
     val checked: Boolean,
     /** A warm-up exercise: read as one, and not a movement of the rite's count. */
     val warmup: Boolean = false,
+    /** A muscle this exercise leans on that is still High or above: its swatch and name ride the line. */
+    val fatigue: FatigueTag? = null,
 ) {
     /** Some sets logged but not all: a mini bar rides the value. */
     val partly: Boolean get() = done in 1 until total
 }
 
-/** The rite's own movements, nothing logged yet; its warm-ups lead, marked as such. */
-internal fun plannedRows(entries: List<PresetEntry>): List<DayRow> =
+/** The rite's own movements, nothing logged yet; its warm-ups lead, marked as such. [tags] mark the exercises (by entry id) that lean on a tired muscle. */
+internal fun plannedRows(entries: List<PresetEntry>, tags: Map<Long, FatigueTag> = emptyMap()): List<DayRow> =
     entries.sortedWith(compareBy<PresetEntry>({ !it.warmup }, { it.position })).map {
         if (it.warmup) {
             DayRow(it.exerciseName, "Warm-up", done = 0, total = it.targetSets, checked = false, warmup = true)
         } else {
-            DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false)
+            DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false, fatigue = tags[it.id])
         }
     }
 
@@ -213,8 +215,12 @@ internal const val PAIR_NAME_CHARS = 13
 /** The most characters a sets text may have to share a line ("3 × 8–12" is 8, "3 × 6–10 s" is 10). */
 internal const val PAIR_VALUE_CHARS = 9
 
-/** The character rule for a half-width cell: short name, short sets text. The measured width is the second test. */
-internal fun fitsHalfLine(row: DayRow): Boolean = row.name.length <= PAIR_NAME_CHARS && row.value.length <= PAIR_VALUE_CHARS
+/**
+ * The character rule for a half-width cell: short name, short sets text. The measured width is the second test. An
+ * exercise carrying a fatigue tag (swatch and muscle name) always takes a line of its own.
+ */
+internal fun fitsHalfLine(row: DayRow): Boolean =
+    row.fatigue == null && row.name.length <= PAIR_NAME_CHARS && row.value.length <= PAIR_VALUE_CHARS
 
 /**
  * The card's exercises as lines, in routine order. Two consecutive exercises that both pass [fitsHalf] share

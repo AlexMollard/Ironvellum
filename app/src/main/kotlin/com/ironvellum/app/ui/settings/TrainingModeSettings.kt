@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.FatigueAdviceSetting
 import com.ironvellum.app.data.LiftingExperienceSetting
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.WarmupStore
@@ -114,5 +115,12 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
         )
         Spacer(Modifier.height(8.dp))
         SettingsCaption(stringResource(R.string.settings_training_experience_caption))
+        Spacer(Modifier.height(16.dp))
+        SettingsSwitchRow(
+            label = stringResource(R.string.settings_training_fatigue_advice_label),
+            caption = UiText.themed(R.string.settings_training_fatigue_advice_caption, R.string.settings_training_fatigue_advice_caption__t).asString(),
+            checked = FatigueAdviceSetting.enabled,
+            onCheckedChange = { FatigueAdviceSetting.setEnabled(context.applicationContext, it) },
+        )
     }
 }

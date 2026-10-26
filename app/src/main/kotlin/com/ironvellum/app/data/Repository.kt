@@ -24,6 +24,7 @@ import com.ironvellum.app.data.db.OwnedCrestFrameEntity
 import com.ironvellum.app.data.db.PresetDao
 import com.ironvellum.app.data.db.PresetEntity
 import com.ironvellum.app.data.db.PresetEntryEntity
+import com.ironvellum.app.data.db.PresetWithEntries
 import com.ironvellum.app.data.db.ProfileDao
 import com.ironvellum.app.data.db.ProfileEntity
 import com.ironvellum.app.data.db.SessionDao
@@ -98,6 +99,7 @@ import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.RiteSwap
+import com.ironvellum.app.domain.SessionOverride
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.modifiersAfterLoadChange
 import com.ironvellum.app.domain.CarryEdits
@@ -250,6 +252,8 @@ class Repository(
     private val loadKit: suspend () -> LoadKit = { LoadKit.NONE },
     /** Told when a finished workout is sealed, changed or removed, after the write has committed. */
     private val writeBack: SessionWriteBack? = null,
+    /** How each workout differed from its routine (Today's fatigue advice); remembered past the process. */
+    private val adjustments: SessionAdjustments = SessionAdjustments.None,
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -1077,7 +1081,7 @@ class Repository(
         val mode = trainingMode()
         val rows = sessionDao.setsFor(sessionId)
         val nth = nthOfBlocks(rows)
-        return entriesByBlock(rows, pw.working).mapNotNull { (block, entry) ->
+        return entriesByBlock(rows, beganWith(sessionId, pw)).mapNotNull { (block, entry) ->
             suggestionFor(entry, exerciseDao.byId(entry.exerciseId), mode, nth[block] ?: 0)
                 ?.let { ResolvedSuggestion(block, it) }
         }
@@ -1215,9 +1219,23 @@ class Repository(
      * Starts a trial from a rite on exactly the figures the rite writes: every set's load, reps, count and scheme.
      * Nothing the progression engine thinks is applied; what it would change is offered on the block
      * ([trialSuggestions]) for the lifter to accept.
+     *
+     * [override] changes this one workout (a swapped lift, a lightened exercise): its entries start as
+     * [SessionOverride.applyTo] makes them and the rite itself is never written. It is remembered under the new
+     * session ([beganWith]) so what the workout was meant to be can be read back, and the end-of-workout offer to
+     * update the rite stays quiet about changes the lifter chose here.
      */
-    suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
-        claimLiveSession()?.let { return@withTransaction it }
+    suspend fun startSessionFromPreset(presetId: Long, override: SessionOverride = SessionOverride.NONE): Long {
+        var resumed = false
+        val sessionId = db.withTransaction {
+            claimLiveSession()?.let { resumed = true; return@withTransaction it }
+            startFromPreset(presetId, override)
+        }
+        if (!resumed) adjustments.put(sessionId, override)
+        return sessionId
+    }
+
+    private suspend fun startFromPreset(presetId: Long, override: SessionOverride): Long {
         val pw = presetDao.presetWithEntries(presetId) ?: error("${Words.rite.c} $presetId not found")
         val sessionId = sessionDao.insertSession(
             SessionEntity(
@@ -1230,10 +1248,11 @@ class Repository(
         )
         // A warm-up exercise is not a set row: it is ticked in the trial's warm-up step, so it never reaches the log,
         // the score, the records or the progression, and the worked entries are numbered without it.
-        val exerciseById = exerciseDao.let { dao -> pw.working.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
+        val working = pw.working.map { it.under(override) }
+        val exerciseById = exerciseDao.let { dao -> working.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
             .associateBy { it.id }
 
-        val ordered = pw.working.sortedBy { it.position }
+        val ordered = working.sortedBy { it.position }
         // Only entries that really are neighbours start the trial as a superset.
         val groups = Supersets.effective(ordered.map { it.supersetGroup })
         val sets = ordered.flatMapIndexed { entryPos, entry ->
@@ -1275,7 +1294,29 @@ class Repository(
             }
         }
         sessionDao.insertSets(sets)
-        sessionId
+        return sessionId
+    }
+
+    /** This entry as [override] makes it for one workout; the entry itself is a row of the rite and is never written. */
+    private suspend fun PresetEntryEntity.under(override: SessionOverride): PresetEntryEntity {
+        if (override.entries[id] == null) return this
+        val entry = PresetEntry(
+            id = id, exerciseId = exerciseId, targetSets = targetSets, targetReps = targetReps, targetWeightKg = targetWeightKg,
+            modifiers = modifiers, position = position, supersetGroup = supersetGroup, scheme = SetScheme.decode(setScheme), warmup = warmup,
+        )
+        val lift = override.entries.getValue(id).swap?.exerciseId ?: exerciseId
+        val counted = runCatching { ExerciseMetric.valueOf(exerciseDao.byId(lift)?.metric ?: "REPS") }.getOrDefault(ExerciseMetric.REPS) == ExerciseMetric.REPS
+        val out = override.applyTo(entry, counted)
+        return copy(
+            exerciseId = out.exerciseId, targetSets = out.targetSets, targetReps = out.targetReps, targetWeightKg = out.targetWeightKg,
+            modifiers = out.modifiers, setScheme = out.scheme.normalised().encode(),
+        )
+    }
+
+    /** The working entries session [sessionId] began from: [pw]'s own, as that workout's [SessionOverride] changed them. */
+    private suspend fun beganWith(sessionId: Long, pw: PresetWithEntries): List<PresetEntryEntity> {
+        val override = adjustments.get(sessionId)
+        return pw.working.map { it.under(override) }
     }
 
     /** The lift as the scheme planner rounds loads for it: its step, the vest and belt it is worn with, the body it adds to. */
@@ -1464,7 +1505,7 @@ class Repository(
     /** The block's own rite scheme in the trial's rite, or Straight when there is none. */
     private suspend fun presetScheme(sessionId: Long, block: BlockKey): SetScheme {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return SetScheme()
-        val working = presetDao.presetWithEntries(presetId)?.working ?: return SetScheme()
+        val working = presetDao.presetWithEntries(presetId)?.let { beganWith(sessionId, it) } ?: return SetScheme()
         val entry = entriesByBlock(sessionDao.setsFor(sessionId), working)[block]
         return SetScheme.decode(entry?.setScheme)
     }
@@ -1492,7 +1533,7 @@ class Repository(
     /** The rite scheme of each block of the trial that has one, for the trial's labels; a lift with none is left out. */
     suspend fun trialSchemes(sessionId: Long): Map<BlockKey, SetScheme> {
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
-        val working = presetDao.presetWithEntries(presetId)?.working.orEmpty()
+        val working = presetDao.presetWithEntries(presetId)?.let { beganWith(sessionId, it) }.orEmpty()
         return entriesByBlock(sessionDao.setsFor(sessionId), working).mapNotNull { (block, entry) ->
             SetScheme.decode(entry.setScheme).takeIf { !it.isStraight || it.workingReps != null }?.let { block to it }
         }.toMap()
@@ -2033,7 +2074,7 @@ class Repository(
         quest: Boolean,
     ): Xp.TrialFacts {
         val planned = session.presetId?.let { pid ->
-            presetDao.presetWithEntries(pid)?.working
+            presetDao.presetWithEntries(pid)?.let { beganWith(session.id, it) }
                 ?.groupBy { it.exerciseId }
                 ?.mapValues { (_, rows) -> rows.sumOf { it.targetSets } }
         }
@@ -2149,7 +2190,7 @@ class Repository(
         val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
         val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
         return buildMap {
-            pw.working.sortedBy { it.position }.filter { it.targetReps > 0 }.forEach { putIfAbsent(it.exerciseId, it.targetReps) }
+            beganWith(sessionId, pw).sortedBy { it.position }.filter { it.targetReps > 0 }.forEach { putIfAbsent(it.exerciseId, it.targetReps) }
         }
     }
 
@@ -2175,8 +2216,10 @@ class Repository(
         val session = sessionDao.byId(sessionId)?.takeIf { it.completedAtMs != null } ?: return null
         val pw = session.presetId?.let { presetDao.presetWithEntries(it) } ?: return null
         val catalogue = exerciseDao.observeAll().first().associateBy { it.id }
+        // What the workout was meant to be: the rite's entries as the override chosen at its start changed them, so a
+        // swap or a lightened exercise picked on Today is not offered back as an edit to the rite.
         // A warm-up exercise is never offered a change: it was not worked, so the trial says nothing about it.
-        val entries = pw.working.sortedBy { it.position }.map { e ->
+        val entries = beganWith(sessionId, pw).sortedBy { it.position }.map { e ->
             PresetEntry(
                 id = e.id,
                 exerciseId = e.exerciseId,
@@ -2205,9 +2248,11 @@ class Repository(
                 supersetGroup = s.supersetGroup,
             )
         }
+        // A lift swapped in at the start stands in a rite entry that is another lift: its figures are no edit to that entry.
+        val swappedIn = adjustments.get(sessionId).entries.filterValues { it.swap != null }.keys
         val changes = RoutineUpdate.propose(entries, sets) { id ->
             catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
-        }
+        }.filter { it.before.id !in swappedIn }
         val swaps = RiteSwap.detect(entries, sets) { id ->
             catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
         }
@@ -2215,7 +2260,7 @@ class Repository(
             catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
         }
         val additions = RoutineUpdate.additions(
-            riteIds = pw.entries.map { it.exerciseId }.toSet(),
+            riteIds = pw.entries.map { it.exerciseId }.toSet() + entries.map { it.exerciseId },
             sets = sets,
             excluded = swaps.map { it.toId }.toSet(),
             metricOf = metricOf,

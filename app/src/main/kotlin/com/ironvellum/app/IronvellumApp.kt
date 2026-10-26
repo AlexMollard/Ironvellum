@@ -49,6 +49,7 @@ class IronvellumApp : Application() {
         Repository(
             database, healthSync, PrefsHighestBandStore(this), writeBack = healthWriteBack,
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
+            adjustments = com.ironvellum.app.data.PrefsSessionAdjustments(getSharedPreferences("suggestion_dismissals", MODE_PRIVATE)),
         )
     }
 
@@ -83,6 +84,7 @@ class IronvellumApp : Application() {
         com.ironvellum.app.data.ReviewDismissals.init(this) // Which reviews were closed on Today, before it draws.
         com.ironvellum.app.data.EffortSetting.init(this) // And whether effort is asked for, before the trial screen reads it.
         com.ironvellum.app.data.LiftingExperienceSetting.init(this) // And how long they have lifted, before the fatigue estimate reads it.
+        com.ironvellum.app.data.FatigueAdviceSetting.init(this) // And whether fatigue may advise, before Today reads it.
         // Which vocabulary to print, decided before the database file or any screen exists: a lifter who already has a database keeps
         // the themed names, a fresh install starts plain. Must run before DbSnapshot or Room can create the file.
         Words.init(

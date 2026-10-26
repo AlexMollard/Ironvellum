@@ -7,7 +7,9 @@ import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.MuscleArea
+import com.ironvellum.app.domain.ProgramRequest
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.VolumeLevel
@@ -35,6 +37,26 @@ data class ProgramAnswers(
     /** Minutes one workout may take: 45, 60, 75 or 90. */
     val sessionMinutes: Int = ProgramRules.DEFAULT_SESSION_MINUTES,
 )
+
+/**
+ * The generator request for a lifter with [equipment], who answered [answers] (null: the defaults) and has [presetCount]
+ * saved rites. Optimise and Today's fatigue swap rank movements against the same request.
+ */
+fun ProgramAnswers?.requestFor(equipment: Equipment, sex: Sex, presetCount: Int): ProgramRequest {
+    val days = this?.daysPerWeek ?: presetCount.coerceIn(1, 6)
+    return ProgramRequest(
+        focus = this?.focus ?: TrainingFocus.GENERAL,
+        volume = this?.volume ?: VolumeLevel.STANDARD,
+        equipment = equipment,
+        daysPerWeek = days,
+        priorities = this?.priorities.orEmpty(),
+        sex = sex,
+        split = this?.split ?: TrainingSplit.forDays(days),
+        compoundOnly = this?.compoundOnly ?: false,
+        maxExercises = this?.maxExercises ?: ProgramRules.DEFAULT_MAX_EXERCISES,
+        sessionMinutes = this?.sessionMinutes ?: ProgramRules.DEFAULT_SESSION_MINUTES,
+    )
+}
 
 /**
  * Process-wide store over SharedPreferences ("program_answers"). Enum names
