@@ -915,7 +915,7 @@ private fun TodayDayBody(
                         narrator = narratorLine(kind, daysKept = daysKept),
                         meta = AnnotatedString(
                             (if (isTodaySelected) UiText.themed(R.string.today_meta_todays, R.string.today_meta_todays__t).asString() else dayLong(selectedDay)) + " · " +
-                                sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))),
+                                sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite))),
                         ),
                         corner = { RiteGlyph(glyphSets, fit = true) },
                         cornerFits = true,

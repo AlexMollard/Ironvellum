@@ -28,8 +28,17 @@ object SessionClock {
         null -> saved ?: TrainingFocus.MUSCLE
     }
 
-    /** Most recent usable sessions a pace is read from: it tracks the lifter as he changes. */
-    const val PACE_WINDOW = 10
+    /** Most recent usable sessions a pace is read from: it tracks the lifter as he gets faster. */
+    const val PACE_WINDOW = 5
+
+    /**
+     * A session counts towards a routine's own pace only when its done exercises
+     * cover this share of the routine's current exercises (2/3, as a fraction so
+     * the comparison stays in integers): a rebuilt routine keeps its id, and the
+     * sessions of what it used to be say nothing about what it is now.
+     */
+    private const val COVER_NUM = 2
+    private const val COVER_DEN = 3
 
     /** Fewer usable sessions than this and the pace falls back a level. */
     const val PACE_MIN_SESSIONS = 2
@@ -70,23 +79,46 @@ object SessionClock {
         return if (sorted.size % 2 == 1) sorted[mid] else (sorted[mid - 1] + sorted[mid]) / 2
     }
 
-    /** The lifter's measured pace: overall, and per preset where that preset has enough sessions. */
-    data class Pace(val overall: Int? = null, val byPreset: Map<Long, Int> = emptyMap()) {
+    /** Whether [sets] did at least 2/3 of the exercises in [exerciseIds] (by exercise id). */
+    private fun covers(sets: List<SessionSet>, exerciseIds: Set<Long>): Boolean {
+        if (exerciseIds.isEmpty()) return false
+        val done = sets.filter { it.done }.mapTo(HashSet()) { it.exerciseId }
+        return exerciseIds.count { it in done } * COVER_DEN >= exerciseIds.size * COVER_NUM
+    }
+
+    /**
+     * The lifter's measured pace: overall, and the sessions of each routine so
+     * a routine's own pace can be read against what it holds now.
+     */
+    data class Pace(
+        val overall: Int? = null,
+        val byPreset: Map<Long, List<Pair<WorkoutSession, List<SessionSet>>>> = emptyMap(),
+    ) {
         /**
-         * Seconds per set for a session of [presetId]: that preset's own pace,
-         * else the lifter's overall pace, else null (the caller's rule-based
-         * figure).
+         * Seconds per set for a session of [presetId], a routine that now holds
+         * [exerciseIds]: the median of its own sessions that cover at least 2/3 of
+         * those exercises, when [PACE_MIN_SESSIONS] or more do; else the lifter's
+         * overall pace; else null (the caller's rule-based figure). Every caller
+         * reads it through here, so the plan line, Today, Train, the widget and
+         * the live trial agree.
          */
-        fun secondsPerSet(presetId: Long?): Int? = presetId?.let { byPreset[it] } ?: overall
+        fun secondsPerSet(presetId: Long?, exerciseIds: Set<Long>): Int? {
+            val own = presetId?.let { byPreset[it] }
+                ?.filter { covers(it.second, exerciseIds) }
+                ?.let { medianPace(it) }
+            return own ?: overall
+        }
+
+        /** [secondsPerSet] for a routine as it stands now (warm-ups are not part of it). */
+        fun secondsPerSet(preset: WorkoutPreset?): Int? =
+            secondsPerSet(preset?.id, preset?.working.orEmpty().mapTo(HashSet()) { it.exerciseId })
     }
 
     fun pace(history: List<Pair<WorkoutSession, List<SessionSet>>>): Pace = Pace(
         overall = medianPace(history),
         byPreset = history
             .filter { it.first.presetId != null }
-            .groupBy { it.first.presetId!! }
-            .mapNotNull { (id, sessions) -> medianPace(sessions)?.let { id to it } }
-            .toMap(),
+            .groupBy { it.first.presetId!! },
     )
 
     /**

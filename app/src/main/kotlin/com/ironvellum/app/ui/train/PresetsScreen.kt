@@ -341,7 +341,7 @@ fun PresetsScreen(
                             isToday && focus is TrainFocus.Live -> stringResource(R.string.presets_row_under_way)
                             isToday -> stringResource(R.string.presets_row_today)
                             // "~54 min": the tail of the rite's plan line.
-                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
+                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset))
                                 .substringAfterLast(" · ").lowercase()
                         },
                         style = MaterialTheme.typography.bodySmall,

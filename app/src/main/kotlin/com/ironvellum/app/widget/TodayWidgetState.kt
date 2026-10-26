@@ -293,11 +293,11 @@ internal suspend fun loadWidgetState(context: android.content.Context, repo: Rep
             repo.observeProfile().first()?.trainingMode,
         )
         val recent = completed.sortedByDescending { it.completedAtMs ?: 0L }
-            .take(SessionClock.PACE_WINDOW * 2)
+            .take(SessionClock.PACE_WINDOW * 4)
             .mapNotNull { s -> (sets[s.id] ?: repo.observeWorkout(s.id).first()?.second)?.let { s to it } }
         val pace = SessionClock.pace(recent)
         estimate = { preset ->
-            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset.id)))
+            SessionClock.minutes(SessionClock.planSeconds(preset.toPlanned().entries, focus, pace.secondsPerSet(preset)))
         }
     }
     val catalogue = repo.observeExercises().first()

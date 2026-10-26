@@ -153,6 +153,79 @@ class SessionClockTest {
         assertEquals(200, SessionClock.medianPace(older + recent))
     }
 
+    /** A finished session of [pace] s/set over [done] done sets spread across [exerciseIds]. */
+    private fun ofPace(
+        startMs: Long,
+        pace: Int,
+        done: Int,
+        presetId: Long?,
+        exerciseIds: List<Long>,
+    ): Pair<WorkoutSession, List<SessionSet>> =
+        WorkoutSession(
+            presetId = presetId,
+            label = "Push",
+            startedAtMs = startMs,
+            completedAtMs = startMs + pace.toLong() * done * 1000,
+        ) to List(done) { i ->
+            SessionSet(exerciseId = exerciseIds[i % exerciseIds.size], exerciseName = "x", setIndex = i, reps = 8, done = true)
+        }
+
+    @Test
+    fun `a rebuilt routine reads only the sessions that match what it holds now`() {
+        val routine = (1L..6L).toList()
+        val a = 10L
+        // The owner's shape, newest first: s/set, done sets, routine, exercises done.
+        val history = listOf(
+            ofPace(9_000_000_000, 158, 17, a, routine),
+            ofPace(8_000_000_000, 170, 17, 11, routine),
+            ofPace(7_000_000_000, 202, 15, 12, listOf(1L, 2L, 3L)),
+            ofPace(6_000_000_000, 187, 16, null, routine),
+            ofPace(5_000_000_000, 360, 15, a, listOf(1L, 2L, 3L)),
+            ofPace(4_000_000_000, 230, 16, null, routine),
+            ofPace(3_000_000_000, 224, 16, null, routine),
+            ofPace(2_000_000_000, 315, 15, a, listOf(1L, 2L, 3L)),
+            ofPace(1_900_000_000, 236, 16, null, routine),
+            ofPace(1_800_000_000, 265, 15, a, listOf(1L, 2L)),
+        )
+        val pace = SessionClock.pace(history)
+        // The newest five (158, 170, 202, 187, 360) have the median 187.
+        assertEquals(187, pace.overall)
+        // Routine A: one session matches, 3/6 and 2/6 do not reach 2/3, so the overall pace.
+        assertEquals(187, pace.secondsPerSet(a, routine.toSet()))
+        // Routine C did 3 of its 8 exercises: no match either.
+        assertEquals(187, pace.secondsPerSet(12, (1L..8L).toSet()))
+        // A routine holding none of what the sessions did, or nothing, reads the overall pace.
+        assertEquals(187, pace.secondsPerSet(a, setOf(7L, 8L)))
+        assertEquals(187, pace.secondsPerSet(a, emptySet()))
+        // 4 of 6 is exactly 2/3: it matches.
+        val four = history + ofPace(1_700_000_000, 100, 12, a, listOf(1L, 2L, 3L, 4L)) +
+            ofPace(1_600_000_000, 140, 12, a, listOf(1L, 2L, 3L, 4L, 5L))
+        // Only A's sessions covering 2/3 of {1..6}: the 158 full match is newest, then 100 and 140.
+        assertEquals(140, SessionClock.pace(four).secondsPerSet(a, routine.toSet()))
+        // Two full matches: their own median, whatever the overall pace is.
+        val own = history + ofPace(1_000_000_000, 150, 17, 13, routine) + ofPace(900_000_000, 190, 17, 13, routine)
+        assertEquals(170, SessionClock.pace(own).secondsPerSet(13, routine.toSet()))
+        assertEquals(187, SessionClock.pace(own).overall)
+        // Push-Strength-like: 17 sets at 187 s is about 53 min, not 82.
+        val day = listOf(PlannedEntry(exerciseName = "Bench Press", sets = 17, reps = 5, targetWeightKg = null))
+        assertEquals("1 EXERCISE · 17 SETS · ~53 MIN", SessionClock.planLine(day, TrainingFocus.STRENGTH, pace.secondsPerSet(a, routine.toSet())))
+    }
+
+    @Test
+    fun `a routine's pace reads its current working entries`() {
+        val entries = (1L..6L).map { PresetEntry(exerciseId = it, targetSets = 3, targetReps = 8) } +
+            PresetEntry(exerciseId = 99, targetSets = 1, targetReps = 10, warmup = true)
+        val preset = WorkoutPreset(id = 4, name = "Push Strength", entries = entries)
+        val sessions = listOf(
+            ofPace(3_000_000_000, 150, 17, 4, (1L..6L).toList()),
+            ofPace(2_000_000_000, 190, 17, 4, (1L..6L).toList()),
+            ofPace(1_000_000_000, 300, 17, null, (1L..6L).toList()),
+        )
+        val pace = SessionClock.pace(sessions)
+        assertEquals(170, pace.secondsPerSet(preset))
+        assertEquals(190, pace.secondsPerSet(null as WorkoutPreset?))
+    }
+
     @Test
     fun `a preset's own pace outranks the lifter's, which outranks the rules`() {
         val history = listOf(
@@ -163,12 +236,14 @@ class SessionClockTest {
         )
         val pace = SessionClock.pace(history)
         // Preset 1: two sessions at 300 s/set.
-        assertEquals(300, pace.secondsPerSet(1))
+        // (The sessions all did exercise 1, the one exercise these presets hold.)
+        val held = setOf(1L)
+        assertEquals(300, pace.secondsPerSet(1, held))
         // Preset 2 has one session: the lifter's median over all four (300, 300, 120, 150).
-        assertEquals(225, pace.secondsPerSet(2))
-        assertEquals(225, pace.secondsPerSet(null))
+        assertEquals(225, pace.secondsPerSet(2, held))
+        assertEquals(225, pace.secondsPerSet(null, held))
         // No history: null, and the estimate falls back to the rule figure.
-        assertEquals(null, SessionClock.pace(emptyList()).secondsPerSet(1))
+        assertEquals(null, SessionClock.pace(emptyList()).secondsPerSet(1, held))
         val sets = listOf(deadlift(done = true), deadlift(), curl())
         assertEquals(220 + 100, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, null))
         assertEquals(2 * 225, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, 225))

@@ -440,11 +440,13 @@ class SessionViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SessionClock.focusFor(savedFocus, null))
 
     /**
-     * The lifter's own seconds per set for this session: this preset's pace,
-     * else his overall pace, else null (the rule-based figure).
+     * The lifter's own seconds per set for this session: this routine's pace
+     * (its matching sessions, as it stands now), else his overall pace, else null
+     * (the rule-based figure). The same [SessionClock.Pace.secondsPerSet] the plan
+     * line reads, so the trial's estimate matches the card's.
      */
-    val pace: StateFlow<Int?> = combine(repo.observeHistory(), repo.observeSession(sessionId)) { history, session ->
-        SessionClock.pace(history).secondsPerSet(session?.presetId)
+    val pace: StateFlow<Int?> = combine(repo.observeHistory(), repo.observeSession(sessionId), repo.observePresets()) { history, session, presets ->
+        SessionClock.pace(history).secondsPerSet(presets.firstOrNull { it.id == session?.presetId })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
