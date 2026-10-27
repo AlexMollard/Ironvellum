@@ -1312,12 +1312,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 30,
-        format('schema_version() reports %s, not 30 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 31,
+        format('schema_version() reports %s, not 31 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 30,
+        (select public.schema_version()) = 31,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -2482,9 +2482,11 @@ begin
     perform assert_true(refused_as(owner_id, format('update session_set_details set kind = ''x'' where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update session_set_details set rpe = 4 where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update session_set_details set rpe = 11 where user_id = %L', owner_id), array['23514'])
-        and refused_as(owner_id, format('update web_snapshots set size_bytes = 2097153 where user_id = %L', owner_id), array['23514'])
-        and refused_as(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 2097153)), size_bytes = 2 where user_id = %L', owner_id), array['23514']),
+        and refused_as(owner_id, format('update web_snapshots set size_bytes = 4194305 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 4194303)), size_bytes = 2 where user_id = %L', owner_id), array['23514']),
         'invalid detail or oversized snapshot accepted');
+    perform must_run(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 4194302)), size_bytes = 4194304 where user_id = %L', owner_id), 'a snapshot exactly at the 4 MiB limit was rejected');
+    perform must_run(owner_id, format('update web_snapshots set snapshot = ''{}'', size_bytes = 2 where user_id = %L', owner_id), 'cannot restore snapshot fixture');
     perform assert_true(refused_as(owner_id, format('update imported_session_sets set kind = ''x'' where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update imported_session_sets set rpe = 4 where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update imported_session_sets set rpe = 11 where user_id = %L', owner_id), array['23514'])

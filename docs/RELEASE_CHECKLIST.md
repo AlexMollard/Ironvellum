@@ -60,9 +60,9 @@ is upgraded in place: a schema change edits the baseline, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` in `Cloud.kt` together,
 and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
 baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
-project is at schema 29 (crests patch applied 2026-10-15); the owner must
-apply `supabase/hosted/2026-10-23-web-viewer.sql` to reach schema 30 before
-shipping the build that requires it.
+project is at schema 30; the owner must apply
+`supabase/hosted/2026-10-28-web-snapshot-cap.sql` to reach schema 31 before
+shipping the build that uploads snapshots under the 4 MiB cap.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

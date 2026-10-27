@@ -25,6 +25,7 @@ class HostedPatchTest {
         "2026-10-02-release.sql",
         "2026-10-09-crests.sql",
         "2026-10-23-web-viewer.sql",
+        "2026-10-28-web-snapshot-cap.sql",
     )
 
     private val root: File = run {
@@ -104,7 +105,7 @@ class HostedPatchTest {
         val patch = sql("supabase/hosted/2026-10-23-web-viewer.sql")
         val baseline = sql("supabase/migrations/0001_baseline.sql")
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
-        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(patch)!!.groupValues[1].toInt())
+        assertEquals(30, beacon.find(patch)!!.groupValues[1].toInt())
         assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(baseline)!!.groupValues[1].toInt())
         val tables = listOf("session_set_details", "imported_sessions", "imported_session_sets", "web_snapshots")
         val create = Regex("""create table if not exists\s+(?:public\.)?(\w+)""", RegexOption.IGNORE_CASE)
@@ -113,5 +114,13 @@ class HostedPatchTest {
         for (table in tables) {
             assertTrue("baseline missing $table", create.findAll(baseline).any { it.groupValues[1] == table })
         }
+    }
+
+    @Test
+    fun `the snapshot cap patch carries the current schema beacon`() {
+        val patch = sql("supabase/hosted/2026-10-28-web-snapshot-cap.sql")
+        val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
+        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(patch)!!.groupValues[1].toInt())
+        assertTrue("web_snapshots_size_cap" in patch)
     }
 }

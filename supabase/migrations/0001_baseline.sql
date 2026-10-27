@@ -465,9 +465,16 @@ create table if not exists web_snapshots (
     size_bytes int not null,
     updated_at timestamptz not null default now(),
     constraint web_snapshots_size_cap check (
-        size_bytes > 0 and size_bytes <= 2 * 1024 * 1024
-        and octet_length(snapshot::text) <= 2 * 1024 * 1024
+        size_bytes > 0 and size_bytes <= 4 * 1024 * 1024
+        and octet_length(snapshot::text) <= 4 * 1024 * 1024
     )
+);
+
+-- Upgrade schema-30 installations as well as fresh databases.
+alter table web_snapshots drop constraint if exists web_snapshots_size_cap;
+alter table web_snapshots add constraint web_snapshots_size_cap check (
+    size_bytes > 0 and size_bytes <= 4 * 1024 * 1024
+    and octet_length(snapshot::text) <= 4 * 1024 * 1024
 );
 
 -- One row per lifter per board: the coarse step, worked out on the phone. On a
@@ -2831,7 +2838,7 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 30 $$;
+language sql stable as $$ select 31 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

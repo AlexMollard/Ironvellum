@@ -49,8 +49,8 @@ object WireLimits {
      */
     const val ARCHIVE_MAX_BYTES = 8_388_608
 
-    /** `web_snapshots_size_cap`: both declared and encoded snapshot size are capped at 2 MiB. */
-    const val SNAPSHOT_MAX_BYTES = 2_097_152
+    /** `web_snapshots_size_cap`: both declared and encoded snapshot size are capped at 4 MiB. */
+    const val SNAPSHOT_MAX_BYTES = 4_194_304
 
     /**
      * `session_comments.body`: 1..280 after trim. The client trims and refuses
