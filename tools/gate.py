@@ -43,6 +43,9 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import device  # noqa: E402
 
+# Wall-clock budget for one gate; raised from 5 to 7 minutes by the owner on 2026-10-27 as the suite grew.
+BUDGET_S = 7 * 60
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADB = os.path.join(
     os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe"
@@ -492,7 +495,7 @@ def main() -> int:
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
     took = time.time() - gate_started
-    print(f"  wall clock    {took // 60:.0f}m{took % 60:02.0f}s" + ("" if took < 300 else "  !! over the 5 minute budget"))
+    print(f"  wall clock    {took // 60:.0f}m{took % 60:02.0f}s" + ("" if took < BUDGET_S else f"  !! over the {BUDGET_S // 60} minute budget"))
 
     if failures or unit_failed or inst_failed or unit_short or inst_short:
         print("\nGATE RED" + (f": {'; '.join(failures)}" if failures else ""))

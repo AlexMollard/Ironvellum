@@ -32,7 +32,7 @@ python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
 It finishes in 3.5 to 4 minutes on this machine (3m36s and 3m51s measured after a source edit on a warm
-emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is 5 minutes and the
+emulator, 3m58s with a cold boot in the run; 2026-10-16). The budget is 7 minutes (raised from 5 on 2026-10-27) and the
 summary prints the wall clock and flags a miss. It goes red when any test fails, and also when fewer tests
 ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
 which used to read as green.
