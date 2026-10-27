@@ -1,0 +1,11 @@
+name: Question
+description: Ask how something in the app works.
+labels: ["question", "triage"]
+assignees: ["AlexMollard"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
