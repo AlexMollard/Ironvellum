@@ -56,6 +56,7 @@ The short view, by version; the detail of each item is in the sections below.
 - Large screens: request portrait on phones and center medium-width content at up to 600dp; expanded screens place Today, Train, workout history, live workout and muscle details in two panes.
 - Archive backups include portable settings; older archives leave current settings unchanged. `python tools/phone_backup.py --serial SERIAL --output NEW_DIRECTORY` also captures private preferences with the database; keep that folder private.
 - The live exercise picker starts its fatigue report with the workout and waits for it before opening when advice is enabled.
+- Dedicated-exercise prompts in the workout and routine editor survive activity recreation; Switch and Keep retain their original target.
 - [ ] 1 Play-ready code: done: privacy policy row in Settings > Support (both flavours), PLAY_DATA_SAFETY.md updated for heart rate, background reads and WRITE_EXERCISE, `bundlePlayRelease` builds (unsigned, 19.1 MB). Open: sign it once the owner's keystore exists; release-build frame stats on the phone (a release build signed with the debug key installs over the debug one and keeps the data; the owner uses it about 3 minutes, then the debug build goes back)
 - [ ] 2 Progress photos, on the phone and in the folder backup, never the cloud:
   - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout

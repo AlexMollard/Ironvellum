@@ -163,6 +163,27 @@ class PresetEditorViewModel(
     private val _ui = MutableStateFlow(EditorUi(presetId = presetId))
     val ui: StateFlow<EditorUi> = _ui.asStateFlow()
 
+    // The editor itself is retained across configuration changes; so is an unanswered offer.
+    private val _twinPrompt = MutableStateFlow<Triple<Int, EditorEntry, ExerciseTwins.Resolution>?>(null)
+    val twinPrompt = _twinPrompt.asStateFlow()
+
+    fun offerTwin(index: Int, entry: EditorEntry, resolution: ExerciseTwins.Resolution) {
+        _twinPrompt.value = Triple(index, entry, resolution)
+    }
+
+    fun dismissTwin() {
+        _twinPrompt.value = null
+    }
+
+    fun switchTwin() {
+        val (index, entry, resolution) = _twinPrompt.value ?: return
+        _twinPrompt.value = null
+        // Do not replace a different row or overwrite edits made after the offer.
+        if (_ui.value.entries.getOrNull(index) != entry) return
+        val twin = _ui.value.exercises.firstOrNull { it.name.equals(resolution.twin.dedicated, ignoreCase = true) } ?: return
+        updateEntry(index, entry.switchedTo(twin, resolution))
+    }
+
     /** The workout as loaded; back with anything different asks before discarding. */
     private val _baseline = MutableStateFlow(EditorUi(presetId = presetId))
     val baseline: StateFlow<EditorUi> = _baseline.asStateFlow()
@@ -545,8 +566,7 @@ fun PresetEditorScreen(
     var linking by remember { mutableStateOf<Int?>(null) }
     // The entry whose "Sets for" sheet is open.
     var setting by remember { mutableStateOf<Int?>(null) }
-    // A modifier or load just made entry (index, as edited) a dedicated exercise: the prompt waits for Switch or Keep.
-    var twinPrompt by remember { mutableStateOf<Triple<Int, EditorEntry, ExerciseTwins.Resolution>?>(null) }
+    val twinPrompt by viewModel.twinPrompt.collectAsStateWithLifecycle()
     val trialPrefs = TrialPrefs(LocalContext.current)
 
     // Back used to drop every edit without a word; with anything changed it
@@ -577,27 +597,19 @@ fun PresetEditorScreen(
         viewModel.updateEntry(index, edited)
         if (before == null) return
         val after = edited.followingLoad(before, ui.exercises)
-        twinPromptFor(before, after, ui.exercises, trialPrefs.twinKept)?.let { twinPrompt = Triple(index, after, it) }
+        twinPromptFor(before, after, ui.exercises, trialPrefs.twinKept)?.let { viewModel.offerTwin(index, after, it) }
     }
 
-    twinPrompt?.let { (index, entry, res) ->
-        val twin = ui.exercises.firstOrNull { it.name.equals(res.twin.dedicated, ignoreCase = true) }
-        if (twin == null) {
-            twinPrompt = null
-        } else {
-            TwinSwitchDialog(
-                twinName = twin.name,
-                onSwitch = {
-                    viewModel.updateEntry(index, entry.switchedTo(twin, res))
-                    twinPrompt = null
-                },
-                onKeep = {
-                    trialPrefs.keepTwin(res.keepKey(ui.exercises.first { it.id == entry.exerciseId }.name))
-                    twinPrompt = null
-                },
-                onDismiss = { twinPrompt = null },
-            )
-        }
+    twinPrompt?.let { (_, entry, res) ->
+        TwinSwitchDialog(
+            twinName = res.twin.dedicated,
+            onSwitch = viewModel::switchTwin,
+            onKeep = {
+                viewModel.dismissTwin()
+                trialPrefs.keepTwin(res.keepKey(entry.exerciseName))
+            },
+            onDismiss = viewModel::dismissTwin,
+        )
     }
 
     Column(Modifier.fillMaxSize().imePadding()) {

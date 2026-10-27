@@ -274,6 +274,16 @@ class SessionViewModel(
     private val appContext: Context,
     private val sessionId: Long,
 ) : ViewModel() {
+    // Keep both the outstanding decision and its observation baseline across recreation.
+    internal var twinPrompt by mutableStateOf<TwinTrialPrompt?>(null)
+    internal val seenTwinModifiers = mutableMapOf<BlockKey, String>()
+
+    internal fun takeTwinPrompt(): TwinTrialPrompt? {
+        val prompt = twinPrompt
+        twinPrompt = null
+        return prompt
+    }
+
 
     // Records exclude THIS session: a live set must never become its own benchmark.
     val records: StateFlow<Map<Pair<String, Int>, SetRecords.Record>> = combine(
@@ -988,24 +998,28 @@ fun SessionScreen(
     val groups = remember(blocks) { blocks.map { b -> b.sets.firstNotNullOfOrNull { it.supersetGroup } } }
     val supersetRuns = remember(groups) { Supersets.runs(groups) }
     // A modifier or load just made a block a dedicated exercise ([ExerciseTwins]): Switch or Keep as is waits here.
-    var twinPrompt by remember { mutableStateOf<TwinTrialPrompt?>(null) }
-    val seenModifiers = remember { mutableMapOf<BlockKey, String>() }
+    val twinPrompt = viewModel.twinPrompt
+    val seenModifiers = viewModel.seenTwinModifiers
     LaunchedEffect(blocks, exercises) {
+        // Do not consume a change before the catalogue has arrived after recreation.
+        if (exercises.isEmpty()) return@LaunchedEffect
         val names = exercises.mapTo(HashSet()) { it.name.trim().lowercase() }
         blocks.forEachIndexed { at, block ->
             val now = block.first.modifiers
             // First sight of a block is no change: a rite that starts weighted is not asked about.
             val before = seenModifiers.put(block.key, now) ?: return@forEachIndexed
-            if (before == now || twinPrompt != null || block.sets.none { it.isPending }) return@forEachIndexed
+            if (before == now || viewModel.twinPrompt != null || block.sets.none { it.isPending }) return@forEachIndexed
             val base = exercises.firstOrNull { it.id == block.exerciseId } ?: return@forEachIndexed
             val res = ExerciseTwins.steer(base.name, before, now, !base.isWeighted, trialPrefs.twinKept) { it.trim().lowercase() in names }
                 ?: return@forEachIndexed
             val twin = exercises.firstOrNull { it.name.equals(res.twin.dedicated, ignoreCase = true) } ?: return@forEachIndexed
-            twinPrompt = TwinTrialPrompt(
+            viewModel.twinPrompt = TwinTrialPrompt(
                 block = block.key,
                 baseName = base.name,
-                twin = twin,
-                res = res,
+                twinId = twin.id,
+                twinName = twin.name,
+                modifiers = res.modifiers,
+                keepKey = res.keepKey(base.name),
                 split = block.sets.any { it.done && !it.warmup },
                 fullSuperset = (Supersets.runAt(groups, at)?.count() ?: 0) >= Supersets.MAX_SIZE,
             )
@@ -1837,20 +1851,20 @@ fun SessionScreen(
     }
     twinPrompt?.let { prompt ->
         TwinSwitchDialog(
-            twinName = prompt.twin.name,
+            twinName = prompt.twinName,
             notes = buildList {
                 if (prompt.split) add(stringResource(R.string.twin_switch_split_note, prompt.baseName))
                 if (prompt.split && prompt.fullSuperset) add(stringResource(R.string.twin_switch_unlink_note))
             },
             onSwitch = {
-                viewModel.switchToTwin(prompt.block, prompt.twin.id, prompt.res.modifiers)
-                twinPrompt = null
+                viewModel.takeTwinPrompt()?.let {
+                    viewModel.switchToTwin(it.block, it.twinId, it.modifiers)
+                }
             },
             onKeep = {
-                trialPrefs.keepTwin(prompt.res.keepKey(prompt.baseName))
-                twinPrompt = null
+                viewModel.takeTwinPrompt()?.let { trialPrefs.keepTwin(it.keepKey) }
             },
-            onDismiss = { twinPrompt = null },
+            onDismiss = { viewModel.takeTwinPrompt() },
         )
     }
     editModifiersFor?.let { position ->
@@ -2101,12 +2115,14 @@ private const val TITLE_CAP = 80
 private const val PUBLIC_NOTE_CAP = 500
 
 
-/** The prompt owed after a modifier or load made [block] the dedicated exercise [twin]; [split] when ticked sets stay behind. */
-private class TwinTrialPrompt(
+/** The prompt owed after a modifier or load made [block] a dedicated exercise; [split] when ticked sets stay behind. */
+internal class TwinTrialPrompt(
     val block: BlockKey,
     val baseName: String,
-    val twin: Exercise,
-    val res: ExerciseTwins.Resolution,
+    val twinId: Long,
+    val twinName: String,
+    val modifiers: String,
+    val keepKey: String,
     val split: Boolean,
     val fullSuperset: Boolean,
 )

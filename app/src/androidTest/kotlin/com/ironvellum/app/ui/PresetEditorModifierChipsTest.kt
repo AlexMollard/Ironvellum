@@ -1,12 +1,20 @@
 package com.ironvellum.app.ui
 
+import android.content.Context
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.IronvellumDatabase
@@ -18,6 +26,7 @@ import com.ironvellum.app.domain.toggleModifier
 import com.ironvellum.app.ui.components.ModifierChipGrid
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.PresetEditorViewModel
+import com.ironvellum.app.ui.train.PresetEditorScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -25,6 +34,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -40,7 +50,7 @@ import org.junit.runner.RunWith
 class PresetEditorModifierChipsTest {
 
     @get:Rule
-    val compose = createComposeRule()
+    val compose = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var db: IronvellumDatabase
     private lateinit var vm: PresetEditorViewModel
@@ -52,7 +62,14 @@ class PresetEditorModifierChipsTest {
         db = IronvellumDatabase.create(context, TEST_DB)
         val repo = Repository(db)
         repo.ensureSeeded()
-        vm = withContext(Dispatchers.Main) { PresetEditorViewModel(repo, presetId = null) }
+        compose.activityRule.scenario.onActivity { activity ->
+            val factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    PresetEditorViewModel(repo, presetId = null) as T
+            }
+            vm = ViewModelProvider(activity, factory)["test-preset-editor", PresetEditorViewModel::class.java]
+        }
         val loaded = withTimeout(10_000) { vm.ui.first { it.exercises.isNotEmpty() } }
         assertTrue("the editor must load its catalogue", loaded.exercises.isNotEmpty())
     }
@@ -119,6 +136,78 @@ class PresetEditorModifierChipsTest {
         }
         assertEquals("", vm.ui.first().entries[0].modifiers)
     }
+
+    private fun showEditor() {
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.setContent { IronvellumTheme { PresetEditorScreen(null, onDone = {}, viewModel = vm) } }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun promptAcrossRecreation(action: String) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = context.getSharedPreferences("trial_prefs", Context.MODE_PRIVATE)
+        val original = prefs.getStringSet("twin_kept", null)?.toSet()
+        try {
+            prefs.edit().remove("twin_kept").commit()
+            compose.runOnUiThread {
+                val exercises = vm.ui.value.exercises
+                vm.addEntry(exercises.first { it.name == "Dip" })
+                assertTrue("Pull-up must offer the archer modifier", "archer" in applicableModifiers(exercises.first { it.name == "Pull-up" }))
+                vm.addEntry(exercises.first { it.name == "Pull-up" })
+                vm.updateEntry(1, vm.ui.value.entries[1].copy(reps = "7", modifiers = "tempo"))
+            }
+            showEditor()
+            // Tap the name itself: the merged row's centre can land on its separate sets action.
+            compose.onNodeWithText("Pull-up", useUnmergedTree = true)
+                .performScrollTo().performTouchInput { click() }
+            compose.onNodeWithContentDescription("archer, not set").performScrollTo().performClick()
+            val prompt = "Archer Pull-up is its own exercise, with its own art and form guide. Switch to it?"
+            compose.onNodeWithText(prompt).assertExists()
+            val edited = vm.ui.value.entries.toList()
+
+            compose.activityRule.scenario.recreate()
+            compose.activityRule.scenario.onActivity { activity ->
+                assertSame(vm, ViewModelProvider(activity)["test-preset-editor", PresetEditorViewModel::class.java])
+            }
+            showEditor()
+            compose.onNodeWithText(prompt).assertExists()
+            if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
+                val autoAdvance = compose.mainClock.autoAdvance
+                try {
+                    ShotRecorder.take(compose, "preset-twin-prompt-recreated")
+                } finally {
+                    compose.mainClock.autoAdvance = autoAdvance
+                }
+            }
+            compose.onNodeWithText(action).performClick()
+            compose.waitForIdle()
+            val entries = vm.ui.value.entries
+            assertEquals("the other entry is untouched", edited[0], entries[0])
+            assertEquals("the target's edits survive", "7", entries[1].reps)
+            if (action == "Switch") {
+                assertEquals("Archer Pull-up", entries[1].exerciseName)
+                assertEquals("tempo", entries[1].modifiers)
+            } else {
+                assertEquals(edited[1], entries[1])
+                assertTrue("the choice is remembered", "pull-up|archer" in prefs.getStringSet("twin_kept", emptySet()).orEmpty())
+            }
+            compose.activityRule.scenario.recreate()
+            showEditor()
+            compose.onNodeWithText(prompt).assertDoesNotExist()
+            assertEquals(entries, vm.ui.value.entries)
+        } finally {
+            val editor = prefs.edit()
+            if (original == null) editor.remove("twin_kept") else editor.putStringSet("twin_kept", original)
+            editor.commit()
+        }
+    }
+
+    @Test fun switchingTheOfferedTwinAfterRecreationKeepsTheEditsOnTheSameEntry() =
+        promptAcrossRecreation("Switch")
+
+    @Test fun keepingTheOfferedTwinAfterRecreationDoesNotReplayIt() =
+        promptAcrossRecreation("Keep as is")
 
     private companion object {
         const val TEST_DB = "ironvellum-preset-modifier-chips-test.db"
