@@ -815,6 +815,8 @@ fun SessionScreen(
     val lastTops by viewModel.lastTops.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
     val clocks by viewModel.clocks.collectAsStateWithLifecycle()
+    // Start observing before the picker opens, so its first frame already has fatigue marks.
+    val pickerFatigueReport = rememberFatigueReport()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var confirmReopen by remember { mutableStateOf(false) }
@@ -1886,12 +1888,14 @@ fun SessionScreen(
         }
     }
 
-    if (showExercisePicker) {
-        // Every muscle's level right now, from the report that already holds this workout; none with the advice off.
-        val fatigueReport = rememberFatigueReport()
-        val fatigue = remember(fatigueReport, FatigueAdviceSetting.enabled) {
-            if (FatigueAdviceSetting.enabled && fatigueReport != null) {
-                Muscle.entries.associateWith { fatigueReport.levelAt(it, fatigueReport.nowMs) }
+    androidx.activity.compose.BackHandler(enabled = showExercisePicker && FatigueAdviceSetting.enabled && pickerFatigueReport == null) {
+        showExercisePicker = false
+    }
+    if (showExercisePicker && (!FatigueAdviceSetting.enabled || pickerFatigueReport != null)) {
+        // Wait for the first report when advice is on rather than opening an unmarked list.
+        val fatigue = remember(pickerFatigueReport, FatigueAdviceSetting.enabled) {
+            if (FatigueAdviceSetting.enabled && pickerFatigueReport != null) {
+                Muscle.entries.associateWith { pickerFatigueReport.levelAt(it, pickerFatigueReport.nowMs) }
             } else {
                 emptyMap()
             }

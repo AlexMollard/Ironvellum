@@ -13,9 +13,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.R
+import com.ironvellum.app.data.FatigueAdviceSetting
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
@@ -162,6 +165,23 @@ class SessionExpandedPaneTest {
         compose.onNodeWithText("Dip").assertIsDisplayed()
         logAndRate()
         compose.onNodeWithText(dipGuide.setup).assertDoesNotExist()
+    }
+
+    @Test
+    fun pickerOpensWithFatigueInformationAlreadyPresent() {
+        val wasEnabled = FatigueAdviceSetting.enabled
+        FatigueAdviceSetting.setEnabled(context, true)
+        try {
+            showSession(400f)
+            compose.onNodeWithText(context.getString(R.string.session_end_add_exercise)).performScrollTo().performClick()
+            waitForText(context.getString(R.string.picker_title_default))
+            compose.onNodeWithText(context.getString(R.string.picker_fatigue_note)).assertIsDisplayed()
+            if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
+                ShotRecorder.take(compose, "live-picker-fatigue-ready")
+            }
+        } finally {
+            FatigueAdviceSetting.setEnabled(context, wasEnabled)
+        }
     }
 
     private companion object { const val DB_NAME = "session-pane-test.db" }
