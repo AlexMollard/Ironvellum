@@ -67,5 +67,22 @@ class LockTest(unittest.TestCase):
         self.assertTrue(os.path.exists(device.LOCK))
 
 
+class LockedEnvTest(unittest.TestCase):
+    """A locked run never reaches a phone: Gradle's connected tasks use every attached device otherwise."""
+
+    def test_unpinned_run_is_pinned_to_the_running_emulator(self):
+        self.assertEqual(device.locked_env({}, ["emulator-5556"])["ANDROID_SERIAL"], "emulator-5556")
+
+    def test_unpinned_run_with_no_emulator_still_never_picks_the_phone(self):
+        self.assertEqual(device.locked_env({}, [])["ANDROID_SERIAL"], "emulator-5554")
+
+    def test_an_emulator_pin_is_kept(self):
+        self.assertEqual(device.locked_env({"ANDROID_SERIAL": "emulator-5554"}, ["emulator-5556"])["ANDROID_SERIAL"], "emulator-5554")
+
+    def test_a_phone_pin_is_refused(self):
+        with self.assertRaises(SystemExit):
+            device.locked_env({"ANDROID_SERIAL": "R5GL14GXV3J"}, ["emulator-5554"])
+
+
 if __name__ == "__main__":
     unittest.main()

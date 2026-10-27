@@ -359,14 +359,31 @@ def emulator_lock(label: str):
             signal.signal(signum, handler)
 
 
+def locked_env(environ: dict[str, str], emus: list[str]) -> dict[str, str]:
+    """The child's environment, pinned to an emulator: a phone on the cable must never run the suite.
+
+    Gradle's connected tasks run on EVERY attached device unless ANDROID_SERIAL names one, and the
+    suite clears and uninstalls the app (2026-10-27 it wiped the owner's phone). A serial that is
+    not an emulator is refused; the gate's --serial is the only way onto a phone.
+    """
+    env = dict(environ)
+    pinned = env.get("ANDROID_SERIAL")
+    if pinned and not pinned.startswith("emulator-"):
+        sys.exit(f"lock: ANDROID_SERIAL={pinned} is not an emulator; refusing (use tools/gate.py --serial for a phone)")
+    if not pinned:
+        env["ANDROID_SERIAL"] = emus[0] if emus else "emulator-5554"
+    return env
+
+
 def run_locked(command: list[str], label: str) -> int:
-    """Run `command` while holding the emulator lock; its exit code is ours."""
+    """Run `command` while holding the emulator lock, pinned to an emulator; its exit code is ours."""
     if command and command[0] == "--":
         command = command[1:]
     if not command:
         sys.exit("lock: no command given (usage: device.py lock [--label NAME] -- <cmd> [args])")
+    env = locked_env(dict(os.environ), emulators())
     with emulator_lock(label):
-        proc = subprocess.Popen(command)
+        proc = subprocess.Popen(command, env=env)
         while True:
             try:
                 return proc.wait()

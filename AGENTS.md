@@ -102,7 +102,9 @@ python3 tools/device.py lock -- adb -s emulator-5554 install -r app.apk
 python3 tools/device.py lock --label "my run" -- bash -c 'ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest'
 ```
 
-The command's exit code is the helper's. `tools/gate.py` takes the same lock itself while the instrumented
+The command's exit code is the helper's. The helper pins `ANDROID_SERIAL` to an emulator for the command when it is unset, and
+refuses one that names a phone: Gradle's connected tasks otherwise run on every attached device (on 2026-10-27 an unpinned run
+reached the owner's phone and uninstalled the app; it was restored from backup). `tools/gate.py` takes the same lock itself while the instrumented
 suite runs.
 
 The lock heals itself, so a killed run no longer blocks everyone until a human clears it. A holder that uses
