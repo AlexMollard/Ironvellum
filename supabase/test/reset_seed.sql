@@ -17,6 +17,14 @@ values ('a5544444-0000-4000-8000-000000000001', 'a5500000-0000-4000-8000-0000000
         1, 'Pull', now() - interval '2 hour', now() - interval '1 hour');
 insert into session_sets (session_id, exercise_name, set_index, reps, done)
 values ('a5544444-0000-4000-8000-000000000001', 'Pull-up', 0, 8, true);
+insert into session_set_details (user_id, session_id, exercise_name, set_index, kind)
+values ('a5500000-0000-4000-8000-0000000000a1', 'a5544444-0000-4000-8000-000000000001', 'Pull-up', 0, 'working');
+insert into imported_sessions (id, user_id, local_id, label, started_at)
+values ('a5544444-0000-4000-8000-000000000002', 'a5500000-0000-4000-8000-0000000000a1', 1, 'Imported', now());
+insert into imported_session_sets (id, user_id, session_id, exercise_name, set_index)
+values ('a5544444-0000-4000-8000-000000000003', 'a5500000-0000-4000-8000-0000000000a1', 'a5544444-0000-4000-8000-000000000002', 'Pull-up', 0);
+insert into web_snapshots (user_id, version, snapshot, content_hash, size_bytes)
+values ('a5500000-0000-4000-8000-0000000000a1', 1, '{}', 'seed', 2);
 insert into session_likes (session_id, user_id)
 values ('a5544444-0000-4000-8000-000000000001', 'a5500000-0000-4000-8000-0000000000a2');
 insert into session_comments (session_id, user_id, body)
@@ -46,6 +54,10 @@ begin
        or (select count(*) from sessions) = 0
        or (select count(*) from cloud_archives) = 0
        or (select count(*) from lift_marks) = 0
+       or (select count(*) from session_set_details) = 0
+       or (select count(*) from imported_sessions) = 0
+       or (select count(*) from imported_session_sets) = 0
+       or (select count(*) from web_snapshots) = 0
        or (select count(*) from reports) = 0 then
         raise exception 'ASSERTION FAILED: the reset fixtures did not land, so the reset check would be vacuous';
     end if;

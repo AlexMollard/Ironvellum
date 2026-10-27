@@ -16,19 +16,15 @@ stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
 
 ## 2. Apply the schema
 
-The app expects the schema in `supabase/migrations/`: `0001_baseline.sql`,
-then any later files in numeric order. With psql:
+The whole schema is `supabase/migrations/0001_baseline.sql`. Re-apply this
+idempotent baseline to upgrade a self-hosted project to schema 30:
 
 ```bash
-for f in supabase/migrations/*.sql; do
-  psql "$DATABASE_URL" -f "$f"
-done
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
 ```
 
-or paste each file, in order, into the project's SQL editor. The baseline
-includes the `schema_version()` beacon the app uses to check your project is
-ready; if it is missing, the app reports "migrations have not been applied"
-instead of sending data into a half-built schema.
+Alternatively, paste the baseline into the project's SQL editor. Its
+`schema_version()` beacon lets the app check the project is ready.
 
 To wipe a throwaway project back to empty first, run `supabase/reset.sql`.
 **It deletes every account and every app table**, so never run it on a project

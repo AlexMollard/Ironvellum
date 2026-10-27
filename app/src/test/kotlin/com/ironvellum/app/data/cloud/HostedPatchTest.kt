@@ -24,6 +24,7 @@ class HostedPatchTest {
         "2026-10-01-circles.sql",
         "2026-10-02-release.sql",
         "2026-10-09-crests.sql",
+        "2026-10-23-web-viewer.sql",
     )
 
     private val root: File = run {
@@ -89,14 +90,28 @@ class HostedPatchTest {
     }
 
     @Test
-    fun `the crests patch carries the schema the app needs, the column and every surface that reads it`() {
+    fun `the crests patch carries schema 29, the column and every surface that reads it`() {
         val crests = sql("supabase/hosted/2026-10-09-crests.sql")
-        val baseline = sql("supabase/migrations/0001_baseline.sql")
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
-        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(baseline)!!.groupValues[1].toInt())
-        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(crests)!!.groupValues[1].toInt())
+        assertEquals(29, beacon.find(crests)!!.groupValues[1].toInt())
         assertTrue("add column if not exists current_crest_id" in crests.lowercase())
         // Four views and the circle's two mentions (the key and the column it reads).
         assertEquals(6, Regex("current_crest_id").findAll(crests.substringAfter("2. the boards")).count())
+    }
+
+    @Test
+    fun `the web viewer patch carries the beacon and every new table`() {
+        val patch = sql("supabase/hosted/2026-10-23-web-viewer.sql")
+        val baseline = sql("supabase/migrations/0001_baseline.sql")
+        val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
+        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(patch)!!.groupValues[1].toInt())
+        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(baseline)!!.groupValues[1].toInt())
+        val tables = listOf("session_set_details", "imported_sessions", "imported_session_sets", "web_snapshots")
+        val create = Regex("""create table if not exists\s+(?:public\.)?(\w+)""", RegexOption.IGNORE_CASE)
+        assertEquals(tables.toSet(), create.findAll(patch).map { it.groupValues[1] }.toSet())
+        assertEquals(4, create.findAll(patch).count())
+        for (table in tables) {
+            assertTrue("baseline missing $table", create.findAll(baseline).any { it.groupValues[1] == table })
+        }
     }
 }

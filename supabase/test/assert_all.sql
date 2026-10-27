@@ -282,6 +282,7 @@ begin
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
                           'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks',
+                          'session_set_details','imported_sessions','imported_session_sets','web_snapshots',
                           'circles','circle_members','circle_join_log','circle_weeks','circle_week_members','circle_events')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
@@ -1311,12 +1312,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 29,
-        format('schema_version() reports %s, not 29 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 30,
+        format('schema_version() reports %s, not 30 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 29,
+        (select public.schema_version()) = 30,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -2406,6 +2407,124 @@ begin
         'circle fixtures survived the teardown'
     );
 end $wk$;
+
+-- ------------------------------------------------------ owner-only web data
+do $web$
+declare
+    owner_id uuid := 'a5500000-0000-4000-8000-0000000000c1';
+    ally uuid := 'a5500000-0000-4000-8000-0000000000c2';
+    stranger uuid := 'a5500000-0000-4000-8000-0000000000c3';
+    owner_session uuid := 'a5577777-0000-4000-8000-000000000001';
+    ally_session uuid := 'a5577777-0000-4000-8000-000000000002';
+    imported uuid := 'a5577777-0000-4000-8000-000000000003';
+    foreign_import uuid := 'a5577777-0000-4000-8000-000000000004';
+    t text;
+    reader uuid;
+    feed_before text;
+    inbox_before text;
+    days_before text;
+    events_before bigint;
+begin
+    delete from auth.users where id in (owner_id, ally, stranger);
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated',
+           'web-' || right(u::text, 2) || '@m.test', '', now(), now()
+    from unnest(array[owner_id, ally, stranger]) u;
+    update profiles set visibility = 'public' where id in (owner_id, ally, stranger);
+    insert into friendships (requester_id, addressee_id, accepted) values (owner_id, ally, true);
+    insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience)
+    values (owner_session, owner_id, 1, 'Pull', now() - interval '2 hours', now() - interval '1 hour', 'profile'),
+           (ally_session, ally, 1, 'Push', now() - interval '2 hours', now() - interval '1 hour', 'profile'),
+           ('a5577777-0000-4000-8000-000000000005', owner_id, 2, 'Legs', now() - interval '4 hours', now() - interval '3 hours', 'profile');
+    insert into session_sets (session_id, exercise_name, set_index, reps, done)
+    values (owner_session, 'Pull-up', 0, 8, true), (ally_session, 'Dip', 0, 8, true);
+
+    perform must_run(owner_id, format('insert into session_set_details (user_id, session_id, exercise_name, set_index, kind, rpe) values (%L,%L,''Pull-up'',0,''working'',8)', owner_id, owner_session), 'owner cannot insert set details');
+    perform must_run(owner_id, format('insert into imported_sessions (id,user_id,local_id,label,started_at) values (%L,%L,1,''Import'',now())', imported, owner_id), 'owner cannot insert imported session');
+    perform must_run(owner_id, format('insert into imported_session_sets (id,user_id,session_id,exercise_name,set_index) values (gen_random_uuid(),%L,%L,''Pull-up'',0)', owner_id, imported), 'owner cannot insert imported set');
+    perform must_run(owner_id, format('insert into web_snapshots (user_id,version,snapshot,content_hash,size_bytes) values (%L,1,''{}'',''hash'',2)', owner_id), 'owner cannot insert snapshot');
+    perform must_run(ally, format('insert into imported_sessions (id,user_id,local_id,label,started_at) values (%L,%L,1,''Foreign'',now())', foreign_import, ally), 'ally cannot insert imported session');
+    if has_table_privilege('authenticated', 'public.web_snapshots', 'delete') then
+        perform must_run(owner_id, format('delete from web_snapshots where user_id = %L', owner_id), 'snapshot delete should be a no-op');
+    else
+        perform assert_true(refused_as(owner_id, format('delete from web_snapshots where user_id = %L', owner_id), array['42501']), 'snapshot delete grant unexpectedly available');
+    end if;
+    perform assert_true(exists (select 1 from web_snapshots where user_id = owner_id), 'owner can delete snapshot directly');
+
+    foreach t in array array['session_set_details','imported_sessions','imported_session_sets','web_snapshots'] loop
+        perform assert_true(value_as(owner_id, format('select count(*) from %I where user_id = %L', t, owner_id))::int = 1,
+            format('owner cannot read own %s', t));
+        foreach reader in array array[ally, stranger] loop
+            perform assert_true(value_as(reader, format('select count(*) from %I where user_id = %L', t, owner_id))::int = 0,
+                format('ally or stranger reads owner %s', t));
+        end loop;
+        perform assert_true(not has_table_privilege('anon', 'public.' || t, 'select')
+            and not has_table_privilege('anon', 'public.' || t, 'insert')
+            and not has_table_privilege('anon', 'public.' || t, 'update')
+            and not has_table_privilege('anon', 'public.' || t, 'delete')
+            and refused_as_anon(format('select * from %I', t), array['42501']),
+            format('anon can access %s', t));
+    end loop;
+    perform assert_true(refused_as_anon(format('insert into web_snapshots (user_id,version,snapshot,content_hash,size_bytes) values (%L,1,''{}'',''hash'',2)', stranger), array['42501']), 'anon can write a snapshot');
+    perform assert_true(refused_as(owner_id, format('insert into imported_sessions (user_id,local_id,label,started_at) values (%L,2,''Forged'',now())', ally), array['42501']), 'can write another user''s import');
+    perform assert_true(refused_as(owner_id, format('insert into session_set_details (user_id,session_id,exercise_name,set_index) values (%L,%L,''Dip'',0)', owner_id, ally_session), array['42501']), 'can attach own details to another user''s session');
+    perform assert_true(refused_as(owner_id, format('insert into imported_session_sets (id,user_id,session_id,exercise_name,set_index) values (gen_random_uuid(),%L,%L,''Dip'',0)', owner_id, foreign_import), array['42501']), 'can attach own set to another user''s import');
+    perform assert_true(refused_as(owner_id, format('update imported_session_sets set session_id = %L where user_id = %L', foreign_import, owner_id), array['42501']), 'can move a set to another user''s import');
+    perform assert_true(refused_as_anon(format('insert into session_set_details (user_id,session_id,exercise_name,set_index) values (%L,%L,''Pull-up'',0)', owner_id, owner_session), array['42501'])
+        and refused_as_anon(format('insert into imported_sessions (user_id,local_id,label,started_at) values (%L,3,''Anon'',now())', owner_id), array['42501'])
+        and refused_as_anon(format('insert into imported_session_sets (id,user_id,session_id,exercise_name,set_index) values (gen_random_uuid(),%L,%L,''Anon'',0)', owner_id, imported), array['42501']),
+        'anon can insert web data');
+    perform assert_true(refused_as(owner_id, format('insert into session_set_details (user_id,session_id,exercise_name,set_index) values (%L,%L,''Dip'',0)', ally, ally_session), array['42501'])
+        and refused_as(owner_id, format('insert into imported_session_sets (id,user_id,session_id,exercise_name,set_index) values (gen_random_uuid(),%L,%L,''Dip'',0)', ally, foreign_import), array['42501'])
+        and refused_as(owner_id, format('insert into web_snapshots (user_id,version,snapshot,content_hash,size_bytes) values (%L,1,''{}'',''hash'',2)', ally), array['42501']),
+        'can write web data under another user');
+    perform assert_true(refused_as(owner_id, format('update session_set_details set session_id = %L, exercise_name = ''Dip'' where user_id = %L', ally_session, owner_id), array['42501']), 'can move details to another user''s session');
+    perform assert_true(refused_as(owner_id, format('update session_set_details set kind = ''x'' where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update session_set_details set rpe = 4 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update session_set_details set rpe = 11 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update web_snapshots set size_bytes = 2097153 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 2097153)), size_bytes = 2 where user_id = %L', owner_id), array['23514']),
+        'invalid detail or oversized snapshot accepted');
+    perform assert_true(refused_as(owner_id, format('update imported_session_sets set kind = ''x'' where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update imported_session_sets set rpe = 4 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update imported_session_sets set rpe = 11 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update imported_session_sets set reps = -1 where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update imported_session_sets set exercise_name = repeat(''x'',65) where user_id = %L', owner_id), array['23514'])
+        and refused_as(owner_id, format('update imported_sessions set label = repeat(''x'',81) where user_id = %L', owner_id), array['23514']),
+        'invalid imported session or set accepted');
+    perform assert_true(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public' and p.prosrc ilike '%imported_session%')
+        and not exists (select 1 from pg_views where schemaname = 'public' and definition ilike '%imported_session%'),
+        'a public function or view reads imported sessions');
+
+    -- A circle and a reply make the observations non-vacuous.
+    perform must_run(owner_id, 'select create_circle(''Web fixture'')', 'cannot create fixture circle');
+    perform must_run(ally, format('select join_circle(%L)', (select invite_code from circles where circles.owner_id = 'a5500000-0000-4000-8000-0000000000c1')), 'cannot join fixture circle');
+    perform assert_true((select count(*) from circle_members where user_id in (owner_id, ally)) = 2, 'fixture circle does not contain both lifters');
+    insert into session_comments (session_id, user_id, body) values (ally_session, owner_id, 'fixture');
+    feed_before := value_as(ally, format('select coalesce(string_agg(session_id::text, '','' order by completed_at desc, session_id), '''') from public_feed where user_id = %L', owner_id));
+    inbox_before := value_as(ally, 'select count(*) from my_inbox()');
+    select coalesce(string_agg(day::text || ':' || at::text, ',' order by day), '') into days_before
+    from circle_member_days(owner_id, now() - interval '7 days', now() + interval '1 day');
+    select count(*) into events_before from circle_events;
+    perform assert_true(array_length(string_to_array(feed_before, ','), 1) = 2 and inbox_before::int > 0 and days_before <> '', 'repush fixtures are empty');
+    perform must_run(owner_id, format('insert into sessions (id,user_id,local_id,label,started_at,completed_at,audience) select id,user_id,local_id,label,started_at,completed_at,audience from sessions where id = %L on conflict (user_id,local_id) do update set label = excluded.label', owner_session), 'session repush failed');
+    perform must_run(owner_id, format('insert into session_sets (session_id,exercise_name,set_index,reps,done) values (%L,''Pull-up'',0,8,true) on conflict (session_id,exercise_name,set_index) do update set reps = excluded.reps, done = excluded.done', owner_session), 'set repush failed');
+    perform assert_true(feed_before = value_as(ally, format('select coalesce(string_agg(session_id::text, '','' order by completed_at desc, session_id), '''') from public_feed where user_id = %L', owner_id))
+        and inbox_before = value_as(ally, 'select count(*) from my_inbox()')
+        and days_before = (select coalesce(string_agg(day::text || ':' || at::text, ',' order by day), '') from circle_member_days(owner_id, now() - interval '7 days', now() + interval '1 day'))
+        and events_before = (select count(*) from circle_events),
+        'repush changed feed order, inbox, circle days or circle events');
+
+    perform must_run(owner_id, 'select delete_my_account()', 'owner cannot erase account');
+    perform assert_true(not exists (select 1 from session_set_details where user_id = owner_id)
+        and not exists (select 1 from imported_sessions where user_id = owner_id)
+        and not exists (select 1 from imported_session_sets where user_id = owner_id)
+        and not exists (select 1 from web_snapshots where user_id = owner_id),
+        'account deletion left web data behind');
+    delete from auth.users where id in (ally, stranger);
+    perform set_config('probe.uid', '', true);
+end $web$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

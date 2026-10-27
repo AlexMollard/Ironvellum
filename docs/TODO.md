@@ -14,6 +14,8 @@ The hosted project is at `schema_version()` 29: the circles, release and crests
 patches are applied (crests pasted by the owner 2026-10-15), `circle_draw_code()`
 works, `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the
 worn crest is on profiles, the boards, the feed and `my_circle()`.
+The owner must paste `supabase/hosted/2026-10-23-web-viewer.sql` to reach
+schema 30 before shipping the build that requires it.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
