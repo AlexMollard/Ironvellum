@@ -10,13 +10,13 @@ lives in git (`git log`, `git log -S`), not here.
 
 ## Hosted schema: how a change reaches the live project
 
-The hosted project reports `schema_version()` 30 (HTTP 200). The circles,
-release, crests and web-viewer patches are applied; `circle_draw_code()` works,
+The hosted project reports `schema_version()` 31 (HTTP 200). The circles,
+release, crests, web-viewer and snapshot-cap patches are applied; `circle_draw_code()` works,
 `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the worn
 crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
-The owner must apply `supabase/hosted/2026-10-28-web-snapshot-cap.sql`
-to reach schema 31 before shipping the 4 MiB snapshot uploader.
+The 4 MiB snapshot uploader's schema prerequisite is satisfied; the updated
+phone build and a real-account sync still need verification.
 
 The read-only viewer is implemented under `web/`: Overview, Workouts, workout
 details, Lifts and Trends, with generated phone appearance, art and both figures.
