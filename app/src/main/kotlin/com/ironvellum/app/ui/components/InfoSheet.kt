@@ -210,6 +210,48 @@ fun InfoSheet(
     }
 }
 
+/** The same detail as an info sheet, embedded beside a map on a wide screen. */
+@Composable
+fun InfoSheetInline(
+    title: String,
+    subtitle: String? = null,
+    chips: List<InfoChip> = emptyList(),
+    actions: List<InfoAction> = emptyList(),
+    modifier: Modifier = Modifier,
+    content: InfoSheetScope.() -> Unit = {},
+) {
+    require(actions.size <= 2) { "An info sheet pins at most two actions" }
+    val sections = InfoSheetBuilder().apply(content).sections
+    Column(modifier.fillMaxSize().semantics { paneTitle = title }) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = LedgerSpace.Gutter),
+        ) {
+            Spacer(Modifier.height(20.dp))
+            SheetHeader(title, subtitle, IronvellumColors.InkMuted, chips, false, IronvellumColors.Ink)
+            SectionList(sections, false)
+            Spacer(Modifier.height(20.dp))
+        }
+        if (actions.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = LedgerSpace.Gutter, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                actions.forEach { action ->
+                    IronvellumButton(
+                        label = action.label,
+                        onClick = action.onClick,
+                        enabled = action.enabled,
+                        quiet = action.quiet,
+                        gold = action.gold,
+                        danger = action.danger,
+                        modifier = Modifier.weight(1f).heightIn(min = LedgerSpace.Target),
+                    )
+                }
+            }
+        }
+    }
+}
+
 private const val PEEK_DELAY_MS = 500L
 private const val PEEK_LEG_MS = 300
 private const val PEEK_FRACTION = 0.15f

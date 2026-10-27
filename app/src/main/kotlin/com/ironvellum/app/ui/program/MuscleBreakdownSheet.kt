@@ -44,6 +44,7 @@ import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoSheet
+import com.ironvellum.app.ui.components.InfoSheetInline
 import com.ironvellum.app.ui.components.InfoSheetScope
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.time.ZoneId
@@ -102,8 +103,9 @@ internal fun MuscleBreakdownSheet(
     onDismiss: () -> Unit,
     lead: InfoSheetScope.() -> Unit = {},
     extra: InfoSheetScope.() -> Unit = {},
+    inline: Boolean = false,
 ) {
-    InfoSheet(title = title, onDismiss = onDismiss, subtitle = subtitle, chips = chips, actions = actions) {
+    val content: InfoSheetScope.() -> Unit = {
         lead()
         if (sources.isNotEmpty()) {
             section(sourcesTitle) {
@@ -115,6 +117,11 @@ internal fun MuscleBreakdownSheet(
             text(null, none, IronvellumColors.InkMuted)
         }
         extra()
+    }
+    if (inline) {
+        InfoSheetInline(title = title, subtitle = subtitle, chips = chips, actions = actions, content = content)
+    } else {
+        InfoSheet(title = title, onDismiss = onDismiss, subtitle = subtitle, chips = chips, actions = actions, content = content)
     }
 }
 
@@ -131,6 +138,7 @@ internal fun FatigueBreakdownSheet(
     onExplain: () -> Unit,
     onDismiss: () -> Unit,
     zone: ZoneId = ZoneId.systemDefault(),
+    inline: Boolean = false,
 ) {
     val lightBy = lightByLine(reading.lightBy)
     MuscleBreakdownSheet(
@@ -152,6 +160,7 @@ internal fun FatigueBreakdownSheet(
         other = reading.otherPercent.takeIf { it > 0 }?.let { BreakdownOther(shareText(it), it.toFloat()) },
         none = t(R.string.fatigue_breakdown_none),
         onDismiss = onDismiss,
+        inline = inline,
         extra = {
             reading.soreness?.let { note ->
                 section(t(R.string.fatigue_soreness_title)) {

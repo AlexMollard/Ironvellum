@@ -55,6 +55,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -257,8 +259,13 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         // most a bottom bar should carry, and it is a place visited now and then.
     )
 
+    val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val expandedRoute = needsSetup == false && windowWidth >= 840.dp && currentRoute in setOf(
+        Routes.DASHBOARD, Routes.PRESETS, Routes.MUSCLES, Routes.WORKOUT_LOG, Routes.SESSION,
+    )
+
     Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss), contentAlignment = Alignment.TopCenter) {
-        Box(Modifier.widthIn(max = 600.dp).fillMaxSize().testTag("rootContent")) {
+        Box((if (expandedRoute) Modifier else Modifier.widthIn(max = 600.dp)).fillMaxSize().testTag("rootContent")) {
         // Gate render, not a route: onboarding has no back stack, no bottom
         // bar and nothing to navigate back to.
         if (needsSetup == true) {
@@ -357,7 +364,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             containerColor = Color.Transparent,
             bottomBar = {
                 if (currentRoute in destinations.map { it.route }) {
-                    IronvellumBottomBar(destinations, currentRoute, inboxUnread, navController)
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                        Box(Modifier.widthIn(max = 600.dp).fillMaxWidth()) {
+                            IronvellumBottomBar(destinations, currentRoute, inboxUnread, navController)
+                        }
+                    }
                 }
             },
         ) { padding ->
@@ -385,6 +396,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     DashboardScreen(
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenPresets = { navController.navigate(Routes.PRESETS) { launchSingleTop = true } },
+                        onOpenMuscles = { view -> navController.navigate(Routes.muscles(view)) },
                         onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onOpenForge = { navController.navigate(Routes.programBuilder("week", null)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },

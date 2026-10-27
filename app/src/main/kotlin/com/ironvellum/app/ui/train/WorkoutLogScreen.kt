@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,8 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -101,6 +105,39 @@ fun WorkoutLogScreen(
     onBack: () -> Unit,
     viewModel: WorkoutLogViewModel =
         viewModel(factory = viewModelFactory { initializer { WorkoutLogViewModel(ironvellumRepository()) } }),
+) {
+    val density = LocalDensity.current
+    val expanded = with(density) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
+    var selectedSessionId by rememberSaveable { mutableStateOf<Long?>(null) }
+    BackHandler(enabled = selectedSessionId != null) { selectedSessionId = null }
+
+    if (expanded) {
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.weight(1f)) {
+                WorkoutLogList(
+                    onOpenWorkout = { selectedSessionId = it },
+                    onBack = onBack,
+                    viewModel = viewModel,
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                selectedSessionId?.let { sessionId ->
+                    WorkoutDetailScreen(sessionId = sessionId, onBack = { selectedSessionId = null })
+                }
+            }
+        }
+    } else if (selectedSessionId != null) {
+        WorkoutDetailScreen(sessionId = selectedSessionId!!, onBack = { selectedSessionId = null })
+    } else {
+        WorkoutLogList(onOpenWorkout = onOpenWorkout, onBack = onBack, viewModel = viewModel)
+    }
+}
+
+@Composable
+private fun WorkoutLogList(
+    onOpenWorkout: (sessionId: Long) -> Unit,
+    onBack: () -> Unit,
+    viewModel: WorkoutLogViewModel,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -28,6 +28,7 @@ internal fun CoverageBreakdownSheet(
     onOpenExercise: ((name: String, modifiers: String) -> Unit)?,
     onDismissHeavy: (() -> Unit)?,
     onDismiss: () -> Unit,
+    inline: Boolean = false,
 ) {
     fun t(id: Int, vararg args: Any): String = Words.text(UiText.res(id, *args))
     val sources = buildList {
@@ -63,6 +64,7 @@ internal fun CoverageBreakdownSheet(
         other = null,
         none = t(R.string.coverage_filter_empty),
         onDismiss = onDismiss,
+        inline = inline,
         lead = {
             text(
                 t(R.string.coverage_breakdown_sets_title),

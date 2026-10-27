@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -151,6 +152,14 @@ import com.ironvellum.app.domain.SessionOverride
 import com.ironvellum.app.ui.program.FatigueSwatch
 import com.ironvellum.app.ui.program.rememberFatigueReport
 import kotlinx.coroutines.Dispatchers
+import com.ironvellum.app.ui.program.MusclesNowCard
+import com.ironvellum.app.ui.program.MusclesView
+import com.ironvellum.app.ui.program.MuscleCoverageViewModel
+import com.ironvellum.app.ui.program.MuscleFatigueViewModel
+import com.ironvellum.app.ui.program.rememberDismissedHeavy
+import com.ironvellum.app.ui.program.weekLine
+import com.ironvellum.app.ui.train.PresetsViewModel
+import com.ironvellum.app.ui.train.WeekPlanRows
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import com.ironvellum.app.ui.components.CrestPlate
@@ -559,6 +568,7 @@ fun DashboardScreen(
     onOpenRecap: (Long) -> Unit = {},
     /** The review card: "month" or "year", and the epoch day its period starts on. */
     onOpenReview: (String, Long) -> Unit = { _, _ -> },
+    onOpenMuscles: (MusclesView) -> Unit = { onOpenPresets() },
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
             // The saved answers sit behind a Context only a composable can read;
@@ -618,7 +628,11 @@ fun DashboardScreen(
 
     val fatigueReport = rememberFatigueReport()
     val fatigueDismissals = remember(appContext) { FatigueAdviceDismissals(appContext) }
-    TodayContent(
+    val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    DashboardPanes(
+        windowWidth = windowWidth,
+        today = {
+            TodayContent(
         ui = ui,
         selectedDay = selectedDay,
         today = LocalDate.now(),
@@ -653,6 +667,9 @@ fun DashboardScreen(
             onBeginAdjusted = { presetId, override -> viewModel.beginAdjusted(presetId, override, onStartSession) },
             swapsFor = { leans, routine, report, atMs -> viewModel.fatigueSwaps(appContext, leans, routine, report, atMs) },
         ),
+            )
+        },
+        plan = { modifier -> DashboardPlanPane(onOpenRite, onOpenPresets, onOpenMuscles, modifier) },
     )
 
     // Titles reconciled at startup (health data, imports) have no session to
@@ -670,6 +687,88 @@ fun DashboardScreen(
         wornCrestId = wornCrest,
         onWearCrest = viewModel::wearCrest,
     )
+}
+
+/** The window, not the width left to Today, determines whether the companion pane is shown. */
+@Composable
+internal fun DashboardPanes(
+    windowWidth: Dp,
+    today: @Composable () -> Unit,
+    plan: @Composable (Modifier) -> Unit,
+) {
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxSize()) { today() }
+        if (windowWidth >= 840.dp) plan(Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DashboardPlanPane(
+    onOpenRite: (Long) -> Unit,
+    onOpenPresets: () -> Unit,
+    onOpenMuscles: (MusclesView) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    val presetsModel: PresetsViewModel = viewModel(factory = viewModelFactory {
+        initializer { PresetsViewModel(ironvellumRepository(), context) }
+    })
+    val plan by presetsModel.ui.collectAsStateWithLifecycle()
+    val live by presetsModel.live.collectAsStateWithLifecycle()
+    val today = LocalDate.now()
+    val fatigueModel: MuscleFatigueViewModel = viewModel(factory = viewModelFactory {
+        initializer { MuscleFatigueViewModel(ironvellumRepository()) }
+    })
+    val coverageModel: MuscleCoverageViewModel = viewModel(factory = viewModelFactory {
+        initializer { MuscleCoverageViewModel(ironvellumRepository()) }
+    })
+    val fatigue by fatigueModel.ui.collectAsStateWithLifecycle()
+    val coverage by coverageModel.ui.collectAsStateWithLifecycle()
+    val dismissed = rememberDismissedHeavy()
+    val coverageLine = remember(coverage.week, dismissed.value) { weekLine(coverage.week.tally(dismissed.value)) }
+    DashboardPlanContent(plan, live != null, fatigue, if (!coverage.week.hasAnything()) null else stringResource(R.string.muscles_now_week, coverageLine), today, onOpenRite, onOpenPresets, onOpenMuscles, modifier)
+}
+
+@Composable
+internal fun DashboardPlanContent(
+    plan: com.ironvellum.app.ui.train.TrainUi,
+    live: Boolean,
+    fatigue: com.ironvellum.app.ui.program.FatigueUi,
+    coverageLine: String?,
+    today: LocalDate,
+    onOpenRite: (Long) -> Unit,
+    onOpenPresets: () -> Unit,
+    onOpenMuscles: (MusclesView) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
+        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = GUTTER)) {
+        Spacer(Modifier.height(16.dp))
+        ListRow(
+            label = UiText.themed(R.string.presets_cycle_header, R.string.presets_cycle_header__t).asString(),
+            onClick = onOpenPresets,
+        )
+        if (plan.presets.isNotEmpty()) {
+            WeekPlanRows(
+                ui = plan,
+                today = today.dayOfWeek.value,
+                live = live,
+                sealedThisWeek = { preset ->
+                    plan.history.any { (session, _) -> session.presetId == preset.id && (session.completedAtMs ?: 0L) >= weekStart }
+                },
+                onOpenRite = onOpenRite,
+            )
+        }
+        MusclesNowCard(
+            ui = fatigue,
+            coverageLine = coverageLine,
+            zone = ZoneId.systemDefault(),
+            onOpen = { onOpenMuscles(MusclesView.FATIGUE) },
+            onOpenCoverage = { onOpenMuscles(MusclesView.COVERAGE) },
+            modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
+        )
+    }
 }
 
 /** What Today's controls do. Every one defaults to nothing, so a test can render the page alone. */
@@ -729,9 +828,9 @@ internal fun TodayContent(
     /** "Not today" for the advice; null when there is nowhere to keep it. */
     fatigueDismissals: FatigueAdviceDismissals? = null,
 ) {
-    var rankOpen by remember { mutableStateOf(false) }
-    var oathOpen by remember { mutableStateOf(false) }
-    var levelOpen by remember { mutableStateOf(false) }
+    var rankOpen by rememberSaveable { mutableStateOf(false) }
+    var oathOpen by rememberSaveable { mutableStateOf(false) }
+    var levelOpen by rememberSaveable { mutableStateOf(false) }
     val swipe = rememberTodaySwipe(selectedDay, actions.onSelectDay, motion)
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
@@ -911,7 +1010,7 @@ private fun TodayDayBody(
     val advice = remember(kind, selectedPreset, ui.presets, ui.weekDone, report, selectedDay, adviceOn, notToday) {
         todayAdvice(kind, selectedPreset, ui.presets, ui.weekDone.values, report, selectedDay, zone, adviceOn, notToday)
     }
-    var adjustOpen by remember { mutableStateOf(false) }
+    var adjustOpen by rememberSaveable { mutableStateOf(false) }
     var adjustSwaps by remember { mutableStateOf<Map<Long, EntryAdjust.Swap>?>(null) }
     val cardRows: List<DayRow> = when (kind) {
         DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)

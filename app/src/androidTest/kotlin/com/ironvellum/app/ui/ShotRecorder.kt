@@ -47,6 +47,8 @@ object ShotRecorder {
         // The flow tests hold the clock, so let it run for a moment: a frame it never drew would be captured stale.
         compose.mainClock.autoAdvance = true
         compose.mainClock.advanceTimeBy(1000)
+        // A perpetually animated screen never idles with auto-advance enabled.
+        if (enabled) compose.mainClock.autoAdvance = false
         compose.waitForIdle()
         if (!enabled) {
             compose.mainClock.autoAdvance = false

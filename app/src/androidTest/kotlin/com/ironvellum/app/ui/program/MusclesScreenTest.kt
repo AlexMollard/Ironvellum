@@ -2,6 +2,10 @@ package com.ironvellum.app.ui.program
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -38,14 +42,19 @@ class MusclesScreenTest {
         driver.takeTheClock()
     }
 
-    private fun show(view: MusclesView, onBack: () -> Unit = {}) {
+    private fun show(view: MusclesView, expanded: Boolean = false, onBack: () -> Unit = {}) {
         compose.activityRule.scenario.onActivity {
             it.setContent {
-                IronvellumTheme {
-                    MusclesScreen(
-                        initialView = view, onBack = onBack, onGenerateSession = {}, onOpenRite = {},
-                        onOpenRites = {}, onOptimise = {},
-                    )
+                val density = LocalDensity.current
+                val width = LocalWindowInfo.current.containerSize.width
+                val testDensity = if (expanded) Density(width / 1000f, density.fontScale) else density
+                CompositionLocalProvider(LocalDensity provides testDensity) {
+                    IronvellumTheme {
+                        MusclesScreen(
+                            initialView = view, onBack = onBack, onGenerateSession = {}, onOpenRite = {},
+                            onOpenRites = {}, onOptimise = {},
+                        )
+                    }
                 }
             }
         }
@@ -81,6 +90,19 @@ class MusclesScreenTest {
         show(MusclesView.FATIGUE)
         driver.click("Coverage")
         driver.awaitText("This week, Monday to Sunday")
+        driver.click("Fatigue")
+        driver.awaitText("Estimated from your last 7 days")
+        assertEquals(2, tabCount())
+    }
+
+    @Test
+    fun expandedTabsSwitchWithOnlyOneTabRow() {
+        show(MusclesView.FATIGUE, expanded = true)
+        driver.awaitText("Estimated from your last 7 days")
+        assertEquals(2, tabCount())
+        driver.click("Coverage")
+        driver.awaitText("This week, Monday to Sunday")
+        assertEquals(2, tabCount())
         driver.click("Fatigue")
         driver.awaitText("Estimated from your last 7 days")
         assertEquals(2, tabCount())

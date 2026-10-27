@@ -2,6 +2,31 @@ package com.ironvellum.app.ui.train
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.data.IronvellumDatabase
+import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.SeededDb
+import com.ironvellum.app.ui.program.MuscleCoverageViewModel
+import com.ironvellum.app.ui.program.MuscleFatigueViewModel
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
+import java.time.LocalDate
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -17,10 +42,12 @@ import com.ironvellum.app.domain.FatigueSession
 import com.ironvellum.app.domain.LoggedSet
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.FlowDriver
+import com.ironvellum.app.ui.ShotRecorder
 import com.ironvellum.app.ui.TestProfile
 import com.ironvellum.app.ui.program.FatigueUi
 import com.ironvellum.app.ui.program.MusclesNowCard
 import com.ironvellum.app.ui.program.MusclesView
+import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
@@ -131,4 +158,87 @@ class TrainMusclesCardTest {
         driver.click("MUSCLES RIGHT NOW")
         assertEquals(MusclesView.FATIGUE, view)
     }
+
+    private fun showTrainAtWidth(
+        widthDp: Float,
+        repo: Repository,
+        onRite: (Long) -> Unit,
+        onMuscles: (MusclesView) -> Unit,
+    ) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val planModel = PresetsViewModel(repo, context)
+        val fatigueModel = MuscleFatigueViewModel(repo)
+        val coverageModel = MuscleCoverageViewModel(repo)
+        val paneLight = InstrumentationRegistry.getArguments().getString("paneLight") == "true"
+        compose.activityRule.scenario.onActivity {
+            it.setContent {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val actualDensity = LocalDensity.current
+                    val actualWindow = LocalWindowInfo.current
+                    val widthPx = with(actualDensity) { maxWidth.roundToPx() }
+                    val heightPx = with(actualDensity) { maxHeight.roundToPx() }
+                    val testDensity = Density(widthPx / widthDp, actualDensity.fontScale)
+                    val window = object : WindowInfo by actualWindow {
+                        override val containerSize = IntSize(widthPx, heightPx)
+                    }
+                    CompositionLocalProvider(LocalDensity provides testDensity, LocalWindowInfo provides window) {
+                        IronvellumTheme(light = paneLight) {
+                            Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                                PresetsScreen(
+                                    onOpenRite = onRite, onNew = {}, onGenerate = { _, _ -> },
+                                    onStartSession = {}, onQuickSession = {}, onOpenExercises = {},
+                                    onOpenLog = {}, onOpenMuscles = onMuscles,
+                                    viewModel = planModel, fatigueModel = fatigueModel, coverageModel = coverageModel,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        driver.settle()
+    }
+
+    private fun checkTrainPlan(widthDp: Float, expanded: Boolean) = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dbName = "train-pane-${java.util.UUID.randomUUID()}.db"
+        SeededDb.fresh(context, dbName)
+        val db = IronvellumDatabase.create(context, dbName)
+        val repo = Repository(db)
+        repo.ensureSeeded()
+        val id = repo.savePreset(null, "Pane fixture workout", "", LocalDate.now().dayOfWeek.value, emptyList())
+        try {
+            var opened = -1L
+            var view: MusclesView? = null
+            showTrainAtWidth(widthDp, repo, { opened = it }, { view = it })
+            driver.awaitText("Pane fixture workout")
+            driver.awaitText("MUSCLES RIGHT NOW")
+            val plan = compose.onAllNodesWithText("Pane fixture workout").onFirst()
+            val muscles = compose.onNodeWithText("MUSCLES RIGHT NOW")
+            if (expanded) {
+                plan.assertIsDisplayed()
+                muscles.assertIsDisplayed()
+                assertTrue(plan.getUnclippedBoundsInRoot().left < muscles.getUnclippedBoundsInRoot().left)
+                if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
+                    ShotRecorder.take(compose, "expanded-train-plan-muscles")
+                }
+            }
+            if (!expanded) plan.performScrollTo()
+            plan.performClick()
+            assertEquals(id, opened)
+            if (!expanded) muscles.performScrollTo()
+            muscles.performClick()
+            assertEquals(MusclesView.FATIGUE, view)
+        } finally {
+            compose.activityRule.scenario.onActivity { it.setContent {} }
+            db.close()
+            context.deleteDatabase(dbName)
+        }
+    }
+
+    @Test
+    fun expandedTrainPlacesMusclesBesideTheWeekPlan() = checkTrainPlan(1000f, true)
+
+    @Test
+    fun phoneTrainKeepsPlanAndMusclesActions() = checkTrainPlan(400f, false)
 }

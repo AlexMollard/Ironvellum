@@ -65,9 +65,10 @@ internal fun FatiguePane(
         viewModel(factory = viewModelFactory {
             initializer { MuscleFatigueViewModel(ironvellumRepository()) }
         }),
+    expanded: Boolean = false,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault())
+    FatigueContent(ui, rememberMuscleSelection(), ZoneId.systemDefault(), expanded)
 }
 
 /** The pane for a given [ui]: stateless, so a test or a preview can hand it any report. */
@@ -76,6 +77,7 @@ internal fun FatigueContent(
     ui: FatigueUi,
     selection: MutableState<Muscle?>,
     zone: ZoneId,
+    expanded: Boolean = false,
 ) {
     val report = ui.report
     // Blank for the first read: a moment of nothing is better than a flash of an all-fresh figure.
@@ -86,22 +88,26 @@ internal fun FatigueContent(
     var explain by rememberSaveable { mutableStateOf(false) }
     // The cause the lifter tapped, as (name, modifiers): its exercise sheet opens over the breakdown, which stays lit under it.
     var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
-    // A lit muscle opens its breakdown; closing the sheet clears the light.
-    selection.value?.let { muscle ->
-        FatigueBreakdownSheet(
-            reading = remember(report, muscle, zone) { report.reading(muscle, zone) },
-            nowMs = report.nowMs,
-            onOpenExercise = { name, modifiers -> inspected = name to modifiers },
-            onExplain = { explain = true },
-            onDismiss = { selection.value = null },
-            zone = zone,
-        )
+    val breakdown: @Composable () -> Unit = {
+        selection.value?.let { muscle ->
+            FatigueBreakdownSheet(
+                reading = remember(report, muscle, zone) { report.reading(muscle, zone) },
+                nowMs = report.nowMs,
+                onOpenExercise = { name, modifiers -> inspected = name to modifiers },
+                onExplain = { explain = true },
+                onDismiss = { selection.value = null },
+                zone = zone,
+                inline = expanded,
+            )
+        }
     }
+    if (!expanded) breakdown()
     inspected?.let { (name, modifiers) -> ExerciseInspection(ui.exercises, name, modifiers) { inspected = null } }
     if (explain) FatigueExplainerSheet { explain = false }
+    Row(Modifier.fillMaxSize()) {
     Column(
         Modifier
-            .fillMaxSize()
+            .weight(1f)
             .verticalScroll(scroll)
             .padding(horizontal = 16.dp),
     ) {
@@ -131,6 +137,12 @@ internal fun FatigueContent(
             }
         }
         Spacer(Modifier.height(20.dp))
+    }
+    if (expanded) {
+        Column(Modifier.weight(1f).fillMaxSize().padding(horizontal = 16.dp)) {
+            breakdown()
+        }
+    }
     }
 }
 

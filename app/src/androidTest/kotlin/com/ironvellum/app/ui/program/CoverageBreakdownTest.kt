@@ -2,9 +2,18 @@ package com.ironvellum.app.ui.program
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -15,7 +24,9 @@ import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.ui.FlowDriver
+import com.ironvellum.app.ui.ShotRecorder
 import com.ironvellum.app.ui.TestProfile
+import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -57,12 +68,20 @@ class CoverageBreakdownTest {
         driver.takeTheClock()
     }
 
-    private fun show(): MutableState<Muscle?> {
+    private fun show(expanded: Boolean = false): MutableState<Muscle?> {
         val lit = mutableStateOf<Muscle?>(null)
+        val paneLight = androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("paneLight") == "true"
         compose.activityRule.scenario.onActivity {
             it.setContent {
-                IronvellumTheme {
-                    CoveragePage(ui, lit, openExercise = null, onOpenExercise = {}, dismissed = emptySet(), onDismiss = {})
+                val density = LocalDensity.current
+                val width = LocalWindowInfo.current.containerSize.width
+                val testDensity = if (expanded) Density(width / 1000f, density.fontScale) else density
+                CompositionLocalProvider(LocalDensity provides testDensity) {
+                    IronvellumTheme(light = paneLight) {
+                        Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                            CoveragePage(ui, lit, openExercise = null, onOpenExercise = {}, dismissed = emptySet(), onDismiss = {}, expanded = expanded)
+                        }
+                    }
                 }
             }
         }
@@ -110,5 +129,23 @@ class CoverageBreakdownTest {
         light(lit, Muscle.MID_CHEST)
         driver.awaitText("What trains it")
         assertEquals(before, tops())
+    }
+
+    @Test
+    fun expandedCoverageSelectionShowsInlineBesideMap() {
+        val lit = show(expanded = true)
+        driver.awaitText("This week, Monday to Sunday")
+        driver.click("Lats")
+        assertEquals(Muscle.LATS, lit.value)
+        driver.awaitText("Nothing in this view trains it.")
+        val mapCaption = compose.onAllNodesWithText("This week, Monday to Sunday", substring = true)
+            .onFirst().fetchSemanticsNode().boundsInRoot
+        val breakdown = compose.onAllNodesWithText("Nothing in this view trains it.").onFirst().fetchSemanticsNode().boundsInRoot
+        assertTrue("Map=$mapCaption breakdown=$breakdown", breakdown.left >= mapCaption.right)
+        assertEquals(0, compose.onAllNodes(isDialog()).fetchSemanticsNodes().size)
+        assertTrue(driver.allText().contains("Lats"))
+        if (androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("shots") == "true") {
+            ShotRecorder.take(compose, "expanded-coverage-breakdown")
+        }
     }
 }

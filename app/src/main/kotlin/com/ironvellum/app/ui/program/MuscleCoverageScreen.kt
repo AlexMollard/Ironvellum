@@ -218,6 +218,7 @@ internal fun MuscleCoverageContent(
             initializer { MuscleCoverageViewModel(ironvellumRepository()) }
         }),
     modifier: Modifier = Modifier,
+    expanded: Boolean = false,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
@@ -239,6 +240,7 @@ internal fun MuscleCoverageContent(
                 // One rite goes straight to it; several go to the list that holds them all.
                 ui.uncountedRites.singleOrNull()?.let { (id, _) -> onOpenRite(id) } ?: onOpenRites()
             },
+            expanded = expanded,
             modifier = Modifier.weight(1f),
         )
         val actions = dockActions(tally, planned = true, hasRites = ui.hasAnyPreset)
@@ -355,6 +357,7 @@ internal fun CoveragePage(
     onDismiss: (Muscle) -> Unit,
     onOpenUncounted: () -> Unit = {},
     modifier: Modifier = Modifier,
+    expanded: Boolean = false,
 ) {
     val week = ui.week
     val states = remember(week, dismissed) { week.states(dismissed) }
@@ -376,31 +379,35 @@ internal fun CoveragePage(
     var whyOpen by rememberSaveable { mutableStateOf(false) }
     var inspected by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
 
-    // A lit muscle opens its breakdown, the same sheet Fatigue uses; closing it clears the light.
-    lit.value?.let { muscle ->
-        val state = states[muscle]
-        CoverageBreakdownSheet(
-            muscle = muscle,
-            week = week.of(muscle),
-            state = state,
-            done = ui.donePresets,
-            planned = ui.plannedPresets,
-            onOpenExercise = ui.exercises.takeIf { it.isNotEmpty() }?.let { _ -> { name: String, modifiers: String -> inspected = name to modifiers } },
-            onDismissHeavy = if (state == WeekState.HEAVY) {
-                {
-                    onDismiss(muscle)
-                    lit.value = null
-                }
-            } else {
-                null
-            },
-            onDismiss = { lit.value = null },
-        )
+    val breakdown: @Composable () -> Unit = {
+        lit.value?.let { muscle ->
+            val state = states[muscle]
+            CoverageBreakdownSheet(
+                muscle = muscle,
+                week = week.of(muscle),
+                state = state,
+                done = ui.donePresets,
+                planned = ui.plannedPresets,
+                onOpenExercise = ui.exercises.takeIf { it.isNotEmpty() }?.let { _ -> { name: String, modifiers: String -> inspected = name to modifiers } },
+                onDismissHeavy = if (state == WeekState.HEAVY) {
+                    {
+                        onDismiss(muscle)
+                        lit.value = null
+                    }
+                } else {
+                    null
+                },
+                onDismiss = { lit.value = null },
+                inline = expanded,
+            )
+        }
     }
+    if (!expanded) breakdown()
     inspected?.let { (name, modifiers) -> ExerciseInspection(ui.exercises, name, modifiers) { inspected = null } }
 
+    Row(modifier.fillMaxSize()) {
     Column(
-        modifier
+        Modifier.weight(1f)
             .fillMaxSize()
             .verticalScroll(scroll)
             .padding(horizontal = 16.dp),
@@ -538,6 +545,12 @@ internal fun CoveragePage(
             )
         }
         Spacer(Modifier.height(20.dp))
+    }
+    if (expanded) {
+        Column(Modifier.weight(1f).fillMaxSize().padding(horizontal = 16.dp)) {
+            breakdown()
+        }
+    }
     }
 }
 

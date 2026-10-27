@@ -27,6 +27,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicTextField
@@ -189,6 +190,7 @@ import com.ironvellum.app.domain.Supersets
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ExerciseTwins
 import com.ironvellum.app.domain.LastLogged
@@ -1154,6 +1156,42 @@ fun SessionScreen(
             .takeIf { it > 0 }?.let { SessionClock.minutes(it) }
     }
     val scroll = rememberScrollState()
+    val expanded = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
+
+    @Composable
+    fun SessionFooter() {
+        TrialFooter(
+            modifier = Modifier.onSizeChanged { footerPx = if (expanded) 0 else it.height },
+            allLogged = allLogged,
+            rest = rest,
+            nextSetNumber = activeSet?.workingNumber(ui.sets),
+            nextLine = activeSet?.let { set ->
+                val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                val number = set.workingNumber(ui.sets)
+                if (set.blockKey != openBlock?.key) {
+                    stringResource(R.string.session_next_line_named, number, set.exerciseName, figure)
+                } else {
+                    stringResource(R.string.session_next_line, number, figure)
+                }
+            },
+            noRestYet = activeSet?.let { Supersets.midRound(ui.sets, it) } == true,
+            onLog = ::logActive,
+            onExtend = viewModel::extendRest,
+            onShorten = viewModel::shortenRest,
+            onSkip = viewModel::skipRest,
+            onSealed = ::requestSeal,
+            slideReset = slideReset,
+            effortSet = effortSet.takeIf { restChipsOn },
+            effortLabel = effortSet?.let {
+                if (it.kind == SetKind.TOP) {
+                    stringResource(R.string.session_effort_label_top, it.exerciseName)
+                } else {
+                    stringResource(R.string.session_effort_label_set, it.exerciseName, it.workingNumber(ui.sets))
+                }
+            }.orEmpty(),
+            onRate = { rpe -> effortSet?.let { viewModel.setRpe(it.id, rpe) } },
+        )
+    }
 
     // Once sealed the live trial is not drawn under the finish pages (the routine question opens over this screen,
     // and it read "Trial in progress" behind a sealed trial).
@@ -1191,6 +1229,8 @@ fun SessionScreen(
                     compact = true,
                 )
             }
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+            Column(Modifier.weight(if (expanded) 1.4f else 1f).fillMaxHeight()) {
             Column(
                 Modifier
                     .weight(1f)
@@ -1262,8 +1302,8 @@ fun SessionScreen(
                                     )
                                 },
                                 note = exerciseNotes[block.exerciseId],
-                                lastNote = lastNotes[block.exerciseId],
-                                onNote = { noteForExercise = block.exerciseId },
+                                lastNote = lastNotes[block.exerciseId].takeUnless { expanded },
+                                onNote = if (expanded) null else { { noteForExercise = block.exerciseId } },
                                 modifiersEditable = modifiersEditable,
                                 activeSetId = if (activeSet?.blockKey == block.key) activeSet.id else null,
                                 editingSetId = editingSetId,
@@ -1441,39 +1481,46 @@ fun SessionScreen(
                 }
                 Spacer(Modifier.height(24.dp))
             }
-            TrialFooter(
-                modifier = Modifier.onSizeChanged { footerPx = it.height },
-                allLogged = allLogged,
-                rest = rest,
-                nextSetNumber = activeSet?.workingNumber(ui.sets),
-                nextLine = activeSet?.let { set ->
-                    val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
-                    val number = set.workingNumber(ui.sets)
-                    // Named only when it is not the card on screen.
-                    if (set.blockKey != openBlock?.key) {
-                        stringResource(R.string.session_next_line_named, number, set.exerciseName, figure)
-                    } else {
-                        stringResource(R.string.session_next_line, number, figure)
+            if (!expanded) SessionFooter()
+            }
+            if (expanded) {
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    SessionFooter()
+                    val upcoming = blocks.dropWhile { it.key != openBlock?.key }
+                        .drop(1).firstOrNull { block -> block.sets.any { it.isPending } }
+                    upcoming?.sets?.firstOrNull { it.isPending }?.let { set ->
+                        Text(
+                            stringResource(R.string.session_next_line_named, set.workingNumber(ui.sets), set.exerciseName,
+                                setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = IronvellumColors.Ink,
+                        )
                     }
-                },
-                noRestYet = activeSet?.let { Supersets.midRound(ui.sets, it) } == true,
-                onLog = ::logActive,
-                onExtend = viewModel::extendRest,
-                onShorten = viewModel::shortenRest,
-                onSkip = viewModel::skipRest,
-                onSealed = ::requestSeal,
-                slideReset = slideReset,
-                effortSet = effortSet.takeIf { restChipsOn },
-                // Names the exercise: in a superset the question is about the set just done, not the card now open.
-                effortLabel = effortSet?.let {
-                    if (it.kind == SetKind.TOP) {
-                        stringResource(R.string.session_effort_label_top, it.exerciseName)
-                    } else {
-                        stringResource(R.string.session_effort_label_set, it.exerciseName, it.workingNumber(ui.sets))
+                    openBlock?.let { block ->
+                        ExerciseGuides.forName(block.first.exerciseName)?.let { guide ->
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(stringResource(R.string.infosheet_page_form), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
+                                if (guide.setup.isNotBlank()) {
+                                    Text(guide.setup, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                                }
+                                guide.cues.forEach { cue ->
+                                    Text(cue, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                                }
+                            }
+                        }
+                        ExerciseNoteRow(block.first.exerciseName, exerciseNotes[block.exerciseId]) {
+                            noteForExercise = block.exerciseId
+                        }
+                        lastNotes[block.exerciseId]?.let { note ->
+                            Text(stringResource(R.string.session_last_note, note), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                        }
                     }
-                }.orEmpty(),
-                onRate = { rpe -> effortSet?.let { viewModel.setRpe(it.id, rpe) } },
-            )
+                }
+            }
+            }
         }
         undo?.let { prompt ->
             UndoBar(

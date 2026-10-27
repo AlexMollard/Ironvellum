@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -43,6 +46,7 @@ import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.recap.RecapSample
 import com.ironvellum.app.ui.recap.ReviewSample
+import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -650,6 +654,121 @@ class TodayFitsTest {
         } finally {
             com.ironvellum.app.data.FatigueAdviceSetting.setEnabled(context, before)
         }
+    }
+
+    /** Exercise the real companion content without opening the app's database. */
+    private fun showDashboardPanes(
+        width: Int,
+        onRite: (Long) -> Unit = {},
+        onPresets: () -> Unit = {},
+        onMuscles: (com.ironvellum.app.ui.program.MusclesView) -> Unit = {},
+        onBegin: (Long) -> Unit = {},
+    ) {
+        val todayRite = rite(1, day = 1)
+        val otherRite = WorkoutPreset(id = 42, name = "Companion plan", scheduledDay = 3)
+        val paneLight = androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("paneLight") == "true"
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            IronvellumTheme(light = paneLight) {
+                // Fit the whole simulated window into the actual device viewport, including on
+                // resized portrait displays; otherwise its plan can lie outside the test activity.
+                BoxWithConstraints(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                val testDensity = minOf(constraints.maxWidth / width.toFloat(), constraints.maxHeight / 760f)
+                CompositionLocalProvider(LocalDensity provides Density(testDensity)) {
+                    Box(Modifier.size(width.dp, 760.dp)) {
+                        DashboardPanes(
+                            windowWidth = width.dp,
+                            today = {
+                                Box(Modifier.testTag("dashboard-today")) {
+                                TodayContent(
+                                    ui = DashboardUi(presets = listOf(todayRite)),
+                                    selectedDay = 1, today = today, live = null, liveSets = emptyList(),
+                                    bodyGap = null, strengthRank = "Iron", rankBreakdown = null,
+                                    veil = null, actions = TodayActions(onBeginPreset = onBegin),
+                                    nowMs = now, motion = false,
+                                )
+                                }
+                            },
+                            plan = { modifier ->
+                                DashboardPlanContent(
+                                    plan = com.ironvellum.app.ui.train.TrainUi(presets = listOf(otherRite)),
+                                    live = false,
+                                    fatigue = com.ironvellum.app.ui.program.FatigueUi(
+                                        report = tiredReport(emptyList()), loaded = true,
+                                    ),
+                                    coverageLine = "This week: fixture coverage",
+                                    today = today, onOpenRite = onRite, onOpenPresets = onPresets,
+                                    onOpenMuscles = onMuscles, modifier = modifier.testTag("dashboard-plan"),
+                                )
+                            },
+                        )
+                    }
+                }
+                }
+            }
+        }
+        compose.mainClock.advanceTimeBy(500)
+    }
+
+    private val planHeader: String
+        get() = com.ironvellum.app.data.Words.text(
+            com.ironvellum.app.domain.UiText.themed(
+                com.ironvellum.app.R.string.presets_cycle_header,
+                com.ironvellum.app.R.string.presets_cycle_header__t,
+            ),
+        )
+
+    private val musclesHeader: String
+        get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(com.ironvellum.app.R.string.muscles_now_title).uppercase()
+
+    @Test
+    fun expandedTodayShowsPlanAndMusclesAndRoutesTheirActions() {
+        var begun: Long? = null
+        var opened: Long? = null
+        var presetsOpened = 0
+        val musclesOpened = mutableListOf<com.ironvellum.app.ui.program.MusclesView>()
+        showDashboardPanes(840, onRite = { opened = it }, onPresets = { presetsOpened++ },
+            onMuscles = { musclesOpened.add(it) }, onBegin = { begun = it })
+        val todayBounds = compose.onNodeWithTag("dashboard-today").getUnclippedBoundsInRoot()
+        val planBounds = compose.onNodeWithTag("dashboard-plan").getUnclippedBoundsInRoot()
+        assertTrue("Today and the plan must be side by side", todayBounds.right <= planBounds.left)
+        if (androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("shots") == "true") {
+            val autoAdvance = compose.mainClock.autoAdvance
+            com.ironvellum.app.ui.ShotRecorder.take(compose, "expanded-today-plan-muscles")
+            compose.mainClock.autoAdvance = autoAdvance
+        }
+
+        compose.onNodeWithText("Begin Full Body A").assertIsDisplayed().performClick()
+        assertEquals(1L, begun)
+        compose.onNodeWithText("Companion plan").assertIsDisplayed().performClick()
+        assertEquals(42L, opened)
+        compose.onNodeWithText(planHeader).assertIsDisplayed().performClick()
+        assertEquals(1, presetsOpened)
+        compose.onNodeWithText(musclesHeader).assertIsDisplayed().performClick()
+        compose.onNodeWithText("This week: fixture coverage").assertIsDisplayed().performClick()
+        assertEquals(
+            listOf(com.ironvellum.app.ui.program.MusclesView.FATIGUE, com.ironvellum.app.ui.program.MusclesView.COVERAGE),
+            musclesOpened,
+        )
+    }
+
+    @Test
+    fun belowExpandedBreakpointTodayRemainsAndCompanionIsAbsent() {
+        var begun: Long? = null
+        showDashboardPanes(839, onBegin = { begun = it })
+        compose.onNodeWithText("Begin Full Body A").assertIsDisplayed().performClick()
+        assertEquals(1L, begun)
+        compose.onAllNodesWithText("Companion plan").assertCountEquals(0)
+        compose.onAllNodesWithText(musclesHeader).assertCountEquals(0)
+        compose.onAllNodesWithText(planHeader).assertCountEquals(0)
+    }
+
+    @Test
+    fun phoneWidthKeepsTodayWithoutCompanion() {
+        showDashboardPanes(PHONE_WIDTH_DP)
+        compose.onNodeWithText("Begin Full Body A").assertIsDisplayed()
+        compose.onAllNodesWithTag("dashboard-plan").assertCountEquals(0)
     }
 
     private companion object {

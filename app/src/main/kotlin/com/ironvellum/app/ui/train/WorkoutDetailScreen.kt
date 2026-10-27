@@ -296,6 +296,7 @@ fun WorkoutDetailScreen(
     sessionId: Long,
     onBack: () -> Unit,
     viewModel: WorkoutDetailViewModel = viewModel(
+        key = "workout-detail-$sessionId",
         factory = viewModelFactory {
             initializer {
                 WorkoutDetailViewModel(

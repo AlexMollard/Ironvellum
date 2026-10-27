@@ -32,11 +32,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -223,8 +225,8 @@ fun PresetsScreen(
     val coverage by coverageModel.ui.collectAsStateWithLifecycle()
     val dismissedHeavy = rememberDismissedHeavy()
     val live by viewModel.live.collectAsStateWithLifecycle()
-    var showNewChooser by remember { mutableStateOf(false) }
-    var showImport by remember { mutableStateOf(false) }
+    var showNewChooser by rememberSaveable { mutableStateOf(false) }
+    var showImport by rememberSaveable { mutableStateOf(false) }
     // Survives only the composition: a stale "Added 3 workouts" after leaving
     // and returning to Train would read as a fresh import.
     var importResult by remember { mutableStateOf<String?>(null) }
@@ -238,9 +240,23 @@ fun PresetsScreen(
     val weekStart = todayDate.minusDays((today - 1).toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
     val sessions = ui.history.map { it.first }
     val focus = TrainFocus.resolve(ui.presets, sessions, live, today, todayStart, weekStart)
+    val expanded = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
+    val musclesCard: @Composable () -> Unit = {
+        MusclesNowCard(
+            ui = fatigue,
+            coverageLine = if (!coverage.week.hasAnything()) null else stringResource(R.string.muscles_now_week, coverageLine),
+            zone = zone,
+            onOpen = { onOpenMuscles(MusclesView.FATIGUE) },
+            onOpenCoverage = { onOpenMuscles(MusclesView.COVERAGE) },
+            modifier = Modifier.padding(top = SECTION_GAP),
+        )
+    }
+
+    Row(Modifier.fillMaxSize()) {
 
     Column(
         Modifier
+            .weight(1f)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
@@ -264,14 +280,7 @@ fun PresetsScreen(
                 onForge = { showNewChooser = true },
             )
         }
-        MusclesNowCard(
-            ui = fatigue,
-            coverageLine = if (!coverage.week.hasAnything()) null else stringResource(R.string.muscles_now_week, coverageLine),
-            zone = zone,
-            onOpen = { onOpenMuscles(MusclesView.FATIGUE) },
-            onOpenCoverage = { onOpenMuscles(MusclesView.COVERAGE) },
-            modifier = Modifier.padding(top = SECTION_GAP),
-        )
+        if (!expanded) musclesCard()
         if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
         val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
@@ -292,72 +301,7 @@ fun PresetsScreen(
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
         }
-        // Each rite is one line, the whole of it one tap away on its page,
-        // where it is begun; today's is begun from Today.
-        InkRowPanel(Modifier.fillMaxWidth()) {
-            ui.presets.forEach { preset ->
-                val sealed = sealedThisWeek(preset)
-                val isToday = preset.scheduledDay == today
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(onClickLabel = stringResource(R.string.presets_open_description, preset.name)) { onOpenRite(preset.id) }
-                        .heightIn(min = ROW_HEIGHT)
-                        .padding(end = 16.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    // Today is the thin emerald bar at the row's edge; the rest keep the gutter.
-                    Box(
-                        Modifier
-                            .width(TODAY_BAR)
-                            .height(28.dp)
-                            .background(if (isToday) IronvellumColors.Emerald else Color.Transparent),
-                    )
-                    Text(
-                        preset.scheduledDay?.let(::dayLabel) ?: "—",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier.widthIn(min = DAY_COLUMN),
-                    )
-                    Text(
-                        preset.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (sealed) {
-                        Text(stringResource(R.string.presets_sealed_mark), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.EmeraldText)
-                    }
-                    Text(
-                        when {
-                            sealed -> Words.sealed.c
-                            isToday && focus is TrainFocus.Live -> stringResource(R.string.presets_row_under_way)
-                            isToday -> stringResource(R.string.presets_row_today)
-                            // "~54 min": the tail of the rite's plan line.
-                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset))
-                                .substringAfterLast(" · ").lowercase()
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                    )
-                    // The row opens the rite, like the rows below it, so it says so.
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = IronvellumColors.InkMuted,
-                    )
-                }
-                if (preset != ui.presets.last()) InkDivider()
-            }
-        }
+        WeekPlanRows(ui, today, focus is TrainFocus.Live, sealedThisWeek, onOpenRite)
         }
 
         Spacer(Modifier.height(SECTION_GAP))
@@ -405,6 +349,15 @@ fun PresetsScreen(
         }
         Spacer(Modifier.height(END_GAP))
     }
+        if (expanded) {
+            Column(
+                Modifier.weight(1f).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            ) {
+                musclesCard()
+                Spacer(Modifier.height(END_GAP))
+            }
+        }
+    }
 
     if (showNewChooser) {
         IronvellumDialog(
@@ -449,6 +402,82 @@ fun PresetsScreen(
             onDismiss = { showImport = false },
         )
     }
+}
+
+@Composable
+internal fun WeekPlanRows(
+    ui: TrainUi,
+    today: Int,
+    live: Boolean,
+    sealedThisWeek: (WorkoutPreset) -> Boolean,
+    onOpenRite: (Long) -> Unit,
+) {
+        // Each rite is one line, the whole of it one tap away on its page,
+        // where it is begun; today's is begun from Today.
+        InkRowPanel(Modifier.fillMaxWidth()) {
+            ui.presets.forEach { preset ->
+                val sealed = sealedThisWeek(preset)
+                val isToday = preset.scheduledDay == today
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(onClickLabel = stringResource(R.string.presets_open_description, preset.name)) { onOpenRite(preset.id) }
+                        .heightIn(min = ROW_HEIGHT)
+                        .padding(end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Today is the thin emerald bar at the row's edge; the rest keep the gutter.
+                    Box(
+                        Modifier
+                            .width(TODAY_BAR)
+                            .height(28.dp)
+                            .background(if (isToday) IronvellumColors.Emerald else Color.Transparent),
+                    )
+                    Text(
+                        preset.scheduledDay?.let(::dayLabel) ?: "—",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.widthIn(min = DAY_COLUMN),
+                    )
+                    Text(
+                        preset.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (sealed) {
+                        Text(stringResource(R.string.presets_sealed_mark), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.EmeraldText)
+                    }
+                    Text(
+                        when {
+                            sealed -> Words.sealed.c
+                            isToday && live -> stringResource(R.string.presets_row_under_way)
+                            isToday -> stringResource(R.string.presets_row_today)
+                            // "~54 min": the tail of the rite's plan line.
+                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset))
+                                .substringAfterLast(" · ").lowercase()
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                    )
+                    // The row opens the rite, like the rows below it, so it says so.
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = IronvellumColors.InkMuted,
+                    )
+                }
+                if (preset != ui.presets.last()) InkDivider()
+            }
+        }
 }
 
 @Composable

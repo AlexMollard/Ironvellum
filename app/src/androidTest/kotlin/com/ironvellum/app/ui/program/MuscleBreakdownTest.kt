@@ -1,12 +1,23 @@
 package com.ironvellum.app.ui.program
 
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onFirst
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.FatigueModel
@@ -16,7 +27,9 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.ui.FlowDriver
+import com.ironvellum.app.ui.ShotRecorder
 import com.ironvellum.app.ui.TestProfile
+import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
@@ -56,12 +69,23 @@ class MuscleBreakdownTest {
         driver.takeTheClock()
     }
 
-    private fun show(vararg sessions: FatigueSession): androidx.compose.runtime.MutableState<Muscle?> {
+    private fun show(vararg sessions: FatigueSession, expanded: Boolean = false, controlledWidth: Boolean = false): androidx.compose.runtime.MutableState<Muscle?> {
         val selection = mutableStateOf<Muscle?>(null)
+        val paneLight = InstrumentationRegistry.getArguments().getString("paneLight") == "true"
         val ui = FatigueUi(FatigueModel.estimate(sessions.toList(), now, long), hasHistory = true, loaded = true, exercises = catalogue)
         compose.activityRule.scenario.onActivity {
             it.setContent {
-                IronvellumTheme { FatigueContent(ui, selection, ZoneId.of("UTC")) }
+                val density = LocalDensity.current
+                val width = LocalWindowInfo.current.containerSize.width
+                // Keep the real pixel constraints while exercising tablet/phone logical widths.
+                val testDensity = if (controlledWidth || expanded) Density(width / if (expanded) 1000f else 400f, density.fontScale) else density
+                CompositionLocalProvider(LocalDensity provides testDensity) {
+                    IronvellumTheme(light = paneLight) {
+                        Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss)) {
+                            FatigueContent(ui, selection, ZoneId.of("UTC"), expanded = expanded)
+                        }
+                    }
+                }
             }
         }
         driver.settle()
@@ -110,6 +134,46 @@ class MuscleBreakdownTest {
         light(selection, Muscle.QUADS)
         driver.awaitText("What it came from")
         assertEquals(before, tops())
+    }
+
+    @Test
+    fun expandedSelectionShowsBreakdownBesideMapAndCanChangeMuscle() {
+        val selection = show(
+            session(1, 40, "Romanian Deadlift", "", 4),
+            session(2, 20, "Back Squat", "", 5),
+            expanded = true,
+        )
+        driver.awaitText("MOST WORKED")
+        driver.click("Hamstrings")
+        assertEquals(Muscle.HAMSTRINGS, selection.value)
+        driver.awaitText("What it came from")
+        val caption = compose.onAllNodesWithText("Estimated from your last 7 days").onFirst()
+            .fetchSemanticsNode().boundsInRoot
+        val breakdown = compose.onAllNodesWithText("What it came from").onFirst()
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue("Map=$caption breakdown=$breakdown", breakdown.left >= caption.right)
+        assertEquals(0, compose.onAllNodes(isDialog()).fetchSemanticsNodes().size)
+        driver.click("Quads")
+        assertEquals(Muscle.QUADS, selection.value)
+        driver.awaitText("Back Squat")
+        assertTrue(driver.allText().any { it == "Quads" })
+        if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
+            ShotRecorder.take(compose, "expanded-muscle-fatigue-breakdown")
+        }
+    }
+
+    @Test
+    fun phoneSelectionOpensDismissibleSheet() {
+        val selection = show(session(1, 20, "Back Squat", "", 5), controlledWidth = true)
+        driver.awaitText("MOST WORKED")
+        driver.click("Quads")
+        driver.awaitText("What it came from")
+        assertEquals(Muscle.QUADS, selection.value)
+        assertTrue(compose.onAllNodes(isDialog()).fetchSemanticsNodes().isNotEmpty())
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        driver.settle()
+        assertEquals(null, selection.value)
+        assertTrue(driver.allText().none { it == "What it came from" })
     }
 
     @Test
