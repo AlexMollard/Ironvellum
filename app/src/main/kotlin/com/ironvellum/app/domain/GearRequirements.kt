@@ -163,6 +163,23 @@ object GearRequirements {
     )
 
     /**
+     * Movements done with a dumbbell in each hand, whose logged load is per dumbbell (issue #3). Only named
+     * dumbbell lifts: "Romanian Deadlift" may be a barbell and nothing logs which, and one-dumbbell lifts
+     * (goblet squat, one-arm row, pullover) carry the whole load in the one.
+     */
+    private val eachHand: Set<String> = pairOnly + setOf(
+        "dumbbell shoulder press", "arnold press", "lateral raise", "front raise", "reverse fly",
+        "hammer curl", "dumbbell shrug", "walking lunge", "dumbbell step-up",
+        "dumbbell bent-over row", "decline dumbbell press", "standing dumbbell press", "bent-over rear delt raise",
+        "dumbbell romanian deadlift", "incline dumbbell curl", "two dumbbell skullcrusher", "dumbbell upright row",
+        "lying rear lateral raise", "dumbbell rear delt row", "incline dumbbell shoulder press",
+        "head-supported rear delt raise", "decline dumbbell fly", "incline hammer-grip dumbbell press",
+        "incline dumbbell fly", "incline dumbbell fly with twist", "dumbbell deadlift", "dumbbell lunge",
+        "dumbbell squat", "dumbbell iron cross", "alternating hammer curl", "alternating dumbbell curl",
+        "prone incline dumbbell curl", "seated dumbbell curl", "zottman curl", "dumbbell squat to curl",
+    )
+
+    /**
      * One-step harder variant when the capped dumbbell cannot reach failure
      * inside 20 reps (Lopez 2021): same pattern, more bodyweight share.
      */
@@ -215,6 +232,12 @@ object GearRequirements {
 
     /** True when the movement cannot be done with a single dumbbell. */
     fun needsPair(name: String): Boolean = name.trim().lowercase() in pairOnly
+
+    /** True when the movement's load is logged per dumbbell, one held in each hand. */
+    fun loadIsEach(name: String): Boolean = name.trim().lowercase() in eachHand
+
+    /** The each-hand names, for the test that keeps them in step with the catalogue. */
+    internal val eachHandNames: Set<String> get() = eachHand
 
     /** The alternative gear sets the movement needs (each set must be fully owned); empty when unlisted or nothing is needed. */
     fun needs(exerciseName: String): List<Set<Gear>> =

@@ -1679,7 +1679,10 @@ fun SessionScreen(
                     value = field,
                     onValueChange = { field = cleanLoadInput(it) },
                     singleLine = true,
-                    label = { Text(stringResource(R.string.session_load_field_label, Units.name)) },
+                    label = {
+                        val each = GearRequirements.loadIsEach(target.exerciseName)
+                        Text(stringResource(if (each) R.string.session_load_field_label_each else R.string.session_load_field_label, Units.name))
+                    },
                     placeholder = { Text(stringResource(R.string.session_load_placeholder)) },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
@@ -2098,6 +2101,8 @@ private class Figure(
     val unit: String,
     val minus: SessionSet,
     val plus: SessionSet,
+    /** A load held as a dumbbell in each hand: the figure is per dumbbell. */
+    val each: Boolean = false,
 )
 
 private enum class RowState { DONE, WARMUP, EDITING, ACTIVE, UPCOMING }
@@ -2139,14 +2144,20 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
     val worn = WornLoad.forLift(ProgramAnswersStore.kit, set.exerciseName, weighted, metric)
     fun load(): Figure {
         val kg = set.weightKg?.takeIf { it > 0.0 }
+        val each = GearRequirements.loadIsEach(set.exerciseName)
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
             value = kg?.let { Units.format(it) } ?: if (weighted) "0" else resText(R.string.session_figure_bodyweight),
             // A loaded lift with nothing on it says so, where the unit would sit.
-            unit = if (kg != null) Units.name else if (weighted) resText(R.string.session_unit_set_load) else "",
+            unit = when {
+                kg == null -> if (weighted) resText(R.string.session_unit_set_load) else ""
+                each -> resText(R.string.session_unit_load_each, Units.name)
+                else -> Units.name
+            },
             minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
             plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
+            each = each,
         )
     }
     fun minutes(): Figure {
@@ -2223,8 +2234,12 @@ internal fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = 
 private fun FigureKind.typable(): Boolean = this != FigureKind.KM
 
 /** The spoken labels of a figure's minus button, plus button and typed entry. */
-private fun FigureKind.stepperRes(): Triple<Int, Int, Int> = when (this) {
-    FigureKind.LOAD -> Triple(R.string.session_stepper_load_decrease, R.string.session_stepper_load_increase, R.string.session_stepper_load_type)
+private fun FigureKind.stepperRes(each: Boolean = false): Triple<Int, Int, Int> = when (this) {
+    FigureKind.LOAD -> if (each) {
+        Triple(R.string.session_stepper_load_each_decrease, R.string.session_stepper_load_each_increase, R.string.session_stepper_load_each_type)
+    } else {
+        Triple(R.string.session_stepper_load_decrease, R.string.session_stepper_load_increase, R.string.session_stepper_load_type)
+    }
     FigureKind.REPS -> Triple(R.string.session_stepper_reps_decrease, R.string.session_stepper_reps_increase, R.string.session_stepper_reps_type)
     FigureKind.SECONDS -> Triple(R.string.session_stepper_seconds_decrease, R.string.session_stepper_seconds_increase, R.string.session_stepper_seconds_type)
     FigureKind.MINUTES -> Triple(R.string.session_stepper_minutes_decrease, R.string.session_stepper_minutes_increase, R.string.session_stepper_minutes_type)
@@ -3318,7 +3333,7 @@ private fun FigureStepper(
 ) {
     // The glyphs hug the figure, and the group sits centred in its half: spread
     // to the edges, one figure's + read as the next figure's −.
-    val (decrease, increase, type) = figure.kind.stepperRes()
+    val (decrease, increase, type) = figure.kind.stepperRes(figure.each)
     Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         StepButton("−", stringResource(decrease)) { onEdit(figure.minus) }
         Column(

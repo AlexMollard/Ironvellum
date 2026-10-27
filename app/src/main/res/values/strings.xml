@@ -1397,6 +1397,11 @@
     <string name="session_stepper_load_decrease">Decrease load</string>
     <string name="session_stepper_load_increase">Increase load</string>
     <string name="session_stepper_load_type">Type load</string>
+    <!-- The load of a lift done with a dumbbell in each hand is per dumbbell. %1$s is the unit, kg or lb. -->
+    <string name="session_unit_load_each">%1$s each</string>
+    <string name="session_stepper_load_each_decrease">Decrease load per dumbbell</string>
+    <string name="session_stepper_load_each_increase">Increase load per dumbbell</string>
+    <string name="session_stepper_load_each_type">Type load per dumbbell</string>
     <string name="session_stepper_reps_decrease">Decrease reps</string>
     <string name="session_stepper_reps_increase">Increase reps</string>
     <string name="session_stepper_reps_type">Type reps</string>
@@ -1492,6 +1497,8 @@
     <!-- Load dialog. %1$d is a set number; %1$s a unit (kg or lb). -->
     <string name="session_load_dialog_set">SET %1$d</string>
     <string name="session_load_field_label">Load (%1$s)</string>
+    <!-- Load dialog of a lift done with a dumbbell in each hand. %1$s is the unit, kg or lb. -->
+    <string name="session_load_field_label_each">Load per dumbbell (%1$s)</string>
     <string name="session_load_placeholder">Leave blank for bodyweight</string>
     <!-- %1$s is the highest load allowed, %2$s the unit. -->
     <string name="session_load_error">Enter 0 to %1$s %2$s.</string>
