@@ -2,6 +2,8 @@ package com.ironvellum.app.data
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.data.db.PresetEntity
+import com.ironvellum.app.data.db.PresetEntryEntity
 import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import kotlinx.coroutines.flow.first
@@ -69,6 +71,25 @@ class TwinConvertTest {
             )
         }
     }
+    private suspend fun routine(): Pair<Long, List<PresetEntryEntity>> {
+        val presetId = db.presetDao().insertPreset(PresetEntity(name = "Pull day", note = "Keep", scheduledDay = 2))
+        db.presetDao().insertEntries(
+            listOf(
+                PresetEntryEntity(presetId = presetId, exerciseId = ids.getValue("Pull-up"), targetSets = 4,
+                    targetReps = 6, targetWeightKg = 12.5, modifiers = "", position = 0,
+                    supersetGroup = 7, setScheme = "keep scheme", warmup = true),
+                PresetEntryEntity(presetId = presetId, exerciseId = ids.getValue("Push-up"), targetSets = 3,
+                    targetReps = 10, targetWeightKg = 10.0, modifiers = "weighted, deficit, elevated", position = 1),
+                PresetEntryEntity(presetId = presetId, exerciseId = ids.getValue("Pistol Squat"), targetSets = 2,
+                    targetReps = 5, targetWeightKg = 10.0, modifiers = "weighted", position = 2),
+            ),
+        )
+        return presetId to db.presetDao().presetWithEntries(presetId)!!.entries.sortedBy { it.position }
+    }
+
+    private suspend fun routineEntries(id: Long) =
+        db.presetDao().presetWithEntries(id)!!.entries.sortedBy { it.position }
+
 
     private suspend fun countBy(name: String, modifiers: String? = null) =
         (1L..3L).flatMap { db.sessionDao().setsFor(it) }.count { it.exerciseId == ids.getValue(name) && (modifiers == null || it.modifiers == modifiers) }
@@ -143,6 +164,85 @@ class TwinConvertTest {
         assertNotNull(db.sessionDao().byId(1))
         assertNull(db.sessionDao().byId(1)!!.editedAtMs)
     }
+    @Test
+    fun routineOnlyConversionPreservesFieldsAndIsIdempotent() = runBlocking {
+        repo.convertTwins(backup = {})
+        val (presetId, before) = routine()
+        val preview = repo.observeRoutineTwinMoves().first()
+        assertEquals(listOf(before[0].id, before[1].id), preview.map { it.entryId })
+        assertEquals(listOf("Weighted Pull-up", "Decline Push-up"), preview.map { it.to })
+        assertEquals(listOf("", "weighted, deficit"), preview.map { it.modifiers })
+        assertTrue(preview.all { it.presetId == presetId && it.presetName == "Pull day" })
+
+        var backups = 0
+        val result = repo.convertTwins(backup = { archive ->
+            assertTrue(archive.isNotBlank())
+            assertEquals(before, routineEntries(presetId))
+            backups++
+        })
+        assertEquals(1, backups)
+        assertEquals(0, result.sets)
+        assertEquals(0, result.sessions)
+        assertEquals(preview, result.routines)
+        assertEquals(
+            listOf(
+                before[0].copy(exerciseId = ids.getValue("Weighted Pull-up"), modifiers = ""),
+                before[1].copy(exerciseId = ids.getValue("Decline Push-up"), modifiers = "weighted, deficit"),
+                before[2],
+            ),
+            routineEntries(presetId),
+        )
+        assertTrue(repo.observeRoutineTwinMoves().first().isEmpty())
+        val again = repo.convertTwins(backup = { backups++ })
+        assertTrue(again.routines.isEmpty())
+        assertEquals(1, backups)
+    }
+
+    @Test
+    fun backupFailureLeavesRoutineOnlyUnchanged() = runBlocking {
+        repo.convertTwins(backup = {})
+        val (presetId, before) = routine()
+        try {
+            repo.convertTwins(backup = { error("disk full") })
+            fail("backup failure must stop conversion")
+        } catch (expected: IllegalStateException) {
+            assertEquals("disk full", expected.message)
+        }
+        assertEquals(before, routineEntries(presetId))
+        assertTrue(repo.observeRoutineTwinMoves().first().isNotEmpty())
+    }
+
+    @Test
+    fun failureAfterRoutineWriteRollsBackHistoryAndRoutines() = runBlocking {
+        val (presetId, before) = routine()
+        val historyGroupCount = TwinConversionGroups.of(repo).size
+        try {
+            repo.convertTwins(backup = {}, afterGroup = { written ->
+                if (written == historyGroupCount + 1) error("routine failure")
+            })
+            fail("failure must propagate")
+        } catch (expected: IllegalStateException) {
+            assertEquals("routine failure", expected.message)
+        }
+        assertEquals(before, routineEntries(presetId))
+        assertEquals(14, countBy("Pull-up", "weighted"))
+        assertEquals(0, countBy("Weighted Pull-up"))
+        (1L..3L).forEach { assertNull(db.sessionDao().byId(it)!!.editedAtMs) }
+    }
+    @Test
+    fun liveSessionIsNotConverted() = runBlocking {
+        val (presetId, _) = routine()
+        val liveId = db.sessionDao().insertSession(
+            SessionEntity(presetId = presetId, label = "Live", startedAtMs = sealedAt, completedAtMs = null,
+                xpAwarded = 0, strengthScore = 0),
+        )
+        db.sessionDao().insertSets(listOf(SetLogEntity(sessionId = liveId, exerciseId = ids.getValue("Pull-up"),
+            exercisePosition = 0, setIndex = 0, reps = 5, weightKg = 10.0, modifiers = "weighted", done = true)))
+        val before = db.sessionDao().setsFor(liveId)
+        repo.convertTwins(backup = {})
+        assertEquals(before, db.sessionDao().setsFor(liveId))
+    }
+
 
     private companion object {
         const val TEST_DB = "twin_convert_test.db"

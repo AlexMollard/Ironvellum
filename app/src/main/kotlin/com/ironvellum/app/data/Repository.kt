@@ -2394,9 +2394,42 @@ class Repository(
             exercises,
         )
     }.distinctUntilChanged()
+    data class RoutineTwinMove(
+        val entryId: Long,
+        val presetId: Long,
+        val presetName: String,
+        val from: String,
+        val to: String,
+        val toId: Long,
+        val modifiers: String,
+    )
+
+    fun observeRoutineTwinMoves(): Flow<List<RoutineTwinMove>> =
+        combine(presetDao.observePresets(), observeExercises(), ::routineTwinMoves).distinctUntilChanged()
+
+    private fun routineTwinMoves(presets: List<PresetWithEntries>, exercises: List<Exercise>): List<RoutineTwinMove> {
+        val entries = presets.flatMap { preset -> preset.entries.map { preset.preset to it } }
+        val rows = entries.map { (_, entry) ->
+            TwinConversion.Row(entry.id, entry.position, entry.exerciseId, entry.targetWeightKg, entry.modifiers, entry.warmup)
+        }
+        val byId = entries.associateBy { it.second.id }
+        return TwinConversion.plan(rows, exercises).map { move ->
+            val (preset, entry) = byId.getValue(move.block.sessionId)
+            RoutineTwinMove(entry.id, preset.id, preset.name, move.from, move.to, move.toId, move.modifiers)
+        }
+    }
+
+    private suspend fun routineTwinMovesNow(): List<RoutineTwinMove> =
+        routineTwinMoves(presetDao.observePresets().first(), observeExercises().first())
+
 
     /** What [convertTwins] did. */
-    data class TwinConvertResult(val groups: List<TwinConversion.Group>, val sets: Int, val sessions: Int)
+    data class TwinConvertResult(
+        val groups: List<TwinConversion.Group>,
+        val sets: Int,
+        val sessions: Int,
+        val routines: List<RoutineTwinMove> = emptyList(),
+    )
 
     /**
      * Moves every past set logged as a base exercise with a modifier or load onto its dedicated exercise
@@ -2408,18 +2441,19 @@ class Repository(
      * changes neither what an amendment may raise nor whether it can be reopened. Stored XP and strength scores are
      * left as they were paid; records, history, fatigue and deeds read the sets, so they follow.
      *
-     * [afterGroup] is a test seam, called with the number of groups written so far inside the transaction.
+     * [afterGroup] is a test seam, called after each history group and routine entry inside the transaction.
      */
     suspend fun convertTwins(
         backup: suspend (String) -> Unit,
         nowMs: Long = System.currentTimeMillis(),
         afterGroup: (Int) -> Unit = {},
     ): TwinConvertResult {
-        if (twinMovesNow().isEmpty()) return TwinConvertResult(emptyList(), 0, 0)
+        if (twinMovesNow().isEmpty() && routineTwinMovesNow().isEmpty()) return TwinConvertResult(emptyList(), 0, 0)
         backup(exportJson())
         val result = db.withTransaction {
             val moves = twinMovesNow()
             val groups = TwinConversion.groups(moves)
+            val routines = routineTwinMovesNow()
             groups.forEachIndexed { index, group ->
                 moves.filter { it.from == group.from && it.to == group.to }.forEach { move ->
                     sessionDao.setsFor(move.block.sessionId)
@@ -2428,12 +2462,18 @@ class Repository(
                 }
                 afterGroup(index + 1)
             }
+            routines.forEachIndexed { index, move ->
+                val entry = presetDao.presetWithEntries(move.presetId)?.entries?.firstOrNull { it.id == move.entryId }
+                    ?: error("Entry ${move.entryId} disappeared during conversion")
+                presetDao.updateEntry(entry.copy(exerciseId = move.toId, modifiers = move.modifiers))
+                afterGroup(groups.size + index + 1)
+            }
             val touched = moves.map { it.block.sessionId }.distinct()
             touched.forEach { id ->
                 val session = sessionDao.byId(id) ?: return@forEach
                 sessionDao.updateSession(session.copy(editedAtMs = nowMs, sealedXp = sealedBase(session)))
             }
-            TwinConvertResult(groups, moves.sumOf { it.sets }, touched.size) to touched
+            TwinConvertResult(groups, moves.sumOf { it.sets }, touched.size, routines) to touched
         }
         result.second.forEach { writeBackSaved(it) }
         return result.first

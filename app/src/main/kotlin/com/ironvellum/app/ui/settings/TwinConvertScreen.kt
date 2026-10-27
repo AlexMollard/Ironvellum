@@ -17,10 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,6 +69,9 @@ class TwinConvertViewModel(private val repo: Repository, private val appContext:
     val groups: StateFlow<List<TwinConversion.Group>> =
         repo.observeTwinMoves().map(TwinConversion::groups).stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    val routines: StateFlow<List<Repository.RoutineTwinMove>> =
+        repo.observeRoutineTwinMoves().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     private val _ui = MutableStateFlow(TwinConvertUi())
     val ui: StateFlow<TwinConvertUi> = _ui.asStateFlow()
 
@@ -101,28 +107,47 @@ fun rememberTwinConvertViewModel(): TwinConvertViewModel {
     )
 }
 
-/** The confirm screen: each group as "from to to, N sets", then one button that backs up and moves them all. */
+/** Previews history and saved workout changes before confirming the backed-up conversion. */
 @Composable
 fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
     val groups = viewModel.groups.collectAsStateWithLifecycle().value
+    val routines = viewModel.routines.collectAsStateWithLifecycle().value
     val ui = viewModel.ui.collectAsStateWithLifecycle().value
     BackHandler(onBack = onDismiss)
     val moved = ui.result
+    var confirming by remember { mutableStateOf(false) }
     // After a run the live list is empty; show what was moved.
     val shown = moved?.groups ?: groups
+    val shownRoutines = moved?.routines ?: routines
+    val hasMoves = shown.isNotEmpty() || shownRoutines.isNotEmpty()
     val totalSets = shown.sumOf { it.sets }
+    if (confirming) {
+        SettingsConfirmDialog(
+            title = stringResource(R.string.twinconvert_confirm_title),
+            text = stringResource(R.string.twinconvert_confirm_text),
+            confirmLabel = stringResource(R.string.twinconvert_confirm_button),
+            dismissLabel = stringResource(R.string.common_cancel),
+            onConfirm = {
+                confirming = false
+                viewModel.convert()
+            },
+            onDismiss = { confirming = false },
+        )
+    }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.weight(1f).padding(horizontal = 16.dp).verticalScroll(rememberScrollState())) {
             Spacer(Modifier.height(8.dp))
             PushedHeader(stringResource(R.string.twinconvert_title), onBack = onDismiss)
             Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(if (shown.isEmpty()) R.string.twinconvert_empty else R.string.twinconvert_intro),
+                stringResource(if (hasMoves) R.string.twinconvert_intro else R.string.twinconvert_empty),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             if (shown.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
+                Text(stringResource(R.string.twinconvert_history_heading), style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+                Spacer(Modifier.height(8.dp))
                 InkRowPanel {
                     shown.forEachIndexed { i, group ->
                         if (i > 0) InkDivider()
@@ -130,23 +155,47 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
                     }
                 }
             }
-            moved?.let {
+            if (shownRoutines.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    stringResource(
-                        R.string.twinconvert_done,
-                        pluralStringResource(R.plurals.common_sets_count, it.sets, it.sets),
-                        pluralStringResource(R.plurals.common_days_count, it.sessions, it.sessions),
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.SystemGreen,
+                    pluralStringResource(R.plurals.twinconvert_routine_heading, shownRoutines.size, shownRoutines.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = IronvellumColors.Ink,
                 )
+                Spacer(Modifier.height(8.dp))
+                InkRowPanel {
+                    shownRoutines.forEachIndexed { i, move ->
+                        if (i > 0) InkDivider()
+                        RoutineRow(move)
+                    }
+                }
+            }
+            moved?.let {
+                Spacer(Modifier.height(14.dp))
+                if (it.groups.isNotEmpty()) {
+                    Text(
+                        stringResource(
+                            R.string.twinconvert_done,
+                            pluralStringResource(R.plurals.common_sets_count, it.sets, it.sets),
+                            pluralStringResource(R.plurals.common_days_count, it.sessions, it.sessions),
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.SystemGreen,
+                    )
+                }
+                if (it.routines.isNotEmpty()) {
+                    Text(
+                        pluralStringResource(R.plurals.twinconvert_routine_done, it.routines.size, it.routines.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.SystemGreen,
+                    )
+                }
             }
             ui.error?.let {
                 Spacer(Modifier.height(14.dp))
                 Text(stringResource(R.string.twinconvert_failed, it), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
             }
-            if (moved == null && shown.isNotEmpty()) {
+            if (moved == null && hasMoves) {
                 Spacer(Modifier.height(14.dp))
                 Text(stringResource(R.string.twinconvert_note), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
@@ -159,10 +208,11 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
         DockedActionBar(
             primary = when {
                 ui.running -> stringResource(R.string.twinconvert_running)
-                moved != null || shown.isEmpty() -> stringResource(R.string.common_done)
-                else -> pluralStringResource(R.plurals.twinconvert_button, totalSets, totalSets)
+                moved != null || !hasMoves -> stringResource(R.string.common_done)
+                shownRoutines.isEmpty() -> pluralStringResource(R.plurals.twinconvert_button, totalSets, totalSets)
+                else -> stringResource(R.string.twinconvert_review_button)
             },
-            onPrimary = if (moved != null || shown.isEmpty()) onDismiss else viewModel::convert,
+            onPrimary = if (moved != null || !hasMoves) onDismiss else { { confirming = true } },
             primaryEnabled = !ui.running,
             reserveLink = false,
         )
@@ -176,8 +226,6 @@ private fun GroupRow(group: TwinConversion.Group) {
             stringResource(R.string.twinconvert_group, group.from, group.to),
             style = MaterialTheme.typography.bodyLarge,
             color = IronvellumColors.Ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
         )
         Text(
             stringResource(
@@ -185,6 +233,18 @@ private fun GroupRow(group: TwinConversion.Group) {
                 pluralStringResource(R.plurals.common_sets_count, group.sets, group.sets),
                 pluralStringResource(R.plurals.common_days_count, group.sessions, group.sessions),
             ),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
+}
+
+@Composable
+private fun RoutineRow(move: Repository.RoutineTwinMove) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(move.presetName, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
+        Text(
+            stringResource(R.string.twinconvert_group, move.from, move.to),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
