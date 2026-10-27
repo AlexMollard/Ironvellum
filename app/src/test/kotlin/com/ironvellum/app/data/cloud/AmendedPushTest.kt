@@ -2,6 +2,7 @@ package com.ironvellum.app.data.cloud
 
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.WorkoutSession
 import java.util.Objects
 import org.junit.Assert.assertEquals
@@ -42,6 +43,29 @@ class AmendedPushTest {
         )
         assertEquals(legacyFriends, CloudSync.pushFingerprint(friends, sets))
     }
+    @Test
+    fun `a set with kind rpe or group changes the fingerprint`() {
+        val baseline = CloudSync.pushFingerprint(session, sets)
+        for (changed in listOf(
+            sets[0].copy(kind = SetKind.TOP),
+            sets[0].copy(rpe = 8),
+            sets[0].copy(supersetGroup = 1),
+        )) {
+            assertNotEquals(baseline, CloudSync.pushFingerprint(session, listOf(changed, sets[1])))
+        }
+    }
+
+    @Test
+    fun `plain sets keep the legacy fingerprint`() {
+        val legacy = Objects.hash(
+            session.label, session.title, session.note, session.completedAtMs, session.xpAwarded, session.strengthScore,
+            sets.map { s ->
+                listOf(s.exerciseName, s.setIndex, s.reps, s.weightKg, s.modifiers, s.done, s.durationSec, s.distanceM, s.grade, s.exercisePosition)
+            },
+        )
+        assertEquals(legacy, CloudSync.pushFingerprint(session, sets))
+    }
+
 
     @Test
     fun `an amended trial re-pushes`() {

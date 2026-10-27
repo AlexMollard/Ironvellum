@@ -244,6 +244,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation("io.ktor:ktor-client-mock:${libs.versions.ktor.get()}")
     // Compose UI tests. The BOM is applied to the androidTest classpath too, so
     // ui-test tracks the same Compose version the app is built against.
     androidTestImplementation(platform(libs.androidx.compose.bom))

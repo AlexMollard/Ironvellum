@@ -4,7 +4,7 @@ Ironvellum (package `com.ironvellum.app`) is a training tracker. This policy des
 what the app stores, what leaves your device, and what never does. It is written
 from the app's actual behaviour; nothing here is aspirational.
 
-Checked against the codebase on 2026-09-15.
+Cloud workout upload details checked against the codebase on 2026-10-27.
 
 ## The short version
 
@@ -95,7 +95,9 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title, worn crest | `profiles` |
 | Idle-game aggregates (muster essence, figure count, figure rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
-| Set rows: exercise name, set index, reps, weight, modifiers, done | `session_sets` |
+| Set rows: exercise name, position, set index, reps, weight, modifiers, done, duration, distance and grade | `session_sets` |
+| Set kind, effort (RPE) and superset group where recorded | `session_set_details`, readable only by you |
+| Completed imported workouts and their sets, including set kind, effort and superset group | `imported_sessions`, `imported_session_sets`, readable only by you and never in feeds |
 | Unlocked titles with timestamps | `earned_titles` |
 | Likes you give/receive | `session_likes` |
 | Friend requests / friendships | `friendships` |
@@ -103,7 +105,10 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 
 Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_baseline.sql`). Your profile `visibility` setting
-(`public` / `friends` / `private`) controls who else can see your shared data.
+(`public` / `friends` / `private`) controls who else can see shared data; the
+set details and imported workouts above remain owner-only. These uploads occur
+as part of sync while signed in and stop when you sign out. Backends below
+schema version 30 do not receive the set details or imported workouts.
 
 **Using your own backend:** Settings → CLOUD lets you point the app at your
 own Supabase project instead of the shared one. When a custom backend is
@@ -112,9 +117,10 @@ the maintainer's shared instance — and Google sign-in is unavailable there
 (email sign-in only). See `supabase/SELF_HOSTING.md`.
 
 **Not uploaded:** body readings and measurements, height, sex, private notes,
-local-only row ids beyond the sync watermark, in-progress (abandoned)
-sessions, device identifiers, or anything read from Health Connect. This
-holds for the cloud backup too: it is built without them.
+in-progress (abandoned) sessions, device identifiers, or anything read from
+Health Connect. Session local IDs are uploaded to match synced workouts; other
+local-only row IDs are not. The cloud backup is built without these device-only
+readings and private notes too.
 
 ## What the app does NOT contain
 

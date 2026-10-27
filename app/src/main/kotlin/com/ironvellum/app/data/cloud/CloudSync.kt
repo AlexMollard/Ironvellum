@@ -14,6 +14,7 @@ import com.ironvellum.app.domain.JoinStatus
 import com.ironvellum.app.domain.isValidInviteCode
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.blockKey
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
@@ -84,6 +85,20 @@ class CloudSync(
     private val repo: Repository,
     private val account: AccountRepository,
 ) {
+    // Instrumented transport tests inject an isolated client and identity.
+    private var pushClientOverride: io.github.jan.supabase.SupabaseClient? = null
+    private var pushAccountOverride: Account? = null
+
+    internal constructor(
+        repo: Repository,
+        account: AccountRepository,
+        client: io.github.jan.supabase.SupabaseClient,
+        identity: Account,
+    ) : this(repo, account) {
+        pushClientOverride = client
+        pushAccountOverride = identity
+    }
+
     // Read cache + single-flight for the social reads. See CloudReadCache.
     private val cache = CloudReadCache()
     // Declared before init: the sign-in collector below uses it.
@@ -134,8 +149,8 @@ class CloudSync(
     }
 
     suspend fun push(): Result<SyncOutcome> {
-        val me = requireAccount(account).getOrElse { return failure(it) }
-        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        val me = pushAccountOverride ?: requireAccount(account).getOrElse { return failure(it) }
+        val client = pushClientOverride ?: Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
             val profile = repo.observeProfile().first() ?: PlayerProfile()
             val wornCrest = repo.observeEquippedFrame().first()
@@ -151,8 +166,16 @@ class CloudSync(
             // and the server can lose rows without the device hearing of it: a
             // project reset, a new account on this phone, a manual delete. So
             // it only counts for sessions the server still has; the rest push.
+            var webAvailable = webReady(Cloud.schemaVersion(client))
+            if (webAvailable && !Cloud.webCaughtUp(me.userId) && !Cloud.webCatchUpStarted(me.userId)) {
+                // clearPushWatermark() also deletes tombstones; preserve pending
+                // deletions while invalidating the completed-session fingerprints.
+                repo.recordPushWatermark(emptyMap())
+                check(Cloud.markWebCatchUpStarted(me.userId)) { "Could not save web catch-up state" }
+            }
             val onServer = serverLocalIds(client, me.userId)
-            val watermark = repo.pushWatermark().filterKeys { it in onServer }
+            val storedWatermark = repo.pushWatermark()
+            val watermark = storedWatermark.filterKeys { it in onServer }
             val pending = pendingForPush(completed, watermark)
             val level = Xp.progress(profile.totalXp).level
             // Same rule as Today and the deeds: rest days are rest, so the
@@ -164,6 +187,21 @@ class CloudSync(
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
             val problems = mutableListOf<UiText>()
+            var webTableMissing = false
+            fun webFailure(error: Throwable) {
+                if (generateSequence(error) { it.cause }.any {
+                        it is PostgrestRestException && it.code in setOf("42P01", "PGRST205")
+                    }) {
+                    webAvailable = false
+                    webTableMissing = true
+                    if (problems.none { it == cloudText(R.string.cloud_sync_web_unavailable) }) {
+                        problems += cloudText(R.string.cloud_sync_web_unavailable)
+                    }
+                } else {
+                    problems += cloudText(R.string.cloud_sync_web_failed, Cloud.explain(error))
+                }
+            }
+
 
             // Trials deleted on this device go from the cloud too, so they stop
             // counting in a circle's week and stop showing in allies' feeds.
@@ -175,15 +213,30 @@ class CloudSync(
             val tombstones = repo.tombstonedSessions()
             if (tombstones.isNotEmpty()) {
                 runCatching {
-                    client.postgrest.from("sessions").delete {
-                        filter {
-                            eq("user_id", me.userId)
-                            isIn("local_id", tombstones)
+                    chunks(tombstones).forEach { ids ->
+                        client.postgrest.from("sessions").delete {
+                            filter {
+                                eq("user_id", me.userId)
+                                isIn("local_id", ids)
+                            }
+                        }
+                        if (webAvailable) {
+                            client.postgrest.from("imported_sessions").delete {
+                                filter {
+                                    eq("user_id", me.userId)
+                                    isIn("local_id", ids)
+                                }
+                            }
+                        } else {
+                            error("Imported data deletion requires an updated backend")
                         }
                     }
                     repo.clearTombstones(tombstones)
                 }.onFailure { error ->
-                    problems += cloudThemed(R.string.cloud_sync_deleted_failed, R.string.cloud_sync_deleted_failed__t, Cloud.explain(error))
+                    if (webAvailable && generateSequence(error) { it.cause }.any {
+                            it is PostgrestRestException && it.code in setOf("42P01", "PGRST205")
+                        }) webFailure(error)
+                    else problems += cloudThemed(R.string.cloud_sync_deleted_failed, R.string.cloud_sync_deleted_failed__t, Cloud.explain(error))
                 }
             }
             // The worn title is the only profile column push owns. The name
@@ -257,10 +310,8 @@ class CloudSync(
                     editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
                 )
             }
-            if (sessionDtos.isNotEmpty()) {
-                client.postgrest.from("sessions").upsert(
-                    sessionDtos,
-                ) {
+            chunks(sessionDtos).forEach { rows ->
+                client.postgrest.from("sessions").upsert(rows) {
                     onConflict = "user_id,local_id"
                     // A field at its Kotlin default is left out of the JSON. In a batch where another
                     // row carries it, PostgREST writes null for the missing key unless told to use the
@@ -271,18 +322,14 @@ class CloudSync(
             // Nothing changed means no ids to resolve; an empty isIn() filter
             // is not a valid PostgREST query, so skip the round trip outright.
             val pendingIds = pending.map { it.first.id }
-            val cloudIds = if (pendingIds.isEmpty()) {
-                emptyMap()
-            } else {
+            val cloudIds = chunks(pendingIds).flatMap { ids ->
                 client.postgrest.from("sessions").select {
                     filter {
                         eq("user_id", me.userId)
-                        // Only the ids this push actually needs — the old
-                        // unfiltered select re-downloaded every session row.
-                        isIn("local_id", pendingIds)
+                        isIn("local_id", ids)
                     }
-                }.decodeList<SessionIdDto>().associate { it.localId to it.id }
-            }
+                }.decodeList<SessionIdDto>()
+            }.associate { it.localId to it.id }
 
             var setCount = 0
             val setDtos = buildList {
@@ -326,10 +373,8 @@ class CloudSync(
                     }
                 }
             }
-            if (setDtos.isNotEmpty()) {
-                client.postgrest.from("session_sets").upsert(
-                    setDtos,
-                ) {
+            chunks(setDtos).forEach { rows ->
+                client.postgrest.from("session_sets").upsert(rows) {
                     onConflict = "session_id,exercise_name,set_index"
                     defaultToNull = false
                 }
@@ -358,12 +403,87 @@ class CloudSync(
                     }
                 }
             }
+            // Replace detail rows so cleared effort and removed set keys disappear.
+            if (webTableMissing) pushedNow.clear()
+            if (webAvailable) {
+                for ((session, sets) in pushedNow.toList()) {
+                    if (!webAvailable) {
+                        pushedNow.remove(session to sets)
+                        continue
+                    }
+                    val cloudId = cloudIds.getValue(session.id)
+                    runCatching {
+                        client.postgrest.from("session_set_details").delete {
+                            filter { eq("session_id", cloudId) }
+                        }
+                        chunks(detailRows(me.userId, cloudId, sets)).forEach { rows ->
+                            client.postgrest.from("session_set_details").insert(rows) { defaultToNull = false }
+                        }
+                    }.onFailure { error ->
+                        webFailure(error)
+                        pushedNow.remove(session to sets)
+                    }
+                }
+            }
+
+            var importedOnServer = emptySet<Long>()
+            val importedPushed = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
+            if (webAvailable) {
+                runCatching {
+                    importedOnServer = serverLocalIds(client, me.userId, "imported_sessions")
+                    val importedPending = pendingImportedForPush(completed, storedWatermark.filterKeys { it in importedOnServer })
+                    for ((session, sets) in importedPending) {
+                        val (pushable, skipped) = partitionPushable(sets)
+                        if (skipped.isNotEmpty()) {
+                            problems += cloudText(R.string.cloud_sync_set_skipped, session.label)
+                            continue
+                        }
+                        runCatching {
+                            val dto = ImportedSessionDto(
+                                userId = me.userId, localId = session.id, label = session.label,
+                                title = session.title, note = session.note,
+                                startedAt = Instant.ofEpochMilli(session.startedAtMs).toString(),
+                                completedAt = session.completedAtMs?.let { Instant.ofEpochMilli(it).toString() },
+                                editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
+                            )
+                            client.postgrest.from("imported_sessions").upsert(dto) {
+                                onConflict = "user_id,local_id"
+                                defaultToNull = false
+                            }
+                            val cloudId = client.postgrest.from("imported_sessions").select {
+                                filter { eq("user_id", me.userId); eq("local_id", session.id) }
+                            }.decodeList<SessionIdDto>().single().id
+                            client.postgrest.from("imported_session_sets").delete {
+                                filter { eq("session_id", cloudId) }
+                            }
+                            val indexes = wireSetIndexes(pushable)
+                            val rows = pushable.mapIndexed { index, set ->
+                                ImportedSetDto(
+                                    sessionId = cloudId, userId = me.userId, exerciseName = set.exerciseName,
+                                    exercisePosition = set.exercisePosition, setIndex = indexes[index], reps = set.reps,
+                                    weightKg = set.weightKg, modifiers = set.modifiers, done = set.done,
+                                    durationSec = set.durationSec, distanceM = set.distanceM, grade = set.grade,
+                                    kind = set.kind.wire, rpe = set.rpe, supersetGroup = set.supersetGroup,
+                                )
+                            }
+                            chunks(rows).forEach { batch ->
+                                client.postgrest.from("imported_session_sets").insert(batch) { defaultToNull = false }
+                            }
+                            importedPushed += session to sets
+                        }.onFailure { webFailure(it) }
+                        if (!webAvailable) break
+                    }
+                }.onFailure { webFailure(it) }
+            }
+
 
             // Watermark is PERSISTED, not process-local: an in-memory map made
             // every cold start re-upload the whole completed history. Written
             // only here, after the upserts above succeeded, so a failed push
             // re-pushes; rows for locally deleted sessions are pruned.
-            val advanced = watermark + pushedNow.associate { (session, sets) ->
+            val advanced = storedWatermark.filterKeys { id ->
+                id in onServer || id in importedOnServer || (!webAvailable && completed.any { it.first.id == id && it.first.imported })
+            } + (pushedNow + importedPushed).associate { (session, sets) ->
                 session.id to pushFingerprint(session, sets)
             }
             repo.recordPushWatermark(
@@ -433,6 +553,9 @@ class CloudSync(
             // Now that every session, set and title has landed, the server has
             // what it needs to derive the ranked numbers.
             pushDerivedAggregates()
+            if (webAvailable && problems.isEmpty() && !Cloud.webCaughtUp(me.userId)) {
+                Cloud.markWebCaughtUp(me.userId)
+            }
 
             SyncOutcome(
                 sessions = sessionDtos.size,
@@ -456,11 +579,11 @@ class CloudSync(
      * a response at 1000 rows by default, so one select would silently drop
      * the rest and re-push them forever.
      */
-    private suspend fun serverLocalIds(client: io.github.jan.supabase.SupabaseClient, userId: String): Set<Long> {
+    private suspend fun serverLocalIds(client: io.github.jan.supabase.SupabaseClient, userId: String, table: String = "sessions"): Set<Long> {
         val ids = HashSet<Long>()
         var from = 0L
         while (true) {
-            val page = client.postgrest.from("sessions").select(Columns.raw("id, local_id")) {
+            val page = client.postgrest.from(table).select(Columns.raw("id, local_id")) {
                 filter { eq("user_id", userId) }
                 order("local_id", Order.ASCENDING)
                 range(from, from + SERVER_ID_PAGE - 1)
@@ -1561,8 +1684,7 @@ class CloudSync(
             }
         }.toSet()
 
-    // Internal (not private) so the instrumented push-selection test can call
-    // pendingForPush; the fingerprint itself stays private.
+    // Internal helpers also support the push-selection and wire-format tests.
     internal companion object {
         /** `session_comments` columns the thread reads; one list for select and read-back. */
         private const val COMMENT_COLUMNS = "id, session_id, user_id, author_name, body, created_at"
@@ -1573,22 +1695,32 @@ class CloudSync(
         /** PostgREST's default max-rows: one page of the server id sweep. */
         private const val SERVER_ID_PAGE = 1000L
 
-        /**
-         * The sessions a push must upload: changed-since-last-push, and never
-         * CSV-imported. Imported history reaches the cloud only inside the
-         * full-archive backup (cloud_archives) — the feed would otherwise
-         * flood with years of back-filled workouts the lifter never chose to
-         * publish. Filtering BEFORE the watermark check also means an
-         * imported session never enters the retry path: it is skipped each
-         * push and simply never advances the watermark, so there is nothing
-         * to retry forever.
-         */
+        /** Imported history uses its owner-only tables, never the public feed path. */
         internal fun pendingForPush(
             completed: List<Pair<WorkoutSession, List<SessionSet>>>,
             watermark: Map<Long, Int>,
         ): List<Pair<WorkoutSession, List<SessionSet>>> = completed
             .filterNot { (session, _) -> session.imported }
             .filter { (session, sets) -> pushFingerprint(session, sets) != watermark[session.id] }
+        internal fun pendingImportedForPush(
+            completed: List<Pair<WorkoutSession, List<SessionSet>>>,
+            watermark: Map<Long, Int>,
+        ): List<Pair<WorkoutSession, List<SessionSet>>> = completed
+            .filter { (session, _) -> session.imported }
+            .filter { (session, sets) -> pushFingerprint(session, sets) != watermark[session.id] }
+
+        internal fun <T> chunks(rows: List<T>): List<List<T>> = rows.chunked(500)
+
+        internal fun webReady(version: Int?): Boolean = version != null && version >= 30
+
+        internal fun detailRows(userId: String, cloudId: String, sets: List<SessionSet>): List<SessionSetDetailDto> {
+            val indexes = wireSetIndexes(sets)
+            return sets.mapIndexedNotNull { index, set ->
+                if (set.kind == SetKind.WORKING && set.rpe == null && set.supersetGroup == null) null
+                else SessionSetDetailDto(userId, cloudId, set.exerciseName, indexes[index], set.kind.wire, set.rpe, set.supersetGroup)
+            }
+        }
+
 
         /**
          * Content fingerprint of one completed session — every field the push
@@ -1606,10 +1738,15 @@ class CloudSync(
                 sets.map { set ->
                     // Every field the push uploads must be here, or an edit that only
                     // changes a hold's seconds matches the watermark and never syncs.
-                    listOf(
-                        set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
-                        set.durationSec, set.distanceM, set.grade, set.exercisePosition,
-                    )
+                    buildList<Any?> {
+                        addAll(listOf(
+                            set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
+                            set.durationSec, set.distanceM, set.grade, set.exercisePosition,
+                        ))
+                        if (set.kind != SetKind.WORKING) add(set.kind.wire)
+                        set.rpe?.let { add(it) }
+                        set.supersetGroup?.let { add(it) }
+                    }
                 },
             )
             // The audience joins the hash only when it is not the default:

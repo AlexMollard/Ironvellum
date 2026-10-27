@@ -133,6 +133,26 @@ class WireNamesMatchSchemaTest {
     }
 
     @Test
+    fun `web upload rows match their tables`() {
+        check("SessionSetDetailDto", SessionSetDetailDto.serializer().descriptor, tableColumns("session_set_details"))
+        check("ImportedSessionDto", ImportedSessionDto.serializer().descriptor, tableColumns("imported_sessions"))
+        check("ImportedSetDto", ImportedSetDto.serializer().descriptor, tableColumns("imported_session_sets"))
+    }
+
+    @Test
+    fun `snapshot byte limit matches both server bounds`() {
+        val constraint = Regex("""constraint web_snapshots_size_cap\s+check\s*\(([\s\S]*?)\n\s*\)""")
+            .let { re -> migrations.firstNotNullOfOrNull { re.find(it) } }
+        requireNotNull(constraint) { "no web_snapshots_size_cap constraint" }
+        val bounds = Regex("""(?:size_bytes|octet_length\(snapshot::text\))\s*<=\s*(\d+)\s*\*\s*(\d+)\s*\*\s*(\d+)""")
+            .findAll(constraint.groupValues[1])
+            .map { match -> match.groupValues.drop(1).map(String::toInt).reduce(Int::times) }
+            .toList()
+        assertEquals("snapshot needs both byte bounds", 2, bounds.size)
+        assertTrue("snapshot byte caps drifted: $bounds", bounds.all { it == WireLimits.SNAPSHOT_MAX_BYTES })
+    }
+
+    @Test
     fun `earned titles and friendships match their tables`() {
         check("EarnedTitleDto", EarnedTitleDto.serializer().descriptor, tableColumns("earned_titles"))
         check("FriendshipDto", FriendshipDto.serializer().descriptor, tableColumns("friendships"))

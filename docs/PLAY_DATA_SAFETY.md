@@ -37,13 +37,17 @@ Code references:
 ### Fitness info — workouts (collected, shared)
 - Collected: **Yes** — completed sessions with label, public title, public
   note (≤500 chars), timestamps, XP, strength score; set rows (exercise name,
-  reps, weight kg, modifiers, duration, distance, grade). Shared: **Yes**,
-  subject to the profile visibility setting (default `friends`) enforced by
-  RLS. Optional: **Yes** (sign-in only).
-- Purpose: App functionality — syncing training history across the social
+  position, index, reps, weight kg, modifiers, duration, distance and grade).
+  Set kind, effort (RPE) and superset group, plus completed imported workouts
+  and their sets, are also synced on schema 30 or newer. These additional
+  records are owner-only; imported workouts never enter feeds.
+- Shared: **Yes** for ordinary completed sessions and their standard sets,
+  subject to the profile and workout visibility settings enforced by RLS.
+  Optional: **Yes** (sign-in only; signing out stops uploads).
+- Purpose: App functionality — syncing training history and supporting social
   features.
-- Code: `CS` `push()`; `M1` `sessions`/`session_sets` (title, note, duration,
-  distance and grade columns included).
+- Code: `CS` `push()`; `M1` `sessions`, `session_sets`,
+  `session_set_details`, `imported_sessions` and `imported_session_sets`.
 
 ### Fitness info — Health Connect data (NOT collected)
 - The app **reads** steps, distance, active calories, sleep, resting heart

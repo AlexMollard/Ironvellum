@@ -131,6 +131,51 @@ data class SessionSetDto(
     @SerialName("exercise_position") val exercisePosition: Int? = null,
 )
 
+@Serializable
+data class SessionSetDetailDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("exercise_name") val exerciseName: String,
+    @SerialName("set_index") val setIndex: Int,
+    @SerialName("kind") val kind: String?,
+    @SerialName("rpe") val rpe: Int?,
+    @SerialName("superset_group") val supersetGroup: Int?,
+)
+
+@Serializable
+data class ImportedSessionDto(
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("id") val id: String? = null,
+    @SerialName("user_id") val userId: String,
+    @SerialName("local_id") val localId: Long,
+    @SerialName("label") val label: String,
+    @SerialName("title") val title: String,
+    @SerialName("note") val note: String,
+    @SerialName("started_at") val startedAt: String,
+    @SerialName("completed_at") val completedAt: String?,
+    @SerialName("edited_at") val editedAt: String?,
+)
+
+@Serializable
+data class ImportedSetDto(
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("exercise_name") val exerciseName: String,
+    @SerialName("exercise_position") val exercisePosition: Int?,
+    @SerialName("set_index") val setIndex: Int,
+    @SerialName("reps") val reps: Int,
+    @SerialName("weight_kg") val weightKg: Double?,
+    @SerialName("modifiers") val modifiers: String,
+    @SerialName("done") val done: Boolean,
+    @SerialName("duration_sec") val durationSec: Int?,
+    @SerialName("distance_m") val distanceM: Double?,
+    @SerialName("grade") val grade: String?,
+    @SerialName("kind") val kind: String?,
+    @SerialName("rpe") val rpe: Int?,
+    @SerialName("superset_group") val supersetGroup: Int?,
+)
+
 /** `lift_marks` insert shape; only tier steps leave the phone, never bodyweight. */
 @Serializable
 data class LiftMarkDto(

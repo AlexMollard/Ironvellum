@@ -219,6 +219,37 @@ object Cloud {
             prefs?.edit { putString(PREF_TOMBSTONE_OWNER, value) }
         }
 
+    private fun webCatchUpKey(prefix: String, userId: String): String? =
+        _config.value?.url?.let { "$prefix:$it:$userId" }
+
+    internal fun webCaughtUp(userId: String): Boolean =
+        webCatchUpKey("web_caught_up", userId)?.let { prefs?.getBoolean(it, false) } == true
+
+    internal fun webCatchUpStarted(userId: String): Boolean =
+        webCatchUpKey("web_catch_up_started", userId)?.let { prefs?.getBoolean(it, false) } == true
+
+    internal fun markWebCatchUpStarted(userId: String): Boolean =
+        webCatchUpKey("web_catch_up_started", userId)?.let { prefs?.edit()?.putBoolean(it, true)?.commit() } == true
+
+    internal fun markWebCaughtUp(userId: String): Boolean {
+        val caughtUp = webCatchUpKey("web_caught_up", userId) ?: return false
+        val started = webCatchUpKey("web_catch_up_started", userId) ?: return false
+        return prefs?.edit()?.putBoolean(caughtUp, true)?.remove(started)?.commit() == true
+    }
+
+    /** Query the same schema beacon as [probe], returning null when it cannot be read. */
+    suspend fun schemaVersion(client: SupabaseClient): Int? = try {
+        client.postgrest.rpc(RPC_SCHEMA_VERSION).data.trim().toIntOrNull()
+    } catch (e: PostgrestRestException) {
+        null
+    } catch (e: RestException) {
+        null
+    } catch (e: HttpRequestException) {
+        null
+    } catch (e: IOException) {
+        null
+    }
+
     private fun readOverride(prefs: SharedPreferences): CloudConfig? {
         val url = prefs.getString(PREF_URL, null)
         val key = prefs.getString(PREF_KEY, null)
