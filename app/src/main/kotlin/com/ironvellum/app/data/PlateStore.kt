@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * The bar and plates the lifter owns, per unit: kg and lb each keep their own bar and pair counts
  * (45 lb plates are not 20 kg ones), and an exercise can override the bar (a women's bar for press).
  * Kept in the "program_answers" preferences beside the rest of the armoury, under "plates." keys,
- * so no new file and no database migration; like the gear it is excluded from backups.
+ * so no new file and no database migration; portable settings travel in the archive.
  *
  * Nothing stored reads as the unit's defaults. The [racks] flow mirrors the saved values so the
  * Armoury page and the live trial's sheet see each other's edits.

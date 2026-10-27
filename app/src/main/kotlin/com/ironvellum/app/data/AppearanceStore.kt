@@ -48,6 +48,17 @@ class AppearanceStore(private val prefs: SharedPreferences, private val existing
     /** The notification accent for the theme in force right now (the stored mode against the phone's dark state). */
     fun accent(): Int = notificationAccent(currentMode.value, systemDark(), current.value, currentLight.value)
 
+    /** Re-read restored preferences and update every observable theme value. */
+    fun reload() {
+        currentMode.value = readMode()
+        current.value = readPair("primary", "secondary", AccentPalette.Default)
+        currentLight.value = readPair("light_primary", "light_secondary", AccentPalette.LightDefault)
+        IronvellumColors.darkAccents = current.value
+        IronvellumColors.lightAccents = currentLight.value
+        IronvellumColors.light = currentMode.value.isLight(systemDark())
+        onChange()
+    }
+
     fun setMode(mode: ThemeMode) {
         prefs.edit { putString("theme", mode.name) }
         currentMode.value = mode

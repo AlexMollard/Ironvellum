@@ -54,6 +54,7 @@ The short view, by version; the detail of each item is in the sections below.
 
 ### 1.9: Play preparation, photos, translations (owner agreed 2026-10-22, built in this order)
 - Large screens: request portrait on phones and center medium-width content at up to 600dp; expanded screens place Today, Train, workout history, live workout and muscle details in two panes.
+- Archive backups include portable settings; older archives leave current settings unchanged. `python tools/phone_backup.py --serial SERIAL --output NEW_DIRECTORY` also captures private preferences with the database; keep that folder private.
 - [ ] 1 Play-ready code: done: privacy policy row in Settings > Support (both flavours), PLAY_DATA_SAFETY.md updated for heart rate, background reads and WRITE_EXERCISE, `bundlePlayRelease` builds (unsigned, 19.1 MB). Open: sign it once the owner's keystore exists; release-build frame stats on the phone (a release build signed with the debug key installs over the debug one and keeps the data; the owner uses it about 3 minutes, then the debug build goes back)
 - [ ] 2 Progress photos, on the phone and in the folder backup, never the cloud:
   - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout
@@ -193,9 +194,9 @@ Theme: faster, sturdier, easier to reach. Measured against the F-Droid field on
    Health Connect checks segment types against the session type and wants per-exercise
    timing, which means a catalogue-to-type table and invented timings. The Play declaration is in the owner list below. Checked on the emulator (API 35, real Health
    Connect): write, amend (still one entry) and delete (entry gone), screenshots in
-   `.tmp/hc-shots/`. Not backed up (`health_write` prefs): the grant does not survive a
-   reinstall. Not hooked: archive or cloud restore and "delete all data", which leave any
-   earlier entries in Health Connect.
+   `.tmp/hc-shots/`. The write-back switch is included in portable settings, but the Health Connect
+   grant is not; a restored switch still checks the device permission before writing. Archive or cloud
+   restore and "delete all data" leave earlier entries in Health Connect.
 8. **String extraction.** Move UI text into string resources, plain and themed
    names included, with a lint guard against new literals. No translations yet;
    inviting translators is 1.9. Owner decisions 2026-10-16: built AFTER item 9;

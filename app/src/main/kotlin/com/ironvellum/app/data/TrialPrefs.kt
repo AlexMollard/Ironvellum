@@ -8,9 +8,8 @@ import com.ironvellum.app.domain.RestAlert
 /**
  * The live trial's device settings: whether a rest runs between sets (for every
  * movement, and for single movements), how its end is announced, and whether
- * the screen stays awake. Preferences, not columns: they describe this phone,
- * and nothing in the database or the cloud reads them. Movements are kept by
- * lower-case name, the key the catalogue and an import already agree on.
+ * the screen stays awake. Stored as preferences and included in the portable settings archive.
+ * Movements are kept by lower-case name, the key the catalogue and an import already agree on.
  */
 class TrialPrefs(private val prefs: SharedPreferences) {
     constructor(context: Context) : this(context.getSharedPreferences("trial_prefs", Context.MODE_PRIVATE))

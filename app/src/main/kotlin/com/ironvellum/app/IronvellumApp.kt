@@ -50,6 +50,37 @@ class IronvellumApp : Application() {
             database, healthSync, PrefsHighestBandStore(this), writeBack = healthWriteBack,
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
             adjustments = com.ironvellum.app.data.PrefsSessionAdjustments(getSharedPreferences("suggestion_dismissals", MODE_PRIVATE)),
+            archiveSettings = com.ironvellum.app.data.ArchiveSettings(this) { restored, includeDeviceOnly ->
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    if ("appearance" in restored) {
+                        appearanceStore.reload()
+                        com.ironvellum.app.data.Units.init(this@IronvellumApp)
+                        com.ironvellum.app.data.EffortSetting.init(this@IronvellumApp)
+                        com.ironvellum.app.data.LiftingExperienceSetting.init(this@IronvellumApp)
+                        com.ironvellum.app.data.FatigueAdviceSetting.init(this@IronvellumApp)
+                        Words.init(this@IronvellumApp, getDatabasePath(IronvellumDatabase.NAME).exists(), com.ironvellum.app.data.FirstRunPrefs.welcomeSeen(this@IronvellumApp))
+                        Words.setThemed(this@IronvellumApp, Words.themed)
+                    }
+                    if (includeDeviceOnly && "onboarding" in restored) {
+                        com.ironvellum.app.data.FirstRunPrefs.setSexUnset(this@IronvellumApp, getSharedPreferences("onboarding", MODE_PRIVATE).getBoolean("sex_unset", false))
+                    }
+                    if ("weekly_recap" in restored) com.ironvellum.app.data.ReviewDismissals.init(this@IronvellumApp)
+                    if ("program_answers" in restored) {
+                        com.ironvellum.app.data.ProgramAnswersStore.get(this@IronvellumApp)
+                        com.ironvellum.app.data.PlateStore.load(this@IronvellumApp)
+                    }
+                    if ("health_write" in restored) {
+                        healthWriteBack.setEnabled(getSharedPreferences("health_write", MODE_PRIVATE).getBoolean("enabled", false))
+                    }
+                    if ("reminders" in restored) {
+                        if (Reminders.enabled(this@IronvellumApp)) Reminders.enable(this@IronvellumApp) else Reminders.disable(this@IronvellumApp)
+                    }
+                    if ("inbox_notifier" in restored) {
+                        if (!com.ironvellum.app.data.InboxNotifier.enabled(this@IronvellumApp)) com.ironvellum.app.data.InboxNotifier.cancel(this@IronvellumApp)
+                        InboxWorker.sync(this@IronvellumApp, accountRepository.account.value != null && Cloud.config.value != null)
+                    }
+                }
+            },
         )
     }
 

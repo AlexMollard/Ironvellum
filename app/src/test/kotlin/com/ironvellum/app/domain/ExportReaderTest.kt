@@ -362,6 +362,7 @@ class ExportReaderTest {
         assertEquals(TrainingMode.STRENGTH, archive.trainingMode)
         assertTrue(archive.skills.isEmpty())
         assertTrue(archive.healthDays.isEmpty())
+        assertNull(archive.settings)
     }
 
     @Test
@@ -379,6 +380,26 @@ class ExportReaderTest {
             assertTrue("expected failure for <$bad>", result.isFailure)
             assertNotNull(result.exceptionOrNull()?.message)
         }
+    }
+
+    @Test
+    fun `settings section must contain objects of string values`() {
+        val archive = fullArchiveJson()
+        val malformed = listOf(
+            "null", "true", "[]", "\"text\"", "42",
+            "{\"prefs\":null}", "{\"prefs\":[]}", "{\"prefs\":\"text\"}",
+            "{\"prefs\":{\"key\":null}}", "{\"prefs\":{\"key\":true}}",
+            "{\"prefs\":{\"key\":42}}", "{\"prefs\":{\"key\":[]}}",
+            "{\"prefs\":{\"key\":{}}}",
+        )
+        malformed.forEach { section ->
+            val json = archive.dropLast(1) + ",\"settings\":$section}"
+            val result = ExportReader.read(json)
+            assertTrue("expected failure for settings $section", result.isFailure)
+            assertTrue(result.exceptionOrNull()?.message?.contains("settings") == true)
+        }
+        val empty = archive.dropLast(1) + ",\"settings\":{}}"
+        assertEquals(emptyMap<String, Map<String, String>>(), ExportReader.read(empty).getOrThrow().settings)
     }
 
     @Test

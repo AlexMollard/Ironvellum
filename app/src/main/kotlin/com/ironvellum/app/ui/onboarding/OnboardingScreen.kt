@@ -204,8 +204,10 @@ class OnboardingViewModel(
             val height = repo.observeBodyProfile().first().first
             val rites = repo.observePresets().first().size
             if (FirstRun.restoreCompletesSetup(height, rites)) {
-                leaveWelcome()
-                skip()
+                // Restored profile and preferences are already authoritative; skipping would mark
+                // its sex as unanswered and leaving Welcome would reset the restored preferences flag.
+                _dismissed.value = true
+                prefs.edit { putBoolean(KEY_DISMISSED, true) }
             }
         }
     }

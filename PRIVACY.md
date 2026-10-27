@@ -41,8 +41,9 @@ storage:
   "private" means the server cannot read it, not that the UI hides it
   (`supabase/migrations/0001_baseline.sql`, the comment above the `sessions` table).
 
-The app also offers manual export/import of this data as a JSON archive you
-control (`ExportWriter.kt` / `ExportReader.kt`).
+The app also offers manual export/import of this data and portable settings as a JSON archive you
+control (`ExportWriter.kt` / `ExportReader.kt`). Archives omit account credentials, device tokens,
+and backup-folder permissions.
 
 ## What the app reads from Health Connect
 
@@ -98,7 +99,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Unlocked titles with timestamps | `earned_titles` |
 | Likes you give/receive | `session_likes` |
 | Friend requests / friendships | `friendships` |
-| Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP). It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives` (migration `0013`), readable only by you |
+| Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP) and portable settings such as appearance, training equipment and notification preferences. It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives` (migration `0013`), readable only by you |
 
 Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_baseline.sql`). Your profile `visibility` setting

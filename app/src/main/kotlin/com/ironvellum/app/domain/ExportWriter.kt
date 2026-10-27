@@ -98,6 +98,7 @@ object ExportWriter {
         // clearing them. Default true keeps the LOCAL archive complete and
         // byte-identical.
         includeDeviceOnly: Boolean = true,
+        settings: Map<String, Map<String, String>>? = null,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
@@ -138,6 +139,22 @@ object ExportWriter {
             appendCrestFrames(crestFrames)
             append(",\"relics\":")
             appendRelics(relics)
+        }
+        if (settings != null) {
+            append(",\"settings\":{")
+            settings.entries.forEachIndexed { fileIndex, (file, values) ->
+                if (fileIndex > 0) append(",")
+                appendEscaped(file)
+                append(":{")
+                values.entries.forEachIndexed { valueIndex, (key, value) ->
+                    if (valueIndex > 0) append(",")
+                    appendEscaped(key)
+                    append(":")
+                    appendEscaped(value)
+                }
+                append("}")
+            }
+            append("}")
         }
         append("}")
     }

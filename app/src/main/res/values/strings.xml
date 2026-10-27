@@ -1085,6 +1085,7 @@
     <!-- %1$s is the first problem found in the archive, %2$d how many more there are. -->
     <string tools:ignore="PluralsCandidate" name="settings_import_more_problems">%1$s (+%2$d more)</string>
     <string name="settings_import_not_archive">Import failed — the file may not be an Ironvellum archive</string>
+    <string name="settings_restore_settings_failed">Training was restored, but settings could not be fully restored or refreshed.</string>
     <!-- %1$s is the reason the sync failed. -->
     <string name="settings_health_sync_failed">Health Connect sync failed: %1$s</string>
     <string name="settings_health_unsupported">Health Connect isn\'t available on this device.</string>

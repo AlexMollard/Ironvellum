@@ -43,6 +43,7 @@ object ExportReader {
          * clearing them.
          */
         val deviceDataOmitted: Boolean = false,
+        val settings: Map<String, Map<String, String>>? = null,
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -74,6 +75,7 @@ object ExportReader {
             crestFrames = (root.arr("crestFrames") ?: emptyList()).map { readCrestFrame(it as Obj) },
             relics = (root.arr("relics") ?: emptyList()).map { readRelic(it as Obj) },
             deviceDataOmitted = deviceDataOmitted,
+            settings = root.settings(),
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.
@@ -283,6 +285,17 @@ object ExportReader {
         fun obj(key: String): Obj? = map[key] as? Obj
         @Suppress("UNCHECKED_CAST")
         fun arr(key: String): List<Any?>? = map[key] as? List<Any?>
+
+        fun settings(): Map<String, Map<String, String>>? {
+            if (!map.containsKey("settings")) return null
+            val section = map["settings"] as? Obj ?: fail("settings must be an object")
+            return section.map.mapValues { (file, value) ->
+                val entries = value as? Obj ?: fail("settings file \"$file\" must be an object")
+                entries.map.mapValues { (key, entry) ->
+                    entry as? String ?: fail("settings value \"$file\"/\"$key\" must be a string")
+                }
+            }
+        }
     }
 
     /** Recursive-descent parser over the raw archive text. */

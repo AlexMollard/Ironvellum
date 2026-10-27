@@ -254,6 +254,7 @@ class Repository(
     private val writeBack: SessionWriteBack? = null,
     /** How each workout differed from its routine (Today's fatigue advice); remembered past the process. */
     private val adjustments: SessionAdjustments = SessionAdjustments.None,
+    private val archiveSettings: ArchiveSettings? = null,
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -3717,6 +3718,7 @@ class Repository(
             crestFrames = crestFrames,
             relics = relics,
             exportedAtMs = System.currentTimeMillis(),
+            settings = archiveSettings?.snapshot(includeDeviceOnly),
             includeDeviceOnly = includeDeviceOnly,
         )
         return ExportResult(json, exportProblems)
@@ -3734,6 +3736,10 @@ class Repository(
         val problems: List<UiText>,
     )
 
+    /** The Room transaction committed, but preference persistence or refresh failed afterward. */
+    class SettingsRestoreException(cause: Throwable) :
+        MessageException(UiText.res(R.string.settings_restore_settings_failed), cause)
+
     /**
      * Full restore from an export archive: wipes user data and replays the
      * archive inside one transaction, so a mid-way failure cannot leave a
@@ -3748,7 +3754,8 @@ class Repository(
      */
     suspend fun importArchive(json: String): Result<ImportResult> = Result.runCatching {
         val archive = ExportReader.read(json).getOrThrow()
-        db.withTransaction {
+        archive.settings?.let(ArchiveSettings::validate)
+        val result = db.withTransaction {
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
                 sessionDao.clearAll()
@@ -4071,6 +4078,16 @@ class Repository(
                     problems = problems,
                 )
             }
+        if (archive.settings != null && archiveSettings != null) {
+            try {
+                archiveSettings.restore(archive.settings, includeDeviceOnly = !archive.deviceDataOmitted)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw SettingsRestoreException(e)
+            }
+        }
+        result
     }
 
     // ------------------------------------------------------------------ CSV import

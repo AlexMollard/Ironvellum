@@ -96,6 +96,7 @@ class ExportWriterTest {
         assertFalse(json.contains("\"gacha\""))
         assertFalse(json.contains("\"crestFrames\""))
         assertFalse(json.contains("\"relics\""))
+        assertFalse(json.contains("\"settings\""))
         assertTrue(json.contains("\"exercises\":[]"))
     }
 
@@ -276,5 +277,35 @@ class ExportWriterTest {
         assertFalse(plain.contains("sealedXp"))
         assertNull(ExportReader.read(plain).getOrThrow().sessions.single().first.editedAtMs)
         assertNull(ExportReader.read(plain).getOrThrow().sessions.single().first.sealedXp)
+    }
+
+    @Test
+    fun `settings round trip with escaped file names keys and values in local and cloud archives`() {
+        val settings = linkedMapOf(
+            "appearance\"\\\n" to linkedMapOf(
+                "key\t\"" to "s:line\nslash\\quote\"control\u0001",
+                "seen" to "b:true",
+                "choices" to "ss:[\"one\",\"two\"]",
+            ),
+            "empty" to emptyMap(),
+        )
+        for (includeDeviceOnly in listOf(true, false)) {
+            val json = ExportWriter.write(
+                profile = PlayerProfile(),
+                trainingMode = TrainingMode.STRENGTH,
+                presets = emptyList(),
+                sessions = emptyList(),
+                stats = emptyList(),
+                titles = emptyList(),
+                skills = emptyList(),
+                healthDays = emptyList(),
+                exportedAtMs = 1,
+                includeDeviceOnly = includeDeviceOnly,
+                settings = settings,
+            )
+            assertTrue(json.contains("\"appearance\\\"\\\\\\n\""))
+            assertTrue(json.contains("\"key\\t\\\"\":\"s:line\\nslash\\\\quote\\\"control\\u0001\""))
+            assertEquals(settings, ExportReader.read(json).getOrThrow().settings)
+        }
     }
 }
