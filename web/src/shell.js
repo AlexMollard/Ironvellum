@@ -24,7 +24,11 @@ export function renderShell(root, {source,snapshot,onSignOut}) {
     try {
       if(path==='/' || !path) await renderOverview(page,ctx);
       else if(path==='/workouts') await renderWorkouts(page,ctx);
-      else if(path.startsWith('/workouts/')) await renderWorkoutDetail(page,ctx,decodeURIComponent(path.slice(10)));
+      else if(path.startsWith('/workouts/')) {
+        const parts=path.slice(10).split('/');
+        if(parts.length===2 && ['synced','imported'].includes(parts[0]) && parts[1]) await renderWorkoutDetail(page,ctx,parts[0],decodeURIComponent(parts[1]));
+        else page.textContent='Page not found.';
+      }
       else if(path==='/lifts' || path.startsWith('/lifts/')) await renderLifts(page,ctx,path.startsWith('/lifts/')?decodeURIComponent(path.slice(7)):undefined);
       else if(path==='/trends') await renderTrends(page,ctx);
       else {page.textContent='Page not found.';}

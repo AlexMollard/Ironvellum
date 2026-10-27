@@ -1,4 +1,5 @@
 import { t } from '../i18n.js';
+import { snapshotForWorkout } from '../source.js';
 import { formatSets } from '../format.js';
 import { artImg } from '../components/artImg.js';
 import { node, card, sortedWorkouts, dayKey, displayDate } from '../components/statCard.js';
@@ -46,11 +47,11 @@ export async function renderWorkouts(root, { source, snapshot, router }) {
   }
   function drawList() {
     listArea.replaceChildren();
-    const filtered = rows.filter(w => (`${w.title || ''} ${w.label || ''}`).toLocaleLowerCase().includes(query) && (filter === 'all' || (filter === 'imported' ? w.origin === 'imported' : (snapshot?.sessions?.[String(w.localId)]?.peaks ?? 0) > 0)));
+    const filtered = rows.filter(w => (`${w.title || ''} ${w.label || ''}`).toLocaleLowerCase().includes(query) && (filter === 'all' || (filter === 'imported' ? w.origin === 'imported' : (snapshotForWorkout(snapshot, w)?.peaks ?? 0) > 0)));
     for (const button of controls.querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.filter === filter));
     if (!filtered.length) { listArea.append(node('p', rows.length ? `No matching ${t('concept_trial_pl')}.` : `No ${t('concept_trial_pl')} yet.`)); return; }
     const size = 25, pages = Math.ceil(filtered.length / size); page = Math.min(page, pages - 1);
-    for (const row of filtered.slice(page * size, (page + 1) * size)) listArea.append(workoutRow(row, snapshot?.sessions?.[String(row.localId)], snapshot, router));
+    for (const row of filtered.slice(page * size, (page + 1) * size)) listArea.append(workoutRow(row, snapshotForWorkout(snapshot, row), snapshot, router));
     if (pages > 1) listArea.append(pager(page, pages, n => { page = n; drawList(); }));
   }
   drawCalendar(); drawList();

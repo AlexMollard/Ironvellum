@@ -14,6 +14,15 @@ describe('overview', () => {
     const root = document.createElement('main'); await renderOverview(root, { source, snapshot: null, router: { go: vi.fn() } });
     expect(root.textContent).toContain('Sync the app');
   });
+  it('links by cloud identity and suppresses a different origin’s snapshot entry', async () => {
+    const root = document.createElement('main');
+    const workout = { id: 'cloud/id', origin: 'imported', localId: 5, title: 'Imported pull', startedAt: '2025-10-05T00:00:00Z' };
+    const otherSnapshot = { ...snapshot, sessions: { 5: { origin: 'synced', hardSets: 77, strength: 999, volumeKg: 123 } } };
+    await renderOverview(root, { source: { userId: 'me', listWorkouts: async () => [workout], getSets: async () => [] }, snapshot: otherSnapshot, router: { go: vi.fn() } });
+    expect(root.querySelector('a[href="#/workouts/imported/cloud%2Fid"]')).not.toBeNull();
+    expect(root.textContent).toContain('— hard sets · — STR');
+    expect(root.textContent).not.toContain('999 STR');
+  });
   it('switches glossary names without changing snapshot figures', async () => {
     const root = document.createElement('main');
     try {

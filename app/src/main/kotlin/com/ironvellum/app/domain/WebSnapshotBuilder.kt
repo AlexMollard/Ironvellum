@@ -248,6 +248,7 @@ object WebSnapshotBuilder {
                 }
             }
             session.id to WebSnapshot.SessionEntry(
+                origin = if (session.imported) "imported" else "synced",
                 min = session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000).coerceAtLeast(1).toInt() } ?: 0,
                 exercises = sets.filter { it.done }.map { it.exerciseId }.distinct().size,
                 hardSets = hard, volumeKg = WorkoutShare.totals(sets, input.exercises).movedKg.toDouble(),

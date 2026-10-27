@@ -1,16 +1,17 @@
 import { t } from '../i18n.js';
+import { snapshotForWorkout, workoutPath } from '../source.js';
 import { formatLoad, formatSets } from '../format.js';
 import { artImg } from '../components/artImg.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { node, card, statCard, sortedWorkouts, displayDate, link } from '../components/statCard.js';
 import { setTable } from '../components/setTable.js';
 import { prTag } from '../components/prTag.js';
-export async function renderWorkoutDetail(root, { source, snapshot, router }, localId) {
+export async function renderWorkoutDetail(root, { source, snapshot, router }, origin, id) {
   root.replaceChildren();
   const workouts = sortedWorkouts(await source.listWorkouts(), source);
-  const index = workouts.findIndex(w => String(w.localId) === String(localId));
+  const index = workouts.findIndex(w => w.origin === origin && String(w.id) === String(id));
   if (index < 0) { root.append(node('h1', `${t('concept_trial_c')} not found`), link(`Back to ${t('concept_trial_pl')}`, '/workouts', router)); return; }
-  const workout = workouts[index], entry = snapshot?.sessions?.[String(workout.localId)];
+  const workout = workouts[index], entry = snapshotForWorkout(snapshot, workout);
   const header = node('header', null, 'screen-header'); header.append(link(t('concept_trial_cpl'), '/workouts', router), node('h1', workout.title || workout.label || t('concept_trial_c')), node('p', displayDate(workout.startedAt, snapshot?.zone), 'muted'));
   if (workout.origin === 'imported') header.append(node('span', 'Imported', 'chip')); root.append(header);
   if (!snapshot) root.append(node('p', 'Sync the app to see your stats.', 'muted'));
@@ -40,7 +41,7 @@ export async function renderWorkoutDetail(root, { source, snapshot, router }, lo
   }
   if (workout.note) { const note = card('Your note'); note.append(node('p', workout.note)); root.append(note); }
   const nav = node('nav', null, 'button-row'); nav.setAttribute('aria-label', `Adjacent ${t('concept_trial_pl')}`);
-  if (index + 1 < workouts.length) nav.append(link(`Previous ${t('concept_trial_s')}`, `/workouts/${encodeURIComponent(workouts[index + 1].localId)}`, router));
-  if (index > 0) nav.append(link(`Next ${t('concept_trial_s')}`, `/workouts/${encodeURIComponent(workouts[index - 1].localId)}`, router)); root.append(nav);
+  if (index + 1 < workouts.length) nav.append(link(`Previous ${t('concept_trial_s')}`, workoutPath(workouts[index + 1]), router));
+  if (index > 0) nav.append(link(`Next ${t('concept_trial_s')}`, workoutPath(workouts[index - 1]), router)); root.append(nav);
   const footer = node('footer'); const credit = node('a', 'Body map license'); credit.href = `${import.meta.env.BASE_URL}licenses/MIT-react-native-body-highlighter.txt`; footer.append(credit); root.append(footer);
 }

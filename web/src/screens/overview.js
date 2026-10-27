@@ -1,4 +1,5 @@
 import { t } from '../i18n.js';
+import { snapshotForWorkout, workoutPath } from '../source.js';
 import { formatLoad, formatSets } from '../format.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { plate } from '../components/plate.js';
@@ -27,8 +28,8 @@ export async function renderOverview(root, { source, snapshot, router }) {
   profileCard.append(emblem, progressStats); layout.append(profileCard);
   const last = rows[0];
   if (last) {
-    const entry = snapshot.sessions?.[String(last.localId)]; const panel = card(`Last ${t('concept_trial_s')}`);
-    panel.append(link(last.title || last.label || t('concept_trial_c'), `/workouts/${encodeURIComponent(last.localId)}`, router), node('p', displayDate(last.startedAt, snapshot.zone), 'muted'));
+    const entry = snapshotForWorkout(snapshot, last); const panel = card(`Last ${t('concept_trial_s')}`);
+    panel.append(link(last.title || last.label || t('concept_trial_c'), workoutPath(last), router), node('p', displayDate(last.startedAt, snapshot.zone), 'muted'));
     if (entry) {
       panel.append(node('p', `${formatSets(entry.hardSets)} hard sets · ${entry.strength} STR · ${formatLoad(entry.volumeKg, snapshot.unit)} ${snapshot.unit}`));
       for (const pr of entry.prs || []) panel.append(prTag(pr, snapshot.unit));

@@ -19,3 +19,37 @@ or run `gh workflow run pages.yml --ref main`. This is manual-only; pushing
 does not deploy. The workflow tests and builds `web/`, then publishes only
 `web/dist` using a Pages artifact retained for one day. It uploads no test
 reports or dependency caches.
+
+## Data contract for design work
+
+Keep the data/authentication layer intact while redesigning `src/screens/`,
+`src/components/` and `src/theme.css`. Screens receive `{source, snapshot, router}`:
+
+- `source.schemaVersion()` reads the backend beacon. Schema 30 supplies workout
+  rows and private details; schema 31 is required by the phone snapshot uploader.
+- `source.listWorkouts()` reads both synced and imported workouts, scoped to the
+  signed-in owner and paged beyond the server's 1,000-row limit.
+- `source.getSets(workout)` rechecks ownership, merges private kind/RPE/superset
+  details, and preserves holds, activities, grades and repeated exercise blocks.
+- `source.getSnapshot()` supplies phone-computed stats or `null`. Missing derived
+  figures must stay unknown (`—`), not become zero or browser-computed estimates.
+- `workoutPath(workout)` identifies details by origin and cloud ID:
+  `#/workouts/<synced|imported>/<cloud-id>`. Never route by `localId` alone.
+- `snapshotForWorkout(snapshot, workout)` checks the snapshot entry's origin
+  before exposing derived figures for its local ID.
+
+The phone owns the arithmetic in `WebSnapshotBuilder.kt`; the browser displays
+it. Snapshot time and zone determine trend windows, stale-data notices and
+calendar dates. Workouts use their completion date, falling back to start.
+Authentication belongs in `src/auth.js`; signing out must stay local to this
+browser and clear private page state.
+
+Use `npm run dev` with `?fixture=1` for offline design work. The generated
+`test/fixtures/snapshot-v1.json` and `rows.json` cover imported workouts,
+variations, holds and activities without exposing real account data. Follow
+links from the example workout list for valid detail URLs. Fixture mode is
+development-only and must not become a production fallback.
+
+Theme tokens, vocabulary, catalogues and body geometry in `src/generated/`
+come from the app. Regenerate them rather than editing their output. Exercise
+art stays in the pinned `art/` submodule; browser copies remain ignored output.

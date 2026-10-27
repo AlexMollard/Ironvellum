@@ -32,7 +32,7 @@ data class WebSnapshot(
     @Serializable data class Month(val workouts: Int, val perWeek: Double, val weeks: List<MonthWeek>, val topLifts: List<TopLift>)
     @Serializable data class MonthWeek(val start: String, val hardSets: Double)
     @Serializable data class TopLift(val name: String, val art: String?, val sessions: Int)
-    @Serializable data class SessionEntry(val min: Int, val exercises: Int, val hardSets: Int, val volumeKg: Double, val peaks: Int,
+    @Serializable data class SessionEntry(val origin: String, val min: Int, val exercises: Int, val hardSets: Int, val volumeKg: Double, val peaks: Int,
         val xp: Int, val strength: Int, val muscleLevels: Map<String, Int>, val groupLevels: Map<String, Int>,
         val prs: List<PrTag>, val peakSets: List<String>, val e1rm: Map<String, Double>)
     @Serializable data class PrTag(val label: String, val reps: Int, val weightKg: Double?, val durationSec: Int?)

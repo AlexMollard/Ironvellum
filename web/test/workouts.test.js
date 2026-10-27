@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderWorkouts } from '../src/screens/workouts.js';
 import { setWordsMode } from '../src/i18n.js';
 const router = { go: vi.fn() };
-const snapshot = { builtAtMs: Date.parse('2025-10-05T00:00:00Z'), zone: 'Australia/Sydney', unit: 'kg', profile: { workouts: 2, firstMs: null }, sessions: { 1: { min: 42, hardSets: 7, volumeKg: 500, xp: 23, peaks: 1, groupLevels: { BACK: 3 }, prs: [{ label: 'Pull-up', reps: 5, weightKg: 10 }] } }, months: { '2025-10': { workouts: 2, perWeek: 2.3333333333333335, weeks: [{ start: '2025-10-01', hardSets: 7 }], topLifts: [] } } };
-const rows = [{ localId: 1, origin: 'imported', title: 'Pull', startedAt: '2025-10-05T23:30:00Z' }, { localId: 2, origin: 'synced', label: 'Legs', startedAt: '2025-10-03T00:00:00Z' }, { localId: 3, userId: 'other', title: 'Private stranger', startedAt: '2025-10-04T00:00:00Z' }];
+const snapshot = { builtAtMs: Date.parse('2025-10-05T00:00:00Z'), zone: 'Australia/Sydney', unit: 'kg', profile: { workouts: 2, firstMs: null }, sessions: { 1: { origin: 'imported', min: 42, hardSets: 7, volumeKg: 500, xp: 23, peaks: 1, groupLevels: { BACK: 3 }, prs: [{ label: 'Pull-up', reps: 5, weightKg: 10 }] } }, months: { '2025-10': { workouts: 2, perWeek: 2.3333333333333335, weeks: [{ start: '2025-10-01', hardSets: 7 }], topLifts: [] } } };
+const rows = [{ id: 'imported-1', localId: 1, origin: 'imported', title: 'Pull', startedAt: '2025-10-05T23:30:00Z' }, { id: 'synced-2', localId: 2, origin: 'synced', label: 'Legs', startedAt: '2025-10-03T00:00:00Z' }, { localId: 3, userId: 'other', title: 'Private stranger', startedAt: '2025-10-04T00:00:00Z' }];
 describe('workouts', () => {
   it('shows snapshot figures, imported tags, zone days and dashes for missing entries', async () => {
     const root = document.createElement('main'); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot, router });
@@ -19,6 +19,27 @@ describe('workouts', () => {
     const root = document.createElement('main'); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot, router });
     root.querySelector('[data-filter="imported"]').click(); expect(root.textContent).toContain('Pull'); expect(root.textContent).not.toContain('Legs');
     const search = root.querySelector('input'); search.value = 'missing'; search.dispatchEvent(new Event('input')); expect(root.textContent).toContain('No matching workouts');
+  });
+  it('uses origin to guard stats and PR filters when local IDs collide', async () => {
+    const root = document.createElement('main');
+    const collision = { id: 'sync/id', localId: 1, origin: 'synced', title: 'Other pull', startedAt: '2025-10-04T00:00:00Z' };
+    await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => [...rows, collision] }, snapshot, router });
+    const cards = [...root.querySelectorAll('.workout-row')];
+    const other = cards.find(card => card.textContent.includes('Other pull'));
+    expect(other.textContent).toContain('— min');
+    expect(other.textContent).not.toContain('23 XP');
+    expect(other.querySelector('a').getAttribute('href')).toBe('#/workouts/synced/sync%2Fid');
+    root.querySelector('[data-filter="prs"]').click();
+    expect(root.textContent).toContain('Pull');
+    expect(root.textContent).not.toContain('Other pull');
+  });
+  it('marks the completion day across midnight and a month boundary', async () => {
+    const root = document.createElement('main');
+    const crossing = { id: 'crossing', origin: 'synced', localId: 4, startedAt: '2025-09-30T23:45:00Z', completedAt: '2025-10-01T00:15:00Z' };
+    await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => [crossing] }, snapshot: { ...snapshot, zone: 'UTC' }, router });
+    expect(root.querySelector('[data-day="2025-10-01"]').classList.contains('has-workout')).toBe(true);
+    root.querySelector('[aria-label="Previous month"]').click();
+    expect(root.querySelector('[data-day="2025-09-30"]').classList.contains('has-workout')).toBe(false);
   });
   it('uses themed names while retaining filters, calendar and snapshot values', async () => {
     const root = document.createElement('main');
