@@ -15,6 +15,14 @@ release, crests and web-viewer patches are applied; `circle_draw_code()` works,
 `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the worn
 crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
+The owner must apply `supabase/hosted/2026-10-28-web-snapshot-cap.sql`
+to reach schema 31 before shipping the 4 MiB snapshot uploader.
+
+The read-only viewer is implemented under `web/`: Overview, Workouts, workout
+details, Lifts and Trends, with generated phone appearance, art and both figures.
+Local browser verification covers desktop and phone widths in dark and light.
+Pages is configured for Actions, but publication and live account acceptance
+are not complete; phase two remains gated on that acceptance.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,

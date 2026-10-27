@@ -1,0 +1,5 @@
+import {it,expect,vi} from 'vitest';
+import {effectiveAppearance,applyAppearance,accents} from '../src/theme.js';
+it('uses custom phone tokens and honours an override',()=>{const custom={...accents.dark[0].tokens,preset:null,fill:'custom'};const phone={mode:'dark',dark:custom,light:accents.light[0].tokens,themed:false};expect(effectiveAppearance(phone).tokens.fill).toBe('custom');expect(effectiveAppearance(phone,{accentId:accents.dark[1].id}).tokens).toEqual(accents.dark[1].tokens);expect(effectiveAppearance(phone,{accentId:'unknown'}).tokens).toEqual(custom);});
+it('system follows the system colour scheme',()=>{vi.stubGlobal('matchMedia',()=>({matches:true}));applyAppearance({mode:'system',light:accents.light[0].tokens});expect(document.documentElement.dataset.theme).toBe('light');vi.unstubAllGlobals();});
+it('uses generated contrast-safe foregrounds',()=>{for(const mode of ['dark','light']) for(const preset of accents[mode]) {expect(preset.contrast.primary).toBeGreaterThanOrEqual(4.5);expect(preset.tokens.onPrimary).toBeTruthy();}});

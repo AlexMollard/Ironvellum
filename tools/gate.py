@@ -352,7 +352,7 @@ def backend() -> int:
         # newest patch must apply cleanly onto a project that has the baseline
         # and run again as a no-op, and the suite must still hold afterwards.
         # (The older patches migrate warbands and are not re-runnable here.)
-        release = os.path.join(ROOT, "supabase/hosted/2026-10-23-web-viewer.sql")
+        release = os.path.join(ROOT, "supabase/hosted/2026-10-28-web-snapshot-cap.sql")
         steps += [release, release, test("assert_all.sql")]
         # The hosted reset round trip. assert_all leaves its fixtures behind and
         # reset_seed adds a sign-up-made profile and a row in every table, so
@@ -470,6 +470,25 @@ def main() -> int:
         print("-- backend: supabase migrations + assertions")
         if backend():
             failures.append("backend")
+
+    print("-- web: generated assets, tests and production build")
+    npm = shutil.which("npm")
+    if not npm:
+        failures.append("web: npm is not installed")
+    else:
+        web_commands = [
+            [sys.executable, "tools/bodymap_web.py", "--check"],
+            [sys.executable, "tools/web_art.py"],
+            [sys.executable, "tools/web_art.py", "--check"],
+            [sys.executable, "tools/test_web_art.py"],
+            [npm, "--prefix", "web", "ci", "--ignore-scripts"],
+            [npm, "--prefix", "web", "test"],
+            [npm, "--prefix", "web", "run", "build"],
+        ]
+        for command in web_commands:
+            if run(command):
+                failures.append("web: " + " ".join(command[1:]))
+                break
 
     unit_total, unit_failed = counts(
         f"app/build/test-results/test{fl}DebugUnitTest/*.xml"
