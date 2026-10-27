@@ -1,0 +1,1082 @@
+{
+    "accent_copper_teal": {
+        "plain": "Copper & Teal",
+        "themed": "Copper & Teal"
+    },
+    "accent_emerald_gold": {
+        "plain": "Emerald & Gold",
+        "themed": "Emerald & Gold"
+    },
+    "accent_forest_gold": {
+        "plain": "Forest & Gold",
+        "themed": "Forest & Gold"
+    },
+    "accent_ice_copper": {
+        "plain": "Ice & Copper",
+        "themed": "Ice & Copper"
+    },
+    "accent_ink_gold": {
+        "plain": "Ink & Gold",
+        "themed": "Ink & Gold"
+    },
+    "accent_oxblood_gold": {
+        "plain": "Oxblood & Gold",
+        "themed": "Oxblood & Gold"
+    },
+    "accent_sapphire_amber": {
+        "plain": "Sapphire & Amber",
+        "themed": "Sapphire & Amber"
+    },
+    "accent_violet_rose": {
+        "plain": "Violet & Rose",
+        "themed": "Violet & Rose"
+    },
+    "always_acct_essence_value": {
+        "plain": "%1$s essence",
+        "themed": "%1$s essence"
+    },
+    "always_amend_confirm_deeds": {
+        "plain": "Deeds already earned stay earned, and no inscriptions are paid.",
+        "themed": "Deeds already earned stay earned, and no inscriptions are paid."
+    },
+    "always_celebration_added_to_veil": {
+        "plain": "Added to the Veil",
+        "themed": "Added to the Veil"
+    },
+    "always_celebration_crest_lead_deed": {
+        "plain": "Deed crest · %1$s",
+        "themed": "Deed crest · %1$s"
+    },
+    "always_celebration_veil_remembered": {
+        "plain": "The Veil remembered you",
+        "themed": "The Veil remembered you"
+    },
+    "always_crest_how_deed": {
+        "plain": "The deed %1$s. The crest is yours for good once it is earned.",
+        "themed": "The deed %1$s. The crest is yours for good once it is earned."
+    },
+    "always_crest_how_veil": {
+        "plain": "It cannot be bought or levelled to: a Veil draw that pays a crest can pay this one.",
+        "themed": "It cannot be bought or levelled to: a Veil draw that pays a crest can pay this one."
+    },
+    "always_crest_perk_label": {
+        "plain": "VEIL PERK",
+        "themed": "VEIL PERK"
+    },
+    "always_crests_group_veil": {
+        "plain": "The Veil · chance draws",
+        "themed": "The Veil · chance draws"
+    },
+    "always_deed_a": {
+        "plain": "a deed",
+        "themed": "a deed"
+    },
+    "always_deed_c": {
+        "plain": "Deed",
+        "themed": "Deed"
+    },
+    "always_deed_cpl": {
+        "plain": "Deeds",
+        "themed": "Deeds"
+    },
+    "always_deed_pl": {
+        "plain": "deeds",
+        "themed": "deeds"
+    },
+    "always_deed_s": {
+        "plain": "deed",
+        "themed": "deed"
+    },
+    "always_deed_unknown_name": {
+        "plain": "A deed from a newer version",
+        "themed": "A deed from a newer version"
+    },
+    "always_deed_upl": {
+        "plain": "DEEDS",
+        "themed": "DEEDS"
+    },
+    "always_deeds_all_earned": {
+        "plain": "Every deed in %1$s is earned.",
+        "themed": "Every deed in %1$s is earned."
+    },
+    "always_deeds_category_summary": {
+        "plain": "%1$s deeds: %2$d of %3$d earned. %4$s.",
+        "themed": "%1$s deeds: %2$d of %3$d earned. %4$s."
+    },
+    "always_deeds_intro": {
+        "plain": "Deeds are the milestones you earn by training. Each grants a title to wear.",
+        "themed": "Deeds are the milestones you earn by training. Each grants a title to wear."
+    },
+    "always_deeds_no_title_worn": {
+        "plain": "No title worn yet. Earn a deed and its title is yours to wear.",
+        "themed": "No title worn yet. Earn a deed and its title is yours to wear."
+    },
+    "always_deeds_none_here": {
+        "plain": "No deeds here.",
+        "themed": "No deeds here."
+    },
+    "always_deeds_page_empty": {
+        "plain": "Nothing is written here yet. Earned deeds appear on this page.",
+        "themed": "Nothing is written here yet. Earned deeds appear on this page."
+    },
+    "always_deeds_rarity_description": {
+        "plain": "Rarity tiers in order: %1$s. This deed is %2$s.",
+        "themed": "Rarity tiers in order: %1$s. This deed is %2$s."
+    },
+    "always_deeds_show_earned_description": {
+        "plain": "Show the deeds you have earned",
+        "themed": "Show the deeds you have earned"
+    },
+    "always_idle_intro_crests_body": {
+        "plain": "The mark you wear on your profile. Its perk only works in the Veil.",
+        "themed": "The mark you wear on your folio. Its perk only works in the Veil."
+    },
+    "always_idle_rate_away_note": {
+        "plain": "One absence pays at most %1$d h of work. Opening the Veil banks it and starts the clock again.",
+        "themed": "One absence pays at most %1$d h of work. Opening the Veil banks it and starts the clock again."
+    },
+    "always_oath_name": {
+        "plain": "Oath",
+        "themed": "Oath"
+    },
+    "always_technique_name": {
+        "plain": "Technique",
+        "themed": "Technique"
+    },
+    "always_the_veil_c": {
+        "plain": "The Veil",
+        "themed": "The Veil"
+    },
+    "always_the_veil_t": {
+        "plain": "the Veil",
+        "themed": "the Veil"
+    },
+    "always_themed_names_caption": {
+        "plain": "Uses the app's fantasy names: Workout becomes Trial, Routine becomes Rite.",
+        "themed": "Uses the app's fantasy names: Workout becomes Trial, Routine becomes Rite."
+    },
+    "always_trial_name": {
+        "plain": "Trial",
+        "themed": "Trial"
+    },
+    "always_veil_buy_action": {
+        "plain": "Buy one · %1$s",
+        "themed": "Buy one · %1$s"
+    },
+    "always_veil_buy_inscription_label": {
+        "plain": "Buy an inscription in the Veil",
+        "themed": "Buy an inscription in the Veil"
+    },
+    "always_veil_c": {
+        "plain": "Veil",
+        "themed": "Veil"
+    },
+    "always_veil_draw_at": {
+        "plain": "a Veil draw",
+        "themed": "a Veil draw"
+    },
+    "always_veil_draw_c": {
+        "plain": "Veil draw",
+        "themed": "Veil draw"
+    },
+    "always_veil_echoes_added": {
+        "plain": "%1$s added to the Veil",
+        "themed": "%1$s added to the Veil"
+    },
+    "always_veil_first_run": {
+        "plain": "The Veil gathers essence while you're away. Finish workouts to raise the pace; your echoes and history will fill in as you train.",
+        "themed": "The Veil gathers essence while you're away. Seal trials to raise the pace; your echoes and Chronicle will fill in as you train."
+    },
+    "always_veil_how_title": {
+        "plain": "How the Veil works",
+        "themed": "How the Veil works"
+    },
+    "always_veil_inscribe_action": {
+        "plain": "Inscribe (%1$d)",
+        "themed": "Inscribe (%1$d)"
+    },
+    "always_veil_inscribe_label": {
+        "plain": "Inscribe in the Veil",
+        "themed": "Inscribe in the Veil"
+    },
+    "always_veil_inscriptions_none": {
+        "plain": "No inscriptions waiting",
+        "themed": "No inscriptions waiting"
+    },
+    "always_veil_open_label": {
+        "plain": "Open the Veil",
+        "themed": "Open the Veil"
+    },
+    "always_veil_strength_left": {
+        "plain": "%1$d h left at full strength",
+        "themed": "%1$d h left at full strength"
+    },
+    "always_veil_strength_tapering": {
+        "plain": "Tapering, at %1$d%% strength",
+        "themed": "Tapering, at %1$d%% strength"
+    },
+    "always_veil_u": {
+        "plain": "VEIL",
+        "themed": "VEIL"
+    },
+    "always_veilreveal_perk_label": {
+        "plain": "VEIL PERK · %1$s",
+        "themed": "VEIL PERK · %1$s"
+    },
+    "cloud_error_code_expired": {
+        "plain": "That code is wrong or expired — request a new one",
+        "themed": "That code is wrong or expired — request a new one"
+    },
+    "cloud_error_email_taken": {
+        "plain": "That email is already registered — sign in instead",
+        "themed": "That email is already registered — sign in instead"
+    },
+    "cloud_error_email_unconfirmed": {
+        "plain": "Confirm your email first — open the link we sent, then sign in",
+        "themed": "Confirm your email first — open the link we sent, then sign in"
+    },
+    "cloud_error_name_taken": {
+        "plain": "That display name is taken",
+        "themed": "That true name is taken"
+    },
+    "cloud_error_not_allowed": {
+        "plain": "The cloud refused this — you are not allowed to change that record",
+        "themed": "The cloud refused this — you are not allowed to change that record"
+    },
+    "cloud_error_not_set_up": {
+        "plain": "This part of the cloud is not set up yet — its database migration has not been applied",
+        "themed": "This part of the cloud is not set up yet — its database migration has not been applied"
+    },
+    "cloud_error_offline": {
+        "plain": "Could not reach the cloud — check your connection",
+        "themed": "Could not reach the cloud — check your connection"
+    },
+    "cloud_error_out_of_range": {
+        "plain": "The cloud rejected this value as out of range",
+        "themed": "The cloud rejected this value as out of range"
+    },
+    "cloud_error_rate_limited": {
+        "plain": "Too many attempts — wait a minute and try again",
+        "themed": "Too many attempts — wait a minute and try again"
+    },
+    "cloud_error_refused": {
+        "plain": "The cloud refused this request — try again",
+        "themed": "The cloud refused this request — try again"
+    },
+    "cloud_error_same_password": {
+        "plain": "Pick a password you have not used on this account",
+        "themed": "Pick a password you have not used on this account"
+    },
+    "cloud_error_signin_refused": {
+        "plain": "Sign-in was refused — try again in a moment",
+        "themed": "Sign-in was refused — try again in a moment"
+    },
+    "cloud_error_unavailable": {
+        "plain": "Cloud sync is not available",
+        "themed": "Cloud sync is not available"
+    },
+    "cloud_error_weak_password": {
+        "plain": "That password is too weak — make it longer",
+        "themed": "That password is too weak — make it longer"
+    },
+    "cloud_error_wrong_credentials": {
+        "plain": "Wrong email or password",
+        "themed": "Wrong email or password"
+    },
+    "concept_ally_a": {
+        "plain": "a friend",
+        "themed": "an ally"
+    },
+    "concept_ally_c": {
+        "plain": "Friend",
+        "themed": "Ally"
+    },
+    "concept_ally_cpl": {
+        "plain": "Friends",
+        "themed": "Allies"
+    },
+    "concept_ally_pl": {
+        "plain": "friends",
+        "themed": "allies"
+    },
+    "concept_ally_s": {
+        "plain": "friend",
+        "themed": "ally"
+    },
+    "concept_ally_tpl": {
+        "plain": "friends",
+        "themed": "Allies"
+    },
+    "concept_ally_upl": {
+        "plain": "FRIENDS",
+        "themed": "ALLIES"
+    },
+    "concept_armoury_c": {
+        "plain": "Equipment",
+        "themed": "Armoury"
+    },
+    "concept_armoury_s": {
+        "plain": "equipment",
+        "themed": "armoury"
+    },
+    "concept_armoury_u": {
+        "plain": "EQUIPMENT",
+        "themed": "ARMOURY"
+    },
+    "concept_chronicle_c": {
+        "plain": "History",
+        "themed": "Chronicle"
+    },
+    "concept_chronicle_s": {
+        "plain": "history",
+        "themed": "chronicle"
+    },
+    "concept_chronicle_t": {
+        "plain": "history",
+        "themed": "Chronicle"
+    },
+    "concept_circle_a": {
+        "plain": "a group",
+        "themed": "a circle"
+    },
+    "concept_circle_c": {
+        "plain": "Group",
+        "themed": "Circle"
+    },
+    "concept_circle_ca": {
+        "plain": "A group",
+        "themed": "A circle"
+    },
+    "concept_circle_cpl": {
+        "plain": "Groups",
+        "themed": "Circles"
+    },
+    "concept_circle_pl": {
+        "plain": "groups",
+        "themed": "circles"
+    },
+    "concept_circle_s": {
+        "plain": "group",
+        "themed": "circle"
+    },
+    "concept_claim_c": {
+        "plain": "Mark as mastered",
+        "themed": "Claim"
+    },
+    "concept_claim_s": {
+        "plain": "mark as mastered",
+        "themed": "claim"
+    },
+    "concept_claim_u": {
+        "plain": "MARK AS MASTERED",
+        "themed": "CLAIM"
+    },
+    "concept_claimed_c": {
+        "plain": "Mastered",
+        "themed": "Claimed"
+    },
+    "concept_claimed_s": {
+        "plain": "mastered",
+        "themed": "claimed"
+    },
+    "concept_claimed_u": {
+        "plain": "MASTERED",
+        "themed": "CLAIMED"
+    },
+    "concept_codex_c": {
+        "plain": "Progress",
+        "themed": "Codex"
+    },
+    "concept_codex_u": {
+        "plain": "PROGRESS",
+        "themed": "CODEX"
+    },
+    "concept_cycle_a": {
+        "plain": "a weekly plan",
+        "themed": "a cycle"
+    },
+    "concept_cycle_c": {
+        "plain": "Weekly plan",
+        "themed": "Cycle"
+    },
+    "concept_cycle_cpl": {
+        "plain": "Weekly plans",
+        "themed": "Cycles"
+    },
+    "concept_cycle_pl": {
+        "plain": "weekly plans",
+        "themed": "cycles"
+    },
+    "concept_cycle_s": {
+        "plain": "weekly plan",
+        "themed": "cycle"
+    },
+    "concept_cycle_t": {
+        "plain": "weekly plan",
+        "themed": "Cycle"
+    },
+    "concept_cycle_u": {
+        "plain": "WEEKLY PLAN",
+        "themed": "CYCLE"
+    },
+    "concept_folio_c": {
+        "plain": "Profile",
+        "themed": "Folio"
+    },
+    "concept_folio_pl": {
+        "plain": "profiles",
+        "themed": "folios"
+    },
+    "concept_folio_s": {
+        "plain": "profile",
+        "themed": "folio"
+    },
+    "concept_forge_c": {
+        "plain": "Build",
+        "themed": "Forge"
+    },
+    "concept_forge_s": {
+        "plain": "build",
+        "themed": "forge"
+    },
+    "concept_forged_s": {
+        "plain": "built",
+        "themed": "forged"
+    },
+    "concept_inbox_c": {
+        "plain": "Inbox",
+        "themed": "Missives"
+    },
+    "concept_journal_c": {
+        "plain": "Practice log",
+        "themed": "Journal"
+    },
+    "concept_journal_t": {
+        "plain": "practice log",
+        "themed": "Journal"
+    },
+    "concept_journal_u": {
+        "plain": "PRACTICE LOG",
+        "themed": "JOURNAL"
+    },
+    "concept_keeper_c": {
+        "plain": "Owner",
+        "themed": "Keeper"
+    },
+    "concept_keeper_pl": {
+        "plain": "owners",
+        "themed": "keepers"
+    },
+    "concept_keeper_s": {
+        "plain": "owner",
+        "themed": "keeper"
+    },
+    "concept_keeper_t": {
+        "plain": "owner",
+        "themed": "Keeper"
+    },
+    "concept_ledger_c": {
+        "plain": "Stats",
+        "themed": "Ledger"
+    },
+    "concept_ledger_t": {
+        "plain": "stats",
+        "themed": "Ledger"
+    },
+    "concept_lifter_at": {
+        "plain": "a lifter",
+        "themed": "an Ironbound"
+    },
+    "concept_lifter_c": {
+        "plain": "Lifter",
+        "themed": "Ironbound"
+    },
+    "concept_lifter_cat": {
+        "plain": "A lifter",
+        "themed": "An Ironbound"
+    },
+    "concept_lifter_pl": {
+        "plain": "lifters",
+        "themed": "ironbound"
+    },
+    "concept_lifter_s": {
+        "plain": "lifter",
+        "themed": "ironbound"
+    },
+    "concept_lifter_t": {
+        "plain": "lifter",
+        "themed": "Ironbound"
+    },
+    "concept_lifter_u": {
+        "plain": "LIFTER",
+        "themed": "IRONBOUND"
+    },
+    "concept_missive_ca": {
+        "plain": "A message",
+        "themed": "A missive"
+    },
+    "concept_missive_cpl": {
+        "plain": "Messages",
+        "themed": "Missives"
+    },
+    "concept_missive_pl": {
+        "plain": "messages",
+        "themed": "missives"
+    },
+    "concept_missive_s": {
+        "plain": "message",
+        "themed": "missive"
+    },
+    "concept_missive_tpl": {
+        "plain": "messages",
+        "themed": "Missives"
+    },
+    "concept_oath_a": {
+        "plain": "a streak",
+        "themed": "an oath"
+    },
+    "concept_oath_c": {
+        "plain": "Streak",
+        "themed": "Oath"
+    },
+    "concept_oath_pl": {
+        "plain": "streaks",
+        "themed": "oaths"
+    },
+    "concept_oath_s": {
+        "plain": "streak",
+        "themed": "oath"
+    },
+    "concept_oath_t": {
+        "plain": "streak",
+        "themed": "Oath"
+    },
+    "concept_open_trial_a": {
+        "plain": "an empty workout",
+        "themed": "an open trial"
+    },
+    "concept_open_trial_c": {
+        "plain": "Empty workout",
+        "themed": "Open Trial"
+    },
+    "concept_open_trial_s": {
+        "plain": "empty workout",
+        "themed": "open trial"
+    },
+    "concept_path_a": {
+        "plain": "a skill tree",
+        "themed": "a path"
+    },
+    "concept_path_pl": {
+        "plain": "skill trees",
+        "themed": "paths"
+    },
+    "concept_path_s": {
+        "plain": "skill tree",
+        "themed": "path"
+    },
+    "concept_paths_c": {
+        "plain": "Skills",
+        "themed": "Paths"
+    },
+    "concept_paths_u": {
+        "plain": "SKILLS",
+        "themed": "PATHS"
+    },
+    "concept_pattern_a": {
+        "plain": "a template",
+        "themed": "a pattern"
+    },
+    "concept_pattern_cpl": {
+        "plain": "Templates",
+        "themed": "Patterns"
+    },
+    "concept_pattern_s": {
+        "plain": "template",
+        "themed": "pattern"
+    },
+    "concept_peak_a": {
+        "plain": "a PR",
+        "themed": "a peak"
+    },
+    "concept_peak_c": {
+        "plain": "PR",
+        "themed": "Peak"
+    },
+    "concept_peak_cpl": {
+        "plain": "PRs",
+        "themed": "Peaks"
+    },
+    "concept_peak_pl": {
+        "plain": "PRs",
+        "themed": "peaks"
+    },
+    "concept_peak_s": {
+        "plain": "PR",
+        "themed": "peak"
+    },
+    "concept_peak_u": {
+        "plain": "PR",
+        "themed": "PEAK"
+    },
+    "concept_peak_upl": {
+        "plain": "PRS",
+        "themed": "PEAKS"
+    },
+    "concept_reading_c": {
+        "plain": "Measurement",
+        "themed": "Reading"
+    },
+    "concept_reading_cpl": {
+        "plain": "Measurements",
+        "themed": "Readings"
+    },
+    "concept_reading_pl": {
+        "plain": "measurements",
+        "themed": "readings"
+    },
+    "concept_reading_s": {
+        "plain": "measurement",
+        "themed": "reading"
+    },
+    "concept_reading_upl": {
+        "plain": "MEASUREMENTS",
+        "themed": "READINGS"
+    },
+    "concept_reads_c": {
+        "plain": "Loading",
+        "themed": "Reading"
+    },
+    "concept_reckoning_a": {
+        "plain": "a leaderboard",
+        "themed": "a reckoning"
+    },
+    "concept_reckoning_c": {
+        "plain": "Leaderboard",
+        "themed": "Reckoning"
+    },
+    "concept_reckoning_pl": {
+        "plain": "leaderboards",
+        "themed": "reckonings"
+    },
+    "concept_reckoning_s": {
+        "plain": "leaderboard",
+        "themed": "reckoning"
+    },
+    "concept_remark_a": {
+        "plain": "a comment",
+        "themed": "a remark"
+    },
+    "concept_remark_c": {
+        "plain": "Comment",
+        "themed": "Remark"
+    },
+    "concept_remark_cpl": {
+        "plain": "Comments",
+        "themed": "Remarks"
+    },
+    "concept_remark_pl": {
+        "plain": "comments",
+        "themed": "remarks"
+    },
+    "concept_remark_s": {
+        "plain": "comment",
+        "themed": "remark"
+    },
+    "concept_remark_upl": {
+        "plain": "COMMENTS",
+        "themed": "REMARKS"
+    },
+    "concept_respite_c": {
+        "plain": "Rest day",
+        "themed": "Respite"
+    },
+    "concept_respite_s": {
+        "plain": "rest day",
+        "themed": "respite"
+    },
+    "concept_rite_a": {
+        "plain": "a routine",
+        "themed": "a rite"
+    },
+    "concept_rite_c": {
+        "plain": "Routine",
+        "themed": "Rite"
+    },
+    "concept_rite_ca": {
+        "plain": "A routine",
+        "themed": "A rite"
+    },
+    "concept_rite_cpl": {
+        "plain": "Routines",
+        "themed": "Rites"
+    },
+    "concept_rite_pl": {
+        "plain": "routines",
+        "themed": "rites"
+    },
+    "concept_rite_s": {
+        "plain": "routine",
+        "themed": "rite"
+    },
+    "concept_rite_t": {
+        "plain": "routine",
+        "themed": "Rite"
+    },
+    "concept_rite_upl": {
+        "plain": "ROUTINES",
+        "themed": "RITES"
+    },
+    "concept_rung_cpl": {
+        "plain": "Tiers",
+        "themed": "Rungs"
+    },
+    "concept_rung_pl": {
+        "plain": "tiers",
+        "themed": "rungs"
+    },
+    "concept_rung_s": {
+        "plain": "tier",
+        "themed": "rung"
+    },
+    "concept_seal_c": {
+        "plain": "Finish",
+        "themed": "Seal"
+    },
+    "concept_seal_s": {
+        "plain": "finish",
+        "themed": "seal"
+    },
+    "concept_seal_t": {
+        "plain": "finish",
+        "themed": "Seal"
+    },
+    "concept_sealed_a": {
+        "plain": "a finished",
+        "themed": "a sealed"
+    },
+    "concept_sealed_c": {
+        "plain": "Finished",
+        "themed": "Sealed"
+    },
+    "concept_sealed_ca": {
+        "plain": "A finished",
+        "themed": "A sealed"
+    },
+    "concept_sealed_s": {
+        "plain": "finished",
+        "themed": "sealed"
+    },
+    "concept_sealed_u": {
+        "plain": "FINISHED",
+        "themed": "SEALED"
+    },
+    "concept_sealing_c": {
+        "plain": "Finishing",
+        "themed": "Sealing"
+    },
+    "concept_sealing_s": {
+        "plain": "finishing",
+        "themed": "sealing"
+    },
+    "concept_standing_c": {
+        "plain": "Position",
+        "themed": "Standing"
+    },
+    "concept_standing_s": {
+        "plain": "position",
+        "themed": "standing"
+    },
+    "concept_summons_s": {
+        "plain": "reminder",
+        "themed": "summons"
+    },
+    "concept_technique_a": {
+        "plain": "a skill",
+        "themed": "a technique"
+    },
+    "concept_technique_c": {
+        "plain": "Skill",
+        "themed": "Technique"
+    },
+    "concept_technique_cpl": {
+        "plain": "Skills",
+        "themed": "Techniques"
+    },
+    "concept_technique_pl": {
+        "plain": "skills",
+        "themed": "techniques"
+    },
+    "concept_technique_s": {
+        "plain": "skill",
+        "themed": "technique"
+    },
+    "concept_technique_t": {
+        "plain": "skill",
+        "themed": "Technique"
+    },
+    "concept_technique_u": {
+        "plain": "SKILL",
+        "themed": "TECHNIQUE"
+    },
+    "concept_temper_c": {
+        "plain": "Improve",
+        "themed": "Temper"
+    },
+    "concept_temper_s": {
+        "plain": "improve",
+        "themed": "temper"
+    },
+    "concept_the_chronicle_c": {
+        "plain": "Your history",
+        "themed": "The Chronicle"
+    },
+    "concept_the_chronicle_t": {
+        "plain": "your history",
+        "themed": "the Chronicle"
+    },
+    "concept_the_forge_c": {
+        "plain": "Plan builder",
+        "themed": "The Forge"
+    },
+    "concept_the_forge_t": {
+        "plain": "plan builder",
+        "themed": "the Forge"
+    },
+    "concept_the_reckoning_s": {
+        "plain": "leaderboard",
+        "themed": "the reckoning"
+    },
+    "concept_the_reckoning_t": {
+        "plain": "leaderboard",
+        "themed": "the Reckoning"
+    },
+    "concept_the_reckoning_u": {
+        "plain": "LEADERBOARD",
+        "themed": "THE RECKONING"
+    },
+    "concept_the_summons_c": {
+        "plain": "Reminder",
+        "themed": "The Summons"
+    },
+    "concept_the_summons_u": {
+        "plain": "REMINDER",
+        "themed": "THE SUMMONS"
+    },
+    "concept_tidings_c": {
+        "plain": "Feed",
+        "themed": "Tidings"
+    },
+    "concept_tidings_s": {
+        "plain": "feed",
+        "themed": "tidings"
+    },
+    "concept_tidings_t": {
+        "plain": "feed",
+        "themed": "Tidings"
+    },
+    "concept_trial_a": {
+        "plain": "a workout",
+        "themed": "a trial"
+    },
+    "concept_trial_c": {
+        "plain": "Workout",
+        "themed": "Trial"
+    },
+    "concept_trial_ca": {
+        "plain": "A workout",
+        "themed": "A trial"
+    },
+    "concept_trial_cpl": {
+        "plain": "Workouts",
+        "themed": "Trials"
+    },
+    "concept_trial_pl": {
+        "plain": "workouts",
+        "themed": "trials"
+    },
+    "concept_trial_s": {
+        "plain": "workout",
+        "themed": "trial"
+    },
+    "concept_trial_t": {
+        "plain": "workout",
+        "themed": "Trial"
+    },
+    "concept_trial_u": {
+        "plain": "WORKOUT",
+        "themed": "TRIAL"
+    },
+    "concept_trial_upl": {
+        "plain": "WORKOUTS",
+        "themed": "TRIALS"
+    },
+    "concept_tribute_c": {
+        "plain": "Kudos",
+        "themed": "Tribute"
+    },
+    "concept_tribute_pl": {
+        "plain": "kudos",
+        "themed": "tributes"
+    },
+    "concept_tribute_s": {
+        "plain": "kudos",
+        "themed": "tribute"
+    },
+    "concept_tribute_u": {
+        "plain": "KUDOS",
+        "themed": "TRIBUTE"
+    },
+    "concept_tribute_upl": {
+        "plain": "KUDOS",
+        "themed": "TRIBUTES"
+    },
+    "concept_true_name_a": {
+        "plain": "a display name",
+        "themed": "a true name"
+    },
+    "concept_true_name_c": {
+        "plain": "Display name",
+        "themed": "True Name"
+    },
+    "concept_true_name_pl": {
+        "plain": "display names",
+        "themed": "true names"
+    },
+    "concept_true_name_s": {
+        "plain": "display name",
+        "themed": "true name"
+    },
+    "concept_unsealed_c": {
+        "plain": "Unfinished",
+        "themed": "Unsealed"
+    },
+    "concept_unsealed_s": {
+        "plain": "unfinished",
+        "themed": "unsealed"
+    },
+    "concept_yours_c": {
+        "plain": "Custom",
+        "themed": "Yours"
+    },
+    "concept_yours_s": {
+        "plain": "custom",
+        "themed": "yours"
+    },
+    "concept_yours_u": {
+        "plain": "CUSTOM",
+        "themed": "YOURS"
+    },
+    "coverage_reason": {
+        "plain": "About %1$d hard sets a week per muscle is a sound floor.",
+        "themed": "About %1$d hard sets a week per muscle is a sound floor."
+    },
+    "explorer_chart_one": {
+        "plain": "One workout written — a trend needs at least two.",
+        "themed": "One trial written — a trend needs at least two."
+    },
+    "fatigue_level_fresh": {
+        "plain": "Fresh",
+        "themed": "Fresh"
+    },
+    "fatigue_level_high": {
+        "plain": "High",
+        "themed": "High"
+    },
+    "fatigue_level_light": {
+        "plain": "Light",
+        "themed": "Light"
+    },
+    "fatigue_level_moderate": {
+        "plain": "Moderate",
+        "themed": "Moderate"
+    },
+    "fatigue_level_very_high": {
+        "plain": "Very high",
+        "themed": "Very high"
+    },
+    "fatigue_window_caption": {
+        "plain": "Estimated from your last 7 days",
+        "themed": "Estimated from your last 7 days"
+    },
+    "serverTerms": [
+        {
+            "themed": "true name",
+            "themedPl": "true names",
+            "plain": "display name",
+            "plainPl": "display names"
+        },
+        {
+            "themed": "folio",
+            "themedPl": "folios",
+            "plain": "profile",
+            "plainPl": "profiles"
+        },
+        {
+            "themed": "rite",
+            "themedPl": "rites",
+            "plain": "routine",
+            "plainPl": "routines"
+        },
+        {
+            "themed": "cycle",
+            "themedPl": "cycles",
+            "plain": "weekly plan",
+            "plainPl": "weekly plans"
+        },
+        {
+            "themed": "trial",
+            "themedPl": "trials",
+            "plain": "workout",
+            "plainPl": "workouts"
+        },
+        {
+            "themed": "oath",
+            "themedPl": "oaths",
+            "plain": "streak",
+            "plainPl": "streaks"
+        },
+        {
+            "themed": "ally",
+            "themedPl": "allies",
+            "plain": "friend",
+            "plainPl": "friends"
+        },
+        {
+            "themed": "circle",
+            "themedPl": "circles",
+            "plain": "group",
+            "plainPl": "groups"
+        },
+        {
+            "themed": "keeper",
+            "themedPl": "keepers",
+            "plain": "owner",
+            "plainPl": "owners"
+        },
+        {
+            "themed": "tribute",
+            "themedPl": "tributes",
+            "plain": "kudos",
+            "plainPl": "kudos"
+        },
+        {
+            "themed": "remark",
+            "themedPl": "remarks",
+            "plain": "comment",
+            "plainPl": "comments"
+        },
+        {
+            "themed": "missive",
+            "themedPl": "missives",
+            "plain": "message",
+            "plainPl": "messages"
+        },
+        {
+            "themed": "ironbound",
+            "themedPl": "ironbound",
+            "plain": "lifter",
+            "plainPl": "lifters"
+        }
+    ]
+}

@@ -14,3 +14,6 @@ tools/exercise_art/.venv/
 *.log
 *.jks
 *.keystore
+web/node_modules/
+web/dist/
+web/public/art/

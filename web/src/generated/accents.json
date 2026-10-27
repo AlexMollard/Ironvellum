@@ -1,0 +1,230 @@
+{
+    "dark": [
+        {
+            "id": "emerald_gold",
+            "name": {
+                "plain": "Emerald & Gold",
+                "themed": "Emerald & Gold"
+            },
+            "tokens": {
+                "preset": "emerald_gold",
+                "primary": "#34D399",
+                "secondary": "#F2C14E",
+                "bright": "#6EE7B7",
+                "deep": "#25986E",
+                "muted": "#6FAE8C",
+                "panelTint": "#10241C",
+                "panelTintBorder": "#1F5C46",
+                "fill": "#34D399",
+                "text": "#34D399",
+                "tint": "#10241C",
+                "border": "#1F5C46",
+                "reward": "#F2C14E",
+                "onPrimary": "#000000",
+                "onSecondary": "#000000"
+            },
+            "contrast": {
+                "primary": 10.92370064381631,
+                "secondary": 12.513446471059396
+            }
+        },
+        {
+            "id": "sapphire_amber",
+            "name": {
+                "plain": "Sapphire & Amber",
+                "themed": "Sapphire & Amber"
+            },
+            "tokens": {
+                "preset": "sapphire_amber",
+                "primary": "#60A5FA",
+                "secondary": "#FBBF24",
+                "bright": "#8DBEFB",
+                "deep": "#4577B4",
+                "muted": "#82A3CA",
+                "panelTint": "#1E252C",
+                "panelTintBorder": "#314965",
+                "fill": "#60A5FA",
+                "text": "#60A5FA",
+                "tint": "#1E252C",
+                "border": "#314965",
+                "reward": "#FBBF24",
+                "onPrimary": "#000000",
+                "onSecondary": "#000000"
+            },
+            "contrast": {
+                "primary": 8.259838208663083,
+                "secondary": 12.579641587443575
+            }
+        },
+        {
+            "id": "violet_rose",
+            "name": {
+                "plain": "Violet & Rose",
+                "themed": "Violet & Rose"
+            },
+            "tokens": {
+                "preset": "violet_rose",
+                "primary": "#A78BFA",
+                "secondary": "#FB7185",
+                "bright": "#C0ABFB",
+                "deep": "#7864B4",
+                "muted": "#A596CA",
+                "panelTint": "#25232C",
+                "panelTintBorder": "#494065",
+                "fill": "#A78BFA",
+                "text": "#A78BFA",
+                "tint": "#25232C",
+                "border": "#494065",
+                "reward": "#FB7185",
+                "onPrimary": "#000000",
+                "onSecondary": "#000000"
+            },
+            "contrast": {
+                "primary": 7.716571002745007,
+                "secondary": 7.802587876839611
+            }
+        },
+        {
+            "id": "ice_copper",
+            "name": {
+                "plain": "Ice & Copper",
+                "themed": "Ice & Copper"
+            },
+            "tokens": {
+                "preset": "ice_copper",
+                "primary": "#67E8F9",
+                "secondary": "#E6A07C",
+                "bright": "#92EEFB",
+                "deep": "#4AA7B3",
+                "muted": "#85C4C9",
+                "panelTint": "#1F2C2C",
+                "panelTintBorder": "#336065",
+                "fill": "#67E8F9",
+                "text": "#67E8F9",
+                "tint": "#1F2C2C",
+                "border": "#336065",
+                "reward": "#E6A07C",
+                "onPrimary": "#000000",
+                "onSecondary": "#000000"
+            },
+            "contrast": {
+                "primary": 14.487268650437647,
+                "secondary": 9.683968376027737
+            }
+        }
+    ],
+    "light": [
+        {
+            "id": "forest_gold",
+            "name": {
+                "plain": "Forest & Gold",
+                "themed": "Forest & Gold"
+            },
+            "tokens": {
+                "preset": "forest_gold",
+                "primary": "#208046",
+                "secondary": "#9B5900",
+                "bright": "#5EA47A",
+                "deep": "#175C32",
+                "muted": "#629070",
+                "panelTint": "#18221A",
+                "panelTintBorder": "#1A3C26",
+                "fill": "#208046",
+                "text": "#176938",
+                "tint": "#CFEED6",
+                "border": "#85BA92",
+                "reward": "#9B5900",
+                "onPrimary": "#FEFBF5",
+                "onSecondary": "#FEFBF5"
+            },
+            "contrast": {
+                "primary": 4.797980350660294,
+                "secondary": 5.318686991260187
+            }
+        },
+        {
+            "id": "oxblood_gold",
+            "name": {
+                "plain": "Oxblood & Gold",
+                "themed": "Oxblood & Gold"
+            },
+            "tokens": {
+                "preset": "oxblood_gold",
+                "primary": "#A03E43",
+                "secondary": "#9B5900",
+                "bright": "#BB7478",
+                "deep": "#732D30",
+                "muted": "#A26F6E",
+                "panelTint": "#251B1A",
+                "panelTintBorder": "#472525",
+                "fill": "#A03E43",
+                "text": "#833035",
+                "tint": "#FEDBDA",
+                "border": "#D99796",
+                "reward": "#9B5900",
+                "onPrimary": "#FEFBF5",
+                "onSecondary": "#FEFBF5"
+            },
+            "contrast": {
+                "primary": 6.227472886079186,
+                "secondary": 5.318686991260187
+            }
+        },
+        {
+            "id": "ink_gold",
+            "name": {
+                "plain": "Ink & Gold",
+                "themed": "Ink & Gold"
+            },
+            "tokens": {
+                "preset": "ink_gold",
+                "primary": "#2E64A6",
+                "secondary": "#9B5900",
+                "bright": "#698FBF",
+                "deep": "#214878",
+                "muted": "#6982A0",
+                "panelTint": "#191F24",
+                "panelTintBorder": "#1F3248",
+                "fill": "#2E64A6",
+                "text": "#225088",
+                "tint": "#D3E7FF",
+                "border": "#89AEDD",
+                "reward": "#9B5900",
+                "onPrimary": "#FEFBF5",
+                "onSecondary": "#FEFBF5"
+            },
+            "contrast": {
+                "primary": 5.8262077307673215,
+                "secondary": 5.318686991260187
+            }
+        },
+        {
+            "id": "copper_teal",
+            "name": {
+                "plain": "Copper & Teal",
+                "themed": "Copper & Teal"
+            },
+            "tokens": {
+                "preset": "copper_teal",
+                "primary": "#A34D16",
+                "secondary": "#007176",
+                "bright": "#BD7F57",
+                "deep": "#753710",
+                "muted": "#A37758",
+                "panelTint": "#251C15",
+                "panelTintBorder": "#482A15",
+                "fill": "#A34D16",
+                "text": "#863D0E",
+                "tint": "#FCDDCE",
+                "border": "#D59C7F",
+                "reward": "#007176",
+                "onPrimary": "#FEFBF5",
+                "onSecondary": "#FEFBF5"
+            },
+            "contrast": {
+                "primary": 5.600296153466911,
+                "secondary": 5.610790500190654
+            }
+        }
+    ]
+}

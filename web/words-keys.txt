@@ -1,0 +1,8 @@
+fatigue_window_caption
+coverage_reason
+explorer_chart_one
+fatigue_level_fresh
+fatigue_level_light
+fatigue_level_moderate
+fatigue_level_high
+fatigue_level_very_high

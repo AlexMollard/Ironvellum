@@ -1,0 +1,2929 @@
+{
+    "crests": [
+        {
+            "id": "iron",
+            "name": "Iron Crest",
+            "group": "Ladder",
+            "kind": "Rate",
+            "perk": "Steady Hand",
+            "short": "Essence rate +3%",
+            "art": "Iron",
+            "ring": "Iron",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 10L84 22V50C84 72 68 86 50 92C32 86 16 72 16 50V22Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M26 30V50C26 66 38 77 50 82C62 77 74 66 74 50V30",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.4,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 30L64 50L50 70L36 50Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M30 38L50 24L70 38",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.6,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "bronze",
+            "name": "Bronze Crest",
+            "group": "Ladder",
+            "kind": "Offering",
+            "perk": "Frugal Offering",
+            "short": "Offerings 5% cheaper",
+            "art": "Bronze",
+            "ring": "Bronze",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M48 88C26 78 18 56 26 30M52 88C74 78 82 56 74 30",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M27 68C14 65 12 55 14 47C25 50 30 57 27 68Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 48C15 42 16 29 20 23C29 32 29 40 24 48Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M29 31C23 19 30 11 36 9C40 20 37 27 29 31Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M73 68C86 65 88 55 86 47C75 50 70 57 73 68Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M76 48C85 42 84 29 80 23C71 32 71 40 76 48Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M71 31C77 19 70 11 64 9C60 20 63 27 71 31Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M41 86L50 81L59 86",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "silver",
+            "name": "Silver Crest",
+            "group": "Ladder",
+            "kind": "Echoes",
+            "perk": "Echo Trim",
+            "short": "Echoes lift rate 50% more",
+            "art": "Iron",
+            "ring": "Iron",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M57 11C43 8 33 18 37 28C40 35 46 38 54 35C44 30 43 18 57 11Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 88L71 48M76 88L54 69M46 62L29 48",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M66 46L80 37L76 51ZM34 46L20 37L24 51Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "gold",
+            "name": "Gold Crest",
+            "group": "Ladder",
+            "kind": "Echoes",
+            "perk": "Echo Purse",
+            "short": "Echo draws pay +50%",
+            "art": "Gold",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M28 70A22 22 0 0 1 72 70",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 4.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M80 70H96M76 55L89.8 47M65 44L73 30.2M50 40V24M35 44L27 30.2M24 55L10.2 47M20 70H4",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 4.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M14 80H86",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "jade",
+            "name": "Jade Crest",
+            "group": "Ladder",
+            "kind": "Away",
+            "perk": "Long Day",
+            "short": "Full strength 26 h, not 24",
+            "art": "Emerald",
+            "ring": "Emerald",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M68 20C40 12 26 32 44 46C62 58 74 68 52 82C42 88 30 84 26 76",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.2,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M67 21A3 3 0 1 0 73 21A3 3 0 1 0 67 21Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.2,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M52 34C66 42 66 58 52 70C38 58 38 42 52 34Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.2,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M52 36V68",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 2.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "crimson",
+            "name": "Crimson Crest",
+            "group": "Ladder",
+            "kind": "Away",
+            "perk": "Slow Ember",
+            "short": "Long-absence floor 13%",
+            "art": "Red",
+            "ring": "Red",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M32 84L30 65C21 59 18 50 23 42L29 38L36 44V29C36 22 45 21 49 26C52 19 61 21 63 27C68 23 76 26 76 33V51C76 60 69 65 66 68L65 84Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M29 38L46 48Q51 52 46 58L39 61",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M49 26V37M63 27V39",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M31 74H66",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "obsidian",
+            "name": "Obsidian Crest",
+            "group": "Ladder",
+            "kind": "Rate",
+            "perk": "Heavy Week",
+            "short": "Each workout counts 3.5, not 3",
+            "art": "Ink",
+            "ring": "Ink",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 9L74 30L80 67L50 91L20 67L27 30Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 9L42 36L50 91",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M42 36L74 30M42 36L20 67",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "verdant",
+            "name": "Verdant Crest",
+            "group": "Ladder",
+            "kind": "Rate",
+            "perk": "Quick Study",
+            "short": "Skills lift rate faster",
+            "art": "Emerald",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 88V51",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 61C24 67 15 53 21 39C15 26 31 18 41 23C44 10 62 10 66 23C81 20 91 34 81 44C88 59 70 70 50 61Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 61L35 44M50 54L63 37",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M35 88Q50 77 65 88",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "ember",
+            "name": "Ember Crest",
+            "group": "Ladder",
+            "kind": "Offering",
+            "perk": "Slow Tithe",
+            "short": "Price step 400, not 500",
+            "art": "Red",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 8C58 26 76 36 74 58C73 74 62 86 50 86C38 86 27 74 26 58C25 44 36 38 40 28C44 34 46 38 48 38C52 28 50 18 50 8Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 50C56 58 62 64 58 72C56 78 52 80 50 80C46 80 42 76 42 70C42 62 48 58 50 50Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M30 92H70",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "vellum",
+            "name": "Vellum Crest",
+            "group": "Ladder",
+            "kind": "Vault",
+            "perk": "Set Rite",
+            "short": "Pair bonuses +8%, not +5%",
+            "art": "Ink",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M23 14H77A5 5 0 0 1 82 19V20A5 5 0 0 1 77 25H23A5 5 0 0 1 18 20V19A5 5 0 0 1 23 14Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M23 75H77A5 5 0 0 1 82 80V81A5 5 0 0 1 77 86H23A5 5 0 0 1 18 81V80A5 5 0 0 1 23 75Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M26 25V75M74 25V75",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M36 38H64M36 48H64M36 58H52",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.7,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M57 62A7 7 0 1 0 71 62A7 7 0 1 0 57 62Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "sovereign",
+            "name": "Sovereign Crest",
+            "group": "Ladder",
+            "kind": "Vault",
+            "perk": "Hoard",
+            "short": "+0.3% per relic held",
+            "art": "Gold",
+            "ring": "Gold",
+            "double": true,
+            "shapes": [
+                {
+                    "d": "M18 72L11 34L34 52L50 22L66 52L89 34L82 72Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M18 82H82",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M7 30A4 4 0 1 0 15 30A4 4 0 1 0 7 30Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M46 17A4 4 0 1 0 54 17A4 4 0 1 0 46 17Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M85 30A4 4 0 1 0 93 30A4 4 0 1 0 85 30Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "ironvellum",
+            "name": "Ironvellum Crest",
+            "group": "Ladder",
+            "kind": "Vault",
+            "perk": "Deep Vault",
+            "short": "Relic stacking ceiling x5",
+            "art": "Emerald",
+            "ring": "Gold",
+            "double": true,
+            "shapes": [
+                {
+                    "d": "M50 34C40 28 26 28 14 32V78C26 74 40 74 50 80C60 74 74 74 86 78V32C74 28 60 28 50 34Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 34V80",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 6L59 15L50 24L41 15Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 44C30 42 36 42 42 44M24 55C30 53 36 53 42 55M58 44C64 42 70 42 76 44M58 55C64 53 70 53 76 55",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.65,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "watchfire",
+            "name": "Watchfire Crest",
+            "group": "Deeds",
+            "kind": "Rate",
+            "perk": "Kept Flame",
+            "short": "Streak days count 1.5, not 1",
+            "art": "Bronze",
+            "ring": "Bronze",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 10C57 24 67 30 63 44C61 50 57 54 50 54C43 54 39 50 39 44C39 36 47 32 50 10Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 58H76C76 72 65 80 50 80C35 80 24 72 24 58Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M38 78L31 93M62 78L69 93M50 80V93",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "anvil",
+            "name": "Anvil Crest",
+            "group": "Deeds",
+            "kind": "Rate",
+            "perk": "Steady Count",
+            "short": "Training ceiling +1.5",
+            "art": "Iron",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M10 34H86L78 48H62V58L70 66V78H30V66L38 58V48H30C20 48 14 42 10 34Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 88H76",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "sage",
+            "name": "Sage Crest",
+            "group": "Deeds",
+            "kind": "Rate",
+            "perk": "Keen Study",
+            "short": "Skill ceiling x2.06",
+            "art": "Emerald",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M50 85V39C50 26 57 17 66 12C69 28 62 39 50 43",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 59C32 60 23 50 22 35C38 34 49 45 50 59",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 73C67 72 77 62 78 48C63 47 52 59 50 73",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M38 87Q50 80 62 87",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "dawnroad",
+            "name": "Dawnroad Crest",
+            "group": "Deeds",
+            "kind": "Rate",
+            "perk": "Walker's Trickle",
+            "short": "+1 essence/h base",
+            "art": "Prism",
+            "ring": "Prism",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M30 56A20 20 0 0 1 70 56Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 18V28M27 28L33 35M73 28L67 35M13 46L22 48M87 46L78 48",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M8 56H92",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M44 58L22 92M56 58L78 92",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 64V70M50 77V84",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "throne",
+            "name": "Throne Crest",
+            "group": "Deeds",
+            "kind": "Rate",
+            "perk": "Heavy Hand",
+            "short": "Volume counts 20% more",
+            "art": "Gold",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M31 55V32Q31 19 42 15L50 9L58 15Q69 19 69 32V55",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M23 44V64H77V44",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M23 44Q30 38 35 44M65 44Q71 38 77 44",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M28 64L25 86H36L39 73H61L64 86H75L72 64",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M39 55H61",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 25L56 33L50 41L44 33Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "marathon",
+            "name": "Marathon Crest",
+            "group": "Deeds",
+            "kind": "Away",
+            "perk": "Second Wind",
+            "short": "Away-pay +5%",
+            "art": "Red",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M29 86V16",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M30 22C44 13 56 31 75 23V48C57 57 45 39 30 48",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M18 86H40",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M48 82C67 78 60 69 79 63",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "ironhold",
+            "name": "Ironhold Crest",
+            "group": "Houses",
+            "kind": "Rate",
+            "perk": "Ironhold Rite",
+            "short": "Lifting term +6%",
+            "art": "Iron",
+            "ring": "Iron",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M22 90V34H33V24H44V34H56V24H67V34H78V90Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M42 90V70A8 8 0 0 1 58 70V90",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M47 48H53V56H47Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "bellwarden",
+            "name": "Bellwarden Crest",
+            "group": "Houses",
+            "kind": "Rate",
+            "perk": "Bellwarden's Watch",
+            "short": "Consistency term +15%",
+            "art": "Bronze",
+            "ring": "Bronze",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M46 13A4 4 0 1 0 54 13A4 4 0 1 0 46 13Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 17C34 17 28 36 28 50C28 64 20 70 17 76H83C80 70 72 64 72 50C72 36 66 17 50 17Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M42 83A8 8 0 0 0 58 83",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "masterwright",
+            "name": "Masterwright Crest",
+            "group": "Houses",
+            "kind": "Rate",
+            "perk": "Masterwright's Hand",
+            "short": "Skill term +8%",
+            "art": "Prism",
+            "ring": "Prism",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M17 21H53V37H17Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M31 37V82H39V37",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M67 17H77V66L72 83L67 66Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "hearthgate",
+            "name": "Hearthgate Crest",
+            "group": "Houses",
+            "kind": "Away",
+            "perk": "Open Gate",
+            "short": "Comeback term +10%",
+            "art": "Emerald",
+            "ring": "Emerald",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M19 88V47C19 27 32 14 50 14C68 14 81 27 81 47V88",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M29 88V48C29 34 38 25 50 25C62 25 71 34 71 48V88",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 25V40",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M40 47L44 40H56L60 47L57 65H43Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 50Q44 57 50 60Q56 57 50 50",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M14 88H86",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "aurora",
+            "name": "Aurora Crest",
+            "group": "Veil",
+            "kind": "Echoes",
+            "perk": "Brighter Echo",
+            "short": "Echo draws pay 60%+ of band",
+            "art": "Prism",
+            "ring": "Prism",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M13 53C26 58 32 21 48 29S68 58 87 24L87 48C68 82 61 53 48 53S26 82 13 77Z",
+                    "wash": 0.18,
+                    "strokeAlpha": 0.0,
+                    "width": 1.0,
+                    "roundCap": false,
+                    "roundJoin": false,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M13 53C26 58 32 21 48 29S68 58 87 24",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 4.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M21 53V70M32 38V63M44 28V52M56 34V62M68 43V68M80 36V60",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.2,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "void",
+            "name": "Void Crest",
+            "group": "Veil",
+            "kind": "Away",
+            "perk": "Long Hush",
+            "short": "Taper lasts 54 h, not 48",
+            "art": "Ink",
+            "ring": "Ink",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M22 50A28 28 0 1 0 78 50A28 28 0 1 0 22 50Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.0,
+                    "width": 1.0,
+                    "roundCap": false,
+                    "roundJoin": false,
+                    "dash": null,
+                    "darkGround": true
+                },
+                {
+                    "d": "M28 70C16 58 17 39 29 27C43 13 65 16 77 31",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 5.0,
+                    "roundCap": true,
+                    "roundJoin": false,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M72 30C84 42 83 61 71 73C57 87 35 84 23 69",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.55,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": false,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "masterwork",
+            "name": "Masterwork Crest",
+            "group": "Veil",
+            "kind": "Vault",
+            "perk": "Fine Entry",
+            "short": "New relics roll higher",
+            "art": "Prism",
+            "ring": "Prism",
+            "double": true,
+            "shapes": [
+                {
+                    "d": "M50 9L59 33L82 18L68 42L91 50L68 58L82 82L59 67L50 91L41 67L18 82L32 58L9 50L32 42L18 18L41 33Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 36L61 50L50 64L39 50Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "ledger",
+            "name": "Ledger Crest",
+            "group": "Veil",
+            "kind": "Vault",
+            "perk": "Tribute",
+            "short": "+2% per completed house",
+            "art": "Gold",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M24 12H72A4 4 0 0 1 76 16V84H28A4 4 0 0 1 24 80Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M24 80A4 4 0 0 1 28 76H76",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M34 32H64M34 44H64M34 56H54",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.7,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M62 12V30L67 26L72 30V12",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "margin",
+            "name": "Margin Crest",
+            "group": "Veil",
+            "kind": "Vault",
+            "perk": "Close Ranks",
+            "short": "Backing relics weigh +25%",
+            "art": "Iron",
+            "ring": "Iron",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M25 13H75V87H25Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M37 13V87",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M48 65C44 47 56 29 68 25C73 39 63 55 48 65Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M44 76L62 39",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        },
+        {
+            "id": "ashenking",
+            "name": "Ashen King's Crest",
+            "group": "Veil",
+            "kind": "Rate",
+            "perk": "Reigning",
+            "short": "+5% while streak is 7+ days",
+            "art": "Red",
+            "ring": "Gold",
+            "double": false,
+            "shapes": [
+                {
+                    "d": "M16 76L11 40L34 56L50 26L66 56L89 40L84 76Z",
+                    "wash": 0.12,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50 26L45 46L56 56L49 76",
+                    "wash": 0.0,
+                    "strokeAlpha": 0.6,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M14 86H86",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M28 16A2 2 0 1 0 32 16A2 2 0 1 0 28 16Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M70 12A2 2 0 1 0 74 12A2 2 0 1 0 70 12Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                },
+                {
+                    "d": "M50.4 8A1.6 1.6 0 1 0 53.6 8A1.6 1.6 0 1 0 50.4 8Z",
+                    "wash": 0.0,
+                    "strokeAlpha": 1.0,
+                    "width": 3.0,
+                    "roundCap": true,
+                    "roundJoin": true,
+                    "dash": null,
+                    "darkGround": false
+                }
+            ]
+        }
+    ],
+    "deeds": [
+        {
+            "id": "awakened",
+            "name": "First Mark",
+            "rarity": "Common",
+            "category": "Workouts",
+            "description": "Finish your first workout.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "iron_discipline",
+            "name": "Iron Discipline",
+            "rarity": "Rare",
+            "category": "Workouts",
+            "description": "Finish 25 workouts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "relentless",
+            "name": "Relentless",
+            "rarity": "Rare",
+            "category": "Workouts",
+            "description": "Finish 50 workouts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "unbroken",
+            "name": "Unbroken",
+            "rarity": "Epic",
+            "category": "Workouts",
+            "description": "Finish 100 workouts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "hundred_battles",
+            "name": "Inkstained",
+            "rarity": "Epic",
+            "category": "Workouts",
+            "description": "Finish 250 workouts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "eternal_grinder",
+            "name": "The Ceaseless",
+            "rarity": "Masterwork",
+            "category": "Workouts",
+            "description": "Finish 500 workouts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "shadow_ascendant",
+            "name": "Rising Mark",
+            "rarity": "Common",
+            "category": "Level",
+            "description": "Reach level 5.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "royal_apex",
+            "name": "Graven Mark",
+            "rarity": "Common",
+            "category": "Level",
+            "description": "Reach level 10.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "baron_of_shadows",
+            "name": "Ashen Scribe",
+            "rarity": "Rare",
+            "category": "Level",
+            "description": "Reach level 20.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "count_of_the_abyss",
+            "name": "Voice of the Abyss",
+            "rarity": "Rare",
+            "category": "Level",
+            "description": "Reach level 35.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "duke_of_shadows",
+            "name": "Inkbound Sage",
+            "rarity": "Epic",
+            "category": "Level",
+            "description": "Reach level 50.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "sovereign_of_shadow",
+            "name": "Master of the Vellum",
+            "rarity": "Masterwork",
+            "category": "Level",
+            "description": "Reach level 75.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "monarch_of_shadows",
+            "name": "Grand Archivist",
+            "rarity": "Masterwork",
+            "category": "Level",
+            "description": "Reach level 100.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gatecrasher",
+            "name": "Anvil-Struck",
+            "rarity": "Common",
+            "category": "Volume",
+            "description": "Log 250 working sets.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "storm_of_steel",
+            "name": "Ashfall",
+            "rarity": "Rare",
+            "category": "Volume",
+            "description": "Log 500 working sets.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gate_breaker",
+            "name": "Threshold Breaker",
+            "rarity": "Rare",
+            "category": "Volume",
+            "description": "Log 1,000 working sets.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "world_splitter",
+            "name": "World Splitter",
+            "rarity": "Epic",
+            "category": "Volume",
+            "description": "Log 2,500 working sets.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "steel_tempest",
+            "name": "The Black Tempest",
+            "rarity": "Masterwork",
+            "category": "Volume",
+            "description": "Log 10,000 working sets.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "monarchs_mandate",
+            "name": "Tally of Iron",
+            "rarity": "Common",
+            "category": "Volume",
+            "description": "Log 2,000 total reps.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "ten_thousand_echoes",
+            "name": "Ten Thousand Strokes",
+            "rarity": "Rare",
+            "category": "Volume",
+            "description": "Log 10,000 total reps.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "endless_legion",
+            "name": "Unending Ink",
+            "rarity": "Epic",
+            "category": "Volume",
+            "description": "Log 25,000 total reps.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "myriad_strikes",
+            "name": "Myriad Strikes",
+            "rarity": "Masterwork",
+            "category": "Volume",
+            "description": "Log 50,000 total reps.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "iron_ascension",
+            "name": "Iron Tide",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Score 1,000 strength in one workout — scaled to your body.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "titans_verdict",
+            "name": "Titan's Verdict",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Score 3,000 strength in one workout — scaled to your body.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gravitys_rebel",
+            "name": "Gravity's Rebel",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Reach 50,000 lifetime strength — scaled to your body.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gravitys_sovereign",
+            "name": "Gravity's Master",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Reach 250,000 lifetime strength — scaled to your body.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "beyond_gravity",
+            "name": "Beyond Gravity",
+            "rarity": "Masterwork",
+            "category": "Strength",
+            "description": "Reach 5,000,000 lifetime strength. The scale gives up.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "shadow_marcher",
+            "name": "Long Stride",
+            "rarity": "Common",
+            "category": "Steps",
+            "description": "Walk 10,000 steps in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "tireless",
+            "name": "Tireless",
+            "rarity": "Common",
+            "category": "Steps",
+            "description": "Walk 15,000 steps in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gate_runner",
+            "name": "Road Runner",
+            "rarity": "Rare",
+            "category": "Steps",
+            "description": "Walk 20,000 steps in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "red_zone_hunter",
+            "name": "Ember-Shod",
+            "rarity": "Epic",
+            "category": "Steps",
+            "description": "Walk 30,000 steps in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "footsteps_in_the_dark",
+            "name": "Footsteps in the Dark",
+            "rarity": "Common",
+            "category": "Steps",
+            "description": "Walk 100,000 steps in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "wandering_soldier",
+            "name": "Drifting Shade",
+            "rarity": "Rare",
+            "category": "Steps",
+            "description": "Walk 500,000 steps in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "million_march",
+            "name": "Million Footfalls",
+            "rarity": "Epic",
+            "category": "Steps",
+            "description": "Walk 1,000,000 steps in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "shadow_exodus",
+            "name": "The Great Wandering",
+            "rarity": "Masterwork",
+            "category": "Steps",
+            "description": "Walk 5,000,000 steps in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "fifty_k_traveler",
+            "name": "Dust-Walker",
+            "rarity": "Common",
+            "category": "Steps",
+            "description": "Cover 50 km on foot in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "path_carver",
+            "name": "Wayfinder",
+            "rarity": "Rare",
+            "category": "Steps",
+            "description": "Cover 250 km on foot in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "thousand_gate_runner",
+            "name": "Thousand-Kilometre Runner",
+            "rarity": "Epic",
+            "category": "Steps",
+            "description": "Cover 1,000 km on foot in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "furnace_awake",
+            "name": "Furnace Awake",
+            "rarity": "Common",
+            "category": "Steps",
+            "description": "Burn 500 active calories in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "infernal_engine",
+            "name": "Infernal Engine",
+            "rarity": "Rare",
+            "category": "Steps",
+            "description": "Burn 1,000 active calories in a single day.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "eight_hour_shroud",
+            "name": "Eight-Hour Shroud",
+            "rarity": "Common",
+            "category": "Recovery",
+            "description": "Sleep 8 hours in a single night.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "abyssal_slumber",
+            "name": "Abyssal Slumber",
+            "rarity": "Common",
+            "category": "Recovery",
+            "description": "Sleep 9 hours in a single night.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "marching_orders",
+            "name": "Measured Tread",
+            "rarity": "Rare",
+            "category": "Steps",
+            "description": "Hit a 10,000-step day 10 times.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "cadence_keeper",
+            "name": "Cadence of Iron",
+            "rarity": "Epic",
+            "category": "Steps",
+            "description": "Hit a 10,000-step day 50 times.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "eternal_vanguard",
+            "name": "Hundred Dawns",
+            "rarity": "Masterwork",
+            "category": "Steps",
+            "description": "Hit a 10,000-step day 100 times.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "three_day_oath",
+            "name": "Three-Day Oath",
+            "rarity": "Common",
+            "category": "Workouts",
+            "description": "Keep a 3-day streak.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "week_of_shadows",
+            "name": "Week of Iron",
+            "rarity": "Common",
+            "category": "Workouts",
+            "description": "Keep a 7-day streak.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "fortnight_vigil",
+            "name": "Fortnight Vigil",
+            "rarity": "Rare",
+            "category": "Workouts",
+            "description": "Keep a 14-day streak.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "unrelenting_watch",
+            "name": "Unrelenting Watch",
+            "rarity": "Epic",
+            "category": "Workouts",
+            "description": "Keep a 30-day streak.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "hundred_day_promise",
+            "name": "Hundred-Day Promise",
+            "rarity": "Masterwork",
+            "category": "Workouts",
+            "description": "Keep a 100-day streak.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "triple_threat",
+            "name": "Threefold Iron",
+            "rarity": "Common",
+            "category": "Workouts",
+            "description": "Finish 3 workouts in a single week.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "fivefold_assault",
+            "name": "Fivefold Fury",
+            "rarity": "Rare",
+            "category": "Workouts",
+            "description": "Finish 5 workouts in a single week.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "six_gate_week",
+            "name": "Six-Trial Week",
+            "rarity": "Epic",
+            "category": "Workouts",
+            "description": "Finish 6 workouts in a single week.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "first_technique",
+            "name": "First Technique",
+            "rarity": "Common",
+            "category": "Mastery",
+            "description": "Master 1 skill.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "apprentice_of_five",
+            "name": "Apprentice of Five",
+            "rarity": "Rare",
+            "category": "Mastery",
+            "description": "Master 5 skills.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "ten_folds_form",
+            "name": "Tenfold Form",
+            "rarity": "Epic",
+            "category": "Mastery",
+            "description": "Master 10 skills.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "keeper_of_twenty_five",
+            "name": "Sage of Twenty-Five",
+            "rarity": "Epic",
+            "category": "Mastery",
+            "description": "Master 25 skills.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "fifty_fanged_style",
+            "name": "Fifty-Fanged Style",
+            "rarity": "Masterwork",
+            "category": "Mastery",
+            "description": "Master 50 skills.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "grandmaster_of_all",
+            "name": "Grandmaster of All",
+            "rarity": "Masterwork",
+            "category": "Mastery",
+            "description": "Master all 126 skills.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "first_hundred_cuts",
+            "name": "First Hundred Cuts",
+            "rarity": "Common",
+            "category": "Mastery",
+            "description": "Log 25 attempts in the practice log.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "hundred_cuts_deep",
+            "name": "Hundred Cuts Deep",
+            "rarity": "Rare",
+            "category": "Mastery",
+            "description": "Log 100 attempts in the practice log.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "five_hundred_repetitions",
+            "name": "Five Hundred Repetitions",
+            "rarity": "Epic",
+            "category": "Mastery",
+            "description": "Log 500 attempts in the practice log.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "kindled",
+            "name": "Kindled",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Log 60 activity minutes — the fire starts.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "restless_shadows",
+            "name": "Restless Miles",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Log 600 activity minutes in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "tireless_wind",
+            "name": "Tireless Wind",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Log 3,000 activity minutes in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "storm_runner",
+            "name": "Storm Runner",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Log 12,000 activity minutes in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "wind_that_never_sleeps",
+            "name": "Wind That Never Sleeps",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Log 50,000 activity minutes in your lifetime.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "road_of_shadows",
+            "name": "The Long Road",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Cover 10 km through logged activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "hundred_gate_march",
+            "name": "Ashen Hundred",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Cover 100 km through logged activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "horizon_breaker",
+            "name": "Horizon Breaker",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Cover 500 km through logged activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "world_walker",
+            "name": "World Walker",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Cover 2,000 km through logged activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "beyond_the_map",
+            "name": "Beyond the Map",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Cover 10,000 km through logged activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "three_paths",
+            "name": "Three Roads",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Try 3 different activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "ten_paths",
+            "name": "Ten Roads",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Try 10 different activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "twenty_five_paths",
+            "name": "Twenty-Five Roads",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Try 25 different activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "thirty_five_paths",
+            "name": "Thirty-Five Roads",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Try 35 different activities.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "walker_of_all_roads",
+            "name": "Walker of All Roads",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Try all 43 activities the catalogue offers. Nothing is foreign to you.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "five_k_razor",
+            "name": "Five-K Razor",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Log a 5 km run in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "ten_k_hunter",
+            "name": "Ten-K Blade",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Log a 10 km run in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "half_gate_marathon",
+            "name": "Half Marathon",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Log a 21.1 km run in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gate_marathon",
+            "name": "Marathon",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Log a 42.2 km run in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "shadow_ultra",
+            "name": "Ultra",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Log a 100 km run in one go. The road was never this long.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "first_water",
+            "name": "First Water",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Log a 1 km swim in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "deep_current",
+            "name": "Deep Current",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Log a 2.5 km swim in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "abyss_lapper",
+            "name": "Abyss Lapper",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Log a 5 km swim in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "leviathan_swimmer",
+            "name": "Leviathan Swimmer",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Log a 10 km swim in one go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "first_send",
+            "name": "First Send",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Send a route graded V1 or harder.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "chalk_dusted",
+            "name": "Chalk Dusted",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Send a route graded V2 or harder.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "grip_of_the_abyss",
+            "name": "Grip of the Abyss",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Send a route graded V5 or harder.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "vertical_sovereign",
+            "name": "Vertical Master",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Send a route graded V8 or harder.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "gravity_defiant",
+            "name": "Gravity Defiant",
+            "rarity": "Masterwork",
+            "category": "Activities",
+            "description": "Send a route graded V11 or harder. Walls kneel.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "first_arena",
+            "name": "First Wager",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Finish a workout with sport play in it.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "arena_regular",
+            "name": "Seasoned Hand",
+            "rarity": "Common",
+            "category": "Activities",
+            "description": "Finish 10 workouts with sport play in them.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "field_commander",
+            "name": "Hand of Iron",
+            "rarity": "Rare",
+            "category": "Activities",
+            "description": "Finish 50 workouts with sport play in them.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "champion_of_games",
+            "name": "Hundred Wagers",
+            "rarity": "Epic",
+            "category": "Activities",
+            "description": "Finish 100 workouts with sport play in them.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "iron_standard",
+            "name": "Iron Standard",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Squat your own bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Squat 0.6× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "bench_mark",
+            "name": "Bench Mark",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Bench press your bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Bench press 0.5× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "iron_wings",
+            "name": "Iron Wings",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Weight a pull-up or chin-up with half your bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Weight a pull-up or chin-up with 0.3× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "crown_press",
+            "name": "Crown Press",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Overhead press three quarters of your bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Overhead press 0.35× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "throne_of_iron",
+            "name": "Throne of Iron",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Squat double bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Squat 1.25× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "titans_pull",
+            "name": "Titan's Pull",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Deadlift double bodyweight as an estimated 1-rep max.",
+            "descriptionFemale": "Deadlift 1.4× your bodyweight as an estimated 1-rep max."
+        },
+        {
+            "id": "atlas",
+            "name": "Atlas",
+            "rarity": "Masterwork",
+            "category": "Strength",
+            "description": "Deadlift triple bodyweight as an estimated 1-rep max. The sky holds itself up.",
+            "descriptionFemale": "Deadlift 2.25× your bodyweight as an estimated 1-rep max. The sky holds itself up."
+        },
+        {
+            "id": "century_of_rungs",
+            "name": "Hundred Risings",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Log 100 pull-ups or chin-ups in one workout.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "two_hundred_suns",
+            "name": "Two Hundred Suns",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Log 200 push-ups in one workout.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "unshaking",
+            "name": "The Unshaking",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Hold one static position for 240 s without letting go.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "cast_off_the_crutch",
+            "name": "Cast Off the Crutch",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Do a standard pull-up, chin-up or dip after logging it assisted, or do one without ever having logged it assisted.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "level_ground",
+            "name": "Level Ground",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Do a flat push-up after logging it incline, or do one without ever having logged it incline or assisted.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "off_the_leash",
+            "name": "Off the Leash",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Move off the easier version of 3 different lifts: do one standard after logging it easier, or do one never having logged it easier.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "no_hand_beneath",
+            "name": "No Hand Beneath",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Do more standard reps in one set than your best assisted set of the same lift, or do the lift standard without ever having logged it assisted.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "below_the_floor",
+            "name": "Below the Floor",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Log your first deficit set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "headlong",
+            "name": "Headlong",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Log a decline or feet-elevated push-up set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "bowstring",
+            "name": "Bowstring",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Do 5 reps of an archer pull-up or push-up in one set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "half_the_hands",
+            "name": "Half the Hands",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Log your first one-arm set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "the_long_way_down",
+            "name": "The Long Way Down",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Reach a higher estimated 1-rep max with a deficit than on the standard lift.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "curious_iron",
+            "name": "Curious Iron",
+            "rarity": "Common",
+            "category": "Strength",
+            "description": "Log 5 different variations.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "many_roads",
+            "name": "Many Roads",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Log 15 different variations.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "cartographer",
+            "name": "Cartographer",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Log 40 different variations.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "every_face_of_the_stone",
+            "name": "Every Face of the Stone",
+            "rarity": "Masterwork",
+            "category": "Strength",
+            "description": "Log all 7 variations of the push-up, each at least once.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "twofold_burden",
+            "name": "Twofold Burden",
+            "rarity": "Rare",
+            "category": "Strength",
+            "description": "Carry two harder modifiers in one set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "threefold_burden",
+            "name": "Threefold Burden",
+            "rarity": "Epic",
+            "category": "Strength",
+            "description": "Carry three harder modifiers in one set.",
+            "descriptionFemale": null
+        },
+        {
+            "id": "the_unkind_angle",
+            "name": "The Unkind Angle",
+            "rarity": "Masterwork",
+            "category": "Strength",
+            "description": "Do 5 reps of an archer, deficit, feet-elevated push-up in one set.",
+            "descriptionFemale": null
+        }
+    ],
+    "seals": {
+        "Common": {
+            "outer": [
+                [
+                    58.792503,
+                    43.09782
+                ],
+                [
+                    43.09782,
+                    58.792503
+                ],
+                [
+                    20.90218,
+                    58.792503
+                ],
+                [
+                    5.2074947,
+                    43.09782
+                ],
+                [
+                    5.2074947,
+                    20.90218
+                ],
+                [
+                    20.90218,
+                    5.2074947
+                ],
+                [
+                    43.09782,
+                    5.2074947
+                ],
+                [
+                    58.792503,
+                    20.90218
+                ]
+            ],
+            "rim": [],
+            "leaves": [],
+            "branches": null,
+            "core": [],
+            "glyphSize": 28.0
+        },
+        "Rare": {
+            "outer": [
+                [
+                    58.792503,
+                    43.09782
+                ],
+                [
+                    43.09782,
+                    58.792503
+                ],
+                [
+                    20.90218,
+                    58.792503
+                ],
+                [
+                    5.2074947,
+                    43.09782
+                ],
+                [
+                    5.2074947,
+                    20.90218
+                ],
+                [
+                    20.90218,
+                    5.2074947
+                ],
+                [
+                    43.09782,
+                    5.2074947
+                ],
+                [
+                    58.792503,
+                    20.90218
+                ]
+            ],
+            "rim": [
+                [
+                    55.096985,
+                    41.567085
+                ],
+                [
+                    41.567085,
+                    55.096985
+                ],
+                [
+                    22.432915,
+                    55.096985
+                ],
+                [
+                    8.903013,
+                    41.567085
+                ],
+                [
+                    8.903013,
+                    22.432915
+                ],
+                [
+                    22.432915,
+                    8.903013
+                ],
+                [
+                    41.567085,
+                    8.903013
+                ],
+                [
+                    55.096985,
+                    22.432915
+                ]
+            ],
+            "leaves": [],
+            "branches": null,
+            "core": [],
+            "glyphSize": 28.0
+        },
+        "Epic": {
+            "outer": [
+                [
+                    32.0,
+                    1.5
+                ],
+                [
+                    38.858704,
+                    6.4029655
+                ],
+                [
+                    47.25,
+                    5.5862255
+                ],
+                [
+                    50.738327,
+                    13.261671
+                ],
+                [
+                    58.413773,
+                    16.75
+                ],
+                [
+                    57.597034,
+                    25.141296
+                ],
+                [
+                    62.5,
+                    32.0
+                ],
+                [
+                    57.597034,
+                    38.858704
+                ],
+                [
+                    58.413773,
+                    47.25
+                ],
+                [
+                    50.738327,
+                    50.738327
+                ],
+                [
+                    47.25,
+                    58.413773
+                ],
+                [
+                    38.858704,
+                    57.597034
+                ],
+                [
+                    32.0,
+                    62.5
+                ],
+                [
+                    25.141296,
+                    57.597034
+                ],
+                [
+                    16.75,
+                    58.413773
+                ],
+                [
+                    13.261671,
+                    50.738327
+                ],
+                [
+                    5.5862255,
+                    47.25
+                ],
+                [
+                    6.4029655,
+                    38.858704
+                ],
+                [
+                    1.5,
+                    32.0
+                ],
+                [
+                    6.4029655,
+                    25.141296
+                ],
+                [
+                    5.5862255,
+                    16.75
+                ],
+                [
+                    13.261671,
+                    13.261671
+                ],
+                [
+                    16.75,
+                    5.5862255
+                ],
+                [
+                    25.141296,
+                    6.4029655
+                ]
+            ],
+            "rim": [],
+            "leaves": [
+                "M23 51C17 51 15 47 15 44C20 44 23 47 23 51Z",
+                "M17 44C12 43 10 39 11 36C16 37 18 40 17 44Z",
+                "M15 36C10 34 10 29 12 27C16 29 17 33 15 36Z",
+                "M41 51C47 51 49 47 49 44C44 44 41 47 41 51Z",
+                "M47 44C52 43 54 39 53 36C48 37 46 40 47 44Z",
+                "M49 36C54 34 54 29 52 27C48 29 47 33 49 36Z"
+            ],
+            "branches": "M29 54C16 51 11 38 16 24M35 54C48 51 53 38 48 24",
+            "core": [],
+            "glyphSize": 26.0
+        },
+        "Masterwork": {
+            "outer": [
+                [
+                    32.0,
+                    1.0
+                ],
+                [
+                    41.567085,
+                    8.903013
+                ],
+                [
+                    53.92031,
+                    10.079691
+                ],
+                [
+                    55.096985,
+                    22.432915
+                ],
+                [
+                    63.0,
+                    32.0
+                ],
+                [
+                    55.096985,
+                    41.567085
+                ],
+                [
+                    53.92031,
+                    53.92031
+                ],
+                [
+                    41.567085,
+                    55.096985
+                ],
+                [
+                    32.0,
+                    63.0
+                ],
+                [
+                    22.432915,
+                    55.096985
+                ],
+                [
+                    10.079691,
+                    53.92031
+                ],
+                [
+                    8.903013,
+                    41.567085
+                ],
+                [
+                    1.0,
+                    32.0
+                ],
+                [
+                    8.903013,
+                    22.432915
+                ],
+                [
+                    10.079691,
+                    10.079691
+                ],
+                [
+                    22.432915,
+                    8.903013
+                ]
+            ],
+            "rim": [],
+            "leaves": [],
+            "branches": null,
+            "core": [
+                [
+                    32.0,
+                    9.0
+                ],
+                [
+                    48.26346,
+                    15.736544
+                ],
+                [
+                    55.0,
+                    32.0
+                ],
+                [
+                    48.26346,
+                    48.26346
+                ],
+                [
+                    32.0,
+                    55.0
+                ],
+                [
+                    15.736544,
+                    48.26346
+                ],
+                [
+                    9.0,
+                    32.0
+                ],
+                [
+                    15.736544,
+                    15.736544
+                ]
+            ],
+            "glyphSize": 28.0
+        }
+    },
+    "glyphs": {
+        "Level": [
+            "M5 12l7-7 7 7M5 19l7-7 7 7"
+        ],
+        "Volume": [
+            "M5 5V19M9.5 5V19M14 5V19M18.5 5V19M3 16.5L21 7.5"
+        ],
+        "Strength": [
+            "M9 9V7.5a3 3 0 0 1 6 0V9",
+            "M12 9c-4 0-7 2.7-7 6.2C5 18 6.7 20 9 20h6c2.3 0 4-2 4-4.8C19 11.7 16 9 12 9z"
+        ],
+        "Steps": [
+            "M8 3.5c-1.8 0-2.8 2.4-2.8 4.6 0 1.8.9 2.9 2.8 2.9s2.8-1.1 2.8-2.9c0-2.2-1-4.6-2.8-4.6zM6.2 13h3.6v1.5a1.8 1.8 0 0 1-3.6 0z",
+            "M16 9c-1.8 0-2.8 2.4-2.8 4.6 0 1.8.9 2.9 2.8 2.9s2.8-1.1 2.8-2.9c0-2.2-1-4.6-2.8-4.6zM14.2 18.5h3.6v1a1.8 1.8 0 0 1-3.6 0z"
+        ],
+        "Recovery": [
+            "M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z",
+            "M17.5 3.5v4M15.5 5.5h4"
+        ],
+        "Mastery": [
+            "M12 6.5C9.8 5 7 4.6 4 5v12.5c3-.4 5.8 0 8 1.5 2.2-1.5 5-1.9 8-1.5V5c-3-.4-5.8 0-8 1.5zM12 6.5V19"
+        ],
+        "Activities": [
+            "M2.5 19L9 8l4 6 2.5-3.5L21.5 19z"
+        ],
+        "Workouts": [
+            "M3 7h13l5 2-2 2h-4c0 2-1 3-3 3v2h3v3H7v-3h3v-2C6 14 4 11 3 7z"
+        ]
+    },
+    "lifts": [
+        {
+            "wire": "pull_up",
+            "label": "Weighted pull-up",
+            "group": "PULL",
+            "kind": "TIERED"
+        },
+        {
+            "wire": "one_arm_pull",
+            "label": "One-arm pull-up",
+            "group": "PULL",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "muscle_up",
+            "label": "Muscle-up",
+            "group": "PULL",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "dip",
+            "label": "Weighted dip",
+            "group": "PUSH",
+            "kind": "TIERED"
+        },
+        {
+            "wire": "push_up",
+            "label": "One-arm push-up",
+            "group": "PUSH",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "hspu",
+            "label": "Handstand push-up",
+            "group": "PUSH",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "front_lever",
+            "label": "Front lever",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "back_lever",
+            "label": "Back lever",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "planche",
+            "label": "Planche",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "handstand",
+            "label": "Handstand",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "l_sit",
+            "label": "L-sit to manna",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "human_flag",
+            "label": "Human flag",
+            "group": "STATIC",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "pistol",
+            "label": "Single-leg squat",
+            "group": "LEGS",
+            "kind": "LADDER"
+        },
+        {
+            "wire": "squat",
+            "label": "Squat",
+            "group": "BARBELL",
+            "kind": "TIERED"
+        },
+        {
+            "wire": "bench",
+            "label": "Bench press",
+            "group": "BARBELL",
+            "kind": "TIERED"
+        },
+        {
+            "wire": "deadlift",
+            "label": "Deadlift",
+            "group": "BARBELL",
+            "kind": "TIERED"
+        },
+        {
+            "wire": "ohp",
+            "label": "Overhead press",
+            "group": "BARBELL",
+            "kind": "TIERED"
+        }
+    ],
+    "tiers": [
+        "Initiate",
+        "Ash I",
+        "Ash II",
+        "Bone I",
+        "Bone II",
+        "Silver I",
+        "Silver II",
+        "Gold I",
+        "Gold II",
+        "Umbral I",
+        "Umbral II"
+    ]
+}
