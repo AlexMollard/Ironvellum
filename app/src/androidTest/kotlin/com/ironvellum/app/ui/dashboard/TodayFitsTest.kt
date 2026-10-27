@@ -14,8 +14,10 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
@@ -35,6 +37,7 @@ import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.IdleRate
 import com.ironvellum.app.domain.IdleState
+import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.RepMax
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlayerProfile
@@ -47,6 +50,7 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.recap.RecapSample
 import com.ironvellum.app.ui.recap.ReviewSample
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.program.exerciseMuscleSummary
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -110,6 +114,7 @@ class TodayFitsTest {
         onOpenRecap: (Long) -> Unit = {},
         onOpenReview: (String, Long) -> Unit = { _, _ -> },
         onDismissReview: (String) -> Unit = {},
+        onOpenRite: (Long) -> Unit = {},
         report: com.ironvellum.app.domain.FatigueReport? = null,
     ) {
         // The ink treatment animates forever, so Compose never idles on its own. The Veil's own motion is
@@ -123,7 +128,7 @@ class TodayFitsTest {
                         TodayContent(
                             ui = ui, selectedDay = selectedDay, today = today, live = live, liveSets = liveSets,
                             bodyGap = bodyGap, strengthRank = "Iron", rankBreakdown = null, veil = glance,
-                            actions = TodayActions(onOpenRecap = onOpenRecap, onOpenReview = onOpenReview, onDismissReview = onDismissReview), nowMs = now, motion = motion,
+                            actions = TodayActions(onOpenRecap = onOpenRecap, onOpenReview = onOpenReview, onDismissReview = onDismissReview, onOpenRite = onOpenRite), nowMs = now, motion = motion,
                             report = report,
                         )
                     }
@@ -282,7 +287,7 @@ class TodayFitsTest {
     fun shortNeighboursShareALineLongNamesDoNotAndEveryExerciseStaysItsOwnNode() {
         show(
             ui = DashboardUi(presets = listOf(named("Pull-up", "Inverted Row", "Dip", "Push-up", "Deficit Push-up", "Bulgarian Split Squat", "Ab Wheel Rollout"))),
-            selectedDay = 1,
+            selectedDay = 1, height = 1000,
         )
         assertDoesNotScroll()
         // Routine order, left to right then down: two pairs, then three lines of their own.
@@ -292,14 +297,87 @@ class TodayFitsTest {
         assertTrue(top("Deficit Push-up") > top("Dip"))
         assertTrue(top("Bulgarian Split Squat") > top("Deficit Push-up"))
         assertTrue(top("Ab Wheel Rollout") > top("Bulgarian Split Squat"))
-        // The card reads as one node; a pair keeps each exercise's name next to its own sets, in order.
+        // Each exercise is its own button, with its own sets in the merged reading.
         val reading = compose.onNode(hasText("Pull-up")).fetchSemanticsNode().config[SemanticsProperties.Text].map { it.text }
-        assertEquals(listOf("Pull-up", "3 × 8", "Inverted Row", "3 × 8"), reading.drop(reading.indexOf("Pull-up")).take(4))
+        assertEquals(listOf("Pull-up", "3 × 8"), reading)
+        compose.onNode(hasText("Inverted Row")).assertHasClickAction()
         // All seven fit: no "+N more".
         compose.onAllNodesWithText("more", substring = true).assertCountEquals(0)
         // The title is one line: it never wraps into a second.
         assertTrue("the title wrapped", compose.onAllNodesWithText("BACK + CHEST VOLUME (DIP BARS)", useUnmergedTree = true).fetchSemanticsNodes().first { it.layoutInfo.isPlaced }.boundsInRoot.height < 40 * androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density)
         saveShot("today-paired-rows")
+    }
+
+    @Test
+    fun exerciseTargetsOpenTheirOwnDetailsAndLeaveTheCardActionIntact() {
+        val pull = Exercise(id = 1, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val dip = Exercise(id = 2, name = "Dip", muscleGroup = MuscleGroup.PUSH, isWeighted = false)
+        val rite = named("Pull-up", "Dip").let {
+            it.copy(entries = it.entries.mapIndexed { index, entry -> if (index == 0) entry.copy(modifiers = "weighted") else entry })
+        }
+        var openedRite = -1L
+        show(
+            ui = DashboardUi(presets = listOf(rite), exercises = mapOf(pull.id to pull, dip.id to dip)),
+            selectedDay = 1,
+            onOpenRite = { openedRite = it },
+        )
+        val first = compose.onNodeWithText("Pull-up").assertHasClickAction()
+        val second = compose.onNodeWithText("Dip").assertHasClickAction()
+        val firstBounds = first.getUnclippedBoundsInRoot()
+        val secondBounds = second.getUnclippedBoundsInRoot()
+        assertTrue(firstBounds.right - firstBounds.left >= 48.dp && firstBounds.bottom - firstBounds.top >= 48.dp)
+        assertTrue(secondBounds.right - secondBounds.left >= 48.dp && secondBounds.bottom - secondBounds.top >= 48.dp)
+        assertTrue(firstBounds.right <= secondBounds.left)
+        com.ironvellum.app.ui.ShotRecorder.take(compose, "today_exercise_targets")
+        first.performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("Close", ignoreCase = true).assertIsDisplayed()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Pull-up")).assertIsDisplayed()
+        assertEquals(-1L, openedRite)
+        compose.onNodeWithText("Close", ignoreCase = true).performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        second.performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("Close", ignoreCase = true).assertIsDisplayed()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Dip")).assertIsDisplayed()
+        assertEquals(-1L, openedRite)
+        compose.onNodeWithText("Close", ignoreCase = true).performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("BACK + CHEST VOLUME (DIP BARS)").performClick()
+        assertEquals(rite.id, openedRite)
+    }
+
+    @Test
+    fun plannedVariationShapesTheExerciseSheet() {
+        val exercise = Exercise(id = 1, name = "Push-up", muscleGroup = MuscleGroup.PUSH, isWeighted = false)
+        val rite = named("Push-up").let {
+            it.copy(entries = listOf(it.entries.single().copy(modifiers = "elevated")))
+        }
+        val expected = exerciseMuscleSummary(MuscleMap.profile("Push-up", "elevated")!!.muscles)
+        val plain = exerciseMuscleSummary(MuscleMap.profile("Push-up", "")!!.muscles)
+        assertTrue("fixture must distinguish the variation", expected != plain)
+        show(ui = DashboardUi(presets = listOf(rite), exercises = mapOf(exercise.id to exercise)), selectedDay = 1)
+        compose.onNodeWithText("Push-up").performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNode(hasContentDescription(expected), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun liveTrialExerciseOpensItsDetails() {
+        val exercise = Exercise(id = 10, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val set = SessionSet(exerciseId = exercise.id, exerciseName = exercise.name, exercisePosition = 0, setIndex = 0, reps = 8, modifiers = "weighted", done = true)
+        show(
+            ui = DashboardUi(exercises = mapOf(exercise.id to exercise)),
+            selectedDay = 1,
+            live = trial,
+            liveSets = listOf(set),
+        )
+        compose.onNodeWithText("Pull-up").assertHasClickAction().performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Pull-up")).assertIsDisplayed()
     }
 
     @Test
@@ -496,7 +574,7 @@ class TodayFitsTest {
         )
         assertDoesNotScroll()
         assertInside("The Ledger gilds its page.")
-        assertInside("Sealed", substring = true)
+        assertInside("Sealed · 8 exercises", substring = true)
         assertInside("Sealed move 0")
         assertInside("Bench Press")
         assertInside("The Veil")

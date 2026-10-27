@@ -53,7 +53,7 @@ class TodayStateTest {
     @Test
     fun `planned rows read sets by reps`() {
         val rows = plannedRows(listOf(PresetEntry(exerciseId = 1, exerciseName = "Back squat", targetSets = 3, targetReps = 7)))
-        assertEquals(listOf(DayRow("Back squat", "3 × 7", 0, 3, false)), rows)
+        assertEquals(listOf(DayRow("Back squat", "3 × 7", 0, 3, false, exerciseId = 1, modifiers = "")), rows)
     }
 
     @Test
@@ -62,7 +62,35 @@ class TodayStateTest {
             type = com.ironvellum.app.domain.SchemeType.TOP_BACKOFF, topReps = 2..4, backoffSets = 3, backoffReps = 4..5, backoffPercent = 10,
         )
         val rows = plannedRows(listOf(PresetEntry(exerciseId = 1, exerciseName = "Pull-up", targetSets = 4, targetReps = 2, scheme = scheme)))
-        assertEquals(listOf(DayRow("Pull-up", "2–4 · 3 × 4–5 −10%", 0, 4, false)), rows)
+        assertEquals(listOf(DayRow("Pull-up", "2–4 · 3 × 4–5 −10%", 0, 4, false, exerciseId = 1, modifiers = "")), rows)
+    }
+
+    @Test
+    fun `planned rows retain the exact exercise and modifiers including warmups and repeated movements`() {
+        val entries = listOf(
+            PresetEntry(exerciseId = 7, exerciseName = "Pull-up", targetSets = 3, targetReps = 5, modifiers = "weighted", position = 1),
+            PresetEntry(exerciseId = 8, exerciseName = "Warm-up", targetSets = 1, targetReps = 10, modifiers = "  slow  ", position = 2, warmup = true),
+            PresetEntry(exerciseId = 7, exerciseName = "Pull-up", targetSets = 2, targetReps = 8, modifiers = "assisted", position = 3),
+        )
+        val rows = plannedRows(entries)
+        assertEquals(listOf(8L, 7L, 7L), rows.map { it.exerciseId })
+        assertEquals(listOf("  slow  ", "weighted", "assisted"), rows.map { it.modifiers })
+        assertEquals(listOf(true, false, false), rows.map { it.warmup })
+    }
+
+    @Test
+    fun `live and sealed rows retain each block's first working set identity and modifiers`() {
+        val sets = listOf(
+            set(0, 0, false, warmup = true).copy(exerciseId = 7, modifiers = "warmup"),
+            set(0, 1, true).copy(exerciseId = 7, modifiers = "  weighted  "),
+            set(0, 2, true).copy(exerciseId = 7, modifiers = "later set"),
+            set(1, 0, false).copy(exerciseId = 7, modifiers = "assisted"),
+        )
+        for (sealed in listOf(false, true)) {
+            val rows = trialRows(sets, catalogue, sealed)
+            assertEquals(listOf(7L, 7L), rows.map { it.exerciseId })
+            assertEquals(listOf("  weighted  ", "assisted"), rows.map { it.modifiers })
+        }
     }
 
     @Test
@@ -227,7 +255,7 @@ class TodayStateTest {
         assertEquals(TodayFit(1, 52, fullVeil = false), fitToday(big))
     }
 
-    private fun day(name: String, value: String = "3 × 8–12") = DayRow(name = name, value = value, done = 0, total = 3, checked = false)
+    private fun day(name: String, value: String = "3 × 8–12") = DayRow(name = name, value = value, done = 0, total = 3, checked = false, exerciseId = 1, modifiers = "")
 
     private fun names(lines: List<List<DayRow>>) = lines.map { line -> line.map { it.name } }
 

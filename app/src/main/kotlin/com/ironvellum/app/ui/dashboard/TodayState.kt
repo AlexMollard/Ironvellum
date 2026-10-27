@@ -102,6 +102,8 @@ internal data class DayRow(
     val done: Int,
     val total: Int,
     val checked: Boolean,
+    val exerciseId: Long,
+    val modifiers: String,
     /** A warm-up exercise: read as one, and not a movement of the rite's count. */
     val warmup: Boolean = false,
     /** A muscle this exercise leans on that is still High or above: its swatch and name ride the line. */
@@ -115,9 +117,9 @@ internal data class DayRow(
 internal fun plannedRows(entries: List<PresetEntry>, tags: Map<Long, FatigueTag> = emptyMap()): List<DayRow> =
     entries.sortedWith(compareBy<PresetEntry>({ !it.warmup }, { it.position })).map {
         if (it.warmup) {
-            DayRow(it.exerciseName, "Warm-up", done = 0, total = it.targetSets, checked = false, warmup = true)
+            DayRow(it.exerciseName, "Warm-up", done = 0, total = it.targetSets, checked = false, exerciseId = it.exerciseId, modifiers = it.modifiers, warmup = true)
         } else {
-            DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false, fatigue = tags[it.id])
+            DayRow(it.exerciseName, SchemeText.figure(it.scheme, it.targetSets, it.targetReps, null, null), done = 0, total = it.targetSets, checked = false, exerciseId = it.exerciseId, modifiers = it.modifiers, fatigue = tags[it.id])
         }
     }
 
@@ -159,6 +161,8 @@ internal fun trialRows(sets: List<SessionSet>, exercises: Map<Long, Exercise>, s
                 done = done,
                 total = total,
                 checked = if (sealed) done > 0 else total > 0 && done == total,
+                exerciseId = first.exerciseId,
+                modifiers = first.modifiers,
             )
         }
 

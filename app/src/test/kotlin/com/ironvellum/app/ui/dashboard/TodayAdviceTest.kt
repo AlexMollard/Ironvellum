@@ -116,8 +116,8 @@ class TodayAdviceTest {
         val rows = plannedRows(push.entries, tags)
         assertEquals(FatigueTag(Muscle.MID_CHEST, FatigueLevel.HIGH), rows[0].fatigue)
         assertNull(rows[1].fatigue)
-        assertFalse(fitsHalfLine(DayRow("Dip", "3 × 5", 0, 3, false, fatigue = rows[0].fatigue)))
-        assertTrue(fitsHalfLine(DayRow("Dip", "3 × 5", 0, 3, false)))
+        assertFalse(fitsHalfLine(DayRow("Dip", "3 × 5", 0, 3, false, exerciseId = 1, modifiers = "", fatigue = rows[0].fatigue)))
+        assertTrue(fitsHalfLine(DayRow("Dip", "3 × 5", 0, 3, false, exerciseId = 1, modifiers = "")))
         assertEquals("no tags is the card as it was", plannedRows(push.entries), plannedRows(push.entries, emptyMap()))
     }
 

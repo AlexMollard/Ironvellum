@@ -37,6 +37,9 @@ import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.domain.PresetEntry
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.MuscleGroup
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
@@ -130,6 +133,19 @@ class TodaySwipeTest {
         right()
         compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
         compose.runOnIdle { assertEquals(3, selections) }
+    }
+
+    @Test fun swipingAnExerciseStillChangesDayInsteadOfOpeningItsSheet() {
+        val exercise = Exercise(id = 1, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val preset = WorkoutPreset(
+            id = 1, name = "Monday rite", scheduledDay = 1,
+            entries = listOf(PresetEntry(exerciseId = 1, exerciseName = "Pull-up", targetSets = 3, targetReps = 8)),
+        )
+        show(ui = DashboardUi(presets = listOf(preset), exercises = mapOf(exercise.id to exercise)))
+        compose.onNodeWithText("Pull-up").performTouchInput { swipeLeft() }
+        advance()
+        compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
+        compose.runOnIdle { assertEquals(1, selections); assertNull(openedRite) }
     }
 
     /**
