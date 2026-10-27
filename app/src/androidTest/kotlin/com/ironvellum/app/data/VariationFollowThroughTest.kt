@@ -1,5 +1,6 @@
 package com.ironvellum.app.data
 
+import androidx.lifecycle.viewModelScope
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.db.SessionEntity
@@ -7,6 +8,7 @@ import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.ui.Routes
 import com.ironvellum.app.ui.train.ExerciseExplorerViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -25,6 +27,7 @@ class VariationFollowThroughTest {
     private lateinit var db: IronvellumDatabase
     private lateinit var repo: Repository
     private var pushUp = 0L
+    private val explorers = mutableListOf<ExerciseExplorerViewModel>()
 
     @Before
     fun setUp() = runBlocking<Unit> {
@@ -42,6 +45,10 @@ class VariationFollowThroughTest {
 
     @After
     fun tearDown() {
+        // The explorer shares its state WhileSubscribed(5s), so after a test's last read its Room flow stays live for
+        // five seconds. Closing the database under it threw "attempt to re-open an already-closed object" into
+        // whichever test was running next. Stop the scopes first.
+        runBlocking(Dispatchers.Main) { explorers.forEach { it.viewModelScope.cancel() } }
         db.close()
         InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase(TEST_DB)
     }
@@ -69,13 +76,13 @@ class VariationFollowThroughTest {
         assertEquals("exercises?name=Push-up&variation=deficit%2Celevated", Routes.exercises("Push-up", "deficit,elevated"))
         val exercise = repo.observeExercises().first().first { it.id == pushUp }
         val shown = withContext(Dispatchers.Main) {
-            val vm = ExerciseExplorerViewModel(repo)
+            val vm = ExerciseExplorerViewModel(repo).also { explorers += it }
             vm.pick(exercise, "deficit")
             withTimeout(10_000) { vm.ui.first { it.history?.variation == "deficit" } }.history!!.variation
         }
         assertEquals("deficit", shown)
         val plain = withContext(Dispatchers.Main) {
-            val vm = ExerciseExplorerViewModel(repo)
+            val vm = ExerciseExplorerViewModel(repo).also { explorers += it }
             vm.pick(exercise, "")
             withTimeout(10_000) { vm.ui.first { it.history != null } }.history!!.variation
         }
@@ -83,7 +90,7 @@ class VariationFollowThroughTest {
         // A combination opens on its own chip, whichever order its tokens were picked in.
         trial(5_000_000L, "deficit, archer", reps = 8)
         val combo = withContext(Dispatchers.Main) {
-            val vm = ExerciseExplorerViewModel(repo)
+            val vm = ExerciseExplorerViewModel(repo).also { explorers += it }
             vm.pick(exercise, com.ironvellum.app.domain.Variation.key("deficit, archer"))
             withTimeout(10_000) { vm.ui.first { it.history?.variation == "archer,deficit" } }.history!!.variation
         }

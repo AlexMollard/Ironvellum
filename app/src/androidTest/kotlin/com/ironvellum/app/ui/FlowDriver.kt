@@ -70,12 +70,18 @@ class FlowDriver(private val compose: ComposeTestRule) {
     }
 
     fun tab(contentDescription: String) {
-        compose.onAllNodes(
-            SemanticsMatcher.expectValue(
-                SemanticsProperties.ContentDescription,
-                listOf(contentDescription),
-            ),
-        ).onFirst().performSemanticsAction(SemanticsActions.OnClick)
+        val matcher = SemanticsMatcher.expectValue(
+            SemanticsProperties.ContentDescription,
+            listOf(contentDescription),
+        )
+        // The first-run gate renders nothing until the profile flow emits, which takes seconds on an emulator
+        // that has just cold booted: sampling the bar once failed with "no node Codex". Poll like every other step.
+        for (attempt in 1..60) {
+            if (compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()) break
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            Thread.sleep(POLL_MS)
+        }
+        compose.onAllNodes(matcher).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         settle()
     }
 

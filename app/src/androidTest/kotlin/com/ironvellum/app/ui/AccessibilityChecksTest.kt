@@ -1,9 +1,11 @@
 package com.ironvellum.app.ui
 
 import android.util.Log
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -12,6 +14,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
@@ -405,7 +408,13 @@ class AccessibilityChecksTest {
         compose.onAllNodesWithText("DEEDS", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         // Categories are the board's only way in: no filter lives on the board itself.
-        compose.onAllNodesWithText("Trials", substring = true).onFirst().performClick()
+        // The category list is the last item on the board and its first row sits a sliver (about 21px) above the
+        // nav bar, so a coordinate tap lands on the bar or nothing whenever the shelf above it changes height. Fire the
+        // row's click action instead, matched by its click label (a shelf deed can also say "Trials"). Not
+        // performScrollTo: it waits for an idle that this test's paused clock never reaches.
+        compose.onNode(SemanticsMatcher("opens the Trials category") {
+            SemanticsActions.OnClick in it.config && it.config[SemanticsActions.OnClick].label == "Open Trials"
+        }).performSemanticsAction(SemanticsActions.OnClick)
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         fun chipSelected(label: String): Boolean =
