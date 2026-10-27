@@ -23,8 +23,12 @@ details, Lifts and Trends, with generated phone appearance, art and both figures
 Local browser verification covers desktop and phone widths in dark and light.
 The site is published at https://alexmollard.github.io/Ironvellum/ by the
 manual-only `pages.yml` workflow. The first deployment succeeded and its
-sign-in surface was verified in a browser. Live account/OAuth and phone-stat
-acceptance are still outstanding; phase two remains gated on that acceptance.
+sign-in surface was verified in a browser. Live email/password reads across
+all five pages were verified using disposable accounts, including private-row
+isolation and colliding workout IDs; the test accounts were deleted afterward.
+The phone-data and Google OAuth roundtrip acceptance are still outstanding;
+phase two remains gated on that acceptance. Design data contracts and offline
+fixture instructions are in `web/README.md`.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
