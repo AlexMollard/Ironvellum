@@ -89,6 +89,7 @@ internal sealed interface OptStep {
     data class Heavy(val muscle: Muscle) : OptStep
     data class Overlap(val rite: String) : OptStep
     data object Spread : OptStep
+    data class Recovery(val presetId: Long) : OptStep
     data class Detail(val parent: OptStep, val changeId: String) : OptStep
 
     fun encode(): String = when (this) {
@@ -98,13 +99,14 @@ internal sealed interface OptStep {
         is Heavy -> "heavy:${muscle.name}"
         is Overlap -> "overlap:$rite"
         Spread -> "spread"
+        is Recovery -> "recovery:$presetId"
         is Detail -> "detail:${parent.encode()}$SEP$changeId"
     }
 
     /** Where Back goes. */
     fun parent(): OptStep = when (this) {
         Hub -> Hub
-        is Gap, is Heavy, is Overlap, Spread -> Hub
+        is Gap, is Heavy, is Overlap, Spread, is Recovery -> Hub
         is Where -> Gap(muscle)
         is Detail -> parent
     }
@@ -120,6 +122,7 @@ internal sealed interface OptStep {
                 "heavy" -> Heavy(Muscle.valueOf(parts[1]))
                 "overlap" -> Overlap(text.removePrefix("overlap:"))
                 "spread" -> Spread
+                "recovery" -> Recovery(parts[1].toLong())
                 "detail" -> {
                     val rest = text.removePrefix("detail:")
                     Detail(decode(rest.substringBefore(SEP)), rest.substringAfter(SEP))
@@ -200,6 +203,7 @@ internal fun OptimiseScreen(
                     saving = saving,
                     error = error,
                     onApply = viewModel::apply,
+                    onKeepAsIs = viewModel::keepAsIs,
                     onBack = onBack,
                 )
             }
@@ -246,6 +250,7 @@ private fun ReadyPages(
     saving: Boolean,
     error: String?,
     onApply: (Applied, List<Pair<Long, PlannedPreset>>) -> Unit,
+    onKeepAsIs: (Long, Muscle) -> Unit,
     onBack: () -> Unit,
 ) {
     val input = report.input
@@ -258,7 +263,7 @@ private fun ReadyPages(
         OptStep.Hub, is OptStep.Gap -> null
         is OptStep.Where -> OptStep.Gap(step.muscle)
         is OptStep.Detail -> step.parent
-        is OptStep.Heavy, is OptStep.Overlap, OptStep.Spread -> OptStep.Hub
+        is OptStep.Heavy, is OptStep.Overlap, OptStep.Spread, is OptStep.Recovery -> OptStep.Hub
     }
     BackHandler(enabled = stepBack != null) { stepBack?.let(onStep) }
 
@@ -273,6 +278,23 @@ private fun ReadyPages(
                 title = title,
                 lines = kept.map { (change, option) -> change.kind.label to titleFor(change, option) },
                 skipped = changes.size - kept.size,
+                before = touched.map { input.ids[it] to week[it] },
+                riteNames = touched.map { week[it].name },
+            ),
+            touched.map { input.ids[it] to after[it] },
+        )
+    }
+
+    /** Writes one picked option of a recovery finding: the rites that differ, with what they were before. */
+    fun applyOne(change: OptChange, option: OptOption) {
+        val after = resolveWeek(week, listOf(option))
+        val touched = week.indices.filter { after[it] != week[it] }
+        if (touched.isEmpty()) return
+        onApply(
+            Applied(
+                title = change.rite.orEmpty(),
+                lines = listOf(change.kind.label to option.label),
+                skipped = 0,
                 before = touched.map { input.ids[it] to week[it] },
                 riteNames = touched.map { week[it].name },
             ),
@@ -348,6 +370,22 @@ private fun ReadyPages(
                 )
             }
         }
+        is OptStep.Recovery -> {
+            val rite = report.recovery.firstOrNull { it.finding.presetId == step.presetId }
+            if (rite == null) {
+                // Kept as is, or no longer tired: nothing left to show here.
+                Redirect(onStep)
+            } else {
+                RecoveryPage(
+                    rite = rite,
+                    saving = saving,
+                    error = error,
+                    onApply = { applyOne(rite.change, it) },
+                    onKeep = { onKeepAsIs(rite.finding.presetId, rite.finding.muscle) },
+                    onBack = { onStep(OptStep.Hub) },
+                )
+            }
+        }
         is OptStep.Detail -> {
             val change = report.allChanges().firstOrNull { it.id == step.changeId }
             if (change == null) {
@@ -419,6 +457,23 @@ private fun HubPage(report: OptimiseReport, onStep: (OptStep) -> Unit, onBack: (
                             onClickLabel = stringResource(R.string.optimise_heavy_open_label, finding.muscle.label.lowercase()),
                             spoken = stringResource(R.string.optimise_heavy_description, finding.muscle.label, sets, CoverageState.HEAVY.label, changes),
                             onClick = { onStep(OptStep.Heavy(finding.muscle)) },
+                        )
+                    }
+                }
+            }
+            if (report.recovery.isNotEmpty()) {
+                OptLabel(stringResource(R.string.optimise_recovery_label))
+                InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                    report.recovery.forEachIndexed { index, rite ->
+                        if (index > 0) InkDivider()
+                        val line = recoverySubline(rite)
+                        FindingRow(
+                            state = null,
+                            title = rite.finding.rite,
+                            subline = line,
+                            onClickLabel = stringResource(R.string.optimise_recovery_open_label, rite.finding.rite),
+                            spoken = stringResource(R.string.optimise_recovery_description, rite.finding.rite, line),
+                            onClick = { onStep(OptStep.Recovery(rite.finding.presetId)) },
                         )
                     }
                 }

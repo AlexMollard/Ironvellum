@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ironvellum.app.R
+import com.ironvellum.app.data.FatigueAdviceDismissals
+import com.ironvellum.app.data.FatigueAdviceSetting
+import com.ironvellum.app.data.LiftingExperienceSetting
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.data.requestFor
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.VolumeLevel
@@ -59,19 +63,47 @@ internal class OptimiseViewModel(
     private val appContext: Context,
 ) : ViewModel() {
 
+    private val dismissals = FatigueAdviceDismissals(appContext)
+
+    /** Bumped when a recovery finding is kept as is, so the report is rebuilt without it. */
+    private val keeps = MutableStateFlow(0)
+
     val state: StateFlow<OptimiseState> =
-        combine(repo.observePresets(), repo.observeExercises(), repo.observeBodyProfile().map { it.second }) { saved, catalogue, sex ->
-            Triple(saved, catalogue, sex)
-        }.mapLatest { (saved, catalogue, sex) ->
+        combine(
+            repo.observePresets(), repo.observeExercises(), repo.observeBodyProfile().map { it.second }, repo.observeHistory(), keeps,
+        ) { saved, catalogue, sex, history, _ ->
+            Inputs(saved, catalogue, sex, history)
+        }.mapLatest { (saved, catalogue, sex, history) ->
             if (saved.isEmpty()) return@mapLatest OptimiseState.NoRites
             if (catalogue.isEmpty()) return@mapLatest OptimiseState.Loading
             val answers = ProgramAnswersStore.get(appContext)
             val equipment = answers?.equipment ?: ProgramAnswersStore.equipment.value ?: return@mapLatest OptimiseState.NeedsArmoury
             val strength = repo.strengthProfile().copy(starter = repo.starterBasis(sex, answers?.volume ?: VolumeLevel.STANDARD))
             val request = answers.requestFor(equipment, sex, saved.size)
-            OptimiseState.Ready(buildReport(OptimiseInput(saved, request, catalogue, strength)))
+            val input = OptimiseInput(
+                saved, request, catalogue, strength,
+                history = history,
+                nowMs = System.currentTimeMillis(),
+                experience = LiftingExperienceSetting.answer,
+                fatigueAdvice = FatigueAdviceSetting.enabled,
+                keptAsIs = dismissals::isKept,
+            )
+            OptimiseState.Ready(buildReport(input))
         }.flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OptimiseState.Loading)
+
+    private data class Inputs(
+        val saved: List<com.ironvellum.app.domain.WorkoutPreset>,
+        val catalogue: List<com.ironvellum.app.domain.Exercise>,
+        val sex: com.ironvellum.app.domain.Sex,
+        val history: List<Pair<com.ironvellum.app.domain.WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>>,
+    )
+
+    /** "Keep as is" on a recovery finding: it stops being flagged for that routine and muscle. */
+    fun keepAsIs(presetId: Long, muscle: Muscle) {
+        dismissals.keepAsIs(presetId, muscle)
+        keeps.value++
+    }
 
     private val _saving = MutableStateFlow(false)
 

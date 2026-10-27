@@ -2804,6 +2804,25 @@
     <!-- Themed wording of optimise_heavy_per_session. Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
     <string name="optimise_heavy_per_session__t">%1$s in one rite</string>
     <!-- Hub row under a heavy muscle. %1$s is the hard sets ("24 hard sets a week"), %2$s the state (Heavy), %3$s how many changes help. -->
+    <!-- Temper's recovery finding: a routine that keeps starting with a muscle still tired. -->
+    <string name="optimise_recovery_label">Starts tired</string>
+    <string name="optimise_recovery_title">%1$s keeps starting with %2$s still tired</string>
+    <string name="optimise_recovery_detail">High at %1$d of its last %2$d starts</string>
+    <string name="optimise_recovery_subline">%1$s High at %2$d of its last %3$d starts</string>
+    <string name="optimise_recovery_subtitle">%1$s still tired at the start</string>
+    <string name="optimise_recovery_open_label">Open %1$s recovery</string>
+    <string name="optimise_recovery_description">%1$s starts tired. %2$s</string>
+    <string name="optimise_recovery_intro">High or more at the start for %1$s, %2$d of the last %3$d times. Pick a change, or keep it as it is.</string>
+    <string name="optimise_recovery_starts_label">When it began</string>
+    <string name="optimise_recovery_cause">Most of it came from %1$s on %2$s (%3$s).</string>
+    <string name="optimise_recovery_cause_free">Most of it came from a workout on %1$s (%2$s).</string>
+    <string name="optimise_recovery_choose_label">What to do</string>
+    <string name="optimise_recovery_move_option">Move %1$s to %2$s</string>
+    <string name="optimise_recovery_move_reason">One more day after %1$s</string>
+    <string name="optimise_recovery_trim_option">Trim a set of %1$s in %2$s</string>
+    <string name="optimise_recovery_trim_reason">%1$s would be about %2$s at the start</string>
+    <string name="optimise_recovery_keep_option">Keep as is</string>
+    <string name="optimise_recovery_keep_reason">Stop flagging %1$s on %2$s</string>
     <string name="optimise_heavy_subline" translatable="false">%1$s · %2$s · %3$s</string>
     <!-- %1$s is a muscle, lower case. -->
     <string name="optimise_heavy_open_label">Ease %1$s</string>
@@ -3543,6 +3562,7 @@
     <!-- The Forge dock button while the plan is being applied (with an ellipsis), and what a screen reader says. -->
     <string name="forge_dock_busy_label">Applying…</string>
     <string name="forge_dock_busy_description">Applying</string>
+    <string name="optimise_kind_recovery">Recovery</string>
     <!-- Under a routine row in a superset: %1$s is the partner exercise, or "A and B" for two. -->
     <string name="preseteditor_superset_with">With %1$s</string>
     <!-- Names a partner in a superset when its exercise has no name yet. -->

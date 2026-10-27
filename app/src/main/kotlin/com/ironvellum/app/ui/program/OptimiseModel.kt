@@ -8,6 +8,8 @@ import com.ironvellum.app.domain.ChangeOp
 import com.ironvellum.app.domain.Easing
 import com.ironvellum.app.domain.EasingOption
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.FatigueLevel
+import com.ironvellum.app.domain.LiftingExperience
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MuscleLoad
 import com.ironvellum.app.domain.MuscleMap
@@ -18,14 +20,17 @@ import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRequest
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.Ranked
+import com.ironvellum.app.domain.RecoveryFinding
 import com.ironvellum.app.domain.Reason
 import com.ironvellum.app.domain.ReasonTag
 import com.ironvellum.app.domain.Recovery
+import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Slot
 import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WeekEdit
 import com.ironvellum.app.domain.WeekEdits
+import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
 import kotlin.math.abs
 
@@ -44,6 +49,14 @@ internal data class OptimiseInput(
     val request: ProgramRequest,
     val catalogue: List<Exercise>,
     val strength: StrengthProfile,
+    /** The sealed workouts, for the recovery finding; empty means none is looked for. */
+    val history: List<Pair<WorkoutSession, List<SessionSet>>> = emptyList(),
+    val nowMs: Long = 0L,
+    val experience: LiftingExperience = LiftingExperience.UNANSWERED,
+    /** The Fatigue advice setting: off means no recovery finding, whatever the history says. */
+    val fatigueAdvice: Boolean = true,
+    /** A standing "Keep as is" for a routine and muscle. */
+    val keptAsIs: (presetId: Long, muscle: Muscle) -> Boolean = { _, _ -> false },
 ) {
     /** The rites Weekly coverage counts, so the numbers here are the numbers there. */
     val counted: List<WorkoutPreset> = scheduledRoutine(saved) { it.scheduledDay }
@@ -56,6 +69,7 @@ enum class OptKind(@StringRes private val labelRes: Int) {
     SWAP(R.string.optimise_kind_swap),
     MOVE(R.string.optimise_kind_move),
     SPREAD(R.string.optimise_kind_spread),
+    RECOVERY(R.string.optimise_kind_recovery),
     ;
 
     val label: String get() = Words.text(UiText.res(labelRes))
@@ -91,6 +105,23 @@ internal data class OptChange(
     val movements: List<Pair<String, String>> = emptyList(),
 )
 
+/**
+ * A routine that keeps starting on a tired muscle. [change] holds the options that edit the week (move the routine,
+ * trim the cause routine's lift), at most two; "Keep as is" is not an edit and is offered by the page. [move] and
+ * [trim] say what each option is, for the sheet's wording.
+ */
+internal data class RecoveryRite(
+    val finding: RecoveryFinding.Finding,
+    val change: OptChange,
+    val move: DayMove?,
+    /** The cause routine's rite and lift a trim would touch, with the level the muscle would start at after it. */
+    val trim: RecoveryTrim?,
+    /** The cause routine's name, when the cause was one of the saved routines. */
+    val causeRite: String?,
+)
+
+internal data class RecoveryTrim(val rite: String, val exercise: String, val from: Int, val projected: FatigueLevel)
+
 internal data class HeavyFinding(val muscle: Muscle, val load: MuscleLoad, val changes: List<OptChange>)
 
 /** The changes found in one rite whose movements overlap. */
@@ -107,10 +138,12 @@ internal data class OptimiseReport(
     val overlaps: List<OverlapRite>,
     val spread: OptChange?,
     val tight: List<Recovery.TightPair>,
+    /** Routines that keep starting on a tired muscle; empty with Fatigue advice off. */
+    val recovery: List<RecoveryRite> = emptyList(),
 ) {
-    /** Nothing to suggest: no gap, no heavy muscle, no overlap, no tight days. */
-    val nothing: Boolean get() = gaps.isEmpty() && heavy.isEmpty() && overlaps.isEmpty() && spread == null
-    val findings: Int get() = gaps.size + heavy.size + overlaps.sumOf { it.changes.size } + if (spread != null) 1 else 0
+    /** Nothing to suggest: no gap, no heavy muscle, no overlap, no tight days, no tired starts. */
+    val nothing: Boolean get() = gaps.isEmpty() && heavy.isEmpty() && overlaps.isEmpty() && spread == null && recovery.isEmpty()
+    val findings: Int get() = gaps.size + heavy.size + overlaps.sumOf { it.changes.size } + (if (spread != null) 1 else 0) + recovery.size
 }
 
 // ------------------------------------------------------------------------------------------- the report
@@ -132,7 +165,7 @@ internal fun buildReport(input: OptimiseInput): OptimiseReport {
 
     val gapOptions = gaps.associateWith { gapRanked(input, it) }
 
-    return OptimiseReport(input, loads, tally, gaps, gapOptions, heavy, overlaps, spreadChange(input), Recovery.tightPairs(week))
+    return OptimiseReport(input, loads, tally, gaps, gapOptions, heavy, overlaps, spreadChange(input), Recovery.tightPairs(week), recoveryRites(input))
 }
 
 private fun reasonOf(tag: ReasonTag): String {
@@ -356,6 +389,83 @@ private fun spreadChange(input: OptimiseInput): OptChange? {
             ),
         ),
     )
+}
+
+// ------------------------------------------------------------------------------------------------ recovery
+
+/**
+ * Routines that keep starting tired, each with what could be done about it: move the routine to the nearest free day
+ * that gives the cause at least one more day of gap, or trim one set from the cause routine's lift that loads the
+ * muscle most. [Recovery.bestFitDays] ranks where one movement goes; this is the other question (where a whole routine
+ * goes so one gap grows), so the day arithmetic is here.
+ */
+internal fun recoveryRites(input: OptimiseInput): List<RecoveryRite> {
+    if (!input.fatigueAdvice || input.history.isEmpty()) return emptyList()
+    val exercises = input.catalogue.associateBy { it.id }
+    return RecoveryFinding.find(input.counted, input.history, exercises, input.nowMs, input.experience, input.keptAsIs).map { finding ->
+        val week = input.week
+        val index = input.counted.indexOfFirst { it.id == finding.presetId }
+        val causeIndex = finding.cause?.presetId?.let { id -> input.counted.indexOfFirst { it.id == id } } ?: -1
+        val move = moveFor(week, index, causeIndex)
+        val trimEntry = if (causeIndex >= 0) {
+            week[causeIndex].entries.firstOrNull { it.exerciseName.equals(finding.cause?.exerciseName, true) && it.sets >= 2 }
+        } else {
+            null
+        }
+        val trim = trimEntry?.let {
+            RecoveryTrim(week[causeIndex].name, it.exerciseName, it.sets, RecoveryFinding.projected(finding, it.sets))
+        }
+        val options = listOfNotNull(
+            move?.let {
+                OptOption(
+                    label = Words.text(UiText.res(R.string.optimise_recovery_move_option, finding.rite, dayLabel(it.to))),
+                    reason = Words.text(UiText.res(R.string.optimise_recovery_move_reason, week[causeIndex].name)),
+                    dayMoves = listOf(it),
+                )
+            },
+            trim?.let {
+                OptOption(
+                    label = Words.text(UiText.res(R.string.optimise_recovery_trim_option, it.exercise, it.rite)),
+                    reason = Words.text(UiText.res(R.string.optimise_recovery_trim_reason, finding.muscle.label, levelWord(it.projected).lowercase())),
+                    edits = listOf(WeekEdit(causeIndex, ChangeOp.SetSets(it.exercise, it.from - 1))),
+                )
+            },
+        )
+        RecoveryRite(
+            finding = finding,
+            change = OptChange(
+                id = listOf("recovery", finding.presetId, finding.muscle.name).joinToString(":"),
+                kind = OptKind.RECOVERY,
+                title = Words.text(UiText.res(R.string.optimise_recovery_title, finding.rite, finding.muscle.label.lowercase())),
+                detail = Words.text(UiText.res(R.string.optimise_recovery_detail, finding.tiredStarts, finding.starts.size)),
+                rite = finding.rite,
+                options = options,
+            ),
+            move = move,
+            trim = trim,
+            causeRite = if (causeIndex >= 0) week[causeIndex].name else null,
+        )
+    }
+}
+
+/**
+ * The tired routine at [index] moved to the nearest free weekday that leaves more days after the cause routine at
+ * [causeIndex]: forward from where it is, never past the day before the cause comes round again. Null when either
+ * routine is unscheduled or no free day gives more gap.
+ */
+internal fun moveFor(week: List<PlannedPreset>, index: Int, causeIndex: Int): DayMove? {
+    val tired = week.getOrNull(index) ?: return null
+    val cause = week.getOrNull(causeIndex) ?: return null
+    val tiredDay = tired.scheduledDay ?: return null
+    val causeDay = cause.scheduledDay ?: return null
+    if (index == causeIndex) return null
+    val gap = Math.floorMod(tiredDay - causeDay, 7)
+    val taken = week.filterIndexed { i, _ -> i != index }.mapNotNull { it.scheduledDay }.toSet()
+    for (shift in 1..(6 - gap)) {
+        val day = Math.floorMod(tiredDay - 1 + shift, 7) + 1
+        if (day !in taken) return DayMove(index, tired.name, tiredDay, day)
+    }
+    return null
 }
 
 // ---------------------------------------------------------------------------------------------- gaps
