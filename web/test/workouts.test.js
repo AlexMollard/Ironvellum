@@ -51,6 +51,15 @@ describe('workouts', () => {
       root.querySelector('[data-filter="imported"]').click(); expect(root.textContent).toContain('Pull'); expect(root.textContent).not.toContain('Legs');
     } finally { setWordsMode(false); }
   });
+  it('counts current owner rows when the snapshot predates a new workout', async () => {
+    const root = document.createElement('main');
+    await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot: { ...snapshot, profile: { workouts: 1, firstMs: Date.parse('2020-01-01T00:00:00Z') } }, router });
+    const heading = root.querySelector('.screen-header p').textContent;
+    expect(Number.parseInt(heading, 10)).toBe(2);
+    expect(heading).toContain('2025');
+    expect(heading).not.toContain('2020');
+    expect(root.querySelectorAll('.workout-row')).toHaveLength(2);
+  });
   it('renders an empty account', async () => {
     const root = document.createElement('main'); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => [] }, snapshot: null, router }); expect(root.textContent).toContain('No workouts yet');
   });

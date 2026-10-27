@@ -12,7 +12,8 @@ export async function renderWorkouts(root, { source, snapshot, router }) {
   const zone = snapshot?.zone || 'UTC';
   let month = dayKey(snapshot?.builtAtMs ?? Date.now(), zone).slice(0, 7), filter = 'all', query = '', page = 0;
   const header = node('header', null, 'screen-header'); header.append(node('h1', t('concept_trial_cpl')));
-  header.append(node('p', snapshot ? `${snapshot.profile.workouts} ${t('concept_trial_pl')}${snapshot.profile.firstMs != null ? ` since ${displayDate(snapshot.profile.firstMs, zone)}` : ''}` : 'Sync the app to see your stats.', 'muted'));
+  const first = rows.reduce((earliest, row) => !earliest || row.startedAt < earliest ? row.startedAt : earliest, null);
+  header.append(node('p', `${rows.length} ${t(rows.length === 1 ? 'concept_trial_s' : 'concept_trial_pl')}${first ? ` since ${displayDate(first, zone)}` : ''}`, 'muted'));
   root.append(header);
   const controls = node('div', null, 'button-row');
   const search = node('input'); search.type = 'search'; search.placeholder = 'Search title or label'; search.setAttribute('aria-label', `Search ${t('concept_trial_pl')}`);
