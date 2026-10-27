@@ -15,8 +15,10 @@ release, crests, web-viewer and snapshot-cap patches are applied; `circle_draw_c
 `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the worn
 crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
-The 4 MiB snapshot uploader's schema prerequisite is satisfied; the updated
-phone build and a real-account sync still need verification.
+The 4 MiB snapshot uploader's schema prerequisite is satisfied. The updated
+phone build synced successfully, and the deployed viewer's history, set details,
+profile XP, lift variations and trends were verified against a read-only local
+backup. Temporary browser credentials were cleared without signing out the phone.
 
 The read-only viewer is implemented under `web/`: Overview, Workouts, workout
 details, Lifts and Trends, with generated phone appearance, art and both figures.
@@ -26,8 +28,8 @@ manual-only `pages.yml` workflow. The first deployment succeeded and its
 sign-in surface was verified in a browser. Live email/password reads across
 all five pages were verified using disposable accounts, including private-row
 isolation and colliding workout IDs; the test accounts were deleted afterward.
-The phone-data and Google OAuth roundtrip acceptance are still outstanding;
-phase two remains gated on that acceptance. Design data contracts and offline
+The Google OAuth roundtrip acceptance is still outstanding; phase two remains
+gated on that acceptance. Design data contracts and offline
 fixture instructions are in `web/README.md`.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
