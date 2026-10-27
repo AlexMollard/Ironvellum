@@ -139,6 +139,9 @@ android {
         // Exported Room schema JSONs, consumed by MigrationTestHelper on device.
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
+    testOptions.unitTests.all {
+        it.systemProperty("golden.update", System.getProperty("golden.update", "false"))
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

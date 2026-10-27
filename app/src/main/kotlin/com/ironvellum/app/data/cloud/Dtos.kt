@@ -25,6 +25,15 @@ import com.ironvellum.app.domain.CircleMember
  */
 
 @Serializable
+data class WebSnapshotRowDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("version") val version: Int,
+    @SerialName("snapshot") val snapshot: kotlinx.serialization.json.JsonElement,
+    @SerialName("content_hash") val contentHash: String,
+    @SerialName("size_bytes") val sizeBytes: Int,
+)
+
+@Serializable
 data class ProfileDto(
     @SerialName("id") val id: String,
     @SerialName("display_name") val displayName: String,

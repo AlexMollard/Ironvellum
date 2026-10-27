@@ -59,7 +59,7 @@ data class AccentPalette(
     }
 }
 
-data class AccentPreset(@StringRes private val nameRes: Int, val palette: AccentPalette) {
+data class AccentPreset(val id: String, @StringRes private val nameRes: Int, val palette: AccentPalette) {
     /** The preset's name as shown. */
     val name: String get() = Words.text(UiText.res(nameRes))
 }
@@ -67,10 +67,10 @@ data class AccentPreset(@StringRes private val nameRes: Int, val palette: Accent
 object AccentPresets {
     /** The dark presets. */
     val entries = listOf(
-        AccentPreset(R.string.accent_emerald_gold, AccentPalette.Default),
-        AccentPreset(R.string.accent_sapphire_amber, AccentPalette(0xFF60A5FA.toInt(), 0xFFFBBF24.toInt())),
-        AccentPreset(R.string.accent_violet_rose, AccentPalette(0xFFA78BFA.toInt(), 0xFFFB7185.toInt())),
-        AccentPreset(R.string.accent_ice_copper, AccentPalette(0xFF67E8F9.toInt(), 0xFFE6A07C.toInt())),
+        AccentPreset("emerald_gold", R.string.accent_emerald_gold, AccentPalette.Default),
+        AccentPreset("sapphire_amber", R.string.accent_sapphire_amber, AccentPalette(0xFF60A5FA.toInt(), 0xFFFBBF24.toInt())),
+        AccentPreset("violet_rose", R.string.accent_violet_rose, AccentPalette(0xFFA78BFA.toInt(), 0xFFFB7185.toInt())),
+        AccentPreset("ice_copper", R.string.accent_ice_copper, AccentPalette(0xFF67E8F9.toInt(), 0xFFE6A07C.toInt())),
     )
 
     /**
@@ -79,10 +79,10 @@ object AccentPresets {
      * (hue 68) and would read as the same colour.
      */
     val light = listOf(
-        AccentPreset(R.string.accent_forest_gold, AccentPalette.LightDefault),
-        AccentPreset(R.string.accent_oxblood_gold, AccentPalette(LIGHT_OXBLOOD, LIGHT_GOLD)),
-        AccentPreset(R.string.accent_ink_gold, AccentPalette(LIGHT_INK_BLUE, LIGHT_GOLD)),
-        AccentPreset(R.string.accent_copper_teal, AccentPalette(LIGHT_COPPER, LIGHT_TEAL)),
+        AccentPreset("forest_gold", R.string.accent_forest_gold, AccentPalette.LightDefault),
+        AccentPreset("oxblood_gold", R.string.accent_oxblood_gold, AccentPalette(LIGHT_OXBLOOD, LIGHT_GOLD)),
+        AccentPreset("ink_gold", R.string.accent_ink_gold, AccentPalette(LIGHT_INK_BLUE, LIGHT_GOLD)),
+        AccentPreset("copper_teal", R.string.accent_copper_teal, AccentPalette(LIGHT_COPPER, LIGHT_TEAL)),
     )
 
     fun forTheme(light: Boolean) = if (light) this.light else entries
