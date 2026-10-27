@@ -66,7 +66,7 @@ class WebPushIntegrationTest {
             var importedUploaded = false
             var failDetails = true
             var snapshotHash: String? = null
-            var schemaVersion = 31
+            var schemaVersion: Int? = 31
             val engine = MockEngine { request ->
                 val path = request.url.encodedPath.substringAfterLast('/')
                 val method = request.method.value
@@ -75,7 +75,7 @@ class WebPushIntegrationTest {
                 val failed = path == "session_set_details" && method == "POST" && failDetails
                 val response = when {
                     failed -> "{\"code\":\"23514\",\"message\":\"detail rejected\"}"
-                    path == "schema_version" -> schemaVersion.toString()
+                    path == "schema_version" -> schemaVersion?.toString() ?: "{\"message\":\"Temporary schema probe failure\"}"
                     path == "web_snapshots" && method == "GET" -> snapshotHash?.let { "[{\"content_hash\":\"$it\"}]" } ?: "[]"
                     path == "web_snapshots" && method == "POST" -> {
                         val value = Json.parseToJsonElement(body)
@@ -90,7 +90,10 @@ class WebPushIntegrationTest {
                     method == "GET" -> "[]"
                     else -> ""
                 }
-                respond(response, if (failed) HttpStatusCode.BadRequest else HttpStatusCode.OK,
+                val status = if (failed) HttpStatusCode.BadRequest
+                    else if (path == "schema_version" && schemaVersion == null) HttpStatusCode.ServiceUnavailable
+                    else HttpStatusCode.OK
+                respond(response, status,
                     headersOf(HttpHeaders.ContentType, "application/json"))
             }
             val client = createSupabaseClient("https://web-push.invalid", "test-key") {
@@ -155,6 +158,22 @@ class WebPushIntegrationTest {
             val signedOut = CloudSync(repo, AccountRepository(), AppearanceStore(context))
             assertTrue(signedOut.push().isFailure)
             assertEquals(beforeSignedOut, requests.size)
+
+            // A failed beacon must not certify edits whose private detail rows were skipped.
+            val normalSet = db.sessionDao().setsFor(normal).single()
+            db.sessionDao().updateSet(normalSet.copy(rpe = 8))
+            val detailsBeforeProbeFailure = requests.count { it.first == "POST" && it.second == "session_set_details" }
+            schemaVersion = null
+            val unavailable = sync.push().getOrThrow()
+            assertTrue(unavailable.problems.isNotEmpty())
+            assertEquals(detailsBeforeProbeFailure, requests.count { it.first == "POST" && it.second == "session_set_details" })
+            assertEquals(listOf(normal), CloudSync.pendingForPush(repo.observeHistory().first(), repo.pushWatermark()).map { it.first.id })
+            schemaVersion = 31
+            assertTrue(sync.push().getOrThrow().problems.isEmpty())
+            val retriedDetail = Json.parseToJsonElement(requests.last { it.first == "POST" && it.second == "session_set_details" }.third)
+                .jsonArray.single().jsonObject
+            assertEquals("8", retriedDetail.getValue("rpe").jsonPrimitive.content)
+            assertTrue(CloudSync.pendingForPush(repo.observeHistory().first(), repo.pushWatermark()).isEmpty())
         } finally {
             Cloud.tombstoneOwner = oldOwner
             db.close()

@@ -438,7 +438,8 @@ class CloudSync(
                 }
             }
             // Replace detail rows so cleared effort and removed set keys disappear.
-            if (webTableMissing) pushedNow.clear()
+            // An unknown schema cannot certify that private details reached the server.
+            if (webTableMissing || schemaVersion == null) pushedNow.clear()
             if (webAvailable) {
                 for ((session, sets) in pushedNow.toList()) {
                     if (!webAvailable) {
