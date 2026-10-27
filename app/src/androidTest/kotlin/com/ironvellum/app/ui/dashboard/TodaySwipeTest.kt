@@ -32,9 +32,12 @@ import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -127,6 +130,48 @@ class TodaySwipeTest {
         right()
         compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
         compose.runOnIdle { assertEquals(3, selections) }
+    }
+
+    /**
+     * Today asks the system, not its caller, whether to animate: with the animator scale at 0 (battery saver, "Remove
+     * animations") the swipe must still change the day, only without the slide.
+     */
+    @Test fun aSwipeStillChangesTheDayWhenTheSystemAnimatorsAreOff() {
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        fun shell(command: String) = uiAutomation.executeShellCommand(command).let { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).use { stream -> stream.readBytes().decodeToString().trim() } }
+        val before = shell("settings get global animator_duration_scale")
+        shell("settings put global animator_duration_scale 0")
+        try {
+            day = 1
+            compose.mainClock.autoAdvance = false
+            compose.setContent {
+                IronvellumTheme {
+                    Box(Modifier.size(411.dp, 760.dp).testTag("home")) {
+                        TodayContent(
+                            ui = DashboardUi(presets = (1..7).map { WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it) }),
+                            selectedDay = day, today = LocalDate.of(2026, 10, 5),
+                            live = null, liveSets = emptyList(), bodyGap = BodyGap.BOTH,
+                            strengthRank = "Unranked", rankBreakdown = null, veil = null,
+                            actions = TodayActions(onSelectDay = { day = it; selections++ }),
+                        )
+                    }
+                }
+            }
+            advance()
+            compose.runOnIdle { assertFalse("the system animators are off", animatorsOn(InstrumentationRegistry.getInstrumentation().targetContext)) }
+            left()
+            compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
+            compose.onNodeWithText("RITE 2").assertIsDisplayed()
+            right()
+            compose.onNodeWithContentDescription("Monday").assertIsSelected()
+            compose.runOnIdle { assertEquals(2, selections) }
+            // No slide: the one page sits exactly on the viewport.
+            val viewport = compose.onNodeWithTag("today-day-viewport").fetchSemanticsNode().boundsInRoot
+            val page = compose.onNodeWithTag("today-day-page-1", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertEquals(viewport.left, page.left, 1f)
+        } finally {
+            shell(if (before == "null" || before.isEmpty()) "settings delete global animator_duration_scale" else "settings put global animator_duration_scale $before")
+        }
     }
 
     @Test fun swipesWrapBothEndsOfTheWeek() {
