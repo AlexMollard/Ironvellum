@@ -21,8 +21,10 @@ to reach schema 31 before shipping the 4 MiB snapshot uploader.
 The read-only viewer is implemented under `web/`: Overview, Workouts, workout
 details, Lifts and Trends, with generated phone appearance, art and both figures.
 Local browser verification covers desktop and phone widths in dark and light.
-Pages is configured for Actions, but publication and live account acceptance
-are not complete; phase two remains gated on that acceptance.
+The site is published at https://alexmollard.github.io/Ironvellum/ by the
+manual-only `pages.yml` workflow. The first deployment succeeded and its
+sign-in surface was verified in a browser. Live account/OAuth and phone-stat
+acceptance are still outstanding; phase two remains gated on that acceptance.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
