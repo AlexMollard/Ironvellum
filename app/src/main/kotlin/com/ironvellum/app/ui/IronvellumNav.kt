@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.graphics.SolidColor
@@ -54,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -255,7 +257,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         // most a bottom bar should carry, and it is a place visited now and then.
     )
 
-    Box(Modifier.background(IronvellumColors.Abyss)) {
+    Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.widthIn(max = 600.dp).fillMaxSize().testTag("rootContent")) {
         // Gate render, not a route: onboarding has no back stack, no bottom
         // bar and nothing to navigate back to.
         if (needsSetup == true) {
@@ -748,6 +751,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
             }
             }
+        }
         }
         }
     }

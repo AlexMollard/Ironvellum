@@ -53,6 +53,7 @@ The short view, by version; the detail of each item is in the sections below.
 - [x] Owner: push tag `v1.8`
 
 ### 1.9: Play preparation, photos, translations (owner agreed 2026-10-22, built in this order)
+- Large-screen baseline: request portrait on phones; on wider windows center content and modal surfaces at up to 600dp. Expanded two-pane layouts remain planned.
 - [ ] 1 Play-ready code: done: privacy policy row in Settings > Support (both flavours), PLAY_DATA_SAFETY.md updated for heart rate, background reads and WRITE_EXERCISE, `bundlePlayRelease` builds (unsigned, 19.1 MB). Open: sign it once the owner's keystore exists; release-build frame stats on the phone (a release build signed with the debug key installs over the debug one and keeps the data; the owner uses it about 3 minutes, then the debug build goes back)
 - [ ] 2 Progress photos, on the phone and in the folder backup, never the cloud:
   - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout

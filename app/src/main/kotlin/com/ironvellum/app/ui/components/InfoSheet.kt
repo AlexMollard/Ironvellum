@@ -57,7 +57,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,8 +123,7 @@ fun InfoSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // Wide enough to be full width on a tablet or a landscape phone too.
-        sheetMaxWidth = Dp.Unspecified,
+        sheetMaxWidth = 600.dp,
         shape = MaterialTheme.shapes.extraSmall,
         containerColor = IronvellumColors.VaultHigh,
         contentColor = IronvellumColors.Ink,

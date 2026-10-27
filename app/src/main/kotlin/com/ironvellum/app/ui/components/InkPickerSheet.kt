@@ -73,6 +73,7 @@ fun InkPickerSheet(
     ) {
         Column(
             Modifier
+                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.VaultHigh)
                 .statusBarsPadding()

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -300,6 +301,7 @@ internal fun AchievementOverlay(
     ) {
         Box(
             Modifier
+                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss),
         ) {

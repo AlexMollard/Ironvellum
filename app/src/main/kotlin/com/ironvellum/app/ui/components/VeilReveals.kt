@@ -105,6 +105,7 @@ internal fun InscribedOverlay(
     ) {
         Box(
             Modifier
+                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss),
         ) {

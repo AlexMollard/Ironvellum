@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkHairline
@@ -51,8 +50,7 @@ fun IronvellumDialog(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        // Wide enough to be full width on a tablet or a landscape phone too.
-        sheetMaxWidth = Dp.Unspecified,
+        sheetMaxWidth = 600.dp,
         shape = MaterialTheme.shapes.extraSmall,
         containerColor = IronvellumColors.VaultHigh,
         contentColor = IronvellumColors.Ink,
