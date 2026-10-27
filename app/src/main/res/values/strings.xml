@@ -2804,13 +2804,6 @@
     <string name="optimise_nothing_note__t">Your rites cover every muscle without running any heavy, and no two movements do one job.</string>
     <string name="optimise_gaps_label">Gaps</string>
     <string name="optimise_heavy_label">Heavy</string>
-    <string name="optimise_overlap_label">Overlap</string>
-    <!-- Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
-    <string name="optimise_heavy_per_week">%1$s a week</string>
-    <string name="optimise_heavy_per_session">%1$s in one routine</string>
-    <!-- Themed wording of optimise_heavy_per_session. Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
-    <string name="optimise_heavy_per_session__t">%1$s in one rite</string>
-    <!-- Hub row under a heavy muscle. %1$s is the hard sets ("24 hard sets a week"), %2$s the state (Heavy), %3$s how many changes help. -->
     <!-- Temper's recovery finding: a routine that keeps starting with a muscle still tired. -->
     <string name="optimise_recovery_label">Starts tired</string>
     <string name="optimise_recovery_title">%1$s keeps starting with %2$s still tired</string>
@@ -2830,6 +2823,13 @@
     <string name="optimise_recovery_trim_reason">%1$s would be about %2$s at the start</string>
     <string name="optimise_recovery_keep_option">Keep as is</string>
     <string name="optimise_recovery_keep_reason">Stop flagging %1$s on %2$s</string>
+    <string name="optimise_overlap_label">Overlap</string>
+    <!-- Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
+    <string name="optimise_heavy_per_week">%1$s a week</string>
+    <string name="optimise_heavy_per_session">%1$s in one routine</string>
+    <!-- Themed wording of optimise_heavy_per_session. Heavy muscle. %1$s is weekly hard sets ("24 hard sets"). -->
+    <string name="optimise_heavy_per_session__t">%1$s in one rite</string>
+    <!-- Hub row under a heavy muscle. %1$s is the hard sets ("24 hard sets a week"), %2$s the state (Heavy), %3$s how many changes help. -->
     <string name="optimise_heavy_subline" translatable="false">%1$s · %2$s · %3$s</string>
     <!-- %1$s is a muscle, lower case. -->
     <string name="optimise_heavy_open_label">Ease %1$s</string>
@@ -3562,6 +3562,7 @@
     <string name="optimise_kind_swap">Swap</string>
     <string name="optimise_kind_move">Move</string>
     <string name="optimise_kind_spread">Spread</string>
+    <string name="optimise_kind_recovery">Recovery</string>
     <!-- Abbreviation for bodyweight, shown where a load would be ("BW × 12"). -->
     <string name="load_bodyweight">BW</string>
     <!-- Shown where a weekday would be, for a routine with no day. -->
@@ -3569,7 +3570,6 @@
     <!-- The Forge dock button while the plan is being applied (with an ellipsis), and what a screen reader says. -->
     <string name="forge_dock_busy_label">Applying…</string>
     <string name="forge_dock_busy_description">Applying</string>
-    <string name="optimise_kind_recovery">Recovery</string>
     <!-- Under a routine row in a superset: %1$s is the partner exercise, or "A and B" for two. -->
     <string name="preseteditor_superset_with">With %1$s</string>
     <!-- Names a partner in a superset when its exercise has no name yet. -->
