@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.AppearanceStore
 import com.ironvellum.app.data.SeededDb
 import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.data.db.SetLogEntity
@@ -22,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -63,6 +65,8 @@ class WebPushIntegrationTest {
             var sessionsUploaded = false
             var importedUploaded = false
             var failDetails = true
+            var snapshotHash: String? = null
+            var schemaVersion = 31
             val engine = MockEngine { request ->
                 val path = request.url.encodedPath.substringAfterLast('/')
                 val method = request.method.value
@@ -71,7 +75,14 @@ class WebPushIntegrationTest {
                 val failed = path == "session_set_details" && method == "POST" && failDetails
                 val response = when {
                     failed -> "{\"code\":\"23514\",\"message\":\"detail rejected\"}"
-                    path == "schema_version" -> "30"
+                    path == "schema_version" -> schemaVersion.toString()
+                    path == "web_snapshots" && method == "GET" -> snapshotHash?.let { "[{\"content_hash\":\"$it\"}]" } ?: "[]"
+                    path == "web_snapshots" && method == "POST" -> {
+                        val value = Json.parseToJsonElement(body)
+                        val row = if (value is JsonArray) value.single().jsonObject else value.jsonObject
+                        snapshotHash = row.getValue("content_hash").jsonPrimitive.content
+                        ""
+                    }
                     path == "sessions" && method == "POST" -> { sessionsUploaded = true; "" }
                     path == "sessions" && method == "GET" -> if (sessionsUploaded) "[{\"id\":\"normal-cloud\",\"local_id\":$normal}]" else "[]"
                     path == "imported_sessions" && method == "POST" -> { importedUploaded = true; "" }
@@ -87,9 +98,11 @@ class WebPushIntegrationTest {
                 install(Postgrest)
                 httpEngine = engine
             }
-            val sync = CloudSync(repo, AccountRepository(), client, Account(user, "test@example.invalid", "Test", "private"))
+            val sync = CloudSync(repo, AccountRepository(), client, AppearanceStore(context), Account(user, "test@example.invalid", "Test", "private"))
+            sync.snapshotClock = { 1_800_000_000_000L }
             val first = sync.push().getOrThrow()
             assertTrue(first.problems.isNotEmpty())
+            assertFalse(requests.any { it.first == "POST" && it.second == "web_snapshots" })
             val firstWatermark = repo.pushWatermark()
             assertFalse(firstWatermark.containsKey(normal))
             assertTrue(firstWatermark.containsKey(imported))
@@ -117,6 +130,31 @@ class WebPushIntegrationTest {
             assertEquals("1", detail.getValue("superset_group").jsonPrimitive.content)
             assertEquals(CloudSync.pushFingerprint(history.getValue(normal).first, history.getValue(normal).second), repo.pushWatermark()[normal])
             assertEquals(1, requests.count { it.first == "POST" && it.second == "imported_sessions" })
+            val snapshotRequest = requests.single { it.first == "POST" && it.second == "web_snapshots" }
+            val wire = Json.parseToJsonElement(snapshotRequest.third)
+            val row = if (wire is JsonArray) wire.single().jsonObject else wire.jsonObject
+            val snapshot = row.getValue("snapshot").jsonObject
+            assertEquals(user, row.getValue("user_id").jsonPrimitive.content)
+            assertEquals("Test", snapshot.getValue("profile").jsonObject.getValue("name").jsonPrimitive.content)
+            assertTrue(snapshot.getValue("sessions").jsonObject.containsKey(normal.toString()))
+            assertTrue(snapshot.getValue("sessions").jsonObject.containsKey(imported.toString()))
+            assertEquals("2", snapshot.getValue("profile").jsonObject.getValue("workouts").jsonPrimitive.content)
+            assertEquals(1, requests.count { it.first == "POST" && it.second == "web_snapshots" })
+            sync.push().getOrThrow()
+            assertEquals(1, requests.count { it.first == "POST" && it.second == "web_snapshots" })
+            sync.snapshotJsonForTest = { "x".repeat(WireLimits.SNAPSHOT_MAX_BYTES + 1) }
+            val oversized = sync.push().getOrThrow()
+            assertTrue(oversized.problems.isNotEmpty())
+            assertEquals(1, requests.count { it.first == "POST" && it.second == "web_snapshots" })
+            sync.snapshotJsonForTest = null
+            schemaVersion = 30
+            val oldBackend = sync.push().getOrThrow()
+            assertTrue(oldBackend.problems.isNotEmpty())
+            assertEquals(1, requests.count { it.first == "POST" && it.second == "web_snapshots" })
+            val beforeSignedOut = requests.size
+            val signedOut = CloudSync(repo, AccountRepository(), AppearanceStore(context))
+            assertTrue(signedOut.push().isFailure)
+            assertEquals(beforeSignedOut, requests.size)
         } finally {
             Cloud.tombstoneOwner = oldOwner
             db.close()

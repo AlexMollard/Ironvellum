@@ -99,7 +99,7 @@ class IronvellumApp : Application() {
      * would mean two sessions and a sign-in that only half the app can see.
      */
     val accountRepository: AccountRepository by lazy { AccountRepository() }
-    val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository) }
+    val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository, appearanceStore) }
 
     /** Every circle read goes through this, so the weekly bonus is settled wherever the circle is read. */
     val circleBonus: CircleBonus by lazy {

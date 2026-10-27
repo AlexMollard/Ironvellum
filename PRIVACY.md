@@ -4,7 +4,7 @@ Ironvellum (package `com.ironvellum.app`) is a training tracker. This policy des
 what the app stores, what leaves your device, and what never does. It is written
 from the app's actual behaviour; nothing here is aspirational.
 
-Cloud workout upload details checked against the codebase on 2026-10-27.
+Cloud workout upload details checked against the codebase on 2026-10-28.
 
 ## The short version
 
@@ -14,21 +14,21 @@ Cloud workout upload details checked against the codebase on 2026-10-27.
 - **Cloud sync is optional.** Without signing in, no data ever leaves the
   device. The cloud features are disabled entirely unless Supabase credentials
   are configured (`Cloud.configured`, `data/cloud/Cloud.kt`).
-- **Body measurements never leave the device.** The cloud schema deliberately
-  has no table for them (`supabase/migrations/0001_baseline.sql`, header comment;
-  `Repository.kt` "measurements — device-only by design").
+- **Raw body measurements stay on the device.** The owner-only web snapshot
+  can contain strength estimates derived from body weight and the body figure
+  selected for muscle maps.
 - **The database is excluded from Android's backups.** Android would otherwise
   copy app data to your Google account and to a new phone during device
   transfer. `ironvellum.db`, its write-ahead sidecars, the local snapshot copies
   of it, and the crash journal are all excluded in every domain
   (`app/src/main/res/xml/backup_rules.xml`,
-  `app/src/main/res/xml/data_extraction_rules.xml`), so your training data and
-  measurements stay on the device that recorded them.
+  `app/src/main/res/xml/data_extraction_rules.xml`). Raw measurements remain
+  on the device that recorded them.
 
 ## What the app stores on your device
 
-All of the following live only in `ironvellum.db` (Room) in the app's private
-storage:
+The following are stored in `ironvellum.db` (Room) in the app's private
+storage; the sync section below describes what can also leave the device:
 
 - Workout sessions and individual sets (exercise, reps, weight, modifiers,
   duration, distance, grade) — `data/db/Entities.kt`.
@@ -58,8 +58,9 @@ samples themselves are not stored. Reads happen:
   what changed since the last read, and
 - once per day via a WorkManager job (`HealthSyncWorker.kt`, 14-day window).
 
-The results are aggregated per day and stored locally in `health_days`. None of
-it is uploaded to the cloud.
+The results are aggregated per day and stored locally in `health_days`. Raw
+Health Connect data is not uploaded; bodyweight-derived estimates can be
+included in the owner-only web snapshot.
 
 ## What the app writes to Health Connect
 
@@ -98,6 +99,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Set rows: exercise name, position, set index, reps, weight, modifiers, done, duration, distance and grade | `session_sets` |
 | Set kind, effort (RPE) and superset group where recorded | `session_set_details`, readable only by you |
 | Completed imported workouts and their sets, including set kind, effort and superset group | `imported_sessions`, `imported_session_sets`, readable only by you and never in feeds |
+| Web stats snapshot: phone-computed workout and lift figures, including bodyweight-lift strength estimates, weekly sets, fatigue, streak, level and deed names; muscle-map figure (male or female) and appearance settings | `web_snapshots`, one owner-only row replaced when its contents change |
 | Unlocked titles with timestamps | `earned_titles` |
 | Likes you give/receive | `session_likes` |
 | Friend requests / friendships | `friendships` |
@@ -106,9 +108,11 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_baseline.sql`). Your profile `visibility` setting
 (`public` / `friends` / `private`) controls who else can see shared data; the
-set details and imported workouts above remain owner-only. These uploads occur
-as part of sync while signed in and stop when you sign out. Backends below
-schema version 30 do not receive the set details or imported workouts.
+set details, imported workouts and web snapshot above remain owner-only. The
+snapshot's bodyweight-lift estimates can reveal information about body weight;
+they are not shared with allies or feeds. These uploads occur as part of sync
+while signed in and stop when you sign out. Backends below schema version 30
+do not receive set details or imported workouts; snapshots require schema 31.
 
 **Using your own backend:** Settings → CLOUD lets you point the app at your
 own Supabase project instead of the shared one. When a custom backend is
@@ -116,11 +120,12 @@ configured, everything listed above goes to YOUR project — nothing is sent to
 the maintainer's shared instance — and Google sign-in is unavailable there
 (email sign-in only). See `supabase/SELF_HOSTING.md`.
 
-**Not uploaded:** body readings and measurements, height, sex, private notes,
-in-progress (abandoned) sessions, device identifiers, or anything read from
-Health Connect. Session local IDs are uploaded to match synced workouts; other
-local-only row IDs are not. The cloud backup is built without these device-only
-readings and private notes too.
+**Not uploaded:** raw body readings and measurements, height, private notes,
+in-progress (abandoned) sessions, device identifiers, or raw Health Connect
+data. The owner-only snapshot includes the selected body figure and estimates
+derived from body weight, but not the underlying readings. Session local IDs
+are uploaded to match synced workouts; other local-only row IDs are not. The
+cloud backup leaves out device-only readings, sex and private notes.
 
 ## What the app does NOT contain
 

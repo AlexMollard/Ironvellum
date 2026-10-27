@@ -49,6 +49,16 @@ Code references:
 - Code: `CS` `push()`; `M1` `sessions`, `session_sets`,
   `session_set_details`, `imported_sessions` and `imported_session_sets`.
 
+### Fitness info — web stats snapshot (collected, not shared)
+- On schema 31 or newer, signed-in sync uploads one owner-only `web_snapshots`
+  row containing phone-computed lift and workout figures, weekly sets, fatigue,
+  streak, level and deed names, the selected male or female muscle-map figure,
+  and appearance settings. Bodyweight-lift strength estimates can reveal
+  information about body weight, though raw body readings are not uploaded.
+  The row is replaced when its contents change and deleted with the account.
+- Purpose: App functionality — the read-only web viewer. Code: `CS` `push()`;
+  `M1` `web_snapshots` and its owner-only policies.
+
 ### Fitness info — Health Connect data (NOT collected)
 - The app **reads** steps, distance, active calories, sleep, resting heart
   rate, heart rate, weight, body fat from Health Connect (`AM`, 8 `READ_*`
@@ -74,9 +84,9 @@ Code references:
   Health Connect with no server of ours in the path. Same classification:
   not collected, not shared. It adds one write permission to the Health apps
   declaration and the Health Connect permissions declaration.
-- Weight/body-fat read from Health Connect feeds local stat tracking only;
-  user-entered body measurements (`measurements` table, `RP` "device-only by
-  design") also never leave the device (`M1` header comment).
+- Weight/body-fat read from Health Connect feeds local stat tracking. Raw
+  readings and user-entered measurements stay on-device, but owner-only web
+  snapshot strength estimates can be derived from body weight.
 
 ### Fitness info — idle-game aggregates (collected, shared)
 - Garrison essence / figure count / figure rate are pushed as profile columns.
@@ -106,8 +116,8 @@ Code references:
   PostgREST table the app touches contains it.
 - Shared: **No** (held by Supabase Auth only). Optional: **Yes** (sign-in
   only). Purpose: App functionality — account management.
-- Deletion: tied to the auth identity, which in-app deletion deliberately
-  retains (see Q1) — removal requires a server-side service-role action.
+- Deletion: in-app cloud account deletion removes the auth identity and its
+  dependent rows through `delete_my_account()`.
 
 ### App interactions — likes, friend requests (collected, shared)
 - `session_likes`, `friendships` (`M1`). Optional; purpose: social

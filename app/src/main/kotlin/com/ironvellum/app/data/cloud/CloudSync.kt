@@ -4,6 +4,15 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.MessageException
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.AppearanceStore
+import com.ironvellum.app.data.EffortSetting
+import com.ironvellum.app.data.Units
+import androidx.compose.runtime.snapshots.Snapshot
+import com.ironvellum.app.domain.SnapshotInput
+import com.ironvellum.app.domain.WebSnapshotBuilder
+import com.ironvellum.app.domain.WebSnapshotJson
+import com.ironvellum.app.ui.program.WebFatigueText
+import com.ironvellum.app.ui.theme.WebAppearance
 import com.ironvellum.app.data.messageText
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
@@ -46,6 +55,25 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+internal sealed interface SnapshotDecision {
+    data class TooLarge(val bytes: Int) : SnapshotDecision
+    data object Unchanged : SnapshotDecision
+    data object Upload : SnapshotDecision
+}
+
+internal fun snapshotDecision(json: String, serverHash: String?): SnapshotDecision {
+    val bytes = json.toByteArray(Charsets.UTF_8).size
+    return when {
+        bytes > WireLimits.SNAPSHOT_MAX_BYTES -> SnapshotDecision.TooLarge(bytes)
+        WebSnapshotJson.contentHash(json) == serverHash -> SnapshotDecision.Unchanged
+        else -> SnapshotDecision.Upload
+    }
+}
 
 /** Screen text for a message this file raises: left unresolved, so whoever shows it does so in the mode and language then. */
 private fun cloudText(@androidx.annotation.StringRes id: Int, vararg args: Any): UiText = UiText.res(id, *args)
@@ -84,6 +112,7 @@ internal fun tombstonesToDrop(owner: String?, signedIn: String, pending: List<Lo
 class CloudSync(
     private val repo: Repository,
     private val account: AccountRepository,
+    private val appearance: AppearanceStore,
 ) {
     // Instrumented transport tests inject an isolated client and identity.
     private var pushClientOverride: io.github.jan.supabase.SupabaseClient? = null
@@ -93,11 +122,15 @@ class CloudSync(
         repo: Repository,
         account: AccountRepository,
         client: io.github.jan.supabase.SupabaseClient,
+        appearance: AppearanceStore,
         identity: Account,
-    ) : this(repo, account) {
+    ) : this(repo, account, appearance) {
         pushClientOverride = client
         pushAccountOverride = identity
     }
+
+    internal var snapshotClock: () -> Long = System::currentTimeMillis
+    internal var snapshotJsonForTest: ((String) -> String)? = null
 
     // Read cache + single-flight for the social reads. See CloudReadCache.
     private val cache = CloudReadCache()
@@ -166,7 +199,8 @@ class CloudSync(
             // and the server can lose rows without the device hearing of it: a
             // project reset, a new account on this phone, a manual delete. So
             // it only counts for sessions the server still has; the rest push.
-            var webAvailable = webReady(Cloud.schemaVersion(client))
+            val schemaVersion = Cloud.schemaVersion(client)
+            var webAvailable = webReady(schemaVersion)
             if (webAvailable && !Cloud.webCaughtUp(me.userId) && !Cloud.webCatchUpStarted(me.userId)) {
                 // clearPushWatermark() also deletes tombstones; preserve pending
                 // deletions while invalidating the completed-session fingerprints.
@@ -548,6 +582,60 @@ class CloudSync(
                 }
             }.onFailure { error ->
                 problems += cloudThemed(R.string.cloud_sync_tiers_failed, R.string.cloud_sync_tiers_failed__t, Cloud.explain(error))
+            }
+
+            // Do not publish derived figures for a partially uploaded history.
+            if (schemaVersion == null || schemaVersion < 31) {
+                problems += cloudText(R.string.cloud_sync_web_needs_schema)
+            } else if (webAvailable && problems.isEmpty()) {
+                runCatching {
+                    val exercises = repo.observeExercises().first().associateBy { it.id }
+                    val stats = repo.observeStats().first()
+                    val presets = repo.observePresets().first()
+                    val figure = repo.observeSex().first().name.lowercase()
+                    val mode = appearance.mode.value
+                    val dark = appearance.palette.value
+                    val light = appearance.lightPalette.value
+                    val now = snapshotClock()
+                    val json = withContext(Dispatchers.Default) {
+                        // Words and the effort scale are Compose state. Freeze their
+                        // reads throughout the build, including catalogue and fatigue text.
+                        val view = Snapshot.takeSnapshot()
+                        try {
+                            view.enter {
+                                val themed = Words.themed
+                                val input = SnapshotInput(
+                                    history = completed, exercises = exercises, stats = stats, profile = profile,
+                                    titles = titles, presets = presets, unit = Units.current,
+                                    effort = EffortSetting.scale, themed = themed, zone = ZoneId.systemDefault(),
+                                    nowMs = now, appearance = WebAppearance.of(mode, dark, light, themed),
+                                    fatigueText = WebFatigueText, displayName = me.displayName,
+                                    figure = figure, crestId = wornCrest,
+                                )
+                                WebSnapshotJson.write(WebSnapshotBuilder.build(input))
+                            }
+                        } finally {
+                            view.dispose()
+                        }
+                    }.let { snapshotJsonForTest?.invoke(it) ?: it }
+                    val bytes = json.toByteArray(Charsets.UTF_8).size
+                    if (bytes > WireLimits.SNAPSHOT_MAX_BYTES) {
+                        problems += cloudText(R.string.cloud_sync_web_snapshot_too_large, bytes)
+                    } else {
+                        val hash = client.postgrest.from("web_snapshots")
+                            .select(Columns.list("content_hash")) { filter { eq("user_id", me.userId) } }
+                            .decodeList<JsonObject>().singleOrNull()?.get("content_hash")?.jsonPrimitive?.content
+                        when (snapshotDecision(json, hash)) {
+                            is SnapshotDecision.TooLarge -> problems += cloudText(R.string.cloud_sync_web_snapshot_too_large, bytes)
+                            SnapshotDecision.Unchanged -> Unit
+                            SnapshotDecision.Upload -> client.postgrest.from("web_snapshots").upsert(
+                                WebSnapshotRowDto(me.userId, 1, Json.parseToJsonElement(json), WebSnapshotJson.contentHash(json), bytes),
+                            ) { onConflict = "user_id" }
+                        }
+                    }
+                }.onFailure { error ->
+                    problems += cloudText(R.string.cloud_sync_web_snapshot_failed, Cloud.explain(error))
+                }
             }
 
             // Now that every session, set and title has landed, the server has
