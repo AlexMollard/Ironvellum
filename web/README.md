@@ -13,3 +13,9 @@ Regenerate the app-derived assets with `./gradlew :app:testFossDebugUnitTest --t
 `art/` remains the only checked-in SVG source. `web/public/art/` is ignored,
 generated build output: `npm run dev` and `npm run build` prepare it from the
 pinned submodule. Do not add these copies to git. Vite packages them into `dist/`.
+
+Deploy from GitHub's **Actions → Deploy website → Run workflow** on `main`,
+or run `gh workflow run pages.yml --ref main`. This is manual-only; pushing
+does not deploy. The workflow tests and builds `web/`, then publishes only
+`web/dist` using a Pages artifact retained for one day. It uploads no test
+reports or dependency caches.
