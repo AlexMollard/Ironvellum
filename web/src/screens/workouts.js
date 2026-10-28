@@ -8,7 +8,7 @@ import { workoutRow } from '../components/workoutRow.js';
 import { pager } from '../components/pager.js';
 export async function renderWorkouts(root, { source, snapshot, router }) {
   root.replaceChildren();
-  const rows = sortedWorkouts(await source.listWorkouts(), source);
+  const rows = sortedWorkouts(await source.listWorkouts(), source, snapshot?.zone);
   const zone = snapshot?.zone || 'UTC';
   let month = dayKey(snapshot?.builtAtMs ?? Date.now(), zone).slice(0, 7), filter = 'all', query = '', page = 0;
   const header = node('header', null, 'screen-header'); header.append(node('h1', t('concept_trial_cpl')));

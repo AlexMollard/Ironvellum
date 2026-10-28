@@ -2,7 +2,7 @@
 
 The viewer is read-only. Sign in with the same backend and account as the app; workout and derived statistics are uploaded by the phone. The shared backend comes from the repository's public `cloud-defaults.properties`; a self-hosted backend can be entered on the sign-in page. Backend and appearance preferences stay in browser storage. No analytics or external fonts are used.
 
-Google sign-in is available on the shared backend once its Google provider and OAuth client are configured, and the deployed viewer URL is allowed in Supabase's redirect URLs. Self-hosted backends use email and password.
+Google sign-in is off by default (email sign-in is the supported route; the Google provider is unverified). Build with `VITE_GOOGLE_SIGNIN=true` to show it on the shared backend, once its Google provider and OAuth client are configured and the deployed viewer URL is allowed in Supabase's redirect URLs. It uses the PKCE flow. Self-hosted backends use email and password.
 
 Signing out clears this browser's session without signing the phone out. Backends older than schema 30 can still show synced workouts and sets, but need updating before phone snapshots and imported workouts are available.
 
@@ -16,8 +16,9 @@ pinned submodule. Do not add these copies to git. Vite packages them into `dist/
 
 Deploy from GitHub's **Actions → Deploy website → Run workflow** on `main`,
 or run `gh workflow run pages.yml --ref main`. This is manual-only; pushing
-does not deploy. The workflow tests and builds `web/`, then publishes only
-`web/dist` using a Pages artifact retained for one day. It uploads no test
+does not deploy. The workflow's `build` job (read-only token) tests and builds `web/` and uploads
+`web/dist` as a Pages artifact retained for one day; a separate `deploy` job
+(the only one with `pages: write`) publishes it. It uploads no test
 reports or dependency caches.
 
 ## Data contract for design work

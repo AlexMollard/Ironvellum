@@ -2,7 +2,7 @@ import { artImg } from '../components/artImg.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { renderLineChart } from '../components/lineChart.js';
 import { renderVariationTable, formatPeak } from '../components/variationTable.js';
-import { formatLoad, formatSets } from '../format.js';
+import { formatLoad, formatSets, formatVolume } from '../format.js';
 import { t } from '../i18n.js';
 
 const el = (tag, text, cls) => { const node = document.createElement(tag); if (text != null) node.textContent = text; if (cls) node.className = cls; return node; };
@@ -46,7 +46,7 @@ export function renderLifts(root, ctx, name) {
     if (v.peak?.e1rmKg != null) box.append(el('p', `Best est. 1RM: ${formatLoad(v.peak.e1rmKg, snapshot.unit)} ${snapshot.unit}`));
     if (v.heaviest) box.append(el('p', `Heaviest: ${formatPeak(v.heaviest, snapshot.unit)}`));
     for (const record of v.setRecords || []) box.append(el('p', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, snapshot.unit)}`));
-    if (v.volumeKg != null) box.append(el('p', `Volume: ${formatLoad(v.volumeKg, snapshot.unit)} ${snapshot.unit}`));
+    if (v.volumeKg != null) box.append(el('p', `Volume: ${formatVolume(v.volumeKg, snapshot.unit)}`));
     if (v.perWeek != null) box.append(el('p', `${formatSets(v.perWeek)} a week`));
     box.append(el('p', `${v.sessions} workouts`)); records.append(box);
   } root.append(records);

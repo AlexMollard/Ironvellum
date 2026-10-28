@@ -29,8 +29,15 @@ export function displayDate(value, zone = 'UTC') {
 export function owned(rows, source) {
   return rows.filter(row => (row.userId ?? row.user_id ?? source.userId) === source.userId);
 }
-export function sortedWorkouts(rows, source) {
-  return owned(rows, source).slice().sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+export function weekPassed(snapshot, nowMs = Date.now()) {
+  const end = snapshot?.week?.endDay;
+  return Boolean(end) && dayKey(nowMs, snapshot.zone) > end;
+}
+export function workoutDay(workout, zone = 'UTC') {
+  return dayKey(workout.completedAt ?? workout.startedAt, zone);
+}
+export function sortedWorkouts(rows, source, zone) {
+  return owned(rows, source).slice().sort((a, b) => workoutDay(b, zone).localeCompare(workoutDay(a, zone)) || new Date(b.startedAt) - new Date(a.startedAt));
 }
 export function link(text, path, router, className) {
   const el = node('a', text, className); el.href = `#${path}`;

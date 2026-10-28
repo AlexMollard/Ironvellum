@@ -22,7 +22,7 @@ export function renderFatigueCard(el, { fatigue, muscles = {}, figure = 'male', 
   panel.append(legend);
   for (const row of (fatigue.worked || []).slice(0, 4)) {
     const item = node('div', null, `fatigue-row level-${row.level}`);
-    item.append(node('strong', muscles[row.muscle] || row.muscle), node('span', levelKeys[row.level] ? t(levelKeys[row.level]) : '—', 'fatigue-level'));
+    item.append(node('strong', muscles[row.muscle] || row.muscle), ' · ', node('span', levelKeys[row.level] ? t(levelKeys[row.level]) : '—', 'fatigue-level'));
     if (row.cause) item.append(node('p', row.cause));
     if (row.freshBy) item.append(node('p', row.freshBy));
     panel.append(item);

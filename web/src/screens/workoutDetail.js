@@ -1,22 +1,22 @@
 import { t } from '../i18n.js';
 import { snapshotForWorkout, workoutPath } from '../source.js';
-import { formatLoad, formatSets } from '../format.js';
+import { formatDay, formatSets, formatVolume } from '../format.js';
 import { artImg } from '../components/artImg.js';
 import { renderBodyMap } from '../components/bodyMap.js';
-import { node, card, statCard, sortedWorkouts, displayDate, link } from '../components/statCard.js';
+import { node, card, statCard, sortedWorkouts, workoutDay, link } from '../components/statCard.js';
 import { setTable } from '../components/setTable.js';
 import { prTag } from '../components/prTag.js';
 export async function renderWorkoutDetail(root, { source, snapshot, router }, origin, id) {
   root.replaceChildren();
-  const workouts = sortedWorkouts(await source.listWorkouts(), source);
+  const workouts = sortedWorkouts(await source.listWorkouts(), source, snapshot?.zone);
   const index = workouts.findIndex(w => w.origin === origin && String(w.id) === String(id));
   if (index < 0) { root.append(node('h1', `${t('concept_trial_c')} not found`), link(`Back to ${t('concept_trial_pl')}`, '/workouts', router)); return; }
   const workout = workouts[index], entry = snapshotForWorkout(snapshot, workout);
-  const header = node('header', null, 'screen-header'); header.append(link(t('concept_trial_cpl'), '/workouts', router), node('h1', workout.title || workout.label || t('concept_trial_c')), node('p', displayDate(workout.startedAt, snapshot?.zone), 'muted'));
+  const header = node('header', null, 'screen-header'); header.append(link(t('concept_trial_cpl'), '/workouts', router), node('h1', workout.title || workout.label || t('concept_trial_c')), node('p', formatDay(workoutDay(workout, snapshot?.zone)), 'muted'));
   if (workout.origin === 'imported') header.append(node('span', 'Imported', 'chip')); root.append(header);
   if (!snapshot) root.append(node('p', 'Sync the app to see your stats.', 'muted'));
   const summary = card('Summary'); const figures = node('div', null, 'grid');
-  figures.append(statCard('Records', entry?.peaks), statCard('Strength', entry?.strength), statCard('XP', entry?.xp), statCard('Hard sets', entry ? formatSets(entry.hardSets) : null), statCard('Volume', entry ? `${formatLoad(entry.volumeKg, snapshot.unit)} ${snapshot.unit}` : null), statCard('Minutes', entry?.min)); summary.append(figures); root.append(summary);
+  figures.append(statCard('Records', entry?.peaks), statCard('Strength', entry?.strength), statCard('XP', entry?.xp), statCard('Hard sets', entry ? formatSets(entry.hardSets) : null), statCard('Volume', entry ? formatVolume(entry.volumeKg, snapshot.unit) : null), statCard('Minutes', entry?.min)); summary.append(figures); root.append(summary);
   if (entry) {
     const muscles = card('Muscles worked'); const maps = node('div', null, 'body-map-pair');
     for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked' }); maps.append(map); }

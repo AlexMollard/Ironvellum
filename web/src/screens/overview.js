@@ -1,25 +1,26 @@
 import { t } from '../i18n.js';
 import { snapshotForWorkout, workoutPath } from '../source.js';
-import { formatLoad, formatSets } from '../format.js';
+import { formatDay, formatSets, formatVolume } from '../format.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { plate } from '../components/plate.js';
-import { node, card, statCard, sortedWorkouts, displayDate, link } from '../components/statCard.js';
+import { node, card, statCard, sortedWorkouts, workoutDay, weekPassed, link } from '../components/statCard.js';
 import { renderFatigueCard } from '../components/fatigueCard.js';
 import { deedRow } from '../components/deedRow.js';
 import { recordRow } from '../components/recordRow.js';
 import { prTag } from '../components/prTag.js';
-export async function renderOverview(root, { source, snapshot, router }) {
+export async function renderOverview(root, { source, snapshot, router, nowMs = Date.now() }) {
   root.replaceChildren();
   const heading = node('header', null, 'screen-header'); heading.append(node('h1', snapshot?.profile?.name || 'Overview'));
-  if (snapshot?.builtAtMs != null) heading.append(node('p', `Stats as of ${new Date(snapshot.builtAtMs).toLocaleString()}`, 'muted'));
+  if (snapshot?.builtAtMs != null) heading.append(node('p', `Stats as of ${new Date(snapshot.builtAtMs).toLocaleString(undefined, { timeZone: snapshot.zone || 'UTC' })}`, 'muted'));
   root.append(heading);
   if (!snapshot) root.append(node('p', `Sync the app to see your stats. ${t('concept_trial_cpl')} are still available.`, 'muted'));
-  const rows = sortedWorkouts(await source.listWorkouts(), source);
+  const rows = sortedWorkouts(await source.listWorkouts(), source, snapshot?.zone);
   if (!snapshot) { if (rows.length) root.append(link(`View ${t('concept_trial_pl')}`, '/workouts', router)); return; }
   const { profile, week, trends } = snapshot;
+  if (!profile || !week || !trends) { root.append(node('p', 'Your phone has not synced all your stats yet. Open the app to sync.', 'muted')); if (rows.length) root.append(link(`View ${t('concept_trial_pl')}`, '/workouts', router)); return; }
   const layout = node('div', null, 'overview-layout'); root.append(layout);
-  const summary = card('This week'); const stats = node('div', null, 'grid');
-  stats.append(statCard(t('concept_trial_cpl'), week.workouts), statCard('Hard sets', formatSets(week.hardSets)), statCard('Volume', `${formatLoad(week.volumeKg, snapshot.unit)} ${snapshot.unit}`), statCard('Previous week', `${formatLoad(week.prevVolumeKg, snapshot.unit)} ${snapshot.unit}`), statCard('XP this week', week.xp));
+  const summary = card(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week'); const stats = node('div', null, 'grid');
+  stats.append(statCard(t('concept_trial_cpl'), week.workouts), statCard('Hard sets', formatSets(week.hardSets)), statCard('Volume', formatVolume(week.volumeKg, snapshot.unit)), statCard('Previous week', formatVolume(week.prevVolumeKg, snapshot.unit)), statCard('XP this week', week.xp));
   if (week.plannedDays != null) stats.append(statCard('Planned days', week.plannedDays));
   summary.append(stats); layout.append(summary);
   const profileCard = card('Your progress'); const emblem = node('div'); plate(emblem, { name: profile.name, level: profile.level, crestId: profile.crestId });
@@ -29,9 +30,9 @@ export async function renderOverview(root, { source, snapshot, router }) {
   const last = rows[0];
   if (last) {
     const entry = snapshotForWorkout(snapshot, last); const panel = card(`Last ${t('concept_trial_s')}`);
-    panel.append(link(last.title || last.label || t('concept_trial_c'), workoutPath(last), router), node('p', displayDate(last.startedAt, snapshot.zone), 'muted'));
+    panel.append(link(last.title || last.label || t('concept_trial_c'), workoutPath(last), router), node('p', formatDay(workoutDay(last, snapshot.zone)), 'muted'));
     if (entry) {
-      panel.append(node('p', `${formatSets(entry.hardSets)} hard sets · ${entry.strength} STR · ${formatLoad(entry.volumeKg, snapshot.unit)} ${snapshot.unit}`));
+      panel.append(node('p', `${formatSets(entry.hardSets)} hard sets · ${entry.strength} STR · ${formatVolume(entry.volumeKg, snapshot.unit)}`));
       for (const pr of entry.prs || []) panel.append(prTag(pr, snapshot.unit));
       const maps = node('div', null, 'body-map-pair');
       for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: profile.figure, view, look: 'worked' }); maps.append(map); }

@@ -1,5 +1,5 @@
 import { t } from '../i18n.js';
-import { node, dayKey } from './statCard.js';
+import { node, workoutDay } from './statCard.js';
 export function calendar(month, workouts, zone, changeMonth) {
   const el = node('section', null, 'card calendar');
   const [year, number] = month.split('-').map(Number);
@@ -12,7 +12,7 @@ export function calendar(month, workouts, zone, changeMonth) {
   for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) grid.append(node('span', day, 'muted'));
   const first = (new Date(Date.UTC(year, number - 1, 1)).getUTCDay() + 6) % 7;
   for (let i = 0; i < first; i++) grid.append(node('span', ''));
-  const days = new Set(workouts.map(w => dayKey(w.completedAt ?? w.startedAt, zone)));
+  const days = new Set(workouts.map(w => workoutDay(w, zone)));
   const count = new Date(Date.UTC(year, number, 0)).getUTCDate();
   for (let i = 1; i <= count; i++) {
     const key = `${month}-${String(i).padStart(2, '0')}`;

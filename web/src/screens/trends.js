@@ -8,7 +8,7 @@ const el = (tag, text, cls) => { const node = document.createElement(tag); if (t
 export function renderTrends(root, ctx) {
   root.replaceChildren(); root.append(el('h1', 'Trends'));
   const snapshot = ctx.snapshot, trends = snapshot?.trends;
-  if (!trends || !(snapshot.profile?.workouts > 0)) { root.append(el('p', 'No trends yet.')); return; }
+  if (!Array.isArray(trends?.weeks) || !(snapshot.profile?.workouts > 0)) { root.append(el('p', 'No trends yet.')); return; }
   const controls = el('div', null, 'analytics-controls'); const label = el('label', 'Week range '); const select = el('select'); select.setAttribute('aria-label', 'Week range');
   for (const [value, text] of [['4', '4 weeks'], ['12', '12 weeks'], ['52', '1 year']]) { const option = el('option', text); option.value = value; option.selected = value === '52'; select.append(option); } label.append(select); controls.append(label); root.append(controls);
   const barsCard = el('section', null, 'card'); barsCard.append(el('h2', 'Hard sets by muscle group')); const bars = el('div', null, 'analytics-chart'); barsCard.append(bars); root.append(barsCard);

@@ -7,7 +7,7 @@ const source = { userId: 'me', listWorkouts: async () => [], getSets: async () =
 describe('overview', () => {
   it('shows phone figures and hides an absent planned count', async () => {
     const root = document.createElement('main'); await renderOverview(root, { source, snapshot, router: { go: vi.fn() } });
-    for (const value of ['13', '1000', '99', '1020', '4 days', '3 in the last 30 days']) expect(root.textContent).toContain(value);
+    for (const value of ['13', '1.0 t', '99', '1020', '4 days', '3 in the last 30 days']) expect(root.textContent).toContain(value);
     expect(root.textContent).not.toContain('Planned days');
   });
   it('honestly reports a missing snapshot', async () => {

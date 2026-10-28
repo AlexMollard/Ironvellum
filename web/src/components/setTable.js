@@ -7,7 +7,7 @@ export function setTable(sets, entry, snapshot) {
   for (const label of ['Set', 'Kind', 'Load', 'Reps / distance', snapshot?.effort === 'rir' ? 'Reps left' : 'RPE', 'e1RM', 'Record']) header.append(node('th', label));
   head.append(header); table.append(head);
   const body = node('tbody');
-  for (const set of sets) {
+  for (const [position, set] of sets.entries()) {
     const key = `${set.exerciseName}#${set.setIndex}`; const row = node('tr');
     const unit = snapshot?.unit || 'kg';
     const load = set.weightKg == null || set.weightKg === 0 ? 'BW' : `${formatLoad(set.weightKg, unit)} ${unit}`;
@@ -17,7 +17,7 @@ export function setTable(sets, entry, snapshot) {
     const performance = [set.reps ? `${set.reps} reps` : null, set.durationSec != null ? `${set.durationSec} s` : null, distance, set.grade || null].filter(Boolean).join(' · ') || '—';
     const effort = set.rpe == null ? '—' : snapshot?.effort === 'rir' ? (snapshot?.rir?.[String(set.rpe)] ?? '—') : set.rpe;
     const e1rm = entry?.e1rm?.[key];
-    for (const value of [set.setIndex + 1, kinds[set.kind] || 'Working', load, performance, effort, e1rm == null ? '—' : `${formatLoad(e1rm, unit)} ${unit}`, entry?.peakSets?.includes(key) ? 'PR' : '—']) row.append(node('td', value));
+    for (const value of [position + 1, kinds[set.kind] || 'Working', load, performance, effort, e1rm == null ? '—' : `${formatLoad(e1rm, unit)} ${unit}`, entry?.peakSets?.includes(key) ? 'PR' : '—']) row.append(node('td', value));
     body.append(row);
   }
   table.append(body); return table;
