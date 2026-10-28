@@ -7,22 +7,35 @@ import {createRouter} from './router.js';
 import {createAppearanceMenu} from './appearance.js';
 import {plate} from './components/plate.js';
 import {t} from './i18n.js';
-import {dayKey,weekPassed} from './components/statCard.js';
-import {formatDay} from './format.js';
+import {dayKey,weekPassed,node} from './components/statCard.js';
+import {formatDay,formatClock} from './format.js';
 
+const NAV=[['/','Overview','▣'],['/workouts','Workouts','☰'],['/lifts','Lifts','↗'],['/trends','Trends','▁▃▅']];
+export function statsAsOf(snapshot,nowMs=Date.now()) {
+  const day=dayKey(snapshot.builtAtMs,snapshot.zone);
+  return `Stats as of ${day===dayKey(nowMs,snapshot.zone)?'today':formatDay(day)} ${formatClock(snapshot.builtAtMs,snapshot.zone)}`;
+}
+function credit(footer) {
+  const link=(text,href)=>{const a=node('a',text);a.href=href;return a;};
+  footer.append('Exercise art: Open Exercise Art · CC BY-SA 4.0 · Colours changed. Body map: ',link('MIT licence','licenses/MIT-react-native-body-highlighter.txt'),'. Type: Chakra Petch, ',link('SIL OFL','licenses/OFL-ChakraPetch.txt'),'.');
+}
 export function renderShell(root, {source,snapshot,onSignOut,nowMs=Date.now()}) {
-  root.replaceChildren(); const frame=document.createElement('div');frame.className='shell';
-  const sidebar=document.createElement('aside');sidebar.className='sidebar';
-  const brand=document.createElement('strong');brand.className='brand';brand.textContent='IRONVELLUM'; sidebar.append(brand);
-  if(snapshot?.profile) {const p=document.createElement('div');plate(p,snapshot.profile);sidebar.append(p);}
-  const nav=document.createElement('nav');nav.setAttribute('aria-label','Main navigation');
-  for(const [path,label] of [['/','Overview'],['/workouts','Workouts'],['/lifts','Lifts'],['/trends','Trends']]) {const a=document.createElement('a');a.href=`#${path}`;a.textContent=label;if(path==='/workouts') a.dataset.workouts='true';nav.append(a);} sidebar.append(nav);
-  const main=document.createElement('main');main.className='main'; const top=document.createElement('div');top.className='topbar';
-  const appearance=createAppearanceMenu(snapshot?.appearance,()=>{nav.querySelector('[data-workouts]').textContent=t('concept_trial_cpl');router.start();});nav.querySelector('[data-workouts]').textContent=t('concept_trial_cpl');top.append(appearance);
-  const logout=document.createElement('button');logout.textContent='Sign out';logout.addEventListener('click',onSignOut);top.append(logout);main.append(top);
-  const content=document.createElement('div');content.className='content';main.append(content);frame.append(sidebar,main);root.append(frame);
+  root.replaceChildren(); const frame=node('div',null,'shell');
+  const sidebar=node('aside',null,'sidebar');
+  const brand=node('strong','Ironvellum','brand');brand.append(node('span',' WEB','brand-web'));sidebar.append(brand);
+  const nav=node('nav');nav.setAttribute('aria-label','Main navigation');
+  for(const [path,label,glyph] of NAV) {const a=node('a');a.href=`#${path}`;a.dataset.path=path;a.append(node('span',glyph,'nav-icon'),node('span',label,'nav-label'));if(path==='/workouts') a.dataset.workouts='true';nav.append(a);} sidebar.append(nav);
+  const user=node('div',null,'sidebar-user');
+  const logout=node('button','Sign out','link-button');logout.type='button';logout.addEventListener('click',onSignOut);
+  if(snapshot?.profile) {const who=node('div',null,'user-line');const emblem=node('span');plate(emblem,{name:snapshot.profile.name,crestId:snapshot.profile.crestId});who.append(emblem);const text=node('span',null,'user-name');text.append(snapshot.profile.name||'',node('br'),node('span',`Level ${snapshot.profile.level}`,'muted'));who.append(text);user.append(who);}
+  const asof=node('div',null,'muted user-asof');if(snapshot?.builtAtMs!=null) asof.append(node('span',`${statsAsOf(snapshot,nowMs)} · `,'asof-text'));asof.append(logout);user.append(asof,node('div','Log and edit training in the app.','faint user-note'));sidebar.append(user);
+  const main=node('main',null,'main'),top=node('div',null,'topbar'),titleSlot=node('div',null,'topbar-title');
+  const workoutsLabel=()=>nav.querySelector('[data-workouts] .nav-label').textContent=t('concept_trial_cpl');
+  const appearance=createAppearanceMenu(snapshot?.appearance,()=>{workoutsLabel();router.start();});workoutsLabel();top.append(titleSlot,appearance);main.append(top);
+  const content=node('div',null,'content');main.append(content);frame.append(sidebar,main);root.append(frame);
+  const current=path=>{const key=path==='/'||!path?'/':`/${path.split('/')[1]}`;for(const a of nav.querySelectorAll('a')) {if(a.dataset.path===key) a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}};
   const router=createRouter(async path=>{
-    const page=document.createElement('div');page.className='route-page';content.replaceChildren(page); const ctx={source,snapshot,router,nowMs};
+    const page=node('div',null,'route-page');content.replaceChildren(page);titleSlot.replaceChildren();current(path); const ctx={source,snapshot,router,nowMs};
     try {
       if(path==='/' || !path) await renderOverview(page,ctx);
       else if(path==='/workouts') await renderWorkouts(page,ctx);
@@ -35,9 +48,11 @@ export function renderShell(root, {source,snapshot,onSignOut,nowMs=Date.now()}) 
       else if(path==='/trends') await renderTrends(page,ctx);
       else {page.textContent='Page not found.';}
     } catch(error) {page.textContent='Could not load this page. Check your connection and try again.';console.error(error);}
+    if(content.firstChild!==page) return;
+    const header=page.querySelector(':scope > .screen-header'); if(header) titleSlot.replaceChildren(header);
   });
-  if(!snapshot) {const hint=document.createElement('p');hint.className='notice';hint.textContent='No phone snapshot yet. Sync the app to see your statistics.';main.insertBefore(hint,content);}
-  else if(weekPassed(snapshot,nowMs)) {const hint=document.createElement('p');hint.className='notice';hint.textContent=`Stats from ${formatDay(dayKey(snapshot.builtAtMs,snapshot.zone))}. Open the app to sync.`;main.insertBefore(hint,content);}
-  const footer=document.createElement('footer');footer.innerHTML='Exercise art: Open Exercise Art · CC BY-SA 4.0 · Colours changed. Body map: <a href="licenses/MIT-react-native-body-highlighter.txt">MIT licence</a>.';main.append(footer);
+  if(!snapshot) {const hint=node('p','No phone snapshot yet. Sync the app to see your statistics.','notice');main.insertBefore(hint,content);}
+  else if(weekPassed(snapshot,nowMs)) {const hint=node('p',`Stats from ${formatDay(dayKey(snapshot.builtAtMs,snapshot.zone))}. Open the app to sync.`,'notice');main.insertBefore(hint,content);}
+  const footer=node('footer');credit(footer);main.append(footer);
   const disposeRouter=router.dispose;router.dispose=()=>{disposeRouter();appearance.dispose();};router.start();return router;
 }

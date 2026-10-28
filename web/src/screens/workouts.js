@@ -1,56 +1,60 @@
 import { t } from '../i18n.js';
 import { snapshotForWorkout } from '../source.js';
-import { formatSets } from '../format.js';
+import { formatSets, formatDayShort } from '../format.js';
 import { artImg } from '../components/artImg.js';
 import { node, card, sortedWorkouts, dayKey, displayDate } from '../components/statCard.js';
 import { calendar } from '../components/calendar.js';
 import { workoutRow } from '../components/workoutRow.js';
 import { pager } from '../components/pager.js';
-export async function renderWorkouts(root, { source, snapshot, router }) {
+const monthName = (month, withYear) => new Intl.DateTimeFormat(undefined, { month: 'long', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${month}-01T12:00:00Z`));
+export async function renderWorkouts(root, { source, snapshot, router, nowMs = Date.now() }) {
   root.replaceChildren();
   const rows = sortedWorkouts(await source.listWorkouts(), source, snapshot?.zone);
   const zone = snapshot?.zone || 'UTC';
-  let month = dayKey(snapshot?.builtAtMs ?? Date.now(), zone).slice(0, 7), filter = 'all', query = '', page = 0;
+  const currentMonth = dayKey(snapshot?.builtAtMs ?? nowMs, zone).slice(0, 7);
+  let month = currentMonth, filter = 'all', query = '', page = 0;
   const header = node('header', null, 'screen-header'); header.append(node('h1', t('concept_trial_cpl')));
   const first = rows.reduce((earliest, row) => !earliest || row.startedAt < earliest ? row.startedAt : earliest, null);
   header.append(node('p', `${rows.length} ${t(rows.length === 1 ? 'concept_trial_s' : 'concept_trial_pl')}${first ? ` since ${displayDate(first, zone)}` : ''}`, 'muted'));
   root.append(header);
-  const controls = node('div', null, 'button-row');
-  const search = node('input'); search.type = 'search'; search.placeholder = 'Search title or label'; search.setAttribute('aria-label', `Search ${t('concept_trial_pl')}`);
+  const layout = node('div', null, 'workouts-layout'), side = node('div', null, 'workouts-side'), listCard = card(null, 'list-card');
+  const controls = node('div', null, 'list-controls');
+  const search = node('input'); search.type = 'search'; search.placeholder = 'Search workouts or exercises'; search.setAttribute('aria-label', `Search ${t('concept_trial_pl')}`);
   search.addEventListener('input', () => { query = search.value.toLocaleLowerCase(); page = 0; drawList(); }); controls.append(search);
   for (const [value, label] of [['all', 'All'], ['prs', 'With PRs'], ['imported', 'Imported']]) {
-    const button = node('button', label); button.type = 'button'; button.dataset.filter = value;
+    const button = node('button', label, 'pill'); button.type = 'button'; button.dataset.filter = value;
     button.onclick = () => { filter = value; page = 0; drawList(); }; controls.append(button);
   }
-  root.append(controls);
-  const calendarArea = node('div'); const listArea = node('div'); root.append(calendarArea, listArea);
+  const listArea = node('div', null, 'workout-list'); listCard.append(controls, listArea);
+  const calendarArea = node('div'), monthArea = node('div'); side.append(calendarArea, monthArea); layout.append(side, listCard); root.append(layout);
   function drawCalendar() {
-    calendarArea.replaceChildren();
-    calendarArea.append(calendar(month, rows, zone, delta => { const [y, m] = month.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + delta, 1)); month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; drawCalendar(); }));
-    const entry = snapshot?.months?.[month]; const panel = card('Month summary');
-    if (!entry) panel.append(node('p', `— ${t('concept_trial_pl')} · — per week`), node('p', '— hard sets'), node('p', '— top lifts'));
+    calendarArea.replaceChildren(); monthArea.replaceChildren();
+    const el = calendar(month, rows, zone, delta => { const [y, m] = month.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + delta, 1)); month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; drawCalendar(); }, nowMs);
+    const entry = snapshot?.months?.[month];
+    el.append(node('p', entry ? `${entry.workouts} ${t('concept_trial_pl')} this month · ${formatSets(entry.perWeek)} per week on average` : `— ${t('concept_trial_pl')} this month · — per week on average`, 'muted calendar-foot'));
+    calendarArea.append(el);
+    const panel = card(month === currentMonth ? `${monthName(month)} so far` : monthName(month, true), 'month-card');
+    if (!entry) panel.append(node('p', '—', 'muted'));
     else {
-      panel.append(node('p', `${entry.workouts} ${t('concept_trial_pl')} · ${formatSets(entry.perWeek)} per week`));
-      const bars = node('div', null, 'month-weeks');
-      const weeks = entry.weeks || [];
-      const max = Math.max(1, ...weeks.map(week => week.hardSets));
+      const weeks = entry.weeks || [], max = Math.max(1, ...weeks.map(week => week.hardSets));
+      const bars = node('div', null, 'week-bars');
       for (const week of weeks) {
-        const row = node('div', null, 'month-week-bar');
-        row.append(node('span', `${week.start} · ${formatSets(week.hardSets)} hard sets`));
-        const meter = node('meter'); meter.min = 0; meter.max = max; meter.value = week.hardSets; meter.setAttribute('aria-label', `${week.start}: ${formatSets(week.hardSets)} hard sets`); row.append(meter); bars.append(row);
+        const column = node('div', null, 'week-col'), bar = node('div', null, 'week-bar');
+        bar.style.setProperty('--h', String(Math.max(.04, week.hardSets / max)));
+        bar.setAttribute('role', 'meter'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(max)); bar.setAttribute('aria-valuenow', String(week.hardSets)); bar.setAttribute('aria-label', `${week.start}: ${formatSets(week.hardSets)} hard sets`);
+        column.append(node('span', formatSets(week.hardSets), 'muted'), bar, node('span', formatDayShort(week.start), 'muted'));
+        bars.append(column);
       }
-      panel.append(bars);
-      const lifts = node('div', null, 'top-lifts');
-      for (const lift of entry.topLifts || []) { const item = node('div', null, 'record-row'); item.append(artImg(lift.name, lift.art), node('span', `${lift.name} · ${lift.sessions} ${t('concept_trial_pl')}`)); lifts.append(item); }
-      panel.append(lifts);
+      panel.append(bars, node('p', 'Hard sets per week', 'muted week-caption'));
+      for (const lift of entry.topLifts || []) { const item = node('div', null, 'record-row compact'); const frame = node('span', null, 'art-frame'); frame.append(artImg(lift.name, lift.art)); item.append(frame, node('span', lift.name, 'record-text'), node('span', `${lift.sessions} ${t('concept_trial_pl')}`, 'muted')); panel.append(item); }
     }
-    calendarArea.append(panel);
+    monthArea.append(panel);
   }
   function drawList() {
     listArea.replaceChildren();
     const filtered = rows.filter(w => (`${w.title || ''} ${w.label || ''}`).toLocaleLowerCase().includes(query) && (filter === 'all' || (filter === 'imported' ? w.origin === 'imported' : (snapshotForWorkout(snapshot, w)?.peaks ?? 0) > 0)));
     for (const button of controls.querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.filter === filter));
-    if (!filtered.length) { listArea.append(node('p', rows.length ? `No matching ${t('concept_trial_pl')}.` : `No ${t('concept_trial_pl')} yet.`)); return; }
+    if (!filtered.length) { listArea.append(node('p', rows.length ? `No matching ${t('concept_trial_pl')}.` : `No ${t('concept_trial_pl')} yet.`, 'muted empty')); return; }
     const size = 25, pages = Math.ceil(filtered.length / size); page = Math.min(page, pages - 1);
     for (const row of filtered.slice(page * size, (page + 1) * size)) listArea.append(workoutRow(row, snapshotForWorkout(snapshot, row), snapshot, router));
     if (pages > 1) listArea.append(pager(page, pages, n => { page = n; drawList(); }));

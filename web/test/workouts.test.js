@@ -9,7 +9,7 @@ describe('workouts', () => {
     const root = document.createElement('main'); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot, router });
     for (const text of ['Pull', 'Imported', '42 min', '7 hard sets', '23 XP', 'PR', 'Legs', '— min', '2 workouts']) expect(root.textContent).toContain(text);
     expect(root.textContent).toContain('2.3 per week');
-    expect(root.querySelector('meter').value).toBe(7);
+    expect(root.querySelector('[role="meter"]').getAttribute('aria-valuenow')).toBe('7');
     expect(root.textContent).not.toContain('Private stranger');
     expect(root.querySelector('[data-day="2025-10-06"]').classList.contains('has-workout')).toBe(true);
     expect(root.querySelector('.muscle-cell').dataset.level).toBe('3');

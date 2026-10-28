@@ -30,7 +30,7 @@ export function renderVariationTable(root, { variations, selected, onToggle, uni
     const tr = document.createElement('tr');
     const first = document.createElement('td');
     const button = document.createElement('button'); button.type = 'button'; button.className = `variation-toggle chart-series-${index % 6}`;
-    button.setAttribute('aria-pressed', String(selected.has(v.key))); button.textContent = `● ${v.label}`;
+    button.setAttribute('aria-pressed', String(selected.has(v.key))); button.textContent = v.label;
     button.addEventListener('click', () => onToggle(v.key)); first.append(button); tr.append(first);
     const values = v.sets ? [v.peak?.e1rmKg == null ? '—' : `${formatLoad(v.peak.e1rmKg, unit)} ${unit}`, formatPeak(v.peak, unit), lastDone(v.lastMs, builtAtMs, zone)] : ['Not yet', 'Not yet', 'Not yet'];
     for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }

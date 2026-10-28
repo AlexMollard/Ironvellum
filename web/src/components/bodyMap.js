@@ -5,7 +5,7 @@ function svg(tag, attrs={}) {const e=document.createElementNS(ns,tag); for(const
 let serial=0;
 export function renderBodyMap(el, {levels={},view='front',figure='male',look='worked'}={}) {
   const shape=figure==='female'?female:male; const id=`body-hatch-${++serial}`;
-  const map=svg('svg',{viewBox:'-4000 0 8000 10000',role:'img','aria-label':`${view} muscle map`,class:'body-map'});
+  const map=svg('svg',{viewBox:'-2650 -60 5300 10120',role:'img','aria-label':`${view} muscle map`,class:'body-map'});
   const defs=svg('defs');
   for(const [suffix,cross] of [['high',false],['very-high',true]]) {const p=svg('pattern',{id:`${id}-${suffix}`,width:350,height:350,patternUnits:'userSpaceOnUse'});p.append(svg('path',{d:cross?'M 0 0 L 350 350 M 350 0 L 0 350':'M 0 350 L 350 0',stroke:'currentColor','stroke-width':45}));defs.append(p);} map.append(defs);
   const points = p => p.map(([x,y])=>`${x},${y}`).join(' ');

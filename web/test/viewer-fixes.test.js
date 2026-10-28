@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderOverview } from '../src/screens/overview.js';
 import { renderTrends } from '../src/screens/trends.js';
 import { renderWorkoutDetail } from '../src/screens/workoutDetail.js';
-import { renderShell } from '../src/shell.js';
+import { renderShell, statsAsOf } from '../src/shell.js';
 import { workoutRow } from '../src/components/workoutRow.js';
 import { calendar } from '../src/components/calendar.js';
 import { setTable } from '../src/components/setTable.js';
@@ -84,10 +84,12 @@ describe('low fixes', () => {
     expect(lb.textContent).toContain('21.6 k lb');
   });
   it('formats "Stats as of" in the snapshot zone', async () => {
-    const root = document.createElement('main');
-    await renderOverview(root, { source, snapshot: { ...base, zone: 'Pacific/Kiritimati' }, router, nowMs: Date.UTC(2023, 10, 15) });
-    const expected = new Date(base.builtAtMs).toLocaleString(undefined, { timeZone: 'Pacific/Kiritimati' });
-    expect(root.textContent).toContain(`Stats as of ${expected}`);
+    const snapshot = { ...base, zone: 'Pacific/Kiritimati' };
+    expect(statsAsOf(snapshot, Date.UTC(2023, 10, 15))).toBe('Stats as of today 02:00');
+    expect(statsAsOf(snapshot, Date.UTC(2023, 10, 25))).toBe(`Stats as of ${formatDay('2023-11-15')} 02:00`);
+    const root = document.createElement('div'); document.body.append(root);
+    const shell = renderShell(root, { source, snapshot, onSignOut: () => {}, nowMs: Date.UTC(2023, 10, 15) });
+    expect(root.querySelector('.sidebar').textContent).toContain('Stats as of today 02:00'); shell.dispose(); root.remove();
   });
   it('shows a friendly empty state when the snapshot lacks profile or trends', async () => {
     for (const snapshot of [{ ...base, profile: undefined }, { ...base, trends: undefined }]) {

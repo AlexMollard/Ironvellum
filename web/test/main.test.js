@@ -22,7 +22,8 @@ afterEach(() => vi.unstubAllEnvs());
 describe('main flows', () => {
   it('renders the sign-in page, with Google hidden by default', async () => {
     await loadMain();
-    expect(document.querySelector('h1').textContent).toBe('IRONVELLUM');
+    expect(document.querySelector('h1').textContent).toBe('Your training, on a bigger screen.');
+    expect(document.querySelector('.example').textContent).toContain('Example'); expect(document.body.textContent).toContain('Forgot it? Reset in the app.');
     expect(document.querySelector('form.signin-form h2').textContent).toBe('Sign in');
     expect(document.querySelector('input[type="email"]')).not.toBeNull(); expect(document.querySelector('input[type="password"]')).not.toBeNull();
     expect([...document.querySelectorAll('button')].find(b => b.textContent === 'Continue with Google').hidden).toBe(true);

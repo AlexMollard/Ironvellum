@@ -17,3 +17,24 @@ export function formatDay(isoDay, zoneNote) {
   if (Number.isNaN(date.valueOf())) return '—';
   return new Intl.DateTimeFormat(undefined, {day:'numeric', month:'short', year:'numeric', timeZone: /^\d{4}-\d\d-\d\d$/.test(isoDay) ? 'UTC' : (zoneNote || 'UTC')}).format(date);
 }
+export function formatDayShort(isoDay) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(isoDay ?? '')) return '—';
+  return new Intl.DateTimeFormat(undefined, {day:'numeric', month:'short', timeZone:'UTC'}).format(new Date(`${isoDay}T12:00:00Z`));
+}
+export function formatWeekday(isoDay, long = false) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(isoDay ?? '')) return '';
+  return new Intl.DateTimeFormat(undefined, {weekday: long ? 'long' : 'short', timeZone: 'UTC'}).format(new Date(`${isoDay}T12:00:00Z`));
+}
+export function formatClock(ms, zone = 'UTC') {
+  const date = new Date(ms);
+  if (Number.isNaN(date.valueOf())) return '—';
+  return new Intl.DateTimeFormat(undefined, {hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone || 'UTC'}).format(date);
+}
+export function splitVolume(kg, unit = 'kg') {
+  const text = formatVolume(kg, unit), space = text.indexOf(' ');
+  return [text.slice(0, space), text.slice(space + 1)];
+}
+export function splitLabel(label = '') {
+  const [name, ...rest] = String(label).split(/\s+[·.]\s+/);
+  return [name, rest.join(' · ')];
+}

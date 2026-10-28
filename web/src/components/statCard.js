@@ -4,13 +4,25 @@ export function node(tag, text, className) {
   if (className) el.className = className;
   return el;
 }
-export function card(title, className = '') {
+export function card(title, className = '', aside) {
   const el = node('section', null, `card ${className}`.trim());
-  if (title) el.append(node('h2', title));
+  if (title || aside != null) {
+    const head = node('div', null, 'card-head');
+    if (title) head.append(node('h2', title));
+    if (aside != null) head.append(aside instanceof Node ? aside : node('span', aside, 'card-aside'));
+    el.append(head);
+  }
   return el;
 }
-export function statCard(label, value) {
-  const el = node('div', null, 'stat-card');
+export function kpi(label, value, unit, sub) {
+  const el = card(null, 'kpi');
+  const figure = node('div', value ?? '—', 'kpi-value');
+  if (unit && value != null) figure.append(node('span', ` ${unit}`, 'kpi-unit'));
+  el.append(node('div', label, 'eyebrow'), figure, node('div', sub ?? '', 'kpi-sub'));
+  return el;
+}
+export function factRow(label, value) {
+  const el = node('div', null, 'fact-row');
   el.append(node('span', label, 'muted'), node('strong', value ?? '—'));
   return el;
 }

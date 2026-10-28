@@ -4,10 +4,11 @@ import { renderFatigueCard } from '../src/components/fatigueCard.js';
 import { setWordsMode } from '../src/i18n.js';
 const snapshot = { builtAtMs: 1700000000000, zone: 'UTC', unit: 'kg', profile: { name: 'Lifter', level: 7, intoLevel: 20, needed: 100, totalXp: 1020, streakDays: 4, longestStreakDays: 8, deedsEarned: 1, deedsTotal: 20, figure: 'male' }, week: { workouts: 2, hardSets: 13, volumeKg: 1000, prevVolumeKg: 700, xp: 99, plannedDays: null }, sessions: {}, muscles: { LATS: 'Lats' }, fatigue: { hasHistory: false }, trends: { records30d: 3, recent: [] }, deeds: [] };
 const source = { userId: 'me', listWorkouts: async () => [], getSets: async () => [] };
+const totalXp = (1020).toLocaleString();
 describe('overview', () => {
   it('shows phone figures and hides an absent planned count', async () => {
     const root = document.createElement('main'); await renderOverview(root, { source, snapshot, router: { go: vi.fn() } });
-    for (const value of ['13', '1.0 t', '99', '1020', '4 days', '3 in the last 30 days']) expect(root.textContent).toContain(value);
+    for (const value of ['13', '1.0 t', '99', totalXp, '4 days', '3 in the last 30 days', '20 / 100 XP', 'Best: 8 days']) expect(root.textContent).toContain(value);
     expect(root.textContent).not.toContain('Planned days');
   });
   it('honestly reports a missing snapshot', async () => {
@@ -20,16 +21,16 @@ describe('overview', () => {
     const otherSnapshot = { ...snapshot, sessions: { 5: { origin: 'synced', hardSets: 77, strength: 999, volumeKg: 123 } } };
     await renderOverview(root, { source: { userId: 'me', listWorkouts: async () => [workout], getSets: async () => [] }, snapshot: otherSnapshot, router: { go: vi.fn() } });
     expect(root.querySelector('a[href="#/workouts/imported/cloud%2Fid"]')).not.toBeNull();
-    expect(root.textContent).toContain('— hard sets · — STR');
+    expect(root.textContent).toContain('— hard sets · — volume · — STR');
     expect(root.textContent).not.toContain('999 STR');
   });
   it('switches glossary names without changing snapshot figures', async () => {
     const root = document.createElement('main');
     try {
       setWordsMode(true); await renderOverview(root, { source, snapshot, router: { go: vi.fn() } });
-      expect(root.textContent).toContain('Trials'); expect(root.textContent).toContain('Oath'); expect(root.textContent).toContain('1020');
+      expect(root.textContent).toContain('2 trials'); expect(root.textContent).toContain('Oath'); expect(root.textContent).toContain(totalXp);
       setWordsMode(false); await renderOverview(root, { source, snapshot, router: { go: vi.fn() } });
-      expect(root.textContent).toContain('Workouts'); expect(root.textContent).toContain('Streak'); expect(root.textContent).toContain('1020');
+      expect(root.textContent).toContain('2 workouts'); expect(root.textContent).toContain('Streak'); expect(root.textContent).toContain(totalXp);
     } finally { setWordsMode(false); }
   });
   it('shows the phone fatigue wording and a stale hint, but hides empty history', () => {

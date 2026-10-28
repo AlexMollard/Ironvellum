@@ -6,7 +6,9 @@ Google sign-in is off by default (email sign-in is the supported route; the Goog
 
 Signing out clears this browser's session without signing the phone out. Backends older than schema 30 can still show synced workouts and sets, but need updating before phone snapshots and imported workouts are available.
 
-Use Node 22.12 or newer: `npm ci`, `npm run dev`, `npm test`, and `npm run build`. In the development server, `?fixture=1` opens the offline example; fixtures are not included in production builds.
+Use Node 22.12 or newer: `npm ci`, `npm run dev`, `npm test`, and `npm run build`. In the development server, `?fixture=1` opens the signed-in screens offline from the synthetic "Fictional lifter" fixtures (plus `web/dev/screenshotOverlay.js`, which adds records, deeds and a streak so every card has content), `?fixture=signin` opens the sign-in page without contacting the backend, and `&theme=light` or `&theme=dark` (default dark) picks the theme. These entry points exist only where `import.meta.env.DEV` is true, so a production build contains none of the fixtures, the overlay or the entry code; `test/productionBuild.test.js` builds and checks that. The text is set in Chakra Petch, self-hosted from the pinned `@fontsource/chakra-petch` package (SIL OFL, licence in `public/licenses/`), four weights, latin only, because the page's content security policy allows no external font or stylesheet host.
+
+To check a page against the real policy, build a fixture bundle and serve it: `NODE_ENV=development npx vite build --mode fixture --outDir <dir>`, then `npx vite preview --outDir <dir>`. (`npm run dev` relaxes `style-src` so the injected stylesheets load; builds never do.)
 
 Regenerate the app-derived assets with `./gradlew :app:testFossDebugUnitTest --tests "*WebAssetsGoldenTest" -Dgolden.update=true`, then run `python3 tools/bodymap_web.py` and `python3 tools/web_art.py`. The art attribution is included in the viewer.
 
