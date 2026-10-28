@@ -12,5 +12,5 @@
     android:fontFamily="sans-serif-medium"
     android:textAllCaps="true"
     android:letterSpacing="0.09"
-    android:text="Thu Â· Legs Â· 15 sets"
+    android:text="Thu · Legs · 15 sets"
     android:gravity="center_vertical" />
