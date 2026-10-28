@@ -31,7 +31,7 @@ function liftDetail(pane, lift, snapshot) {
   const frame = el('span', null, 'art-frame hero'); frame.append(artImg(lift.name, lift.art));
   const text = el('div', null, 'lift-intro'); text.append(el('h2', lift.name, 'lift-name'), el('p', `${lift.muscleSummary} · ${lift.variations.length} ${lift.variations.length === 1 ? 'variation' : 'variations'} logged`, 'muted'));
   const chips = el('div', null, 'chips');
-  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, snapshot.unit)}`); chips.append(chip); }
+  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, snapshot.unit, lift.addsToBody)}`); chips.append(chip); }
   text.append(chips);
   const map = el('div', null, 'analytics-body-map body-map-pair');
   for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked', names: snapshot.muscles }); map.append(figure); }
@@ -49,9 +49,9 @@ function liftDetail(pane, lift, snapshot) {
   for (const v of lift.variations) {
     const box = el('div', null, 'analytics-record'); box.append(el('h3', v.label)); const tiles = el('div', null, 'tiles');
     if (v.peak?.e1rmKg != null) tiles.append(tile('Best est. 1RM', `${formatLoad(v.peak.e1rmKg, snapshot.unit)} ${snapshot.unit}`));
-    if (v.peak) tiles.append(tile('Best set', formatPeak(v.peak, snapshot.unit)));
-    if (v.heaviest) tiles.append(tile('Heaviest', formatPeak(v.heaviest, snapshot.unit)));
-    for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, snapshot.unit)}`));
+    if (v.peak) tiles.append(tile('Best set', formatPeak(v.peak, snapshot.unit, lift.addsToBody)));
+    if (v.heaviest) tiles.append(tile('Heaviest', formatPeak(v.heaviest, snapshot.unit, lift.addsToBody)));
+    for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, snapshot.unit, lift.addsToBody)}`));
     if (v.volumeKg != null) tiles.append(tile('Volume', formatVolume(v.volumeKg, snapshot.unit)));
     if (v.perWeek != null) tiles.append(tile('Frequency', `${formatSets(v.perWeek)} a week`));
     tiles.append(tile('Sessions', `${v.sessions} ${t('concept_trial_pl')}`)); box.append(tiles); records.append(box);
@@ -73,7 +73,7 @@ function liftDetail(pane, lift, snapshot) {
       else renderLineChart(plot, { series, label: title, formatValue, unit });
     }
     if (lift.variations.some(v => selected.has(v.key) && !((v.chartMetric === 'e1rm' && v.chartUnit === 'kg') || (v.chartMetric === 'strength' && v.chartUnit === 'score')))) chart.append(el('p', 'Sync the app to see chart metrics.'));
-    renderVariationTable(table, { variations: lift.variations, selected, unit: snapshot.unit, zone: snapshot.zone, builtAtMs: snapshot.builtAtMs, onToggle(key) { if (selected.has(key)) selected.delete(key); else selected.add(key); draw(); } });
+    renderVariationTable(table, { variations: lift.variations, selected, unit: snapshot.unit, zone: snapshot.zone, builtAtMs: snapshot.builtAtMs, addsToBody: lift.addsToBody, onToggle(key) { if (selected.has(key)) selected.delete(key); else selected.add(key); draw(); } });
   }
   select.addEventListener('change', () => { range = select.value; draw(); }); draw();
 }
