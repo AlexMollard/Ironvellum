@@ -64,7 +64,7 @@ export async function renderWorkouts(root, { source, snapshot, router, nowMs = D
     const size = 25, pages = Math.ceil(filtered.length / size);
     if (picked) { const at = filtered.findIndex(w => workoutDay(w, zone) === picked); if (at >= 0) page = Math.floor(at / size); }
     page = Math.min(page, pages - 1);
-    for (const row of filtered.slice(page * size, (page + 1) * size)) listArea.append(workoutRow(row, snapshotForWorkout(snapshot, row), snapshot, router));
+    for (const row of filtered.slice(page * size, (page + 1) * size)) listArea.append(workoutRow(row, snapshotForWorkout(snapshot, row), snapshot, router, source));
     if (picked) { const hits = [...listArea.querySelectorAll('.workout-row')].filter(r => r.dataset.day === picked); for (const r of hits) r.classList.add('is-highlight'); if (hits[0]) scrollToElement(hits[0]); }
     if (pages > 1) listArea.append(pager(page, pages, n => { page = n; picked = ''; drawList(); }));
   }

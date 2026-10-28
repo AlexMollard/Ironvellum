@@ -38,3 +38,21 @@ export function splitLabel(label = '') {
   const [name, ...rest] = String(label).split(/\s+[·.]\s+/);
   return [name, rest.join(' · ')];
 }
+export const SET_KINDS = { working: 'Working', warmup: 'Warm-up', top: 'Top', backoff: 'Back-off', drop: 'Drop', failure: 'Failure', rest_pause: 'Rest-pause' };
+export const setKindName = set => SET_KINDS[set.kind] || 'Working';
+// Load of one set: bodyweight reads BW, an assisted set keeps its minus sign.
+export function formatSetLoad(set, unit = 'kg') {
+  return set.weightKg == null || set.weightKg === 0 ? 'BW' : `${formatLoad(set.weightKg, unit)} ${unit}`;
+}
+// Reps, hold time, distance and grade of one set, as the parts the set table joins with " · ".
+export function setPerformance(set) {
+  const distance = set.distanceM == null ? null : set.distanceM >= 1000
+    ? `${Number((set.distanceM / 1000).toFixed(5))} km`
+    : `${Number(Number(set.distanceM).toFixed(2))} m`;
+  return [set.reps ? `${set.reps}` : null, set.durationSec != null ? `${set.durationSec} s` : null, distance, set.grade || null].filter(Boolean);
+}
+// The effort figure to show (reps left in RIR mode, the stored RPE otherwise); null when unknown.
+export function setEffort(set, snapshot) {
+  if (set.rpe == null) return null;
+  return snapshot?.effort === 'rir' ? (snapshot?.rir?.[String(set.rpe)] ?? null) : set.rpe;
+}

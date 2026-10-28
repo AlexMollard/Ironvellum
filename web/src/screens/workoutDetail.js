@@ -5,6 +5,8 @@ import { artImg } from '../components/artImg.js';
 import { renderBodyMap } from '../components/bodyMap.js';
 import { node, card, factRow, sortedWorkouts, workoutDay, link } from '../components/statCard.js';
 import { setTable } from '../components/setTable.js';
+import { copyButton } from '../components/copyWorkout.js';
+import { formatWorkoutText, groupSets } from '../workoutText.js';
 import { prTag } from '../components/prTag.js';
 const adjacent = (workout, day, router, previous) => {
   const a = link('', workoutPath(workout), router, 'adjacent'); a.append(node('span', previous ? `Previous ${t('concept_trial_s')}: ` : `Next ${t('concept_trial_s')}: `, 'sr-only'), `${previous ? '‹ ' : ''}${formatWeekday(day)} ${formatDayShort(day)}${previous ? '' : ' ›'}`);
@@ -37,15 +39,9 @@ export async function renderWorkoutDetail(root, { source, snapshot, router }, or
     muscles.append(maps, legend); side.append(muscles);
   }
   const sets = await source.getSets(workout);
-  const groups = new Map();
-  for (const set of sets) {
-    const key = JSON.stringify([set.exerciseName, set.exercisePosition]);
-    if (!groups.has(key)) groups.set(key, { name: set.exerciseName, position: set.exercisePosition, sets: [] });
-    groups.get(key).sets.push(set);
-  }
-  const ordered = [...groups.values()].sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity) || a.name.localeCompare(b.name));
+  const ordered = groupSets(sets);
+  header.querySelector('.header-title').after(copyButton({ label: `Copy ${workout.title || workout.label || t('concept_trial_s')}`, getText: () => formatWorkoutText({ workout, entry, snapshot, sets }) }));
   for (const group of ordered) {
-    group.sets.sort((a, b) => a.setIndex - b.setIndex);
     const block = node('section', null, 'exercise-block'); const lift = snapshot?.lifts?.find(l => l.name === group.name);
     const head = node('div', null, 'exercise-header'), frame = node('span', null, 'art-frame large'); frame.append(artImg(group.name, lift?.art));
     const line = node('div', null, 'exercise-line'); line.append(node('h2', group.name));

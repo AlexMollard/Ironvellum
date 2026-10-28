@@ -540,3 +540,14 @@ a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset
   .example { zoom: 1; width: auto; }
   .signin > footer { position: static; }
 }
+/* copy a workout */
+.copy-wrap { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.copy-button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; font-size: 13px; }
+.copy-button.icon-only { width: 32px; padding: 0; justify-content: center; border-color: transparent; position: relative; z-index: 1; }
+.copy-icon { display: inline-flex; }
+.copy-status { font-size: 12px; color: var(--text); white-space: nowrap; }
+.workout-row .copy-wrap { z-index: 1; }
+.copy-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: var(--paper-scrim); }
+.copy-dialog { width: min(560px, 100%); display: grid; gap: 12px; }
+.copy-dialog textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--paper-rune); border-radius: 4px; background: var(--paper-abyss); color: inherit; font: inherit; font-size: 13px; resize: vertical; }
+.copy-dialog button { justify-self: end; }
