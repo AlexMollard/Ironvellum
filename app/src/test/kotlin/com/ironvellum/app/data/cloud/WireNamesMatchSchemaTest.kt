@@ -148,8 +148,7 @@ class WireNamesMatchSchemaTest {
             .findAll(constraint.groupValues[1])
             .map { match -> match.groupValues.drop(1).map(String::toInt).reduce(Int::times) }
             .toList()
-        assertEquals("snapshot needs both byte bounds", 2, bounds.size)
-        assertTrue("snapshot byte caps drifted: $bounds", bounds.all { it == WireLimits.SNAPSHOT_MAX_BYTES })
+        assertEquals("snapshot needs both byte bounds", listOf(WireLimits.SNAPSHOT_MAX_BYTES, WireLimits.SNAPSHOT_TEXT_MAX_BYTES), bounds)
     }
 
     @Test
@@ -282,6 +281,10 @@ class WireNamesMatchSchemaTest {
             lengthCeiling("session_sets", "grade"),
             WireLimits.GRADE_MAX,
         )
+        assertEquals("session_sets.modifiers", lengthCeiling("session_sets", "modifiers"), WireLimits.SET_MODIFIERS_MAX)
+        assertEquals("imported_session_sets.modifiers", lengthCeiling("imported_session_sets", "modifiers"), WireLimits.SET_MODIFIERS_MAX)
+        assertEquals("imported_session_sets.exercise_name", lengthCeiling("imported_session_sets", "exercise_name"), WireLimits.IMPORTED_EXERCISE_NAME_MAX)
+        assertEquals("imported_sessions.label", lengthCeiling("imported_sessions", "label"), WireLimits.IMPORTED_LABEL_MAX)
         assertEquals(
             "reports.note ceiling drifted from WireLimits",
             lengthCeiling("reports", "note"),

@@ -4213,7 +4213,9 @@ class Repository(
         parsed.workouts.forEach { workout ->
             val key = workout.startedAtMs
             val normalisedLabel = workout.label.lowercase().trim()
-            if (sessionDao.countImportKey(key, normalisedLabel) > 0) {
+            // A label is stored cut to the cloud's 80 characters; one imported before that was stored whole.
+            val clampedLabel = WireLimits.clamp(workout.label.trim(), WireLimits.IMPORTED_LABEL_MAX).lowercase().trim()
+            if (sessionDao.countImportKey(key, normalisedLabel) + sessionDao.countImportKey(key, clampedLabel) > 0) {
                 skipped++
                 return@forEach
             }
@@ -4221,13 +4223,14 @@ class Repository(
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
                 // The set's own note stays a modifier; its RPE is the effort field, not text.
                 // The app's own CSV names the modifiers in a column of their own, and that wins over the note.
-                val mods = set.modifiers.trim().ifEmpty { set.notes.trim() }
+                // The cloud holds 64 characters of it (WireLimits.SET_MODIFIERS_MAX); a longer note failed every sync.
+                val mods = WireLimits.clamp(set.modifiers.trim().ifEmpty { set.notes.trim() }, WireLimits.SET_MODIFIERS_MAX)
                 Triple(set, exerciseId, mods)
             }
             val sessionId = sessionDao.insertSession(
                 SessionEntity(
                     presetId = null,
-                    label = workout.label.trim().ifBlank { "Imported ${Words.trial.s}" },
+                    label = WireLimits.clamp(workout.label.trim().ifBlank { "Imported ${Words.trial.s}" }, WireLimits.IMPORTED_LABEL_MAX),
                     startedAtMs = workout.startedAtMs,
                     completedAtMs = workout.completedAtMs ?: workout.startedAtMs,
                     xpAwarded = 0,

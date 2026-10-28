@@ -112,7 +112,9 @@ set details, imported workouts and web snapshot above remain owner-only. The
 snapshot's bodyweight-lift estimates can reveal information about body weight;
 they are not shared with allies or feeds. These uploads occur as part of sync
 while signed in and stop when you sign out. Backends below schema version 30
-do not receive set details or imported workouts; snapshots require schema 31.
+do not receive set details or imported workouts; snapshots require schema 31. The snapshot
+is not removed when you sign out: the app has no switch for it yet. Your account can delete it
+(the backend grants the owner, and only the owner, a delete on it), and deleting your account removes it.
 
 **Using your own backend:** Settings → CLOUD lets you point the app at your
 own Supabase project instead of the shared one. When a custom backend is

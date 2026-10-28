@@ -26,6 +26,7 @@ class HostedPatchTest {
         "2026-10-09-crests.sql",
         "2026-10-23-web-viewer.sql",
         "2026-10-28-web-snapshot-cap.sql",
+        "2026-10-28-web-snapshot-hardening.sql",
     )
 
     private val root: File = run {
@@ -122,5 +123,32 @@ class HostedPatchTest {
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
         assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(patch)!!.groupValues[1].toInt())
         assertTrue("web_snapshots_size_cap" in patch)
+    }
+
+    @Test
+    fun `the hardening patch is the baseline's snapshot cap, delete path and init-plan policies`() {
+        val patch = sql("supabase/hosted/2026-10-28-web-snapshot-hardening.sql")
+        val baseline = sql("supabase/migrations/0001_baseline.sql")
+        val code = patch.lines().filterNot { it.trimStart().startsWith("--") }.joinToString("\n")
+        // No beacon, no function: the build that expects schema 31 works before and after it.
+        assertTrue("create or replace function" !in code.lowercase())
+        // The cap is added NOT VALID, validated, and only when the definition is not already this one.
+        assertTrue("not valid" in code.lowercase() && "validate constraint web_snapshots_size_cap" in code)
+        assertTrue("octet_length(snapshot::text) <= 8 * 1024 * 1024" in code && "octet_length(snapshot::text) <= 8 * 1024 * 1024" in baseline)
+        assertTrue("like '%(8 * 1024)%'" in code && "like '%(8 * 1024)%'" in baseline)
+        // The owner-only delete exists in both, and every policy of the four tables is the one-evaluation form.
+        for (text in listOf(code, baseline)) {
+            assertTrue("create policy web_snapshots_delete" in text)
+            assertTrue("grant select, insert, update, delete on web_snapshots to authenticated" in text)
+        }
+        val policies = Regex("""create policy (session_set_details_owner|imported_sessions_owner|imported_session_sets_owner|web_snapshots_\w+)[\s\S]*?;""")
+        val webPolicies = policies.findAll(code).toList()
+        assertEquals(7, webPolicies.size)
+        val bare = Regex("""(?<!select )auth\.uid\(\)""")
+        for (policy in webPolicies) {
+            assertTrue("${policy.groupValues[1]} calls auth.uid() per row", !bare.containsMatchIn(policy.value))
+            val inBaseline = policies.findAll(baseline).first { it.groupValues[1] == policy.groupValues[1] }.value
+            assertEquals("${policy.groupValues[1]} differs from the baseline", squash(inBaseline), squash(policy.value))
+        }
     }
 }

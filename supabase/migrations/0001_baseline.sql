@@ -464,18 +464,38 @@ create table if not exists web_snapshots (
     content_hash text not null,
     size_bytes int not null,
     updated_at timestamptz not null default now(),
+    -- size_bytes is what the phone measured (the jsonb text form, 4 MiB at most). The text the server holds
+    -- gets twice that: jsonb prints a space after every ':' and ',', so a bound equal to the client's would
+    -- refuse snapshots the client had measured as fitting.
     constraint web_snapshots_size_cap check (
         size_bytes > 0 and size_bytes <= 4 * 1024 * 1024
-        and octet_length(snapshot::text) <= 4 * 1024 * 1024
+        and octet_length(snapshot::text) <= 8 * 1024 * 1024
     )
 );
 
--- Upgrade schema-30 installations as well as fresh databases.
-alter table web_snapshots drop constraint if exists web_snapshots_size_cap;
-alter table web_snapshots add constraint web_snapshots_size_cap check (
-    size_bytes > 0 and size_bytes <= 4 * 1024 * 1024
-    and octet_length(snapshot::text) <= 4 * 1024 * 1024
-);
+-- Upgrade schema-30 and schema-31 installations as well as fresh databases. Guarded on the current definition so
+-- applying the baseline again does not rescan the table under a lock, and added NOT VALID then validated.
+do $cap$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conrelid = 'public.web_snapshots'::regclass and conname = 'web_snapshots_size_cap'
+          and pg_get_constraintdef(oid) like '%(8 * 1024)%'
+    ) then
+        alter table web_snapshots drop constraint if exists web_snapshots_size_cap;
+        alter table web_snapshots add constraint web_snapshots_size_cap check (
+            size_bytes > 0 and size_bytes <= 4 * 1024 * 1024
+            and octet_length(snapshot::text) <= 8 * 1024 * 1024
+        ) not valid;
+    end if;
+    if exists (
+        select 1 from pg_constraint
+        where conrelid = 'public.web_snapshots'::regclass and conname = 'web_snapshots_size_cap' and not convalidated
+    ) then
+        alter table web_snapshots validate constraint web_snapshots_size_cap;
+    end if;
+end
+$cap$;
 
 -- One row per lifter per board: the coarse step, worked out on the phone. On a
 -- bodyweight-tier board it is the tier (never bodyweight or a ratio, so an ally
@@ -1197,46 +1217,52 @@ create policy cloud_archives_update on cloud_archives
     with check (user_id = auth.uid());
 
 -- Foreign keys bypass RLS; check ownership of each referenced parent explicitly.
+-- (select auth.uid()) is evaluated once per statement, not once per row.
 drop policy if exists session_set_details_owner on session_set_details;
 create policy session_set_details_owner on session_set_details
     for all to authenticated
-    using (user_id = auth.uid())
-    with check (user_id = auth.uid() and exists (
+    using (user_id = (select auth.uid()))
+    with check (user_id = (select auth.uid()) and exists (
         select 1 from sessions s
-        where s.id = session_set_details.session_id and s.user_id = auth.uid()
+        where s.id = session_set_details.session_id and s.user_id = (select auth.uid())
     ));
 
 drop policy if exists imported_sessions_owner on imported_sessions;
 create policy imported_sessions_owner on imported_sessions
     for all to authenticated
-    using (user_id = auth.uid())
-    with check (user_id = auth.uid());
+    using (user_id = (select auth.uid()))
+    with check (user_id = (select auth.uid()));
 
 drop policy if exists imported_session_sets_owner on imported_session_sets;
 create policy imported_session_sets_owner on imported_session_sets
     for all to authenticated
-    using (user_id = auth.uid())
-    with check (user_id = auth.uid() and exists (
+    using (user_id = (select auth.uid()))
+    with check (user_id = (select auth.uid()) and exists (
         select 1 from imported_sessions s
-        where s.id = imported_session_sets.session_id and s.user_id = auth.uid()
+        where s.id = imported_session_sets.session_id and s.user_id = (select auth.uid())
     ));
 
 drop policy if exists web_snapshots_read on web_snapshots;
 create policy web_snapshots_read on web_snapshots
-    for select to authenticated using (user_id = auth.uid());
+    for select to authenticated using (user_id = (select auth.uid()));
 
 drop policy if exists web_snapshots_insert on web_snapshots;
 create policy web_snapshots_insert on web_snapshots
-    for insert to authenticated with check (user_id = auth.uid());
+    for insert to authenticated with check (user_id = (select auth.uid()));
 
 drop policy if exists web_snapshots_update on web_snapshots;
 create policy web_snapshots_update on web_snapshots
-    for update to authenticated using (user_id = auth.uid())
-    with check (user_id = auth.uid());
+    for update to authenticated using (user_id = (select auth.uid()))
+    with check (user_id = (select auth.uid()));
+
+-- The owner can remove their own snapshot (nobody else's: the policy is the same ownership test).
+drop policy if exists web_snapshots_delete on web_snapshots;
+create policy web_snapshots_delete on web_snapshots
+    for delete to authenticated using (user_id = (select auth.uid()));
 
 revoke all on session_set_details, imported_sessions, imported_session_sets, web_snapshots from public, anon, authenticated;
 grant select, insert, update, delete on session_set_details, imported_sessions, imported_session_sets to authenticated;
-grant select, insert, update on web_snapshots to authenticated;
+grant select, insert, update, delete on web_snapshots to authenticated;
 
 -- lift_marks: your own, plus an accepted ally's. Deliberately NOT can_view():
 -- a public profile is not an ally, and strength tiers are an allies-only board.

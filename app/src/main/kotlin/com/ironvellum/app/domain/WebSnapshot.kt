@@ -113,6 +113,27 @@ object WebSnapshotJson {
         } else snapshot.lifts
         return json.encodeToString(WebSnapshot.serializer(), snapshot.copy(sessions = sessions, lifts = lifts))
     }
+    /**
+     * The length in bytes of [value] as Postgres prints it back from a jsonb column: the compact UTF-8 plus the
+     * space jsonb adds after every `:` and `,` outside a string, and 1% on top for number spellings that differ.
+     * The server's size check reads that printed form, so an estimate from the compact text alone runs short.
+     */
+    fun jsonbTextBytes(value: String): Int {
+        var spaces = 0L
+        var inString = false
+        var escaped = false
+        for (c in value) {
+            when {
+                escaped -> escaped = false
+                inString -> if (c == '\\') escaped = true else if (c == '"') inString = false
+                c == '"' -> inString = true
+                c == ',' || c == ':' -> spaces++
+            }
+        }
+        val exact = value.toByteArray(Charsets.UTF_8).size + spaces
+        return (exact + exact / 100).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    }
+
     fun contentHash(value: String): String {
         val body = JsonObject(json.parseToJsonElement(value).let { it as JsonObject }.filterKeys { it != "builtAtMs" })
         return MessageDigest.getInstance("SHA-256").digest(body.toString().toByteArray(Charsets.UTF_8))

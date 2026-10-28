@@ -61,8 +61,10 @@ is upgraded in place: a schema change edits the baseline, bumps the
 and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
 baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
 project is at schema 30; the owner must apply
-`supabase/hosted/2026-10-28-web-snapshot-cap.sql` to reach schema 31 before
-shipping the build that uploads snapshots under the 4 MiB cap.
+`supabase/hosted/2026-10-28-web-snapshot-cap.sql` to reach schema 31 and then
+`supabase/hosted/2026-10-28-web-snapshot-hardening.sql` (8 MiB text bound on the snapshot
+cap, owner-only snapshot delete, cheaper RLS; no schema bump, and it touches only the four
+web tables) before shipping the build that uploads snapshots.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

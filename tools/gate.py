@@ -348,12 +348,21 @@ def backend() -> int:
         # Re-apply every file: each one declares itself idempotent (checked above).
         steps += migrations
         steps.append(test("assert_all.sql"))
-        # The owner pastes supabase/hosted/ patches into the live project. The
-        # newest patch must apply cleanly onto a project that has the baseline
-        # and run again as a no-op, and the suite must still hold afterwards.
-        # (The older patches migrate warbands and are not re-runnable here.)
-        release = os.path.join(ROOT, "supabase/hosted/2026-10-28-web-snapshot-cap.sql")
-        steps += [release, release, test("assert_all.sql")]
+        # The owner pastes supabase/hosted/ patches into the live project, in date
+        # order. Every one that can run on top of the baseline is replayed, and the
+        # newest runs a second time as a no-op: a patch that only worked on the
+        # project it was written against would otherwise ship green. The three named
+        # below migrate a pre-circles project: inbox and release fail on the baseline
+        # (warbands, the old feed view) and circles puts back function bodies a later
+        # patch replaced. A new patch is replayed unless it is added there on purpose.
+        migrate_old_project = {
+            "2026-10-01-inbox.sql", "2026-10-01-circles.sql", "2026-10-02-release.sql",
+        }
+        hosted = [
+            path for path in sorted(glob.glob(os.path.join(ROOT, "supabase/hosted/*.sql")))
+            if os.path.basename(path) not in migrate_old_project
+        ]
+        steps += hosted + hosted[-1:] + [test("assert_all.sql")]
         # The hosted reset round trip. assert_all leaves its fixtures behind and
         # reset_seed adds a sign-up-made profile and a row in every table, so
         # reset.sql has real data to destroy. Then the baseline goes onto the

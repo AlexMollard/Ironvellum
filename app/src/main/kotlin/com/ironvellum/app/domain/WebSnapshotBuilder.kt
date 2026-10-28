@@ -15,6 +15,8 @@ data class SnapshotInput(
     val presets: List<WorkoutPreset>, val unit: LoadUnit, val effort: EffortScale, val themed: Boolean,
     val zone: ZoneId, val nowMs: Long, val appearance: WebSnapshot.Appearance, val fatigueText: FatigueText,
     val displayName: String, val figure: String, val crestId: String?,
+    /** When the snapshot is stamped. [nowMs] may sit earlier, see [WebSnapshotBuilder.stableNowMs]. */
+    val builtAtMs: Long = nowMs,
 )
 
 object WebSnapshotBuilder {
@@ -25,11 +27,24 @@ object WebSnapshotBuilder {
         else -> "covered"
     }
 
+    /**
+     * The clock to build a pushed snapshot at. Fatigue, the rolling hard sets, the 30-day records and the
+     * sessions-a-week figures all move with the clock, so a snapshot built at the real time differs from the last
+     * one on every push and the unchanged check never holds. This is the start of the local day, or the latest
+     * workout when that is later (a set must not sit after the clock it is judged at): the same all day for the
+     * same training, a new value each day and after each workout, so the figures still refresh at least daily.
+     */
+    fun stableNowMs(nowMs: Long, zone: ZoneId, history: List<Pair<WorkoutSession, List<SessionSet>>>): Long {
+        val dayStart = java.time.Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        val latest = history.maxOfOrNull { (s, _) -> maxOf(s.startedAtMs, s.completedAtMs ?: 0L) } ?: 0L
+        return minOf(nowMs, maxOf(dayStart, latest))
+    }
+
     fun build(input: SnapshotInput): WebSnapshot {
         val (profile, deeds) = profileAndDeeds(input)
         val (week, trends) = weekAndTrends(input)
         return WebSnapshot(
-            builtAtMs = input.nowMs, zone = input.zone.id, unit = input.unit.name.lowercase(),
+            builtAtMs = input.builtAtMs, zone = input.zone.id, unit = input.unit.name.lowercase(),
             effort = input.effort.name.lowercase(), words = if (input.themed) "themed" else "plain",
             rir = Effort.CHIPS.associate { it.toString() to Effort.rir(it) }, appearance = input.appearance,
             profile = profile, deeds = deeds, muscles = Muscle.entries.associate { it.name to it.label },

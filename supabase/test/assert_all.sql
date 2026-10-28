@@ -2444,12 +2444,16 @@ begin
     perform must_run(owner_id, format('insert into imported_session_sets (id,user_id,session_id,exercise_name,set_index) values (gen_random_uuid(),%L,%L,''Pull-up'',0)', owner_id, imported), 'owner cannot insert imported set');
     perform must_run(owner_id, format('insert into web_snapshots (user_id,version,snapshot,content_hash,size_bytes) values (%L,1,''{}'',''hash'',2)', owner_id), 'owner cannot insert snapshot');
     perform must_run(ally, format('insert into imported_sessions (id,user_id,local_id,label,started_at) values (%L,%L,1,''Foreign'',now())', foreign_import, ally), 'ally cannot insert imported session');
-    if has_table_privilege('authenticated', 'public.web_snapshots', 'delete') then
-        perform must_run(owner_id, format('delete from web_snapshots where user_id = %L', owner_id), 'snapshot delete should be a no-op');
-    else
-        perform assert_true(refused_as(owner_id, format('delete from web_snapshots where user_id = %L', owner_id), array['42501']), 'snapshot delete grant unexpectedly available');
-    end if;
-    perform assert_true(exists (select 1 from web_snapshots where user_id = owner_id), 'owner can delete snapshot directly');
+    -- Only the owner can remove a snapshot: the grant exists, anon has none, and an ally's or stranger's delete
+    -- of the owner's row removes nothing.
+    perform assert_true(has_table_privilege('authenticated', 'public.web_snapshots', 'delete')
+        and not has_table_privilege('anon', 'public.web_snapshots', 'delete'), 'snapshot delete grant missing or open to anon');
+    perform must_run(ally, format('delete from web_snapshots where user_id = %L', owner_id), 'ally snapshot delete should be a no-op');
+    perform must_run(stranger, format('delete from web_snapshots where user_id = %L', owner_id), 'stranger snapshot delete should be a no-op');
+    perform assert_true(exists (select 1 from web_snapshots where user_id = owner_id), 'ally or stranger deleted the owner snapshot');
+    perform must_run(owner_id, format('delete from web_snapshots where user_id = %L', owner_id), 'owner cannot delete own snapshot');
+    perform assert_true(not exists (select 1 from web_snapshots where user_id = owner_id), 'owner snapshot delete removed nothing');
+    perform must_run(owner_id, format('insert into web_snapshots (user_id,version,snapshot,content_hash,size_bytes) values (%L,1,''{}'',''hash'',2)', owner_id), 'owner cannot restore snapshot fixture');
 
     foreach t in array array['session_set_details','imported_sessions','imported_session_sets','web_snapshots'] loop
         perform assert_true(value_as(owner_id, format('select count(*) from %I where user_id = %L', t, owner_id))::int = 1,
@@ -2483,9 +2487,12 @@ begin
         and refused_as(owner_id, format('update session_set_details set rpe = 4 where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update session_set_details set rpe = 11 where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update web_snapshots set size_bytes = 4194305 where user_id = %L', owner_id), array['23514'])
-        and refused_as(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 4194303)), size_bytes = 2 where user_id = %L', owner_id), array['23514']),
+        and refused_as(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 8388607)), size_bytes = 2 where user_id = %L', owner_id), array['23514']),
         'invalid detail or oversized snapshot accepted');
     perform must_run(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 4194302)), size_bytes = 4194304 where user_id = %L', owner_id), 'a snapshot exactly at the 4 MiB limit was rejected');
+    -- The phone measures the jsonb text form and sends at most 4 MiB of it, so the server's own bound on that
+    -- text sits above the declared size, up to 8 MiB.
+    perform must_run(owner_id, format('update web_snapshots set snapshot = to_jsonb(repeat(''x'', 8388606)), size_bytes = 4194304 where user_id = %L', owner_id), 'a snapshot exactly at the 8 MiB text limit was rejected');
     perform must_run(owner_id, format('update web_snapshots set snapshot = ''{}'', size_bytes = 2 where user_id = %L', owner_id), 'cannot restore snapshot fixture');
     perform assert_true(refused_as(owner_id, format('update imported_session_sets set kind = ''x'' where user_id = %L', owner_id), array['23514'])
         and refused_as(owner_id, format('update imported_session_sets set rpe = 4 where user_id = %L', owner_id), array['23514'])
@@ -2495,9 +2502,17 @@ begin
         and refused_as(owner_id, format('update imported_sessions set label = repeat(''x'',81) where user_id = %L', owner_id), array['23514']),
         'invalid imported session or set accepted');
     perform assert_true(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-        where n.nspname = 'public' and p.prosrc ilike '%imported_session%')
-        and not exists (select 1 from pg_views where schemaname = 'public' and definition ilike '%imported_session%'),
-        'a public function or view reads imported sessions');
+        where n.nspname = 'public' and p.prosrc ~* '(imported_session|session_set_details|web_snapshots)')
+        and not exists (select 1 from pg_views where schemaname = 'public' and definition ~* '(imported_session|session_set_details|web_snapshots)'),
+        'a public function or view reads the owner-only web tables');
+    -- (select auth.uid()) is planned once per statement; a bare auth.uid() is called for every row.
+    perform assert_true(exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'web_snapshots')
+        and not exists (select 1 from pg_policies
+            where schemaname = 'public'
+              and tablename in ('session_set_details', 'imported_sessions', 'imported_session_sets', 'web_snapshots')
+              and regexp_count(coalesce(qual, '') || ' ' || coalesce(with_check, ''), 'auth\.uid\(\)')
+                  <> regexp_count(coalesce(qual, '') || ' ' || coalesce(with_check, ''), 'SELECT auth\.uid\(\)')),
+        'a web table policy calls auth.uid() per row');
 
     -- A circle and a reply make the observations non-vacuous.
     perform must_run(owner_id, 'select create_circle(''Web fixture'')', 'cannot create fixture circle');

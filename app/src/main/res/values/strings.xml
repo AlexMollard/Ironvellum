@@ -5625,6 +5625,8 @@
     <string name="cloud_sync_unmatched__t">Trial \"%1$s\" could not be matched on the cloud</string>
     <!-- %1$s is the name the user gave the workout. -->
     <string name="cloud_sync_set_skipped">A set in \"%1$s\" has no exercise name and was skipped</string>
+    <!-- %1$s is the name the user gave the workout. -->
+    <string name="cloud_sync_set_unsyncable">A set in \"%1$s\" has an exercise name too long for the cloud and was skipped</string>
     <string name="cloud_sync_web_unavailable">Web workout details are unavailable on this cloud.</string>
     <string name="cloud_sync_web_failed">Web workout details were not synced: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web stats need cloud schema 31 or newer.</string>

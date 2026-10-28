@@ -164,7 +164,10 @@ class WebPushIntegrationTest {
             db.sessionDao().updateSet(normalSet.copy(rpe = 8))
             val detailsBeforeProbeFailure = requests.count { it.first == "POST" && it.second == "session_set_details" }
             schemaVersion = null
-            val unavailable = sync.push().getOrThrow()
+            // A phone that has never had an answer from the beacon (a fresh process): one that did keeps it.
+            val unknown = CloudSync(repo, AccountRepository(), client, AppearanceStore(context), Account(user, "test@example.invalid", "Test", "private"))
+            unknown.snapshotClock = { 1_800_000_000_000L }
+            val unavailable = unknown.push().getOrThrow()
             assertTrue(unavailable.problems.isNotEmpty())
             assertEquals(detailsBeforeProbeFailure, requests.count { it.first == "POST" && it.second == "session_set_details" })
             assertEquals(listOf(normal), CloudSync.pendingForPush(repo.observeHistory().first(), repo.pushWatermark()).map { it.first.id })

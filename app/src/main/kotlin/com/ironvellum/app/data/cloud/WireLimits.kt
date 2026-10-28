@@ -49,8 +49,37 @@ object WireLimits {
      */
     const val ARCHIVE_MAX_BYTES = 8_388_608
 
-    /** `web_snapshots_size_cap`: both declared and encoded snapshot size are capped at 4 MiB. */
+    /**
+     * `web_snapshots_size_cap`: the declared `size_bytes` is capped at 4 MiB, and so is what the client
+     * measures. The client measures the text Postgres will hold, which is the compact JSON plus the space
+     * jsonb puts after every `:` and `,` ([com.ironvellum.app.domain.WebSnapshotJson.jsonbTextBytes]).
+     */
     const val SNAPSHOT_MAX_BYTES = 4_194_304
+
+    /**
+     * `web_snapshots_size_cap`: the server's own bound on `octet_length(snapshot::text)`. It sits at twice what
+     * the client sends, so the text form's spacing can never make an accepted snapshot fail.
+     */
+    const val SNAPSHOT_TEXT_MAX_BYTES = 8_388_608
+
+    /** `session_sets.modifiers` (`session_sets_mods_len`) and `imported_session_sets.modifiers`: 64 characters. */
+    const val SET_MODIFIERS_MAX = 64
+
+    /** `imported_session_sets.exercise_name`: `char_length(exercise_name) <= 64`. */
+    const val IMPORTED_EXERCISE_NAME_MAX = 64
+
+    /** `imported_sessions.label`: `char_length(label) <= 80`. */
+    const val IMPORTED_LABEL_MAX = 80
+
+    /**
+     * [text] cut to at most [max] characters. Postgres counts code points and Kotlin counts UTF-16 units, so
+     * the cut is never past [max] on the server's count, and never lands inside a surrogate pair.
+     */
+    fun clamp(text: String, max: Int): String {
+        if (text.length <= max) return text
+        val end = if (Character.isHighSurrogate(text[max - 1])) max - 1 else max
+        return text.substring(0, end)
+    }
 
     /**
      * `session_comments.body`: 1..280 after trim. The client trims and refuses
