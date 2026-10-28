@@ -35,6 +35,8 @@ export function renderBodyMap(el, {levels={},view='front',figure='male',look='wo
   for(const region of regions) if(!stops.some(s=>s.dataset.muscle===region.dataset.muscle)) stops.push(region);
   for(const stop of stops) {stop.setAttribute('role','img');stop.setAttribute('aria-label',label(stop.dataset.muscle));}
   const mark=(region,on)=>{for(const r of regions) if(r.dataset.muscle===region.dataset.muscle) r.classList.toggle('is-active',on);};
+  // A click shows the tooltip but must not focus: focus outlined only the one focusable side (or the whole figure) and stuck after the pointer left.
+  map.addEventListener('mousedown',event=>{if(event.target.closest('.body-region')) event.preventDefault();});
   if(stops.length) roving(stops,(index,key)=>({ArrowRight:index+1,ArrowDown:index+1,ArrowLeft:index-1,ArrowUp:index-1})[key]);
   bindTips(map,'.body-region',region=>{const muscle=region.dataset.muscle;return {title:names[muscle]||tidy(muscle),value:describeLevel(look,levels[muscle]??(look==='coverage'?'none':0))};},{onShow:r=>mark(r,true),onHide:r=>mark(r,false)});
   return map;
