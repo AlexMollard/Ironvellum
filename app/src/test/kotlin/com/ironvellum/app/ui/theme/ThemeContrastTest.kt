@@ -119,10 +119,10 @@ class ThemeContrastTest {
         IronvellumColors.light = true
         IronvellumColors.lightAccents = AccentPalette.LightDefault
         val c = IronvellumColors
-        assertEquals(0xFFF2E8D8.toInt(), c.Abyss.toArgb())
+        assertEquals(0xFFF7F3EA.toInt(), c.Abyss.toArgb())
         assertEquals(0xFFFEFBF5.toInt(), c.Vault.toArgb())
-        assertEquals(0xFFF6F0E5.toInt(), c.VaultHigh.toArgb())
-        assertEquals(0xFFD4C9B8.toInt(), c.Rune.toArgb())
+        assertEquals(0xFFF3ECDF.toInt(), c.VaultHigh.toArgb())
+        assertEquals(0xFFC9BDA9.toInt(), c.Rune.toArgb())
         assertEquals(0xFFAA9C8A.toInt(), c.Bracket.toArgb())
         assertEquals(0xFF241B15.toInt(), c.Ink.toArgb())
         assertEquals(0xFF65584C.toInt(), c.InkMuted.toArgb())
@@ -138,8 +138,9 @@ class ThemeContrastTest {
         val c = IronvellumColors
         val cardOnPage = contrastRatio(c.Vault.toArgb(), c.Abyss.toArgb())
         val raisedOnPage = contrastRatio(c.VaultHigh.toArgb(), c.Abyss.toArgb())
-        // Measured 1.17:1 (it was 1.07:1 before the rebuild: F3EEE3 against FBF8F2); the raised sheet is 1.07:1.
-        assertTrue("card on page is $cardOnPage:1", cardOnPage >= 1.15)
+        // Option A lightened the page (F7F3EA), so the card is 1.07:1 on it (1.17:1 before) and the raised sheet 1.06:1; the
+        // strengthened Rune edge (1.79:1 on the card) carries the separation now.
+        assertTrue("card on page is $cardOnPage:1", cardOnPage >= 1.05)
         assertTrue("raised on page is $raisedOnPage:1", raisedOnPage > 1.05 && raisedOnPage < cardOnPage)
         assertTrue(contrastRatio(c.Rune.toArgb(), c.Vault.toArgb()) > 1.3)
     }

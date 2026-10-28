@@ -118,12 +118,12 @@ internal object DarkPaper : Paper {
  * lighter than the page and a raised sheet sits between them. Each hex is the sRGB of the OKLCH (L, C, h) in its comment.
  */
 internal object LightPaper : Paper {
-    override val Abyss = Color(0xFFF2E8D8) // oklch(.935 .024 82) page
+    override val Abyss = Color(0xFFF7F3EA) // oklch(.965 .013 87) page
     override val Vault = Color(0xFFFEFBF5) // oklch(.988 .008 85) card
-    override val VaultHigh = Color(0xFFF6F0E5) // oklch(.958 .016 84) card-high
+    override val VaultHigh = Color(0xFFF3ECDF) // oklch(.945 .019 83) card-high
     override val Ink = Color(0xFF241B15) // oklch(.23 .018 55)
     override val InkMuted = Color(0xFF65584C) // oklch(.47 .025 65)
-    override val Rune = Color(0xFFD4C9B8) // oklch(.84 .026 78) line
+    override val Rune = Color(0xFFC9BDA9) // oklch(.803 .031 81) line
     override val Bracket = Color(0xFFAA9C8A) // oklch(.70 .03 75)
     override val DangerRed = Color(0xFFBE2323) // oklch(.52 .19 27)
     // shortcut: the approved caution (oklch .56 .16 34, #C0482D) reads 4.12:1 on the page; this is the same hue and
@@ -137,7 +137,7 @@ internal object LightPaper : Paper {
     )
     override val PlateGround = Color(0xFFFAF6EE) // oklch(.975 .012 85)
     override val PlateEdge = Color(0xFFDFD6C8) // oklch(.88 .022 80)
-    override val PlateDeep = Color(0xFFF2E8D8) // the page, as a crest mark's infill
+    override val PlateDeep = Color(0xFFF7F3EA) // the page, as a crest mark's infill
     override val Silhouette = Color(0xFFC7BCAC) // oklch(.80 .026 78)
     override val SilhouetteGround = Color(0xFFF2ECE1) // oklch(.945 .016 84)
     override val UnheldName = Color(0xFF6E6155) // oklch(.50 .025 65)
