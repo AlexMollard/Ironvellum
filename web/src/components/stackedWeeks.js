@@ -14,9 +14,13 @@ export function renderStackedWeeks(root, weeks, height = 220) {
   const hits = [];
   weeks.forEach((week, i) => {
     let y = height - bottom;
+    const base = y, topGroup = GROUPS.reduce((found, g, k) => (week.groups?.[g] ? k : found), -1);
     GROUPS.forEach((group, j) => {
-      const value = week.groups?.[group] || 0, h = value / max * (height - top - bottom); y -= h;
-      const rect = make('rect', { x: i * slot + gap / 2, y, width: Math.max(1, slot - gap), height: h, fill: 'currentColor', class: `chart-series-${j}` });
+      // Marks: a 2px surface gap between stacked segments, a 4px rounded end on the top one, square at the baseline.
+      const value = week.groups?.[group] || 0, h = value / max * (height - top - bottom), bottomEdge = y; y -= h;
+      const w = Math.min(24, Math.max(1, slot - gap)), x0 = i * slot + (slot - w) / 2, hh = Math.max(0, h - (bottomEdge < base ? 2 : 0)), r = j === topGroup ? Math.min(4, hh, w / 2) : 0;
+      const d = hh <= 0 ? `M${x0} ${y}Z` : r ? `M${x0} ${y + hh}V${y + r}Q${x0} ${y} ${x0 + r} ${y}H${x0 + w - r}Q${x0 + w} ${y} ${x0 + w} ${y + r}V${y + hh}Z` : `M${x0} ${y}H${x0 + w}V${y + hh}H${x0}Z`;
+      const rect = make('path', { d, class: `chart-series-${j}` });
       rect.dataset.group = group; rect.dataset.value = String(value); rect.dataset.week = week.start;
       svg.append(rect);
     });

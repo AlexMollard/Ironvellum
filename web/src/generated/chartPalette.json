@@ -1,0 +1,5 @@
+{
+  "_note": "Web-only categorical chart palette; it has no counterpart in the app's Theme.kt. Eight hues in a fixed order (blue, orange, aqua, yellow, magenta, green, violet, red), one slot per entity, from the dataviz reference palette. Dark is unchanged from the reference; the light aqua, yellow and magenta are stepped darker (hue and chroma held) so every light slot reaches 3:1 on the light card surface. Validated with validate_palette.js against tokens.json paper.Vault: dark #171715 --mode dark, light #FEFBF5 --mode light.",
+  "dark": ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"],
+  "light": ["#2a78d6", "#eb6834", "#00a571", "#ca8000", "#d86d96", "#008300", "#6250d6", "#e34948"]
+}

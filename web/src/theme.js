@@ -1,5 +1,6 @@
 import tokens from './generated/tokens.json';
 import accents from './generated/accents.json';
+import chartPalette from './generated/chartPalette.json';
 import {setWordsMode} from './i18n.js';
 export function effectiveAppearance(phone, override = {}) {
   const mode = override.mode ?? phone?.mode ?? 'system';
@@ -22,6 +23,7 @@ export function applyAppearance(phone, override = {}) {
   for (const [name,ramp] of Object.entries(palette.metal)) root.style.setProperty(`--metal-${name.toLowerCase()}`,`linear-gradient(135deg, ${ramp.colors.map((color,i)=>`${color} ${ramp.stops[i]*100}%`).join(', ')})`);
   for (const [key,value] of Object.entries(appearance.tokens)) if (typeof value === 'string' && key !== 'preset') root.style.setProperty(`--${key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}`,value);
   root.style.setProperty('--accent',appearance.tokens.fill);
+  chartPalette[appearance.light ? 'light' : 'dark'].forEach((color,i)=>root.style.setProperty(`--series-${i}`,color));
   setWordsMode(appearance.themed);
   return appearance;
 }

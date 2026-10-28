@@ -4,19 +4,6 @@
   color-scheme: dark light;
   --faint: color-mix(in srgb, var(--paper-ink-muted) 58%, var(--paper-abyss));
   --wash: color-mix(in srgb, var(--fill) 8%, transparent);
-  --series-0: var(--fill);
-  --series-1: color-mix(in srgb, var(--fill) 50%, var(--paper-ink));
-  --series-2: var(--deep);
-  --series-3: var(--secondary);
-  --series-4: color-mix(in srgb, var(--secondary) 55%, var(--paper-danger-red));
-  --series-5: var(--paper-ink-muted);
-}
-/* Six distinguishable hues derived from the accent: its hue turned toward blue and purple, where the browser supports relative colours. */
-@supports (color: oklch(from red l c h)) {
-  :root {
-    --series-1: oklch(from var(--fill) l c calc(h + 100));
-    --series-2: oklch(from var(--fill) l c calc(h + 160));
-  }
 }
 :root[data-theme="dark"] { color-scheme: dark; }
 :root[data-theme="light"] { color-scheme: light; }
@@ -242,7 +229,7 @@ svg.body-map { width: auto; height: 100%; }
 .calendar-foot { margin: 14px 0 0; font-size: 12px; line-height: 1.5; }
 .week-bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; margin-top: 10px; }
 .week-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; font-size: 11px; }
-.week-bar { width: 100%; flex: none; height: calc(var(--h) * 66px); background: var(--fill); }
+.week-bar { width: 100%; max-width: 24px; flex: none; height: calc(var(--h) * 66px); border-radius: 4px 4px 0 0; background: var(--series-0); }
 .week-caption { margin: 6px 0 10px; font-size: 12px; }
 .list-card { display: flex; flex-direction: column; padding: 14px 18px; }
 .list-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -356,7 +343,9 @@ td:first-child, th:first-child { padding-left: 0; }
 .chart-series-3 { --series: var(--series-3); }
 .chart-series-4 { --series: var(--series-4); }
 .chart-series-5 { --series: var(--series-5); }
-rect[class*="chart-series-"] { fill: var(--series); }
+.chart-series-6 { --series: var(--series-6); }
+.chart-series-7 { --series: var(--series-7); }
+rect[class*="chart-series-"], path[class*="chart-series-"] { fill: var(--series); }
 .legend-item[class*="chart-series-"] { color: var(--paper-ink-muted); }
 .chart-grid { stroke: var(--paper-rune); stroke-width: 1; }
 .chart-text { fill: var(--faint); font-size: 11px; font-family: inherit; }
@@ -464,7 +453,7 @@ a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset
 .chart-hit { fill: transparent; stroke: transparent; stroke-width: 1; outline: none; cursor: crosshair; }
 .chart-hit.is-active, .chart-hit:focus { fill: var(--wash); stroke: var(--fill); }
 .week-bar { outline-offset: 2px; }
-.week-col.is-active .week-bar, .week-bar:hover { background: var(--bright); }
+.week-col.is-active .week-bar, .week-bar:hover { background: color-mix(in srgb, var(--series-0) 78%, var(--paper-ink)); }
 .muscle-strip { position: relative; z-index: 1; }
 .muscle-cell { cursor: default; outline-offset: 2px; transform-origin: bottom; }
 .muscle-cell:hover, .muscle-cell.is-active { transform: scaleY(1.7); }
@@ -551,3 +540,5 @@ a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset
 .copy-dialog { width: min(560px, 100%); display: grid; gap: 12px; }
 .copy-dialog textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--paper-rune); border-radius: 4px; background: var(--paper-abyss); color: inherit; font: inherit; font-size: 13px; resize: vertical; }
 .copy-dialog button { justify-self: end; }
+
+circle.chart-point, polygon.chart-point { stroke: var(--paper-vault); stroke-width: 2px; paint-order: stroke; }

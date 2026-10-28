@@ -38,7 +38,7 @@ export function showTip(content, { anchor, point, owner = anchor }) {
   }
   for (const entry of content.lines ?? []) {
     const text = typeof entry === 'string' ? entry : entry.text;
-    el.append(part('div', text, entry.series == null ? 'tooltip-line' : `tooltip-line legend-item chart-series-${entry.series % 6}`));
+    el.append(part('div', text, entry.series == null ? 'tooltip-line' : `tooltip-line legend-item chart-series-${entry.series % 8}`));
   }
   current = { anchor, owner };
   el.classList.add('is-on');

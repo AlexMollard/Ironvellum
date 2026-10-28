@@ -27,11 +27,11 @@ export function renderLineChart(root, { series, label = 'Progress', formatValue 
   const groups = [];
   series.forEach((s, index) => {
     const marks = []; groups.push(marks);
-    const group = make('g', { class: `chart-series chart-series-${(s.index ?? index) % 6}` });
+    const group = make('g', { class: `chart-series chart-series-${(s.index ?? index) % 8}` });
     group.append(make('polyline', { points: s.points.map(p => `${x(p[0])},${y(p[2])}`).join(' '), fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
     for (const p of s.points) {
       const px = x(p[0]), py = y(p[2]);
-      const mark = p[3] ? make('polygon', { points: `${px},${py - 6} ${px + 6},${py} ${px},${py + 6} ${px - 6},${py}`, class: 'chart-pr' }) : make('circle', { cx: px, cy: py, r: 3.5 });
+      const mark = p[3] ? make('polygon', { points: `${px},${py - 6} ${px + 6},${py} ${px},${py + 6} ${px - 6},${py}`, class: 'chart-pr' }) : make('circle', { cx: px, cy: py, r: 4 });
       mark.setAttribute('fill', 'currentColor');
       mark.dataset.value = String(p[2]);
       mark.dataset.at = String(p[0]);
