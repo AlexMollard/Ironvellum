@@ -37,7 +37,13 @@ summary prints the wall clock and flags a miss. It goes red when any test fails,
 ran than the sources declare: a test process that crashes on start reports zero tests and zero failures,
 which used to read as green.
 
-Phases of a warm run after an edit (379 instrumented, 2040 unit tests): build 10 to 20s, verify 206 to 211s.
+Measured 2026-10-28 with 2663 unit and 615 instrumented tests: plain gate 5m55s (build 7s, emulator cold boot 32s
+alongside, verify 309s; the instrumented suite sums to 290s, led by TodayFitsTest 27s, AccessibilityChecksTest 27s,
+TodaySwipeTest 16s, FontScaleSweepTest 14s), and `--backend` 5m27s on a warm emulator (verify 303s, the Postgres
+assertions overlap the web build inside the same window). Runs of 7m06s and 8m12s were taken while other builds
+shared the machine: run the gate alone.
+
+Earlier breakdown, phases of a warm run after an edit (379 instrumented, 2040 unit tests): build 10 to 20s, verify 206 to 211s.
 Verify is the instrumented task alone; unit tests, lint and the other flavour's assembles finish inside it, so
 only the instrumented time matters. Before the seeded-template change the same run took 5m19s (verify 299s,
 the suite summing 277s). A cold boot (over 30 minutes up) adds about 34s when it overlaps nothing else, and an
