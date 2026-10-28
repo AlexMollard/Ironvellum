@@ -299,6 +299,9 @@ td:first-child, th:first-child { padding-left: 0; }
 .lift-intro p { margin: 4px 0 0; font-size: 13px; }
 .analytics-body-map { flex: none; }
 .chart-columns { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
+/* Side by side only when the card can fit the four table columns; otherwise the table goes under the chart. */
+.chart-card { container-type: inline-size; }
+@container (max-width: 900px) { .chart-columns { grid-template-columns: minmax(0, 1fr); } }
 .chart-col, .variation-col { min-width: 0; }
 .chart-title { margin: 8px 0 0; font-size: 13px; font-weight: 400; color: var(--paper-ink-muted); }
 .analytics-chart svg { display: block; width: 100%; height: auto; }
