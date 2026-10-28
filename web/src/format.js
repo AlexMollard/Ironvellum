@@ -40,9 +40,16 @@ export function splitLabel(label = '') {
 }
 export const SET_KINDS = { working: 'Working', warmup: 'Warm-up', top: 'Top', backoff: 'Back-off', drop: 'Drop', failure: 'Failure', rest_pause: 'Rest-pause' };
 export const setKindName = set => SET_KINDS[set.kind] || 'Working';
-// Load of one set: bodyweight reads BW, an assisted set keeps its minus sign.
-export function formatSetLoad(set, unit = 'kg') {
-  return set.weightKg == null || set.weightKg === 0 ? 'BW' : `${formatLoad(set.weightKg, unit)} ${unit}`;
+// Whether the load logged on an exercise is added to the body (a pull-up's plates), as the app's BodyShare.addsToBody
+// decides it. The snapshot carries that per lift; an exercise it does not list reads as a plain load.
+export function addsToBody(snapshot, exerciseName) {
+  const name = String(exerciseName ?? '').trim().toLowerCase();
+  return !!snapshot?.lifts?.find(l => String(l.name).trim().toLowerCase() === name)?.addsToBody;
+}
+// Load of one set: bodyweight reads BW, an assisted set keeps its minus sign, and weight added to the body gets a plus.
+export function formatSetLoad(set, unit = 'kg', addsToBody = false) {
+  if (set.weightKg == null || set.weightKg === 0) return 'BW';
+  return `${addsToBody && set.weightKg > 0 ? '+' : ''}${formatLoad(set.weightKg, unit)} ${unit}`;
 }
 // Reps, hold time, distance and grade of one set, as the parts the set table joins with " · ".
 export function setPerformance(set) {

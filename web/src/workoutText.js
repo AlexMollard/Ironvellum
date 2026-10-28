@@ -1,5 +1,5 @@
 import { t, word } from './i18n.js';
-import { formatDay, formatSets, formatVolume, formatWeekday, formatClock, formatSetLoad, setPerformance, setEffort, setKindName } from './format.js';
+import { formatDay, formatSets, formatVolume, formatWeekday, formatClock, formatSetLoad, addsToBody, setPerformance, setEffort, setKindName } from './format.js';
 import { workoutDay } from './components/statCard.js';
 // Sets of one workout grouped into exercise blocks: the same exercise logged twice stays two blocks, ordered by position.
 export function groupSets(sets) {
@@ -15,7 +15,7 @@ export function groupSets(sets) {
 }
 // One set as a plain line: "load × reps", then its kind (when not a working set), its effort and a PR mark.
 function setLine(set, number, width, entry, snapshot) {
-  const unit = snapshot?.unit || 'kg', performance = setPerformance(set), load = formatSetLoad(set, unit);
+  const unit = snapshot?.unit || 'kg', performance = setPerformance(set), load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName));
   const main = set.reps ? [`${load} × ${performance[0]}`, ...performance.slice(1)] : [...(load === 'BW' && performance.length ? [] : [load]), ...performance];
   const parts = [main.join(' · ') || '—'];
   if ((set.kind || 'working') !== 'working') parts.push(setKindName(set));
