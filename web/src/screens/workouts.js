@@ -1,4 +1,4 @@
-import { t } from '../i18n.js';
+import { t, word } from '../i18n.js';
 import { snapshotForWorkout } from '../source.js';
 import { formatSets, formatDayShort, formatDay } from '../format.js';
 import { artImg } from '../components/artImg.js';
@@ -20,9 +20,9 @@ export async function renderWorkouts(root, { source, snapshot, router, nowMs = D
   root.append(header);
   const layout = node('div', null, 'workouts-layout'), side = node('div', null, 'workouts-side'), listCard = card(null, 'list-card');
   const controls = node('div', null, 'list-controls');
-  const search = node('input'); search.type = 'search'; search.placeholder = 'Search workouts or exercises'; search.setAttribute('aria-label', `Search ${t('concept_trial_pl')}`);
+  const search = node('input'); search.type = 'search'; search.placeholder = `Search ${t('concept_trial_pl')} or exercises`; search.setAttribute('aria-label', `Search ${t('concept_trial_pl')}`);
   search.addEventListener('input', () => { query = search.value.toLocaleLowerCase(); page = 0; picked = ''; drawList(); }); controls.append(search);
-  for (const [value, label] of [['all', 'All'], ['prs', 'With PRs'], ['imported', 'Imported']]) {
+  for (const [value, label] of [['all', 'All'], ['prs', word('With PRs', 'concept_peak_cpl', w => `With ${w}`)], ['imported', 'Imported']]) {
     const button = node('button', label, 'pill'); button.type = 'button'; button.dataset.filter = value;
     button.onclick = () => { filter = value; page = 0; picked = ''; drawList(); }; controls.append(button);
   }

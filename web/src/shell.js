@@ -6,7 +6,7 @@ import {renderTrends} from './screens/trends.js';
 import {createRouter} from './router.js';
 import {createAppearanceMenu} from './appearance.js';
 import {plate} from './components/plate.js';
-import {t} from './i18n.js';
+import {word} from './i18n.js';
 import {dayKey,weekPassed,node} from './components/statCard.js';
 import {formatDay,formatClock} from './format.js';
 import {createElement,LayoutDashboard,CalendarDays,Dumbbell,ChartLine} from 'lucide';
@@ -31,7 +31,7 @@ export function renderShell(root, {source,snapshot,onSignOut,nowMs=Date.now()}) 
   if(snapshot?.profile) {const who=node('div',null,'user-line');const emblem=node('span');plate(emblem,{name:snapshot.profile.name,crestId:snapshot.profile.crestId});who.append(emblem);const text=node('span',null,'user-name');text.append(snapshot.profile.name||'',node('br'),node('span',`Level ${snapshot.profile.level}`,'muted'));who.append(text);user.append(who);}
   const asof=node('div',null,'muted user-asof');if(snapshot?.builtAtMs!=null) asof.append(node('span',`${statsAsOf(snapshot,nowMs)} · `,'asof-text'));asof.append(logout);user.append(asof,node('div','Log and edit training in the app.','faint user-note'));sidebar.append(user);
   const main=node('main',null,'main'),top=node('div',null,'topbar'),titleSlot=node('div',null,'topbar-title');
-  const workoutsLabel=()=>nav.querySelector('[data-workouts] .nav-label').textContent=t('concept_trial_cpl');
+  const workoutsLabel=()=>nav.querySelector('[data-workouts] .nav-label').textContent=word('Workouts','concept_chronicle_c');
   const appearance=createAppearanceMenu(snapshot?.appearance,()=>{workoutsLabel();router.start();});workoutsLabel();top.append(titleSlot,appearance);main.append(top);
   const content=node('div',null,'content');main.append(content);frame.append(sidebar,main);root.append(frame);
   const current=path=>{const key=path==='/'||!path?'/':`/${path.split('/')[1]}`;for(const a of nav.querySelectorAll('a')) {if(a.dataset.path===key) a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}};

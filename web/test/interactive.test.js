@@ -140,13 +140,13 @@ describe('deed panel', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false'); expect(panel.hidden).toBe(true); expect(button.getAttribute('aria-controls')).toBe(panel.id);
     button.click();
     expect(button.getAttribute('aria-expanded')).toBe('true'); expect(panel.hidden).toBe(false);
-    expect(panel.textContent).toContain('Train five weeks in a row.'); expect(panel.textContent).toContain('Epic'); expect(panel.textContent).toContain('Earned'); expect(panel.textContent).toContain('2026');
+    expect(panel.textContent).toContain('Train five weeks in a row.'); expect(panel.textContent).toContain('Fabled'); expect(panel.textContent).toContain('Earned'); expect(panel.textContent).toContain('2026');
     key(button, 'Escape'); expect(panel.hidden).toBe(true); expect(document.activeElement).toBe(button);
     button.click(); button.click(); expect(panel.hidden).toBe(true);
   });
   it('still opens when the deed has no description, and never injects markup', () => {
     const el = deedRow({ ...deed, name: '<img src=x onerror=alert(1)>', description: undefined }, 'UTC'); document.body.append(el);
-    el.querySelector('button').click(); expect(el.querySelector('.deed-panel').textContent).toContain('Epic'); expect(el.querySelector('img')).toBeNull();
+    el.querySelector('button').click(); expect(el.querySelector('.deed-panel').textContent).toContain('Fabled'); expect(el.querySelector('img')).toBeNull();
   });
 });
 

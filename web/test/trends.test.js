@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderTrends } from '../src/screens/trends.js';
 vi.mock('../src/components/bodyMap.js', () => ({ renderBodyMap: (el, opts) => { el.dataset.look = opts.look; el.dataset.levels = JSON.stringify(opts.levels); } }));
 vi.mock('../src/components/fatigueCard.js', () => ({ renderFatigueCard: (el, opts) => { el.textContent = opts.fatigue.worked[0].cause; } }));
-vi.mock('../src/i18n.js', () => ({ t: key => key === 'coverage_reason' ? 'Floor %1$d' : 'Estimated from your last 7 days' }));
+vi.mock('../src/i18n.js', () => ({ t: key => key === 'coverage_reason' ? 'Floor %1$d' : key === 'concept_oath_s' ? 'streak' : 'Estimated from your last 7 days', word: plain => plain }));
 const weeks = Array.from({ length: 52 }, (_, i) => ({ start: new Date(Date.UTC(2025, 10, 3 + i * 7)).toISOString().slice(0, 10), hardSets: i, groups: { BACK: 1, CHEST: 2, LEGS: 3, SHOULDERS: 4, ARMS: 5, CORE: 6 } }));
 const snapshot = { builtAtMs: Date.UTC(2026, 9, 28), zone: 'UTC', profile: { workouts: 10, figure: 'female', streakDays: 3, longestStreakDays: 10 }, muscles: { LATS: 'Lats' }, fatigue: { worked: [{ cause: 'Phone cause' }] }, trends: { floor: 4, heavy: 20, weeks, days: ['2026-10-27'], daysPerWeek: 3.1, windows: { '7': { state: { LATS: 'covered' }, perWeek: { LATS: 5 } } } } };
 

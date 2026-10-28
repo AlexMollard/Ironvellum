@@ -1,3 +1,4 @@
+import { word } from '../i18n.js';
 import { artImg } from './artImg.js';
 import { formatLoad, splitLabel } from '../format.js';
 import { node, displayDate, link } from './statCard.js';
@@ -10,5 +11,5 @@ export function recordRow(record, snapshot, router) {
   title.append(link(name, `/lifts/${encodeURIComponent(record.name)}`, router));
   if (variation) title.append(node('span', ` · ${variation}`, 'accent-text'));
   content.append(title, node('div', `e1RM · ${displayDate(record.atMs, snapshot.zone)} · +${formatLoad(record.gainKg, snapshot.unit)} ${snapshot.unit}`, 'muted record-sub'));
-  el.append(frame, content, node('b', 'PR', 'pr-mark'), node('span', `${formatLoad(record.e1rmKg, snapshot.unit)} ${snapshot.unit}`, 'record-value')); return el;
+  el.append(frame, content, node('b', word('PR', 'concept_peak_u'), 'pr-mark'), node('span', `${formatLoad(record.e1rmKg, snapshot.unit)} ${snapshot.unit}`, 'record-value')); return el;
 }

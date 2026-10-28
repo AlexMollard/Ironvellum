@@ -1,4 +1,4 @@
-import { t } from '../i18n.js';
+import { t, word } from '../i18n.js';
 import { snapshotForWorkout, workoutPath } from '../source.js';
 import { formatDay, formatDayShort, formatSets, formatVolume, formatWeekday, formatClock } from '../format.js';
 import { artImg } from '../components/artImg.js';
@@ -28,7 +28,7 @@ export async function renderWorkoutDetail(root, { source, snapshot, router }, or
   const summary = card(null, 'summary-card'), top = node('div', null, 'summary-top');
   top.append(node('span', `${formatWeekday(day)} ${formatDay(day)} · ${formatClock(workout.startedAt, snapshot?.zone)} · ${entry?.min ?? '—'} min`, 'muted'));
   if (entry) top.append(node('span', `+${entry.xp} XP`, 'lw-xp'));
-  summary.append(top, factRow('Hard sets', entry ? formatSets(entry.hardSets) : null), factRow('Volume', entry ? formatVolume(entry.volumeKg, snapshot.unit) : null), factRow('Records', entry?.peaks), factRow('Strength', entry?.strength)); side.append(summary);
+  summary.append(top, factRow('Hard sets', entry ? formatSets(entry.hardSets) : null), factRow('Volume', entry ? formatVolume(entry.volumeKg, snapshot.unit) : null), factRow(word('Records', 'concept_peak_cpl'), entry?.peaks), factRow('Strength', entry?.strength)); side.append(summary);
   if (entry) {
     const muscles = card('Muscles worked', 'muscles-card'); const maps = node('div', null, 'body-map-pair');
     for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked', names: snapshot.muscles }); maps.append(map); }

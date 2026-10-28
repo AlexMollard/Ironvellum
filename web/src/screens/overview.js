@@ -1,4 +1,4 @@
-import { t } from '../i18n.js';
+import { t, word } from '../i18n.js';
 import tokens from '../generated/tokens.json';
 import catalogue from '../generated/catalogue.json';
 import { snapshotForWorkout, workoutPath } from '../source.js';
@@ -38,7 +38,7 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
   tiles.append(
     kpi(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week', week.workouts, t('concept_trial_pl'), `${formatSets(week.hardSets)} hard sets${week.plannedDays != null ? ` · ${week.plannedDays} planned` : ''}`, { path: '/workouts', router }),
     kpi(t('concept_oath_c'), profile.streakDays, 'days', `Best: ${profile.longestStreakDays} days`, { path: '/workouts', router }),
-    kpi('Records', trends.records30d, 'PRs', 'last 30 days', { path: '/lifts', router }),
+    kpi(word('Records', 'concept_peak_cpl'), trends.records30d, t('concept_peak_pl'), 'last 30 days', { path: '/lifts', router }),
     kpi('Volume', volume, volumeUnit, `this week · ${splitVolume(week.prevVolumeKg, snapshot.unit).join(' ')} last`, { path: '/workouts', router }));
   main.append(tiles);
   const last = rows[0];
@@ -53,7 +53,7 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
     }));
   } else main.append(node('p', `No ${t('concept_trial_pl')} yet.`));
   const pair = node('div', null, 'ov-pair');
-  const records = card('Recent records', 'records-card', `${trends.records30d} in the last 30 days`);
+  const records = card(word('Recent records', 'concept_peak_pl', w => `Recent ${w}`), 'records-card', `${trends.records30d} in the last 30 days`);
   for (const record of trends.recent || []) records.append(recordRow(record, snapshot, router));
   const deeds = card('Deeds', 'deeds-card', `${profile.deedsEarned} of ${profile.deedsTotal}`);
   for (const deed of snapshot.deeds || []) deeds.append(deedRow(deed, snapshot.zone));

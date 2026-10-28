@@ -4,7 +4,7 @@ import { renderLineChart } from '../components/lineChart.js';
 import { renderVariationTable, formatPeak } from '../components/variationTable.js';
 import { formatLoad, formatSets, formatVolume } from '../format.js';
 import { card } from '../components/statCard.js';
-import { t } from '../i18n.js';
+import { t, word } from '../i18n.js';
 
 const el = (tag, text, cls) => { const node = document.createElement(tag); if (text != null) node.textContent = text; if (cls) node.className = cls; return node; };
 const tile = (label, value, sub) => { const item = el('div', null, 'tile'); item.append(el('span', label, 'muted'), el('strong', value)); if (sub) item.append(el('span', sub, 'muted')); return item; };
@@ -31,7 +31,7 @@ function liftDetail(pane, lift, snapshot) {
   const frame = el('span', null, 'art-frame hero'); frame.append(artImg(lift.name, lift.art));
   const text = el('div', null, 'lift-intro'); text.append(el('h2', lift.name, 'lift-name'), el('p', `${lift.muscleSummary} · ${lift.variations.length} ${lift.variations.length === 1 ? 'variation' : 'variations'} logged`, 'muted'));
   const chips = el('div', null, 'chips');
-  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', 'PR'), `${v.label} ${formatPeak(v.peak, snapshot.unit)}`); chips.append(chip); }
+  for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', word('PR', 'concept_peak_u')), `${v.label} ${formatPeak(v.peak, snapshot.unit)}`); chips.append(chip); }
   text.append(chips);
   const map = el('div', null, 'analytics-body-map body-map-pair');
   for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked', names: snapshot.muscles }); map.append(figure); }
@@ -45,7 +45,7 @@ function liftDetail(pane, lift, snapshot) {
   const chart = el('div', null, 'analytics-chart'); chartCol.append(chart);
   const tableHead = el('div', null, 'card-head'); tableHead.append(el('h2', 'Variations side by side')); const table = el('div', null, 'table-scroll'); variationCol.append(tableHead, table, el('p', 'Each keeps its own records. Tap one to show or hide it on the chart.', 'muted note'));
   columns.append(chartCol, variationCol); chartCard.append(columns); pane.append(chartCard);
-  const records = card('Records', 'records-panel');
+  const records = card(word('Records', 'concept_peak_cpl'), 'records-panel');
   for (const v of lift.variations) {
     const box = el('div', null, 'analytics-record'); box.append(el('h3', v.label)); const tiles = el('div', null, 'tiles');
     if (v.peak?.e1rmKg != null) tiles.append(tile('Best est. 1RM', `${formatLoad(v.peak.e1rmKg, snapshot.unit)} ${snapshot.unit}`));
@@ -54,7 +54,7 @@ function liftDetail(pane, lift, snapshot) {
     for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, snapshot.unit)}`));
     if (v.volumeKg != null) tiles.append(tile('Volume', formatVolume(v.volumeKg, snapshot.unit)));
     if (v.perWeek != null) tiles.append(tile('Frequency', `${formatSets(v.perWeek)} a week`));
-    tiles.append(tile('Sessions', `${v.sessions} workouts`)); box.append(tiles); records.append(box);
+    tiles.append(tile('Sessions', `${v.sessions} ${t('concept_trial_pl')}`)); box.append(tiles); records.append(box);
   } pane.append(records);
   function draw() {
     const cutoff = range === 'all' ? -Infinity : snapshot.builtAtMs - Number(range) * 30.4375 * 86400000;
@@ -65,7 +65,7 @@ function liftDetail(pane, lift, snapshot) {
       if (!matching.length) continue;
       const unit = metric === 'e1rm' ? snapshot.unit : 'score';
       const formatValue = metric === 'e1rm' ? value => formatLoad(value, snapshot.unit) : String;
-      const title = metric === 'e1rm' ? 'Estimated 1RM per workout' : 'Strength score per workout';
+      const title = metric === 'e1rm' ? `Estimated 1RM per ${t('concept_trial_s')}` : `Strength score per ${t('concept_trial_s')}`;
       const series = matching.map(({ v, index }) => ({ index, name: v.label, points: v.points.filter(p => p[0] >= cutoff).map(p => [...p, date.format(p[0]), `${formatValue(p[2])} ${unit}`]) }));
       const panel = el('div', null, 'analytics-chart'); panel.append(el('h3', title, 'chart-title'));
       const plot = el('div'); panel.append(plot); chart.append(panel);

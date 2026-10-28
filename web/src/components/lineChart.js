@@ -1,3 +1,4 @@
+import { word } from '../i18n.js';
 import { showTip, hideTip, roving, clientPoint, svgPoint } from './interact.js';
 const NS = 'http://www.w3.org/2000/svg';
 const make = (tag, attrs = {}) => { const el = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value)); return el; };
@@ -54,7 +55,7 @@ export function renderLineChart(root, { series, label = 'Progress', formatValue 
   const list = document.createElement('ul');
   for (const s of series) for (const p of s.points) {
     const item = document.createElement('li');
-    item.textContent = `${s.name ? `${s.name} · ` : ''}${p[4] ?? ''}: ${p[5] ?? `${formatValue(p[2])}${unit ? ` ${unit}` : ''}`}${p[3] ? ' · PR' : ''}`;
+    item.textContent = `${s.name ? `${s.name} · ` : ''}${p[4] ?? ''}: ${p[5] ?? `${formatValue(p[2])}${unit ? ` ${unit}` : ''}`}${p[3] ? ` · ${word('PR', 'concept_peak_u')}` : ''}`;
     list.append(item);
   }
   values.append(list); root.append(values);

@@ -1,5 +1,6 @@
 // Shared hover, focus and touch behaviour: one tooltip for the whole page, delegated tooltip binding, roving keyboard focus.
 // It only shows text its callers already have; it computes nothing about training.
+import { word } from '../i18n.js';
 
 export const reducedMotion = () => Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 export const scrollBehavior = () => (reducedMotion() ? 'auto' : 'smooth');
@@ -32,7 +33,7 @@ export function showTip(content, { anchor, point, owner = anchor }) {
   if (content.title) el.append(part('div', content.title, 'tooltip-title'));
   if (content.value) {
     const line = part('div', content.value, 'tooltip-value');
-    if (content.pr) line.append(' ', part('b', 'PR', 'tooltip-pr'));
+    if (content.pr) line.append(' ', part('b', word('PR', 'concept_peak_u'), 'tooltip-pr'));
     el.append(line);
   }
   for (const entry of content.lines ?? []) {

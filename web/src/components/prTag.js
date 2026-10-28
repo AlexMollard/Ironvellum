@@ -1,4 +1,5 @@
 import { formatLoad, splitLabel } from '../format.js';
+import { word } from '../i18n.js';
 import { node } from './statCard.js';
 export function prTag(pr, unit = 'kg') {
   const parts = [splitLabel(pr.label).filter(Boolean).join(' · ')];
@@ -7,6 +8,6 @@ export function prTag(pr, unit = 'kg') {
   if (pr.durationSec != null) parts.push(`${pr.durationSec} s`);
   else if (pr.reps != null) parts.push(`× ${pr.reps}`);
   const el = node('span', null, 'chip pr-tag');
-  el.append(node('b', 'PR'), parts.filter(Boolean).join(' '));
+  el.append(node('b', word('PR', 'concept_peak_u')), parts.filter(Boolean).join(' '));
   return el;
 }

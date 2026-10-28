@@ -23,13 +23,6 @@ it('light B is the app’s light paper: every colour of the page comes from the 
   applyAppearance({mode:'dark'}); expect(root.style.getPropertyValue('--paper-vault')).toBe(tokens.dark.paper.Vault);
   for(const [name,value] of Object.entries(tokens.light.rarity)) { applyAppearance({mode:'light'}); expect(root.style.getPropertyValue(`--rarity-${name.toLowerCase()}`)).toBe(value); }
 });
-it('the menu lists every preset of the effective theme, plain and themed',()=>{
-  for(const [mode,themed] of [['dark',false],['light',false],['dark',true],['light',true]]) {
-    const menu=createAppearanceMenu({mode,themed}); const options=[...menu.querySelectorAll('select')[1].options].slice(1);
-    expect(options.map(o=>o.value)).toEqual(accents[mode].map(a=>a.id));
-    expect(options.map(o=>o.textContent)).toEqual(accents[mode].map(a=>a.name[themed?'themed':'plain'])); menu.dispose();
-  }
-});
 it('the names toggle switches the vocabulary',()=>{
   applyAppearance({mode:'dark',themed:false}); const plain=t('concept_trial_cpl');
   applyAppearance({mode:'dark',themed:true}); const themed=t('concept_trial_cpl');

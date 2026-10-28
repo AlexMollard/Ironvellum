@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { renderLineChart } from '../components/lineChart.js';
 import { renderStackedWeeks } from '../components/stackedWeeks.js';
 import { renderTrainingDays } from '../components/trainingDays.js';
@@ -17,7 +18,7 @@ export function renderTrends(root, ctx) {
   const layout = el('div', null, 'trends-layout');
   const barsAside = el('span', null, 'card-aside'), barsCard = card('Where your hard sets went', 'bars-card', barsAside); const bars = el('div', null, 'analytics-chart'); barsCard.append(bars);
   const lineCard = card('Hard sets per week', 'line-card'); const line = el('div', null, 'analytics-chart'); lineCard.append(line);
-  const activity = card('Training days', 'days-card', `${trends.daysPerWeek} a week`); const grid = el('div'); renderTrainingDays(grid, trends.days || [], snapshot.builtAtMs, snapshot.zone); activity.append(grid, el('p', `Longest streak: ${snapshot.profile.longestStreakDays} days · now: ${snapshot.profile.streakDays}`, 'muted'));
+  const activity = card('Training days', 'days-card', `${trends.daysPerWeek} a week`); const grid = el('div'); renderTrainingDays(grid, trends.days || [], snapshot.builtAtMs, snapshot.zone); activity.append(grid, el('p', `Longest ${t('concept_oath_s')}: ${snapshot.profile.longestStreakDays} days · now: ${snapshot.profile.streakDays}`, 'muted'));
   const muscles = card(null, 'trend-muscles'); renderMusclePanel(muscles, snapshot);
   layout.append(barsCard, lineCard, activity, muscles); root.append(layout);
   function draw() {

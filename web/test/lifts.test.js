@@ -4,7 +4,7 @@ import { formatPeak } from '../src/components/variationTable.js';
 
 vi.mock('../src/components/artImg.js', () => ({ artImg: (name, art) => { const e = document.createElement('span'); e.dataset.art = art || 'placeholder'; return e; } }));
 vi.mock('../src/components/bodyMap.js', () => ({ renderBodyMap: (el, opts) => { el.dataset.figure = opts.figure; } }));
-vi.mock('../src/i18n.js', () => ({ t: () => 'One workout written' }));
+vi.mock('../src/i18n.js', () => ({ t: key => key.startsWith('concept_trial') ? 'workouts' : 'One workout written', word: plain => plain }));
 const now = Date.UTC(2026, 9, 28);
 const variation = { key: 'weighted', label: 'Weighted', chartMetric: 'e1rm', chartUnit: 'kg', sessions: 2, sets: 2, lastMs: now, perWeek: 1.5, volumeKg: 200, peak: { reps: 6, weightKg: 12.5, e1rmKg: 40 }, heaviest: { reps: 5, weightKg: 15 }, setRecords: [{ position: 0, reps: 6, weightKg: 12.5 }], points: [[now - 86400000, 1, 30, 0], [now, 2, 40, 1]] };
 const lift = { name: 'Pull-up', art: 'pull', metric: 'reps', byE1rm: true, muscleSummary: 'Lats', muscleLevels: { LATS: 3 }, variations: [variation] };
