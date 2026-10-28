@@ -98,10 +98,22 @@ describe('components', () => {
     expect(root.textContent).toContain('80 kg'); expect(root.textContent).toContain('105 kg');
     expect(root.querySelectorAll('polygon.chart-pr')).toHaveLength(1); expect(root.querySelectorAll('circle')).toHaveLength(2); expect(root.querySelector('details')).toBeNull();
   });
-  it('a deed seal centres its stroked glyph', () => {
+  it('a deed seal draws like the app: metal outline, rim and a glyph at the tier size', () => {
     const holder = document.createElement('span'); seal(holder, { rarity: 'Rare', category: 'Volume' });
-    expect(holder.querySelector('g').getAttribute('transform')).toBe('translate(32 32) scale(1) translate(-12 -12)');
-    expect(holder.querySelectorAll('.seal-glyph')).toHaveLength(catalogue.glyphs.Volume.length);
+    const glyph = holder.querySelector('.seal-glyph');
+    expect(glyph.getAttribute('transform')).toBe('translate(18 18) scale(1.1666666666666667)');
+    expect(glyph.querySelectorAll('path')).toHaveLength(catalogue.glyphs.Volume.length);
+    expect(holder.querySelectorAll('linearGradient stop')).toHaveLength(3);
+    expect(holder.querySelectorAll('polygon')).toHaveLength(4);
+  });
+  it('an unknown category falls back to the Activities glyph, as in the app', () => {
+    const holder = document.createElement('span'); seal(holder, { rarity: 'Common', category: 'Nope' });
+    expect(holder.querySelectorAll('.seal-glyph path')).toHaveLength(catalogue.glyphs.Activities.length);
+  });
+  it('a locked seal takes the muted ink and no metal gradient', () => {
+    const holder = document.createElement('span'); seal(holder, { rarity: 'Epic', category: 'Level', earned: false });
+    expect(holder.querySelector('linearGradient')).toBeNull();
+    expect(holder.querySelector('.deed-seal').classList.contains('unearned')).toBe(true);
   });
 });
 

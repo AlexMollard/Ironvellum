@@ -9,22 +9,23 @@ import {plate} from './components/plate.js';
 import {t} from './i18n.js';
 import {dayKey,weekPassed,node} from './components/statCard.js';
 import {formatDay,formatClock} from './format.js';
+import {createElement,LayoutDashboard,CalendarDays,Dumbbell,ChartLine} from 'lucide';
 
-const NAV=[['/','Overview','▣'],['/workouts','Workouts','☰'],['/lifts','Lifts','↗'],['/trends','Trends','▁▃▅']];
+const NAV=[['/','Overview',LayoutDashboard],['/workouts','Workouts',CalendarDays],['/lifts','Lifts',Dumbbell],['/trends','Trends',ChartLine]];
 export function statsAsOf(snapshot,nowMs=Date.now()) {
   const day=dayKey(snapshot.builtAtMs,snapshot.zone);
   return `Stats as of ${day===dayKey(nowMs,snapshot.zone)?'today':formatDay(day)} ${formatClock(snapshot.builtAtMs,snapshot.zone)}`;
 }
 function credit(footer) {
   const link=(text,href)=>{const a=node('a',text);a.href=href;return a;};
-  footer.append('Exercise art: Open Exercise Art · CC BY-SA 4.0 · Colours changed. Body map: ',link('MIT licence','licenses/MIT-react-native-body-highlighter.txt'),'. Type: Chakra Petch, ',link('SIL OFL','licenses/OFL-ChakraPetch.txt'),'.');
+  footer.append('Exercise art: Open Exercise Art · CC BY-SA 4.0 · Colours changed. Body map: ',link('MIT licence','licenses/MIT-react-native-body-highlighter.txt'),'. Type: Chakra Petch, ',link('SIL OFL','licenses/OFL-ChakraPetch.txt'),'. Icons: Lucide, ',link('ISC licence','licenses/ISC-lucide.txt'),'.');
 }
 export function renderShell(root, {source,snapshot,onSignOut,nowMs=Date.now()}) {
   root.replaceChildren(); const frame=node('div',null,'shell');
   const sidebar=node('aside',null,'sidebar');
   const brand=node('strong','Ironvellum','brand');brand.append(node('span',' WEB','brand-web'));sidebar.append(brand);
   const nav=node('nav');nav.setAttribute('aria-label','Main navigation');
-  for(const [path,label,glyph] of NAV) {const a=node('a');a.href=`#${path}`;a.dataset.path=path;a.append(node('span',glyph,'nav-icon'),node('span',label,'nav-label'));if(path==='/workouts') a.dataset.workouts='true';nav.append(a);} sidebar.append(nav);
+  for(const [path,label,icon] of NAV) {const a=node('a');a.href=`#${path}`;a.dataset.path=path;const mark=node('span',null,'nav-icon');mark.append(createElement(icon,{width:18,height:18,'stroke-width':1.75,'aria-hidden':'true'}));a.append(mark,node('span',label,'nav-label'));if(path==='/workouts') a.dataset.workouts='true';nav.append(a);} sidebar.append(nav);
   const user=node('div',null,'sidebar-user');
   const logout=node('button','Sign out','link-button');logout.type='button';logout.addEventListener('click',onSignOut);
   if(snapshot?.profile) {const who=node('div',null,'user-line');const emblem=node('span');plate(emblem,{name:snapshot.profile.name,crestId:snapshot.profile.crestId});who.append(emblem);const text=node('span',null,'user-name');text.append(snapshot.profile.name||'',node('br'),node('span',`Level ${snapshot.profile.level}`,'muted'));who.append(text);user.append(who);}

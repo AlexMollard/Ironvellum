@@ -86,7 +86,8 @@ button { border: 1px solid var(--paper-rune); border-radius: 4px; background: tr
 .sidebar nav a { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; margin: 2px 0; border-left: 3px solid transparent; font-size: 15px; text-decoration: none; color: var(--paper-ink-muted); }
 .sidebar nav a:hover { color: var(--paper-ink); }
 .sidebar nav a[aria-current="page"] { border-left-color: var(--fill); background: var(--wash); color: var(--paper-ink); font-weight: 600; }
-.nav-icon { width: 22px; text-align: center; font-size: 13px; color: var(--faint); white-space: nowrap; }
+.nav-icon { width: 22px; display: inline-flex; justify-content: center; color: var(--faint); }
+.nav-icon svg { display: block; }
 nav a[aria-current="page"] .nav-icon { color: var(--text); }
 .sidebar-user { margin-top: auto; padding: 14px 20px 0; border-top: 1px solid var(--paper-rune); }
 .user-line { display: flex; align-items: center; gap: 10px; }
@@ -118,15 +119,6 @@ main > footer { padding: 0 32px 18px; font-size: 11px; }
 .exercise-art { display: inline-grid; place-items: center; width: 4rem; height: 4rem; background: currentColor; mask-size: contain; mask-position: center; mask-repeat: no-repeat; -webkit-mask-size: contain; -webkit-mask-position: center; -webkit-mask-repeat: no-repeat; }
 .exercise-art-placeholder { background: var(--tint); color: var(--text); border-radius: 4px; mask: none; font-weight: 600; }
 .deed-seal, .crest-mark { width: 40px; height: 40px; }
-.deed-seal[data-rarity="Common"], .deed-seal[data-rarity="COMMON"] { color: var(--rarity-common); }
-.deed-seal[data-rarity="Rare"], .deed-seal[data-rarity="RARE"] { color: var(--rarity-rare); }
-.deed-seal[data-rarity="Epic"], .deed-seal[data-rarity="EPIC"] { color: var(--rarity-epic); }
-.deed-seal[data-rarity="Masterwork"], .deed-seal[data-rarity="MASTERWORK"] { color: var(--rarity-masterwork); }
-.seal-outer { fill: currentColor; }
-.seal-rim { fill: var(--paper-vault); }
-.seal-core { fill: var(--secondary); }
-.seal-glyph { fill: none; stroke: var(--paper-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.deed-seal.unearned { opacity: .45; }
 
 /* body map */
 .body-map-pair { display: flex; justify-content: center; gap: 8px; height: var(--map-h, 200px); }
