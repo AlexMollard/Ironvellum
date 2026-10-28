@@ -12,5 +12,7 @@ it('a production build contains no test fixture, no screenshot overlay and no fi
     const text=walk(out).map(path=>readFileSync(path,'utf8')).join('\n');
     for(const marker of ['Fictional','Synthetic example deed','screenshotOverlay','Example data is unavailable','fixture-14']) expect(text).not.toContain(marker);
     expect(text).toContain('Example lifter');
+    const html=readFileSync(join(out,'index.html'),'utf8');
+    expect(html).toContain("style-src 'self'"); expect(html).not.toContain('unsafe-inline');
   } finally {rmSync(out,{recursive:true,force:true});}
 },120000);
