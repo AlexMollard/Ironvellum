@@ -114,8 +114,16 @@ enum class ModifierFlag {
     UNKNOWN,
 }
 
-/** One chip of the modifier picker: the token, whether it is set, and, if it is set though not offered, why it is flagged. */
-data class ModifierChip(val token: String, val selected: Boolean, val flag: ModifierFlag = ModifierFlag.NONE)
+/**
+ * One chip of the modifier picker: the token, whether it is set, and, if it is set though not offered, why it is flagged.
+ * [effect] is the arrow it wears: whether the token makes this exercise harder or easier (NONE when neutral).
+ */
+data class ModifierChip(
+    val token: String,
+    val selected: Boolean,
+    val flag: ModifierFlag = ModifierFlag.NONE,
+    val effect: ModifierEffect.Effect = ModifierEffect.Effect.NONE,
+)
 
 /**
  * The chips the one modifier picker shows - the live trial's dialog and the rite editor alike - for a movement
@@ -123,17 +131,19 @@ data class ModifierChip(val token: String, val selected: Boolean, val flag: Modi
  *
  * Every offered token first, set or not; then each token already set that is not offered, set and flagged so
  * it can be removed but is never dropped behind the lifter's back. "weighted" has no chip: the load sets it
- * ([modifiersFollowingLoad]).
+ * ([modifiersFollowingLoad]). With an [exerciseName] each chip also carries its [ModifierEffect]; without one it is NONE.
  */
-fun modifierChips(offered: List<String>, current: String): List<ModifierChip> {
+fun modifierChips(offered: List<String>, current: String, exerciseName: String? = null): List<ModifierChip> {
     val tokens = modifierTokens(current)
-    val offeredChips = offered.map { token -> ModifierChip(token, tokens.any { it.equals(token, ignoreCase = true) }) }
+    fun effect(token: String) = if (exerciseName == null) ModifierEffect.Effect.NONE else ModifierEffect.of(exerciseName, token)
+    val offeredChips = offered.map { token -> ModifierChip(token, tokens.any { it.equals(token, ignoreCase = true) }, effect = effect(token)) }
     val strays = tokens
         .filter { token -> !token.equals(WEIGHTED_MODIFIER, ignoreCase = true) && offered.none { it.equals(token, ignoreCase = true) } }
         .map { token ->
             ModifierChip(
                 token, true,
                 if (MovementDifficulty.pricesModifier(token)) ModifierFlag.NOT_APPLICABLE else ModifierFlag.UNKNOWN,
+                effect(token),
             )
         }
     return offeredChips + strays

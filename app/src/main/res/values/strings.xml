@@ -3837,6 +3837,10 @@
     <string name="modchips_state_set">set</string>
     <!-- Screen-reader state of a modifier chip that is off. -->
     <string name="modchips_state_not_set">not set</string>
+    <!-- Screen-reader suffix of a modifier chip that makes this exercise harder; the chip wears an up arrow. -->
+    <string name="modchips_effect_harder">harder</string>
+    <!-- Screen-reader suffix of a modifier chip that makes this exercise easier; the chip wears a down arrow. -->
+    <string name="modchips_effect_easier">easier</string>
     <!-- Back chip at the right of every pushed screen header. Keep it short and upper case. -->
     <string name="pushedheader_back_chip">BACK</string>
     <!-- Screen-reader click label of a settings hub row. %1$s is the row's label. -->

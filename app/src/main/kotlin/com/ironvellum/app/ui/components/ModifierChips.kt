@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.ModifierChip
+import com.ironvellum.app.domain.ModifierEffect.Effect
 import com.ironvellum.app.domain.ModifierFlag
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -88,6 +94,12 @@ private fun ModifierChipCell(chip: ModifierChip, modifier: Modifier, onToggle: (
         on -> stringResource(R.string.modchips_state_set)
         else -> stringResource(R.string.modchips_state_not_set)
     }
+    // The arrow is decorative: what it means is read out as the last word of the chip.
+    val effect = when (chip.effect) {
+        Effect.HARDER -> stringResource(R.string.modchips_effect_harder)
+        Effect.EASIER -> stringResource(R.string.modchips_effect_easier)
+        Effect.NONE -> null
+    }
     Box(
         modifier
             .background(
@@ -107,26 +119,40 @@ private fun ModifierChipCell(chip: ModifierChip, modifier: Modifier, onToggle: (
                 shape,
                 1.dp,
             )
-            .semantics { contentDescription = "${chip.token}, $state" }
+            .semantics { contentDescription = listOfNotNull(chip.token, effect, state).joinToString(", ") }
             .clickable(role = Role.Button, onClickLabel = stringResource(if (on) R.string.modchips_remove_label else R.string.modchips_set_label, chip.token)) { onToggle(chip.token) }
             .padding(vertical = 8.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         // Centred and never wrapped: "hold seconds" wrapped, so it measured the full cell and sat start-aligned.
         // At 360dp or a large font it shrinks to fit.
-        Text(
-            chip.token,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-            autoSize = TextAutoSize.StepBased(
-                minFontSize = 8.sp,
-                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
-            ),
-        )
+        val ink = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Text(
+                chip.token,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = ink,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 8.sp,
+                    maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                ),
+                // With no arrow the text keeps the whole cell, as before.
+                modifier = if (effect == null) Modifier.weight(1f) else Modifier.weight(1f, fill = false),
+            )
+            if (effect != null) {
+                // Up or down by shape, so it does not rest on colour; 14dp is shorter than the label line, so the chip keeps its height.
+                Icon(
+                    if (chip.effect == Effect.HARDER) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
+                    contentDescription = null,
+                    tint = ink,
+                    modifier = Modifier.padding(start = 2.dp).size(14.dp),
+                )
+            }
+        }
     }
 }

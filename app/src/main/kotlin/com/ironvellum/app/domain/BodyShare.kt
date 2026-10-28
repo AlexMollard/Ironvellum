@@ -180,7 +180,7 @@ object BodyShare {
      * puts more on the hands, hands up ("incline") less, both cancel. An inverted row is the same lever read the
      * other way. A rear foot up loads the front leg a little more. Everything else, deficit included, leaves it.
      */
-    private fun modifierFactor(exerciseName: String, modifiers: String): Double {
+    internal fun modifierFactor(exerciseName: String, modifiers: String): Double {
         val words = Regex("[a-z]+").findAll(modifiers.lowercase()).map { it.value }.toSet()
         if (words.isEmpty()) return 1.0
         val n = key(exerciseName)

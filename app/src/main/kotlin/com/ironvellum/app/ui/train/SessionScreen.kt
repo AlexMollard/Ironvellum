@@ -4454,7 +4454,7 @@ private fun ModifierPickerDialog(
                 }
                 Spacer(Modifier.height(10.dp))
                 ModifierChipGrid(
-                    chips = modifierChips(applicable, picked),
+                    chips = modifierChips(applicable, picked, exerciseName),
                     onToggle = { picked = toggleModifier(picked, it) },
                 )
             }

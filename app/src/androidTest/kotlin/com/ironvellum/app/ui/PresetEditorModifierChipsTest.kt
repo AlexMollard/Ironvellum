@@ -161,7 +161,7 @@ class PresetEditorModifierChipsTest {
             // Tap the name itself: the merged row's centre can land on its separate sets action.
             compose.onNodeWithText("Pull-up", useUnmergedTree = true)
                 .performScrollTo().performTouchInput { click() }
-            compose.onNodeWithContentDescription("archer, not set").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("archer, harder, not set").performScrollTo().performClick()
             val prompt = "Archer Pull-up is its own exercise, with its own art and form guide. Switch to it?"
             compose.onNodeWithText(prompt).assertExists()
             val edited = vm.ui.value.entries.toList()

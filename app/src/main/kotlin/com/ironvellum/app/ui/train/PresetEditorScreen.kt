@@ -1124,7 +1124,7 @@ private fun EntryItem(
         }
         // The same chips the live trial offers: only what fits the movement, "weighted" left to the load, and a
         // token already on the entry that does not fit shown flagged so it can be removed, never dropped.
-        val chips = modifierChips(offeredModifiers, entry.modifiers)
+        val chips = modifierChips(offeredModifiers, entry.modifiers, entry.exerciseName)
         val weightedByLoad = modifierTokens(entry.modifiers).any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
         if (chips.isNotEmpty()) {
             Text(
