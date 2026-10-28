@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.ui.components.ContentMaxWidth
 import com.ironvellum.app.ui.components.LocalOpenWorkout
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.onboarding.OnboardingScreen
@@ -265,7 +266,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
     )
 
     Box(Modifier.fillMaxSize().background(IronvellumColors.Abyss), contentAlignment = Alignment.TopCenter) {
-        Box((if (expandedRoute) Modifier else Modifier.widthIn(max = 600.dp)).fillMaxSize().testTag("rootContent")) {
+        Box((if (expandedRoute) Modifier else Modifier.widthIn(max = ContentMaxWidth)).fillMaxSize().testTag("rootContent")) {
         // Gate render, not a route: onboarding has no back stack, no bottom
         // bar and nothing to navigate back to.
         if (needsSetup == true) {
@@ -365,7 +366,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             bottomBar = {
                 if (currentRoute in destinations.map { it.route }) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                        Box(Modifier.widthIn(max = 600.dp).fillMaxWidth()) {
+                        Box(Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth()) {
                             IronvellumBottomBar(destinations, currentRoute, inboxUnread, navController)
                         }
                     }

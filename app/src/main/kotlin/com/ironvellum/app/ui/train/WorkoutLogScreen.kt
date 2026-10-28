@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.train
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +36,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +92,37 @@ data class WorkoutLogUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
+/**
+ * Owns the store the History detail pane's view model lives in. Each workout opened beside the list used to leave
+ * its own view model in the screen's store until the screen closed; opening another now clears the last one.
+ */
+internal class DetailPaneStore : ViewModel(), ViewModelStoreOwner {
+    override val viewModelStore = ViewModelStore()
+    private var openId: Long? = null
+
+    fun open(sessionId: Long): DetailPaneStore {
+        if (openId != null && openId != sessionId) viewModelStore.clear()
+        openId = sessionId
+        return this
+    }
+
+    override fun onCleared() = viewModelStore.clear()
+}
+
+/** One workout's detail, in the pane store so only the open one has a view model. */
+@Composable
+private fun OpenedWorkout(
+    sessionId: Long,
+    onBack: () -> Unit,
+    detailViewModel: @Composable (Long) -> WorkoutDetailViewModel,
+) {
+    val store: DetailPaneStore = viewModel(key = "workout-detail-pane")
+    remember(sessionId) { store.open(sessionId) }
+    CompositionLocalProvider(LocalViewModelStoreOwner provides store) {
+        WorkoutDetailScreen(sessionId = sessionId, onBack = onBack, viewModel = detailViewModel(sessionId))
+    }
+}
+
 /** A trial is deleted from its own detail screen, so this only observes the history. */
 class WorkoutLogViewModel(repo: Repository) : ViewModel() {
     val ui: StateFlow<WorkoutLogUi> = combine(
@@ -105,6 +142,8 @@ fun WorkoutLogScreen(
     onBack: () -> Unit,
     viewModel: WorkoutLogViewModel =
         viewModel(factory = viewModelFactory { initializer { WorkoutLogViewModel(ironvellumRepository()) } }),
+    /** Seam for tests: the detail's view model for a workout; by default the pane store's own. */
+    detailViewModel: @Composable (Long) -> WorkoutDetailViewModel = { rememberWorkoutDetailViewModel(it) },
 ) {
     val density = LocalDensity.current
     val expanded = with(density) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
@@ -121,13 +160,24 @@ fun WorkoutLogScreen(
                 )
             }
             Column(Modifier.weight(1f)) {
-                selectedSessionId?.let { sessionId ->
-                    WorkoutDetailScreen(sessionId = sessionId, onBack = { selectedSessionId = null })
+                val sessionId = selectedSessionId
+                if (sessionId != null) {
+                    OpenedWorkout(sessionId, onBack = { selectedSessionId = null }, detailViewModel)
+                } else {
+                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            UiText.themed(R.string.workoutlog_detail_placeholder, R.string.workoutlog_detail_placeholder__t).asString(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = IronvellumColors.InkMuted,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.testTag("workoutLogDetailPlaceholder"),
+                        )
+                    }
                 }
             }
         }
     } else if (selectedSessionId != null) {
-        WorkoutDetailScreen(sessionId = selectedSessionId!!, onBack = { selectedSessionId = null })
+        OpenedWorkout(selectedSessionId!!, onBack = { selectedSessionId = null }, detailViewModel)
     } else {
         WorkoutLogList(onOpenWorkout = onOpenWorkout, onBack = onBack, viewModel = viewModel)
     }

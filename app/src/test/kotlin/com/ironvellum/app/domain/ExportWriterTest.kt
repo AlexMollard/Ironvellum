@@ -306,6 +306,24 @@ class ExportWriterTest {
             assertTrue(json.contains("\"appearance\\\"\\\\\\n\""))
             assertTrue(json.contains("\"key\\t\\\"\":\"s:line\\nslash\\\\quote\\\"control\\u0001\""))
             assertEquals(settings, ExportReader.read(json).getOrThrow().settings)
+            assertEquals(ExportWriter.SETTINGS_VERSION, ExportReader.read(json).getOrThrow().settingsVersion)
         }
+    }
+
+    @Test
+    fun `an archive without settings reads as settings version 0`() {
+        val json = ExportWriter.write(
+            profile = PlayerProfile(),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = emptyList(),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 1,
+        )
+        assertFalse(json.contains("settingsVersion"))
+        assertEquals(0, ExportReader.read(json).getOrThrow().settingsVersion)
     }
 }

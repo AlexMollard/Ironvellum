@@ -603,6 +603,7 @@ fun PresetEditorScreen(
     twinPrompt?.let { (_, entry, res) ->
         TwinSwitchDialog(
             twinName = res.twin.dedicated,
+            canSwitch = ui.exercises.any { it.name.equals(res.twin.dedicated, ignoreCase = true) },
             onSwitch = viewModel::switchTwin,
             onKeep = {
                 viewModel.dismissTwin()

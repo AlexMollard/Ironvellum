@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.Crests
@@ -99,13 +98,12 @@ internal fun InscribedOverlay(
     wornCrestId: String?,
     onWearCrest: (String) -> Unit,
 ) {
-    Dialog(
+    CappedDialog(
         onDismissRequest = onDone,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Box(
             Modifier
-                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss),
         ) {

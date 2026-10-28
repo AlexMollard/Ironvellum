@@ -44,6 +44,8 @@ object ExportReader {
          */
         val deviceDataOmitted: Boolean = false,
         val settings: Map<String, Map<String, String>>? = null,
+        /** 0 when the archive predates the field. */
+        val settingsVersion: Int = 0,
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -76,6 +78,7 @@ object ExportReader {
             relics = (root.arr("relics") ?: emptyList()).map { readRelic(it as Obj) },
             deviceDataOmitted = deviceDataOmitted,
             settings = root.settings(),
+            settingsVersion = root.int("settingsVersion") ?: 0,
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.

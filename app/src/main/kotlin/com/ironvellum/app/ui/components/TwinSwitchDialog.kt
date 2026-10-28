@@ -20,6 +20,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 fun TwinSwitchDialog(
     twinName: String,
     notes: List<String> = emptyList(),
+    /** False when the dedicated exercise is not in the catalogue, so there is nothing to switch to. */
+    canSwitch: Boolean = true,
     onSwitch: () -> Unit,
     onKeep: () -> Unit,
     onDismiss: () -> Unit,
@@ -38,7 +40,7 @@ fun TwinSwitchDialog(
                 }
             }
         },
-        confirmButton = { IronvellumButton(stringResource(R.string.twin_switch_button), onClick = onSwitch) },
+        confirmButton = { IronvellumButton(stringResource(R.string.twin_switch_button), enabled = canSwitch, onClick = onSwitch) },
         dismissButton = { IronvellumButton(stringResource(R.string.twin_keep_button), quiet = true, onClick = onKeep) },
     )
 }

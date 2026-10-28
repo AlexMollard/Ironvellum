@@ -14,6 +14,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
@@ -31,7 +33,12 @@ import com.ironvellum.app.ui.train.WorkoutDetailViewModel
 import com.ironvellum.app.ui.train.WorkoutLogViewModel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.ui.train.DetailPaneStore
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -75,11 +82,6 @@ class WorkoutHistoryPaneTest {
             logViewModel = register("test-workout-log", WorkoutLogViewModel::class.java) {
                 WorkoutLogViewModel(repo)
             }
-            ids.forEach { id ->
-                register("workout-detail-$id", WorkoutDetailViewModel::class.java) {
-                    WorkoutDetailViewModel(repo, id, context.applicationContext)
-                }
-            }
         }
     }
 
@@ -103,6 +105,15 @@ class WorkoutHistoryPaneTest {
                             onOpenWorkout = { openedId = it },
                             onBack = { leftLog = true },
                             viewModel = logViewModel,
+                            // Inside the pane's own store, over the test database.
+                            detailViewModel = { id ->
+                                viewModel(
+                                    key = "workout-detail-$id",
+                                    factory = viewModelFactory {
+                                        initializer { WorkoutDetailViewModel(repo, id, context.applicationContext) }
+                                    },
+                                )
+                            },
                         )
                     }
                 }
@@ -139,6 +150,44 @@ class WorkoutHistoryPaneTest {
         compose.onNodeWithText(names[0]).assertIsDisplayed()
         assertEquals(null, openedId)
         assertEquals(false, leftLog)
+    }
+
+    @Test fun emptyDetailPaneShowsAPlaceholderUntilAWorkoutIsOpened() {
+        show()
+        waitForCount(names[0], 1)
+        compose.onNodeWithTag("workoutLogDetailPlaceholder").assertIsDisplayed()
+        val autoAdvance = compose.mainClock.autoAdvance
+        ShotRecorder.take(compose, "history-detail-placeholder")
+        compose.mainClock.autoAdvance = autoAdvance
+        compose.onNodeWithText(names[0]).performClick()
+        waitForCount(names[0], 2)
+        compose.onAllNodesWithTag("workoutLogDetailPlaceholder").assertCountEquals(0)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        waitForCount(names[0], 1)
+        compose.onNodeWithTag("workoutLogDetailPlaceholder").assertIsDisplayed()
+    }
+
+    @Test fun openingAnotherWorkoutClearsTheLastDetailViewModel() {
+        show()
+        waitForCount(names[0], 1)
+        compose.onNodeWithText(names[0]).performClick()
+        waitForCount(names[0], 2)
+        compose.onNodeWithText(names[1]).performClick()
+        waitForCount(names[1], 2)
+        compose.runOnIdle {
+            val store = ViewModelProvider(compose.activity)["workout-detail-pane", DetailPaneStore::class.java]
+            val absent = object : ViewModelProvider.Factory {
+                override fun <V : ViewModel> create(modelClass: Class<V>): V = throw IllegalStateException("not held")
+            }
+            // The open workout's view model is held; the earlier one was cleared, not left piling up.
+            ViewModelProvider(store, absent)["workout-detail-${ids[1]}", WorkoutDetailViewModel::class.java]
+            try {
+                ViewModelProvider(store, absent)["workout-detail-${ids[0]}", WorkoutDetailViewModel::class.java]
+                fail("the first workout's view model should have been cleared")
+            } catch (expected: IllegalStateException) {
+                assertEquals("not held", expected.message)
+            }
+        }
     }
 
     @Test fun narrowSelectionUsesExistingNavigationCallback() {

@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -115,7 +115,7 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
     val ui = viewModel.ui.collectAsStateWithLifecycle().value
     BackHandler(onBack = onDismiss)
     val moved = ui.result
-    var confirming by remember { mutableStateOf(false) }
+    var confirming by rememberSaveable { mutableStateOf(false) }
     // After a run the live list is empty; show what was moved.
     val shown = moved?.groups ?: groups
     val shownRoutines = moved?.routines ?: routines

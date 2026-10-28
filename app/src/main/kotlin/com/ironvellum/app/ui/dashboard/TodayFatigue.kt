@@ -241,7 +241,8 @@ internal fun FatigueRestPanel(
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (doLabel != null) IronvellumButton(doLabel, onDo, Modifier.weight(1f))
-            IronvellumButton(stringResource(R.string.fatigue_rest_rest_button), onRest, quiet = true)
+            // The only button takes the whole row, as a pair shares it.
+            IronvellumButton(stringResource(R.string.fatigue_rest_rest_button), onRest, if (doLabel == null) Modifier.weight(1f) else Modifier, quiet = true)
         }
     }
 }

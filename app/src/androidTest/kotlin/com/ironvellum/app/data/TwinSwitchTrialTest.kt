@@ -13,6 +13,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -20,17 +22,22 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
+import com.ironvellum.app.domain.BlockKey
 import com.ironvellum.app.domain.blockKey
 import com.ironvellum.app.ui.ShotRecorder
+import com.ironvellum.app.ui.components.ExercisePickerViewModel
 import com.ironvellum.app.ui.program.MuscleFatigueViewModel
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.ui.train.SessionViewModel
+import com.ironvellum.app.ui.train.TwinTrialPrompt
 import org.junit.Rule
 import org.junit.Assert.assertFalse
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -171,6 +178,52 @@ class TwinSwitchTrialRecreationTest {
         context.deleteDatabase(DB_NAME)
         context.deleteSharedPreferences("twin_recreation_trial_prefs")
         context.deleteSharedPreferences("twin_recreation_trial")
+    }
+
+    @Test fun addExerciseOpensThePickerWhileTheFatigueReportIsStillLoading() {
+        // A report that never arrives: the tap must still open the (unmarked) picker, not be swallowed.
+        owner.viewModelStore.clear()
+        ViewModelProvider(owner, viewModelFactory {
+            initializer { MuscleFatigueViewModel(repo, experience = flow { awaitCancellation() }) }
+        })[MuscleFatigueViewModel::class.java]
+        ViewModelProvider(owner, viewModelFactory {
+            initializer { ExercisePickerViewModel(repo, context.applicationContext) }
+        })["exercise_picker", ExercisePickerViewModel::class.java]
+        show()
+        compose.onNodeWithText(context.getString(R.string.session_end_add_exercise)).performScrollTo().performClick()
+        awaitText(context.getString(R.string.picker_title_default))
+    }
+
+    @Test fun theOpenTwinPromptComesBackFromSavedStateAfterProcessDeath() {
+        // View models made here live in their own store, cleared at the end: a leftover one would keep reading
+        // the database after tearDown closes it and fail whichever test runs next.
+        val store = ViewModelStore()
+        var made = 0
+        fun session(saved: SavedStateHandle) = ViewModelProvider(
+            object : ViewModelStoreOwner { override val viewModelStore = store },
+            viewModelFactory { initializer { SessionViewModel(repo, context, sessionId, saved) } },
+        )["saved-state-${made++}", SessionViewModel::class.java]
+        try {
+        val handle = SavedStateHandle()
+        val first = session(handle)
+        first.twinPrompt = TwinTrialPrompt(
+            block = BlockKey(2, pullUp), baseName = "Pull-up", twinId = weightedPullUp, twinName = "Weighted Pull-up",
+            modifiers = "", keepKey = "pull-up|weighted", split = true, fullSuperset = false,
+        )
+        // What a new process is handed: only what the handle put into the saved state.
+        val restoredHandle = SavedStateHandle(handle.keys().associateWith { handle.get<Any>(it) })
+        val restored = session(restoredHandle)
+        val prompt = restored.twinPrompt!!
+        assertEquals(BlockKey(2, pullUp), prompt.block)
+        assertEquals(weightedPullUp, prompt.twinId)
+        assertEquals("pull-up|weighted", prompt.keepKey)
+        assertTrue(prompt.split)
+        restored.takeTwinPrompt()
+        // Answered: the next process is not asked again.
+        assertEquals(null, session(SavedStateHandle(restoredHandle.keys().associateWith { restoredHandle.get<Any>(it) })).twinPrompt)
+        } finally {
+            store.clear()
+        }
     }
 
     private fun show() {

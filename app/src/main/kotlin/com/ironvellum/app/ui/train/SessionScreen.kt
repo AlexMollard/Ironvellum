@@ -18,6 +18,9 @@ import com.ironvellum.app.data.Units
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.SpanStyle
@@ -269,13 +272,23 @@ data class SessionUi(
     val sets: List<SessionSet> = emptyList(),
 )
 
+private const val TWIN_PROMPT_KEY = "twin_prompt"
+
 class SessionViewModel(
     private val repo: Repository,
     private val appContext: Context,
     private val sessionId: Long,
+    private val savedState: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    // Keep both the outstanding decision and its observation baseline across recreation.
-    internal var twinPrompt by mutableStateOf<TwinTrialPrompt?>(null)
+    // Keep both the outstanding decision and its observation baseline across recreation. The decision also
+    // lives in the saved state, so a process death while Switch / Keep as is waits does not lose the question.
+    private var openTwinPrompt by mutableStateOf(savedState.get<Bundle>(TWIN_PROMPT_KEY)?.let(TwinTrialPrompt::fromBundle))
+    internal var twinPrompt: TwinTrialPrompt?
+        get() = openTwinPrompt
+        set(value) {
+            openTwinPrompt = value
+            savedState[TWIN_PROMPT_KEY] = value?.toBundle()
+        }
     internal val seenTwinModifiers = mutableMapOf<BlockKey, String>()
 
     internal fun takeTwinPrompt(): TwinTrialPrompt? {
@@ -782,7 +795,7 @@ private fun rememberSessionViewModel(sessionId: Long): SessionViewModel {
     val appContext = LocalContext.current.applicationContext
     return viewModel(
         key = "session-$sessionId",
-        factory = viewModelFactory { initializer { SessionViewModel(ironvellumRepository(), appContext, sessionId) } },
+        factory = viewModelFactory { initializer { SessionViewModel(ironvellumRepository(), appContext, sessionId, createSavedStateHandle()) } },
     )
 }
 
@@ -825,8 +838,9 @@ fun SessionScreen(
     val lastTops by viewModel.lastTops.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
     val clocks by viewModel.clocks.collectAsStateWithLifecycle()
-    // Start observing before the picker opens, so its first frame already has fatigue marks.
-    val pickerFatigueReport = rememberFatigueReport()
+    // Start observing before the picker opens, so its first frame already has fatigue marks. Only with advice on:
+    // with it off nothing reads the report, so nothing should keep computing it all session.
+    val pickerFatigueReport = if (FatigueAdviceSetting.enabled) rememberFatigueReport() else null
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var confirmReopen by remember { mutableStateOf(false) }
@@ -1852,6 +1866,8 @@ fun SessionScreen(
     twinPrompt?.let { prompt ->
         TwinSwitchDialog(
             twinName = prompt.twinName,
+            // After a restore the catalogue may no longer hold it: Keep as is still answers, Switch cannot.
+            canSwitch = exercises.any { it.id == prompt.twinId },
             notes = buildList {
                 if (prompt.split) add(stringResource(R.string.twin_switch_split_note, prompt.baseName))
                 if (prompt.split && prompt.fullSuperset) add(stringResource(R.string.twin_switch_unlink_note))
@@ -1902,11 +1918,8 @@ fun SessionScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showExercisePicker && FatigueAdviceSetting.enabled && pickerFatigueReport == null) {
-        showExercisePicker = false
-    }
-    if (showExercisePicker && (!FatigueAdviceSetting.enabled || pickerFatigueReport != null)) {
-        // Wait for the first report when advice is on rather than opening an unmarked list.
+    if (showExercisePicker) {
+        // Opens at once; while the first report is still loading the list has no marks, and they appear when it lands.
         val fatigue = remember(pickerFatigueReport, FatigueAdviceSetting.enabled) {
             if (FatigueAdviceSetting.enabled && pickerFatigueReport != null) {
                 Muscle.entries.associateWith { pickerFatigueReport.levelAt(it, pickerFatigueReport.nowMs) }
@@ -2125,7 +2138,35 @@ internal class TwinTrialPrompt(
     val keepKey: String,
     val split: Boolean,
     val fullSuperset: Boolean,
-)
+) {
+    /** What the saved state keeps: a [Bundle] of primitives, so it survives process death. */
+    fun toBundle(): Bundle = Bundle().apply {
+        putInt("position", block.position)
+        putLong("exerciseId", block.exerciseId)
+        putString("baseName", baseName)
+        putLong("twinId", twinId)
+        putString("twinName", twinName)
+        putString("modifiers", modifiers)
+        putString("keepKey", keepKey)
+        putBoolean("split", split)
+        putBoolean("fullSuperset", fullSuperset)
+    }
+
+    companion object {
+        fun fromBundle(b: Bundle): TwinTrialPrompt? = runCatching {
+            TwinTrialPrompt(
+                block = BlockKey(b.getInt("position"), b.getLong("exerciseId")),
+                baseName = b.getString("baseName")!!,
+                twinId = b.getLong("twinId"),
+                twinName = b.getString("twinName")!!,
+                modifiers = b.getString("modifiers")!!,
+                keepKey = b.getString("keepKey")!!,
+                split = b.getBoolean("split"),
+                fullSuperset = b.getBoolean("fullSuperset"),
+            )
+        }.getOrNull()
+    }
+}
 
 /** One block of the live trial (one rite entry): its sets in order, and where the rite put it. */
 internal class TrialBlock(val exerciseId: Long, val position: Int, val sets: List<SessionSet>) {

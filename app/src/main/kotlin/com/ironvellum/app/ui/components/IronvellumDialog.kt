@@ -50,7 +50,7 @@ fun IronvellumDialog(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        sheetMaxWidth = 600.dp,
+        sheetMaxWidth = ContentMaxWidth,
         shape = MaterialTheme.shapes.extraSmall,
         containerColor = IronvellumColors.VaultHigh,
         contentColor = IronvellumColors.Ink,

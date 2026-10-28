@@ -129,6 +129,21 @@ data class WorkoutDetailUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
+/** The detail's view model, one per workout in the current [androidx.lifecycle.ViewModelStoreOwner]. */
+@Composable
+fun rememberWorkoutDetailViewModel(sessionId: Long): WorkoutDetailViewModel = viewModel(
+    key = "workout-detail-$sessionId",
+    factory = viewModelFactory {
+        initializer {
+            WorkoutDetailViewModel(
+                ironvellumRepository(),
+                sessionId,
+                this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!.applicationContext,
+            )
+        }
+    },
+)
+
 class WorkoutDetailViewModel(
     private val repo: Repository,
     private val sessionId: Long,
@@ -295,18 +310,7 @@ class WorkoutDetailViewModel(
 fun WorkoutDetailScreen(
     sessionId: Long,
     onBack: () -> Unit,
-    viewModel: WorkoutDetailViewModel = viewModel(
-        key = "workout-detail-$sessionId",
-        factory = viewModelFactory {
-            initializer {
-                WorkoutDetailViewModel(
-                    ironvellumRepository(),
-                    sessionId,
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!.applicationContext,
-                )
-            }
-        },
-    ),
+    viewModel: WorkoutDetailViewModel = rememberWorkoutDetailViewModel(sessionId),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val draft by viewModel.draft.collectAsStateWithLifecycle()

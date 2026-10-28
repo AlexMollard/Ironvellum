@@ -8,6 +8,7 @@ import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import com.ironvellum.app.domain.ExerciseTwins
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -196,6 +197,27 @@ class TwinConvertTest {
         val again = repo.convertTwins(backup = { backups++ })
         assertTrue(again.routines.isEmpty())
         assertEquals(1, backups)
+    }
+
+    @Test
+    fun keepAsIsRoutineEntriesStayAndAMissingDedicatedExerciseIsNotListed() = runBlocking {
+        repo.convertTwins(backup = {})
+        val (presetId, before) = routine()
+        val keptRepo = Repository(db, twinKept = { setOf(ExerciseTwins.keepKey("Pull-up", setOf("weighted"))) })
+        // The kept Pull-up entry is not listed; the Push-up one still is.
+        assertEquals(listOf("Decline Push-up"), keptRepo.observeRoutineTwinMoves().first().map { it.to })
+        keptRepo.convertTwins(backup = {})
+        val after = routineEntries(presetId)
+        assertEquals(before[0], after[0])
+        assertEquals(ids.getValue("Decline Push-up"), after[1].exerciseId)
+
+        // A dedicated exercise the catalogue lacks is no move at all, kept or not.
+        db.openHelper.writableDatabase.execSQL("DELETE FROM exercises WHERE name = 'Weighted Chin-up'")
+        db.presetDao().insertEntries(
+            listOf(PresetEntryEntity(presetId = presetId, exerciseId = ids.getValue("Chin-up"), targetSets = 3,
+                targetReps = 6, targetWeightKg = 10.0, modifiers = "weighted", position = 3)),
+        )
+        assertTrue(repo.observeRoutineTwinMoves().first().none { it.from == "Chin-up" })
     }
 
     @Test

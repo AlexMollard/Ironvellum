@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +50,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
@@ -65,6 +63,7 @@ import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.asString
+import com.ironvellum.app.ui.components.CappedDialog
 import com.ironvellum.app.ui.components.CelebrationDock
 import com.ironvellum.app.ui.components.DeedsPage
 import com.ironvellum.app.ui.components.Dim
@@ -178,14 +177,13 @@ internal fun TrialCelebration(
     val hasLevel = CelebrationFlow.hasLevelUp(result)
     val deeds = CelebrationFlow.deedsOf(result)
     val steps = CelebrationFlow.steps(hasXp, hasLevel, deeds.isNotEmpty())
-    Dialog(
+    CappedDialog(
         onDismissRequest = onContinue,
         // Edge to edge, so the page's glow runs up under the status bar instead of stopping at a black band.
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         Box(
             Modifier
-                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss),
         ) {

@@ -32,6 +32,8 @@ object TwinConversion {
         val toId: Long,
         val modifiers: String,
         val sets: Int,
+        /** What a "Keep as is" for this base and these modifiers is remembered under ([ExerciseTwins.Resolution.keepKey]). */
+        val keepKey: String = "",
     )
 
     /** What the confirm screen lists: every block that goes from [from] to [to], summed. */
@@ -47,7 +49,7 @@ object TwinConversion {
             val modifiers = ExerciseTwins.effectiveModifiers(sets.first().modifiers, sets.maxOf { it.weightKg ?: 0.0 }, bodyweight)
             val found = ExerciseTwins.resolve(base.name, modifiers, bodyweight) { it.trim().lowercase() in byName } ?: return@mapNotNull null
             val twin = byName.getValue(found.twin.dedicated.lowercase())
-            Move(block, base.name, twin.name, twin.id, found.modifiers, sets.count { !it.warmup })
+            Move(block, base.name, twin.name, twin.id, found.modifiers, sets.count { !it.warmup }, found.keepKey(base.name))
         }.sortedWith(compareBy({ it.block.sessionId }, { it.block.position }))
     }
 

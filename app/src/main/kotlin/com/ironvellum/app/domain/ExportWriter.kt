@@ -18,6 +18,13 @@ object ExportWriter {
     // 13: a rite entry's warm-up flag, written only for a warm-up exercise.
     const val FORMAT_VERSION = 13
 
+    /**
+     * Version of the `settings` section, written beside it as `settingsVersion`. Kept apart from
+     * [FORMAT_VERSION] so a settings change never makes an old build refuse the training data: bump it when a
+     * stored setting changes meaning. An archive without it (before this field) reads as 0.
+     */
+    const val SETTINGS_VERSION = 1
+
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
         val name: String,
@@ -141,6 +148,7 @@ object ExportWriter {
             appendRelics(relics)
         }
         if (settings != null) {
+            append(",\"settingsVersion\":$SETTINGS_VERSION")
             append(",\"settings\":{")
             settings.entries.forEachIndexed { fileIndex, (file, values) ->
                 if (fileIndex > 0) append(",")

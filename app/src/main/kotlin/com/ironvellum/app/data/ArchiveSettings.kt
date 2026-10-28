@@ -22,48 +22,69 @@ import org.json.JSONTokener
 /** Only explicitly portable preferences cross the archive boundary; an absent file is left unchanged. */
 class ArchiveSettings(
     private val preferences: (String) -> SharedPreferences,
+    /** True when the settings file's feature may be switched on here (its permission is granted on this device). */
+    private val permitted: suspend (String) -> Boolean = { true },
     private val onRestore: suspend (Map<String, Map<String, String>>, Boolean) -> Unit = { _, _ -> },
 ) {
-    constructor(context: Context, onRestore: suspend (Map<String, Map<String, String>>, Boolean) -> Unit = { _, _ -> }) :
-        this({ context.getSharedPreferences(it, Context.MODE_PRIVATE) }, onRestore)
+    constructor(
+        context: Context,
+        permitted: suspend (String) -> Boolean = { true },
+        onRestore: suspend (Map<String, Map<String, String>>, Boolean) -> Unit = { _, _ -> },
+    ) : this({ context.getSharedPreferences(it, Context.MODE_PRIVATE) }, permitted, onRestore)
 
+    /**
+     * An export must never be the thing a stored value can break: a value the readers would snap or
+     * ignore (an old session length, an unknown gear name) is left out here, and restores as the default.
+     */
     fun snapshot(includeDeviceOnly: Boolean = true): Map<String, Map<String, String>> = files.associateWith { file ->
-        val values = preferences(file).all.mapNotNull { (key, value) ->
-            if (kind(file, key) == null || (!includeDeviceOnly && file == "onboarding" && key == "sex_unset")) return@mapNotNull null
+        preferences(file).all.mapNotNull { (key, value) ->
+            if (kind(file, key) == null || isPermissionState(file, key) ||
+                (!includeDeviceOnly && file == "onboarding" && key == "sex_unset")) return@mapNotNull null
             val encoded = when (value) {
                 is String -> "s:$value"
                 is Boolean -> "b:$value"
                 is Int -> "i:$value"
                 is Long -> "l:$value"
                 is Float -> "f:$value"
-                is Set<*> -> "ss:" + JSONArray(value.sortedBy { it.toString() }).toString()
-                else -> error("Unsupported preference $file/$key")
+                is Set<*> -> "ss:" + JSONArray(value.filterIsInstance<String>().sorted()).toString()
+                else -> return@mapNotNull null
             }
-            decode(file, key, encoded)
+            if (runCatching { decode(file, key, encoded) }.isFailure) return@mapNotNull null
             key to encoded
         }.toMap()
-        values
     }
 
+    /**
+     * Writes the settings that survive [sanitize]; the rest was already reported by the caller.
+     * Every file's edits are built (and decoded) before the first commit, so a bad value cannot leave the
+     * preferences half written.
+     */
+    // shortcut: SharedPreferences has no cross-file transaction, so a failing disk commit on file N still
+    // leaves files 1..N-1 restored; a journal-and-rollback pass if that ever shows up in the wild.
     suspend fun restore(settings: Map<String, Map<String, String>>, includeDeviceOnly: Boolean = true) {
-        validate(settings)
-        settings.forEach { (file, values) ->
+        val accepted = sanitize(settings).accepted
+        val edits = accepted.map { (file, values) ->
             val prefs = preferences(file)
             val editor = prefs.edit()
-            prefs.all.keys.filter { kind(file, it) != null && (includeDeviceOnly || file != "onboarding" || it != "sex_unset") }.forEach { editor.remove(it) }
+            prefs.all.keys.filter {
+                kind(file, it) != null && !isPermissionState(file, it) &&
+                    (includeDeviceOnly || file != "onboarding" || it != "sex_unset")
+            }.forEach { editor.remove(it) }
             values.filterKeys { includeDeviceOnly || file != "onboarding" || it != "sex_unset" }.forEach { (key, encoded) ->
-                when (val value = decode(file, key, encoded)) {
-                    is String -> editor.putString(key, value)
-                    is Boolean -> editor.putBoolean(key, value)
-                    is Int -> editor.putInt(key, value)
-                    is Long -> editor.putLong(key, value)
-                    is Float -> editor.putFloat(key, value)
-                    is Set<*> -> { @Suppress("UNCHECKED_CAST") editor.putStringSet(key, value as Set<String>) }
+                val wanted = decode(file, key, if (key == "enabled" && file in gated && !permitted(file)) "b:false" else encoded)
+                when (wanted) {
+                    is String -> editor.putString(key, wanted)
+                    is Boolean -> editor.putBoolean(key, wanted)
+                    is Int -> editor.putInt(key, wanted)
+                    is Long -> editor.putLong(key, wanted)
+                    is Float -> editor.putFloat(key, wanted)
+                    is Set<*> -> { @Suppress("UNCHECKED_CAST") editor.putStringSet(key, wanted as Set<String>) }
                 }
             }
-            check(editor.commit()) { "Could not restore preferences: $file" }
+            file to editor
         }
-        onRestore(settings, includeDeviceOnly)
+        edits.forEach { (file, editor) -> check(editor.commit()) { "Could not restore preferences: $file" } }
+        onRestore(accepted, includeDeviceOnly)
     }
 
     companion object {
@@ -111,11 +132,38 @@ class ArchiveSettings(
             }
             return null
         }
-        fun validate(settings: Map<String, Map<String, String>>) {
+        /** Settings whose switch needs a permission: restored as "wanted", but only on once this device grants it. */
+        private val gated = setOf("reminders", "health_write")
+
+        /** Whether this device already asked for, or was refused, a permission: never crosses devices. */
+        private fun isPermissionState(file: String, key: String): Boolean =
+            (file == "trial" && (key == "asked_post_notifications" || key == "post_notifications_not_now")) ||
+                (file == "inbox_notifier" && key == "asked_permission")
+
+        /** What survived [sanitize], and what was dropped (`file` or `file/key`). */
+        class Sanitized(val accepted: Map<String, Map<String, String>>, val dropped: List<String>)
+
+        /**
+         * Keeps the entries this build understands and names the ones it does not: an unknown file or key, a
+         * stale enum, an out-of-range number. Device permission state is dropped silently. A setting must never
+         * fail a training restore, so nothing here throws.
+         */
+        fun sanitize(settings: Map<String, Map<String, String>>): Sanitized {
+            val dropped = mutableListOf<String>()
+            val accepted = linkedMapOf<String, Map<String, String>>()
             settings.forEach { (file, values) ->
-                require(file in files) { "Unknown settings file: $file" }
-                values.forEach { (key, value) -> decode(file, key, value) }
+                if (file !in files) {
+                    dropped += file
+                    return@forEach
+                }
+                accepted[file] = values.filter { (key, value) ->
+                    if (isPermissionState(file, key)) return@filter false
+                    val ok = runCatching { decode(file, key, value) }.isSuccess
+                    if (!ok) dropped += "$file/$key"
+                    ok
+                }
             }
+            return Sanitized(accepted, dropped)
         }
 
         private fun decode(file: String, key: String, encoded: String): Any {

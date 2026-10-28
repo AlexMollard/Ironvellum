@@ -8,6 +8,8 @@ This keeps the prompts in version control next to the art they produced.
 
     python tools/art.py --style ink "a sealed stone gate, dormant rune core" -o out.png
 
+Needs Pillow, pinned in tools/requirements.txt (pip install -r tools/requirements.txt).
+
 STYLE IS A CONTRACT. Every piece of art in the app goes through one of the
 named styles below so screens cannot drift apart, and every style inherits
 BASE - the palette and the anti-"AI render" constraints. Never pass a bare

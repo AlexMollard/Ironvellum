@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
@@ -294,14 +292,13 @@ internal fun AchievementOverlay(
     var index by remember(pages) { mutableIntStateOf(0) }
     val at = index.coerceIn(0, pages.lastIndex)
     val advance = { if (at < pages.lastIndex) index = at + 1 else onDone() }
-    Dialog(
+    CappedDialog(
         // Back is Continue, never a skip past the pages still to show.
         onDismissRequest = advance,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Box(
             Modifier
-                .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss),
         ) {

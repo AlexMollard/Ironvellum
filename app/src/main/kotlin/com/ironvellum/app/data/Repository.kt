@@ -255,6 +255,8 @@ class Repository(
     /** How each workout differed from its routine (Today's fatigue advice); remembered past the process. */
     private val adjustments: SessionAdjustments = SessionAdjustments.None,
     private val archiveSettings: ArchiveSettings? = null,
+    /** The "Keep as is" answers to the dedicated-exercise prompt ([ExerciseTwins.keepKey]): a convert leaves those routine entries alone. */
+    private val twinKept: () -> Set<String> = { emptySet() },
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -2402,6 +2404,7 @@ class Repository(
         val to: String,
         val toId: Long,
         val modifiers: String,
+        val keepKey: String = "",
     )
 
     fun observeRoutineTwinMoves(): Flow<List<RoutineTwinMove>> =
@@ -2413,9 +2416,10 @@ class Repository(
             TwinConversion.Row(entry.id, entry.position, entry.exerciseId, entry.targetWeightKg, entry.modifiers, entry.warmup)
         }
         val byId = entries.associateBy { it.second.id }
-        return TwinConversion.plan(rows, exercises).map { move ->
+        val kept = twinKept()
+        return TwinConversion.plan(rows, exercises).filterNot { it.keepKey in kept }.map { move ->
             val (preset, entry) = byId.getValue(move.block.sessionId)
-            RoutineTwinMove(entry.id, preset.id, preset.name, move.from, move.to, move.toId, move.modifiers)
+            RoutineTwinMove(entry.id, preset.id, preset.name, move.from, move.to, move.toId, move.modifiers, move.keepKey)
         }
     }
 
@@ -3794,7 +3798,8 @@ class Repository(
      */
     suspend fun importArchive(json: String): Result<ImportResult> = Result.runCatching {
         val archive = ExportReader.read(json).getOrThrow()
-        archive.settings?.let(ArchiveSettings::validate)
+        // Settings never fail a training restore: what this build cannot read is dropped and reported below.
+        val settingsPlan = archive.settings?.takeIf { archiveSettings != null }?.let(ArchiveSettings::sanitize)
         val result = db.withTransaction {
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
@@ -4118,14 +4123,20 @@ class Repository(
                     problems = problems,
                 )
             }
-        if (archive.settings != null && archiveSettings != null) {
+        if (settingsPlan != null && archiveSettings != null) {
             try {
-                archiveSettings.restore(archive.settings, includeDeviceOnly = !archive.deviceDataOmitted)
+                archiveSettings.restore(settingsPlan.accepted, includeDeviceOnly = !archive.deviceDataOmitted)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 throw SettingsRestoreException(e)
             }
+            val notes = settingsPlan.dropped.map { UiText.res(R.string.data_import_setting_skipped, it) } +
+                listOfNotNull(
+                    UiText.res(R.string.data_import_settings_newer)
+                        .takeIf { archive.settingsVersion > ExportWriter.SETTINGS_VERSION },
+                )
+            return@runCatching result.copy(problems = result.problems + notes)
         }
         result
     }

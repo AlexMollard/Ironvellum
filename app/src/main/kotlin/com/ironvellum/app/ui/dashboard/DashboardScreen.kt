@@ -1013,14 +1013,16 @@ private fun TodayDayBody(
     }
     var adjustOpen by rememberSaveable { mutableStateOf(false) }
     var adjustSwaps by remember { mutableStateOf<Map<Long, EntryAdjust.Swap>?>(null) }
-    var infoRow by remember { mutableStateOf<DayRow?>(null) }
-    LaunchedEffect(displayed) { if (!displayed) infoRow = null }
+    // The open exercise sheet is kept as the row's exercise id and modifiers, so it survives a recreation.
+    var infoKey by rememberSaveable { mutableStateOf<Pair<Long, String>?>(null) }
+    LaunchedEffect(displayed) { if (!displayed) infoKey = null }
     val cardRows: List<DayRow> = when (kind) {
         DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)
         DayKind.SEALED -> trialRows(sealedSets, ui.exercises, sealed = true)
         DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries, advice?.tags.orEmpty())
         DayKind.RESPITE, DayKind.NO_CYCLE -> emptyList()
     }
+    val infoRow = infoKey?.let { (id, modifiers) -> cardRows.firstOrNull { it.exerciseId == id && it.modifiers == modifiers } }
 
     // The day card: the only boxed area, sized to what it holds. `rows` is where its exercise block goes.
     val cardClick: (() -> Unit)? = if (!displayed) null else when (kind) {
@@ -1245,7 +1247,7 @@ private fun TodayDayBody(
 
     TodayLayout(
         rows = cardRows,
-        onExerciseClick = { infoRow = it },
+        onExerciseClick = { infoKey = it.exerciseId to it.modifiers },
         card = card,
         plain = plain,
         displayed = displayed,
@@ -1262,7 +1264,7 @@ private fun TodayDayBody(
     infoRow?.let { row ->
         val exercise = ui.exercises[row.exerciseId]
         if (displayed && exercise != null) {
-            ExerciseInfoSheet(exercise = exercise, lastLine = null, onDismiss = { infoRow = null }, onPick = null, modifiers = row.modifiers)
+            ExerciseInfoSheet(exercise = exercise, lastLine = null, onDismiss = { infoKey = null }, onPick = null, modifiers = row.modifiers)
         }
     }
 
@@ -1600,7 +1602,10 @@ private fun halfCellNeeds(row: DayRow, gutter: Boolean, measurer: TextMeasurer, 
  */
 @Composable
 private fun ExerciseCell(row: DayRow, checkSlot: Dp, modifier: Modifier, onClick: (DayRow) -> Unit) {
-    Row(modifier.heightIn(min = 48.dp).clickable(role = Role.Button) { onClick(row) }, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClickLabel = stringResource(R.string.today_exercise_open_label, row.name)) { onClick(row) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (checkSlot > 0.dp) {
             Box(Modifier.width(checkSlot)) {
                 if (row.checked) {

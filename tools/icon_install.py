@@ -18,6 +18,8 @@ Two rules this encodes, because both are easy to get wrong by hand:
 Usage:
     python tools/icon_install.py .tmp/icon_candidate.png
     python tools/icon_install.py .tmp/icon_candidate.png --dry-run
+
+Needs Pillow, pinned in tools/requirements.txt (pip install -r tools/requirements.txt).
 """
 import argparse
 import pathlib

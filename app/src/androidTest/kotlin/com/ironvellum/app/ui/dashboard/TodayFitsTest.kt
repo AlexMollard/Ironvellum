@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -192,6 +193,28 @@ class TodayFitsTest {
         assertInside("more", substring = true)
         assertInside("Movement 1")
         saveShot("today-worst-case")
+    }
+
+    @Test
+    fun the48dpExerciseLinesStillFitAShortPhone() {
+        // 640dp of content: 120dp less than the owner's phone. Lines are 48dp tall, so a nine-movement rite folds.
+        show(ui = DashboardUi(presets = listOf(rite(9))), selectedDay = 3, height = 640)
+        assertDoesNotScroll()
+        assertInside("Movement 1")
+        assertInside("more", substring = true)
+        com.ironvellum.app.ui.ShotRecorder.take(compose, "today-short-phone")
+    }
+
+    @Test
+    fun everyExerciseLineSaysWhatTappingItDoes() {
+        show(ui = DashboardUi(presets = listOf(rite(2))), selectedDay = 3)
+        val label = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(com.ironvellum.app.R.string.today_exercise_open_label, "Movement 1")
+        compose.onAllNodes(
+            SemanticsMatcher("click label \"$label\"") {
+                it.config.getOrNull(androidx.compose.ui.semantics.SemanticsActions.OnClick)?.label == label
+            },
+        ).assertCountEquals(1)
     }
 
     @Test

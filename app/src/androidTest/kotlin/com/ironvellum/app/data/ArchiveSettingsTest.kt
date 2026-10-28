@@ -29,7 +29,7 @@ class ArchiveSettingsTest {
     @Before fun setup() = runTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase("archive_settings_test.db")
-        listOf("appearance", "onboarding", "trial_prefs", "auto_backup", "cloud_config", "program_answers", "health_write", "info_sheet_hints", "share_card", "deeds", "warmup").forEach { prefs(it).edit().clear().commit() }
+        listOf("appearance", "onboarding", "trial_prefs", "trial", "reminders", "inbox_notifier", "auto_backup", "cloud_config", "program_answers", "health_write", "info_sheet_hints", "share_card", "deeds", "warmup").forEach { prefs(it).edit().clear().commit() }
         db = IronvellumDatabase.create(context, "archive_settings_test.db")
         settings = ArchiveSettings(::prefs) { _, _ -> refreshed++ }
         repo = Repository(db, archiveSettings = settings)
@@ -40,7 +40,7 @@ class ArchiveSettingsTest {
     @After fun cleanup() {
         db.close()
         context.deleteDatabase("archive_settings_test.db")
-        listOf("appearance", "onboarding", "trial_prefs", "auto_backup", "cloud_config", "program_answers", "health_write", "info_sheet_hints", "share_card", "deeds", "warmup").forEach { prefs(it).edit().clear().commit() }
+        listOf("appearance", "onboarding", "trial_prefs", "trial", "reminders", "inbox_notifier", "auto_backup", "cloud_config", "program_answers", "health_write", "info_sheet_hints", "share_card", "deeds", "warmup").forEach { prefs(it).edit().clear().commit() }
     }
 
     @Test fun portableSettingsRoundTripAndExcludeSecretsInBothCopies() = runTest {
@@ -77,7 +77,7 @@ class ArchiveSettingsTest {
         assertEquals(1, refreshed)
     }
 
-    @Test fun oldArchivesPreserveSettingsAndInvalidSettingsCannotClearTraining() = runTest {
+    @Test fun oldArchivesPreserveSettingsAndInvalidSettingsNeverFailTheTrainingRestore() = runTest {
         val json = JSONObject(repo.exportJson())
         json.remove("settings")
         prefs("appearance").edit().putString("theme", "LIGHT").commit()
@@ -86,12 +86,70 @@ class ArchiveSettingsTest {
         assertEquals(0, refreshed)
         val before = db.presetDao().observePresets().first().size
         assertTrue(before > 0)
-        json.put("settings", JSONObject().put("appearance", JSONObject().put("theme", "s:INVALID")))
-        assertTrue(repo.importArchive(json.toString()).isFailure)
+        // A stale enum, an unknown key and an unknown file are dropped and reported; training still restores.
+        json.put(
+            "settings",
+            JSONObject()
+                .put("appearance", JSONObject().put("theme", "s:INVALID").put("brandNewKey", "b:true").put("themedNames", "b:true"))
+                .put("auto_backup", JSONObject().put("folder", "s:content://private")),
+        )
+        val result = repo.importArchive(json.toString())
+        assertTrue(result.isSuccess)
+        assertEquals(3, result.getOrThrow().problems.size)
         assertEquals(before, db.presetDao().observePresets().first().size)
-        json.put("settings", JSONObject().put("auto_backup", JSONObject().put("folder", "s:content://private")))
-        assertTrue(repo.importArchive(json.toString()).isFailure)
-        assertEquals(before, db.presetDao().observePresets().first().size)
+        assertTrue(prefs("appearance").getBoolean("themedNames", false))
+        assertNull(prefs("appearance").getString("theme", null))
+        assertFalse(prefs("auto_backup").contains("folder"))
+    }
+
+    @Test fun exportSurvivesStoredValuesTheReadersWouldSnap() = runTest {
+        prefs("program_answers").edit().putInt("sessionMinutes", 37).putString("dumbbellMaxKg", "-4").putString("gear", "NOT_A_GEAR")
+            .putInt("daysPerWeek", 3).commit()
+        prefs("appearance").edit().putString("theme", "RETIRED_THEME").putBoolean("themedNames", true).commit()
+        val exported = JSONObject(repo.exportArchive().json).getJSONObject("settings")
+        val answers = exported.getJSONObject("program_answers")
+        assertFalse(answers.has("sessionMinutes"))
+        assertFalse(answers.has("dumbbellMaxKg"))
+        assertFalse(answers.has("gear"))
+        assertEquals("i:3", answers.getString("daysPerWeek"))
+        assertFalse(exported.getJSONObject("appearance").has("theme"))
+        assertEquals("b:true", exported.getJSONObject("appearance").getString("themedNames"))
+        // Back up now and the cloud copy take the same path.
+        assertTrue(JSONObject(repo.exportArchive(includeDeviceOnly = false).json).has("settings"))
+    }
+
+    @Test fun permissionStateStaysOnTheDeviceAndWantedSwitchesNeedThisDevicesPermission() = runTest {
+        prefs("trial").edit().putBoolean("asked_post_notifications", true).putInt("post_notifications_not_now", 2).commit()
+        prefs("inbox_notifier").edit().putBoolean("enabled", true).putBoolean("asked_permission", true).commit()
+        prefs("reminders").edit().putBoolean("enabled", true).commit()
+        prefs("health_write").edit().putBoolean("enabled", true).commit()
+        val archive = repo.exportJson()
+        val exported = JSONObject(archive).getJSONObject("settings")
+        assertFalse(exported.getJSONObject("trial").has("asked_post_notifications"))
+        assertFalse(exported.getJSONObject("trial").has("post_notifications_not_now"))
+        assertFalse(exported.getJSONObject("inbox_notifier").has("asked_permission"))
+        assertEquals("b:true", exported.getJSONObject("inbox_notifier").getString("enabled"))
+
+        // An old archive that still carries the flags: this device's own state wins and nothing is reported.
+        val old = JSONObject(archive)
+        old.getJSONObject("settings").getJSONObject("trial").put("asked_post_notifications", "b:true").put("post_notifications_not_now", "i:9")
+        old.getJSONObject("settings").getJSONObject("inbox_notifier").put("asked_permission", "b:true")
+        prefs("trial").edit().clear().putInt("post_notifications_not_now", 1).commit()
+        prefs("inbox_notifier").edit().clear().putBoolean("asked_permission", false).commit()
+        val denied = Repository(db, archiveSettings = ArchiveSettings(::prefs, permitted = { false }) { _, _ -> })
+        val result = denied.importArchive(old.toString())
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrThrow().problems.isEmpty())
+        assertFalse(prefs("trial").contains("asked_post_notifications"))
+        assertEquals(1, prefs("trial").getInt("post_notifications_not_now", -1))
+        assertFalse(prefs("inbox_notifier").getBoolean("asked_permission", true))
+        assertTrue(prefs("inbox_notifier").getBoolean("enabled", false))
+        assertFalse(prefs("reminders").getBoolean("enabled", true))
+        assertFalse(prefs("health_write").getBoolean("enabled", true))
+
+        assertTrue(repo.importArchive(archive).isSuccess)
+        assertTrue(prefs("reminders").getBoolean("enabled", false))
+        assertTrue(prefs("health_write").getBoolean("enabled", false))
     }
 
     @Test fun settingsRefreshFailureReportsThatTrainingWasRestored() = runTest {

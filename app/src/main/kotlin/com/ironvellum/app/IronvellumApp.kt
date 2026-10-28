@@ -50,7 +50,15 @@ class IronvellumApp : Application() {
             database, healthSync, PrefsHighestBandStore(this), writeBack = healthWriteBack,
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
             adjustments = com.ironvellum.app.data.PrefsSessionAdjustments(getSharedPreferences("suggestion_dismissals", MODE_PRIVATE)),
-            archiveSettings = com.ironvellum.app.data.ArchiveSettings(this) { restored, includeDeviceOnly ->
+            twinKept = { com.ironvellum.app.data.TrialPrefs(this).twinKept },
+            archiveSettings = com.ironvellum.app.data.ArchiveSettings(this, permitted = { file ->
+                // A restored switch is only a wish: it turns on once this device has granted what it needs.
+                when (file) {
+                    "reminders" -> Notifications.access(this, Notifications.CHANNEL_SUMMONS).canPost
+                    "health_write" -> healthWriteBack.permitted()
+                    else -> true
+                }
+            }) { restored, includeDeviceOnly ->
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     if ("appearance" in restored) {
                         appearanceStore.reload()

@@ -1760,6 +1760,9 @@
     <string name="workoutlog_empty_title__t">The Chronicle is blank.</string>
     <string name="workoutlog_empty_body">Finish a workout and it is written here.</string>
     <string name="workoutlog_empty_body__t">Seal a trial and it is written here.</string>
+    <!-- Shown in the empty right-hand pane of History on a wide screen. -->
+    <string name="workoutlog_detail_placeholder">Select a workout to see it here.</string>
+    <string name="workoutlog_detail_placeholder__t">Select a trial to see it here.</string>
     <!-- History screen: one line of totals, "42 workouts · 610 sets · 4,900 reps". %d is the count. -->
     <plurals name="workoutlog_totals_trials"><item quantity="one">%1$d workout</item><item quantity="other">%1$d workouts</item></plurals>
     <plurals name="workoutlog_totals_trials__t"><item quantity="one">%1$d trial</item><item quantity="other">%1$d trials</item></plurals>
@@ -3922,6 +3925,8 @@
     <!-- Quiet link that shows the next scheduled day. %1$s is the routine's name (user data), %2$s a short day name. -->
     <string name="today_next_link">Next: %1$s · %2$s</string>
     <!-- Screen-reader click label of the new-record row. %1$s is the exercise name. -->
+    <!-- Spoken action of a tapped exercise line on Today. %1$s is the exercise name. -->
+    <string name="today_exercise_open_label">Show details for %1$s</string>
     <string name="today_peak_open_label">Open %1$s</string>
     <!-- Gold lead of the Today record row. -->
     <string name="today_peak_new">New PR</string>
@@ -5542,6 +5547,11 @@
     <!-- Import warning. %1$s is a date (2026-10-03), %2$s the weight in kg, %3$s the body fat percentage or a dash. -->
     <string name="data_import_stat_dropped">measurement from %1$s dropped: %2$s kg / %3$s%% outside plausible range</string>
     <string name="data_import_stat_dropped__t">reading from %1$s dropped: %2$s kg / %3$s%% outside plausible range</string>
+
+    <!-- Import warning. %1$s is the settings file or file/key that this version could not restore (internal key, shown as is). -->
+    <string name="data_import_setting_skipped">setting \"%1$s\" not restored: unknown or no longer valid</string>
+    <!-- Import warning: the archive's settings were written by a newer version of the app. -->
+    <string name="data_import_settings_newer">settings were saved by a newer version; ones this version does not know were skipped</string>
 
     <!-- Programme summary shown on a template card. The citation in brackets stays as written. -->
     <string name="program_extra_summary_full_body_strength">Three full-body days on five big lifts. Add a little weight each workout while it keeps moving (ACSM 2009).</string>
