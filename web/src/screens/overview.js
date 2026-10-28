@@ -36,10 +36,10 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
   const tiles = node('div', null, 'kpi-row');
   const [volume, volumeUnit] = splitVolume(week.volumeKg, snapshot.unit);
   tiles.append(
-    kpi(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week', week.workouts, t('concept_trial_pl'), `${formatSets(week.hardSets)} hard sets${week.plannedDays != null ? ` · ${week.plannedDays} planned` : ''}`),
-    kpi(t('concept_oath_c'), profile.streakDays, 'days', `Best: ${profile.longestStreakDays} days`),
-    kpi('Records', trends.records30d, 'PRs', 'last 30 days'),
-    kpi('Volume', volume, volumeUnit, `this week · ${splitVolume(week.prevVolumeKg, snapshot.unit).join(' ')} last`));
+    kpi(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week', week.workouts, t('concept_trial_pl'), `${formatSets(week.hardSets)} hard sets${week.plannedDays != null ? ` · ${week.plannedDays} planned` : ''}`, { path: '/workouts', router }),
+    kpi(t('concept_oath_c'), profile.streakDays, 'days', `Best: ${profile.longestStreakDays} days`, { path: '/workouts', router }),
+    kpi('Records', trends.records30d, 'PRs', 'last 30 days', { path: '/lifts', router }),
+    kpi('Volume', volume, volumeUnit, `this week · ${splitVolume(week.prevVolumeKg, snapshot.unit).join(' ')} last`, { path: '/workouts', router }));
   main.append(tiles);
   const last = rows[0];
   if (last) {
@@ -48,7 +48,7 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
     const volumeText = entry ? splitVolume(entry.volumeKg, snapshot.unit).join(' ') : '—';
     main.append(lastWorkoutCard({
       heading: `Your last ${t('concept_trial_s')}`, profile, when: `${formatWeekday(day)} ${formatDay(day)}`, meta: `${formatClock(last.startedAt, snapshot.zone)}${entry ? ` · ${entry.min} min` : ''}`, xp: entry?.xp,
-      title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, prs: entry?.prs, chips, levels: entry?.muscleLevels, figure: profile.figure,
+      title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, prs: entry?.prs, chips, levels: entry?.muscleLevels, names: snapshot.muscles, figure: profile.figure,
       stats: entry ? `${formatSets(entry.hardSets)} hard sets · ${volumeText} · STR ${entry.strength}` : '— hard sets · — volume · — STR'
     }));
   } else main.append(node('p', `No ${t('concept_trial_pl')} yet.`));

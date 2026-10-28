@@ -14,11 +14,12 @@ export function card(title, className = '', aside) {
   }
   return el;
 }
-export function kpi(label, value, unit, sub) {
-  const el = card(null, 'kpi');
+export function kpi(label, value, unit, sub, target) {
+  const el = card(null, `kpi${target ? ' is-link' : ''}`);
   const figure = node('div', value ?? '—', 'kpi-value');
   if (unit && value != null) figure.append(node('span', ` ${unit}`, 'kpi-unit'));
-  el.append(node('div', label, 'eyebrow'), figure, node('div', sub ?? '', 'kpi-sub'));
+  el.append(node('div', null, 'eyebrow'), figure, node('div', sub ?? '', 'kpi-sub'));
+  el.firstChild.append(target ? link(label, target.path, target.router, 'kpi-link') : label);
   return el;
 }
 export function factRow(label, value) {

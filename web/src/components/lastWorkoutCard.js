@@ -3,8 +3,8 @@ import { plate } from './plate.js';
 import { prTag } from './prTag.js';
 import { renderBodyMap } from './bodyMap.js';
 /** The "Your last workout" card, shared by the Overview and the sign-in Example. Renders what it is given. */
-export function lastWorkoutCard({ heading, profile, when, meta, xp, title, path, router, stats, prs = [], unit, chips = [], levels, figure }) {
-  const el = card(null, 'last-workout');
+export function lastWorkoutCard({ heading, profile, when, meta, xp, title, path, router, stats, prs = [], unit, chips = [], levels, names, figure }) {
+  const el = card(null, path ? 'last-workout is-link' : 'last-workout');
   const head = node('div', null, 'lw-head');
   const emblem = node('span'); plate(emblem, { name: profile?.name, crestId: profile?.crestId });
   const lead = node('span', null, 'lw-lead');
@@ -20,7 +20,7 @@ export function lastWorkoutCard({ heading, profile, when, meta, xp, title, path,
   body.append(main);
   if (levels) {
     const maps = node('div', null, 'body-map-pair');
-    for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels, figure, view, look: 'worked' }); maps.append(map); }
+    for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels, figure, view, look: 'worked', names }); maps.append(map); }
     body.append(maps);
   }
   el.append(body);

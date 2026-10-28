@@ -31,7 +31,7 @@ export async function renderWorkoutDetail(root, { source, snapshot, router }, or
   summary.append(top, factRow('Hard sets', entry ? formatSets(entry.hardSets) : null), factRow('Volume', entry ? formatVolume(entry.volumeKg, snapshot.unit) : null), factRow('Records', entry?.peaks), factRow('Strength', entry?.strength)); side.append(summary);
   if (entry) {
     const muscles = card('Muscles worked', 'muscles-card'); const maps = node('div', null, 'body-map-pair');
-    for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked' }); maps.append(map); }
+    for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked', names: snapshot.muscles }); maps.append(map); }
     const legend = node('div', null, 'fatigue-legend worked-legend');
     for (const [level, label] of [[3, 'Most'], [2, 'Some'], [1, 'A little']]) legend.append(node('span', label, `fatigue-legend-item worked-${level}`));
     muscles.append(maps, legend); side.append(muscles);

@@ -13,7 +13,7 @@ export function renderFatigueCard(el, { fatigue, muscles = {}, figure = 'male', 
   if (Number.isFinite(at) && nowMs - at > 24 * 60 * 60 * 1000) panel.append(node('p', 'Sync the app for a fresh reading.', 'muted fatigue-asof'));
   const maps = node('div', null, 'body-map-pair');
   for (const [view, label] of [['front', 'Front'], ['back', 'Back']]) {
-    const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: fatigue.levels, figure, view, look: 'fatigue' });
+    const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: fatigue.levels, figure, view, look: 'fatigue', names: muscles });
     const wrap = node('div', null, 'body-view'); wrap.append(node('span', label, 'body-view-label'), map); maps.append(wrap);
   }
   panel.append(maps);

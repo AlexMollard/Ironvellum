@@ -181,14 +181,15 @@ svg.body-map { width: auto; height: 100%; }
 .lw-body .body-map-pair { flex: none; gap: 2px; align-items: flex-start; }
 .ov-pair { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .record-row { display: flex; align-items: center; gap: 12px; min-height: 54px; border-top: 1px solid var(--paper-rune); }
-.card-head + .record-row, .card-head + .deed-row { border-top: 0; }
+.card-head + .record-row, .card-head + .deed-item { border-top: 0; }
 .record-text { flex: 1; min-width: 0; line-height: 1.3; font-size: 14px; }
 .record-text a { color: var(--paper-ink); text-decoration: none; }
 .record-sub { font-size: 12px; }
 .record-value { width: 96px; text-align: right; font-size: 14px; font-weight: 600; }
 .record-row.compact { min-height: 42px; gap: 10px; font-size: 13px; }
-.deed-row { display: flex; align-items: center; gap: 12px; min-height: 52px; border-top: 1px solid var(--paper-rune); }
-.deed-text { flex: 1; line-height: 1.3; }
+.deed-item { border-top: 1px solid var(--paper-rune); }
+.deed-row { display: flex; align-items: center; gap: 12px; width: 100%; height: auto; min-height: 52px; padding: 0; border: 0; border-radius: 0; text-align: left; color: var(--paper-ink); }
+.deed-text { flex: 1; display: block; line-height: 1.3; }
 .deed-rarity { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
 .rarity-common { color: var(--rarity-common); }
 .rarity-rare { color: var(--rarity-rare); }
@@ -371,6 +372,106 @@ rect[class*="chart-series-"] { fill: var(--series); }
 .signin-links details label:first-of-type { margin-top: 12px; }
 .signin-links details button { margin-top: 12px; }
 .signin > footer { position: absolute; left: 32px; bottom: 20px; margin: 0; font-size: 11px; color: var(--faint); }
+
+/* interaction: hover, focus, pressed, motion. Colours stay tokens; every duration is switched off under prefers-reduced-motion at the end. */
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+input:focus-visible, select:focus-visible { outline-offset: 0; border-color: var(--fill); }
+a, button, summary, select, input, .chip, .card::before, .workout-row, .record-row, .lift-item, .deed-row, .calendar-day, .tile, .nav-icon, .muscle-cell, .week-bar, .training-day, .body-region, .chart-hit { transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease, transform 120ms ease, fill 120ms ease, stroke 120ms ease; }
+button:not(:disabled):hover, .pill:not(:disabled):hover, .pill-select:hover { border-color: var(--fill); background-color: var(--wash); }
+.link-button:hover, .icon-button:hover, .variation-toggle:hover { border-color: transparent; }
+.icon-button:hover { background-color: var(--wash); }
+.link-button:hover, .variation-toggle:hover { background-color: transparent; }
+.primary:not(:disabled):hover { background-color: var(--bright); border-color: transparent; }
+button:not(:disabled):active, select:active, summary:active { transform: translateY(1px); }
+.pill[aria-pressed="true"]:hover, .segmented button[aria-pressed="true"]:hover { background-color: color-mix(in srgb, var(--fill) 16%, transparent); }
+button:disabled { opacity: .45; cursor: default; }
+.sidebar nav a:hover { background: var(--wash); }
+.sidebar nav a:hover .nav-icon { color: var(--text); }
+.sidebar nav a:active { background: color-mix(in srgb, var(--fill) 16%, transparent); }
+.sidebar nav a:focus-visible { outline-offset: -3px; }
+.lift-item:hover { background: var(--wash); }
+.lift-item[aria-current="true"]:hover { background: var(--wash); }
+.lift-item:active { background: color-mix(in srgb, var(--fill) 16%, transparent); }
+.lift-item:focus-visible { outline-offset: -3px; }
+.variation-toggle:not(:disabled):hover::before { transform: scale(1.25); }
+.variation-toggle::before { transition: transform 120ms ease, background-color 150ms ease; }
+.adjacent:hover, .crumb:hover { color: var(--paper-ink); text-decoration: underline; }
+.workout-row:active { background: color-mix(in srgb, var(--fill) 12%, transparent); }
+.workout-title:focus-visible { outline: none; }
+.workout-row:has(.workout-title:focus-visible) { outline: 2px solid var(--text); outline-offset: -2px; }
+.workout-row.is-highlight { background: color-mix(in srgb, var(--fill) 12%, transparent); box-shadow: inset 3px 0 0 var(--fill); }
+.workout-row:hover .row-chevron, .workout-row:focus-within .row-chevron { color: var(--text); transform: translateX(2px); }
+.row-chevron { display: inline-block; transition: color 150ms ease, transform 120ms ease; }
+
+/* linked tiles and rows: the label link stretches over the whole element */
+.is-link { cursor: pointer; }
+.card.is-link:hover { --card-edge: color-mix(in srgb, var(--fill) 55%, var(--paper-rune)); --card-fill: color-mix(in srgb, var(--fill) 5%, var(--paper-vault)); }
+.card.is-link:active { --card-fill: color-mix(in srgb, var(--fill) 10%, var(--paper-vault)); }
+.card.is-link:has(a:focus-visible) { outline: 2px solid var(--text); outline-offset: -4px; }
+.is-link a:focus-visible { outline: none; }
+.kpi-link, .kpi-link:hover { color: inherit; text-decoration: none; }
+.kpi-link::after, .last-workout.is-link .lw-name::after, .record-row.is-link .record-text a::after { content: ""; position: absolute; inset: 0; }
+.last-workout.is-link .body-map-pair { position: relative; z-index: 1; }
+.last-workout .lw-name:hover { color: var(--bright); }
+.record-row.is-link { position: relative; box-shadow: inset 3px 0 0 transparent; }
+.record-row.is-link:hover, .record-row.is-link:focus-within { background: color-mix(in srgb, var(--fill) 6%, transparent); box-shadow: inset 3px 0 0 var(--fill); }
+.record-row.is-link:active { background: color-mix(in srgb, var(--fill) 12%, transparent); }
+.record-row.is-link:has(a:focus-visible) { outline: 2px solid var(--text); outline-offset: -2px; }
+.record-row.is-link .record-text a:hover { color: var(--bright); }
+
+/* deeds open in place */
+.deed-row:hover, .deed-row:focus-visible { background: color-mix(in srgb, var(--fill) 6%, transparent); border-color: transparent; }
+.deed-row:focus-visible { outline-offset: -2px; }
+.deed-chevron { color: var(--paper-ink-muted); transition: transform 150ms ease; }
+.deed-item.is-open .deed-chevron { transform: rotate(90deg); }
+.deed-panel { padding: 2px 0 12px 52px; font-size: 13px; line-height: 1.45; animation: reveal 150ms ease-out; }
+.deed-description { margin: 0 0 6px; }
+.deed-facts { margin: 0; font-size: 12px; }
+.deed-facts .deed-rarity { display: inline; }
+
+/* calendar days that hold workouts */
+a.calendar-day, button.calendar-day { width: 100%; text-align: left; font: inherit; text-decoration: none; background: transparent; color: var(--paper-ink); }
+a.calendar-day.today, button.calendar-day.today { background: color-mix(in srgb, var(--fill) 10%, transparent); }
+a.calendar-day:hover, button.calendar-day:hover { border-color: var(--fill); background: var(--wash); color: var(--paper-ink); }
+a.calendar-day:active, button.calendar-day:active { background: color-mix(in srgb, var(--fill) 16%, transparent); }
+a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset: -2px; }
+
+/* chart and map hover, focus and touch */
+.analytics-chart, .week-bars { position: relative; }
+.line-chart, .stacked-weeks { touch-action: pan-y; }
+.chart-cursor { stroke: var(--paper-ink-muted); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
+.chart-point { cursor: crosshair; outline: none; transform-box: fill-box; transform-origin: center; }
+.chart-point.is-active, .chart-point:focus { transform: scale(1.55); stroke: var(--paper-ink); stroke-width: 2; }
+.chart-hit { fill: transparent; stroke: transparent; stroke-width: 1; outline: none; cursor: crosshair; }
+.chart-hit.is-active, .chart-hit:focus { fill: var(--wash); stroke: var(--fill); }
+.week-bar { outline-offset: 2px; }
+.week-col.is-active .week-bar, .week-bar:hover { background: var(--bright); }
+.muscle-strip { position: relative; z-index: 1; }
+.muscle-cell { cursor: default; outline-offset: 2px; transform-origin: bottom; }
+.muscle-cell:hover, .muscle-cell.is-active { transform: scaleY(1.7); }
+.training-day { outline-offset: 1px; }
+.training-day.is-active, .training-day:hover { outline: 1px solid var(--paper-ink); }
+.body-region { cursor: default; outline: none; }
+.body-region.is-active, .body-region:focus { stroke: var(--paper-ink); stroke-width: 24; }
+.body-hatching, .body-hair { pointer-events: none; }
+.tooltip { position: fixed; z-index: 30; left: 0; top: 0; max-width: 260px; padding: 8px 10px; border: 1px solid var(--paper-rune); border-radius: 4px; background: var(--paper-vault-high); color: var(--paper-ink); box-shadow: 0 6px 20px var(--paper-scrim); font-size: 12px; line-height: 1.4; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 120ms ease, visibility 0s linear 120ms; }
+.tooltip.is-on { opacity: 1; visibility: visible; transition-delay: 0s; }
+.tooltip-title { font-size: 11px; color: var(--paper-ink-muted); }
+.tooltip-value { font-size: 15px; font-weight: 700; }
+.tooltip-pr { margin-left: 4px; font-size: 10px; letter-spacing: 1px; color: var(--reward); }
+.tooltip-line { color: var(--paper-ink-muted); }
+.tooltip-line.legend-item { display: flex; }
+
+/* route, range and list changes fade in */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes route-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes reveal { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.route-page { animation: route-in 160ms ease-out; }
+.analytics-chart > svg, .analytics-chart > .chart-legend, .workout-list > .workout-row, .calendar-grid, .week-bars { animation: fade-in 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .muscle-cell:hover, .muscle-cell.is-active, .chart-point.is-active, .chart-point:focus, button:not(:disabled):active { transform: none; }
+}
 
 @media (max-width: 1180px) {
   .overview-layout, .detail-layout, .workouts-layout, .lifts-layout { grid-template-columns: minmax(0, 1fr); }

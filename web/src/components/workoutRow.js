@@ -5,8 +5,8 @@ import { node, workoutDay, link } from './statCard.js';
 import { muscleStrip } from './muscleStrip.js';
 import { prTag } from './prTag.js';
 export function workoutRow(workout, entry, snapshot, router) {
-  const el = node('article', null, 'workout-row');
-  const day = workoutDay(workout, snapshot?.zone);
+  const el = node('article', null, 'workout-row is-link');
+  const day = workoutDay(workout, snapshot?.zone); el.dataset.day = day;
   const when = node('span', null, 'row-date'); when.append(node('span', formatWeekday(day)), node('span', formatDay(day)));
   const text = node('div', null, 'row-text');
   const heading = link(workout.title || workout.label || t('concept_trial_c'), workoutPath(workout), router, 'workout-title');
@@ -16,7 +16,9 @@ export function workoutRow(workout, entry, snapshot, router) {
   text.append(titleLine, node('div', figures, 'muted row-figures'));
   el.append(when, text);
   if (entry?.prs?.length) el.append(prTag(entry.prs[0], snapshot?.unit));
-  el.append(muscleStrip(entry?.groupLevels), node('span', '›', 'row-chevron'));
+  // The strip sits above the row's stretched link so it can show its tooltips; a click on it still opens the workout.
+  const strip = muscleStrip(entry?.groupLevels); strip.addEventListener('click', () => heading.click());
+  el.append(strip, node('span', '›', 'row-chevron'));
   el.lastChild.setAttribute('aria-hidden', 'true');
   return el;
 }

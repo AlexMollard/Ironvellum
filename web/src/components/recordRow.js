@@ -2,7 +2,7 @@ import { artImg } from './artImg.js';
 import { formatLoad, splitLabel } from '../format.js';
 import { node, displayDate, link } from './statCard.js';
 export function recordRow(record, snapshot, router) {
-  const el = node('div', null, 'record-row');
+  const el = node('div', null, 'record-row is-link');
   const frame = node('span', null, 'art-frame'); frame.append(artImg(record.name, record.art));
   const [name, variation] = splitLabel(record.label || record.name);
   const content = node('div', null, 'record-text');

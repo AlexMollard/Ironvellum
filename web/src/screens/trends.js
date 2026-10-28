@@ -3,7 +3,7 @@ import { renderStackedWeeks } from '../components/stackedWeeks.js';
 import { renderTrainingDays } from '../components/trainingDays.js';
 import { renderMusclePanel } from '../components/musclePanel.js';
 import { card } from '../components/statCard.js';
-import { formatDayShort } from '../format.js';
+import { formatDay, formatDayShort } from '../format.js';
 
 const el = (tag, text, cls) => { const node = document.createElement(tag); if (text != null) node.textContent = text; if (cls) node.className = cls; return node; };
 
@@ -25,7 +25,7 @@ export function renderTrends(root, ctx) {
     const weeks = trends.weeks.slice(-Number(range));
     barsAside.textContent = range === '52' ? '1 year' : `${range} weeks`;
     renderStackedWeeks(bars, weeks);
-    renderLineChart(line, { series: [{ points: weeks.map(w => [Date.parse(`${w.start}T00:00:00Z`), null, w.hardSets, 0, w.start, undefined, formatDayShort(w.start)]) }], label: 'Hard sets per week', unit: 'hard sets', height: 300 });
+    renderLineChart(line, { series: [{ points: weeks.map(w => [Date.parse(`${w.start}T00:00:00Z`), null, w.hardSets, 0, w.start, undefined, formatDayShort(w.start)]) }], label: 'Hard sets per week', unit: 'hard sets', height: 300, pointTitle: p => `Week of ${formatDay(p[4])}` });
   }
   draw();
 }

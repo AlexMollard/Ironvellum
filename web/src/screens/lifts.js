@@ -34,7 +34,7 @@ function liftDetail(pane, lift, snapshot) {
   for (const v of lift.variations) if (v.peak) { const chip = el('span', null, 'chip pr-tag'); chip.append(el('b', 'PR'), `${v.label} ${formatPeak(v.peak, snapshot.unit)}`); chips.append(chip); }
   text.append(chips);
   const map = el('div', null, 'analytics-body-map body-map-pair');
-  for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked' }); map.append(figure); }
+  for (const view of ['front', 'back']) { const figure = el('div', null, 'body-map'); renderBodyMap(figure, { levels: lift.muscleLevels, figure: snapshot.profile?.figure, view, look: 'worked', names: snapshot.muscles }); map.append(figure); }
   header.append(frame, text, map); pane.append(header);
   const selected = new Set(lift.variations.map(v => v.key));
   let range = 6;
