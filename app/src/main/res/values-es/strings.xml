@@ -5328,10 +5328,10 @@
     <string name="lifter_block_title">¿Bloquear %1$s?</string>
     <string name="lifter_block_title_unnamed">¿Bloquear a este levantador?</string>
     <string name="lifter_block_title_unnamed__t">¿Bloquear a este forjado?</string>
-    <string name="lifter_block_body">Tú y %1$s dejarán de ver los entrenamientos, comentarios y felicitaciones de ambos. La alianza terminará y no podrán enviarse solicitudes de amistad. Puedes desbloquearle en Amigos.</string>
-    <string name="lifter_block_body__t">Tú y %1$s dejarán de ver las pruebas, observaciones y tributos de ambos. La alianza terminará y no podrán enviarse solicitudes de aliado. Puedes desbloquearle en Aliados.</string>
-    <string name="lifter_block_body_unnamed">Tú y este levantador dejarán de ver los entrenamientos, comentarios y felicitaciones de ambos. La alianza terminará y no podrán enviarse solicitudes de amistad. Puedes desbloquearle en Amigos.</string>
-    <string name="lifter_block_body_unnamed__t">Tú y este forjado dejarán de ver las pruebas, observaciones y tributos de ambos. La alianza terminará y no podrán enviarse solicitudes de aliado. Puedes desbloquearle en Aliados.</string>
+    <string name="lifter_block_body">Tú y %1$s dejaréis de ver vuestros entrenamientos, comentarios y felicitaciones. La alianza terminará y no podréis enviaros solicitudes de amistad. Puedes desbloquearle en Amigos.</string>
+    <string name="lifter_block_body__t">Tú y %1$s dejaréis de ver vuestras pruebas, observaciones y tributos. La alianza terminará y no podréis enviaros solicitudes de aliado. Puedes desbloquearle en Aliados.</string>
+    <string name="lifter_block_body_unnamed">Tú y este levantador dejaréis de ver vuestros entrenamientos, comentarios y felicitaciones. La alianza terminará y no podréis enviaros solicitudes de amistad. Puedes desbloquearle en Amigos.</string>
+    <string name="lifter_block_body_unnamed__t">Tú y este forjado dejaréis de ver vuestras pruebas, observaciones y tributos. La alianza terminará y no podréis enviaros solicitudes de aliado. Puedes desbloquearle en Aliados.</string>
     <string name="recap_title">Resumen semanal</string>
     <string name="recap_range">%1$s – %2$s</string>
     <string name="recap_week_of">Semana de %1$s</string>

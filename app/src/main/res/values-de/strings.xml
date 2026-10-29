@@ -56,8 +56,8 @@
     <string name="concept_rite_upl__t">RITEN</string>
     <string name="concept_rite_a">eine Routine</string>
     <string name="concept_rite_a__t">ein Ritus</string>
-    <string name="concept_rite_ca">Die Routine</string>
-    <string name="concept_rite_ca__t">Der Ritus</string>
+    <string name="concept_rite_ca">Eine Routine</string>
+    <string name="concept_rite_ca__t">Ein Ritus</string>
     <string name="concept_cycle_s">Wochenplan</string>
     <string name="concept_cycle_s__t">Zyklus</string>
     <string name="concept_cycle_c">Wochenplan</string>
@@ -88,8 +88,8 @@
     <string name="concept_trial_upl__t">PRÜFUNGEN</string>
     <string name="concept_trial_a">ein Training</string>
     <string name="concept_trial_a__t">eine Prüfung</string>
-    <string name="concept_trial_ca">Das Training</string>
-    <string name="concept_trial_ca__t">Die Prüfung</string>
+    <string name="concept_trial_ca">Ein Training</string>
+    <string name="concept_trial_ca__t">Eine Prüfung</string>
     <string name="always_trial_name">Prüfung</string>
     <string name="concept_open_trial_s">Freies Training</string>
     <string name="concept_open_trial_s__t">Offene Prüfung</string>
@@ -110,9 +110,9 @@
     <string name="concept_sealed_u">ABGESCHLOSSEN</string>
     <string name="concept_sealed_u__t">BESIEGELT</string>
     <string name="concept_sealed_a">ein abgeschlossenes</string>
-    <string name="concept_sealed_a__t">ein besiegeltes</string>
-    <string name="concept_sealed_ca">Das abgeschlossene</string>
-    <string name="concept_sealed_ca__t">Das besiegelte</string>
+    <string name="concept_sealed_a__t">eine besiegelte</string>
+    <string name="concept_sealed_ca">Ein Abgeschlossenes</string>
+    <string name="concept_sealed_ca__t">Eine Besiegelte</string>
     <string name="concept_sealing_s">abschließen</string>
     <string name="concept_sealing_s__t">besiegeln</string>
     <string name="concept_sealing_c">Abschließen</string>
@@ -292,8 +292,8 @@
     <string name="concept_circle_cpl__t">Bünde</string>
     <string name="concept_circle_a">eine Gruppe</string>
     <string name="concept_circle_a__t">ein Bund</string>
-    <string name="concept_circle_ca">Die Gruppe</string>
-    <string name="concept_circle_ca__t">Der Bund</string>
+    <string name="concept_circle_ca">Eine Gruppe</string>
+    <string name="concept_circle_ca__t">Ein Bund</string>
     <string name="concept_keeper_s">Besitzer</string>
     <string name="concept_keeper_s__t">Wächter</string>
     <string name="concept_keeper_c">Besitzer</string>
@@ -362,8 +362,8 @@
     <string name="concept_missive_cpl__t">Botschaften</string>
     <string name="concept_missive_tpl">Nachrichten</string>
     <string name="concept_missive_tpl__t">Botschaften</string>
-    <string name="concept_missive_ca">Die Nachricht</string>
-    <string name="concept_missive_ca__t">Die Botschaft</string>
+    <string name="concept_missive_ca">Eine Nachricht</string>
+    <string name="concept_missive_ca__t">Eine Botschaft</string>
     <string name="concept_inbox_c">Post</string>
     <string name="concept_inbox_c__t">Botschaften</string>
     <string name="always_veil_c">Schleier</string>

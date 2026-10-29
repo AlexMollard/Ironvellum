@@ -4087,7 +4087,7 @@
     <string name="infosheet_history_list_label__t">過去の試練</string>
     <string name="infosheet_history_empty_title">まだログに記録されていません</string>
     <string name="infosheet_history_empty_hint">ワークアウトを終了すると、ここにリストされます。</string>
-    <string name="infosheet_history_empty_hint__t">それを試練に封じすると、ここに書かれています。</string>
+    <string name="infosheet_history_empty_hint__t">それを試練に封じると、ここに書かれています。</string>
     <string name="infosheet_history_record_description">新しい自己ベスト</string>
     <string name="infosheet_history_record_description__t">新しいピーク</string>
     <string name="infosheet_history_open_label">このワークアウトを開く</string>
