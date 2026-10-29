@@ -17,7 +17,7 @@ package com.ironvellum.app.domain
  * - archer, one-arm: bodyweight pulls and push-ups, not technique work.
  * - incline, decline, elevated: push-ups - a bench press has its own rows.
  * - incline, elevated: inverted, ring and australian rows - the feet-up lever [BodyShare.modifierFactor] prices.
- * - deficit: deadlifts, push-ups, split squats and lunges, calf raises.
+ * - deficit: deadlifts, push-ups and handstand push-ups, split squats and lunges, calf raises.
  *
  * A word the name already carries is not offered again: a Paused Bench
  * Press has no "paused", an Archer Push-up neither "archer" nor "one-arm".
@@ -51,6 +51,7 @@ fun applicableModifiers(exercise: Exercise): List<String> {
         if (pattern == MovementPattern.HINGE && "deadlift" in name) offered += "deficit"
         if (pattern == MovementPattern.LUNGE && "step-up" !in name) offered += "deficit"
         if ("calf raise" in name) offered += "deficit"
+        if (bodyweight && pattern == MovementPattern.VERTICAL_PUSH && isHandstandPush(name)) offered += "deficit"
     }
     offered -= notOffered(name, MuscleMap.isTechnique(exercise.name))
     val named = buildSet {
@@ -70,11 +71,13 @@ fun applicableModifiers(exercise: Exercise): List<String> {
  */
 private fun notOffered(name: String, technique: Boolean): Set<String> = buildSet {
     val pushUp = "push-up" in name
+    // Hands on parallettes or plates: the wall is support, not the easy form.
+    val handstand = isHandstandPush(name)
     if ("banded" in name) addAll(listOf("assisted", "archer", "one-arm"))
     if ("walk" in name) add("assisted")
     if ("lever" in name || "commando" in name) addAll(listOf("archer", "one-arm"))
     if (pushUp) {
-        if (REGRESSED_PUSH_UPS.any { it in name }) addAll(listOf("archer", "one-arm", "deficit") + ANGLES)
+        if (!handstand && REGRESSED_PUSH_UPS.any { it in name }) addAll(listOf("archer", "one-arm", "deficit") + ANGLES)
         if ("wall" in name) add("assisted")
         if (FIXED_HAND_PUSH_UPS.any { it in name }) addAll(listOf("archer", "one-arm"))
         if ("hindu" in name || technique) addAll(listOf("deficit") + ANGLES)
@@ -84,8 +87,10 @@ private fun notOffered(name: String, technique: Boolean): Set<String> = buildSet
     val lunge = "lunge" in name || "split squat" in name
     val deadlift = "deadlift" in name
     val calf = "calf raise" in name
-    if (!lunge && !deadlift && !calf && !pushUp) add("deficit")
+    if (!lunge && !deadlift && !calf && !pushUp && !handstand) add("deficit")
 }
+
+private fun isHandstandPush(name: String) = "handstand push" in name || "hspu" in name
 
 private val REGRESSED_PUSH_UPS = listOf("wall", "knee", "ball")
 private val FIXED_HAND_PUSH_UPS = listOf("diamond", "typewriter", "hindu", "shoulder tap", "explosive")

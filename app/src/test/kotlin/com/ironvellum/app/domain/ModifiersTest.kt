@@ -26,6 +26,14 @@ class ModifiersTest {
     }
 
     @Test
+    fun `a handstand push-up, wall or not, gets deficit`() {
+        assertTrue("deficit" in of("Handstand Push-up"))
+        val wall = Exercise(name = "Wall HSPU", muscleGroup = MuscleGroup.PUSH, isWeighted = false)
+        assertTrue("deficit" in applicableModifiers(wall))
+        assertEquals(MovementPattern.VERTICAL_PUSH, MuscleMap.profile("Wall HSPU")?.pattern)
+    }
+
+    @Test
     fun `a pull-up gets the bodyweight pull modifiers and no angle`() {
         val m = of("Pull-up")
         assertTrue(m.containsAll(listOf("assisted", "archer", "one-arm", "tempo", "paused")))
