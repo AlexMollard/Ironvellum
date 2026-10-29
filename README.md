@@ -51,9 +51,12 @@ Plain gym words by default; turn on **Themed names** for the fantasy version. Th
 
 <p align="center">
   <img src="docs/images/web-viewer.png" width="90%" alt="The web dashboard's overview with example data: this week, streak, records, last workout, deeds and muscles">
+  <br>
+  <img src="docs/images/web-friends.png" width="45%" alt="The web friends feed with example lifters: workout cards, PRs, muscles worked, reactions and comments">
+  <img src="docs/images/web-routines.png" width="45%" alt="The web routines page with example data: the week's plan, one routine's exercises and the muscles the week covers">
 </p>
 
-Signed-in lifters can read their training on a computer at **[alexmollard.github.io/Ironvellum](https://alexmollard.github.io/Ironvellum/)**: overview, workouts, lifts and trends. It is read-only and private to you; logging and editing stay in the app.
+Signed-in lifters can read their training on a computer at **[alexmollard.github.io/Ironvellum](https://alexmollard.github.io/Ironvellum/)**: overview, workouts, lifts, trends and routines, plus your friends' feed with reactions and comments, the inbox, boards and your group. Your own training is private to you, and logging and editing stay in the app.
 
 ## Install
 
