@@ -78,7 +78,7 @@ The short view, by version; the detail of each item is in the sections below.
 - The rest panel gives the alternate workout action the remaining width, keeping “Do Push Strength” on one line at 320dp.
 - Today’s visible exercise targets open the shared detail sheet with the selected exercise and modifiers; the fit budget retains 48dp targets.
 - [ ] 1 Play-ready code: done: privacy policy row in Settings > Support (both flavours), PLAY_DATA_SAFETY.md updated for heart rate, background reads and WRITE_EXERCISE, `bundlePlayRelease` builds (unsigned, 19.1 MB). Open: sign it once the owner's keystore exists; release-build frame stats on the phone (a release build signed with the debug key installs over the debug one and keeps the data; the owner uses it about 3 minutes, then the debug build goes back)
-- [ ] 2 Progress photos, on the phone and in the folder backup, never the cloud:
+- [x] 2 Progress photos, on the phone and in the folder backup, never the cloud (090e160b, 2dcafeb1); archive format 14, database 46; photo rows ride in the archive, the pictures are copied to an ironvellum_photos folder beside the folder backup and restored from it (a share-sheet export carries rows only):
   - workout photo: optional "Add a photo?" at the end of a workout, of anything (a thumbs-up is fine), at most one a day, kept with that workout
   - weekly poses: front, side and back on a day you pick (Sunday by default), separate from the workout photo, compared week to week in Stats > Body
 - [ ] 3 Translations by Haiku agents, back-translated and checked by Sonnet, plus the long-text layout sweep: Spanish, German, French, Portuguese (BR), Japanese, Korean, Chinese (Simplified). Arabic waits for the RTL leftovers
