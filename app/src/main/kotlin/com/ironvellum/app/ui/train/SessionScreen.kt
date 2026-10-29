@@ -17,7 +17,10 @@ import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.data.Units
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import com.ironvellum.app.domain.PhotoRules
+import java.time.LocalDate
 import android.os.Bundle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.createSavedStateHandle
@@ -484,7 +487,7 @@ class SessionViewModel(
      * (each only when the seal earned it, see [CelebrationFlow]), then the question
      * about the routine, then leave. XP must stay first: it is where every seal starts.
      */
-    enum class Finish { XP, LEVEL, DEEDS, SUMMARY, ROUTINE }
+    enum class Finish { XP, LEVEL, DEEDS, SUMMARY, PHOTO, ROUTINE }
 
     /**
      * The completion result and the finish stage. Held here, not in the
@@ -494,6 +497,31 @@ class SessionViewModel(
     private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
     val completion: StateFlow<Repository.CompletionResult?> = _completion
     private val _finish = MutableStateFlow(Finish.XP)
+
+    /**
+     * Whether the optional "Add a photo?" step is offered: frozen at the seal (like [peaks]) from the photos kept then, so
+     * it never appears for a second workout the same day, and saving one does not take the step back mid-page.
+     */
+    private val _photoOffered = MutableStateFlow(false)
+    val photoOffered: StateFlow<Boolean> = _photoOffered
+    private var photoDay = 0L
+    var photoSaving by mutableStateOf(false)
+        private set
+    var photoFailed by mutableStateOf(false)
+        private set
+
+    /** Keeps [uri] as the day's photo and moves on; a failure says so and leaves Skip as the way forward. */
+    fun savePhoto(uri: Uri) {
+        if (photoSaving) return
+        photoSaving = true
+        photoFailed = false
+        viewModelScope.launch {
+            runCatching { repo.photoLibrary.saveWorkout(appContext, uri, sessionId, photoDay) }
+                .onSuccess { _finish.value = Finish.ROUTINE }
+                .onFailure { photoFailed = true }
+            photoSaving = false
+        }
+    }
 
     /** What the sealed trial set, frozen at the seal so a rotation keeps it. */
     private val _peaks = MutableStateFlow<List<SessionPeaks.Peak>>(emptyList())
@@ -724,6 +752,8 @@ class SessionViewModel(
                     // Asked after the XP is banked: the answer can never
                     // change what the session paid.
                     _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
+                    photoDay = LocalDate.now().toEpochDay()
+                    _photoOffered.value = runCatching { PhotoRules.workoutPhotoOffered(repo.photoLibrary.workoutPhotoDays(), photoDay) }.getOrDefault(false)
                     _peaks.value = peaks
                     _completion.value = it
                 }
@@ -745,6 +775,7 @@ class SessionViewModel(
                     ui.first { it.session?.completedAtMs == null }
                     _routineUpdate.value = null
                     _peaks.value = emptyList()
+                    _photoOffered.value = false
                     _finish.value = Finish.XP
                     _completion.value = null
                     _claiming.value = false
@@ -825,6 +856,7 @@ fun SessionScreen(
     val warmup by viewModel.warmup.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
+    val photoOffered by viewModel.photoOffered.collectAsStateWithLifecycle()
     val peaks by viewModel.peaks.collectAsStateWithLifecycle()
     val wornTitleId by viewModel.wornTitleId.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
@@ -1972,6 +2004,17 @@ fun SessionScreen(
                     // Answered, or nothing to ask: the finished session is done.
                     LaunchedEffect(result) { onSealed() }
                 }
+            }
+            SessionViewModel.Finish.PHOTO -> if (photoOffered) {
+                PhotoOfferPage(
+                    saving = viewModel.photoSaving,
+                    failed = viewModel.photoFailed,
+                    onPicked = viewModel::savePhoto,
+                    onSkip = { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) },
+                )
+            } else {
+                // Nothing to offer (a photo is already kept for today): straight on to the routine question.
+                LaunchedEffect(result) { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) }
             }
             else -> TrialCelebration(
                 stage = stage,

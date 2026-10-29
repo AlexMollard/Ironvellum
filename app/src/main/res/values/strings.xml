@@ -7003,4 +7003,59 @@
     <plurals name="settings_photos_missing_label"><item quantity="one">%1$d photo to bring back</item><item quantity="other">%1$d photos to bring back</item></plurals>
     <string name="settings_photos_missing_caption">Pick your backup folder. The pictures are copied from the photos folder inside it.</string>
     <plurals name="settings_photos_restored"><item quantity="one">%1$d photo brought back</item><item quantity="other">%1$d photos brought back</item></plurals>
+    <!-- Progress photos. Plain wording only (no concept word) except the one workout caption, which has its themed twin. -->
+    <!-- The optional step at the end of a sealed workout. -->
+    <string name="photo_offer_title">Add a photo?</string>
+    <string name="photo_offer_body">Take or choose one photo of anything. A thumbs-up counts. It stays on this phone.</string>
+    <string name="photo_offer_take">Take a photo</string>
+    <string name="photo_offer_pick">Choose a photo</string>
+    <string name="photo_offer_skip">Skip</string>
+    <string name="photo_offer_saving">Saving</string>
+    <string name="photo_offer_failed">That photo could not be saved.</string>
+    <!-- Buttons under a photo, on a workout\'s detail and in the pose sheet. -->
+    <string name="photo_take_button">Take photo</string>
+    <string name="photo_pick_button">Choose photo</string>
+    <string name="photo_retake_button">Take a new photo</string>
+    <string name="photo_repick_button">Choose another</string>
+    <string name="photo_remove_button">Remove</string>
+    <string name="photo_remove_description">Remove this photo</string>
+    <string name="photo_remove_title">Remove this photo?</string>
+    <string name="photo_remove_body">It is deleted from this phone. A copy already in your backup folder stays there until you delete it.</string>
+    <string name="photo_keep_button">Keep</string>
+    <!-- Workout detail: the day\'s photo. %1$s is the day, as a date. -->
+    <string name="workoutdetail_photo_label">Photo</string>
+    <string name="workoutdetail_photo_description">Photo from %1$s</string>
+    <string name="workoutdetail_photo_caption">One photo a day, shared by every workout that day. It stays on this phone.</string>
+    <string name="workoutdetail_photo_caption__t">One photo a day, shared by every trial that day. It stays on this phone.</string>
+    <!-- Body > Progress photos. %1$s is a date, or a pose name. -->
+    <string name="photos_title">Progress photos</string>
+    <string name="photos_back_description">Back from progress photos</string>
+    <string name="photos_this_week_label">This week</string>
+    <string name="photos_week_of">Week of %1$s</string>
+    <string name="photos_pose_front">Front</string>
+    <string name="photos_pose_side">Side</string>
+    <string name="photos_pose_back">Back</string>
+    <string name="photos_slot_description">%1$s photo, this week</string>
+    <string name="photos_slot_add_description">Add the %1$s photo</string>
+    <string name="photos_slot_change_description">Change the %1$s photo</string>
+    <string name="photos_day_label">Pose day</string>
+    <string name="photos_day_caption">Today asks for your poses on this day.</string>
+    <string name="photos_compare_label">Compare weeks</string>
+    <string name="photos_compare_empty">Take your poses in two different weeks to compare them side by side.</string>
+    <string name="photos_left_week_label">Left week</string>
+    <string name="photos_right_week_label">Right week</string>
+    <string name="photos_pick_week">Pick a week</string>
+    <string name="photos_pick_week_title">Pick a week</string>
+    <string name="photos_picked">Picked</string>
+    <string name="photos_no_photo">No photo</string>
+    <string name="photos_compare_description">%1$s photo, week of %2$s</string>
+    <string name="photos_privacy_caption">Photos stay on this phone and in your own backup folder. They are never uploaded.</string>
+    <!-- The row on Body that opens the screen. -->
+    <string name="ledger_photos_label">Progress photos</string>
+    <string name="ledger_photos_value">Front, side, back</string>
+    <!-- Today: the quiet prompt on the pose day. -->
+    <string name="photos_today_label">Pose photos</string>
+    <string name="photos_today_title">Time for this week\'s poses</string>
+    <string name="photos_today_open_description">Open pose photos</string>
+    <string name="photos_today_dismiss_description">Dismiss for today</string>
 </resources>

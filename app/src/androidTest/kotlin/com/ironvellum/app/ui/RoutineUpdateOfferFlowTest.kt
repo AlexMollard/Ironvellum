@@ -99,7 +99,7 @@ class RoutineUpdateOfferFlowTest {
         // Level-up and deeds pages when earned, then the summary: advance to its Done.
         repeat(24) {
             if (driver.allText().any { it.equals("Update rite", true) }) return@repeat
-            val advance = driver.allText().firstOrNull { it.equals("Continue", true) || it.equals("Done", true) }
+            val advance = driver.allText().firstOrNull { it.equals("Continue", true) || it.equals("Done", true) || it.equals("Skip", true) }
             if (advance != null) driver.click(advance) else driver.settle(1)
             Thread.sleep(100L)
         }

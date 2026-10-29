@@ -88,6 +88,26 @@ Code references:
   readings and user-entered measurements stay on-device, but owner-only web
   snapshot strength estimates can be derived from body weight.
 
+### Photos — progress photos (NOT collected)
+- 1.9 adds optional progress photos: one photo a day with a workout, and weekly
+  front, side and back poses. They are taken with the system camera app
+  (`ActivityResultContracts.TakePicture` into one empty cache file through the
+  app's `FileProvider`) or chosen with the system photo picker
+  (`PickVisualMedia`). The app declares **no camera permission and no storage
+  permission**. The picture is scaled to 2048 px, re-saved as JPEG (location and
+  other metadata dropped) and kept in app-private storage (`files/photos`,
+  `PhotoStore`), with its date and pose in the local `progress_photos` table.
+- They **never leave the device except into the folder the lifter picks for
+  their own backup** (a `ironvellum_photos` sub-folder written through the
+  Storage Access Framework). No server of ours receives them: the cloud archive
+  carries no photo rows, the web snapshot and the Supabase schema have no photo
+  field, and `NoCloudPhotosTest` fails the build if cloud code names one.
+  Android's cloud backup and device transfer exclude `files/photos`
+  (`backup_rules.xml`, `data_extraction_rules.xml`, `BackupRulesTest`).
+- Data Safety: declare as **not collected, not shared**. No change to the
+  "photos and videos" data type answer: nothing is collected or sent off the
+  device by the app.
+
 ### Fitness info — idle-game aggregates (collected, shared)
 - Garrison essence / figure count / figure rate are pushed as profile columns.
   Optional (sign-in only), shared per visibility.

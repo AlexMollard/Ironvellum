@@ -61,6 +61,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
+import com.ironvellum.app.domain.PhotoKind
+import com.ironvellum.app.domain.ProgressPhoto
+import com.ironvellum.app.ui.stats.trialDay
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -299,6 +303,42 @@ class WorkoutDetailViewModel(
             onDone()
         }
     }
+
+    /**
+     * The photo kept for this workout's day (one a day, shared by that day's workouts), or null. Read with the zone
+     * the stored day was made in, the device's, as the history does.
+     */
+    val photo: StateFlow<ProgressPhoto?> = combine(repo.observeWorkout(sessionId), repo.photoLibrary.photos) { hit, photos ->
+        val day = hit?.first?.takeIf { it.completedAtMs != null }?.let { trialDay(it, java.time.ZoneId.systemDefault()).toEpochDay() }
+        photos.firstOrNull { it.kind == PhotoKind.WORKOUT && it.day == day }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    var photoSaving by mutableStateOf(false)
+        private set
+    var photoFailed by mutableStateOf(false)
+        private set
+
+    /** The picture on this phone, or null (no photo, or a restore that has not been given its folder yet). */
+    fun photoFile(photo: ProgressPhoto?): java.io.File? = photo?.let { repo.photoLibrary.store?.file(it.fileName)?.takeIf { f -> f.isFile } }
+
+    /** Keeps [uri] as the day's photo, replacing the one there; it moves to this workout. */
+    fun savePhoto(uri: Uri) {
+        val session = ui.value.session?.takeIf { it.completedAtMs != null } ?: return
+        if (photoSaving) return
+        photoSaving = true
+        photoFailed = false
+        viewModelScope.launch {
+            runCatching {
+                repo.photoLibrary.saveWorkout(appContext, uri, sessionId, trialDay(session, java.time.ZoneId.systemDefault()).toEpochDay())
+            }.onFailure { photoFailed = true }
+            photoSaving = false
+        }
+    }
+
+    fun removePhoto() {
+        val id = photo.value?.id ?: return
+        viewModelScope.launch { repo.photoLibrary.delete(id) }
+    }
 }
 
 /**
@@ -320,6 +360,7 @@ fun WorkoutDetailScreen(
     val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
     val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
     val sharePeaks by viewModel.sharePeaks.collectAsStateWithLifecycle()
+    val photo by viewModel.photo.collectAsStateWithLifecycle()
     var sharing by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -400,6 +441,17 @@ fun WorkoutDetailScreen(
                 DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
                 WorkoutSets(sets = ui.sets, exercises = ui.exercises)
                 NotesCard(session)
+                if (session.completedAtMs != null) {
+                    Spacer(Modifier.height(12.dp))
+                    WorkoutPhotoCard(
+                        file = viewModel.photoFile(photo),
+                        dateText = formatDate(session.completedAtMs, stringResource(R.string.workoutlog_date_pattern)),
+                        saving = viewModel.photoSaving,
+                        failed = viewModel.photoFailed,
+                        onPicked = viewModel::savePhoto,
+                        onRemove = viewModel::removePhoto,
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 InkDivider()
                 ListRow(

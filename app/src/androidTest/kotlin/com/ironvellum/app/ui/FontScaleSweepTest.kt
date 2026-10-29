@@ -337,7 +337,7 @@ class FontScaleSweepTest {
         check(' ' in text.trim() || layouts.none { layout -> layout.lineCount > 1 }) { "\"$text\" is broken across lines" }
     }
 
-    private val advanceLabels get() = listOf("Continue", "Done", "Keep ${Words.rite.s}")
+    private val advanceLabels get() = listOf("Continue", "Done", "Skip", "Keep ${Words.rite.s}")
     private val navLabels get() = listOf("Today", Words.ledger.c, "Train", Words.codex.c, Words.ally.cpl)
 }
 

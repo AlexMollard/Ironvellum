@@ -44,9 +44,12 @@ class CelebrationFlowTest {
     }
 
     @Test
-    fun `the summary leads to the routine question`() {
-        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.SUMMARY, hasXp = false, hasLevel = true, hasDeeds = true))
+    fun `the summary leads to the photo step and then the routine question`() {
+        assertEquals(Finish.PHOTO, CelebrationFlow.after(Finish.SUMMARY, hasXp = false, hasLevel = true, hasDeeds = true))
+        assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.PHOTO, hasXp = false, hasLevel = true, hasDeeds = true))
         assertEquals(Finish.ROUTINE, CelebrationFlow.after(Finish.ROUTINE, hasXp = false, hasLevel = true, hasDeeds = true))
+        // The photo step is never skipped by resolve: the screen decides whether it is offered.
+        assertEquals(Finish.PHOTO, CelebrationFlow.resolve(Finish.PHOTO, hasXp = false, hasLevel = false, hasDeeds = false))
     }
 
     @Test

@@ -97,6 +97,7 @@ import com.ironvellum.app.ui.train.WorkoutLogScreen
 import com.ironvellum.app.ui.train.WorkoutDetailScreen
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.ui.stats.MeasurementDetailScreen
+import com.ironvellum.app.ui.stats.ProgressPhotosScreen
 import com.ironvellum.app.ui.stats.StatsScreen
 import com.ironvellum.app.ui.titles.TitlesScreen
 import androidx.compose.ui.draw.drawBehind
@@ -132,6 +133,7 @@ object Routes {
     const val PRESETS = "presets"
     const val EXERCISES = "exercises?name={name}&variation={variation}"
     const val STATS = "stats"
+    const val PHOTOS = "photos"
     const val TITLES = "titles"
     const val IDLE = "idle"
     const val COLLECTION = "idle/collection/{tab}"
@@ -431,6 +433,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenLift = { name, variation -> navController.navigate(Routes.exercises(name, variation)) },
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                         onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
+                        onOpenPhotos = { navController.navigate(Routes.PHOTOS) },
                     )
                 }
                 composable(Routes.PRESETS) {
@@ -557,8 +560,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenRecap = { week -> navController.navigate(Routes.recap(week)) },
                         onOpenReview = { kind, start -> navController.navigate(Routes.review(kind, start)) },
                         onOpenSettings = { navController.navigate(Routes.settingsSection(it)) },
+                        onOpenPhotos = { navController.navigate(Routes.PHOTOS) },
                     )
                 }
+                composable(Routes.PHOTOS) { ProgressPhotosScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.TITLES) { TitlesScreen() }
                 composable(Routes.SETTINGS) { entry ->
                     SettingsScreen(

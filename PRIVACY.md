@@ -25,6 +25,16 @@ Cloud workout upload details checked against the codebase on 2026-10-28.
   `app/src/main/res/xml/data_extraction_rules.xml`). Raw measurements remain
   on the device that recorded them.
 
+- **Progress photos stay on your device and in your own backup folder.** The
+  optional workout photo and weekly pose photos are JPEG files in the app's
+  private storage (`files/photos`, `data/PhotoStore.kt`), with their dates and
+  poses in `ironvellum.db`. They are never uploaded: not to the cloud backup,
+  not to the web snapshot, not to any sync path (`NoCloudPhotosTest` fails the
+  build if cloud code names a photo). Android's backups leave the folder out
+  too. The only other copy is the one in the backup folder you pick yourself
+  (see below). Photos are scaled to 2048 pixels and re-saved, which drops the
+  location and other metadata the camera wrote.
+
 ## What the app stores on your device
 
 The following are stored in `ironvellum.db` (Room) in the app's private
@@ -37,13 +47,20 @@ storage; the sync section below describes what can also leave the device:
 - Skill practice logs, earned titles, presets, idle-game state (`idle_state`).
 - Per-day Health Connect summaries (`health_days` table) written by the daily
   sync worker (`HealthSyncWorker.kt`).
+- Progress photos: one optional photo a day with a workout, and front, side and
+  back poses by week. The pictures are files in `files/photos`; the table
+  `progress_photos` holds only the date, pose and file name. Deleting a workout
+  deletes its photo; each photo can also be removed on its own.
 - Private notes on workouts. The server schema has no private-notes column:
   "private" means the server cannot read it, not that the UI hides it
   (`supabase/migrations/0001_baseline.sql`, the comment above the `sessions` table).
 
 The app also offers manual export/import of this data and portable settings as a JSON archive you
 control (`ExportWriter.kt` / `ExportReader.kt`). Archives omit account credentials, device tokens,
-and backup-folder permissions.
+and backup-folder permissions. An archive lists your photos (date, pose, file name) but never
+contains the pictures; the weekly backup to a folder you picked copies the picture files into
+a `ironvellum_photos` sub-folder of it, and restoring brings them back from there. The cloud
+backup copy of the archive carries no photo rows at all.
 
 ## What the app reads from Health Connect
 
@@ -122,7 +139,7 @@ configured, everything listed above goes to YOUR project — nothing is sent to
 the maintainer's shared instance — and Google sign-in is unavailable there
 (email sign-in only). See `supabase/SELF_HOSTING.md`.
 
-**Not uploaded:** raw body readings and measurements, height, private notes,
+**Not uploaded:** progress photos (the pictures and their list), raw body readings and measurements, height, private notes,
 in-progress (abandoned) sessions, device identifiers, or raw Health Connect
 data. The owner-only snapshot includes the selected body figure and estimates
 derived from body weight, but not the underlying readings. Session local IDs

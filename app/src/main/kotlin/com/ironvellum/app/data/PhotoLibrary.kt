@@ -60,6 +60,9 @@ class PhotoLibrary(private val dao: ProgressPhotoDao, val store: PhotoStore?) {
         withContext(Dispatchers.IO) { store?.delete(row.fileName) }
     }
 
+    /** The days that already hold a workout photo: the one-a-day rule reads this ([PhotoRules.workoutPhotoOffered]). */
+    suspend fun workoutPhotoDays(): Set<Long> = dao.all().filter { it.kind == PhotoKind.WORKOUT.name }.map { it.day }.toSet()
+
     /** Every kept photo's file name: what the folder backup mirrors. */
     suspend fun fileNames(): Set<String> = dao.all().map { it.fileName }.toSet()
 

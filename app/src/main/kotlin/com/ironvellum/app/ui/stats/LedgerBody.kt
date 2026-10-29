@@ -108,6 +108,7 @@ internal fun BodyTab(
     sexUnset: Boolean = false,
     onOpenTraining: () -> Unit,
     onOpenTape: () -> Unit,
+    onOpenPhotos: () -> Unit,
     onOpenHistory: () -> Unit,
 ) {
     val latest = ui.stats.firstOrNull()
@@ -230,6 +231,13 @@ internal fun BodyTab(
                 value = UiText.res(R.string.ledger_tape_logged, logged, MeasurementSite.entries.size).asString(),
                 supporting = stringResource(R.string.ledger_stays_on_device),
                 onClick = onOpenTape,
+            )
+            InkDivider()
+            InkListRow(
+                label = stringResource(R.string.ledger_photos_label),
+                value = stringResource(R.string.ledger_photos_value),
+                supporting = stringResource(R.string.ledger_stays_on_device),
+                onClick = onOpenPhotos,
             )
         }
         Spacer(Modifier.height(LedgerSpace.Section))

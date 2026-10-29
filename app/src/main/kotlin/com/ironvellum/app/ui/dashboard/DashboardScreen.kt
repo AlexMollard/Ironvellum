@@ -94,7 +94,9 @@ import com.ironvellum.app.domain.WeeklyRecap
 import com.ironvellum.app.ui.recap.RecapText
 import com.ironvellum.app.ui.recap.ReviewTodayCard
 import com.ironvellum.app.ui.recap.routeKind
+import com.ironvellum.app.data.PhotoPrefs
 import com.ironvellum.app.data.ReviewDismissals
+import com.ironvellum.app.domain.PhotoRules
 import com.ironvellum.app.domain.PeriodReview
 import com.ironvellum.app.domain.ReviewSchedule
 import com.ironvellum.app.domain.ReviewSummary
@@ -206,7 +208,7 @@ data class VeilGlance(
     val wornWorth: Double = 0.0,
 )
 
-class DashboardUi(
+data class DashboardUi(
     val profile: PlayerProfile? = null,
     val presets: List<WorkoutPreset> = emptyList(),
     val streak: Int = 0,
@@ -226,6 +228,8 @@ class DashboardUi(
     val lastWeek: WeeklyRecap? = null,
     /** Last month's (in January, last year's) review, offered in the first week of a month; null the rest of the time. */
     val review: ReviewSummary? = null,
+    /** The poses already kept for this week, or null until the photos have been read: Today's pose prompt waits for it. */
+    val posesThisWeek: Set<com.ironvellum.app.domain.Pose>? = null,
     /** False only for the placeholder shown before the first read lands. */
     val loaded: Boolean = false,
 )
@@ -323,7 +327,7 @@ class DashboardViewModel(
         .flatMapLatest { trial -> if (trial == null) flowOf(emptyList()) else repo.observeSessionSets(trial.id) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val ui: StateFlow<DashboardUi> = combine(
+    private val baseUi: StateFlow<DashboardUi> = combine(
         repo.observeProfile(),
         repo.observePresets(),
         repo.observeHistory(),
@@ -358,6 +362,17 @@ class DashboardViewModel(
             lastWeek = lastWeekRecap(history, exercises, bodyweightAt, presets, today, zone),
             review = reviewOffered(history, exercises, bodyweightAt, today, zone),
             loaded = true,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
+
+    /** The base state plus which poses this week already has, for the pose-day prompt. */
+    val ui: StateFlow<DashboardUi> = combine(baseUi, repo.photoLibrary.photos) { base, photos ->
+        val week = com.ironvellum.app.domain.PhotoRules.weekStart(LocalDate.now()).toEpochDay()
+        base.copy(
+            posesThisWeek = photos
+                .filter { it.kind == com.ironvellum.app.domain.PhotoKind.POSE && it.day == week }
+                .mapNotNull { it.pose }
+                .toSet(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -569,6 +584,8 @@ fun DashboardScreen(
     onOpenRecap: (Long) -> Unit = {},
     /** The review card: "month" or "year", and the epoch day its period starts on. */
     onOpenReview: (String, Long) -> Unit = { _, _ -> },
+    /** The pose-day prompt: the progress photos screen. */
+    onOpenPhotos: () -> Unit = {},
     onOpenMuscles: (MusclesView) -> Unit = { onOpenPresets() },
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
@@ -662,6 +679,8 @@ fun DashboardScreen(
             onOpenRecap = onOpenRecap,
             onOpenReview = onOpenReview,
             onDismissReview = { key -> ReviewDismissals.dismiss(appContext, key) },
+            onOpenPhotos = onOpenPhotos,
+            onDismissPoses = { PhotoPrefs.dismissPrompt(appContext, LocalDate.now().toEpochDay()) },
             onSelectDay = viewModel::selectDay,
             onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
             onBeginOpen = { viewModel.beginOpen(onStartSession) },
@@ -794,6 +813,9 @@ internal class TodayActions(
     val onOpenReview: (String, Long) -> Unit = { _, _ -> },
     /** The review's close button: the period's key ([com.ironvellum.app.domain.ReviewPeriod.key]). */
     val onDismissReview: (String) -> Unit = {},
+    /** The weekly pose prompt: open the pose photos, and close it for today. */
+    val onOpenPhotos: () -> Unit = {},
+    val onDismissPoses: () -> Unit = {},
     val onSelectDay: (Int) -> Unit = {},
     val onBeginPreset: (Long) -> Unit = {},
     val onBeginOpen: () -> Unit = {},
@@ -1231,6 +1253,13 @@ private fun TodayDayBody(
                     onOpen = { actions.onOpenReview(summary.period.routeKind, summary.period.from.toEpochDay()) },
                     onDismiss = { actions.onDismissReview(summary.period.key) },
                 )
+            }
+        }
+        // The weekly pose prompt: only on the pose day, until closed for the day, while the week's three are not all kept.
+        // Read here, not in the view model: both the weekday choice and the close are Compose state, so the card goes at once.
+        ui.posesThisWeek?.let { poses ->
+            if (isTodaySelected && PhotoRules.poseDue(today, PhotoPrefs.poseDay, PhotoPrefs.dismissedDay, poses)) {
+                add { PoseTodayCard(onOpen = actions.onOpenPhotos, onDismiss = actions.onDismissPoses) }
             }
         }
     }

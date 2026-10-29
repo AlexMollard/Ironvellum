@@ -263,6 +263,8 @@ fun StatsScreen(
     onOpenReview: (String, Long) -> Unit,
     // Straight to the page that answers: Health Connect, or height on Profile.
     onOpenSettings: (SettingsSection) -> Unit,
+    // Body's progress photos row: the pose photos and the week-to-week comparison.
+    onOpenPhotos: () -> Unit,
     // Today's "Add reading" opens the weigh-in itself, not just the tab.
     logWeightRequested: Boolean = false,
     onLogWeightServed: () -> Unit = {},
@@ -370,6 +372,7 @@ fun StatsScreen(
                             }
                         },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
+                        onOpenPhotos = onOpenPhotos,
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )
                     StatsTab.TRAINING -> TrainingTab(

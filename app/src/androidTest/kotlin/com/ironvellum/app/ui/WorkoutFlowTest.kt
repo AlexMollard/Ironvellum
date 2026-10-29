@@ -254,7 +254,7 @@ class WorkoutFlowTest {
         var clicked = 0
         repeat(rounds) {
             val advance = allText().firstOrNull { label ->
-                listOf("Continue", "Done", "Keep rite").any { label.equals(it, ignoreCase = true) }
+                listOf("Continue", "Done", "Skip", "Keep rite").any { label.equals(it, ignoreCase = true) }
             }
             if (advance == null && clicked > 0) return
             if (advance != null) {
