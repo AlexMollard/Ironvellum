@@ -120,4 +120,30 @@ class RestBarEffortTest {
             assertTrue("the XP tally shows in the trial header: ${flow.allText()}", flow.allText().any { it.matches(Regex("""\+\d+ XP""")) })
         }
     }
+
+    @Test
+    fun theLastSetIsAskedAboveSlideToSeal() {
+        // Sets 1 and 2 are already logged: ticking set 3 turns the bar to slide to seal, and it still asks about set 3.
+        app.database.openHelper.writableDatabase.execSQL("UPDATE set_logs SET done = 1 WHERE setIndex < 2")
+        ActivityScenario.launch(MainActivity::class.java).use {
+            flow = FlowDriver(compose)
+            flow.takeTheClock()
+            flow.awaitText("Trial in progress")
+
+            compose.onAllNodes(hasContentDescription("Log set", substring = true), useUnmergedTree = true)
+                .onFirst().performSemanticsAction(SemanticsActions.OnClick)
+            flow.settle()
+            flow.awaitAnyText { it.contains("how hard?", ignoreCase = true) && it.contains("3") }
+            compose.onAllNodes(hasContentDescription("RPE 9") and hasClickAction()).onFirst()
+                .performSemanticsAction(SemanticsActions.OnClick)
+            flow.settle()
+
+            repeat(30) {
+                if (ratedSets().isNotEmpty()) return@repeat
+                Thread.sleep(100)
+            }
+            assertEquals(listOf(9), ratedSets())
+            flow.awaitAnyText { it.contains("✓") }
+        }
+    }
 }

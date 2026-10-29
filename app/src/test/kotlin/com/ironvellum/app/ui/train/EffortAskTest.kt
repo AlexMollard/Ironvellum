@@ -11,9 +11,19 @@ class EffortAskTest {
     }
 
     @Test
-    fun `the last set and a finished rest still ask a rep set under its row`() {
-        assertEquals(EffortAsk.UNDER_ROW, effortAsk(restRunning = true, allLogged = true, reps = true, settingOn = false))
+    fun `the last rep set is asked above slide to seal`() {
+        assertEquals(EffortAsk.SEAL_BAR, effortAsk(restRunning = true, allLogged = true, reps = true, settingOn = false))
+        assertEquals(EffortAsk.SEAL_BAR, effortAsk(restRunning = false, allLogged = true, reps = true, settingOn = true))
+    }
+
+    @Test
+    fun `a finished rest still asks a rep set under its row`() {
         assertEquals(EffortAsk.UNDER_ROW, effortAsk(restRunning = false, allLogged = false, reps = true, settingOn = false))
+    }
+
+    @Test
+    fun `a last hold stays under its row`() {
+        assertEquals(EffortAsk.UNDER_ROW, effortAsk(restRunning = false, allLogged = true, reps = false, settingOn = true))
     }
 
     @Test

@@ -1097,8 +1097,9 @@ fun SessionScreen(
         if (next != effortFor) effortFor = next
     }
     // Under the row (no rest bar) the question does not wait for ever: minutes later it is not about the set in hand.
-    LaunchedEffect(effortFor, restRunning) {
-        if (effortFor != null && !restRunning) {
+    // Above slide to seal it waits: the last set is still the set in hand until the trial is sealed.
+    LaunchedEffect(effortFor, restRunning, allLogged) {
+        if (effortFor != null && !restRunning && !allLogged) {
             delay(EFFORT_ASK_MS)
             effortFor = null
         }
@@ -1106,7 +1107,7 @@ fun SessionScreen(
     val effortAsk = effortSet?.let {
         effortAsk(restRunning, allLogged, metricOf(it.exerciseId) == ExerciseMetric.REPS, EffortSetting.enabled)
     } ?: EffortAsk.NONE
-    val restChipsOn = effortAsk == EffortAsk.REST_BAR
+    val restChipsOn = effortAsk == EffortAsk.REST_BAR || effortAsk == EffortAsk.SEAL_BAR
     val underRowEffort = effortSet?.takeIf { effortAsk == EffortAsk.UNDER_ROW }
     // The live tally: what the ticked sets have earned, priced by the one function the seal uses.
     val doneForTally = remember(ui.sets) { ui.sets.filter { it.done && !it.warmup } }
@@ -3770,7 +3771,7 @@ private fun TrialFooter(
     onSkip: () -> Unit,
     onSealed: () -> Unit,
     slideReset: Int,
-    /** The set just logged, whose effort the rest bar asks; null when it is not asking. */
+    /** The set just logged, whose effort the rest bar (or, after the last set, the seal bar) asks; null when it is not asking. */
     effortSet: SessionSet? = null,
     effortLabel: String = "",
     onRate: (Int?) -> Unit = {},
@@ -3787,11 +3788,17 @@ private fun TrialFooter(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            allLogged -> SlideToSeal(
-                label = UiText.themed(R.string.session_slide_to_seal, R.string.session_slide_to_seal__t).asString(),
-                onSealed = onSealed,
-                resetKey = slideReset,
-            )
+            allLogged -> Column(Modifier.fillMaxWidth()) {
+                if (effortSet != null) {
+                    RestEffort(effortSet, effortLabel, onRate)
+                    Spacer(Modifier.height(8.dp))
+                }
+                SlideToSeal(
+                    label = UiText.themed(R.string.session_slide_to_seal, R.string.session_slide_to_seal__t).asString(),
+                    onSealed = onSealed,
+                    resetKey = slideReset,
+                )
+            }
             rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip, effortSet, effortLabel, onRate)
             nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, noRestYet, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
@@ -3984,15 +3991,17 @@ internal fun effortTarget(seen: Set<Long>?, now: Set<Long>, current: Long?, orde
 }
 
 /** Where the live trial asks how hard the set just logged was. */
-internal enum class EffortAsk { REST_BAR, UNDER_ROW, NONE }
+internal enum class EffortAsk { REST_BAR, SEAL_BAR, UNDER_ROW, NONE }
 
 /**
  * The rest bar asks while the rest counts down, for a set counted in reps, whatever Settings says.
- * Once no rest bar shows (the last set, the rest ran out, no rest timer) a rep set is still asked
- * under its row; any other set only when Settings asks for effort.
+ * The last rep set is asked on the bar too, above slide to seal: under its folded row it sat off
+ * screen and the trial was sealed without it. Otherwise (the rest ran out, no rest timer) a rep set
+ * is still asked under its row; any other set only when Settings asks for effort.
  */
 internal fun effortAsk(restRunning: Boolean, allLogged: Boolean, reps: Boolean, settingOn: Boolean): EffortAsk = when {
     restRunning && !allLogged && reps -> EffortAsk.REST_BAR
+    allLogged && reps -> EffortAsk.SEAL_BAR
     reps || settingOn -> EffortAsk.UNDER_ROW
     else -> EffortAsk.NONE
 }
