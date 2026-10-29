@@ -49,6 +49,13 @@ class ThemeContrastTest {
         assertText("$label InkMuted", c.InkMuted, c.VaultHigh, "raised paper")
         assertText("$label Ink", c.Ink, c.VaultHigh, "raised paper")
         assertText("$label SystemGreen", c.SystemGreen, c.VaultHigh, "raised paper", 4.0)
+        // The chip: its label and its accent icon on the raised fill, and the fill a visible step off page and card.
+        assertText("$label Ink", c.Ink, c.Raised, "chip fill")
+        assertText("$label SystemGreen", c.SystemGreen, c.Raised, "chip fill", 3.0)
+        listOf("page" to c.Abyss, "card" to c.Vault).forEach { (bgName, bg) ->
+            val r = contrastRatio(c.Raised.toArgb(), bg.toArgb())
+            assertTrue("$label chip fill on $bgName is $r:1, needs 1.15", r >= 1.15)
+        }
         assertText("$label UnheldName", c.UnheldName, c.PlateGround, "plate")
         assertText("$label UnheldNameBright", c.UnheldNameBright, c.Vault, "panel")
         assertText("$label OnEmerald", c.OnEmerald, c.Emerald, "accent fill")

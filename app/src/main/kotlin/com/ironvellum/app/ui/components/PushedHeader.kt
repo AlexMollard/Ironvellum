@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
- * Title left, BACK chip right: the header every pushed screen uses, 52dp tall.
+ * Title left, BACK chip (with its arrow) right: the header every pushed screen uses, 52dp tall.
  * The caller supplies the gutter (and any top padding) through [modifier].
  * [actions] sit between the title and BACK (icon buttons, a second chip).
  * [backDescription] is what a screen reader says for BACK when "BACK" alone is not enough.
@@ -47,7 +49,7 @@ fun PushedHeader(
         actions()
         NavChip(
             stringResource(R.string.pushedheader_back_chip),
-            null,
+            Icons.AutoMirrored.Filled.ArrowBack,
             onClick = onBack,
             modifier = if (backDescription != null) Modifier.semantics { contentDescription = backDescription } else Modifier,
         )

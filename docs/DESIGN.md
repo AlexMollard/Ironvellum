@@ -54,7 +54,8 @@ border, not that the shape changes.
 | `InkMuted` | #A3A099 | Secondary text, labels, done or past rows | |
 | `Rune` | #32302B | Borders, rules, empty progress | Text |
 | Primary accent (`Emerald`) | #34D399 | The screen's one primary action, the active-item marker, filled progress, muscle heat-map fills | Borders, dividers, decoration, headings |
-| Link accent (`SystemGreen`, derived from primary) | #6FAE8C | Quiet links and chips (`InkChip`) | Fills |
+| Link accent (`SystemGreen`, derived from primary) | #6FAE8C | Quiet links and the icon on a chip (`InkChip`) | Fills |
+| `Raised` | #262623 (light #E3D8C5) | The fill of a chip: a step off both the page and a card | Text, borders |
 | Reward accent (`SovereignGold`) | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
 | `DangerRed` | #EF5350 | Destructive actions and errors | Warnings that are not destructive |
 | `Caution` | #E0B25A | A soft warning on a muscle that runs heavy, always with its own mark (a double chevron) | Errors, earned moments, anything the lifter must obey |
@@ -303,9 +304,11 @@ the end it snaps and plays a short seal flourish. It always also offers an
 accessibility action ("Seal the trial") so it works without dragging, and it
 respects reduced motion.
 
-**Chip (`InkChip`).** Outlined, sentence case, `SystemGreen`, with an optional
-leading icon. For secondary actions in a header ("Open trial", "Share",
-"History"). At most two per header.
+**Chip (`InkChip`).** A raised neutral button: a solid `Raised` fill with the theme's cut corners and no
+outline, an `Ink` `labelLarge` label in sentence case, 36dp drawn inside a 48dp target, and an optional leading icon
+in the `SystemGreen` accent (BACK, Share, Amend, Take photo and the like carry one). For secondary actions in a
+header ("Open trial", "Share", "History"). At most two per header. `selected` makes it a choice chip: an accent
+wash and a check, announced as selected.
 
 **Tag.** Small caps text with no box ("NEW PEAK" in gold). It never takes a tap.
 
@@ -353,7 +356,7 @@ with no day is not counted in Weekly coverage). Weekly coverage says when rites 
 several.
 
 **Pushed screen header.** Title on the left and the BACK chip on the right
-(`NavChip`), the same on every pushed screen. No left arrows.
+(`NavChip`) with a back-arrow icon, the same on every pushed screen.
 
 ## 7. Feedback and safety
 

@@ -2059,8 +2059,6 @@
     <string name="explorer_recent_title">Recent sets</string>
     <!-- The word for a movement done with none of the variation modifiers (Pull-up, not Pull-up assisted). One string for every screen. -->
     <string name="common_variation_standard">Standard</string>
-    <!-- Exercise explorer: the selected variation chip. %1$s is the variation. -->
-    <string name="explorer_variation_selected" translatable="false">● %1$s</string>
     <!-- Accessibility: action label of a variation chip. %1$s is the variation. -->
     <string name="explorer_variation_show">Show %1$s</string>
     <!-- Accessibility: state of the selected variation chip. %1$s is the variation. -->

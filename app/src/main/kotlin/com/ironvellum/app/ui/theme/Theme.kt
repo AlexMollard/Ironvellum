@@ -48,6 +48,7 @@ internal interface Paper {
     val Abyss: Color // deepest paper (the page)
     val Vault: Color // panel paper
     val VaultHigh: Color // raised paper (navigation, sheets)
+    val Raised: Color // a button's fill: a step off both the page and a card (the chip)
     val Ink: Color
     val InkMuted: Color
     val Rune: Color // structure lines
@@ -82,6 +83,7 @@ internal object DarkPaper : Paper {
     override val Abyss = Color(0xFF0C0C0B)
     override val Vault = Color(0xFF171715)
     override val VaultHigh = Color(0xFF1E1E1B)
+    override val Raised = Color(0xFF262623) // 1.29:1 on the page, 1.18:1 on a card
     // Ink itself: the structural palette is monochrome by design.
     // Exactly tools/art.py INK_TINT (232, 232, 228): generated artwork and UI
     // text must be the same ink, or the "one hand" claim is decorative only.
@@ -121,6 +123,7 @@ internal object LightPaper : Paper {
     override val Abyss = Color(0xFFF7F3EA) // oklch(.965 .013 87) page
     override val Vault = Color(0xFFFEFBF5) // oklch(.988 .008 85) card
     override val VaultHigh = Color(0xFFF3ECDF) // oklch(.945 .019 83) card-high
+    override val Raised = Color(0xFFE3D8C5) // a step darker than card-high: 1.27:1 on the page, 1.37:1 on a card
     override val Ink = Color(0xFF241B15) // oklch(.23 .018 55)
     override val InkMuted = Color(0xFF65584C) // oklch(.47 .025 65)
     override val Rune = Color(0xFFC9BDA9) // oklch(.803 .031 81) line
@@ -164,6 +167,7 @@ object IronvellumColors {
     val Abyss get() = paper.Abyss
     val Vault get() = paper.Vault
     val VaultHigh get() = paper.VaultHigh
+    val Raised get() = paper.Raised
 
     // Colour survives ONLY where it carries information a monochrome UI would
     // destroy: progression, rarity, earned moments, danger.

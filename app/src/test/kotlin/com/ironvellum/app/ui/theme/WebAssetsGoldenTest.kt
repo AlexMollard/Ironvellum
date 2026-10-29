@@ -32,7 +32,7 @@ class WebAssetsGoldenTest {
     }
     private fun hex(c: Color) = accentHex(c.toArgb())
     private fun paper(p: Paper): Map<String, Any> = linkedMapOf(
-        "Abyss" to hex(p.Abyss), "Vault" to hex(p.Vault), "VaultHigh" to hex(p.VaultHigh),
+        "Abyss" to hex(p.Abyss), "Vault" to hex(p.Vault), "VaultHigh" to hex(p.VaultHigh), "Raised" to hex(p.Raised),
         "Ink" to hex(p.Ink), "InkMuted" to hex(p.InkMuted), "Rune" to hex(p.Rune),
         "Bracket" to hex(p.Bracket), "DangerRed" to hex(p.DangerRed), "Caution" to hex(p.Caution),
         "PlateGround" to hex(p.PlateGround), "PlateEdge" to hex(p.PlateEdge), "PlateDeep" to hex(p.PlateDeep),

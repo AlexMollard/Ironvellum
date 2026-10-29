@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,9 +53,9 @@ internal fun PhotoActions(
     pickLabel: String = stringResource(R.string.photo_pick_button),
 ) {
     FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (source.canTake && enabled) InkChip(takeLabel, height = 48.dp, onClick = source.take)
-        if (enabled) InkChip(pickLabel, height = 48.dp, onClick = source.pick)
-        if (kept && enabled) InkChip(stringResource(R.string.photo_remove_button), stringResource(R.string.photo_remove_description), height = 48.dp, onClick = onRemove)
+        if (source.canTake && enabled) InkChip(takeLabel, icon = Icons.Outlined.PhotoCamera, height = 48.dp, onClick = source.take)
+        if (enabled) InkChip(pickLabel, icon = Icons.Outlined.PhotoLibrary, height = 48.dp, onClick = source.pick)
+        if (kept && enabled) InkChip(stringResource(R.string.photo_remove_button), stringResource(R.string.photo_remove_description), Icons.Outlined.Delete, height = 48.dp, onClick = onRemove)
     }
 }
 

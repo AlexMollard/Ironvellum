@@ -253,9 +253,10 @@ private fun VariationChips(variations: List<String>, shown: String, onPick: (Str
         variations.forEach { key ->
             val label = if (key.isEmpty()) stringResource(R.string.common_variation_standard) else key.replace(",", ", ")
             InkChip(
-                label = if (key == shown) stringResource(R.string.explorer_variation_selected, label) else label,
+                label = label,
                 clickLabel = stringResource(R.string.explorer_variation_show, label),
                 description = if (key == shown) stringResource(R.string.explorer_variation_shown, label) else null,
+                selected = key == shown,
                 onClick = { onPick(key) },
             )
         }
