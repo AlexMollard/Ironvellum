@@ -1971,6 +1971,14 @@
         "plain": "Ranks Veil progress — echoes inscribed — separate from the training leaderboard.",
         "themed": "Ranks Veil progress — echoes inscribed — separate from the training reckoning."
     },
+    "stats_lift_board_empty": {
+        "plain": "Log weighted sets of 1 to 12 reps to build the board.",
+        "themed": "Log weighted sets of 1 to 12 reps to build the board."
+    },
+    "xp_level_label": {
+        "plain": "Level %1$d",
+        "themed": "Level %1$d"
+    },
     "serverTerms": [
         {
             "themed": "true name",
@@ -2050,13 +2058,5 @@
             "plain": "lifter",
             "plainPl": "lifters"
         }
-    ],
-    "stats_lift_board_empty": {
-        "plain": "Log weighted sets of 1 to 12 reps to build the board.",
-        "themed": "Log weighted sets of 1 to 12 reps to build the board."
-    },
-    "xp_level_label": {
-        "plain": "Level %1$d",
-        "themed": "Level %1$d"
-    }
+    ]
 }
