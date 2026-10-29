@@ -69,7 +69,7 @@ class CheckerTest(unittest.TestCase):
         self.assertIn("missing: today_caption__t", errors)
         self.assertIn("missing: sets_done", errors)
         self.assertIn("extra: sets_done_missing (no such key in English)", errors)
-        self.assertIn('copied a translatable="false" entry: app_name', errors)
+        self.assertIn('copied a translatable=\"false\" entry verbatim: app_name', errors)
 
     def test_placeholder_mismatch_apostrophe_and_plural_quantity(self):
         d, tr = self.write_translation(

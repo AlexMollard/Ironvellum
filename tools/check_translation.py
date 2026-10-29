@@ -119,13 +119,18 @@ def check(english, translation, code):
         errors.append(f"unknown language code '{code}': no CLDR plural list (add it to CLDR)")
 
     en_translatable = {k for k, e in english.items() if e.translatable}
+    # An untranslatable English key can still need a locale-specific value
+    # (java.time patterns, separators), so copied translatable="false" keys are
+    # allowed when the translation's value differs from English.
+    allowed_copied = {k for k, e in translation.items()
+                      if k in english and not english[k].translatable and same_value(english[k], e)}
 
     for key in sorted(en_translatable - set(translation)):
         errors.append(f"missing: {key}")
     for key in sorted(set(translation) - set(english)):
         errors.append(f"extra: {key} (no such key in English)")
-    for key in sorted(set(translation) & {k for k, e in english.items() if not e.translatable}):
-        errors.append(f"copied a translatable=\"false\" entry: {key}")
+    for key in sorted(set(translation) & {k for k, e in english.items() if not e.translatable} - allowed_copied):
+        errors.append(f'copied a translatable="false" entry verbatim: {key}')
 
     for key in sorted(set(translation) & en_translatable):
         en, tr = english[key], translation[key]
@@ -170,6 +175,13 @@ def check_value(key, text, en_text, errors, warnings, compare_length):
     if compare_length and en_text and is_long_key(key):
         if len(text) > len(en_text) * 1.3 + 1:
             warnings.append(f"length: {key} is {len(text)} chars vs English {len(en_text)}")
+
+
+def same_value(a, b):
+    """True when two entries hold the same text in every value."""
+    if a.is_plural != b.is_plural:
+        return False
+    return a.values() == b.values()
 
 
 def is_long_key(key):
