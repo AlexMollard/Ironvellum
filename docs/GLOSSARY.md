@@ -283,7 +283,7 @@ The glossary covers every place a user reads words:
   (`'Lifter' || …` in `supabase/migrations/0001_baseline.sql`), and exception
   messages that reach the screen;
 - the store listing (`fastlane/metadata/android/*/full_description.txt`,
-  `short_description.txt`) and the README's feature descriptions.
+  `short_description.txt`), the README and docs/FEATURES.md.
 
 Past changelogs are history and stay as written. Outside the app (store
 listing, README) a reader has not learned the words yet, so a themed term may
