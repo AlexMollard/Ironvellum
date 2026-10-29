@@ -56,7 +56,8 @@ def main(argv):
             print(f"!! no such batch file: {p}")
             return 2
         for lineno, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
-            if not line.strip():
+            line = line.strip()
+            if not line:
                 continue
             parts = line.split("\t")
             if len(parts) != 4:

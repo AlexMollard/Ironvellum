@@ -178,7 +178,9 @@ def check_row(english, translation, code):
         brands = re.search(r"Ironvellum|Health Connect|Supabase|Liberapay|GitHub|Google", english)
         # Only placeholders plus punctuation/units around them: data formatting, not copy.
         unit = re.fullmatch(r"""[A-Za-z0-9 .,:;/()%~×→–—“”’↳'\"\-−+<>&;|·]*""", skeleton)
-        if not (brands or unit or KEEP_ENGLISH.match(english.strip())):
+        # A short nav label ("Muscles ›") may keep its form; the term table governs it.
+        short = len(re.findall(r"[A-Za-z]{3,}", english)) <= 1
+        if not (brands or unit or short or KEEP_ENGLISH.match(english.strip())):
             errors.append("left identical to English")
     return errors
 

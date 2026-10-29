@@ -30,11 +30,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "app" / "src" / "main" / "res"
 
-# CLDR plural categories per language, as docs/TRANSLATING.md lists them.
+# Android <plurals> only accepts the English grammatical categories: `one` and
+# `other` (docs/TRANSLATING.md). ja/ko/zh have no singular form, so `other` only.
 CLDR = {
     "es": {"one", "other"},
     "de": {"one", "other"},
-    "fr": {"one", "many", "other"},
+    "fr": {"one", "other"},
     "pt-rBR": {"one", "other"},
     "ja": {"other"},
     "ko": {"other"},
@@ -105,8 +106,10 @@ def entry_text(e):
 
 
 def placeholders(text):
-    """Multiset of (index, type) tuples; %% is an escape, not a placeholder."""
-    return sorted(PLACEHOLDER.findall(text.replace("%%", "")))
+    """Multiset of (index, type) tuples; %% is an escape, not a placeholder.
+    A `%` before a space then a letter (`Body fat % (optional)`, `40% more`) is a
+    literal percent, not a placeholder (same rule as check_translation_tsv)."""
+    return sorted(PLACEHOLDER.findall(re.sub(r"%\s", "%\u0000", text.replace("%%", ""))))
 
 
 def check(english, translation, code):
@@ -138,6 +141,8 @@ def check(english, translation, code):
             errors.append(f"kind mismatch: {key} is {'a plural' if tr.is_plural else 'a string'} but English is {'a plural' if en.is_plural else 'a string'}")
             continue
         if tr.is_plural:
+            # Every language must ship all its CLDR categories; ja/ko/zh's list is
+            # `other` alone, so a bare `other` plural passes there and nowhere else.
             if cldr is not None and set(tr.items) != cldr:
                 errors.append(f"plural quantities for {key}: {sorted(tr.items)} but {code} uses {sorted(cldr)}")
             for quantity, text in sorted(tr.items.items()):
@@ -190,9 +195,17 @@ def is_long_key(key):
 
 
 def check_bools(dir_path, english, translation):
-    """themed_strings_complete must exist and match whether every __t key is present."""
+    """themed_strings_complete must exist and match whether every __t key is present.
+
+    A `key__t` whose plain twin `key` does not exist in English is a twin of a
+    plurals pair (or a plain-only family English never shipped); the app can
+    never show it, so it does not count for completeness. StringsXmlTest's
+    pairing rule forbids it in any case.
+    """
     errors = []
-    themed_keys = {k for k in english if k.endswith("__t") and english[k].translatable}
+    themed_keys = {k for k in english
+                   if k.endswith("__t") and english[k].translatable
+                   and k[:-3] in english}
     have = set(translation)
     bools = Path(dir_path) / "bools.xml"
     declared = None
