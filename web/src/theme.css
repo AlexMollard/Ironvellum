@@ -557,7 +557,7 @@ a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset
 }
 /* touch targets: 44px where the pointer is a finger */
 @media (max-width: 720px), (pointer: coarse) {
-  input, select { min-height: 44px; }
+  input, select, button { min-height: 44px; }
   .pill, .pill-select, .segmented button, .segment, .reaction, .copy-button, .primary-small, .safety-item, .danger-small { min-height: 44px; }
   .icon-button, .copy-button.icon-only, .safety-toggle, .inbox-button, .appearance-button { min-width: 44px; min-height: 44px; }
   .swatch { width: 44px; height: 44px; }

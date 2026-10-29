@@ -77,7 +77,7 @@ export function renderShell(root, {source,snapshot,social,onSignOut,nowMs=Date.n
     const header=page.querySelector(':scope > .screen-header'); if(header) titleSlot.replaceChildren(header);
     // The tab and the history name the page; focus goes to its heading when the screen changes (not on first load, and not when the same page is drawn again, as the appearance menu does).
     const h1=titleSlot.querySelector('h1')??page.querySelector('h1'),tab=screen.startsWith('friends/')?TABS.find(([id])=>id===screen.slice(8)):null;
-    const name=page.dataset.title||(tab?`${tab[1]()} · ${h1?.textContent??friendsTitle()}`:h1?.textContent)||page.querySelector('.route-message')?.textContent;
+    const name=page.dataset.title||(tab&&tab[1]()!==(h1?.textContent??friendsTitle())?`${tab[1]()} · ${h1?.textContent??friendsTitle()}`:h1?.textContent)||page.querySelector('.route-message')?.textContent;
     document.title=name?`${name} · Ironvellum`:'Ironvellum';
     if(h1){h1.tabIndex=-1;}
     if(lastPath!==null){

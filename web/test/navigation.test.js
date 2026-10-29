@@ -33,6 +33,7 @@ describe('moving between pages', () => {
     expect(document.title).toBe('Overview · Ironvellum'); expect(document.activeElement).toBe(document.body);
     await go('/workouts'); expect(document.title).toBe('Workouts · Ironvellum');
     await go('/friends/inbox'); expect(document.title).toBe('Inbox · Friends · Ironvellum');
+    await go('/friends/allies'); expect(document.title).toBe('Friends · Ironvellum');
   });
   it('movesFocusToThePageHeadingWhenTheScreenChanges', async () => {
     const { root } = await mount();
