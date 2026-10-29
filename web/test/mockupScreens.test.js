@@ -91,11 +91,11 @@ describe('components', () => {
     expect(prTag({ label: 'Pull-up . Archer', reps: 5 }).textContent).toBe('PRPull-up · Archer BW × 5');
     expect(prTag({ label: 'Plank', durationSec: 45 }).textContent).toBe('PRPlank 45 s');
   });
-  it('the chart axis keeps the exact minimum and maximum, draws five grid lines and gold diamonds for records', () => {
+  it('the chart axis rounds out to nice bounds, draws a grid line per step and gold diamonds for records', () => {
     const root = document.createElement('div');
     renderLineChart(root, { series: [{ points: [[1, 1, 80, 0], [2, 2, 105, 1], [3, 3, 92, 0]] }], unit: 'kg', details: false });
-    expect(root.querySelectorAll('.chart-grid')).toHaveLength(5);
-    expect(root.textContent).toContain('80 kg'); expect(root.textContent).toContain('105 kg');
+    expect(root.querySelectorAll('.chart-grid')).toHaveLength(4);
+    expect([...root.querySelectorAll('text.chart-text')].map(t => t.textContent)).toEqual(['80 kg', '90 kg', '100 kg', '110 kg']);
     expect(root.querySelectorAll('polygon.chart-pr')).toHaveLength(1); expect(root.querySelectorAll('circle')).toHaveLength(2); expect(root.querySelector('details')).toBeNull();
   });
   it('a deed seal draws like the app: metal outline, rim and a glyph at the tier size', () => {

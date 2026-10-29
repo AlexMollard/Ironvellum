@@ -3,25 +3,43 @@ import { showTip, hideTip, roving, clientPoint, svgPoint } from './interact.js';
 const NS = 'http://www.w3.org/2000/svg';
 const make = (tag, attrs = {}) => { const el = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value)); return el; };
 
-/** Plot the supplied values without deriving training figures. */
-export function renderLineChart(root, { series, label = 'Progress', formatValue = String, unit = '', height = 220, details = true, pointTitle = p => p[4] }) {
+const STEPS = [1, 2, 2.5, 5, 10];
+const clean = n => Number(n.toPrecision(12));
+/**
+ * A round axis around [min, max]: ticks on steps of 1, 2, 2.5 or 5 x 10^n, the bounds pushed outward to the nearest step so
+ * every value still sits inside. All values equal (a single point included) get a span of 5% either side, or 0 to 1 at zero.
+ */
+export function niceScale(min, max, intervals = 4) {
+  if (min === max) { if (min === 0) return { lo: 0, hi: 1, step: .25, ticks: [0, .25, .5, .75, 1] }; const pad = Math.abs(min) * .05; min -= pad; max += pad; }
+  const raw = (max - min) / intervals, base = 10 ** Math.floor(Math.log10(raw));
+  const step = clean(STEPS.map(m => m * base).find(v => v >= raw * (1 - 1e-9)));
+  const lo = clean(Math.floor(min / step + 1e-9) * step), hi = clean(Math.ceil(max / step - 1e-9) * step);
+  const ticks = []; for (let v = lo, i = 0; v <= hi + step / 2; i++, v = clean(lo + i * step)) ticks.push(v);
+  return { lo, hi, step, ticks };
+}
+
+/**
+ * Plot the supplied values without deriving training figures. `factor` is how many display units one data unit is (2.2046 for
+ * kg shown as lb), so the round axis is round in what the reader sees; values and ticks stay in data units.
+ */
+export function renderLineChart(root, { series, label = 'Progress', formatValue = String, unit = '', height = 220, details = true, factor = 1, pointTitle = p => p[4] }) {
   root.replaceChildren();
   const all = series.flatMap(s => s.points);
   if (!all.length) return;
   const width = Math.max(300, Math.round(root.clientWidth || 600)), right = 14, top = 14, bottom = 28;
-  const widest = Math.max(...[Math.min(...all.map(p => p[2])), Math.max(...all.map(p => p[2]))].map(v => `${formatValue(v)}${unit ? ` ${unit}` : ''}`.length));
+  const scale = niceScale(Math.min(...all.map(p => p[2])) * factor, Math.max(...all.map(p => p[2])) * factor);
+  const ticks = scale.ticks.map(v => v / factor), minY = scale.lo / factor, maxY = scale.hi / factor;
+  const widest = Math.max(...ticks.map(v => `${formatValue(v)}${unit ? ` ${unit}` : ''}`.length));
   const left = Math.max(48, Math.ceil(widest * 6.4) + 16);
   const svg = make('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': label, class: 'line-chart' });
-  const xs = all.map(p => p[0]), ys = all.map(p => p[2]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const xs = all.map(p => p[0]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
   const x = v => left + (maxX === minX ? (width - left - right) / 2 : (v - minX) / (maxX - minX) * (width - left - right));
-  const y = v => height - bottom - (maxY === minY ? (height - top - bottom) / 2 : (v - minY) / (maxY - minY) * (height - top - bottom));
-  const span = maxY - minY, ticks = minY === maxY ? [minY] : [0, 1, 2, 3, 4].map(i => i === 0 ? minY : i === 4 ? maxY : minY + span * i / 4);
-  const tidy = value => value === minY || value === maxY ? value : Number(value.toFixed(span >= 8 ? 0 : 1));
+  const y = v => height - bottom - (v - minY) / (maxY - minY) * (height - top - bottom);
   for (const value of ticks) {
     svg.append(make('line', { x1: left, x2: width - right, y1: y(value), y2: y(value), class: 'chart-grid' }));
     const tick = make('text', { x: left - 8, y: y(value), 'text-anchor': 'end', 'dominant-baseline': 'middle', class: 'chart-text' });
-    tick.textContent = `${formatValue(tidy(value))}${unit ? ` ${unit}` : ''}`; svg.append(tick);
+    tick.textContent = `${formatValue(value)}${unit ? ` ${unit}` : ''}`; svg.append(tick);
   }
   const cursor = make('line', { x1: 0, x2: 0, y1: top, y2: height - bottom, class: 'chart-cursor', visibility: 'hidden' }); svg.append(cursor);
   const groups = [];

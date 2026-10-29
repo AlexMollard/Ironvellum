@@ -75,16 +75,17 @@ export function bindTips(root, selector, contentOf, { anchorOf = el => el, onSho
 const ARROWS = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
 /**
  * Roving tab stop: one item is reachable with Tab, the arrow keys, Home and End move between the items.
- * `next(index, key)` may return the index to move to (or undefined to ignore the key).
+ * `next(index, key)` may return the index to move to (or undefined to ignore the key). An ignored arrow key is swallowed so
+ * the page does not scroll under the widget, unless `passArrows` is set (a row inside a scrolling list).
  */
-export function roving(items, next = (index, key) => (key in ARROWS ? index + ARROWS[key] : undefined)) {
+export function roving(items, next = (index, key) => (key in ARROWS ? index + ARROWS[key] : undefined), { passArrows = false } = {}) {
   const setStop = active => items.forEach(item => item.setAttribute('tabindex', item === active ? '0' : '-1'));
   setStop(items[0]);
   items.forEach((item, index) => {
     item.addEventListener('focus', () => setStop(item));
     item.addEventListener('keydown', event => {
       const target = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : next(index, event.key);
-      if (target == null || !items[target] || target === index) { if (target != null || event.key in ARROWS) event.preventDefault(); return; }
+      if (target == null || !items[target] || target === index) { if (target != null || (event.key in ARROWS && !passArrows)) event.preventDefault(); return; }
       event.preventDefault(); items[target].focus();
     });
   });

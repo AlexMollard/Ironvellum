@@ -70,7 +70,7 @@ function liftDetail(pane, lift, snapshot) {
       const panel = el('div', null, 'analytics-chart'); panel.append(el('h3', title, 'chart-title'));
       const plot = el('div'); panel.append(plot); chart.append(panel);
       if (series.reduce((n, s) => n + s.points.length, 0) < 2) plot.append(el('p', t('explorer_chart_one')));
-      else renderLineChart(plot, { series, label: title, formatValue, unit });
+      else renderLineChart(plot, { series, label: title, formatValue, unit, factor: metric === 'e1rm' && snapshot.unit === 'lb' ? 1 / 0.45359237 : 1 });
     }
     if (lift.variations.some(v => selected.has(v.key) && !((v.chartMetric === 'e1rm' && v.chartUnit === 'kg') || (v.chartMetric === 'strength' && v.chartUnit === 'score')))) chart.append(el('p', 'Sync the app to see chart metrics.'));
     renderVariationTable(table, { variations: lift.variations, selected, unit: snapshot.unit, zone: snapshot.zone, builtAtMs: snapshot.builtAtMs, addsToBody: lift.addsToBody, onToggle(key) { if (selected.has(key)) selected.delete(key); else selected.add(key); draw(); } });

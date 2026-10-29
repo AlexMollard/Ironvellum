@@ -3,6 +3,7 @@ import { workoutPath } from '../source.js';
 import { formatDay, formatSets, formatVolume, formatWeekday } from '../format.js';
 import { node, workoutDay, link } from './statCard.js';
 import { muscleStrip } from './muscleStrip.js';
+import { roving } from './interact.js';
 import { copyButton } from './copyWorkout.js';
 import { formatWorkoutText } from '../workoutText.js';
 import { prTag } from './prTag.js';
@@ -19,10 +20,14 @@ export function workoutRow(workout, entry, snapshot, router, source) {
   el.append(when, text);
   if (entry?.prs?.length) el.append(prTag(entry.prs[0], snapshot?.unit));
   // The strip sits above the row's stretched link so it can show its tooltips; a click on it still opens the workout.
-  const strip = muscleStrip(entry?.groupLevels); strip.addEventListener('click', () => heading.click());
+  const strip = muscleStrip(entry?.groupLevels, { own: false }); strip.addEventListener('click', () => heading.click());
   el.append(strip);
-  if (source) el.append(copyButton({ iconOnly: true, label: `Copy ${workout.title || workout.label || t('concept_trial_s')}`, getText: async () => formatWorkoutText({ workout, entry, snapshot, sets: await source.getSets(workout) }) }));
+  let copy = null;
+  if (source) el.append(copy = copyButton({ iconOnly: true, label: `Copy ${workout.title || workout.label || t('concept_trial_s')}`, getText: async () => formatWorkoutText({ workout, entry, snapshot, sets: await source.getSets(workout) }) }));
   el.append(node('span', '›', 'row-chevron'));
   el.lastChild.setAttribute('aria-hidden', 'true');
+  // One tab stop per row: the title link. Left and Right walk on to the muscle cells and the copy button.
+  const stops = [heading, ...strip.querySelectorAll('.muscle-cell'), ...(copy ? [copy.querySelector('button')] : [])];
+  roving(stops, (index, key) => key === 'ArrowRight' ? index + 1 : key === 'ArrowLeft' ? index - 1 : undefined, { passArrows: true });
   return el;
 }

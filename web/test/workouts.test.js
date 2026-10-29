@@ -15,6 +15,22 @@ describe('workouts', () => {
     expect(root.querySelector('.muscle-cell').dataset.level).toBe('3');
     root.querySelector('[aria-label="Previous month"]').click(); expect(root.textContent).toContain('— workouts');
   });
+  it('makes each row one tab stop, with the muscle cells and copy button a Left/Right walk away', async () => {
+    const root = document.createElement('main'); document.body.append(root);
+    await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows, getSets: async () => [] }, snapshot, router });
+    const stops = row => [...row.querySelectorAll('a[href], button, [tabindex]')].filter(el => el.tabIndex >= 0);
+    const cards = [...root.querySelectorAll('.workout-row')]; expect(cards).toHaveLength(2);
+    for (const card of cards) { const tabbable = stops(card); expect(tabbable).toHaveLength(1); expect(tabbable[0]).toBe(card.querySelector('.workout-title')); }
+    const card = cards[0], title = card.querySelector('.workout-title'), press = (el, key) => el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    title.focus(); press(title, 'ArrowRight'); expect(document.activeElement).toBe(card.querySelector('.muscle-cell'));
+    for (let i = 0; i < 6; i++) press(document.activeElement, 'ArrowRight');
+    expect(document.activeElement).toBe(card.querySelector('.copy-button'));
+    expect(stops(card)).toEqual([card.querySelector('.copy-button')]);
+    const down = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }); document.activeElement.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(false);
+    press(document.activeElement, 'ArrowLeft'); expect(document.activeElement.classList.contains('muscle-cell')).toBe(true);
+    root.remove();
+  });
   it('filters titles and imported workouts', async () => {
     const root = document.createElement('main'); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot, router });
     root.querySelector('[data-filter="imported"]').click(); expect(root.textContent).toContain('Pull'); expect(root.textContent).not.toContain('Legs');

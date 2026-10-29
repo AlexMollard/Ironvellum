@@ -24,7 +24,7 @@ describe('exercise progress', () => {
     const charts = root.querySelectorAll('.line-chart');
     expect(charts).toHaveLength(2);
     expect(charts[0].textContent).toContain('lb');
-    expect(charts[1].textContent).toContain('33.97 score');
+    expect(charts[1].textContent).toContain('32 score'); expect(charts[1].textContent).toContain('40 score');
     expect(charts[1].textContent).not.toContain('lb');
   });
   it('renders hold records as seconds with one-based positions', () => {
