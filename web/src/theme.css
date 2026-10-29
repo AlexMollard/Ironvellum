@@ -281,7 +281,7 @@ svg.body-map { width: auto; height: 100%; }
 .exercise-line h2 { margin: 0; font-size: 18px; font-weight: 700; }
 .exercise-link { color: inherit; text-decoration: none; }
 .exercise-header.is-link { margin: 0 -8px; padding: 4px 8px; border-radius: 4px; }
-.crumb[aria-hidden] { margin-right: 2px; }
+.crumb[aria-hidden] { margin: 0 6px 0 4px; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th { padding: 10px 8px 6px; font-size: 11px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; text-align: left; color: var(--faint); border-bottom: 1px solid var(--paper-rune); }
