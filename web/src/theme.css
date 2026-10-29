@@ -162,7 +162,7 @@ svg.body-map { width: auto; height: 100%; }
 .fatigue-legend-item.level-3::before, .fatigue-row.level-3 .fatigue-swatch { background: repeating-linear-gradient(135deg, var(--paper-abyss) 0 1px, transparent 1px 4px), var(--fill); }
 .fatigue-legend-item.level-4::before, .fatigue-row.level-4 .fatigue-swatch { background: repeating-linear-gradient(135deg, var(--paper-abyss) 0 1px, transparent 1px 4px), repeating-linear-gradient(45deg, var(--paper-abyss) 0 1px, transparent 1px 4px), var(--secondary); }
 .worked-3::before { background: var(--fill); }
-.fatigue-asof { margin: 0; font-size: 11px; }
+.fatigue-asof { margin: 0 0 8px; font-size: 11px; }
 .fatigue-row { display: flex; align-items: center; gap: 10px; min-height: 46px; border-top: 1px solid var(--paper-rune); font-size: 14px; }
 .fatigue-legend + .fatigue-row { margin-top: 8px; }
 .fatigue-text { flex: 1; line-height: 1.3; }

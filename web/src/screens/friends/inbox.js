@@ -53,7 +53,7 @@ export async function renderInbox(root, ctx) {
     const unread = seenAtMs == null || item.occurredAtMs > seenAtMs;
     if (unread) { const dot = node('span', null, 'inbox-dot'); dot.setAttribute('role', 'img'); dot.setAttribute('aria-label', t('inbox_unread_description')); el.append(dot); }
     // Where the item points: your workout for a comment or kudos on it, the folio of someone who accepted, the Group page for its own news.
-    const path = item.sessionId ? `/workouts/synced/${encodeURIComponent(item.sessionId)}` : item.kind === 'accepted' ? `/friends/allies/${encodeURIComponent(item.actorId)}` : item.kind.startsWith('circle_') ? '/friends/circle' : null;
+    const path = item.sessionId && ['comment', 'reply', 'reaction'].includes(item.kind) ? `/workouts/synced/${encodeURIComponent(item.sessionId)}` : item.kind === 'accepted' ? `/friends/allies/${encodeURIComponent(item.actorId)}` : item.kind.startsWith('circle_') ? '/friends/circle' : null;
     if (path && router) el.classList.add('is-link');
     const text = node('div', null, 'inbox-text'); const line = path && router ? link('', path, router, 'inbox-link stretch') : node('div'); line.append(node('strong', hiddenName(item.actorName)), ` ${itemLine(item)}`);
     text.append(line);

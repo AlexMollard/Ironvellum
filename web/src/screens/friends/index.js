@@ -10,7 +10,7 @@ import { renderBoards } from './boards.js';
 import { renderCircle } from './circle.js';
 
 /** The sub-tabs, in the order the app shows them. Each screen is `(root, ctx, arg) => Promise<void>`, added by its task. */
-export const TABS = [['feed', () => 'Feed'], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => 'Boards'], ['circle', () => word('Group', 'concept_circle_c')]];
+export const TABS = [['feed', () => word('Feed', 'concept_tidings_c')], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => word('Boards', 'concept_reckoning_c')], ['circle', () => word('Group', 'concept_circle_c')]];
 export const SCREENS = {};
 export const friendsTitle = () => word('Friends', 'concept_ally_cpl');
 

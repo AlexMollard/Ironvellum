@@ -124,3 +124,22 @@ describe('badge and refresh', () => {
     await social.inbox(); expect(client.calls.some(c => c.name === 'mark_inbox_seen')).toBe(false);
   });
 });
+
+describe('inbox items are targets', () => {
+  const script = items => ({ 'rpc:my_inbox': items, inbox_seen: [], 'rpc:mark_inbox_seen': null, friendships: [{ requester_id: 'u1' }] });
+  it('eachItemLinksToWhatItIsAboutAndARequestLinksNowhere', async () => {
+    const { root } = await open(script([row('request'), row('comment'), row('reaction'), row('accepted', { actor_name: 'Jonah' }), row('circle_join', { body: 'Iron Tide' })]), { router: { go: vi.fn() } });
+    const by = kind => root.querySelector(`.inbox-item[data-kind="${kind}"]`);
+    const stretch = kind => { const found = by(kind).querySelectorAll('.stretch'); expect(found.length).toBeLessThanOrEqual(1); return found[0]; };
+    expect(by('request').classList.contains('is-link')).toBe(false); expect(stretch('request')).toBeUndefined(); expect(by('request').querySelector('.primary-small')).not.toBeNull();
+    expect(stretch('comment').getAttribute('href')).toBe('#/workouts/synced/s1'); expect(stretch('reaction').getAttribute('href')).toBe('#/workouts/synced/s1');
+    expect(stretch('accepted').getAttribute('href')).toBe('#/friends/allies/u1'); expect(stretch('circle_join').getAttribute('href')).toBe('#/friends/circle');
+    expect(by('comment').classList.contains('is-link')).toBe(true);
+  });
+  it('theFeedAndBoardsTabsTakeTheThemedNames', async () => {
+    const { TABS } = await import('../src/screens/friends/index.js');
+    expect(TABS.map(([, label]) => label())).toEqual(['Feed', 'Inbox', 'Friends', 'Boards', 'Group']);
+    setWordsMode(true); expect(TABS.map(([, label]) => label())).toEqual([t('concept_tidings_c'), t('concept_inbox_c'), t('concept_ally_cpl'), t('concept_reckoning_c'), t('concept_circle_c')]);
+    expect(t('concept_tidings_c')).toBe('Tidings');
+  });
+});
