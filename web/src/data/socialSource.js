@@ -242,9 +242,33 @@ function boardsApi(client) {
   };
 }
 
+function circleApi(client) {
+  // Every circle call is an RPC: the server owns the rules (the Keeper checks, the 8-member cap, the join throttle); a status or a refusal is shown as given.
+  const call = async (name, args) => (await checked(args === undefined ? client.rpc(name) : client.rpc(name, args))).data;
+  const circleOf = r => ({
+    id: r.id, name: r.name, code: r.code, ownerId: r.owner_id ?? r.members?.[0]?.user_id ?? '', week: r.week ?? '', perMember: r.per_member ?? 3, pendingPerMember: r.pending_per_member ?? null,
+    goal: r.goal ?? 0, total: r.circle_total ?? 0, roster: r.roster ?? 0, weeksMet: r.weeks_met ?? 0,
+    members: (r.members ?? []).map(m => ({ userId: m.user_id, name: m.display_name, level: m.level ?? null, titleId: m.current_title_id ?? null, crestId: m.current_crest_id ?? null, daysThisWeek: m.days_this_week ?? 0, counts: m.counts !== false, lastWorkoutAtMs: m.last_workout_at ? Date.parse(m.last_workout_at) : null })),
+  });
+  return {
+    // my_circle(): one row (the caller's circle and roster, oldest member first), or none
+    async circle() { const rows = await call('my_circle'); const row = Array.isArray(rows) ? rows[0] : rows; return row ? circleOf(row) : null; },
+    async createCircle(name) { await call('create_circle', { p_name: name }); },
+    // join_circle(p_code) answers a status string: joined, no_such_code, closed, full or throttled
+    async joinCircle(code) { return String(await call('join_circle', { p_code: code })).trim().replace(/^"|"$/g, ''); },
+    async leaveCircle() { await call('leave_circle'); },
+    async setCircleGoal(n) { await call('set_circle_goal', { p_per_member: n }); },
+    async setCircleName(name) { await call('set_circle_name', { p_name: name }); },
+    async rotateCircleCode() { return String(await call('rotate_circle_code')).trim().replace(/^"|"$/g, ''); },
+    async kickCircleMember(id) { await call('kick_circle_member', { p_user: id }); },
+    // circle_bonuses(): the weeks this lifter was on the roster of a circle that met its goal (read-only here; the phone pays the XP)
+    async circleBonuses() { return ((await call('circle_bonuses')) ?? []).map(r => ({ week: r.week, days: r.days ?? 0, circleName: r.circle_name ?? null })); },
+  };
+}
+
 /** The methods implemented so far; each screen's task adds its area here. */
 function implementations(client, userId) {
-  return { ...feedApi(client, userId), ...safetyApi(client, userId), ...inboxApi(client, userId), ...alliesApi(client, userId), ...boardsApi(client) };
+  return { ...feedApi(client, userId), ...safetyApi(client, userId), ...inboxApi(client, userId), ...alliesApi(client, userId), ...boardsApi(client), ...circleApi(client) };
 }
 
 /** @returns {SocialSource} */

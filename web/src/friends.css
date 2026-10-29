@@ -92,6 +92,29 @@
 .board-you { font-weight: 600; }
 .lift-pick { height: 36px; max-width: 100%; }
 
+/* circle */
+.circle { display: grid; gap: 14px; min-width: 0; }
+.circle-join, .circle-create, .circle-head, .circle-manage { max-width: 640px; }
+.circle-join label, .circle-create label, .circle-goal label, .circle-rename label { display: grid; gap: 6px; font-size: 13px; }
+.circle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.circle-title h2 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.circle-progress.is-met { color: var(--fill); border-color: var(--fill); }
+.goal-rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.rail-cell { height: 6px; border-radius: 2px; background: var(--paper-rune); }
+.rail-cell.is-on { background: var(--fill); }
+.circle-code { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.circle-roster { display: grid; gap: 6px; }
+.circle-member-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-size: 12px; }
+.circle-roster .person-row { flex-wrap: wrap; }
+.circle-roster .person-text { flex: 1; }
+.day-boxes { display: inline-flex; gap: 3px; }
+.day-box { width: 12px; height: 12px; border: 1px solid var(--paper-rune); border-radius: 2px; }
+.day-box.is-on { background: var(--fill); border-color: var(--fill); }
+.circle-manage form { display: grid; gap: 8px; }
+.circle-slot { display: grid; gap: 10px; }
+.circle-facts, .circle-footer { font-size: 12px; }
+.circle-bonuses { display: grid; gap: 4px; font-size: 13px; }
+
 /* allies and the lifter folio */
 .allies-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .allies-layout.has-folio { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }

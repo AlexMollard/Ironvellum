@@ -7,6 +7,7 @@ import { renderFeed } from './feed.js';
 import { renderInbox } from './inbox.js';
 import { renderAllies } from './allies.js';
 import { renderBoards } from './boards.js';
+import { renderCircle } from './circle.js';
 
 /** The sub-tabs, in the order the app shows them. Each screen is `(root, ctx, arg) => Promise<void>`, added by its task. */
 export const TABS = [['feed', () => 'Feed'], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => 'Boards'], ['circle', () => word('Group', 'concept_circle_c')]];
@@ -65,4 +66,5 @@ SCREENS.feed = renderFeed;
 SCREENS.inbox = renderInbox;
 SCREENS.allies = renderAllies;
 SCREENS.boards = renderBoards;
+SCREENS.circle = renderCircle;
 for (const [id] of TABS) SCREENS[id] ??= async () => { throw new NotYet(id); };

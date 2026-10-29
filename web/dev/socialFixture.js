@@ -55,6 +55,11 @@ export function createFixtureSocial() {
       ['fixture', 'Fictional lifter', 'bench', 6, 6], ['u-mara', 'Mara Quill', 'bench', 4, null], ['fixture', 'Fictional lifter', 'muscle_up', 3, null],
     ].map(([id, name, lift, step, recentStep]) => ({ id, name, level: 20, titleId: null, crestId: null, lift, step, recentStep })),
     shadowBoard: async () => [['u-mara', 'Mara Quill', 12480, 6, 218.2], ['fixture', 'Fictional lifter', 9100, 5, 160.4], ['u-jonah', 'Jonah Reed', 3300, 1, 40]].map(([id, name, essence, shadows, ratePerHour]) => ({ id, name, level: 20, titleId: null, crestId: null, essence, shadows, ratePerHour })),
+    circle: async () => ({ id: 'c1', name: 'Iron Tide', code: 'K7M4Q9XA', ownerId: 'u-mara', week: '2026-10-26', perMember: 3, pendingPerMember: 4, goal: 15, total: 11, roster: 5, weeksMet: 4, members: [
+      ['u-mara', 'Mara Quill', 31, 3, true], ['fixture', 'Fictional lifter', 50, 3, true], ['u-jonah', 'Jonah Reed', 18, 2, true], ['u-ines', 'Ines Vale', 22, 3, true], ['u-odin', 'Odin Hart', 9, 0, false],
+    ].map(([userId, name, level, daysThisWeek, counts]) => ({ userId, name, level, titleId: null, crestId: null, daysThisWeek, counts, lastWorkoutAtMs: null })) }),
+    circleBonuses: async () => [{ week: '2026-10-19', days: 3, circleName: 'Iron Tide' }],
+    leaveCircle: async () => {}, kickCircleMember: async () => {}, setCircleGoal: async () => {}, setCircleName: async () => {}, rotateCircleCode: async () => 'NEWCODE9', createCircle: async () => {}, joinCircle: async () => 'joined',
     unmute: async () => {}, unblock: async () => {}, requestFriend: async () => {},
     findHunter: async name => ({ id: 'u-new', displayName: name }),
     lifter: async id => ({
