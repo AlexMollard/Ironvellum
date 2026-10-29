@@ -46,6 +46,7 @@ import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FriendSession
 import com.ironvellum.app.data.cloud.ReportReason
+import com.ironvellum.app.domain.LifterSummary
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -334,13 +335,14 @@ internal fun LifterScreen(
             else -> {
                 // Everything below is derived from the sessions already in state:
                 // no extra server chatter.
-                val dayMs = 24L * 60 * 60 * 1000
-                val now = System.currentTimeMillis()
-                val times = ui.sessions.mapNotNull { it.completedAtMs }.sorted()
-                val daysSince = times.lastOrNull()?.let { ((now - it) / dayMs).toInt() }
-                val perWeek = times.count { now - it <= 28 * dayMs } / 4.0
+                val figures = LifterSummary.of(
+                    ui.sessions.map { LifterSummary.Entry(it.completedAtMs, it.xpAwarded, it.strengthScore) },
+                    System.currentTimeMillis(),
+                )
+                val daysSince = figures.daysSince
+                val perWeek = figures.perWeek
                 val chrono = ui.sessions.sortedBy { it.completedAtMs ?: Long.MAX_VALUE }
-                val strSeries = chrono.map { it.strengthScore.toDouble() }
+                val strSeries = figures.strengthSeries
 
                 val summary = buildList {
                     add(
@@ -350,7 +352,7 @@ internal fun LifterScreen(
                             ui.sessions.size,
                         ).asString(),
                     )
-                    add(stringResource(R.string.lifter_xp_gain, grouped(ui.sessions.sumOf { it.xpAwarded }.toLong())))
+                    add(stringResource(R.string.lifter_xp_gain, grouped(figures.xp)))
                     add(stringResource(R.string.lifter_summary_per_week, String.format(Locale.ENGLISH, "%.1f", perWeek)))
                     daysSince?.let {
                         add(

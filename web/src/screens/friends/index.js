@@ -5,6 +5,7 @@ import { node, link } from '../../components/statCard.js';
 import { NotYet } from '../../data/socialSource.js';
 import { renderFeed } from './feed.js';
 import { renderInbox } from './inbox.js';
+import { renderAllies } from './allies.js';
 
 /** The sub-tabs, in the order the app shows them. Each screen is `(root, ctx, arg) => Promise<void>`, added by its task. */
 export const TABS = [['feed', () => 'Feed'], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => 'Boards'], ['circle', () => word('Group', 'concept_circle_c')]];
@@ -61,4 +62,5 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
 
 SCREENS.feed = renderFeed;
 SCREENS.inbox = renderInbox;
+SCREENS.allies = renderAllies;
 for (const [id] of TABS) SCREENS[id] ??= async () => { throw new NotYet(id); };

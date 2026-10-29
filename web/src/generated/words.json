@@ -115,6 +115,14 @@
         "plain": "Open %1$s board",
         "themed": "Open %1$s board"
     },
+    "acct_invite_button": {
+        "plain": "Invite",
+        "themed": "Invite"
+    },
+    "acct_invite_label": {
+        "plain": "Add a friend by display name",
+        "themed": "Add an ally by true name"
+    },
     "acct_unblock_button": {
         "plain": "Unblock",
         "themed": "Unblock"
@@ -654,6 +662,10 @@
     "cloud_report_self": {
         "plain": "You can’t report yourself",
         "themed": "You can’t report yourself"
+    },
+    "cloud_sync_trial_hidden": {
+        "plain": "This workout is not visible to you",
+        "themed": "This trial is not visible to you"
     },
     "comments_delete_body": {
         "plain": "It disappears for everyone. This can't be undone.",

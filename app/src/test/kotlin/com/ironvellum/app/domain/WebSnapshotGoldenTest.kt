@@ -118,6 +118,28 @@ class WebSnapshotGoldenTest {
                     put("unread", Inbox(times.map { InboxItem.FriendRequest(it, "a", "n") }, seen).unread)
                 })
             })
+            // The lifter folio's figures (LifterSummary), pinned for the web port: XP sum, per-week rate, last-workout days, strength series.
+            put("lifterSummaryCases", buildJsonArray {
+                val day = 24L * 60 * 60 * 1000
+                val now = 200 * day
+                val cases = listOf(
+                    emptyList<LifterSummary.Entry>(),
+                    listOf(LifterSummary.Entry(now - day / 2, 120, 700)),
+                    listOf(LifterSummary.Entry(now - day, 100, 900), LifterSummary.Entry(now - 20 * day, 150, 700), LifterSummary.Entry(now - 9 * day, 80, 950)),
+                    listOf(LifterSummary.Entry(now - 3 * day, 90, 500), LifterSummary.Entry(now - 28 * day, 90, 480), LifterSummary.Entry(now - 29 * day, 90, 470), LifterSummary.Entry(null, 10, 800)),
+                )
+                for (entries in cases) add(buildJsonObject {
+                    put("sessions", buildJsonArray {
+                        entries.forEach { e -> add(buildJsonObject { put("completedAtMs", e.completedAtMs); put("xp", e.xpAwarded); put("strength", e.strengthScore) }) }
+                    })
+                    put("nowMs", now)
+                    val f = LifterSummary.of(entries, now)
+                    put("count", f.count); put("xp", f.xp); put("perWeek", String.format(java.util.Locale.ENGLISH, "%.1f", f.perWeek))
+                    put("daysSince", f.daysSince)
+                    put("series", buildJsonArray { f.strengthSeries.forEach { add(kotlinx.serialization.json.JsonPrimitive(it.toInt())) } })
+                    put("peak", f.peak)
+                })
+            })
             put("formatSetsCases", buildJsonArray {
                 for (values in listOf(emptyList(), listOf(5), listOf(5, 5, 5), listOf(5, 4, 3))) add(buildJsonObject {
                     put("sets", buildJsonArray { values.forEach { add(kotlinx.serialization.json.JsonPrimitive(it)) } })

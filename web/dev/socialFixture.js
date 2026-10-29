@@ -39,6 +39,24 @@ export function createFixtureSocial() {
       ],
     }),
     markInboxSeen: async () => {}, acceptFriend: async () => {}, removeFriend: async () => {},
-    friends: async () => [],
+    friends: async () => [
+      { userId: 'u-mara', name: 'Mara Quill', level: 31, titleId: null, crestId: 'iron', accepted: true, incoming: false, acceptedAtMs: hours(24 * 90) },
+      { userId: 'u-jonah', name: 'Jonah Reed', level: 18, titleId: null, crestId: null, accepted: true, incoming: false, acceptedAtMs: hours(24 * 30) },
+      { userId: 'u-ines', name: 'Ines Vale', level: 22, titleId: null, crestId: null, accepted: false, incoming: true, acceptedAtMs: null },
+      { userId: 'u-odin', name: 'Odin Hart', level: 9, titleId: null, crestId: null, accepted: false, incoming: false, acceptedAtMs: null },
+    ],
+    blocked: async () => [{ userId: 'u-x', name: 'Rook Danner' }],
+    unmute: async () => {}, unblock: async () => {}, requestFriend: async () => {},
+    findHunter: async name => ({ id: 'u-new', displayName: name }),
+    lifter: async id => ({
+      userId: id, profile: { name: id === 'u-jonah' ? 'Jonah Reed' : 'Mara Quill', level: 31, titleId: null, crestId: 'iron', totalXp: 48200, streakDays: 6, titlesCount: 9, lifetimeStrength: 14200 },
+      workoutsShared: 214, accepted: true, allySinceMs: hours(24 * 90), muted: false,
+      sessions: [900, 880, 905, 870, 860, 840].map((strength, i) => ({ id: `ls${i}`, label: i % 2 ? 'Legs' : 'Pull', title: i % 2 ? 'Leg day' : 'Heavy pull day', note: '', completedAtMs: hours(20 + i * 70), xp: 120 + i * 5, strength, sets: 16 - i, editedAtMs: i === 2 ? hours(10) : null })),
+      lifts: [{ lift: 'squat', step: 7, recentStep: 7 }, { lift: 'bench', step: 5, recentStep: 4 }, { lift: 'pull_up', step: 8, recentStep: null }, { lift: 'muscle_up', step: 2, recentStep: null }],
+    }),
+    lifterWorkout: async () => ({ sessionId: 'ls0', userId: 'u-mara', headline: 'Heavy pull day', note: 'Felt strong.', completedAtMs: hours(20), xp: 120, strength: 900, exercises: [
+      { name: 'Back Squat', position: 0, sets: [{ setIndex: 0, reps: 5, weightKg: 100, durationSec: null, distanceM: null, grade: null, modifiers: '', done: true }, { setIndex: 1, reps: 5, weightKg: 110, durationSec: null, distanceM: null, grade: null, modifiers: '', done: true }] },
+      { name: 'Weighted Pull-up', position: 1, sets: [{ setIndex: 0, reps: 8, weightKg: 17.5, durationSec: null, distanceM: null, grade: null, modifiers: '', done: true }] },
+    ] }),
   });
 }

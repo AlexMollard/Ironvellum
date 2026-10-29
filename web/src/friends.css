@@ -72,7 +72,42 @@
 .inbox-when { font-size: 12px; }
 .inbox-note { font-size: 12px; }
 
+/* allies and the lifter folio */
+.allies-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.allies-layout.has-folio { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }
+.allies-list, .allies-folio { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.allies-add label { display: grid; gap: 6px; font-size: 13px; }
+.allies-rows { display: grid; gap: 8px; }
+.allies-rows .person-row { padding: 6px 8px; border-radius: 4px; }
+.allies-rows .person-row.is-open { background: var(--wash); }
+.allies-requests a { font-weight: 600; }
+.allies-pending { display: grid; gap: 8px; opacity: .85; }
+.blocked-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--paper-rune); }
+.folio-head { display: flex; align-items: center; gap: 14px; }
+.folio-who h2 { margin: 0; }
+.folio-summary, .folio-total, .folio-since { font-size: 13px; }
+.folio-strength, .folio-recent, .folio-lifts { display: grid; gap: 8px; }
+.folio-strength h3, .folio-recent h3, .folio-lifts h3 { margin: 0; font-size: 15px; }
+.folio-strength-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.folio-workout { border-top: 1px solid var(--paper-rune); }
+.folio-open { display: grid; gap: 2px; width: 100%; height: auto; min-height: 0; padding: 10px 0; text-align: left; white-space: normal; line-height: 1.35; background: none; border: 0; color: inherit; cursor: pointer; }
+.folio-open > * { min-width: 0; overflow-wrap: anywhere; }
+.folio-recent, .folio-lifts { margin-top: 8px; }
+.folio-sets { display: grid; gap: 8px; padding: 0 0 10px; }
+.folio-exercise { display: grid; gap: 2px; font-size: 13px; }
+.lift-tier { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--paper-rune); }
+.tier-lift { font-weight: 600; }
+.tier-name { text-align: right; }
+.tier-bar { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.tier-cell { height: 6px; border-radius: 2px; background: var(--paper-rune); }
+.tier-cell.is-on { background: var(--fill); }
+.tier-of { grid-column: 1 / -1; font-size: 12px; }
+.folio-mute { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; font-size: 14px; }
+.folio-mute .muted { grid-column: 2; font-size: 12px; }
+.folio-panel { display: grid; gap: 10px; }
+
 @media (max-width: 720px) {
+  .allies-layout.has-folio { grid-template-columns: minmax(0, 1fr); }
   .friends-tabs { flex-wrap: nowrap; overflow-x: auto; }
   .friends-tab { flex: none; }
 }

@@ -19,6 +19,8 @@ acct_boards_glance_loading
 acct_boards_glance_place
 acct_boards_glance_top
 acct_boards_open_description
+acct_invite_button
+acct_invite_label
 acct_unblock_button
 circle_code_field_label
 circle_code_label
@@ -91,6 +93,7 @@ cloud_mute_self
 cloud_remark_empty
 cloud_remark_gone
 cloud_report_self
+cloud_sync_trial_hidden
 comments_delete_body
 comments_delete_button
 comments_delete_title
