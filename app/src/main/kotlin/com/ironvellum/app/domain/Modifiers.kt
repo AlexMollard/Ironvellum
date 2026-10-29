@@ -71,7 +71,7 @@ fun applicableModifiers(exercise: Exercise): List<String> {
  */
 private fun notOffered(name: String, technique: Boolean): Set<String> = buildSet {
     val pushUp = "push-up" in name
-    // Hands on parallettes or plates: the wall is support, not the easy form.
+    // A wall handstand push-up is still wall-assisted, but parallettes or plates add range, so it keeps deficit.
     val handstand = isHandstandPush(name)
     if ("banded" in name) addAll(listOf("assisted", "archer", "one-arm"))
     if ("walk" in name) add("assisted")
