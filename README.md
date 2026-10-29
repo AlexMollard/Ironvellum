@@ -5,15 +5,20 @@
 <h1 align="center">Ironvellum</h1>
 
 <p align="center">
-  <strong>An offline-first strength training app that scores what you actually lift.</strong><br>
-  Plan your week, log it set by set and see what is working. No account, signal or subscription needed.
+  <img src="docs/images/readme-lifts.svg" width="90%" alt="Line drawings of a pull-up, push-up, back squat, weighted dip and deadlift">
 </p>
 
 <p align="center">
-  <a href="https://f-droid.org/packages/com.ironvellum.app/"><img alt="F-Droid version" src="https://img.shields.io/f-droid/v/com.ironvellum.app?style=flat-square&amp;label=F-Droid&amp;color=34D399&amp;labelColor=121211"></a>
-  <img alt="Android 10+" src="https://img.shields.io/badge/Android-10%2B-34D399?style=flat-square&amp;labelColor=121211">
-  <img alt="Kotlin and Compose" src="https://img.shields.io/badge/Kotlin-Compose-34D399?style=flat-square&amp;labelColor=121211">
-  <a href="LICENSE"><img alt="GPL-3.0-or-later" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-34D399?style=flat-square&amp;labelColor=121211"></a>
+  <strong>Train hard. Log every set. Watch the work add up.</strong><br>
+  A strength training app for Android that plans your week, scores what you actually lift and shows what is working.<br>
+  Pull-ups to deadlifts, bodyweight to barbell. No account, signal or subscription needed.
+</p>
+
+<p align="center">
+  <a href="https://f-droid.org/packages/com.ironvellum.app/"><img alt="F-Droid version" src="https://img.shields.io/f-droid/v/com.ironvellum.app?style=flat-square&amp;label=F-Droid&amp;color=1E6B4A&amp;labelColor=2B2B28"></a>
+  <img alt="Android 10+" src="https://img.shields.io/badge/Android-10%2B-1E6B4A?style=flat-square&amp;labelColor=2B2B28">
+  <img alt="Kotlin and Compose" src="https://img.shields.io/badge/Kotlin-Compose-1E6B4A?style=flat-square&amp;labelColor=2B2B28">
+  <a href="LICENSE"><img alt="GPL-3.0-or-later" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-1E6B4A?style=flat-square&amp;labelColor=2B2B28"></a>
 </p>
 
 <p align="center">
@@ -30,9 +35,9 @@
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/09-weekly-recap.png" width="24%" alt="The weekly recap against last week">
 </p>
 
-## What is Ironvellum?
+## Built for lifting
 
-A strength training app for Android that plans around effort instead of guesswork. Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a set by what it cost you, with your bodyweight factored in.
+Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a set by what it cost you, with your bodyweight factored in, so a hard set of weighted pull-ups counts as much as it felt.
 
 - **Plan:** a weekly plan built around hard sets, a floor for every muscle and days spaced for recovery.
 - **Train:** a fast live workout with rest timers, supersets, a plate calculator and lock-screen controls.
