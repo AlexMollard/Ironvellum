@@ -1090,8 +1090,8 @@
     <string name="onboarding_back_to_profile">プロフィールに戻る</string>
     <string name="onboarding_back_to_training">トレーニング方法に戻る</string>
     <string name="onboarding_skip_chip">スキップ</string>
-    <string name="onboarding_skip_description">初期設定をスキップします。情報とウィークリープランは後から設定または統計タブで設定できます</string>
-    <string name="onboarding_skip_description__t">絆を飛ばします。情報と周期は後から設定または台帳で定められます</string>
+    <string name="onboarding_skip_description">初期設定をスキップします。情報は後から設定で、ウィークリープランは「鍛える」タブで設定できます</string>
+    <string name="onboarding_skip_description__t">絆を飛ばします。情報は後から設定で、周期は「鍛える」タブで定められます</string>
     <string name="onboarding_step_progress">ステップ %1$d / %2$d</string>
     <string name="onboarding_plan_hint_empty">ウィークリープランを採用するには種目を追加し直すか、再作成してください。</string>
     <string name="onboarding_plan_hint_empty__t">周期を受け入れるには種目を戻すか、鍛え直してください。</string>

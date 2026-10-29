@@ -1144,8 +1144,8 @@
     <string name="onboarding_back_to_profile">Retour à Qui tu es</string>
     <string name="onboarding_back_to_training">Retour à Comment tu t’entraînes</string>
     <string name="onboarding_skip_chip">PASSER</string>
-    <string name="onboarding_skip_description">Passer la configuration. Renseigne tes informations et ton plan hebdo plus tard dans les paramètres ou l’onglet Stats</string>
-    <string name="onboarding_skip_description__t">Passer le Serment. Renseigne tes informations et ton cycle plus tard dans les paramètres ou le Registre</string>
+    <string name="onboarding_skip_description">Passer la configuration. Renseigne tes informations plus tard dans les paramètres, et ton plan hebdo dans l’onglet Entraîner</string>
+    <string name="onboarding_skip_description__t">Passer le Serment. Renseigne tes informations plus tard dans les paramètres, et ton cycle dans l’onglet Entraîner</string>
     <string name="onboarding_step_progress">Étape %1$d sur %2$d</string>
     <string name="onboarding_plan_hint_empty">Ajoute des exercices ou recrée le plan hebdo pour l’adopter.</string>
     <string name="onboarding_plan_hint_empty__t">Ajoute des exercices ou reforge le cycle pour l’adopter.</string>

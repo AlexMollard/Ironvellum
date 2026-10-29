@@ -1144,8 +1144,8 @@
     <string name="onboarding_back_to_profile">Voltar a quem você é</string>
     <string name="onboarding_back_to_training">Voltar a como você treina</string>
     <string name="onboarding_skip_chip">PULAR</string>
-    <string name="onboarding_skip_description">Pular configuração inicial. Defina seus dados e plano semanal depois em Configurações ou Estatísticas</string>
-    <string name="onboarding_skip_description__t">Pular o Vínculo. Defina seus dados e ciclo depois em Configurações ou no Registro</string>
+    <string name="onboarding_skip_description">Pular configuração inicial. Defina seus dados depois em Configurações e seu plano semanal na aba Treinar</string>
+    <string name="onboarding_skip_description__t">Pular o Vínculo. Defina seus dados depois em Configurações e seu ciclo na aba Treinar</string>
     <string name="onboarding_step_progress">Etapa %1$d de %2$d</string>
     <string name="onboarding_plan_hint_empty">Adicione exercícios ou recrie para adotar um plano semanal.</string>
     <string name="onboarding_plan_hint_empty__t">Adicione exercícios ou forje novamente para adotar um ciclo.</string>

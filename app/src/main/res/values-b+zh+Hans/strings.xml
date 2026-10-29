@@ -1090,8 +1090,8 @@
     <string name="onboarding_back_to_profile">返回个人资料</string>
     <string name="onboarding_back_to_training">返回训练方式</string>
     <string name="onboarding_skip_chip">跳过</string>
-    <string name="onboarding_skip_description">跳过设置。稍后可在设置或统计页填写资料并设置周计划</string>
-    <string name="onboarding_skip_description__t">跳过缔约。稍后可在设置或账册中填写资料并设置循环</string>
+    <string name="onboarding_skip_description">跳过设置。稍后可在设置中填写资料，在训练页设置周计划</string>
+    <string name="onboarding_skip_description__t">跳过缔约。稍后可在设置中填写资料，在训练页设置循环</string>
     <string name="onboarding_step_progress">第 %1$d 步，共 %2$d 步</string>
     <string name="onboarding_plan_hint_empty">重新添加动作或重新构建，才能采用周计划。</string>
     <string name="onboarding_plan_hint_empty__t">重新添加动作或重新锻造，才能接纳循环。</string>

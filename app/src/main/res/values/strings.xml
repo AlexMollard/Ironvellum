@@ -1212,8 +1212,8 @@
     <string name="onboarding_back_to_profile">Back to who you are</string>
     <string name="onboarding_back_to_training">Back to how you train</string>
     <string name="onboarding_skip_chip">SKIP</string>
-    <string name="onboarding_skip_description">Skip setup. Set your details and weekly plan later in Settings or the Stats tab</string>
-    <string name="onboarding_skip_description__t">Skip setup. Set your details and cycle later in Settings or the Ledger</string>
+    <string name="onboarding_skip_description">Skip setup. Set your details later in Settings and your weekly plan in the Train tab</string>
+    <string name="onboarding_skip_description__t">Skip setup. Set your details later in Settings and your cycle in the Train tab</string>
     <!-- Setup progress, e.g. "Step 2 of 3": %1$d is the current step, %2$d how many there are. -->
     <string name="onboarding_step_progress">Step %1$d of %2$d</string>
     <string name="onboarding_plan_hint_empty">Add exercises back or rebuild to take a weekly plan.</string>
@@ -4686,7 +4686,7 @@
     <string name="terminfo_level_definition">Each finished workout earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
     <string name="terminfo_level_definition__t">Each sealed trial earns XP. Fill the XP bar to reach your next level. The numbers show XP earned within this level and the XP it needs. Your ascension title follows your level; your Strength Rank follows your strength.</string>
     <!-- %1$s is the gap a streak survives without a workout, from terminfo_oath_gap. The last sentence names the deed milestone, which is the reward layer in both modes. -->
-    <string name="terminfo_oath_definition">The days you have kept training without a break. Every finished workout keeps it, and so does a day of rest day: it only breaks when more than %1$s without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</string>
+    <string name="terminfo_oath_definition">The days you have kept training without a break. Every finished workout keeps it, and so does a rest day: it only breaks when more than %1$s without one. The count is the days since the chain began, so it grows every morning it lives. The streak bar shows progress towards the next streak deed milestone.</string>
     <string name="terminfo_oath_definition__t">The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: it only breaks when more than %1$s without one. The count is the days since the chain began, so it grows every morning it lives. The Oath bar shows progress towards the next oath deed milestone.</string>
     <!-- The gap, in days, written into terminfo_oath_definition and its themed twin: "2 days pass", "1 day passes". The verb agrees with the number. -->
     <plurals name="terminfo_oath_gap"><item quantity="one">%1$d day passes</item><item quantity="other">%1$d days pass</item></plurals>

@@ -1144,8 +1144,8 @@
     <string name="onboarding_back_to_profile">Volver a quién eres</string>
     <string name="onboarding_back_to_training">Volver a cómo entrenas</string>
     <string name="onboarding_skip_chip">OMITIR</string>
-    <string name="onboarding_skip_description">Omitir configuración. Añade tus datos y plan semanal después en Ajustes o Estadísticas</string>
-    <string name="onboarding_skip_description__t">Omitir el Vínculo. Añade tu porte y ciclo después en Ajustes o el Registro</string>
+    <string name="onboarding_skip_description">Omitir configuración. Añade tus datos después en Ajustes y tu plan semanal en la pestaña Entrenar</string>
+    <string name="onboarding_skip_description__t">Omitir el Vínculo. Añade tu porte después en Ajustes y tu ciclo en la pestaña Entrenar</string>
     <string name="onboarding_step_progress">Paso %1$d de %2$d</string>
     <string name="onboarding_plan_hint_empty">Añade ejercicios o vuelve a crear el plan semanal para aceptarlo.</string>
     <string name="onboarding_plan_hint_empty__t">Añade ejercicios o vuelve a forjar el ciclo para aceptarlo.</string>

@@ -1090,8 +1090,8 @@
     <string name="onboarding_back_to_profile">내 정보로 돌아가기</string>
     <string name="onboarding_back_to_training">운동 방식으로 돌아가기</string>
     <string name="onboarding_skip_chip">건너뛰기</string>
-    <string name="onboarding_skip_description">설정을 건너뛰어요. 정보와 주간 계획은 나중에 설정이나 통계 탭에서 정할 수 있어요</string>
-    <string name="onboarding_skip_description__t">결속을 건너뛰어요. 정보와 주기는 나중에 설정이나 대장에서 정할 수 있어요</string>
+    <string name="onboarding_skip_description">설정을 건너뛰어요. 정보는 나중에 설정에서, 주간 계획은 훈련 탭에서 정할 수 있어요</string>
+    <string name="onboarding_skip_description__t">결속을 건너뛰어요. 정보는 나중에 설정에서, 주기는 훈련 탭에서 정할 수 있어요</string>
     <string name="onboarding_step_progress">%2$d단계 중 %1$d단계</string>
     <string name="onboarding_plan_hint_empty">주간 계획을 적용하려면 운동을 다시 추가하거나 계획을 다시 만드세요.</string>
     <string name="onboarding_plan_hint_empty__t">주기를 받아들이려면 운동을 다시 추가하거나 주기를 다시 만드세요.</string>

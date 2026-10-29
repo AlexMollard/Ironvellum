@@ -1144,8 +1144,8 @@
     <string name="onboarding_back_to_profile">Zurück zu deinen Angaben</string>
     <string name="onboarding_back_to_training">Zurück zu deinem Training</string>
     <string name="onboarding_skip_chip">ÜBERSPRINGEN</string>
-    <string name="onboarding_skip_description">Einrichtung überspringen. Angaben und Wochenplan später in den Einstellungen oder unter Statistiken festlegen</string>
-    <string name="onboarding_skip_description__t">Einrichtung überspringen. Angaben und Zyklus später in den Einstellungen oder im Archiv festlegen</string>
+    <string name="onboarding_skip_description">Einrichtung überspringen. Angaben später in den Einstellungen festlegen, den Wochenplan im Tab Training</string>
+    <string name="onboarding_skip_description__t">Einrichtung überspringen. Angaben später in den Einstellungen festlegen, den Zyklus im Tab Training</string>
     <string name="onboarding_step_progress">Schritt %1$d von %2$d</string>
     <string name="onboarding_plan_hint_empty">Füge Übungen hinzu oder erstelle den Wochenplan erneut, um ihn zu übernehmen.</string>
     <string name="onboarding_plan_hint_empty__t">Füge Übungen hinzu oder erschaffe den Zyklus erneut, um ihn anzunehmen.</string>
