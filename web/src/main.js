@@ -4,6 +4,7 @@ import '@fontsource/chakra-petch/latin-600.css';
 import '@fontsource/chakra-petch/latin-700.css';
 import './theme.css';
 import './friends.css';
+import './routines.css';
 import {backendClient,loadBackend,sharedBackend,saveBackend,clearBackend,signIn,signInWithGoogle,restoreSession,observeSignOut,signOut} from './auth.js';
 import {createSupabaseSource,createFixtureSource,SnapshotTooNew} from './source.js';
 import {createSupabaseSocial} from './data/socialSource.js';

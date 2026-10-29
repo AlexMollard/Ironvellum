@@ -1,0 +1,34 @@
+/* routines */
+.routines-layout { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.routines-list, .routines-detail { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.routine-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.routine-item { display: grid; gap: 2px; padding: 10px 8px; border-top: 1px solid var(--paper-rune); }
+.routine-item.is-open { background: var(--wash); }
+.routine-link { font-weight: 600; }
+.routine-meta { font-size: 12px; }
+.routines-headline { margin: 0; font-weight: 600; }
+.routine-maps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 360px; }
+.week-plan { display: grid; gap: 8px; }
+.week-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.week-day { display: grid; gap: 4px; align-content: start; min-height: 64px; padding: 8px 6px; border: 1px solid var(--paper-rune); border-radius: 4px; font-size: 12px; min-width: 0; }
+.week-day.is-open { border-color: var(--fill); background: var(--wash); }
+.week-day-name { font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 10px; color: var(--paper-ink-muted); }
+.week-routine { overflow-wrap: anywhere; font-weight: 600; }
+.routine-detail h2 { margin: 0; }
+.routine-entries { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+.routine-entry { display: grid; grid-template-columns: 24px 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--paper-rune); }
+.routine-entry.is-warmup { opacity: .8; }
+.routine-number { color: var(--paper-ink-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.routine-entry-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.routine-entry-text { display: grid; gap: 2px; min-width: 0; }
+.routine-figure { font-size: 13px; overflow-wrap: anywhere; }
+.routine-scheme { font-size: 12px; }
+.routine-load { font-weight: 600; white-space: nowrap; }
+.routines-custom { display: grid; gap: 6px; }
+.custom-row { display: grid; gap: 2px; padding: 6px 0; border-top: 1px solid var(--paper-rune); font-size: 13px; }
+.routines-viewonly { font-size: 12px; }
+@media (max-width: 720px) {
+  .routines-layout { grid-template-columns: minmax(0, 1fr); }
+  .week-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .week-day { padding: 6px 3px; font-size: 10px; }
+}
