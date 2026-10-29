@@ -18,6 +18,7 @@ PROGRESS
 • Hundreds of exercises, each with a line drawing, and bodyweight skills on progression paths.
 • Personal records per lift, kept apart per variation, with strength charts and a history of every session.
 • A weekly recap every Sunday, and a month and year in review, each with a card to share.
+• Optional progress photos: one after a workout, or front, side and back poses each week to compare. They stay on your phone.
 • Earn XP, levels and deeds as you train.
 • Import your history from Strong, Hevy or FitNotes CSV exports.
 • Optional Health Connect: read your weight and heart rate, and save finished workouts.
@@ -25,8 +26,9 @@ PROGRESS
 MAKE IT YOURS
 • Plain gym words by default. Switch to themed names if you want the full fantasy, including the Veil: relics you collect that raise how much essence you earn while you are away.
 • Dark or light theme, and your own accent colour.
+• In English, Spanish, German, French, Portuguese (Brazil), Japanese, Korean and Simplified Chinese.
 
 PRIVATE AND FREE
 • Works fully offline. No ads, no trackers, no paid tier.
-• An account is optional: use it to back up and to add friends and join groups.
+• An account is optional: use it to back up, to add friends and join groups, and to read your training on a web dashboard.
 • Free and open source (GPL-3.0).

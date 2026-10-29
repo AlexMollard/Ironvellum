@@ -60,18 +60,16 @@ is upgraded in place: a schema change edits the baseline, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` in `Cloud.kt` together,
 and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
 baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
-project is at schema 30; the owner must apply
-`supabase/hosted/2026-10-28-web-snapshot-cap.sql` to reach schema 31 and then
-`supabase/hosted/2026-10-28-web-snapshot-hardening.sql` (8 MiB text bound on the snapshot
-cap, owner-only snapshot delete, cheaper RLS; no schema bump, and it touches only the four
-web tables) before shipping the build that uploads snapshots.
+project was at schema 30 before the snapshot cap patch
+(`supabase/hosted/2026-10-28-web-snapshot-cap.sql`, schema 31) and the hardening patch
+(`2026-10-28-web-snapshot-hardening.sql`: 8 MiB text bound, owner-only snapshot delete,
+cheaper RLS; no schema bump, four web tables only); both are applied.
 
-The hosted project stays at schema 31 until the owner pastes
-`supabase/hosted/2026-10-29-feed-card.sql` (apply it AFTER the hardening patch). It adds
-`sessions.feed_card` and the last column of `public_feed` and reports schema 32. It is
-optional for the app: `NEEDED_SCHEMA_VERSION` stays 31, so a phone on a backend at 31
-keeps syncing and simply sends no card (`CloudSync.feedReady` needs 32), and the web
-viewer's phase 1 screens keep working; only its Friends area says it needs schema 32.
+The owner applied `supabase/hosted/2026-10-29-feed-card.sql` (after the hardening patch)
+to the hosted project on 2026-10-30, so it is at schema 32. The patch adds
+`sessions.feed_card` and the last column of `public_feed`. It stays optional for the app:
+`NEEDED_SCHEMA_VERSION` is 31, so a phone on a backend at 31 keeps syncing and simply sends
+no card (`CloudSync.feedReady` needs 32), and the web viewer's Friends area needs 32.
 Confirm with `select public.schema_version();`, which must return 32.
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every

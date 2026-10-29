@@ -3,6 +3,61 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## 1.9
+
+### Photos
+- An optional "Add a photo" step after a sealed workout, once a day and skipped in one tap. The
+  photo shows on the workout and can be replaced or removed there.
+- Body > Progress photos: a front, side and back pose each week on a day you choose, a reminder on
+  Today that day, and a compare view with one photo and a draggable divider between two weeks.
+- Photos stay on the phone, with no camera or storage permission. They are not synced to the
+  cloud, and they ride along in the weekly backup folder.
+
+### Training
+- The effort of your last set is asked above slide to seal, so you rate it before you finish.
+- Muscle fatigue: a per-muscle estimate shown on a body heatmap, with a Most worked list and the
+  cause behind each muscle. Train is split into Plan and Muscles tabs.
+- Today can offer Keep, Lighten or Swap for tired exercises, or another routine or rest. Turn it
+  off in Settings > Training (Fatigue advice). The exercise picker marks tired muscles.
+- Variations are kept apart: each variation has its own last set and progression history. The
+  plain version is called Standard everywhere, and a tapped variation opens on its own lift page.
+- Sixteen new variation deeds, and sets past 12 reps count as 12 in the estimated 1RM.
+- Weight added to the body shows a plus, a harder or easier arrow marks each modifier chip, and
+  two-dumbbell lifts show the load per dumbbell.
+- Modifiers only appear where they make sense: deficit on handstand push-ups, and elevated and
+  incline on inverted rows. Past sets can be converted onto the dedicated exercise.
+- The last five workouts are listed under Recent on Train, and a routine's movements open their
+  exercise sheet.
+
+### Languages
+- Spanish, German, French, Portuguese (Brazil), Japanese, Korean and Simplified Chinese, with
+  themed names in each. The translations were produced with AI and checked
+  against per-language term tables.
+
+### Web dashboard
+- Sign in at alexmollard.github.io/Ironvellum to read your training on a computer: overview,
+  workouts, lifts, trends and routines, with your body figure, deeds and charts with tooltips.
+- A friends feed with reactions, comments and reports, an inbox, boards, and your group with the
+  keeper actions. Mute, block and report work from a lifter's page.
+- Your own training is private to you; logging and editing stay in the app.
+- Copy a workout as plain text from its page or its row in the workout list.
+- A light and dark theme and the Themed names choice from an Appearance menu, and a plus on Lifts
+  records for weight added to the body.
+- Whole rows and cards are one click target, and focus follows navigation.
+
+### Look and feel
+- Buttons are now raised neutral buttons across the app, with an icon on Back and the photo
+  actions.
+- The light theme is redrawn as Vellum, with readable small text and chart ink. Charts use a
+  checked colour palette and thinner marks.
+- Wide screens centre the app, and expanded screens show paired panes.
+- Boards are cards that each open their own screen.
+
+### Your data and Play
+- Backups include your portable settings.
+- A Privacy policy link in Settings > Support, and the Play data-safety notes cover heart rate
+  and background reads.
+
 ## 1.8
 
 ### Look back
