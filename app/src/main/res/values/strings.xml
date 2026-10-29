@@ -536,10 +536,10 @@
     <!-- Themed wording of narration_begin_streak. Today, nothing started: %1$d is the current streak in days. The themed twin is a quiet, literary line. -->
     <plurals name="narration_begin_streak__t"><item quantity="one">The page is blank. %1$d day of ink behind it.</item><item quantity="other">The page is blank. %1$d days of ink behind it.</item></plurals>
     <plurals name="narration_live_start"><item quantity="one">%1$d set logged. Good start.</item><item quantity="other">%1$d sets logged. Good start.</item></plurals>
-    <!-- Themed wording of narration_live_start. Today, nothing started: %1$d is the current streak in days. The themed twin is a quiet, literary line. -->
+    <!-- Themed wording of narration_live_start. Today's narrator line while a workout is under way and fewer than a third of its sets are logged: %1$d is how many sets are logged so far (the plural quantity). The themed twin is a quiet, literary line. -->
     <plurals name="narration_live_start__t"><item quantity="one">%1$d set inked. The page begins to fill.</item><item quantity="other">%1$d sets inked. The page begins to fill.</item></plurals>
     <plurals name="narration_live_half"><item quantity="one">%1$d set logged. Over halfway.</item><item quantity="other">%1$d sets logged. Over halfway.</item></plurals>
-    <!-- Themed wording of narration_live_half. Today, nothing started: %1$d is the current streak in days. The themed twin is a quiet, literary line. -->
+    <!-- Themed wording of narration_live_half. Today's narrator line while a workout is under way and at least a third of its sets, but not all, are logged: %1$d is how many sets are logged so far (the plural quantity). The themed twin is a quiet, literary line. -->
     <plurals name="narration_live_half__t"><item quantity="one">%1$d set inked. The page is half written.</item><item quantity="other">%1$d sets inked. The page is half written.</item></plurals>
 
     <!-- Counts shown next to a unit. -->
@@ -590,7 +590,7 @@
     <!-- Themed wording of notification_inbox_line_reaction_untitled. %2$s is the reaction's name (Flame...), %3$s the workout's title. -->
     <string name="notification_inbox_line_reaction_untitled__t">%1$s paid %2$s tribute to your trial</string>
     <string name="notification_inbox_line_friend_request">%1$s wants to be friends with you</string>
-    <!-- Themed wording of notification_inbox_line_friend_request. %2$s is the reaction's name (Flame...), %3$s the workout's title. -->
+    <!-- Themed wording of notification_inbox_line_friend_request. Inbox line for a friend request. %1$s is the name of the person who sent it. -->
     <string name="notification_inbox_line_friend_request__t">%1$s wants to ally with you</string>
     <string name="notification_inbox_line_request_accepted">%1$s accepted your request</string>
     <!-- %2$s is the group's name. -->
@@ -1113,7 +1113,7 @@
     <!-- %1$s is a count of days ("3 days"), %2$s a count of measurements ("2 measurements"). -->
     <string name="settings_health_history_updated">Activity history updated — %1$s, %2$s.</string>
     <plurals name="settings_health_history_readings"><item quantity="one">%1$d measurement</item><item quantity="other">%1$d measurements</item></plurals>
-    <!-- Themed wording of settings_health_history_readings. %1$s is a count of days ("3 days"), %2$s a count of measurements ("2 measurements"). -->
+    <!-- Themed wording of settings_health_history_readings. The second figure in the Health history sync message: %1$d is how many body measurements were read (the plural quantity). -->
     <plurals name="settings_health_history_readings__t"><item quantity="one">%1$d reading</item><item quantity="other">%1$d readings</item></plurals>
     <!-- %1$s is the first problem Health Connect reported. -->
     <string name="settings_health_history_partial">Partial: %1$s</string>
@@ -1495,7 +1495,7 @@
     <string name="session_reopen_refused_amended__t">It was amended after sealing, so it cannot be taken back.</string>
     <string name="session_reopen_refused_spent">The XP it paid has been spent, so it cannot be taken back.</string>
 
-    <!-- Load dialog. %1$d is a set number; %1$s a unit (kg or lb). -->
+    <!-- Load dialog, label under the exercise name. %1$d is the number of the working set being edited. -->
     <string name="session_load_dialog_set">SET %1$d</string>
     <string name="session_load_field_label">Load (%1$s)</string>
     <!-- Load dialog of a lift done with a dumbbell in each hand. %1$s is the unit, kg or lb. -->
@@ -1623,7 +1623,7 @@
     <!-- Tag under the number of the top set. -->
     <string name="setkind_top_tag">Top</string>
 
-    <!-- Timed set control (TimedSetControl.kt). %1$s is a clock face (for example "0:45"). -->
+    <!-- Timed set control (TimedSetControl.kt). Screen reader description of the clock during the get-ready countdown. %1$d is the seconds left before the set starts. -->
     <string name="timedset_get_ready_description">Get ready, %1$d</string>
     <string name="timedset_elapsed_description">%1$s elapsed</string>
     <string name="timedset_target_reached_description">%1$s elapsed, target %2$s reached</string>
@@ -1675,7 +1675,7 @@
     <string name="victory_peaks_title">New PR</string>
     <string name="victory_peaks_title__t">New peak</string>
     <string name="victory_peaks_many">New PRs · %1$d</string>
-    <!-- Themed wording of victory_peaks_many. %1$s is the total load, %2$s its unit (kg or lb). -->
+    <!-- Themed wording of victory_peaks_many. Title of the peaks card when several lifts set a new best: %1$d is how many. -->
     <string name="victory_peaks_many__t">New peaks · %1$d</string>
     <!-- Peak card detail. %1$d is the set number, %2$s the kind of peak, %3$s the earlier figure, %4$s what it paid. -->
     <string name="victory_peak_detail">Set %1$d · %2$s · was %3$s · %4$s</string>
@@ -2024,10 +2024,10 @@
     <string name="routineshare_skipped">Skipped, not in your exercise list: %1$s.</string>
     <string name="routineshare_nothing_imported">Nothing imported — none of those exercises are in your exercise list.</string>
     <plurals name="routineshare_replaced"><item quantity="one">Weekly plan replaced with %1$d routine.</item><item quantity="other">Weekly plan replaced with %1$d routines.</item></plurals>
-    <!-- Themed wording of routineshare_replaced. Import summary under the routines header. %1$s lists exercise names, comma separated. -->
+    <!-- Themed wording of routineshare_replaced. Import summary under the routines header. %1$d is how many routines were imported (the plural quantity). -->
     <plurals name="routineshare_replaced__t"><item quantity="one">Cycle replaced with %1$d rite.</item><item quantity="other">Cycle replaced with %1$d rites.</item></plurals>
     <plurals name="routineshare_added"><item quantity="one">Added %1$d routine.</item><item quantity="other">Added %1$d routines.</item></plurals>
-    <!-- Themed wording of routineshare_added. Import summary under the routines header. %1$s lists exercise names, comma separated. -->
+    <!-- Themed wording of routineshare_added. Import summary under the routines header. %1$d is how many routines were imported (the plural quantity). -->
     <plurals name="routineshare_added__t"><item quantity="one">Added %1$d rite.</item><item quantity="other">Added %1$d rites.</item></plurals>
     <!-- Import dialog: one-line preview of a decoded routine. %1$s is its name, %2$d the number of exercises. -->
     <plurals name="routineshare_preview_line"><item quantity="one">%1$s · %2$d exercise</item><item quantity="other">%1$s · %2$d exercises</item></plurals>
@@ -2085,7 +2085,7 @@
     <string name="explorer_chart_e1rm">Estimated 1RM</string>
     <string name="explorer_chart_best_score">Best set score</string>
     <plurals name="explorer_chart_e1rm_count"><item quantity="one">Estimated 1RM, %1$d workout</item><item quantity="other">Estimated 1RM, %1$d workouts</item></plurals>
-    <!-- Themed wording of explorer_chart_e1rm_count. Exercise explorer: how often the movement is trained. %1$s is a number with one decimal. -->
+    <!-- Themed wording of explorer_chart_e1rm_count. Exercise explorer chart caption: %1$d is how many workouts the estimated 1RM chart plots (the plural quantity). -->
     <plurals name="explorer_chart_e1rm_count__t"><item quantity="one">Estimated 1RM, %1$d trial</item><item quantity="other">Estimated 1RM, %1$d trials</item></plurals>
     <!-- Chart caption. %1$d is how many workouts feed the chart. -->
     <plurals name="explorer_chart_score_count"><item quantity="one">Best set score, %1$d workout</item><item quantity="other">Best set score, %1$d workouts</item></plurals>
@@ -3309,8 +3309,9 @@
     <string name="trialhint_aim_reps">Aim for %1$s reps</string>
     <string name="trialhint_aim_hold">Aim for %1$s s</string>
 
-    <!-- The general warm-up before the first set. %1$s is a list of the muscle groups worked: "legs and core". -->
+    <!-- The general warm-up before the first set, when no muscle group is worked. No placeholder. -->
     <string name="warmup_text_plain">5 min easy cardio, then mobility</string>
+    <!-- The general warm-up before the first set. %1$s is a list of the muscle groups worked: "legs and core". -->
     <string name="warmup_text_for">5 min easy cardio, then mobility for %1$s</string>
     <string name="warmup_group_pull">pull</string>
     <string name="warmup_group_push">push</string>
@@ -3321,13 +3322,13 @@
     <string name="warmup_group_water">water work</string>
     <string name="warmup_group_cardio">cardio</string>
     <string name="warmup_group_mobility">mobility</string>
-    <!-- A warm-up exercise's targets: %1$d sets, %2$d the seconds held; %3$s is an optional " · 20 kg". -->
+    <!-- A warm-up exercise's targets: %1$s the sets, %2$s the seconds held; %3$s is an optional " · 20 kg". -->
     <string name="exercise_target_hold">%1$s × %2$s s%3$s</string>
-    <!-- %1$d sets, %2$d minutes. -->
+    <!-- %1$s the sets, %2$s the minutes. -->
     <string name="exercise_target_minutes">%1$s × %2$s min</string>
-    <!-- %1$d sets, %2$s the distance in km. -->
+    <!-- %1$s the sets, %2$s the distance in km. -->
     <string name="exercise_target_km">%1$s × %2$s km</string>
-    <!-- %1$s the sets, %2$d the attempts. -->
+    <!-- %1$s the sets, %2$s the attempts (the plural quantity). -->
     <plurals name="exercise_target_attempts">
         <item quantity="one">%1$s × %2$s attempt</item>
         <item quantity="other">%1$s × %2$s attempts</item>
@@ -3731,7 +3732,7 @@
     <string name="program_why_reps_general_compound">Reps set to %1$d (%2$d-%3$d): compound exercises stay heavy</string>
     <string name="program_why_reps_general_isolation">Reps set to %1$d (%2$d-%3$d): extra exercises carry volume at higher reps</string>
     <string name="program_why_swap_compound">Swapped for %1$s: compound &amp; skill only, and it trains the same muscles</string>
-    <!-- Themed wording of program_why_swap_compound. %1$d the reps, %2$d-%3$d the range. -->
+    <!-- Themed wording of program_why_swap_compound. Reason shown for a swapped exercise. %1$s is the name of the exercise swapped in. -->
     <string name="program_why_swap_compound__t">Swapped for %1$s: compound &amp; technique only, and it trains the same muscles</string>
     <string name="program_why_removed_compound">Removed: with Compound &amp; skill only on, nothing replaces its muscles</string>
     <string name="program_why_removed_compound__t">Removed: with Compound &amp; technique only on, nothing replaces its muscles</string>
@@ -3767,7 +3768,7 @@
     <!-- Themed wording of program_why_template_compound_only. %1$s the stand-in, %2$s the exercise it replaces. -->
     <string name="program_why_template_compound_only__t">Compound &amp; technique only: the %1$s stands in for the %2$s</string>
     <string name="program_why_template_nothing">Nothing in your equipment for the %1$s; the %2$s is the closest match</string>
-    <!-- Themed wording of program_why_template_nothing. %1$s the stand-in, %2$s the exercise it replaces. -->
+    <!-- Themed wording of program_why_template_nothing. %1$s is the exercise the template asked for, %2$s the one used instead. -->
     <string name="program_why_template_nothing__t">Nothing in your armoury for the %1$s; the %2$s is the closest match</string>
     <string name="program_why_template_stretch">For your %1$s, worked at full stretch</string>
     <string name="program_why_template_for">For your %1$s</string>
@@ -4795,6 +4796,7 @@
     <!-- The plural quantity is %3$d. -->
     <!-- Spoken summary of a deed category. %1$s is the category, %2$d how many earned, %3$d how many in all, %4$s its blurb. A progress figure, so it is a string. -->
     <string tools:ignore="PluralsCandidate" name="always_deeds_category_summary">%1$s deeds: %2$d of %3$d earned. %4$s.</string>
+    <!-- Deeds board, empty state of the To do range. %1$s is the name of the deed category. -->
     <string name="always_deeds_all_earned">Every deed in %1$s is earned.</string>
     <string name="always_deeds_page_empty">Nothing is written here yet. Earned deeds appear on this page.</string>
     <string name="always_deeds_none_here">No deeds here.</string>
@@ -6441,7 +6443,7 @@
     <string name="recap_bar_this_week">This week</string>
     <string name="recap_bar_last_week">Last week</string>
 
-    <!-- Records. %1$d is how many lifts set a new best. -->
+    <!-- Records. Title of the recap section that lists the lifts that set a new best. No placeholder. -->
     <string name="recap_records_title">Personal records</string>
     <string tools:ignore="PluralsCandidate" name="recap_records_new_badge">%1$d NEW</string>
     <!-- A record's set: %1$s the load, %2$d the reps, %3$s the day ("Mon 12 Oct"). -->
