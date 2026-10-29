@@ -1,0 +1,42 @@
+/* The Friends area and Routines (phase 2). Colours come only from the tokens src/theme.js sets; never write a hex value here. */
+
+/* topbar inbox button and its unread badge */
+.inbox-button { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid var(--paper-rune); border-radius: 4px; color: var(--paper-ink-muted); }
+.inbox-button:hover, .inbox-button:focus-visible { border-color: var(--fill); color: var(--text); background: var(--wash); }
+.inbox-badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--fill); color: var(--on-primary); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+
+/* sub-tabs */
+.friends-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.friends-tab { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border: 1px solid var(--paper-rune); border-radius: 4px; color: var(--paper-ink-muted); text-decoration: none; font-size: 13px; }
+.friends-tab:hover { border-color: var(--fill); color: var(--text); }
+.friends-tab[aria-current="page"] { border-color: var(--fill); color: var(--text); background: var(--wash); }
+.friends-notice { padding: 10px 14px; }
+.friends-body { display: grid; gap: 16px; min-width: 0; }
+.audience { margin-bottom: 16px; }
+
+/* people */
+.person-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.person-text { display: grid; min-width: 0; }
+.person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; text-align: left; }
+.person-sub { font-size: 12px; }
+
+/* inline panels: report form, confirmations */
+.panel { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--paper-rune); border-radius: 4px; background: var(--paper-abyss); }
+.panel h3 { margin: 0; font-size: 15px; }
+.panel p { margin: 0; font-size: 13px; }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.primary-small { height: 34px; padding: 0 16px; border: 0; border-radius: 4px; background: var(--fill); color: var(--on-primary); font-weight: 600; }
+.primary-small:not(:disabled):hover { background: var(--bright); color: var(--on-primary); }
+.form-status:empty { display: none; }
+.form-status { padding: 8px 12px; font-size: 13px; }
+
+/* overflow menu */
+.safety-menu { position: relative; }
+.safety-toggle { width: 30px; height: 30px; font-size: 18px; line-height: 1; }
+.safety-list { position: absolute; right: 0; top: 100%; z-index: 5; display: grid; min-width: 170px; padding: 4px; border: 1px solid var(--paper-rune); border-radius: 4px; background: var(--paper-vault); }
+.safety-item { height: 34px; border: 0; text-align: left; }
+
+@media (max-width: 720px) {
+  .friends-tabs { flex-wrap: nowrap; overflow-x: auto; }
+  .friends-tab { flex: none; }
+}

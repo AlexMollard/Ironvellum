@@ -31,6 +31,94 @@
         "plain": "Violet & Rose",
         "themed": "Violet & Rose"
     },
+    "acct_allies_empty": {
+        "plain": "No friends yet. Invite one by display name above.",
+        "themed": "No allies yet. Invite one by true name above."
+    },
+    "acct_allies_header": {
+        "plain": "Friends · %1$d",
+        "themed": "Allies · %1$d"
+    },
+    "acct_blocked_empty": {
+        "plain": "Nobody blocked. Block a lifter from their profile.",
+        "themed": "Nobody blocked. Block an Ironbound from their folio."
+    },
+    "acct_blocked_hide_description": {
+        "plain": "Hide blocked lifter",
+        "themed": "Hide blocked Ironbound"
+    },
+    "acct_blocked_label": {
+        "plain": "Blocked lifter",
+        "themed": "Blocked Ironbound"
+    },
+    "acct_blocked_show_description": {
+        "plain": "Show blocked lifter",
+        "themed": "Show blocked Ironbound"
+    },
+    "acct_board_alone": {
+        "plain": "You are alone on the leaderboard. Add friends from the Friends tab to fill it.",
+        "themed": "You stand alone in the reckoning. Add allies from the Allies tab to fill it."
+    },
+    "acct_board_choose": {
+        "plain": "Choose a leaderboard",
+        "themed": "Choose a reckoning"
+    },
+    "acct_board_empty": {
+        "plain": "No standings yet. Add friends by display name on the Friends tab.",
+        "themed": "No standings yet. Add allies by true name on the Allies tab."
+    },
+    "acct_board_lifts": {
+        "plain": "Lifts",
+        "themed": "Lifts"
+    },
+    "acct_board_loading": {
+        "plain": "Loading leaderboard…",
+        "themed": "Reading the reckoning…"
+    },
+    "acct_board_search": {
+        "plain": "Search leaderboards",
+        "themed": "Search reckonings"
+    },
+    "acct_board_training": {
+        "plain": "Training",
+        "themed": "Training"
+    },
+    "acct_board_your_standing": {
+        "plain": "Your position",
+        "themed": "Your standing"
+    },
+    "acct_boards_glance_empty": {
+        "plain": "No standings yet",
+        "themed": "No standings yet"
+    },
+    "acct_boards_glance_failed": {
+        "plain": "Could not load. Open to retry.",
+        "themed": "Could not load. Open to retry."
+    },
+    "acct_boards_glance_lifts": {
+        "plain": "Tiers lift by lift, this week or all time",
+        "themed": "Tiers lift by lift, this week or all time"
+    },
+    "acct_boards_glance_loading": {
+        "plain": "Loading standings",
+        "themed": "Loading standings"
+    },
+    "acct_boards_glance_place": {
+        "plain": "Your place: %1$d of %2$d",
+        "themed": "Your place: %1$d of %2$d"
+    },
+    "acct_boards_glance_top": {
+        "plain": "Top: %1$s, %2$s",
+        "themed": "Top: %1$s, %2$s"
+    },
+    "acct_boards_open_description": {
+        "plain": "Open %1$s board",
+        "themed": "Open %1$s board"
+    },
+    "acct_unblock_button": {
+        "plain": "Unblock",
+        "themed": "Unblock"
+    },
     "always_acct_essence_value": {
         "plain": "%1$s essence",
         "themed": "%1$s essence"
@@ -223,6 +311,270 @@
         "plain": "VEIL PERK · %1$s",
         "themed": "VEIL PERK · %1$s"
     },
+    "circle_code_field_label": {
+        "plain": "Group code (8 characters)",
+        "themed": "Circle code (8 characters)"
+    },
+    "circle_code_label": {
+        "plain": "Code %1$s",
+        "themed": "Code %1$s"
+    },
+    "circle_create_button": {
+        "plain": "Create",
+        "themed": "Create"
+    },
+    "circle_form_button": {
+        "plain": "Form a group",
+        "themed": "Form a circle"
+    },
+    "circle_goal_hint": {
+        "plain": "Days each member aims to train per week. A change starts next Monday.",
+        "themed": "Days each member aims to train per week. A change starts next Monday."
+    },
+    "circle_goal_lower_description": {
+        "plain": "Lower the weekly goal, currently %1$d",
+        "themed": "Lower the weekly goal, currently %1$d"
+    },
+    "circle_goal_met": {
+        "plain": "Goal met",
+        "themed": "Goal met"
+    },
+    "circle_goal_met_description": {
+        "plain": "Goal met",
+        "themed": "Goal met"
+    },
+    "circle_goal_raise_description": {
+        "plain": "Raise the weekly goal, currently %1$d",
+        "themed": "Raise the weekly goal, currently %1$d"
+    },
+    "circle_goal_title": {
+        "plain": "Weekly goal per member",
+        "themed": "Weekly goal per member"
+    },
+    "circle_join_button": {
+        "plain": "Join a group",
+        "themed": "Join a circle"
+    },
+    "circle_join_confirm": {
+        "plain": "Join",
+        "themed": "Join"
+    },
+    "circle_join_hint": {
+        "plain": "Your days count toward the group's goal from next Monday.",
+        "themed": "Your days count toward the circle's goal from next Monday."
+    },
+    "circle_keep_button": {
+        "plain": "Keep",
+        "themed": "Keep"
+    },
+    "circle_leave_body": {
+        "plain": "You leave the group and its shared week. If you are the owner, the longest-standing remaining member takes over.",
+        "themed": "You leave the circle and its shared week. If you are the Keeper, the longest-standing remaining member takes over."
+    },
+    "circle_leave_button": {
+        "plain": "Leave",
+        "themed": "Leave"
+    },
+    "circle_leave_circle_button": {
+        "plain": "Leave group",
+        "themed": "Leave circle"
+    },
+    "circle_leave_last_body": {
+        "plain": "You are the last member — leaving deletes the group and its code.",
+        "themed": "You are the last member — leaving deletes the circle and its code."
+    },
+    "circle_leave_title": {
+        "plain": "Leave %1$s?",
+        "themed": "Leave %1$s?"
+    },
+    "circle_leave_unnamed_title": {
+        "plain": "Leave the group?",
+        "themed": "Leave the circle?"
+    },
+    "circle_loading": {
+        "plain": "Loading the group…",
+        "themed": "Reading the circle…"
+    },
+    "circle_manage_label": {
+        "plain": "Manage group",
+        "themed": "Manage circle"
+    },
+    "circle_manage_resets": {
+        "plain": "resets %1$s",
+        "themed": "resets %1$s"
+    },
+    "circle_manage_title": {
+        "plain": "Manage %1$s",
+        "themed": "Manage %1$s"
+    },
+    "circle_manage_value_member": {
+        "plain": "Leave",
+        "themed": "Leave"
+    },
+    "circle_manage_value_owner": {
+        "plain": "Rename, new code, goal, leave",
+        "themed": "Rename, new code, goal, leave"
+    },
+    "circle_manage_weeks_met": {
+        "plain": "weeks met %1$d",
+        "themed": "weeks met %1$d"
+    },
+    "circle_member_days": {
+        "plain": "%1$d of %2$d",
+        "themed": "%1$d of %2$d"
+    },
+    "circle_member_you": {
+        "plain": "You",
+        "themed": "You"
+    },
+    "circle_name_error": {
+        "plain": "1–24 characters",
+        "themed": "1–24 characters"
+    },
+    "circle_name_label": {
+        "plain": "Group name (1–24)",
+        "themed": "Circle name (1–24)"
+    },
+    "circle_new_code_button": {
+        "plain": "New code",
+        "themed": "New code"
+    },
+    "circle_paid_name_fallback": {
+        "plain": "The group",
+        "themed": "The circle"
+    },
+    "circle_pitch": {
+        "plain": "Form a group of up to 8 friends — share one code, chase one week.",
+        "themed": "Form a circle of up to 8 allies — share one code, chase one week."
+    },
+    "circle_progress_week": {
+        "plain": "%1$d / %2$d this week",
+        "themed": "%1$d / %2$d this week"
+    },
+    "circle_remove_body": {
+        "plain": "They are told, and their days this week still count. They can rejoin with the code unless you change it first.",
+        "themed": "They are told, and their days this week still count. They can rejoin with the code unless you change it first."
+    },
+    "circle_remove_button": {
+        "plain": "Remove",
+        "themed": "Remove"
+    },
+    "circle_remove_member_description": {
+        "plain": "Remove %1$s from the group",
+        "themed": "Remove %1$s from the circle"
+    },
+    "circle_remove_title": {
+        "plain": "Remove %1$s?",
+        "themed": "Remove %1$s?"
+    },
+    "circle_rename_title": {
+        "plain": "Rename the group",
+        "themed": "Rename the circle"
+    },
+    "circle_rotate_body": {
+        "plain": "The current code stops working at once. Members stay; anyone holding the old code can no longer join.",
+        "themed": "The current code stops working at once. Members stay; anyone holding the old code can no longer join."
+    },
+    "circle_rotate_title": {
+        "plain": "New group code?",
+        "themed": "New circle code?"
+    },
+    "circle_share_chooser_title": {
+        "plain": "Share group",
+        "themed": "Share circle"
+    },
+    "circle_share_code_description": {
+        "plain": "Share the group code",
+        "themed": "Share the circle code"
+    },
+    "circle_share_text": {
+        "plain": "Join my Ironvellum group %1$s — code %2$s",
+        "themed": "Join my Ironvellum circle %1$s — code %2$s"
+    },
+    "circle_stay_button": {
+        "plain": "Stay",
+        "themed": "Stay"
+    },
+    "circle_try_again": {
+        "plain": "Try again",
+        "themed": "Try again"
+    },
+    "circle_unknown_failure": {
+        "plain": "Unknown failure",
+        "themed": "Unknown failure"
+    },
+    "circle_warmup_week": {
+        "plain": "Warm-up week",
+        "themed": "Warm-up week"
+    },
+    "circle_weekly_goal_label": {
+        "plain": "Weekly goal",
+        "themed": "Weekly goal"
+    },
+    "circles_join_closed": {
+        "plain": "That group is closed to you",
+        "themed": "That circle is closed to you"
+    },
+    "circles_join_failed": {
+        "plain": "The group did not take you in — try again",
+        "themed": "The circle did not take you in — try again"
+    },
+    "circles_join_full": {
+        "plain": "That group is full",
+        "themed": "That circle is full"
+    },
+    "circles_join_no_such_code": {
+        "plain": "No group answers to that code",
+        "themed": "No circle answers to that code"
+    },
+    "circles_join_throttled": {
+        "plain": "Too many code attempts today — try again tomorrow.",
+        "themed": "Too many code attempts today — try again tomorrow."
+    },
+    "cloud_ally_already_requested": {
+        "plain": "Already requested — waiting for \"%1$s\" to accept",
+        "themed": "Already requested — waiting for \"%1$s\" to accept"
+    },
+    "cloud_ally_no_pending": {
+        "plain": "No pending request from that lifter",
+        "themed": "No pending request from that Ironbound"
+    },
+    "cloud_ally_not_found": {
+        "plain": "No lifter has the display name \"%1$s\"",
+        "themed": "No Ironbound has the true name \"%1$s\""
+    },
+    "cloud_ally_self_request": {
+        "plain": "You cannot send yourself a friend request",
+        "themed": "You cannot send yourself an ally request"
+    },
+    "cloud_ally_type_name": {
+        "plain": "Type a lifter's display name first",
+        "themed": "Type an Ironbound's true name first"
+    },
+    "cloud_block_self": {
+        "plain": "You can’t block yourself",
+        "themed": "You can’t block yourself"
+    },
+    "cloud_circle_code_shape": {
+        "plain": "That code is not the right shape",
+        "themed": "That code is not the right shape"
+    },
+    "cloud_circle_goal_range": {
+        "plain": "A weekly goal is 1–7 days",
+        "themed": "A weekly goal is 1–7 days"
+    },
+    "cloud_circle_missing": {
+        "plain": "The group did not appear — pull to refresh",
+        "themed": "The circle did not appear — pull to refresh"
+    },
+    "cloud_circle_name_length": {
+        "plain": "A group name is 1–24 characters",
+        "themed": "A circle name is 1–24 characters"
+    },
+    "cloud_circle_name_missing": {
+        "plain": "Give the group a name",
+        "themed": "Give the circle a name"
+    },
     "cloud_error_code_expired": {
         "plain": "That code is wrong or expired — request a new one",
         "themed": "That code is wrong or expired — request a new one"
@@ -282,6 +634,162 @@
     "cloud_error_wrong_credentials": {
         "plain": "Wrong email or password",
         "themed": "Wrong email or password"
+    },
+    "cloud_hidden_lifter": {
+        "plain": "Hidden lifter",
+        "themed": "Hidden Ironbound"
+    },
+    "cloud_mute_self": {
+        "plain": "You can’t mute yourself",
+        "themed": "You can’t mute yourself"
+    },
+    "cloud_remark_empty": {
+        "plain": "Write something first",
+        "themed": "Write something first"
+    },
+    "cloud_remark_gone": {
+        "plain": "That comment is already gone or not yours to remove",
+        "themed": "That remark is already gone or not yours to remove"
+    },
+    "cloud_report_self": {
+        "plain": "You can’t report yourself",
+        "themed": "You can’t report yourself"
+    },
+    "comments_delete_body": {
+        "plain": "It disappears for everyone. This can't be undone.",
+        "themed": "It disappears for everyone. This can't be undone."
+    },
+    "comments_delete_button": {
+        "plain": "Delete",
+        "themed": "Delete"
+    },
+    "comments_delete_title": {
+        "plain": "Delete this comment?",
+        "themed": "Delete this remark?"
+    },
+    "comments_empty": {
+        "plain": "No comments yet — say something first.",
+        "themed": "No remarks yet — say something first."
+    },
+    "comments_keep_button": {
+        "plain": "Keep",
+        "themed": "Keep"
+    },
+    "comments_open_profile_label": {
+        "plain": "Open profile",
+        "themed": "Open folio"
+    },
+    "comments_reaction_error": {
+        "plain": "Kudos not saved: %1$s",
+        "themed": "Tribute not saved: %1$s"
+    },
+    "comments_reactions_empty": {
+        "plain": "No kudos yet.",
+        "themed": "No tributes yet."
+    },
+    "comments_reactions_loading": {
+        "plain": "Loading the kudos…",
+        "themed": "Reading the tributes…"
+    },
+    "comments_reactions_who": {
+        "plain": "WHO PAID KUDOS",
+        "themed": "WHO PAID TRIBUTE"
+    },
+    "comments_report_button": {
+        "plain": "Report",
+        "themed": "Report"
+    },
+    "comments_report_note": {
+        "plain": "Only the Ironvellum owner sees reports. They aren't told who sent it.",
+        "themed": "Only the Ironvellum owner sees reports. They aren't told who sent it."
+    },
+    "comments_report_note_label": {
+        "plain": "Note (optional)",
+        "themed": "Note (optional)"
+    },
+    "comments_report_reason_abuse": {
+        "plain": "ABUSE",
+        "themed": "ABUSE"
+    },
+    "comments_report_reason_cheating": {
+        "plain": "CHEATING",
+        "themed": "CHEATING"
+    },
+    "comments_report_reason_other": {
+        "plain": "OTHER",
+        "themed": "OTHER"
+    },
+    "comments_report_reason_spam": {
+        "plain": "SPAM",
+        "themed": "SPAM"
+    },
+    "comments_report_send_button": {
+        "plain": "Send report",
+        "themed": "Send report"
+    },
+    "comments_report_sent": {
+        "plain": "Report sent — thanks.",
+        "themed": "Report sent — thanks."
+    },
+    "comments_report_title": {
+        "plain": "Report %1$s",
+        "themed": "Report %1$s"
+    },
+    "comments_report_title_unnamed": {
+        "plain": "Report this lifter",
+        "themed": "Report this Ironbound"
+    },
+    "comments_send_button": {
+        "plain": "Send",
+        "themed": "Send"
+    },
+    "comments_sending_button": {
+        "plain": "Sending…",
+        "themed": "Sending…"
+    },
+    "comments_stat_reps": {
+        "plain": "REPS",
+        "themed": "REPS"
+    },
+    "comments_stat_sets": {
+        "plain": "SETS",
+        "themed": "SETS"
+    },
+    "comments_stat_strength": {
+        "plain": "STR",
+        "themed": "STR"
+    },
+    "comments_stat_xp": {
+        "plain": "XP",
+        "themed": "XP"
+    },
+    "comments_thread_loading": {
+        "plain": "Loading the thread…",
+        "themed": "Reading the thread…"
+    },
+    "comments_try_again": {
+        "plain": "Try again",
+        "themed": "Try again"
+    },
+    "comments_unknown_failure": {
+        "plain": "Unknown failure",
+        "themed": "Unknown failure"
+    },
+    "comments_work_empty": {
+        "plain": "No sets were shared with this workout.",
+        "themed": "No sets were shared with this trial."
+    },
+    "comments_work_header": {
+        "plain": "THE WORK",
+        "themed": "THE WORK"
+    },
+    "comments_workout_loading": {
+        "plain": "Opening the workout…",
+        "themed": "Opening the trial…"
+    },
+    "comments_you": {
+        "plain": "You",
+        "themed": "You"
     },
     "concept_ally_a": {
         "plain": "a friend",
@@ -998,6 +1506,402 @@
     "fatigue_window_caption": {
         "plain": "Estimated from your last 7 days",
         "themed": "Estimated from your last 7 days"
+    },
+    "feed_add_ally_button": {
+        "plain": "Add friend",
+        "themed": "Add ally"
+    },
+    "feed_ally_pending": {
+        "plain": "Pending",
+        "themed": "Pending"
+    },
+    "feed_ally_request_failed": {
+        "plain": "Friend request failed: %1$s",
+        "themed": "Ally request failed: %1$s"
+    },
+    "feed_best_set": {
+        "plain": "Best %1$s",
+        "themed": "Best %1$s"
+    },
+    "feed_check_again": {
+        "plain": "Check again",
+        "themed": "Check again"
+    },
+    "feed_empty": {
+        "plain": "No feed yet. Make your workouts public in Account settings and be the first.",
+        "themed": "No tidings yet. Make your trials public in Account settings and be the first."
+    },
+    "feed_end": {
+        "plain": "You've reached the first page of the feed.",
+        "themed": "You've reached the first page of the tidings."
+    },
+    "feed_hardest_grade": {
+        "plain": "Hardest %1$s",
+        "themed": "Hardest %1$s"
+    },
+    "feed_header": {
+        "plain": "Every lifter's public workouts, newest first",
+        "themed": "Every Ironbound's public trials, newest first"
+    },
+    "feed_loading": {
+        "plain": "Loading the feed…",
+        "themed": "Reading the tidings…"
+    },
+    "feed_loading_more": {
+        "plain": "Loading older workouts…",
+        "themed": "Turning to older trials…"
+    },
+    "feed_paging_error": {
+        "plain": "Older workouts slipped away — keep pulling to try again.",
+        "themed": "Older trials slipped away — keep pulling to try again."
+    },
+    "feed_reaction_error": {
+        "plain": "Kudos not saved: %1$s",
+        "themed": "Tribute not saved: %1$s"
+    },
+    "feed_reaction_flame": {
+        "plain": "Flame",
+        "themed": "Flame"
+    },
+    "feed_reaction_honour": {
+        "plain": "Honour",
+        "themed": "Honour"
+    },
+    "feed_reaction_iron": {
+        "plain": "Iron",
+        "themed": "Iron"
+    },
+    "feed_reaction_mine_description": {
+        "plain": "Your kudos: %1$s",
+        "themed": "Your tribute: %1$s"
+    },
+    "feed_reaction_option_count": {
+        "plain": "%1$s %2$d",
+        "themed": "%1$s %2$d"
+    },
+    "feed_reaction_pay_description": {
+        "plain": "Pay kudos",
+        "themed": "Pay tribute"
+    },
+    "feed_reaction_remove": {
+        "plain": "Remove",
+        "themed": "Remove"
+    },
+    "feed_stamp_amended": {
+        "plain": "%1$s · amended",
+        "themed": "%1$s · amended"
+    },
+    "feed_stat_covered": {
+        "plain": "%1$s covered",
+        "themed": "%1$s covered"
+    },
+    "feed_stat_held": {
+        "plain": "%1$ds held",
+        "themed": "%1$ds held"
+    },
+    "feed_time_hours_ago": {
+        "plain": "%1$dh ago",
+        "themed": "%1$dh ago"
+    },
+    "feed_time_just_now": {
+        "plain": "just now",
+        "themed": "just now"
+    },
+    "feed_time_minutes_ago": {
+        "plain": "%1$dm ago",
+        "themed": "%1$dm ago"
+    },
+    "feed_time_yesterday": {
+        "plain": "yesterday",
+        "themed": "yesterday"
+    },
+    "feed_try_again": {
+        "plain": "Try again",
+        "themed": "Try again"
+    },
+    "feed_unknown_failure": {
+        "plain": "Unknown failure",
+        "themed": "Unknown failure"
+    },
+    "inbox_accept_button": {
+        "plain": "Accept",
+        "themed": "Accept"
+    },
+    "inbox_answer_accepted": {
+        "plain": "Accepted",
+        "themed": "Allied"
+    },
+    "inbox_answer_declined": {
+        "plain": "Declined",
+        "themed": "Declined"
+    },
+    "inbox_decline_button": {
+        "plain": "Decline",
+        "themed": "Decline"
+    },
+    "inbox_declined_message": {
+        "plain": "Declined %1$s",
+        "themed": "Declined %1$s"
+    },
+    "inbox_empty_body": {
+        "plain": "Friend requests, comments and kudos on your workouts land here.",
+        "themed": "Ally requests, remarks and tributes on your trials land here."
+    },
+    "inbox_empty_title": {
+        "plain": "No messages yet",
+        "themed": "No missives yet"
+    },
+    "inbox_headline_your_trial": {
+        "plain": "your workout",
+        "themed": "your trial"
+    },
+    "inbox_line_circle_goal_met": {
+        "plain": "finished the workout that met your group's weekly goal",
+        "themed": "sealed the trial that met your circle's weekly goal"
+    },
+    "inbox_line_circle_joined": {
+        "plain": "joined your group %1$s",
+        "themed": "joined your circle %1$s"
+    },
+    "inbox_line_circle_keys": {
+        "plain": "passed you the keys of %1$s",
+        "themed": "passed you the keys of %1$s"
+    },
+    "inbox_line_circle_left": {
+        "plain": "left your group %1$s",
+        "themed": "left your circle %1$s"
+    },
+    "inbox_line_circle_removed": {
+        "plain": "removed you from %1$s",
+        "themed": "removed you from %1$s"
+    },
+    "inbox_line_comment": {
+        "plain": "left a comment on %1$s",
+        "themed": "left a remark on %1$s"
+    },
+    "inbox_line_comment_untitled": {
+        "plain": "left a comment on your workout",
+        "themed": "left a remark on your trial"
+    },
+    "inbox_line_friend_request": {
+        "plain": "wants to be your friend",
+        "themed": "wants to be your ally"
+    },
+    "inbox_line_reaction": {
+        "plain": "paid %1$s kudos on %2$s",
+        "themed": "paid %1$s tribute on %2$s"
+    },
+    "inbox_line_reaction_untitled": {
+        "plain": "paid %1$s kudos on your workout",
+        "themed": "paid %1$s tribute on your trial"
+    },
+    "inbox_line_reply": {
+        "plain": "replied on %1$s",
+        "themed": "replied on %1$s"
+    },
+    "inbox_line_reply_untitled": {
+        "plain": "replied on a workout",
+        "themed": "replied on a trial"
+    },
+    "inbox_line_request_accepted": {
+        "plain": "accepted your friend request",
+        "themed": "accepted your ally request"
+    },
+    "inbox_loading": {
+        "plain": "Loading your messages…",
+        "themed": "Reading your missives…"
+    },
+    "inbox_remark_quote": {
+        "plain": "“%1$s”",
+        "themed": "“%1$s”"
+    },
+    "inbox_try_again": {
+        "plain": "Try again",
+        "themed": "Try again"
+    },
+    "inbox_unknown_failure": {
+        "plain": "Unknown failure",
+        "themed": "Unknown failure"
+    },
+    "inbox_unread_description": {
+        "plain": "New",
+        "themed": "New"
+    },
+    "infosheet_board_counts": {
+        "plain": "Counts toward the %1$s leaderboard",
+        "themed": "Counts toward the %1$s reckoning"
+    },
+    "infosheet_board_rung": {
+        "plain": "%1$s leaderboard — tier %2$s of %3$s",
+        "themed": "%1$s reckoning — rung %2$s of %3$s"
+    },
+    "lifter_add_ally_button": {
+        "plain": "Add friend",
+        "themed": "Add ally"
+    },
+    "lifter_ally_request_failed": {
+        "plain": "Friend request failed: %1$s",
+        "themed": "Ally request failed: %1$s"
+    },
+    "lifter_amended": {
+        "plain": "amended",
+        "themed": "amended"
+    },
+    "lifter_block_body": {
+        "plain": "You and %1$s will no longer see each other's workouts, comments or kudos, any alliance ends, and neither of you can send a friend request. Unblock any time under Friends.",
+        "themed": "You and %1$s will no longer see each other's trials, remarks or tributes, any alliance ends, and neither of you can send an ally request. Unblock any time under Allies."
+    },
+    "lifter_block_body_unnamed": {
+        "plain": "You and this lifter will no longer see each other's workouts, comments or kudos, any alliance ends, and neither of you can send a friend request. Unblock any time under Friends.",
+        "themed": "You and this Ironbound will no longer see each other's trials, remarks or tributes, any alliance ends, and neither of you can send an ally request. Unblock any time under Allies."
+    },
+    "lifter_block_label": {
+        "plain": "Block",
+        "themed": "Block"
+    },
+    "lifter_block_title": {
+        "plain": "Block %1$s?",
+        "themed": "Block %1$s?"
+    },
+    "lifter_block_title_unnamed": {
+        "plain": "Block this lifter?",
+        "themed": "Block this Ironbound?"
+    },
+    "lifter_keep_button": {
+        "plain": "Keep",
+        "themed": "Keep"
+    },
+    "lifter_manage_header": {
+        "plain": "Manage profile",
+        "themed": "Manage folio"
+    },
+    "lifter_mute_caption": {
+        "plain": "Hides their workouts, comments and kudos. They aren't told.",
+        "themed": "Hides their trials, remarks and tributes. They aren't told."
+    },
+    "lifter_mute_label": {
+        "plain": "Mute",
+        "themed": "Mute"
+    },
+    "lifter_muted": {
+        "plain": "Muted.",
+        "themed": "Muted."
+    },
+    "lifter_no_longer_allies": {
+        "plain": "No longer friends.",
+        "themed": "No longer allies."
+    },
+    "lifter_none_selected": {
+        "plain": "No lifter selected.",
+        "themed": "No Ironbound selected."
+    },
+    "lifter_nothing_shared": {
+        "plain": "Nothing shared. This lifter has no workouts you may read: either none are finished, or their visibility does not include you.",
+        "themed": "Nothing shared. This Ironbound has no trials you may read: either none are sealed, or their visibility does not include you."
+    },
+    "lifter_open_failed": {
+        "plain": "The profile won't open. %1$s",
+        "themed": "The folio won't open. %1$s"
+    },
+    "lifter_opening": {
+        "plain": "Opening the profile…",
+        "themed": "Opening the folio…"
+    },
+    "lifter_recent_header": {
+        "plain": "Recent workouts",
+        "themed": "Recent trials"
+    },
+    "lifter_remove_ally_label": {
+        "plain": "Remove friend",
+        "themed": "Remove ally"
+    },
+    "lifter_remove_body": {
+        "plain": "Their friends-only workouts leave your feed. Either of you can send a new request later.",
+        "themed": "Their allies-only trials leave your tidings. Either of you can send a new request later."
+    },
+    "lifter_remove_button": {
+        "plain": "Remove",
+        "themed": "Remove"
+    },
+    "lifter_remove_title": {
+        "plain": "Remove %1$s as a friend?",
+        "themed": "Remove %1$s as an ally?"
+    },
+    "lifter_remove_title_unnamed": {
+        "plain": "Remove this lifter as a friend?",
+        "themed": "Remove this Ironbound as an ally?"
+    },
+    "lifter_report_label": {
+        "plain": "Report",
+        "themed": "Report"
+    },
+    "lifter_report_sent": {
+        "plain": "Report sent — thanks.",
+        "themed": "Report sent — thanks."
+    },
+    "lifter_request_pending": {
+        "plain": "Request pending",
+        "themed": "Request pending"
+    },
+    "lifter_sending": {
+        "plain": "Sending…",
+        "themed": "Sending…"
+    },
+    "lifter_str_figure": {
+        "plain": "STR %1$d",
+        "themed": "STR %1$d"
+    },
+    "lifter_strength_peak": {
+        "plain": "PR %1$d",
+        "themed": "PEAK %1$d"
+    },
+    "lifter_strength_single": {
+        "plain": "One workout on record. The line begins with the next.",
+        "themed": "One trial on record. The line begins with the next."
+    },
+    "lifter_strength_title": {
+        "plain": "Strength line",
+        "themed": "Strength line"
+    },
+    "lifter_strength_value": {
+        "plain": "%1$.0f strength",
+        "themed": "%1$.0f strength"
+    },
+    "lifter_summary_last_today": {
+        "plain": "last workout today",
+        "themed": "last trial today"
+    },
+    "lifter_summary_last_yesterday": {
+        "plain": "last workout yesterday",
+        "themed": "last trial yesterday"
+    },
+    "lifter_summary_per_week": {
+        "plain": "%1$s a week",
+        "themed": "%1$s a week"
+    },
+    "lifter_unknown_error": {
+        "plain": "Unknown error",
+        "themed": "Unknown error"
+    },
+    "lifter_unknown_failure": {
+        "plain": "Unknown failure",
+        "themed": "Unknown failure"
+    },
+    "lifter_unmuted": {
+        "plain": "Unmuted.",
+        "themed": "Unmuted."
+    },
+    "lifter_xp_gain": {
+        "plain": "+%1$s XP",
+        "themed": "+%1$s XP"
+    },
+    "line_stumbled": {
+        "plain": "Something went wrong — try again in a moment",
+        "themed": "The Ledger stumbled — try again in a moment"
+    },
+    "stats_lift_board_empty": {
+        "plain": "Log weighted sets of 1 to 12 reps to build the board.",
+        "themed": "Log weighted sets of 1 to 12 reps to build the board."
     },
     "serverTerms": [
         {

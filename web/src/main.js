@@ -3,8 +3,10 @@ import '@fontsource/chakra-petch/latin-500.css';
 import '@fontsource/chakra-petch/latin-600.css';
 import '@fontsource/chakra-petch/latin-700.css';
 import './theme.css';
+import './friends.css';
 import {backendClient,loadBackend,sharedBackend,saveBackend,clearBackend,signIn,signInWithGoogle,restoreSession,observeSignOut,signOut} from './auth.js';
 import {createSupabaseSource,createFixtureSource,SnapshotTooNew} from './source.js';
+import {createSupabaseSocial} from './data/socialSource.js';
 import {NEEDED_SCHEMA_VERSION} from './schema.js';
 import {renderShell} from './shell.js';
 import {applyAppearance} from './theme.js';
@@ -16,13 +18,14 @@ const root=document.querySelector('#app');
 function message(parent,text,cls='notice') {const p=document.createElement('p');p.className=cls;p.textContent=text;parent.append(p);return p;}
 let activeRouter, authSubscription, generation=0;
 function clearViewer() { generation++; activeRouter?.dispose();activeRouter=undefined;authSubscription?.unsubscribe();authSubscription=undefined; }
-async function openSource(source,client) {
+async function openSource(source,client,fixtureSocial) {
   clearViewer();const current=generation;
   if(client) authSubscription=observeSignOut(client,()=>signInPage());
   let snapshot=null, warning='';
   try {const version=await source.schemaVersion();if(version!=null && version<NEEDED_SCHEMA_VERSION) warning=`Needs schema ${NEEDED_SCHEMA_VERSION}; this backend reports ${version}.`;snapshot=await source.getSnapshot();} catch(e) { if(e instanceof SnapshotTooNew) warning='This snapshot is newer than this viewer. Update the web viewer.'; else warning='Could not load the phone snapshot. Workouts remain available.'; }
   if(current!==generation) return;
-  activeRouter=renderShell(root,{source,snapshot,onSignOut:async()=>{try {await signOut();} finally {signInPage();}}});
+  const social=fixtureSocial??(client&&source.userId?createSupabaseSocial(client,source.userId):null);
+  activeRouter=renderShell(root,{source,snapshot,social,onSignOut:async()=>{try {await signOut();} finally {signInPage();}}});
   if(warning) {const p=document.createElement('p');p.className='notice';p.textContent=warning;root.querySelector('main').prepend(p);}
 }
 let devAppearance, offline=false;
@@ -68,7 +71,7 @@ if(devParams?.has('fixture')) {
   // Development only: `import.meta.env.DEV` is false in a build, so this branch and the fixtures it imports are dropped. ?fixture=1 opens the signed-in screens, ?fixture=signin the sign-in page with no network; &theme=light|dark (default dark).
   const mode=devParams.get('theme')==='light' ? 'light' : 'dark';
   if(devParams.get('fixture')==='signin') {devAppearance={mode};offline=true;signInPage();}
-  else Promise.all([import('../test/fixtures/snapshot-v1.json'),import('../test/fixtures/rows.json'),import('../dev/screenshotOverlay.js')]).then(([snapshot,rows,overlay])=>{const data=overlay.withScreenshotData(structuredClone(snapshot.default));data.appearance={...data.appearance,mode};return openSource(createFixtureSource({snapshot:data,rows:rows.default}));}).catch(()=>{root.textContent='Example data is unavailable.';});
+  else Promise.all([import('../test/fixtures/snapshot-v1.json'),import('../test/fixtures/rows.json'),import('../dev/screenshotOverlay.js'),import('../dev/socialFixture.js')]).then(([snapshot,rows,overlay,social])=>{const data=overlay.withScreenshotData(structuredClone(snapshot.default));data.appearance={...data.appearance,mode};return openSource(createFixtureSource({snapshot:data,rows:rows.default}),undefined,social.createFixtureSocial());}).catch(()=>{root.textContent='Example data is unavailable.';});
 } else {
   const params=new URLSearchParams(location.search);
   const fragment=location.hash.startsWith('#/') ? new URLSearchParams() : new URLSearchParams(location.hash.slice(1));

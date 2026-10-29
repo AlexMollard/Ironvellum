@@ -23,11 +23,11 @@ const source = { userId: 'me', listWorkouts: async () => [workout], getSets: asy
 const router = { go: vi.fn() };
 
 describe('shell', () => {
-  it('shows the phase 1 navigation, the user block and the read-only footer line', () => {
+  it('shows the navigation, the user block and the read-only footer line', () => {
     location.hash = '#/workouts'; const root = document.createElement('div'); document.body.append(root);
     const shell = renderShell(root, { source, snapshot, onSignOut: () => {}, nowMs: Date.UTC(2026, 9, 27, 18) });
-    expect([...root.querySelectorAll('nav a')].map(a => a.textContent.replace(/[^A-Za-z]/g, ''))).toEqual(['Overview', 'Workouts', 'Lifts', 'Trends']);
-    for (const absent of ['Routines', 'Friends', 'Inbox', 'Allies', 'comments']) expect(root.textContent).not.toContain(absent);
+    expect([...root.querySelectorAll('nav a')].map(a => a.textContent.replace(/[^A-Za-z]/g, ''))).toEqual(['Overview', 'Workouts', 'Lifts', 'Trends', 'Friends']);
+    for (const absent of ['Routines', 'Allies', 'comments']) expect(root.textContent).not.toContain(absent);
     expect(root.querySelector('nav a[aria-current="page"]').dataset.path).toBe('/workouts');
     const user = root.querySelector('.sidebar-user').textContent;
     for (const text of ['Pat Lifter', 'Level 23', 'Stats as of today 12:00', 'Sign out', 'Log and edit training in the app.']) expect(user).toContain(text);

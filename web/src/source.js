@@ -64,5 +64,5 @@ export function createSupabaseSource(client, userId) {
 export function createFixtureSource(fixture) {
   const snapshot = fixture.snapshot ?? fixture;
   const rows = fixture.rows ?? {workouts:fixture.workouts ?? [],sets:fixture.sets ?? {}};
-  return {userId:'fixture', schemaVersion:async () => 31, getSnapshot:async () => snapshot, listWorkouts:async () => [...rows.workouts], getSets:async w => [...(rows.sets[`${w.origin}:${w.id}`] ?? [])]};
+  return {userId:'fixture', schemaVersion:async () => 32, getSnapshot:async () => snapshot, listWorkouts:async () => [...rows.workouts], getSets:async w => [...(rows.sets[`${w.origin}:${w.id}`] ?? [])]};
 }
