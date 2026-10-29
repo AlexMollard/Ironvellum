@@ -74,10 +74,14 @@ button { border: 1px solid var(--paper-rune); border-radius: 4px; background: tr
 .brand-web { font-size: 11px; font-weight: 500; letter-spacing: 2px; color: var(--paper-ink-muted); }
 .sidebar nav a { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; margin: 2px 0; border-left: 3px solid transparent; font-size: 15px; text-decoration: none; color: var(--paper-ink-muted); }
 .sidebar nav a:hover { color: var(--paper-ink); }
-.sidebar nav a[aria-current="page"] { border-left-color: var(--fill); background: var(--wash); color: var(--paper-ink); font-weight: 600; }
+.sidebar nav a[aria-current] { border-left-color: var(--fill); background: var(--wash); color: var(--paper-ink); font-weight: 600; }
+.sidebar nav .nav-sub { margin-bottom: 4px; }
+.sidebar nav .nav-sub a { height: 36px; margin: 0; padding-left: 53px; font-size: 14px; }
+.sidebar nav .nav-sub a[aria-current] { border-left-color: var(--fill); background: transparent; }
+.sidebar nav a[data-friends][aria-current="true"] { background: transparent; border-left-color: transparent; }
 .nav-icon { width: 22px; display: inline-flex; justify-content: center; color: var(--icon-faint); }
 .nav-icon svg { display: block; }
-nav a[aria-current="page"] .nav-icon { color: var(--text); }
+nav a[aria-current] .nav-icon { color: var(--text); }
 .sidebar-user { margin-top: auto; padding: 14px 20px 0; border-top: 1px solid var(--paper-rune); }
 .user-line { display: flex; align-items: center; gap: 10px; }
 .user-name { flex: 1; font-size: 14px; line-height: 1.25; }
@@ -500,7 +504,8 @@ a.calendar-day:focus-visible, button.calendar-day:focus-visible { outline-offset
   .user-asof { margin: 0; }
   .sidebar nav { position: fixed; z-index: 4; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around; background: var(--paper-vault); border-top: 1px solid var(--paper-rune); }
   .sidebar nav a { flex: 1; flex-direction: column; justify-content: center; gap: 2px; height: 60px; margin: 0; padding: 0 4px; border-left: 0; border-top: 3px solid transparent; font-size: 12px; }
-  .sidebar nav a[aria-current="page"] { border-left-color: transparent; border-top-color: var(--fill); }
+  .sidebar nav a[aria-current], .sidebar nav a[data-friends][aria-current="true"] { border-left-color: transparent; border-top-color: var(--fill); background: var(--wash); }
+  .sidebar nav .nav-sub { display: none; }
   .topbar { flex-wrap: wrap; padding: 12px 16px; min-height: 0; }
   .screen-header { flex-wrap: wrap; }
   .screen-header h1, .header-title { font-size: 20px; }

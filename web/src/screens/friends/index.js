@@ -1,7 +1,7 @@
 import { word } from '../../i18n.js';
 import { explain } from '../../explain.js';
 import { FRIENDS_SCHEMA_VERSION } from '../../schema.js';
-import { node, link } from '../../components/statCard.js';
+import { node } from '../../components/statCard.js';
 import { NotYet } from '../../data/socialSource.js';
 import { renderFeed } from './feed.js';
 import { renderInbox } from './inbox.js';
@@ -22,13 +22,13 @@ export const filterByAllies = (rows, allyIds, idOf = row => row.id) => rows.filt
 let audience = 'everyone';
 export const resetAudience = () => { audience = 'everyone'; };
 
-function tabsNav(router, active) {
-  const nav = node('nav', null, 'friends-tabs'); nav.setAttribute('aria-label', 'Friends sections');
-  for (const [id, label] of TABS) {
-    const a = link(label(), `/friends/${id}`, router, 'friends-tab'); a.dataset.tab = id;
-    if (id === active) a.setAttribute('aria-current', 'page'); nav.append(a);
-  }
-  return nav;
+/** The Friends pages live in the sidebar (shell.js). Where the sidebar is the bottom bar this select, shown by CSS at that width only, stands in for them. */
+function sectionPick(router, active) {
+  const field = node('label', null, 'friends-section'); const select = node('select', null, 'friends-section-pick');
+  for (const [id, label] of TABS) { const o = node('option', label()); o.value = id; o.selected = id === active; select.append(o); }
+  select.addEventListener('change', () => router.go(`/friends/${select.value}`));
+  field.append(node('span', 'Section'), select);
+  return field;
 }
 
 /** Whether the backend can serve this area: null when it is (or its version is unknown), else the sentence to show. */
@@ -43,22 +43,14 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
   if (!social) { root.append(node('p', 'Sign in to see this.', 'notice friends-notice')); return; }
   const blocker = await friendsBlocker(ctx.source);
   if (blocker) { root.append(node('p', blocker, 'notice friends-notice')); return; }
-  if (!SCREENS[tab]) { root.append(tabsNav(ctx.router, 'feed'), node('p', 'Page not found.')); return; }
-  root.append(tabsNav(ctx.router, tab));
+  if (!SCREENS[tab]) { root.append(sectionPick(ctx.router, 'feed'), node('p', 'Page not found.')); return; }
+  root.append(sectionPick(ctx.router, tab));
   const body = node('div', null, 'friends-body');
-  if (tab === 'boards') {
-    const control = node('div', null, 'segmented audience'); control.setAttribute('role', 'group'); control.setAttribute('aria-label', 'Show');
-    for (const [value, label] of [['allies', word('Friends', 'concept_ally_cpl')], ['everyone', 'Everyone']]) {
-      const b = node('button', label); b.type = 'button'; b.dataset.audience = value; b.setAttribute('aria-pressed', String(audience === value));
-      b.addEventListener('click', () => { audience = value; ctx.router.go(arg ? `/friends/boards/${arg}` : '/friends/boards'); }); control.append(b);
-    }
-    root.append(control);
-  }
   root.append(body);
   try {
     let allyIds;
     if (tab === 'boards' && audience === 'allies') allyIds = allyIdsOf(await social.friends());
-    await SCREENS[tab](body, { ...ctx, audience, allyIds }, arg);
+    await SCREENS[tab](body, { ...ctx, audience, allyIds, setAudience: value => { audience = value; } }, arg);
   } catch (error) { body.replaceChildren(node('p', explain(error), 'notice friends-notice')); }
 }
 

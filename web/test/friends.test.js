@@ -46,21 +46,39 @@ describe('friends shell', () => {
     const root = document.createElement('div');
     await renderFriends(root, { source: source(), social: null, router: router() }, 'feed');
     expect(root.textContent).toContain('Sign in');
-    expect(root.querySelector('.friends-tabs')).toBeNull();
+    expect(root.querySelector('.friends-section')).toBeNull();
   });
-  it('showsTheEmptyFeedStateAndTheFiveSubTabs', async () => {
+  it('showsTheEmptyFeedStateAndTheFivePages', async () => {
     const root = document.createElement('div');
     await renderFriends(root, { source: source(), social: createFakeSocial({ feed: async () => [] }), router: router() }, 'feed');
     expect(root.textContent).toContain(t('feed_empty'));
-    expect([...root.querySelectorAll('.friends-tab')].map(a => a.dataset.tab)).toEqual(['feed', 'inbox', 'allies', 'boards', 'circle']);
-    expect(root.querySelector('[aria-current="page"]').dataset.tab).toBe('feed');
+    // No in-page tab row: the page carries one labelled select (shown only at the bottom-bar width) and no links.
+    expect(root.querySelector('.friends-tabs, .friends-tab')).toBeNull(); expect(root.querySelector('a')).toBeNull();
+    const pick = root.querySelector('label.friends-section select'); expect(root.querySelector('label.friends-section').textContent).toContain('Section');
+    expect([...pick.options].map(o => o.value)).toEqual(['feed', 'inbox', 'allies', 'boards', 'circle']); expect(pick.value).toBe('feed');
   });
-  it('subTabsAreDeepLinks', async () => {
+  it('pagesAreSidebarDeepLinksAndTheSelectNavigates', async () => {
     const r = router(); const root = document.createElement('div');
     await renderFriends(root, { source: source(), social: createFakeSocial({}), router: r }, 'inbox');
-    expect(root.querySelector('[aria-current="page"]').getAttribute('href')).toBe('#/friends/inbox');
-    root.querySelector('[data-tab="circle"]').click();
+    const pick = root.querySelector('.friends-section-pick'); expect(pick.value).toBe('inbox');
+    pick.value = 'circle'; pick.dispatchEvent(new Event('change'));
     expect(r.go).toHaveBeenCalledWith('/friends/circle');
+    // the sidebar holds the links: nested under Friends, shown only while Friends is open, the current page marked
+    const open = async hash => {
+      document.body.innerHTML = '<div id="r"></div>'; location.hash = hash;
+      const shell = renderShell(document.querySelector('#r'), { source: { ...source(), listWorkouts: async () => [] }, snapshot: null, social: createFakeSocial({}), onSignOut() {} });
+      await new Promise(resolve => setTimeout(resolve, 20)); return shell;
+    };
+    let shell = await open('#/friends/inbox');
+    const sub = document.querySelector('.nav-sub'); expect(sub.hidden).toBe(false);
+    expect([...sub.querySelectorAll('a')].map(a => [a.dataset.tab, a.getAttribute('href')])).toEqual(TABS.map(([id]) => [id, `#/friends/${id}`]));
+    expect([...sub.querySelectorAll('[aria-current]')].map(a => a.dataset.tab)).toEqual(['inbox']);
+    expect(document.querySelector('[data-friends]').getAttribute('aria-current')).toBe('true');
+    expect(document.querySelectorAll('.sidebar [aria-current="page"]')).toHaveLength(1);
+    expect(document.querySelector('.content .friends-section-pick').value).toBe('inbox');
+    shell.dispose(); shell = await open('#/workouts'); expect(document.querySelector('.nav-sub').hidden).toBe(true); expect(document.querySelector('.nav-sub [aria-current]')).toBeNull(); shell.dispose();
+    shell = await open('#/friends'); expect(document.querySelector('.nav-sub [aria-current]').dataset.tab).toBe('feed'); shell.dispose();
+    location.hash = '';
     // and the shell routes each path to its tab
     for (const tab of ['feed', 'inbox', 'allies', 'boards', 'circle']) {
       const seen = vi.fn(); const saved = SCREENS[tab]; SCREENS[tab] = async (body, ctx, arg) => { seen(tab, arg); }; document.body.innerHTML = '<div id="r"></div>';
@@ -77,13 +95,12 @@ describe('friends shell', () => {
     const rows = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'me' }];
     expect(filterByAllies(rows, allyIdsOf(friends))).toEqual([{ id: 'a' }, { id: 'c' }]);
     const social = createFakeSocial({ friends: async () => friends, leaderboard: async () => rows });
-    const seen = []; const saved = SCREENS.boards; SCREENS.boards = async (body, ctx) => { seen.push([ctx.audience, ctx.allyIds && [...ctx.allyIds]]); };
+    const seen = []; let last; const saved = SCREENS.boards; SCREENS.boards = async (body, ctx) => { last = ctx; seen.push([ctx.audience, ctx.allyIds && [...ctx.allyIds]]); };
     const r = router(); const root = document.createElement('div');
     await renderFriends(root, { source: source(), social, router: r }, 'boards');
     expect(seen[0]).toEqual(['everyone', undefined]);
     expect(social.calls.map(c => c.method)).toEqual([]);
-    root.querySelector('[data-audience="allies"]').click();
-    expect(r.go).toHaveBeenCalledWith('/friends/boards');
+    last.setAudience('allies');
     const again = document.createElement('div');
     await renderFriends(again, { source: source(), social, router: r }, 'boards');
     expect(seen[1]).toEqual(['allies', ['a', 'c']]);

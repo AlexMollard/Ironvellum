@@ -26,7 +26,7 @@ describe('shell', () => {
   it('shows the navigation, the user block and the read-only footer line', () => {
     location.hash = '#/workouts'; const root = document.createElement('div'); document.body.append(root);
     const shell = renderShell(root, { source, snapshot, onSignOut: () => {}, nowMs: Date.UTC(2026, 9, 27, 18) });
-    expect([...root.querySelectorAll('nav a')].map(a => a.textContent.replace(/[^A-Za-z]/g, ''))).toEqual(['Overview', 'Workouts', 'Lifts', 'Trends', 'Routines', 'Friends']);
+    expect([...root.querySelectorAll('nav > a')].map(a => a.textContent.replace(/[^A-Za-z]/g, ''))).toEqual(['Overview', 'Workouts', 'Lifts', 'Trends', 'Routines', 'Friends']);
     for (const absent of ['Allies', 'comments']) expect(root.textContent).not.toContain(absent);
     expect(root.querySelector('nav a[aria-current="page"]').dataset.path).toBe('/workouts');
     const user = root.querySelector('.sidebar-user').textContent;

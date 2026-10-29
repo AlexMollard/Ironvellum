@@ -10,6 +10,7 @@ beforeEach(resetBoards);
 afterEach(() => { setWordsMode(false); document.body.innerHTML = ''; });
 const wait = () => new Promise(resolve => setTimeout(resolve, 0));
 const click = el => el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+const choose = (select, value) => { select.value = value; select.dispatchEvent(new Event('change')); };
 const lb = (id, name, over = {}) => ({ id, display_name: name, current_title_id: null, current_crest_id: null, level: 10, total_xp: 1000, streak_days: 1, titles_count: 1, lifetime_strength: 500, sessions_last_7d: 2, ...over });
 const lift = (id, name, l, step, recent = null) => ({ user_id: id, display_name: name, current_title_id: null, current_crest_id: null, level: 10, lift: l, step, recent_step: recent });
 const mount = async (script, ctx = {}, kind) => {
@@ -57,11 +58,11 @@ describe('training board', () => {
   it('metricSwitchReorders', async () => {
     const rows = [lb('u1', 'Mara', { total_xp: 9000, streak_days: 1 }), lb('u2', 'Jonah', { total_xp: 100, streak_days: 20 }), lb('u3', 'Ines', { total_xp: 50, streak_days: 5 })];
     const { root, router } = await mount({ leaderboard: rows }); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u1');
-    click(root.querySelector('[data-value="streak"]')); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u2'); expect(root.querySelector('.podium-place.place-1').textContent).toContain('20 days');
-    expect(root.querySelector('[data-value="streak"]').getAttribute('aria-pressed')).toBe('true'); expect(router.go).not.toHaveBeenCalled();
+    choose(root.querySelector('.board-metric'), 'streak'); expect(root.querySelector('.podium-place.place-1').dataset.user).toBe('u2'); expect(root.querySelector('.podium-place.place-1').textContent).toContain('20 days');
+    expect(root.querySelector('.board-metric').value).toBe('streak'); expect(router.go).not.toHaveBeenCalled();
   });
   it('levelBoardShowsXpAsTheSubline', async () => {
-    const { root } = await mount({ leaderboard: [...board, lb('u6', 'Zed', { total_xp: 10 })] }); click(root.querySelector('[data-value="level"]'));
+    const { root } = await mount({ leaderboard: [...board, lb('u6', 'Zed', { total_xp: 10 })] }); choose(root.querySelector('.board-metric'), 'level');
     expect(root.querySelector('.board-row .person-sub').textContent).toContain(format(t('acct_metric_xp_value'), '4,000'));
   });
   it('aloneOnTheBoardSaysSo', async () => { const { root } = await mount({ leaderboard: [lb('me', 'Fictional lifter')] }); expect(root.textContent).toContain(t('acct_board_alone')); });
@@ -85,12 +86,12 @@ describe('lift board', () => {
     expect([...root.querySelectorAll('.board-row')].map(r => [r.dataset.rank, r.dataset.user])).toEqual([['1', 'me'], ['2', 'u2'], ['2', 'u1'], ['4', 'u3']]);
     expect(root.querySelector('.board-row .board-figure').textContent).toContain('Gold II'); expect(root.querySelector('.board-row .board-figure').textContent).toContain('tier 8 of 10');
     expect(root.querySelector('.board-you').textContent).toBe('You: Gold II · 1st');
-    click(root.querySelector('[data-value="week"]'));
+    choose(root.querySelector('.board-window'), 'week'); expect(root.querySelector('.board-window').value).toBe('week');
     expect([...root.querySelectorAll('.board-row')].map(r => [r.dataset.rank, r.dataset.user])).toEqual([['1', 'me'], ['2', 'u1'], ['3', 'u3']]);
     expect(root.querySelector('.board-row .board-figure').textContent).toContain('Gold I');
   });
   it('anotherLiftSwitchesTheBoard', async () => {
-    const { root } = await mount({ lift_board: rows }, {}, 'lifts'); const pick = root.querySelector('.lift-pick'); pick.value = 'bench'; pick.dispatchEvent(new Event('change'));
+    const { root } = await mount({ lift_board: rows }, {}, 'lifts'); choose(root.querySelector('.lift-pick'), 'bench');
     expect([...root.querySelectorAll('.board-row')].map(r => r.dataset.user)).toEqual(['u1']); expect(root.querySelector('.lift-pick').value).toBe('bench');
   });
   it('anEmptyLiftReadsNoneYet', async () => { const { root } = await mount({ lift_board: [] }, {}, 'lifts'); expect(root.querySelector('.empty').textContent).toBe(t('acct_lift_none_ranked')); });
@@ -105,6 +106,28 @@ describe('muster board', () => {
     expect(root.querySelectorAll('.board-row')[1].textContent).toContain('1 echo · 1.0/h'); expect(client.callsTo('shadow_board')[0].order).toEqual([['shadow_essence', false]]);
   });
   it('emptyMusterReadsPlain', async () => { const { root } = await mount({ shadow_board: [] }, {}, 'muster'); expect(root.querySelector('.empty').textContent).toBe(t('line_no_veil_echoes')); });
+});
+
+describe('one tab row', () => {
+  it('everyBoardHasOnlyTheBoardKindAsTabsAndLabelledSelectsBelow', async () => {
+    for (const kind of ['training', 'lifts', 'muster']) {
+      const { root } = await mount({ leaderboard: board, lift_board: [], shadow_board: [] }, {}, kind);
+      // the only group of buttons is the board kind row, and it comes first
+      expect([...root.querySelectorAll('.segmented')].map(g => g.getAttribute('aria-label'))).toEqual(['Board']);
+      expect(root.firstElementChild.classList.contains('segmented')).toBe(true); expect(root.firstElementChild.nextElementSibling.classList.contains('board-filters')).toBe(true);
+      // every control in the filter row is a native select with a visible label, so a screen reader and a click both land on it
+      const fields = [...root.querySelectorAll('.board-filters > label')];
+      expect(fields.length).toBe(kind === 'training' ? 2 : kind === 'lifts' ? 3 : 1);
+      for (const f of fields) { expect(f.querySelector('select')).not.toBeNull(); expect(f.querySelector('span').textContent.length).toBeGreaterThan(0); }
+      expect(root.querySelectorAll('.board-filters button')).toHaveLength(0);
+    }
+  });
+  it('theShowSelectSetsTheAudienceAndReloadsTheSameBoard', async () => {
+    const setAudience = vi.fn(); const a = await mount({ leaderboard: board }, { setAudience, audience: 'allies' });
+    expect(a.root.querySelector('.board-audience').value).toBe('allies'); expect([...a.root.querySelector('.board-audience').options].map(o => o.value)).toEqual(['allies', 'everyone']);
+    choose(a.root.querySelector('.board-audience'), 'everyone'); expect(setAudience).toHaveBeenCalledWith('everyone'); expect(a.router.go).toHaveBeenCalledWith('/friends/boards');
+    const b = await mount({ lift_board: [] }, { setAudience }, 'lifts'); choose(b.root.querySelector('.board-audience'), 'allies'); expect(b.router.go).toHaveBeenCalledWith('/friends/boards/lifts');
+  });
 });
 
 describe('every board', () => {

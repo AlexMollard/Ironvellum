@@ -4,7 +4,7 @@ import {renderWorkoutDetail} from './screens/workoutDetail.js';
 import {renderLifts} from './screens/lifts.js';
 import {renderTrends} from './screens/trends.js';
 import {renderRoutines} from './screens/routines.js';
-import {renderFriends,friendsTitle} from './screens/friends/index.js';
+import {renderFriends,friendsTitle,TABS} from './screens/friends/index.js';
 import {unreadCount} from './screens/friends/inbox.js';
 import {startPolling} from './data/poll.js';
 import {FRIENDS_SCHEMA_VERSION} from './schema.js';
@@ -30,18 +30,23 @@ export function renderShell(root, {source,snapshot,social,onSignOut,nowMs=Date.n
   const sidebar=node('aside',null,'sidebar');
   const brand=node('strong','Ironvellum','brand');brand.append(node('span',' WEB','brand-web'));sidebar.append(brand);
   const nav=node('nav');nav.setAttribute('aria-label','Main navigation');
-  for(const [path,label,icon] of NAV) {const a=node('a');a.href=`#${path}`;a.dataset.path=path;const mark=node('span',null,'nav-icon');mark.append(createElement(icon,{width:18,height:18,'stroke-width':1.75,'aria-hidden':'true'}));a.append(mark,node('span',label,'nav-label'));if(path==='/workouts') a.dataset.workouts='true';if(path==='/friends') a.dataset.friends='true';if(path==='/routines') a.dataset.routines='true';nav.append(a);} sidebar.append(nav);
+  // The Friends pages, nested under Friends and shown while that section is open; the narrow bottom bar swaps them for a select in the page.
+  const friendsPages=node('div',null,'nav-sub');friendsPages.hidden=true;
+  for(const [path,label,icon] of NAV) {const a=node('a');a.href=`#${path}`;a.dataset.path=path;const mark=node('span',null,'nav-icon');mark.append(createElement(icon,{width:18,height:18,'stroke-width':1.75,'aria-hidden':'true'}));a.append(mark,node('span',label,'nav-label'));if(path==='/workouts') a.dataset.workouts='true';if(path==='/friends') a.dataset.friends='true';if(path==='/routines') a.dataset.routines='true';nav.append(a);
+    if(path==='/friends') {nav.append(friendsPages);for(const [id,text] of TABS) {const s=node('a',text(),'nav-sub-link');s.href=`#/friends/${id}`;s.dataset.tab=id;friendsPages.append(s);}}
+  } sidebar.append(nav);
   const user=node('div',null,'sidebar-user');
   const logout=node('button','Sign out','link-button');logout.type='button';logout.addEventListener('click',onSignOut);
   if(snapshot?.profile) {const who=node('div',null,'user-line');const emblem=node('span');plate(emblem,{name:snapshot.profile.name,crestId:snapshot.profile.crestId});who.append(emblem);const text=node('span',null,'user-name');text.append(snapshot.profile.name||'',node('br'),node('span',`Level ${snapshot.profile.level}`,'muted'));who.append(text);user.append(who);}
   const asof=node('div',null,'muted user-asof');if(snapshot?.builtAtMs!=null) asof.append(node('span',`${statsAsOf(snapshot,nowMs)} · `,'asof-text'));asof.append(logout);user.append(asof,node('div','Log and edit training in the app.','faint user-note'));sidebar.append(user);
   const main=node('main',null,'main'),top=node('div',null,'topbar'),titleSlot=node('div',null,'topbar-title');
-  const workoutsLabel=()=>{nav.querySelector('[data-workouts] .nav-label').textContent=word('Workouts','concept_chronicle_c');nav.querySelector('[data-friends] .nav-label').textContent=friendsTitle();nav.querySelector('[data-routines] .nav-label').textContent=word('Routines','concept_rite_cpl');inboxLink.setAttribute('aria-label',word('Inbox','concept_inbox_c'));};
+  const workoutsLabel=()=>{nav.querySelector('[data-workouts] .nav-label').textContent=word('Workouts','concept_chronicle_c');nav.querySelector('[data-friends] .nav-label').textContent=friendsTitle();for(const [id,text] of TABS) nav.querySelector(`.nav-sub-link[data-tab="${id}"]`).textContent=text();nav.querySelector('[data-routines] .nav-label').textContent=word('Routines','concept_rite_cpl');inboxLink.setAttribute('aria-label',word('Inbox','concept_inbox_c'));};
   const inboxLink=node('a',null,'inbox-button');inboxLink.href='#/friends/inbox';const inboxIcon=node('span',null,'nav-icon');inboxIcon.append(createElement(Inbox,{width:18,height:18,'stroke-width':1.75,'aria-hidden':'true'}));const badge=node('span',null,'inbox-badge');badge.hidden=true;inboxLink.append(inboxIcon,badge);
   const appearance=createAppearanceMenu(snapshot?.appearance,()=>{workoutsLabel();router.start();});workoutsLabel();top.append(titleSlot,inboxLink,appearance);main.append(top);
   const setInboxUnread=n=>{badge.textContent=n>99?'99+':String(n);badge.hidden=!(n>0);inboxLink.dataset.unread=String(n>0?n:0);};
   const content=node('div',null,'content');main.append(content);frame.append(sidebar,main);root.append(frame);
-  const current=path=>{const key=path==='/'||!path?'/':`/${path.split('/')[1]}`;for(const a of nav.querySelectorAll('a')) {if(a.dataset.path===key) a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}};
+  const current=path=>{const key=path==='/'||!path?'/':`/${path.split('/')[1]}`;for(const a of nav.querySelectorAll(':scope > a')) {if(a.dataset.path===key) a.setAttribute('aria-current',key==='/friends'?'true':'page');else a.removeAttribute('aria-current');}
+    const inFriends=key==='/friends',tab=path.split('/')[2]||'feed';friendsPages.hidden=!inFriends;for(const a of friendsPages.children) {if(inFriends&&a.dataset.tab===tab) a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}};
   const router=createRouter(async path=>{
     const page=node('div',null,'route-page');content.replaceChildren(page);titleSlot.replaceChildren();current(path); const ctx={source,snapshot,social,router,nowMs,setInboxUnread};
     try {

@@ -11,16 +11,23 @@ export const BOARD_KINDS = [['training', () => t('acct_board_training')], ['lift
 let metric = 'xp', lift = 'squat', recent = false;
 export const resetBoards = () => { metric = 'xp'; lift = 'squat'; recent = false; };
 
+// The board kind is the one tab row on this screen (a segmented control); every other choice is a labelled native select in `.board-filters`.
 const segmented = (label, options, current, pick) => {
   const group = node('div', null, 'segmented'); group.setAttribute('role', 'group'); group.setAttribute('aria-label', label);
   for (const [value, text] of options) { const b = node('button', text); b.type = 'button'; b.dataset.value = value; b.setAttribute('aria-pressed', String(value === current)); b.addEventListener('click', () => pick(value)); group.append(b); }
   return group;
 };
+const field = (label, options, current, className, pick) => {
+  const wrap = node('label', null, 'board-field'), select = node('select', null, className);
+  for (const [value, text] of options) { const o = node('option', text); o.value = value; o.selected = value === current; select.append(o); }
+  select.addEventListener('change', () => pick(select.value)); wrap.append(node('span', label), select);
+  return wrap;
+};
 const mine = (rows, me) => rows.findIndex(r => r.id === me);
 const scoped = (rows, ctx, me) => (ctx.audience === 'allies' && ctx.allyIds ? rows.filter(r => r.id === me || ctx.allyIds.has(r.id)) : rows);
 
-function trainingBoard(body, rows, me, redraw) {
-  body.append(segmented(t('acct_ranked_by_label'), METRICS.map(m => [m, metricLabel(m)]), metric, value => { metric = value; redraw(); }));
+function trainingBoard(body, rows, me, redraw, filters) {
+  filters.append(field(t('acct_ranked_by_label'), METRICS.map(m => [m, metricLabel(m)]), metric, 'board-metric', value => { metric = value; redraw(); }));
   const sorted = rankRows(metric, rows);
   if (!sorted.length) { body.append(node('p', t('acct_board_empty'), 'empty')); return; }
   body.append(podium(sorted.slice(0, 3).map((row, i) => ({ rank: i + 1, row, figure: metricText(metric, row) })), me));
@@ -38,12 +45,12 @@ function trainingBoard(body, rows, me, redraw) {
   const place = mine(sorted, me); if (place >= 0) { body.append(node('p', `${t('acct_board_your_standing')}: ${place + 1}`, 'muted board-you')); }
 }
 
-function liftBoard(body, rows, me, redraw) {
+function liftBoard(body, rows, me, redraw, filters) {
   const known = catalogue.lifts.filter(l => knownLift(l.wire));
-  const pick = node('select', null, 'lift-pick'); pick.setAttribute('aria-label', t('acct_board_lifts'));
-  for (const l of known) { const o = node('option', `${l.label} (${rankLift(rows, l.wire, recent).length})`); o.value = l.wire; o.selected = l.wire === lift; pick.append(o); }
-  pick.addEventListener('change', () => { lift = pick.value; redraw(); });
-  body.append(node('p', t('acct_lifts_note'), 'muted'), pick, segmented(t('acct_board_lifts'), [['all', t('acct_window_all_time')], ['week', t('acct_window_week')]], recent ? 'week' : 'all', value => { recent = value === 'week'; redraw(); }));
+  filters.append(
+    field('Lift', known.map(l => [l.wire, `${l.label} (${rankLift(rows, l.wire, recent).length})`]), lift, 'lift-pick', value => { lift = value; redraw(); }),
+    field('Window', [['all', t('acct_window_all_time')], ['week', t('acct_window_week')]], recent ? 'week' : 'all', 'board-window', value => { recent = value === 'week'; redraw(); }));
+  body.append(node('p', t('acct_lifts_note'), 'muted'));
   const standings = rankLift(rows, lift, recent);
   if (!standings.length) { body.append(node('p', t('acct_lift_none_ranked'), 'empty')); return; }
   const you = standings.find(s => s.row.id === me); if (you) body.append(node('p', `You: ${stepLabel(lift, you.step)} · ${ordinal(you.rank)}`, 'board-you'));
@@ -57,7 +64,7 @@ function liftBoard(body, rows, me, redraw) {
   body.append(list);
 }
 
-function musterBoard(body, rows, me) {
+function musterBoard(body, rows, me, redraw, filters) {
   body.append(node('p', t('line_veil_board_note'), 'muted'));
   if (!rows.length) { body.append(node('p', t('line_no_veil_echoes'), 'empty')); return; }
   const list = node('div', null, 'board-rows');
@@ -74,14 +81,20 @@ function musterBoard(body, rows, me) {
 /**
  * The boards, read-only: Training (the phone's metrics and its ranking rule, a podium for the top three), Lifts (tiers per lift, Week or
  * All time, ties sharing a rank) and the muster roll (banked essence). Rows are shown as the views serve them: a blocked lifter is
- * already absent. Friends | Everyone is the client filter the Friends shell passes in `ctx.allyIds`.
+ * already absent. Friends | Everyone is the client filter the Friends shell passes in `ctx.allyIds`; picking it stores the choice
+ * through `ctx.setAudience` and reloads the same board.
  */
-export async function renderBoards(root, ctx, kind = 'training') {
+export async function renderBoards(root, ctx, kind) {
   const { social, router, source } = ctx, me = source.userId;
   const active = BOARD_KINDS.some(([id]) => id === kind) ? kind : 'training';
   const nav = segmented('Board', BOARD_KINDS.map(([id, label]) => [id, label()]), active, id => router.go(`/friends/boards/${id}`));
-  const body = node('div', null, 'board'); root.append(nav, body);
+  const filters = node('div', null, 'board-filters');
+  filters.append(field('Show', [['allies', word('Friends', 'concept_ally_cpl')], ['everyone', 'Everyone']], ctx.audience, 'board-audience', value => { ctx.setAudience?.(value); router.go(kind ? `/friends/boards/${kind}` : '/friends/boards'); }));
+  const body = node('div', null, 'board'); root.append(nav, filters, body);
   const rows = scoped(active === 'training' ? await social.leaderboard() : active === 'lifts' ? await social.liftBoard() : await social.shadowBoard(), ctx, me);
-  const draw = () => { body.replaceChildren(); (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, draw); };
+  const draw = () => {
+    body.replaceChildren(); for (const extra of [...filters.children].slice(1)) extra.remove();
+    (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, draw, filters);
+  };
   draw();
 }
