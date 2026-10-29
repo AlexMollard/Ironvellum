@@ -65,7 +65,7 @@ function liftDetail(pane, lift, snapshot) {
       if (!matching.length) continue;
       const unit = metric === 'e1rm' ? snapshot.unit : 'score';
       const formatValue = metric === 'e1rm' ? value => formatLoad(value, snapshot.unit) : String;
-      const title = metric === 'e1rm' ? `Estimated 1RM per ${t('concept_trial_s')}` : `Strength score per ${t('concept_trial_s')}`;
+      const title = metric === 'e1rm' ? `Estimated 1RM per ${t('concept_trial_s')}` : `${t('acct_metric_strength')} per ${t('concept_trial_s')}`;
       const series = matching.map(({ v, index }) => ({ index, name: v.label, points: v.points.filter(p => p[0] >= cutoff).map(p => [...p, date.format(p[0]), `${formatValue(p[2])} ${unit}`]) }));
       const panel = el('div', null, 'analytics-chart'); panel.append(el('h3', title, 'chart-title'));
       const plot = el('div'); panel.append(plot); chart.append(panel);

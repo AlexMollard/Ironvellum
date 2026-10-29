@@ -74,6 +74,7 @@ import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.LeaderboardRow
 import com.ironvellum.app.data.cloud.ShadowBoardRow
 import com.ironvellum.app.data.cloud.LiftBoardRow
+import com.ironvellum.app.domain.BoardRanking
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Lift
 import com.ironvellum.app.domain.LiftBoards
@@ -157,14 +158,7 @@ private enum class BoardMetric(private val labelText: () -> String) {
     val label: String get() = labelText()
 
     /** The raw value this metric ranks by. */
-    fun value(row: LeaderboardRow): Long = when (this) {
-        Xp -> row.totalXp
-        Level -> row.level.toLong()
-        Streak -> row.streakDays.toLong()
-        Titles -> row.titlesCount.toLong()
-        Strength -> row.lifetimeStrength
-        Last7 -> row.sessionsLast7d.toLong()
-    }
+    fun value(row: LeaderboardRow): Long = BoardRanking.value(BoardRanking.Metric.valueOf(name), row)
 
     /** The big per-row display of this metric's value. */
     fun format(row: LeaderboardRow): String = when (this) {
@@ -181,11 +175,8 @@ private enum class BoardMetric(private val labelText: () -> String) {
 internal fun grouped(value: Long): String = "%,d".fmt(value)
 
 /** Local re-sort for the selected metric; XP breaks ties, then name for stability. No network call. */
-private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<LeaderboardRow> = rows.sortedWith(
-    compareByDescending<LeaderboardRow> { metric.value(it) }
-        .thenByDescending { it.totalXp }
-        .thenBy { it.displayName },
-)
+private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<LeaderboardRow> =
+    BoardRanking.sort(rows, BoardRanking.Metric.valueOf(metric.name))
 
 /** Worn title name resolved locally from the id; null when bare so callers omit the segment cleanly. */
 private fun wornTitle(currentTitleId: String?): String? =
@@ -993,7 +984,7 @@ private enum class LiftWindow(@StringRes private val labelRes: Int) {
 }
 
 /** One lifter's place on one lift board; [step] is the tier step that ranked them, never a ratio. */
-private data class LiftStanding(val rank: Int, val row: LiftBoardRow, val step: Int)
+private typealias LiftStanding = BoardRanking.LiftStanding
 
 /**
  * Ranks one lift for a window, best tier first. Ties share a rank (1, 1, 3) so
@@ -1001,23 +992,8 @@ private data class LiftStanding(val rank: Int, val row: LiftBoardRow, val step: 
  * that reads as one beating the other. WEEK drops lifters with no qualifying
  * set in the last 7 days rather than ranking their stale tier.
  */
-private fun liftStandings(rows: List<LiftBoardRow>, lift: Lift, window: LiftWindow): List<LiftStanding> {
-    val ranked = rows
-        .filter { it.lift == lift }
-        .mapNotNull { row ->
-            val step = if (window == LiftWindow.Week) row.recentStep else row.step
-            step?.let { row to it }
-        }
-        .sortedWith(
-            compareByDescending<Pair<LiftBoardRow, Int>> { it.second }
-                .thenBy { it.first.displayName.lowercase() },
-        )
-    var rank = 0
-    return ranked.mapIndexed { index, (row, step) ->
-        if (index == 0 || step != ranked[index - 1].second) rank = index + 1
-        LiftStanding(rank, row, step)
-    }
-}
+private fun liftStandings(rows: List<LiftBoardRow>, lift: Lift, window: LiftWindow): List<LiftStanding> =
+    BoardRanking.liftStandings(rows, lift, recent = window == LiftWindow.Week)
 
 /** The lift boards: a Row that picks the lift, Week / All time, ranked by tier name only. */
 @Composable

@@ -216,9 +216,35 @@ function alliesApi(client, userId) {
   };
 }
 
+const BOARD_LIMIT = 100;
+
+function boardsApi(client) {
+  return {
+    // leaderboard (view): the 100 best by XP of me and everyone the server lets me see; every other ordering is the client's, as on the phone
+    async leaderboard() {
+      return (await rowsOf(client.from('leaderboard').select('*').order('total_xp', { ascending: false }).limit(BOARD_LIMIT))).map(r => ({
+        id: r.id, name: r.display_name, level: r.level ?? 1, titleId: r.current_title_id ?? null, crestId: r.current_crest_id ?? null, totalXp: r.total_xp ?? 0, streakDays: r.streak_days ?? 0,
+        titlesCount: r.titles_count ?? 0, lifetimeStrength: r.lifetime_strength ?? 0, sessionsLast7d: r.sessions_last_7d ?? 0,
+      }));
+    },
+    // lift_board (view): one row per lifter per lift for me and my accepted friends; only a tier step ever leaves a phone
+    async liftBoard() {
+      return (await rowsOf(client.from('lift_board').select('*'))).map(r => ({
+        id: r.user_id, name: r.display_name, level: r.level ?? 1, titleId: r.current_title_id ?? null, crestId: r.current_crest_id ?? null, lift: r.lift, step: r.step ?? 0, recentStep: r.recent_step ?? null,
+      }));
+    },
+    // shadow_board (view): banked essence, the muster roll; the server orders it
+    async shadowBoard() {
+      return (await rowsOf(client.from('shadow_board').select('*').order('shadow_essence', { ascending: false }).limit(BOARD_LIMIT))).map(r => ({
+        id: r.id, name: r.display_name, level: r.level ?? 1, titleId: r.current_title_id ?? null, crestId: r.current_crest_id ?? null, essence: r.shadow_essence ?? 0, shadows: r.shadow_count ?? 0, ratePerHour: r.shadow_rate ?? 0,
+      }));
+    },
+  };
+}
+
 /** The methods implemented so far; each screen's task adds its area here. */
 function implementations(client, userId) {
-  return { ...feedApi(client, userId), ...safetyApi(client, userId), ...inboxApi(client, userId), ...alliesApi(client, userId) };
+  return { ...feedApi(client, userId), ...safetyApi(client, userId), ...inboxApi(client, userId), ...alliesApi(client, userId), ...boardsApi(client) };
 }
 
 /** @returns {SocialSource} */

@@ -46,6 +46,15 @@ export function createFixtureSocial() {
       { userId: 'u-odin', name: 'Odin Hart', level: 9, titleId: null, crestId: null, accepted: false, incoming: false, acceptedAtMs: null },
     ],
     blocked: async () => [{ userId: 'u-x', name: 'Rook Danner' }],
+    leaderboard: async () => [
+      ['fixture', 'Fictional lifter', 50, 61200, 12, 18, 98000, 4], ['u-mara', 'Mara Quill', 31, 48200, 6, 9, 14200, 5], ['u-jonah', 'Jonah Reed', 18, 22100, 3, 5, 9100, 3],
+      ['u-ines', 'Ines Vale', 22, 19000, 9, 7, 8800, 6], ['u-odin', 'Odin Hart', 9, 6400, 1, 2, 2100, 1], ['u-eve', 'Eve Marsh', 14, 5200, 0, 3, 1900, 0],
+    ].map(([id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d]) => ({ id, name, level, totalXp, streakDays, titlesCount, lifetimeStrength, sessionsLast7d, titleId: null, crestId: id === 'u-mara' ? 'iron' : null })),
+    liftBoard: async () => [
+      ['fixture', 'Fictional lifter', 'squat', 8, 7], ['u-mara', 'Mara Quill', 'squat', 7, 6], ['u-jonah', 'Jonah Reed', 'squat', 7, null], ['u-ines', 'Ines Vale', 'squat', 5, 5],
+      ['fixture', 'Fictional lifter', 'bench', 6, 6], ['u-mara', 'Mara Quill', 'bench', 4, null], ['fixture', 'Fictional lifter', 'muscle_up', 3, null],
+    ].map(([id, name, lift, step, recentStep]) => ({ id, name, level: 20, titleId: null, crestId: null, lift, step, recentStep })),
+    shadowBoard: async () => [['u-mara', 'Mara Quill', 12480, 6, 218.2], ['fixture', 'Fictional lifter', 9100, 5, 160.4], ['u-jonah', 'Jonah Reed', 3300, 1, 40]].map(([id, name, essence, shadows, ratePerHour]) => ({ id, name, level: 20, titleId: null, crestId: null, essence, shadows, ratePerHour })),
     unmute: async () => {}, unblock: async () => {}, requestFriend: async () => {},
     findHunter: async name => ({ id: 'u-new', displayName: name }),
     lifter: async id => ({

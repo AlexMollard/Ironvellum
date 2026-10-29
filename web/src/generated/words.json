@@ -123,9 +123,61 @@
         "plain": "Add a friend by display name",
         "themed": "Add an ally by true name"
     },
+    "acct_lift_none_ranked": {
+        "plain": "none yet",
+        "themed": "none yet"
+    },
+    "acct_lifts_note": {
+        "plain": "Tiers only — bodyweight stays on each phone.",
+        "themed": "Rungs only — bodyweight stays on each phone."
+    },
+    "acct_metric_last7": {
+        "plain": "Last 7 days",
+        "themed": "Last 7 days"
+    },
+    "acct_metric_last7_value": {
+        "plain": "%1$d in 7 days",
+        "themed": "%1$d in 7 days"
+    },
+    "acct_metric_level": {
+        "plain": "Level",
+        "themed": "Level"
+    },
+    "acct_metric_strength": {
+        "plain": "Strength score",
+        "themed": "Strength score"
+    },
+    "acct_metric_strength_value": {
+        "plain": "STR %1$s",
+        "themed": "STR %1$s"
+    },
+    "acct_metric_xp": {
+        "plain": "XP",
+        "themed": "XP"
+    },
+    "acct_metric_xp_value": {
+        "plain": "%1$s XP",
+        "themed": "%1$s XP"
+    },
+    "acct_ranked_by_label": {
+        "plain": "Ranked by",
+        "themed": "Ranked by"
+    },
+    "acct_rate_per_hour": {
+        "plain": "%1$.1f/h",
+        "themed": "%1$.1f/h"
+    },
     "acct_unblock_button": {
         "plain": "Unblock",
         "themed": "Unblock"
+    },
+    "acct_window_all_time": {
+        "plain": "All time",
+        "themed": "All time"
+    },
+    "acct_window_week": {
+        "plain": "Week",
+        "themed": "Week"
     },
     "always_acct_essence_value": {
         "plain": "%1$s essence",
@@ -1907,13 +1959,17 @@
         "plain": "+%1$s XP",
         "themed": "+%1$s XP"
     },
+    "line_no_veil_echoes": {
+        "plain": "No lifter has inscribed echoes yet. The Veil is empty and every top position here is open.",
+        "themed": "No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed."
+    },
     "line_stumbled": {
         "plain": "Something went wrong — try again in a moment",
         "themed": "The Ledger stumbled — try again in a moment"
     },
-    "stats_lift_board_empty": {
-        "plain": "Log weighted sets of 1 to 12 reps to build the board.",
-        "themed": "Log weighted sets of 1 to 12 reps to build the board."
+    "line_veil_board_note": {
+        "plain": "Ranks Veil progress — echoes inscribed — separate from the training leaderboard.",
+        "themed": "Ranks Veil progress — echoes inscribed — separate from the training reckoning."
     },
     "serverTerms": [
         {
@@ -1994,5 +2050,13 @@
             "plain": "lifter",
             "plainPl": "lifters"
         }
-    ]
+    ],
+    "stats_lift_board_empty": {
+        "plain": "Log weighted sets of 1 to 12 reps to build the board.",
+        "themed": "Log weighted sets of 1 to 12 reps to build the board."
+    },
+    "xp_level_label": {
+        "plain": "Level %1$d",
+        "themed": "Level %1$d"
+    }
 }

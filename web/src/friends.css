@@ -72,6 +72,26 @@
 .inbox-when { font-size: 12px; }
 .inbox-note { font-size: 12px; }
 
+/* boards */
+.board { display: grid; gap: 14px; min-width: 0; }
+.podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.podium-place { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border: 1px solid var(--paper-rune); border-radius: 4px; text-align: center; min-width: 0; }
+.podium-place.place-1 { padding-top: 22px; padding-bottom: 18px; border-color: var(--fill); }
+.podium-place.is-me { background: var(--wash); }
+.podium-rank { font-weight: 700; color: var(--paper-ink-muted); }
+.place-1 .podium-rank { color: var(--fill); }
+.podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium-figure { font-size: 12px; }
+.board-rows { display: grid; }
+.board-row { padding: 8px 6px; border-top: 1px solid var(--paper-rune); }
+.board-row.is-me { background: var(--wash); }
+.board-rank { width: 28px; flex: none; text-align: right; color: var(--paper-ink-muted); font-variant-numeric: tabular-nums; }
+.board-row .person-text { flex: 1; }
+.board-figure { display: grid; justify-items: end; gap: 2px; text-align: right; flex: none; }
+.board-figure .tier-bar { width: 110px; }
+.board-you { font-weight: 600; }
+.lift-pick { height: 36px; max-width: 100%; }
+
 /* allies and the lifter folio */
 .allies-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .allies-layout.has-folio { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }

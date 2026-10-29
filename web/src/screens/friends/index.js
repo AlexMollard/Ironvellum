@@ -6,6 +6,7 @@ import { NotYet } from '../../data/socialSource.js';
 import { renderFeed } from './feed.js';
 import { renderInbox } from './inbox.js';
 import { renderAllies } from './allies.js';
+import { renderBoards } from './boards.js';
 
 /** The sub-tabs, in the order the app shows them. Each screen is `(root, ctx, arg) => Promise<void>`, added by its task. */
 export const TABS = [['feed', () => 'Feed'], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => 'Boards'], ['circle', () => word('Group', 'concept_circle_c')]];
@@ -48,7 +49,7 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
     const control = node('div', null, 'segmented audience'); control.setAttribute('role', 'group'); control.setAttribute('aria-label', 'Show');
     for (const [value, label] of [['allies', word('Friends', 'concept_ally_cpl')], ['everyone', 'Everyone']]) {
       const b = node('button', label); b.type = 'button'; b.dataset.audience = value; b.setAttribute('aria-pressed', String(audience === value));
-      b.addEventListener('click', () => { audience = value; ctx.router.go('/friends/boards'); }); control.append(b);
+      b.addEventListener('click', () => { audience = value; ctx.router.go(arg ? `/friends/boards/${arg}` : '/friends/boards'); }); control.append(b);
     }
     root.append(control);
   }
@@ -63,4 +64,5 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
 SCREENS.feed = renderFeed;
 SCREENS.inbox = renderInbox;
 SCREENS.allies = renderAllies;
+SCREENS.boards = renderBoards;
 for (const [id] of TABS) SCREENS[id] ??= async () => { throw new NotYet(id); };

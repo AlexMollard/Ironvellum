@@ -2,6 +2,8 @@ package com.ironvellum.app.domain
 
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.Inbox
+import com.ironvellum.app.data.cloud.LeaderboardRow
+import com.ironvellum.app.data.cloud.LiftBoardRow
 import com.ironvellum.app.data.cloud.InboxItem
 import java.time.Instant
 import java.io.File
@@ -138,6 +140,52 @@ class WebSnapshotGoldenTest {
                     put("daysSince", f.daysSince)
                     put("series", buildJsonArray { f.strengthSeries.forEach { add(kotlinx.serialization.json.JsonPrimitive(it.toInt())) } })
                     put("peak", f.peak)
+                })
+            })
+            // The boards' ranking rules (BoardRanking), pinned for the web port: each training metric's order and the lift boards' shared ranks.
+            put("boardCases", buildJsonObject {
+                val rows = listOf(
+                    LeaderboardRow("a", "Mara", 31, 9000, 5, 12, 14000, 4, null),
+                    LeaderboardRow("b", "Jonah", 31, 9000, 9, 8, 15000, 2, null),
+                    LeaderboardRow("c", "Ines", 18, 4000, 9, 8, 15000, 6, null),
+                    LeaderboardRow("d", "odin", 18, 4000, 2, 20, 9000, 0, null),
+                    LeaderboardRow("e", "Odin", 40, 12000, 0, 3, 100, 1, null),
+                )
+                put("training", buildJsonObject {
+                    put("rows", buildJsonArray {
+                        rows.forEach { r ->
+                            add(buildJsonObject {
+                                put("id", r.userId); put("name", r.displayName); put("level", r.level); put("totalXp", r.totalXp); put("streakDays", r.streakDays)
+                                put("titlesCount", r.titlesCount); put("lifetimeStrength", r.lifetimeStrength); put("sessionsLast7d", r.sessionsLast7d)
+                            })
+                        }
+                    })
+                    put("orders", buildJsonObject {
+                        BoardRanking.Metric.entries.forEach { m ->
+                            put(m.name.lowercase(), buildJsonObject {
+                                put("ids", buildJsonArray { BoardRanking.sort(rows, m).forEach { add(kotlinx.serialization.json.JsonPrimitive(it.userId)) } })
+                                put("values", buildJsonArray { BoardRanking.sort(rows, m).forEach { add(kotlinx.serialization.json.JsonPrimitive(BoardRanking.value(m, it))) } })
+                            })
+                        }
+                    })
+                })
+                val lifts = listOf(
+                    LiftBoardRow("a", "Mara", 31, null, Lift.SQUAT, 7, 6),
+                    LiftBoardRow("b", "jonah", 31, null, Lift.SQUAT, 7, null),
+                    LiftBoardRow("c", "Ines", 18, null, Lift.SQUAT, 5, 5),
+                    LiftBoardRow("d", "Odin", 18, null, Lift.SQUAT, 7, 6),
+                    LiftBoardRow("e", "Eve", 18, null, Lift.SQUAT, 2, 1),
+                    LiftBoardRow("a", "Mara", 31, null, Lift.BENCH, 4, null),
+                )
+                put("lifts", buildJsonObject {
+                    put("rows", buildJsonArray {
+                        lifts.forEach { r -> add(buildJsonObject { put("id", r.userId); put("name", r.displayName); put("lift", r.lift.wire); put("step", r.step); put("recentStep", r.recentStep) }) }
+                    })
+                    for (recent in listOf(false, true)) put(if (recent) "recent" else "allTime", buildJsonArray {
+                        BoardRanking.liftStandings(lifts, Lift.SQUAT, recent).forEach { s ->
+                            add(buildJsonObject { put("id", s.row.userId); put("rank", s.rank); put("step", s.step) })
+                        }
+                    })
                 })
             })
             put("formatSetsCases", buildJsonArray {
