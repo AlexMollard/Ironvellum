@@ -193,7 +193,7 @@ object BodyShare {
                 down && !up -> 0.70
                 else -> 1.0
             }
-            pattern == MovementPattern.HORIZONTAL_PULL && " row" in n -> when {
+            pattern == MovementPattern.HORIZONTAL_PULL && (" row" in n || "australian pull-up" in n) -> when {
                 up && !down -> 1.30
                 down && !up -> 0.80
                 else -> 1.0

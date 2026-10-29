@@ -33,6 +33,22 @@ class ModifiersTest {
     }
 
     @Test
+    fun `an inverted row gets elevated and incline but no decline`() {
+        listOf("Inverted Row", "Australian Pull-up").forEach { name ->
+            val m = of(name)
+            assertTrue(name, m.containsAll(listOf("incline", "elevated", "assisted", "tempo", "paused")))
+            assertFalse(name, "decline" in m)
+            assertFalse(name, "deficit" in m)
+        }
+        assertEquals(listOf("assisted", "archer", "one-arm", "incline", "elevated", "tempo", "paused"), of("Inverted Row"))
+    }
+
+    @Test
+    fun `a loaded or levered row gets no angle`() {
+        listOf("Barbell Row", "Dumbbell Row", "Front Lever Row").forEach { assertFalse(it, "elevated" in of(it)) }
+    }
+
+    @Test
     fun `a deadlift gets deficit tempo and paused`() {
         assertEquals(listOf("deficit", "tempo", "paused"), of("Deadlift"))
     }

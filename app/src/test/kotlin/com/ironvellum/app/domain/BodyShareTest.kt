@@ -85,6 +85,7 @@ class BodyShareTest {
         assertEquals(1.0, BodyShare.of("Dip"), 1e-9)
         assertEquals(0.5, BodyShare.of("Inverted Row"), 1e-9)
         assertEquals(0.65, BodyShare.of("Inverted Row", "elevated"), 1e-9)
+        assertEquals(0.65, BodyShare.of("Australian Pull-up", "elevated"), 1e-9)
         assertEquals(0.94, BodyShare.of("Pistol Squat"), 1e-9)
         assertEquals(0.8, BodyShare.of("Forward Lunge"), 1e-9)
         assertEquals(1.0, BodyShare.of("One-Arm Push-up"), 1e-9)

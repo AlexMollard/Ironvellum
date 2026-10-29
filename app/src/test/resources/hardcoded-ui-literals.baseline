@@ -11,7 +11,7 @@ main/data/cloud/CloudSync.kt 6
 main/domain/Circles.kt 1
 main/domain/Gacha.kt 6
 main/domain/LiftBoards.kt 71
-main/domain/Modifiers.kt 12
+main/domain/Modifiers.kt 15
 main/domain/ProgramEasing.kt 3
 main/domain/ProgramGenerator.kt 40
 main/domain/ProgramRules.kt 54

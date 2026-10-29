@@ -11,6 +11,20 @@ class ModifierEffectTest {
     fun `elevated on an inverted row is harder`() = assertEquals(Effect.HARDER, ModifierEffect.of("Inverted Row", "elevated"))
 
     @Test
+    fun `incline on an inverted row is easier`() = assertEquals(Effect.EASIER, ModifierEffect.of("Inverted Row", "incline"))
+
+    @Test
+    fun `elevated on an australian pull-up is harder`() = assertEquals(Effect.HARDER, ModifierEffect.of("Australian Pull-up", "elevated"))
+
+    @Test
+    fun `the inverted row picker shows the up arrow on elevated`() {
+        val row = Exercise(id = 6, name = "Inverted Row", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val chips = modifierChips(applicableModifiers(row), "elevated", "Inverted Row").associate { it.token to it.effect }
+        assertEquals(Effect.HARDER, chips["elevated"])
+        assertEquals(Effect.EASIER, chips["incline"])
+    }
+
+    @Test
     fun `incline on a push-up is easier`() = assertEquals(Effect.EASIER, ModifierEffect.of("Push-up", "incline"))
 
     @Test

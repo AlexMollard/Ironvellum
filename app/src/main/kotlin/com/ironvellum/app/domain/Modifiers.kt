@@ -16,6 +16,7 @@ package com.ironvellum.app.domain
  * - assisted: bodyweight pushes and pulls.
  * - archer, one-arm: bodyweight pulls and push-ups, not technique work.
  * - incline, decline, elevated: push-ups - a bench press has its own rows.
+ * - incline, elevated: inverted, ring and australian rows - the feet-up lever [BodyShare.modifierFactor] prices.
  * - deficit: deadlifts, push-ups, split squats and lunges, calf raises.
  *
  * A word the name already carries is not offered again: a Paused Bench
@@ -46,6 +47,7 @@ fun applicableModifiers(exercise: Exercise): List<String> {
             offered += listOf("archer", "one-arm")
         }
         if (pushUp) offered += ANGLES + "deficit"
+        if (bodyweight && pattern == MovementPattern.HORIZONTAL_PULL && LEVER_ROWS.any { it in name }) offered += ROW_ANGLES
         if (pattern == MovementPattern.HINGE && "deadlift" in name) offered += "deficit"
         if (pattern == MovementPattern.LUNGE && "step-up" !in name) offered += "deficit"
         if ("calf raise" in name) offered += "deficit"
@@ -93,6 +95,10 @@ private val DEFICIT_NEVER = listOf(
 )
 
 private val ANGLES = listOf("incline", "decline", "elevated")
+
+/** A row done under a bar or rings with the body as the lever: feet up is harder, hands up easier ("decline" would only repeat "elevated"). */
+private val LEVER_ROWS = listOf("inverted row", "ring row", "australian pull-up")
+private val ROW_ANGLES = listOf("incline", "elevated")
 
 private val MODIFIER_ORDER = listOf(
     "assisted", "archer", "one-arm", "incline", "decline", "elevated", "deficit", "tempo", "paused",
