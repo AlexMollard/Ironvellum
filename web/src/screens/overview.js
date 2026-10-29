@@ -2,9 +2,9 @@ import { t, word } from '../i18n.js';
 import tokens from '../generated/tokens.json';
 import catalogue from '../generated/catalogue.json';
 import { snapshotForWorkout, workoutPath } from '../source.js';
-import { formatDay, formatSets, formatWeekday, formatClock, splitVolume } from '../format.js';
+import { formatDay, formatWeekday, formatClock, splitVolume, plural } from '../format.js';
 import { plate } from '../components/plate.js';
-import { node, card, kpi, sortedWorkouts, workoutDay, weekPassed, link } from '../components/statCard.js';
+import { node, card, kpi, sortedWorkouts, workoutDay, weekPassed, link, liftPath } from '../components/statCard.js';
 import { renderFatigueCard } from '../components/fatigueCard.js';
 import { lastWorkoutCard } from '../components/lastWorkoutCard.js';
 import { alliesLine } from '../components/alliesLine.js';
@@ -37,20 +37,20 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
   const tiles = node('div', null, 'kpi-row');
   const [volume, volumeUnit] = splitVolume(week.volumeKg, snapshot.unit);
   tiles.append(
-    kpi(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week', week.workouts, t('concept_trial_pl'), `${formatSets(week.hardSets)} hard sets${week.plannedDays != null ? ` · ${week.plannedDays} planned` : ''}`, { path: '/workouts', router }),
-    kpi(t('concept_oath_c'), profile.streakDays, 'days', `Best: ${profile.longestStreakDays} days`, { path: '/workouts', router }),
-    kpi(word('Records', 'concept_peak_cpl'), trends.records30d, t('concept_peak_pl'), 'last 30 days', { path: '/lifts', router }),
+    kpi(weekPassed(snapshot, nowMs) ? `Week of ${formatDay(week.startDay)}` : 'This week', week.workouts, t(week.workouts === 1 ? 'concept_trial_s' : 'concept_trial_pl'), `${plural(week.hardSets, 'hard set')}${week.plannedDays != null ? ` · ${week.plannedDays} planned` : ''}`, { path: '/workouts', router }),
+    kpi(t('concept_oath_c'), profile.streakDays, profile.streakDays === 1 ? 'day' : 'days', `Best: ${plural(profile.longestStreakDays, 'day')}`, { path: '/workouts', router }),
+    kpi(word('Records', 'concept_peak_cpl'), trends.records30d, t(trends.records30d === 1 ? 'concept_peak_s' : 'concept_peak_pl'), 'last 30 days', { path: '/lifts', router }),
     kpi('Volume', volume, volumeUnit, `this week · ${splitVolume(week.prevVolumeKg, snapshot.unit).join(' ')} last`, { path: '/workouts', router }));
   main.append(tiles);
   const last = rows[0];
   if (last) {
     const entry = snapshotForWorkout(snapshot, last), day = workoutDay(last, snapshot.zone);
-    const sets = await source.getSets(last), chips = [...new Set(sets.filter(s => s.exerciseName).map(s => s.modifiers ? `${s.exerciseName} · ${s.modifiers}` : s.exerciseName))];
+    const sets = await source.getSets(last), chips = [...new Map(sets.filter(s => s.exerciseName).map(s => { const text = s.modifiers ? `${s.exerciseName} · ${s.modifiers}` : s.exerciseName; return [text, { text, path: liftPath(snapshot, s.exerciseName) }]; })).values()];
     const volumeText = entry ? splitVolume(entry.volumeKg, snapshot.unit).join(' ') : '—';
     const lastCard = lastWorkoutCard({
       heading: `Your last ${t('concept_trial_s')}`, profile, when: `${formatWeekday(day)} ${formatDay(day)}`, meta: `${formatClock(last.startedAt, snapshot.zone)}${entry ? ` · ${entry.min} min` : ''}`, xp: entry?.xp,
       title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, prs: entry?.prs, chips, levels: entry?.muscleLevels, names: snapshot.muscles, figure: profile.figure,
-      stats: entry ? `${formatSets(entry.hardSets)} hard sets · ${volumeText} · STR ${entry.strength}` : '— hard sets · — volume · — STR'
+      stats: entry ? `${plural(entry.hardSets, 'hard set')} · ${volumeText} · STR ${entry.strength}` : '— hard sets · — volume · — STR'
     });
     main.append(lastCard);
     // What friends did on it, from its own public_feed row; absent when there is none or the read fails (never blocks the screen).

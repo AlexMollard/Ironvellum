@@ -1,6 +1,6 @@
-import { t, word } from '../i18n.js';
+import { t, word, workoutsTitle } from '../i18n.js';
 import { snapshotForWorkout } from '../source.js';
-import { formatSets, formatDayShort, formatDay } from '../format.js';
+import { formatSets, formatDayShort, formatDay, plural } from '../format.js';
 import { artImg } from '../components/artImg.js';
 import { node, card, sortedWorkouts, dayKey, displayDate, workoutDay, link } from '../components/statCard.js';
 import { calendar } from '../components/calendar.js';
@@ -14,7 +14,7 @@ export async function renderWorkouts(root, { source, snapshot, router, nowMs = D
   const zone = snapshot?.zone || 'UTC';
   const currentMonth = dayKey(snapshot?.builtAtMs ?? nowMs, zone).slice(0, 7);
   let month = currentMonth, filter = 'all', query = '', page = 0, picked = '';
-  const header = node('header', null, 'screen-header'); header.append(node('h1', t('concept_trial_cpl')));
+  const header = node('header', null, 'screen-header'); header.append(node('h1', workoutsTitle()));
   const first = rows.reduce((earliest, row) => !earliest || row.startedAt < earliest ? row.startedAt : earliest, null);
   header.append(node('p', `${rows.length} ${t(rows.length === 1 ? 'concept_trial_s' : 'concept_trial_pl')}${first ? ` since ${displayDate(first, zone)}` : ''}`, 'muted'));
   root.append(header);
@@ -32,7 +32,7 @@ export async function renderWorkouts(root, { source, snapshot, router, nowMs = D
     calendarArea.replaceChildren(); monthArea.replaceChildren();
     const el = calendar(month, rows, zone, delta => { const [y, m] = month.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + delta, 1)); month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; drawCalendar(); }, nowMs, { router, onPick: pickDay });
     const entry = snapshot?.months?.[month];
-    el.append(node('p', entry ? `${entry.workouts} ${t('concept_trial_pl')} this month · ${formatSets(entry.perWeek)} per week on average` : `— ${t('concept_trial_pl')} this month · — per week on average`, 'muted calendar-foot'));
+    el.append(node('p', entry ? `${entry.workouts} ${t(entry.workouts === 1 ? 'concept_trial_s' : 'concept_trial_pl')} this month · ${formatSets(entry.perWeek)} per week on average` : `— ${t('concept_trial_pl')} this month · — per week on average`, 'muted calendar-foot'));
     calendarArea.append(el);
     const panel = card(month === currentMonth ? `${monthName(month)} so far` : monthName(month, true), 'month-card');
     if (!entry) panel.append(node('p', '—', 'muted'));
@@ -42,15 +42,16 @@ export async function renderWorkouts(root, { source, snapshot, router, nowMs = D
       for (const week of weeks) {
         const column = node('div', null, 'week-col'), bar = node('div', null, 'week-bar'); column.dataset.week = week.start; stops.push(bar);
         bar.style.setProperty('--h', String(Math.max(.04, week.hardSets / max)));
-        bar.setAttribute('role', 'meter'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(max)); bar.setAttribute('aria-valuenow', String(week.hardSets)); bar.setAttribute('aria-label', `${week.start}: ${formatSets(week.hardSets)} hard sets`);
+        bar.setAttribute('role', 'meter'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', String(max)); bar.setAttribute('aria-valuenow', String(week.hardSets)); bar.setAttribute('aria-label', `${week.start}: ${plural(week.hardSets, 'hard set')}`);
         column.append(node('span', formatSets(week.hardSets), 'muted'), bar, node('span', formatDayShort(week.start), 'muted'));
         bars.append(column);
       }
       // Hover, tap or focus a week for its date and hard sets; Left/Right move between weeks.
       roving(stops);
-      bindTips(bars, '.week-col', column => { const week = weeks.find(w => w.start === column.dataset.week); return { title: `Week of ${formatDay(week.start)}`, value: `${formatSets(week.hardSets)} hard sets` }; }, { anchorOf: column => column.querySelector('.week-bar'), onShow: c => c.classList.add('is-active'), onHide: c => c.classList.remove('is-active') });
+      bindTips(bars, '.week-col', column => { const week = weeks.find(w => w.start === column.dataset.week); return { title: `Week of ${formatDay(week.start)}`, value: plural(week.hardSets, 'hard set') }; }, { anchorOf: column => column.querySelector('.week-bar'), onShow: c => c.classList.add('is-active'), onHide: c => c.classList.remove('is-active') });
       panel.append(bars, node('p', 'Hard sets per week', 'muted week-caption'));
-      for (const lift of entry.topLifts || []) { const item = node('div', null, 'record-row compact is-link'); const frame = node('span', null, 'art-frame'); frame.append(artImg(lift.name, lift.art)); const text = node('span', null, 'record-text'); text.append(link(lift.name, `/lifts/${encodeURIComponent(lift.name)}`, router)); item.append(frame, text, node('span', `${lift.sessions} ${t('concept_trial_pl')}`, 'muted')); panel.append(item); }
+      if (entry.topLifts?.length) panel.append(node('h3', 'Most trained', 'eyebrow top-lifts-head'));
+      for (const lift of entry.topLifts || []) { const item = node('div', null, 'record-row compact is-link'); const frame = node('span', null, 'art-frame'); frame.append(artImg(lift.name, lift.art)); const text = node('span', null, 'record-text'); text.append(link(lift.name, `/lifts/${encodeURIComponent(lift.name)}`, router, 'stretch')); item.append(frame, text, node('span', `${lift.sessions} ${t(lift.sessions === 1 ? 'concept_trial_s' : 'concept_trial_pl')}`, 'muted')); panel.append(item); }
     }
     monthArea.append(panel);
   }

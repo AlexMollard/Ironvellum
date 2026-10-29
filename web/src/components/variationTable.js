@@ -27,10 +27,11 @@ export function renderVariationTable(root, { variations, selected, onToggle, uni
   head.append(header); table.append(head);
   const body = document.createElement('tbody');
   variations.forEach((v, index) => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement('tr'); tr.className = 'is-link';
     const first = document.createElement('td');
-    const button = document.createElement('button'); button.type = 'button'; button.className = `variation-toggle chart-series-${index % 8}`;
+    const button = document.createElement('button'); button.type = 'button'; button.className = `variation-toggle stretch chart-series-${index % 8}`;
     button.setAttribute('aria-pressed', String(selected.has(v.key))); button.textContent = v.label;
+    if (selected.has(v.key) && selected.size === 1) button.setAttribute('aria-disabled', 'true');
     button.addEventListener('click', () => onToggle(v.key)); first.append(button); tr.append(first);
     const values = v.sets ? [v.peak?.e1rmKg == null ? '—' : `${formatLoad(v.peak.e1rmKg, unit)} ${unit}`, formatPeak(v.peak, unit, addsToBody), lastDone(v.lastMs, builtAtMs, zone)] : ['Not yet', 'Not yet', 'Not yet'];
     for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }

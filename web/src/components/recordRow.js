@@ -8,7 +8,7 @@ export function recordRow(record, snapshot, router) {
   const [name, variation] = splitLabel(record.label || record.name);
   const content = node('div', null, 'record-text');
   const title = node('div');
-  title.append(link(name, `/lifts/${encodeURIComponent(record.name)}`, router));
+  title.append(link(name, `/lifts/${encodeURIComponent(record.name)}`, router, 'stretch'));
   if (variation) title.append(node('span', ` · ${variation}`, 'accent-text'));
   content.append(title, node('div', `e1RM · ${displayDate(record.atMs, snapshot.zone)} · +${formatLoad(record.gainKg, snapshot.unit)} ${snapshot.unit}`, 'muted record-sub'));
   el.append(frame, content, node('b', word('PR', 'concept_peak_u'), 'pr-mark'), node('span', `${formatLoad(record.e1rmKg, snapshot.unit)} ${snapshot.unit}`, 'record-value')); return el;

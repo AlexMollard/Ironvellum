@@ -61,7 +61,7 @@ describe('workouts', () => {
     const root = document.createElement('main');
     try {
       setWordsMode(true); await renderWorkouts(root, { source: { userId: 'me', listWorkouts: async () => rows }, snapshot, router });
-      expect(root.querySelector('h1').textContent).toBe('Trials');
+      expect(root.querySelector('h1').textContent).toBe('Chronicle');
       expect(root.textContent).toContain('2 trials'); expect(root.textContent).toContain('2.3 per week');
       expect(root.querySelector('[data-day="2025-10-06"]').getAttribute('aria-label')).toContain('trial');
       root.querySelector('[data-filter="imported"]').click(); expect(root.textContent).toContain('Pull'); expect(root.textContent).not.toContain('Legs');

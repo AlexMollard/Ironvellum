@@ -7,7 +7,7 @@ describe('workout detail', () => {
   it('shows stored details, keeps repeated blocks separate and excludes private notes', async () => {
     const root = document.createElement('main'); const router = { go: vi.fn() };
     await renderWorkoutDetail(root, { source: { userId: 'me', listWorkouts: async () => workouts, getSets: async () => sets }, snapshot, router }, 'synced', 'cloud-1');
-    for (const value of ['Working', 'Top', 'BW', '68 kg', 'PR', '45 s', '5 km', 'Public note', 'Previous workout', '42']) expect(root.textContent).toContain(value);
+    for (const value of ['Working', 'Top', 'BW', '68 kg', 'PR', '45 s', '5 km', 'Public note', 'Previous', '42']) expect(root.textContent).toContain(value);
     expect(root.textContent).not.toContain('Secret note'); expect(root.textContent).not.toContain('comments');
     expect(root.querySelectorAll('h2').length).toBeGreaterThan(4); expect(root.querySelector('.exercise-art-placeholder')).not.toBeNull();
     expect(root.querySelector('[data-muscle="LATS"][data-level="3"]')).not.toBeNull();

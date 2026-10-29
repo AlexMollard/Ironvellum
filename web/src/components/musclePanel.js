@@ -1,5 +1,6 @@
 import { renderBodyMap } from './bodyMap.js';
 import { renderFatigueCard } from './fatigueCard.js';
+import { coverageLegend } from './mapLegend.js';
 import { t } from '../i18n.js';
 
 export function renderMusclePanel(root, snapshot) {
@@ -24,8 +25,7 @@ export function renderMusclePanel(root, snapshot) {
     const maps = document.createElement('div'); maps.className = 'body-map-pair';
     for (const side of ['front', 'back']) { const wrap = document.createElement('div'); wrap.className = 'body-view'; const label = document.createElement('span'); label.className = 'body-view-label'; label.textContent = side === 'front' ? 'Front' : 'Back'; const map = document.createElement('div'); map.className = 'body-map'; renderBodyMap(map, { levels: window.state, figure: snapshot.profile?.figure, view: side, look: 'coverage', names: snapshot.muscles }); wrap.append(label, map); maps.append(wrap); }
     content.append(maps);
-    const legend = document.createElement('div'); legend.className = 'chart-legend coverage-legend';
-    for (const [state, text] of [['covered', 'Covered'], ['below', 'Below'], ['heavy', 'Heavy'], ['none', 'None']]) { const item = document.createElement('span'); item.className = `legend-item coverage-${state}`; item.textContent = text; legend.append(item); } content.append(legend);
+    content.append(coverageLegend());
     const caption = document.createElement('p'); caption.className = 'muted'; caption.textContent = `${t('fatigue_window_caption')}. ${t('coverage_reason').replace('%1$d', String(snapshot.trends.floor))}`; content.append(caption);
     const thresholds = document.createElement('p'); thresholds.className = 'muted'; thresholds.textContent = `Floor: ${snapshot.trends.floor} · Heavy: ${snapshot.trends.heavy}`; content.append(thresholds);
     const rows = document.createElement('div'); rows.className = 'muscle-rows';

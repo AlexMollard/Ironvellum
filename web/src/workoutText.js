@@ -1,5 +1,5 @@
 import { t, word } from './i18n.js';
-import { formatDay, formatSets, formatVolume, formatWeekday, formatClock, formatSetLoad, addsToBody, setPerformance, setEffort, setKindName } from './format.js';
+import { formatDay, plural, formatVolume, formatWeekday, formatClock, formatSetLoad, addsToBody, setPerformance, setEffort, setKindName } from './format.js';
 import { workoutDay } from './components/statCard.js';
 // Sets of one workout grouped into exercise blocks: the same exercise logged twice stays two blocks, ordered by position.
 export function groupSets(sets) {
@@ -28,7 +28,7 @@ function setLine(set, number, width, entry, snapshot) {
 export function formatWorkoutText({ workout, entry, snapshot, sets }) {
   const zone = snapshot?.zone, day = workoutDay(workout, zone);
   const facts = [`${formatWeekday(day)} ${formatDay(day)}`, formatClock(workout.startedAt, zone)];
-  if (entry) facts.push(`${entry.min} min`, `${formatSets(entry.hardSets)} hard sets`, formatVolume(entry.volumeKg, snapshot?.unit));
+  if (entry) facts.push(`${entry.min} min`, plural(entry.hardSets, 'hard set'), formatVolume(entry.volumeKg, snapshot?.unit));
   const lines = [workout.title || workout.label || t('concept_trial_c'), facts.join(' · ')];
   for (const group of groupSets(sets)) {
     const variations = [...new Set(group.sets.map(s => s.modifiers).filter(Boolean))];

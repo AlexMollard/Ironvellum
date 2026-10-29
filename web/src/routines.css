@@ -2,22 +2,32 @@
 .routines-layout { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
 .routines-list, .routines-detail { display: grid; gap: 16px; min-width: 0; align-content: start; }
 .routine-list { list-style: none; margin: 0; padding: 0; display: grid; }
-.routine-item { display: grid; gap: 2px; padding: 10px 8px; border-top: 1px solid var(--paper-rune); }
+.routine-item { display: grid; gap: 2px; min-height: 44px; padding: 10px 8px; border-top: 1px solid var(--paper-rune); }
 .routine-item.is-open { background: var(--wash); }
-.routine-link { font-weight: 600; }
+.routine-link { font-weight: 600; color: var(--paper-ink); text-decoration: none; }
+.routine-link:hover { color: var(--bright); }
 .routine-meta { font-size: 12px; }
 .routines-headline { margin: 0; font-weight: 600; }
 .routine-maps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 360px; }
 .week-plan { display: grid; gap: 8px; }
 .week-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.week-day { display: grid; gap: 4px; align-content: start; min-height: 64px; padding: 8px 6px; border: 1px solid var(--paper-rune); border-radius: 4px; font-size: 12px; min-width: 0; }
-.week-day.is-open { border-color: var(--fill); background: var(--wash); }
+.week-day { display: grid; gap: 4px; align-content: start; min-height: 64px; padding: 8px 6px; border: 1px solid transparent; border-radius: 4px; font-size: 12px; min-width: 0; }
+.week-day.is-link, .week-slot { border-color: var(--paper-rune); }
+.week-day.is-open, .week-slot.is-open { border-color: var(--fill); background: var(--wash); }
+.week-day.is-multi { padding: 0; border-color: transparent; gap: 4px; }
+.week-day.is-multi .week-day-name { padding: 8px 6px 0; }
+.week-slot { min-height: 44px; padding: 6px; border: 1px solid var(--paper-rune); border-radius: 4px; }
 .week-day-name { font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 10px; color: var(--paper-ink-muted); }
-.week-routine { overflow-wrap: anywhere; font-weight: 600; }
+.week-day.is-today .week-day-name, .week-today { color: var(--text); }
+.week-today { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.week-rest { color: var(--faint); }
+.week-routine { overflow-wrap: anywhere; font-weight: 600; color: var(--paper-ink); text-decoration: none; }
+.week-routine:hover { color: var(--bright); }
 .routine-detail h2 { margin: 0; }
 .routine-entries { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
 .routine-entry { display: grid; grid-template-columns: 24px 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--paper-rune); }
-.routine-entry.is-warmup { opacity: .8; }
+.routine-name { font-weight: 700; color: var(--paper-ink); text-decoration: none; }
+.routine-name:hover { color: var(--bright); }
 .routine-number { color: var(--paper-ink-muted); text-align: right; font-variant-numeric: tabular-nums; }
 .routine-entry-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .routine-entry-text { display: grid; gap: 2px; min-width: 0; }
@@ -28,7 +38,15 @@
 .custom-row { display: grid; gap: 2px; padding: 6px 0; border-top: 1px solid var(--paper-rune); font-size: 13px; }
 .routines-viewonly { font-size: 12px; }
 @media (max-width: 720px) {
-  .routines-layout { grid-template-columns: minmax(0, 1fr); }
+  /* List, week strip, the open routine, then what the week covers: a pick lands next to what it opens. */
+  .routines-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .routines-list, .routines-detail { display: contents; }
+  .routine-list { order: 1; }
+  .week-plan { order: 2; }
+  .routine-detail { order: 3; }
+  .routines-custom { order: 4; }
+  .routines-covers { order: 5; }
   .week-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
   .week-day { padding: 6px 3px; font-size: 10px; }
+  .week-routine { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; font-size: 11px; }
 }

@@ -4,9 +4,11 @@ import { renderRoutines } from '../src/screens/routines.js';
 import { setWordsMode } from '../src/i18n.js';
 
 afterEach(() => { setWordsMode(false); document.body.innerHTML = ''; });
-const mount = (over = {}, id) => {
+// Monday 26 Oct 2026, noon UTC: the fixture's zone has no offset surprises, and the default routine is Monday's.
+const MONDAY = Date.UTC(2026, 9, 26, 12), WEDNESDAY = Date.UTC(2026, 9, 28, 12), THURSDAY = Date.UTC(2026, 9, 29, 12);
+const mount = (over = {}, id, extra = {}) => {
   const root = document.createElement('main'), router = { go: vi.fn() }; document.body.append(root);
-  renderRoutines(root, { snapshot: { ...snapshot, ...over }, router }, id);
+  renderRoutines(root, { snapshot: { ...snapshot, ...over }, router, nowMs: MONDAY, ...extra }, id);
   return { root, router };
 };
 const byName = name => snapshot.routines.presets.find(p => p.name === name);
@@ -16,7 +18,7 @@ describe('routines screen', () => {
   it('listShowsRoutinesWithDays', () => {
     const { root } = mount();
     const items = [...root.querySelectorAll('.routine-item')].map(i => [i.querySelector('.routine-link').textContent, i.querySelector('.routine-meta').textContent]);
-    expect(items).toEqual([['Upper A', 'Mon · 2 exercises'], ['Lower A', 'Wed · 2 exercises'], ['Upper B', 'Fri · 4 exercises'], ['Lower B', 'Sun · 1 exercise'], ['Mobility', 'no day · 1 exercise']]);
+    expect(items).toEqual([['Upper A', 'Mon · 2 exercises'], ['Lower A', 'Wed · 2 exercises'], ['Upper B', 'Fri · 4 exercises'], ['Lower B', 'Sun · 1 exercise'], ['Mobility', 'Unscheduled · 1 exercise']]);
   });
   it('weeklyPlanPlacesRoutinesOnTheirDays', () => {
     const { root } = mount(); const days = [...root.querySelectorAll('.week-day')];
@@ -27,7 +29,15 @@ describe('routines screen', () => {
     const { root } = mount({}, String(byName('Upper B').id)); expect(root.querySelector('.week-day.is-open').dataset.day).toBe('5'); expect(root.querySelector('.routine-link[aria-current="true"]').textContent).toBe('Upper B');
     expect(root.querySelector('.routine-detail h2').textContent).toBe('Upper B');
   });
-  it('anUnknownIdOpensTheFirstScheduledRoutine', () => { const { root } = mount({}, '999'); expect(root.querySelector('.routine-detail h2').textContent).toBe('Upper A'); });
+  it('anUnknownIdSaysSoAndShowsTodaysRoutine', () => {
+    const { root } = mount({}, '999'); expect(root.querySelector('.routine-detail h2').textContent).toBe('Upper A');
+    expect(root.querySelector('.routines-missing').textContent).toContain('Routine not found'); expect(root.querySelector('.routines-missing a').getAttribute('href')).toBe('#/routines');
+  });
+  it('opensTodaysRoutineThenTheNextScheduledDay', () => {
+    expect(mount({}, undefined, { nowMs: WEDNESDAY }).root.querySelector('.routine-detail h2').textContent).toBe('Lower A');
+    const thursday = mount({}, undefined, { nowMs: THURSDAY }).root; expect(thursday.querySelector('.routine-detail h2').textContent).toBe('Upper B');
+    expect(thursday.querySelector('.week-day.is-today').dataset.day).toBe('4'); expect(thursday.querySelector('.week-today').textContent).toBe('Today');
+  });
   it('routineDetailShowsSnapshotFiguresVerbatim', () => {
     const upperB = byName('Upper B'), { root } = mount({}, String(upperB.id));
     expect(root.querySelector('.routine-figures').textContent).toBe(`Friday · ~${upperB.minutes} min · ${upperB.hardSets} hard sets`);
