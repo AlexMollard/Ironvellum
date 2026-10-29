@@ -16,7 +16,9 @@ export function reactionBar(row, { onReact, explain }) {
     for (const [kind, button] of buttons) {
       const mine = row.myReaction === kind;
       button.setAttribute('aria-pressed', String(mine)); button.classList.toggle('is-mine', mine);
-      button.textContent = format(t('feed_reaction_option_count'), t(KINDS.find(k => k[0] === kind)[1]), row.reactions[kind] ?? 0);
+      const name = t(KINDS.find(k => k[0] === kind)[1]);
+      button.textContent = format(t('feed_reaction_option_count'), name, row.reactions[kind] ?? 0);
+      button.title = mine ? format(t('feed_reaction_mine_description'), name) : `${t('feed_reaction_pay_description')}: ${name}`;
     }
   };
   for (const [kind] of KINDS) {

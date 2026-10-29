@@ -4,7 +4,7 @@ import { reactionBar } from './reactionBar.js';
 import { safetyMenu } from './safetyMenu.js';
 import { titleName } from './personRow.js';
 import { hiddenName } from './hiddenName.js';
-import { formatVolume, formatDay } from '../format.js';
+import { formatVolume, formatDay, plural } from '../format.js';
 import { t, format } from '../i18n.js';
 
 /** "just now", "5m ago", "3h ago", "yesterday", else the date: the phone's own wording. */
@@ -26,8 +26,8 @@ export function feedCard(row, { router, snapshot, nowMs, social, explain, onComm
   const unit = snapshot?.unit ?? 'kg', card = row.card && typeof row.card === 'object' ? row.card : null;
   const minutes = row.durationSec != null ? Math.max(1, Math.round(row.durationSec / 60)) : null;
   const when = timeAgo(row.completedAtMs, nowMs, snapshot?.zone);
-  const stats = card ? [Number.isFinite(card.hardSets) ? `${card.hardSets} hard sets` : null, Number.isFinite(card.volumeKg) ? formatVolume(card.volumeKg, unit) : null].filter(Boolean).join(' · ')
-    : [row.bestSet ? format(t('feed_best_set'), row.bestSet) : null, row.setsDone != null ? `${row.setsDone} sets` : null].filter(Boolean).join(' · ');
+  const stats = card ? [Number.isFinite(card.hardSets) ? plural(card.hardSets, 'hard set') : null, Number.isFinite(card.volumeKg) ? formatVolume(card.volumeKg, unit) : null].filter(Boolean).join(' · ')
+    : [row.bestSet ? format(t('feed_best_set'), row.bestSet) : null, row.setsDone != null ? plural(row.setsDone, 'set') : null].filter(Boolean).join(' · ');
   const el = lastWorkoutCard({
     heading: hiddenName(row.name), profile: { name: hiddenName(row.name), crestId: row.crestId }, when: row.editedAt ? format(t('feed_stamp_amended'), when) : when,
     meta: [titleName(row.titleId), row.level != null ? `Level ${row.level}` : '', minutes != null ? `${minutes} min` : ''].filter(Boolean).join(' · '),

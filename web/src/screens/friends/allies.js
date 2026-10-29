@@ -3,6 +3,7 @@ import { personRow } from '../../components/personRow.js';
 import { hiddenName } from '../../components/hiddenName.js';
 import { renderFolio } from '../../components/folio.js';
 import { explain } from '../../explain.js';
+import { scrollToElement } from '../../components/interact.js';
 import { t, format, word } from '../../i18n.js';
 
 /**
@@ -10,7 +11,7 @@ import { t, format, word } from '../../i18n.js';
  * the blocked list with Unblock, and, when a lifter is open (`/friends/allies/<id>`), that lifter's folio beside the list.
  */
 export async function renderAllies(root, ctx, openId) {
-  const { social, router, source, snapshot, nowMs = Date.now() } = ctx, me = source.userId;
+  const { social, router, source, snapshot, nowMs = Date.now(), sameScreen } = ctx, me = source.userId;
   const layout = node('div', null, `allies-layout${openId ? ' has-folio' : ''}`), left = node('div', null, 'allies-list'), right = node('div', null, 'allies-folio');
   layout.append(left, right); root.append(layout);
 
@@ -66,7 +67,10 @@ export async function renderAllies(root, ctx, openId) {
   if (openId) {
     try {
       const data = await social.lifter(openId);
-      renderFolio(right, { social, snapshot, me, nowMs, data, onGone: () => router.go('/friends/allies') });
+      renderFolio(right, { social, snapshot, me, nowMs, data, router, onGone: () => router.go('/friends/allies') });
+      // On a narrow screen the folio replaces the list (the CSS hides it); bring the lifter into view and move focus to the name.
+      const heading = right.querySelector('.folio-who h2');
+      if (heading && sameScreen && (globalThis.innerWidth || 1024) <= 720) { scrollToElement(heading); heading.focus({ preventScroll: true }); }
     } catch (error) { right.append(node('p', explain(error), 'notice friends-notice')); }
   }
 }

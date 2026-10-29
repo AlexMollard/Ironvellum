@@ -61,7 +61,7 @@ describe('circle screen', () => {
   });
   it('bonusesListIsReadOnly', async () => {
     const { root } = await mount(withCircle({ 'rpc:circle_bonuses': [{ week: '2026-10-19', days: 3, circle_name: 'Iron Tide' }] }));
-    expect(root.querySelector('.circle-bonuses').textContent).toContain('2026-10-19'); expect(root.querySelector('.circle-bonuses').textContent).toContain('Collect it in the app'); expect(root.querySelector('.circle-bonuses button')).toBeNull();
+    expect(root.querySelector('.circle-bonuses').textContent).toContain('19 Oct 2026'); expect(root.querySelector('.circle-bonuses').textContent).not.toContain('2026-10-19'); expect(root.querySelector('.circle-bonuses').textContent).toContain('Collect it in the app'); expect(root.querySelector('.circle-bonuses button')).toBeNull();
   });
   it('aBonusReadFailureNeverBlanksTheCircle', async () => { const { root } = await mount(withCircle({ 'rpc:circle_bonuses': { code: 'PGRST202', message: 'x' } })); expect(root.querySelector('.circle-title h2').textContent).toBe('Iron Tide'); });
 });

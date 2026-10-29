@@ -48,9 +48,13 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
   const body = node('div', null, 'friends-body');
   root.append(body);
   try {
+    // Boards and Group open a lifter's folio for an ally; Boards also filters by the same set. A failed read only costs the links, unless the Friends filter needs it.
     let allyIds;
-    if (tab === 'boards' && audience === 'allies') allyIds = allyIdsOf(await social.friends());
-    await SCREENS[tab](body, { ...ctx, audience, allyIds, setAudience: value => { audience = value; } }, arg);
+    if (tab === 'boards' || tab === 'circle') {
+      try { allyIds = allyIdsOf(await social.friends()); } catch (error) { if (tab === 'boards' && audience === 'allies') throw error; }
+    }
+    const folioOf = id => (allyIds?.has(id) ? () => ctx.router.go(`/friends/allies/${encodeURIComponent(id)}`) : undefined);
+    await SCREENS[tab](body, { ...ctx, audience, allyIds, folioOf, setAudience: value => { audience = value; } }, arg);
   } catch (error) { body.replaceChildren(node('p', explain(error), 'notice friends-notice')); }
 }
 

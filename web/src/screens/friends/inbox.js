@@ -1,4 +1,4 @@
-import { node } from '../../components/statCard.js';
+import { node, link } from '../../components/statCard.js';
 import { hiddenName } from '../../components/hiddenName.js';
 import { explain } from '../../explain.js';
 import { t, format, word } from '../../i18n.js';
@@ -36,7 +36,7 @@ export function itemLine(item) {
  * page says so). Opening calls `mark_inbox_seen` once, after the unread markers are drawn; a background refresh never does.
  */
 export async function renderInbox(root, ctx) {
-  const { social, nowMs = Date.now(), setInboxUnread } = ctx;
+  const { social, router, nowMs = Date.now(), setInboxUnread } = ctx;
   const body = node('div', null, 'inbox'), status = node('p', null, 'notice friends-notice'); status.setAttribute('role', 'status');
   root.append(body, status, node('p', 'One inbox, two windows: reading it here clears it in the app too. There are no push messages or emails.', 'muted inbox-note'));
   let answered = new Set();
@@ -52,7 +52,10 @@ export async function renderInbox(root, ctx) {
     const el = node('div', null, 'inbox-item'); el.dataset.kind = item.kind;
     const unread = seenAtMs == null || item.occurredAtMs > seenAtMs;
     if (unread) { const dot = node('span', null, 'inbox-dot'); dot.setAttribute('role', 'img'); dot.setAttribute('aria-label', t('inbox_unread_description')); el.append(dot); }
-    const text = node('div', null, 'inbox-text'); const line = node('div'); line.append(node('strong', hiddenName(item.actorName)), ` ${itemLine(item)}`);
+    // Where the item points: your workout for a comment or kudos on it, the folio of someone who accepted, the Group page for its own news.
+    const path = item.sessionId ? `/workouts/synced/${encodeURIComponent(item.sessionId)}` : item.kind === 'accepted' ? `/friends/allies/${encodeURIComponent(item.actorId)}` : item.kind.startsWith('circle_') ? '/friends/circle' : null;
+    if (path && router) el.classList.add('is-link');
+    const text = node('div', null, 'inbox-text'); const line = path && router ? link('', path, router, 'inbox-link stretch') : node('div'); line.append(node('strong', hiddenName(item.actorName)), ` ${itemLine(item)}`);
     text.append(line);
     if (item.body && ['comment', 'reply'].includes(item.kind)) text.append(node('div', format(t('inbox_remark_quote'), item.body), 'muted inbox-quote'));
     text.append(node('div', timeAgo(item.occurredAtMs, nowMs), 'faint inbox-when')); el.append(text);

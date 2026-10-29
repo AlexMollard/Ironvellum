@@ -1,4 +1,4 @@
-import { node } from '../../components/statCard.js';
+import { node, displayDate } from '../../components/statCard.js';
 import { personRow } from '../../components/personRow.js';
 import { confirmPanel } from '../../components/reasonDialog.js';
 import { hiddenName } from '../../components/hiddenName.js';
@@ -78,7 +78,7 @@ export async function renderCircle(root, ctx) {
           onConfirm: async () => { await social.kickCircleMember(m.userId); slot.replaceChildren(); await load(); }, onCancel: () => slot.replaceChildren() })));
         trailing.append(remove);
       }
-      const row = personRow({ id: m.userId, name: m.name, level: m.level, titleId: m.titleId, crestId: m.crestId }, { trailing }); row.dataset.user = m.userId;
+      const row = personRow({ id: m.userId, name: m.name, level: m.level, titleId: m.titleId, crestId: m.crestId }, { trailing, onOpen: ctx.folioOf?.(m.userId) }); row.dataset.user = m.userId;
       row.querySelector('.person-sub').textContent = [m.userId === me ? t('circle_member_you') : '', m.userId === circle.ownerId ? word('Keeper', 'concept_keeper_c') : '', row.querySelector('.person-sub').textContent].filter(Boolean).join(' · ');
       roster.append(row);
     }
@@ -104,7 +104,7 @@ export async function renderCircle(root, ctx) {
     body.append(node('p', 'Weeks run Monday to Sunday, UTC.', 'muted circle-footer'));
     if (bonuses.length) {
       const list = node('section', null, 'circle-bonuses'); list.append(node('h3', 'Bonus weeks'));
-      for (const b of bonuses) list.append(node('div', `${b.week} · ${b.days} ${b.days === 1 ? 'day' : 'days'}${b.circleName ? ` · ${b.circleName}` : ''}`, 'muted'));
+      for (const b of bonuses) list.append(node('div', `${displayDate(`${b.week}T12:00:00Z`)} · ${b.days} ${b.days === 1 ? 'day' : 'days'}${b.circleName ? ` · ${b.circleName}` : ''}`, 'muted'));
       list.append(node('p', 'Collect it in the app.', 'muted')); body.append(list);
     }
   };

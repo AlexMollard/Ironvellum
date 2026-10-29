@@ -26,17 +26,17 @@ const field = (label, options, current, className, pick) => {
 const mine = (rows, me) => rows.findIndex(r => r.id === me);
 const scoped = (rows, ctx, me) => (ctx.audience === 'allies' && ctx.allyIds ? rows.filter(r => r.id === me || ctx.allyIds.has(r.id)) : rows);
 
-function trainingBoard(body, rows, me, redraw, filters) {
+function trainingBoard(body, rows, me, redraw, filters, ctx) {
   filters.append(field(t('acct_ranked_by_label'), METRICS.map(m => [m, metricLabel(m)]), metric, 'board-metric', value => { metric = value; redraw(); }));
   const sorted = rankRows(metric, rows);
   if (!sorted.length) { body.append(node('p', t('acct_board_empty'), 'empty')); return; }
-  body.append(podium(sorted.slice(0, 3).map((row, i) => ({ rank: i + 1, row, figure: metricText(metric, row) })), me));
+  body.append(podium(sorted.slice(0, 3).map((row, i) => ({ rank: i + 1, row, figure: metricText(metric, row) })), me, ctx.folioOf));
   if (sorted.length === 1) body.append(node('p', t('acct_board_alone'), 'muted'));
   const list = node('div', null, 'board-rows');
   for (const [index, row] of sorted.entries()) {
     if (index < 3) continue;
     const sub = node('span', null, 'board-figure'); sub.append(node('strong', metricText(metric, row)));
-    const line = personRow(row, { trailing: sub }); line.classList.add('board-row'); line.dataset.user = row.id; if (row.id === me) line.classList.add('is-me');
+    const line = personRow(row, { trailing: sub, onOpen: ctx.folioOf?.(row.id) }); line.classList.add('board-row'); line.dataset.user = row.id; if (row.id === me) line.classList.add('is-me');
     line.prepend(node('span', String(index + 1), 'board-rank'));
     line.querySelector('.person-sub').textContent = [metric === 'level' ? format(t('acct_metric_xp_value'), Number(row.totalXp).toLocaleString('en-US')) : format(t('xp_level_label'), row.level), `${row.sessionsLast7d} ${word(row.sessionsLast7d === 1 ? 'workout' : 'workouts', row.sessionsLast7d === 1 ? 'concept_trial_s' : 'concept_trial_pl')} this week`].join(' · ');
     list.append(line);
@@ -45,7 +45,7 @@ function trainingBoard(body, rows, me, redraw, filters) {
   const place = mine(sorted, me); if (place >= 0) { body.append(node('p', `${t('acct_board_your_standing')}: ${place + 1}`, 'muted board-you')); }
 }
 
-function liftBoard(body, rows, me, redraw, filters) {
+function liftBoard(body, rows, me, redraw, filters, ctx) {
   const known = catalogue.lifts.filter(l => knownLift(l.wire));
   filters.append(
     field('Lift', known.map(l => [l.wire, `${l.label} (${rankLift(rows, l.wire, recent).length})`]), lift, 'lift-pick', value => { lift = value; redraw(); }),
@@ -58,19 +58,19 @@ function liftBoard(body, rows, me, redraw, filters) {
   for (const s of standings) {
     const bar = node('span', null, 'tier-bar'); bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', `tier ${s.step} of ${MAX_STEP}`); for (let i = 1; i <= MAX_STEP; i++) bar.append(node('span', null, i <= s.step ? 'tier-cell is-on' : 'tier-cell'));
     const side = node('span', null, 'board-figure'); side.append(node('strong', stepLabel(lift, s.step)), bar, node('span', `tier ${s.step} of ${MAX_STEP}`, 'muted'));
-    const line = personRow(s.row, { trailing: side }); line.classList.add('board-row'); line.dataset.user = s.row.id; line.dataset.rank = String(s.rank); if (s.row.id === me) line.classList.add('is-me');
+    const line = personRow(s.row, { trailing: side, onOpen: ctx.folioOf?.(s.row.id) }); line.classList.add('board-row'); line.dataset.user = s.row.id; line.dataset.rank = String(s.rank); if (s.row.id === me) line.classList.add('is-me');
     line.prepend(node('span', String(s.rank), 'board-rank')); list.append(line);
   }
   body.append(list);
 }
 
-function musterBoard(body, rows, me, redraw, filters) {
+function musterBoard(body, rows, me, redraw, filters, ctx) {
   body.append(node('p', t('line_veil_board_note'), 'muted'));
   if (!rows.length) { body.append(node('p', t('line_no_veil_echoes'), 'empty')); return; }
   const list = node('div', null, 'board-rows');
   for (const [index, row] of rows.entries()) {
     const side = node('span', null, 'board-figure'); side.append(node('strong', format(t('always_acct_essence_value'), Number(row.essence).toLocaleString('en-US'))));
-    const line = personRow(row, { trailing: side }); line.classList.add('board-row'); line.dataset.user = row.id; if (row.id === me) line.classList.add('is-me');
+    const line = personRow(row, { trailing: side, onOpen: ctx.folioOf?.(row.id) }); line.classList.add('board-row'); line.dataset.user = row.id; if (row.id === me) line.classList.add('is-me');
     line.prepend(node('span', String(index + 1), 'board-rank'));
     line.querySelector('.person-sub').textContent = `${row.shadows} ${row.shadows === 1 ? 'echo' : 'echoes'} · ${format(t('acct_rate_per_hour'), Number(row.ratePerHour).toFixed(1))}`;
     list.append(line);
@@ -94,7 +94,7 @@ export async function renderBoards(root, ctx, kind) {
   const rows = scoped(active === 'training' ? await social.leaderboard() : active === 'lifts' ? await social.liftBoard() : await social.shadowBoard(), ctx, me);
   const draw = () => {
     body.replaceChildren(); for (const extra of [...filters.children].slice(1)) extra.remove();
-    (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, draw, filters);
+    (active === 'training' ? trainingBoard : active === 'lifts' ? liftBoard : musterBoard)(body, rows, me, draw, filters, ctx);
   };
   draw();
 }

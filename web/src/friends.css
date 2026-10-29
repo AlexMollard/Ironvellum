@@ -15,6 +15,8 @@
 .person-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .person-text { display: grid; min-width: 0; }
 .person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; text-align: left; }
+.person-name.link-button { text-decoration: none; color: var(--paper-ink); }
+.person-name.link-button:hover { text-decoration: underline; }
 .person-sub { font-size: 12px; }
 
 /* inline panels: report form, confirmations */
@@ -65,6 +67,8 @@
 .inbox-item { position: relative; display: grid; gap: 8px; padding: 12px 14px 12px 22px; border-top: 1px solid var(--paper-rune); }
 .inbox-dot { position: absolute; left: 6px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: var(--fill); }
 .inbox-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.inbox-link { color: inherit; text-decoration: none; }
+.inbox-link:hover { color: inherit; }
 .inbox-quote { font-size: 13px; }
 .inbox-when { font-size: 12px; }
 .inbox-note { font-size: 12px; }
@@ -72,12 +76,14 @@
 /* boards */
 .board { display: grid; gap: 14px; min-width: 0; }
 .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; }
-.podium-place { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border: 1px solid var(--paper-rune); border-radius: 4px; text-align: center; min-width: 0; }
-.podium-place.place-1 { padding-top: 22px; padding-bottom: 18px; border-color: var(--fill); }
+.podium-place { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 4px; background: color-mix(in srgb, var(--paper-ink) 5%, transparent); text-align: center; min-width: 0; }
+.podium-place.place-1 { padding-top: 22px; padding-bottom: 18px; box-shadow: inset 0 3px 0 var(--fill); }
 .podium-place.is-me { background: var(--wash); }
 .podium-rank { font-weight: 700; color: var(--paper-ink-muted); }
-.place-1 .podium-rank { color: var(--fill); }
-.podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-1 .podium-rank { color: var(--text); }
+.podium-name { max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.podium-name .link-button { display: inline; min-height: 0; color: inherit; text-decoration: none; font-weight: inherit; text-align: inherit; }
+.podium-place.is-link:hover .podium-name .link-button { text-decoration: underline; }
 .podium-figure { font-size: 12px; }
 .board-rows { display: grid; }
 .board-row { padding: 8px 6px; border-top: 1px solid var(--paper-rune); }
@@ -97,7 +103,7 @@
 .circle-join label, .circle-create label, .circle-goal label, .circle-rename label { display: grid; gap: 6px; font-size: 13px; }
 .circle-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .circle-title h2 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.circle-progress.is-met { color: var(--fill); border-color: var(--fill); }
+.circle-progress.is-met { color: var(--text); background: var(--wash); }
 .goal-rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
 .rail-cell { height: 6px; border-radius: 2px; background: var(--paper-rune); }
 .rail-cell.is-on { background: var(--fill); }
@@ -118,12 +124,13 @@
 .allies-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .allies-layout.has-folio { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }
 .allies-list, .allies-folio { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.allies-add { max-width: 420px; }
 .allies-add label { display: grid; gap: 6px; font-size: 13px; }
 .allies-rows { display: grid; gap: 8px; }
 .allies-rows .person-row { padding: 6px 8px; border-radius: 4px; }
 .allies-rows .person-row.is-open { background: var(--wash); }
 .allies-requests a { font-weight: 600; }
-.allies-pending { display: grid; gap: 8px; opacity: .85; }
+.allies-pending { display: grid; gap: 8px; }
 .blocked-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--paper-rune); }
 .folio-head { display: flex; align-items: center; gap: 14px; }
 .folio-who h2 { margin: 0; }
@@ -132,8 +139,12 @@
 .folio-strength h3, .folio-recent h3, .folio-lifts h3 { margin: 0; font-size: 15px; }
 .folio-strength-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .folio-workout { border-top: 1px solid var(--paper-rune); }
-.folio-open { display: grid; gap: 2px; width: 100%; height: auto; min-height: 0; padding: 10px 0; text-align: left; white-space: normal; line-height: 1.35; background: none; border: 0; color: inherit; cursor: pointer; }
+.folio-open { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; width: 100%; height: auto; min-height: 44px; padding: 10px 6px; text-align: left; white-space: normal; line-height: 1.35; background: none; border: 0; border-radius: 0; color: inherit; cursor: pointer; }
+.folio-open:hover { background: color-mix(in srgb, var(--fill) 6%, transparent); border-color: transparent; }
+.folio-chevron { grid-row: 1 / 3; grid-column: 2; align-self: center; color: var(--paper-ink-muted); transition: transform 150ms ease; }
+.folio-open[aria-expanded="true"] .folio-chevron { transform: rotate(90deg); }
 .folio-open > * { min-width: 0; overflow-wrap: anywhere; }
+.folio-open > .folio-chevron { grid-column: 2; }
 .folio-recent, .folio-lifts { margin-top: 8px; }
 .folio-sets { display: grid; gap: 8px; padding: 0 0 10px; }
 .folio-exercise { display: grid; gap: 2px; font-size: 13px; }
@@ -148,8 +159,11 @@
 .folio-mute .muted { grid-column: 2; font-size: 12px; }
 .folio-panel { display: grid; gap: 10px; }
 
+.folio-back { display: none; }
 @media (max-width: 720px) {
   .allies-layout.has-folio { grid-template-columns: minmax(0, 1fr); }
+  .allies-layout.has-folio .allies-list { display: none; }
+  .folio-back { display: inline-flex; align-items: center; min-height: 44px; }
   .friends-section { display: grid; }
   .board-field { flex: 1 1 140px; }
   .board-field select { width: 100%; }

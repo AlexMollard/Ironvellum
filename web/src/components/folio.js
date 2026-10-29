@@ -1,4 +1,4 @@
-import { node, displayDate } from './statCard.js';
+import { node, displayDate, link } from './statCard.js';
 import { plate } from './plate.js';
 import { titleName } from './personRow.js';
 import { hiddenName } from './hiddenName.js';
@@ -6,7 +6,7 @@ import { liftTier, knownLift } from './liftTier.js';
 import { reasonDialog, confirmPanel } from './reasonDialog.js';
 import { renderLineChart } from './lineChart.js';
 import { lifterSummary } from '../lifterSummary.js';
-import { formatSetLoad, setPerformance, formatDay } from '../format.js';
+import { formatSetLoad, setPerformance, formatDay, plural } from '../format.js';
 import { explain } from '../explain.js';
 import { t, format, word } from '../i18n.js';
 
@@ -17,7 +17,7 @@ const dayOf = ms => formatDay(new Date(ms).toISOString().slice(0, 10));
 export function summaryLine(figures) {
   const trial = n => word(n === 1 ? 'workout' : 'workouts', n === 1 ? 'concept_trial_s' : 'concept_trial_pl');
   const parts = [`${figures.count} ${trial(figures.count)} shared`, format(t('lifter_xp_gain'), grouped(figures.xp)), format(t('lifter_summary_per_week'), figures.perWeek)];
-  if (figures.daysSince != null) parts.push(figures.daysSince === 0 ? t('lifter_summary_last_today') : figures.daysSince === 1 ? t('lifter_summary_last_yesterday') : `last ${trial(1)} ${figures.daysSince} days ago`);
+  if (figures.daysSince != null) parts.push(figures.daysSince === 0 ? t('lifter_summary_last_today') : figures.daysSince === 1 ? t('lifter_summary_last_yesterday') : `last ${trial(1)} ${plural(figures.daysSince, 'day')} ago`);
   return parts.join(' · ');
 }
 
@@ -37,15 +37,15 @@ function workoutSets(body, workout, unit) {
  * One lifter's folio: what the phone's lifter screen shows, from the same reads (`social.lifter`, `social.lifterWorkout`), read-only
  * and in the viewer's unit, then the manage panel. `onGone()` runs after a block or a removal so the caller leaves the folio.
  */
-export function renderFolio(root, { social, snapshot, me, nowMs = Date.now(), onGone, data }) {
+export function renderFolio(root, { social, snapshot, me, nowMs = Date.now(), onGone, data, router }) {
   const status = node('p', null, 'notice folio-status'); status.setAttribute('role', 'status');
   const say = text => { status.textContent = text; };
   const name = hiddenName(data.profile?.name);
   const head = node('div', null, 'folio-head'), emblem = node('span'); plate(emblem, { name, crestId: data.profile?.crestId });
-  const who = node('div', null, 'folio-who'); who.append(node('h2', name));
+  const who = node('div', null, 'folio-who'); const heading = node('h2', name); heading.tabIndex = -1; who.append(heading);
   who.append(node('div', [data.profile?.level != null ? `Level ${data.profile.level}` : '', titleName(data.profile?.titleId)].filter(Boolean).join(' · '), 'muted'));
   if (data.allySinceMs != null) who.append(node('div', `${word('Friends', 'concept_ally_cpl')} since ${displayDate(data.allySinceMs, 'UTC')}`, 'muted folio-since'));
-  head.append(emblem, who); root.append(head);
+  const back = link('‹ All friends', '/friends/allies', router, 'folio-back'); head.append(emblem, who); root.append(back, head);
 
   if (data.profile?.totalXp != null) root.append(node('div', [`${grouped(data.profile.totalXp)} XP`, data.profile.streakDays != null ? `${data.profile.streakDays} day streak` : ''].filter(Boolean).join(' · '), 'muted folio-total'));
   const sessions = data.sessions;
@@ -66,7 +66,8 @@ export function renderFolio(root, { social, snapshot, me, nowMs = Date.now(), on
     const recent = node('section', null, 'folio-recent'); recent.append(node('h3', t('lifter_recent_header')));
     for (const s of sessions) {
       const item = node('div', null, 'folio-workout'), open = node('button', null, 'folio-open'); open.type = 'button'; open.setAttribute('aria-expanded', 'false');
-      open.append(node('strong', s.title || s.label || word('workout', 'concept_trial_s')), node('span', [s.completedAtMs != null ? dayOf(s.completedAtMs) : '', `${s.sets} sets`, format(t('lifter_str_figure'), s.strength), format(t('lifter_xp_gain'), grouped(s.xp)), s.editedAtMs ? t('lifter_amended') : ''].filter(Boolean).join(' · '), 'muted'));
+      open.append(node('strong', s.title || s.label || word('workout', 'concept_trial_s')), node('span', [s.completedAtMs != null ? dayOf(s.completedAtMs) : '', plural(s.sets, 'set'), format(t('lifter_str_figure'), s.strength), format(t('lifter_xp_gain'), grouped(s.xp)), s.editedAtMs ? t('lifter_amended') : ''].filter(Boolean).join(' · '), 'muted'));
+      const chevron = node('span', '›', 'folio-chevron'); chevron.setAttribute('aria-hidden', 'true'); open.append(chevron);
       const body = node('div', null, 'folio-sets'); body.hidden = true; let loaded = false;
       open.addEventListener('click', async () => {
         body.hidden = !body.hidden; open.setAttribute('aria-expanded', String(!body.hidden));

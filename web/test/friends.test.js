@@ -98,13 +98,14 @@ describe('friends shell', () => {
     const seen = []; let last; const saved = SCREENS.boards; SCREENS.boards = async (body, ctx) => { last = ctx; seen.push([ctx.audience, ctx.allyIds && [...ctx.allyIds]]); };
     const r = router(); const root = document.createElement('div');
     await renderFriends(root, { source: source(), social, router: r }, 'boards');
-    expect(seen[0]).toEqual(['everyone', undefined]);
-    expect(social.calls.map(c => c.method)).toEqual([]);
+    // Everyone mode reads the friends once too, so Boards and Group can open an ally's folio; it filters nothing.
+    expect(seen[0]).toEqual(['everyone', ['a', 'c']]);
+    expect(social.calls.map(c => c.method)).toEqual(['friends']);
     last.setAudience('allies');
     const again = document.createElement('div');
     await renderFriends(again, { source: source(), social, router: r }, 'boards');
     expect(seen[1]).toEqual(['allies', ['a', 'c']]);
-    expect(social.calls.map(c => c.method)).toEqual(['friends']);
+    expect(social.calls.map(c => c.method)).toEqual(['friends', 'friends']);
     SCREENS.boards = saved;
   });
   it('hiddenProfileUsesNeutralName', () => {
