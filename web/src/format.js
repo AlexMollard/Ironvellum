@@ -11,6 +11,8 @@ export function formatSets(n) {
   if (Array.isArray(n)) return n.length === 0 ? '' : n.length === 1 ? String(n[0]) : n.every(x => x === n[0]) ? `${n.length} × ${n[0]}` : n.join('/');
   return String(Number(Number(n).toFixed(1)));
 }
+// "1 hard set", "2 hard sets": the noun agrees with the figure. `n` may be a number or a numeric string; "1.0" counts as one.
+export function plural(n, one, other = `${one}s`) { return `${formatSets(n)} ${Number(n) === 1 ? one : other}`; }
 export function formatDay(isoDay, zoneNote) {
   if (!isoDay) return '—';
   const date = new Date(/^\d{4}-\d\d-\d\d$/.test(isoDay) ? `${isoDay}T12:00:00Z` : isoDay);

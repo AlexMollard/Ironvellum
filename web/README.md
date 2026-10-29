@@ -23,6 +23,10 @@ does not deploy. The workflow's `build` job (read-only token) tests and builds `
 (the only one with `pages: write`) publishes it. It uploads no test
 reports or dependency caches.
 
+## Clickable boxes
+
+A row, card or cell that opens something is one link or button, not a box with a link inside it. Put `is-link` on the box and `stretch` on its one link or button (`link()` from `components/statCard.js` takes the class as its last argument): `.is-link .stretch::after` in `src/theme.css` covers the whole box, so the box is the target, hover and the focus ring, with one tab stop. Other controls inside the box (a copy button, reactions, a chip that links somewhere else) are given `z-index` above it by the same rule. A box that does nothing is drawn flat: no border, no hover (`.chip`, `.tile`, an empty calendar day, a rest day). `link()` leaves Ctrl, Cmd, Shift and middle clicks to the browser, so every link can open in a new tab; use it, not a button with `router.go`. Exercise names go through `liftPath()` so they link to the lift page wherever one exists. Touch targets are 44px at 720px and below (the last block of `theme.css`).
+
 ## Data contract for design work
 
 Keep the data/authentication layer intact while redesigning `src/screens/`,

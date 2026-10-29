@@ -53,7 +53,7 @@ function signInPage(initialMessage = '') {
   function backendField(label,value,type) {const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.type=type;input.value=value;l.append(input);settings.append(l);return input;}
   const url=backendField('Backend URL',config.url,'url'), key=backendField('Publishable key',config.key,'text');if(config.own || !config.url) settings.open=true;
   if(config.own) {const button=document.createElement('button');button.type='button';button.textContent='Use shared backend';button.addEventListener('click',()=>{clearBackend();const defaults=loadBackend();url.value=defaults.url;key.value=defaults.key;settings.open=false;updateGoogle();probe();});settings.append(button);}
-  const status=message(form,initialMessage,'notice');const submit=document.createElement('button');submit.type='submit';submit.className='primary';submit.textContent='Sign in';form.append(submit);
+  const status=message(form,initialMessage,'notice');status.setAttribute('role','alert');const submit=document.createElement('button');submit.type='submit';submit.className='primary';submit.textContent='Sign in';form.append(submit);
   const divider=document.createElement('div');divider.className='or-divider';divider.textContent='or';divider.setAttribute('aria-hidden','true');
   const google=document.createElement('button');google.type='button';google.className='google-button';google.textContent='Continue with Google';form.append(divider,google);
   const links=document.createElement('div');links.className='signin-links';const forgot=document.createElement('span');forgot.className='muted';forgot.textContent='Forgot it? Reset in the app.';links.append(settings,forgot);form.append(links);

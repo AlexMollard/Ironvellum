@@ -19,7 +19,7 @@ export function kpi(label, value, unit, sub, target) {
   const figure = node('div', value ?? '—', 'kpi-value');
   if (unit && value != null) figure.append(node('span', ` ${unit}`, 'kpi-unit'));
   el.append(node('div', null, 'eyebrow'), figure, node('div', sub ?? '', 'kpi-sub'));
-  el.firstChild.append(target ? link(label, target.path, target.router, 'kpi-link') : label);
+  el.firstChild.append(target ? link(label, target.path, target.router, 'kpi-link stretch') : label);
   return el;
 }
 export function factRow(label, value) {
@@ -54,6 +54,17 @@ export function sortedWorkouts(rows, source, zone) {
 }
 export function link(text, path, router, className) {
   const el = node('a', text, className); el.href = `#${path}`;
-  el.addEventListener('click', e => { e.preventDefault(); router.go(path); });
+  // A modified or non-primary click is the browser's own (new tab, new window, download); only a plain click is routed in place.
+  el.addEventListener('click', e => { if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); router.go(path); });
   return el;
+}
+// The lift page for an exercise name, or null when the snapshot has no such lift (a custom exercise, or a friend's lift this lifter never logged).
+export function liftPath(snapshot, name) {
+  const lift = snapshot?.lifts?.find(l => String(l.name).trim().toLowerCase() === String(name ?? '').trim().toLowerCase());
+  return lift ? `/lifts/${encodeURIComponent(lift.name)}` : null;
+}
+// An exercise name: a link to its lift page where one exists, plain text where not. `className` goes on either.
+export function liftName(name, snapshot, router, className) {
+  const path = router ? liftPath(snapshot, name) : null;
+  return path ? link(name, path, router, className) : node('span', name, className);
 }
