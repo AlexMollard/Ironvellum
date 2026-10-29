@@ -2829,6 +2829,15 @@
         <item quantity="one">%1$d SATZ</item>
         <item quantity="other">%1$d SÄTZE</item>
     </plurals>
+    <string name="session_plan_line_sentence">%1$s · %2$s · etwa %3$d Min.</string>
+    <plurals name="session_plan_exercises_sentence">
+        <item quantity="one">%1$d Übung</item>
+        <item quantity="other">%1$d Übungen</item>
+    </plurals>
+    <plurals name="session_plan_sets_sentence">
+        <item quantity="one">%1$d Satz</item>
+        <item quantity="other">%1$d Sätze</item>
+    </plurals>
     <string name="plates_bar_other">Andere</string>
     <string name="plates_bar_weight_label">Stangengewicht</string>
     <string name="plates_bar_lighter_description">Leichtere Stange</string>

@@ -208,6 +208,21 @@ object SessionClock {
         )
     }
 
+    /** [planLine] read as a sentence for Today's card: "5 exercises · 19 sets · about 54 min", each language's own. */
+    fun planSentence(
+        entries: List<PlannedEntry>,
+        focus: TrainingFocus,
+        paceSeconds: Int? = null,
+        metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
+    ): String = Words.text(
+        UiText.res(
+            R.string.session_plan_line_sentence,
+            UiText.plural(R.plurals.session_plan_exercises_sentence, entries.size),
+            UiText.plural(R.plurals.session_plan_sets_sentence, entries.sumOf { it.sets }),
+            minutes(planSeconds(entries, focus, paceSeconds, metricOf)),
+        ),
+    )
+
     /** "4:07" under an hour, "1:04:07" past it. A clock set backwards reads 0:00. */
     fun elapsedLabel(elapsedMs: Long): String {
         return ClockText.elapsed(elapsedMs.coerceAtLeast(0) / 1000)

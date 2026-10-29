@@ -166,9 +166,6 @@ internal fun trialRows(sets: List<SessionSet>, exercises: Map<Long, Exercise>, s
             )
         }
 
-/** "5 EXERCISES · 19 SETS · ~54 MIN" read as a sentence: "5 exercises · 19 sets · about 54 min". */
-internal fun sentencePlan(line: String): String = line.lowercase().replace("~", "about ")
-
 /** How much of the Veil's full-strength day is left, and what that means in words. */
 internal data class VeilStrength(val fraction: Float, val caption: String)
 

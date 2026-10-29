@@ -2681,6 +2681,13 @@
     <plurals name="session_plan_sets">
         <item quantity="other">%1$d 组</item>
     </plurals>
+    <string name="session_plan_line_sentence">%1$s · %2$s · 约 %3$d 分钟</string>
+    <plurals name="session_plan_exercises_sentence">
+        <item quantity="other">%1$d 个动作</item>
+    </plurals>
+    <plurals name="session_plan_sets_sentence">
+        <item quantity="other">%1$d 组</item>
+    </plurals>
     <string name="plates_bar_other">其他</string>
     <string name="plates_bar_weight_label">杠铃杆重量</string>
     <string name="plates_bar_lighter_description">更轻的杠铃杆</string>

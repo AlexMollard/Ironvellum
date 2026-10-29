@@ -117,11 +117,6 @@ class TodayStateTest {
         assertFalse(rows[1].checked)
     }
 
-    @Test
-    fun `the plan line reads as a sentence`() {
-        assertEquals("5 exercises · 19 sets · about 54 min", sentencePlan("5 EXERCISES · 19 SETS · ~54 MIN"))
-    }
-
     private val hour = 3_600_000L
 
     @Test

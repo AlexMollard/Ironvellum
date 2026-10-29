@@ -2829,6 +2829,15 @@
         <item quantity="one">%1$d SÉRIE</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
+    <string name="session_plan_line_sentence">%1$s · %2$s · cerca de %3$d min</string>
+    <plurals name="session_plan_exercises_sentence">
+        <item quantity="one">%1$d exercício</item>
+        <item quantity="other">%1$d exercícios</item>
+    </plurals>
+    <plurals name="session_plan_sets_sentence">
+        <item quantity="one">%1$d série</item>
+        <item quantity="other">%1$d séries</item>
+    </plurals>
     <string name="plates_bar_other">Outra</string>
     <string name="plates_bar_weight_label">Peso da barra</string>
     <string name="plates_bar_lighter_description">Barra mais leve</string>

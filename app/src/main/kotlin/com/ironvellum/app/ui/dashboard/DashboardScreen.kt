@@ -551,8 +551,8 @@ private val stampedTrials = mutableSetOf<Long>()
 /** A movement's mini bar stops growing here; a long block just reads as a long bar. */
 private const val MINI_BAR_SEGMENTS = 8
 
-/** The week rail's letters, Monday first. */
-private val WEEK_LETTERS = listOf("M", "T", "W", "T", "F", "S", "S")
+/** The week rail's letter for a day (Monday is 1): "M" in English, the day's own character in Japanese. */
+private fun weekLetter(day: Int): String = DayOfWeek.of(day).getDisplayName(TextStyle.NARROW, Locale.getDefault())
 
 /** "Sat" within the week, "Oct 3" beyond it. */
 private fun shortWhen(ms: Long): String =
@@ -1119,7 +1119,7 @@ private fun TodayDayBody(
                         narrator = narratorLine(kind, daysKept = daysKept),
                         meta = AnnotatedString(
                             (if (isTodaySelected) UiText.themed(R.string.today_meta_todays, R.string.today_meta_todays__t).asString() else dayLong(selectedDay)) + " · " +
-                                sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite))),
+                                SessionClock.planSentence(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite)),
                         ),
                         corner = { RiteGlyph(glyphSets, fit = true) },
                         cornerFits = true,
@@ -1501,7 +1501,7 @@ private fun WeekRail(
             }
         }
         Row(Modifier.fillMaxWidth()) {
-            WEEK_LETTERS.forEachIndexed { index, letter ->
+            (1..7).map(::weekLetter).forEachIndexed { index, letter ->
                 val day = index + 1
                 val isDone = day in done
                 val isSelected = day == selectedDay

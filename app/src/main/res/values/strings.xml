@@ -3213,6 +3213,16 @@
         <item quantity="one">%1$d SET</item>
         <item quantity="other">%1$d SETS</item>
     </plurals>
+    <!-- Today's card: the plan line read as a sentence, in lower case. %1$s the exercise count, %2$s the set count, %3$d the estimated minutes. -->
+    <string name="session_plan_line_sentence">%1$s · %2$s · about %3$d min</string>
+    <plurals name="session_plan_exercises_sentence">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="session_plan_sets_sentence">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
 
     <!-- Plate setup: the bar chooser and one plate size's row. -->
     <string name="plates_bar_other">Other</string>
