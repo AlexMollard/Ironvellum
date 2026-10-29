@@ -17,7 +17,8 @@ stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
 ## 2. Apply the schema
 
 The whole schema is `supabase/migrations/0001_baseline.sql`. Re-apply this
-idempotent baseline to upgrade a self-hosted project to schema 31:
+idempotent baseline to upgrade a self-hosted project to schema 32 (the app itself works from 31;
+32 adds the friend-safe workout card that the web viewer's Friends area shows):
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql

@@ -15,7 +15,10 @@ release, crests, web-viewer and snapshot-cap patches are applied; `circle_draw_c
 `sessions` and `public_feed` carry `edited_at`, warbands are gone, and the worn
 crest is on profiles, the boards, the feed and `my_circle()`. The version probe
 confirms the reported schema version, not live mutation or phone installation.
-The 4 MiB snapshot uploader's schema prerequisite is satisfied. The updated
+The 4 MiB snapshot uploader's schema prerequisite is satisfied. The baseline is now at
+schema 32 (the friend-safe feed card); the hosted project stays at 31 until the owner pastes
+`supabase/hosted/2026-10-29-feed-card.sql`. The app's minimum (`NEEDED_SCHEMA_VERSION`) stays
+31, so nothing breaks before that. The updated
 phone build synced successfully, and the deployed viewer's history, set details,
 profile XP, lift variations and trends were verified against a read-only local
 backup. Temporary browser credentials were cleared without signing out the phone.
@@ -35,7 +38,9 @@ fixture instructions are in `web/README.md`.
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,
 and ships an idempotent patch in `supabase/hosted/` that the owner pastes into
-the SQL editor once, before the app build that needs it. `HostedPatchTest`
+the SQL editor once, before the app build that needs it (an optional feature, like the
+feed card, may leave `NEEDED_SCHEMA_VERSION` behind the baseline and gate on the version
+instead). `HostedPatchTest`
 fails the unit gate if a patch drifts from the baseline. `python3 tools/gate.py
 --backend` proves the baseline and the newest patch in Docker (applied twice,
 assertions after); older patches migrate warbands and are not re-run there.

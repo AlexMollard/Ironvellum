@@ -354,9 +354,12 @@ def backend() -> int:
         # project it was written against would otherwise ship green. The three named
         # below migrate a pre-circles project: inbox and release fail on the baseline
         # (warbands, the old feed view) and circles puts back function bodies a later
-        # patch replaced. A new patch is replayed unless it is added there on purpose.
+        # patch replaced. crests re-creates public_feed without the columns added
+        # after it, which a view cannot lose (feed-card appends one). A new patch is
+        # replayed unless it is added there on purpose.
         migrate_old_project = {
             "2026-10-01-inbox.sql", "2026-10-01-circles.sql", "2026-10-02-release.sql",
+            "2026-10-09-crests.sql",
         }
         hosted = [
             path for path in sorted(glob.glob(os.path.join(ROOT, "supabase/hosted/*.sql")))

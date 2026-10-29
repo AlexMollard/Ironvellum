@@ -30,7 +30,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
-/** The schema literal the baseline writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
+/**
+ * The oldest backend schema the app works against: below it the app says "Outdated" and stops syncing.
+ * The baseline may be AHEAD of it (schema 32 adds the optional friend-safe feed card, gated by
+ * [CloudSync.feedReady]), so raise this only when the app cannot work without the newer schema.
+ */
 const val NEEDED_SCHEMA_VERSION = 31
 
 /**

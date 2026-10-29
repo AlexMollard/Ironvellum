@@ -257,6 +257,28 @@ create index if not exists sessions_completed_idx on sessions (completed_at desc
 -- marks an amended workout so an ally is not surprised by changed figures.
 alter table sessions add column if not exists edited_at timestamptz;
 
+-- The friend-safe card of a completed workout, written only by the phone:
+-- {"v":1,"hardSets":n,"volumeKg":n,"prs":[{label,reps,weightKg,durationSec}],"levels":{"LATS":1-3}}.
+-- A column on sessions rather than a side table so it inherits sessions_read
+-- (can_view_session: the workout's own audience) with no second policy to get
+-- wrong. It never holds an e1RM or any figure derived from body weight; the
+-- server checks only that it is an object under 2 KiB, the shape is the
+-- phone's contract. Older clients ignore it.
+alter table sessions add column if not exists feed_card jsonb;
+do $fc$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conrelid = 'public.sessions'::regclass and conname = 'sessions_feed_card_check'
+    ) then
+        alter table sessions add constraint sessions_feed_card_check check (
+            feed_card is null
+            or (jsonb_typeof(feed_card) = 'object' and char_length(feed_card::text) <= 2048)
+        );
+    end if;
+end
+$fc$;
+
 -- Sets carry optional duration/distance/grade so a hold, a 5 km run and a V4
 -- problem can be recorded without lying about reps. A hold is reps = 0 with a
 -- positive duration_sec.
@@ -1843,7 +1865,8 @@ select
 
     -- Appended last: create or replace view can only add columns at the end.
     s.edited_at,
-    p.current_crest_id
+    p.current_crest_id,
+    s.feed_card
 from sessions s
 join profiles p on p.id = s.user_id
 where s.completed_at is not null
@@ -2864,7 +2887,7 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 31 $$;
+language sql stable as $$ select 32 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

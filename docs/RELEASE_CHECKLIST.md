@@ -66,6 +66,14 @@ project is at schema 30; the owner must apply
 cap, owner-only snapshot delete, cheaper RLS; no schema bump, and it touches only the four
 web tables) before shipping the build that uploads snapshots.
 
+The hosted project stays at schema 31 until the owner pastes
+`supabase/hosted/2026-10-29-feed-card.sql` (apply it AFTER the hardening patch). It adds
+`sessions.feed_card` and the last column of `public_feed` and reports schema 32. It is
+optional for the app: `NEEDED_SCHEMA_VERSION` stays 31, so a phone on a backend at 31
+keeps syncing and simply sends no card (`CloudSync.feedReady` needs 32), and the web
+viewer's phase 1 screens keep working; only its Friends area says it needs schema 32.
+Confirm with `select public.schema_version();`, which must return 32.
+
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.
 

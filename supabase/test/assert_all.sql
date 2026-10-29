@@ -562,7 +562,7 @@ begin
                       'note', 'completed_at', 'started_at', 'xp_awarded', 'strength_score', 'sets_done',
                       'reps_done', 'held_seconds', 'like_count', 'liked_by_me', 'top_movements', 'best_set',
                       'distance_m', 'hardest_grade', 'movement_count', 'duration_sec',
-                      'comment_count', 'reactions', 'my_reaction', 'edited_at', 'current_crest_id']) c
+                      'comment_count', 'reactions', 'my_reaction', 'edited_at', 'current_crest_id', 'feed_card']) c
     where not exists (select 1 from information_schema.columns ic
                       where ic.table_schema = 'public' and ic.table_name = 'public_feed' and ic.column_name = c);
     perform assert_true(missing is null, format('public_feed lost column(s) the app reads: %s', missing));
@@ -1312,12 +1312,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 31,
-        format('schema_version() reports %s, not 31 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 32,
+        format('schema_version() reports %s, not 32 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 31,
+        (select public.schema_version()) = 32,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -2542,6 +2542,106 @@ begin
     delete from auth.users where id in (ally, stranger);
     perform set_config('probe.uid', '', true);
 end $web$;
+
+-- ------------------------------------------------------ friend-safe feed card
+do $feed$
+declare
+    owner_id uuid := 'a5500000-0000-4000-8000-0000000000d1';
+    ally uuid := 'a5500000-0000-4000-8000-0000000000d2';
+    stranger uuid := 'a5500000-0000-4000-8000-0000000000d3';
+    blocked uuid := 'a5500000-0000-4000-8000-0000000000d4';
+    s_profile uuid := 'a5588888-0000-4000-8000-000000000001';
+    s_friends uuid := 'a5588888-0000-4000-8000-000000000002';
+    s_private uuid := 'a5588888-0000-4000-8000-000000000003';
+    cols text;
+    feed_before text;
+    inbox_before text;
+    days_before text;
+    events_before bigint;
+begin
+    delete from auth.users where id in (owner_id, ally, stranger, blocked);
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated',
+           'card-' || right(u::text, 2) || '@m.test', '', now(), now()
+    from unnest(array[owner_id, ally, stranger, blocked]) u;
+    update profiles set visibility = 'public' where id in (owner_id, ally, stranger, blocked);
+    insert into friendships (requester_id, addressee_id, accepted) values (owner_id, ally, true);
+    insert into blocks (blocker_id, blocked_id) values (owner_id, blocked);
+    insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience, feed_card)
+    values (s_profile, owner_id, 1, 'Pull', now() - interval '2 hours', now() - interval '1 hour', 'profile', '{"v":1,"hardSets":9}'),
+           (s_friends, owner_id, 2, 'Push', now() - interval '4 hours', now() - interval '3 hours', 'friends', '{"v":1,"hardSets":7}'),
+           (s_private, owner_id, 3, 'Legs', now() - interval '6 hours', now() - interval '5 hours', 'private', '{"v":1,"hardSets":5}');
+    insert into session_sets (session_id, exercise_name, set_index, reps, done)
+    values (s_profile, 'Pull-up', 0, 8, true), (s_friends, 'Dip', 0, 8, true);
+
+    -- feedCardFollowsTheSessionsAudience
+    perform assert_true(
+        value_as(ally, format('select count(*) from sessions where user_id = %L and feed_card is not null', owner_id))::int = 2
+        and value_as(ally, format('select count(*) from public_feed where user_id = %L and feed_card is not null', owner_id))::int = 2,
+        'an ally cannot read the cards of the profile and friends workouts');
+    perform assert_true(
+        value_as(stranger, format('select count(*) from sessions where user_id = %L and feed_card is not null', owner_id))::int = 1
+        and value_as(stranger, format('select feed_card ->> ''hardSets'' from public_feed where user_id = %L and feed_card is not null', owner_id)) = '9',
+        'a stranger reads more or less than the profile workout card');
+    perform assert_true(
+        value_as(owner_id, format('select count(*) from sessions where id = %L and feed_card is not null', s_private))::int = 1
+        and value_as(ally, format('select count(*) from sessions where id = %L', s_private))::int = 0
+        and value_as(stranger, format('select count(*) from public_feed where session_id = %L', s_private))::int = 0,
+        'a private workout card is readable by someone but its owner');
+    perform assert_true(
+        value_as(blocked, format('select count(*) from sessions where user_id = %L', owner_id))::int = 0
+        and value_as(blocked, format('select count(*) from public_feed where user_id = %L', owner_id))::int = 0,
+        'a blocked lifter reads the owner''s cards');
+
+    -- ownerWritesOwnFeedCardOnly
+    perform must_run(owner_id, format('update sessions set feed_card = ''{"v":1,"hardSets":10}'' where id = %L', s_profile), 'owner cannot write own feed card');
+    perform assert_true(value_as(owner_id, format('select feed_card ->> ''hardSets'' from sessions where id = %L', s_profile)) = '10', 'owner card write did not land');
+    perform refusal(ally, format('update sessions set feed_card = ''{"v":1,"hardSets":99}'' where id = %L', s_profile));
+    perform assert_true(value_as(owner_id, format('select feed_card ->> ''hardSets'' from sessions where id = %L', s_profile)) = '10', 'an ally rewrote the owner''s feed card');
+    perform assert_true(refused_as(stranger, format('insert into sessions (user_id, local_id, label, started_at, feed_card) values (%L, 77, ''x'', now(), ''{"v":1}'')', owner_id), array['42501']),
+        'a stranger can insert a session under someone else''s user_id');
+
+    -- feedCardIsBoundedAndShapeChecked
+    perform assert_true(
+        refused_as(owner_id, format('update sessions set feed_card = ''[1]''::jsonb where id = %L', s_profile), array['23514'])
+        and refused_as(owner_id, format('update sessions set feed_card = to_jsonb(''text''::text) where id = %L', s_profile), array['23514'])
+        and refused_as(owner_id, format('update sessions set feed_card = jsonb_build_object(''k'', repeat(''x'', 2049)) where id = %L', s_profile), array['23514']),
+        'a feed card that is an array, a string or over 2 KiB was accepted');
+    perform must_run(owner_id, format('update sessions set feed_card = null where id = %L', s_profile), 'a null feed card was refused');
+    perform must_run(owner_id, format('update sessions set feed_card = jsonb_build_object(''k'', repeat(''x'', 2000)) where id = %L', s_profile), 'a 2 KiB-bounded feed card was refused');
+    perform must_run(owner_id, format('update sessions set feed_card = ''{"v":1,"hardSets":9}'' where id = %L', s_profile), 'cannot restore the feed card fixture');
+
+    -- publicFeedKeepsEveryOldColumnInOrder
+    select string_agg(column_name, ',' order by ordinal_position) into cols
+    from information_schema.columns where table_schema = 'public' and table_name = 'public_feed';
+    perform assert_true(
+        cols = 'session_id,user_id,display_name,current_title_id,level,label,title,note,completed_at,started_at,xp_awarded,strength_score,'
+            'sets_done,reps_done,held_seconds,like_count,liked_by_me,top_movements,best_set,distance_m,hardest_grade,movement_count,'
+            'duration_sec,comment_count,reactions,my_reaction,edited_at,current_crest_id,feed_card',
+        format('public_feed columns moved or changed: %s', cols));
+
+    -- repushLeavesFeedInboxAndCircleUntouched
+    perform must_run(owner_id, 'select create_circle(''Card fixture'')', 'cannot create fixture circle');
+    perform must_run(ally, format('select join_circle(%L)', (select invite_code from circles where circles.owner_id = 'a5500000-0000-4000-8000-0000000000d1')), 'cannot join fixture circle');
+    insert into session_comments (session_id, user_id, body) values (s_profile, ally, 'fixture');
+    feed_before := value_as(ally, format('select coalesce(string_agg(session_id::text, '','' order by completed_at desc, session_id), '''') from public_feed where user_id = %L', owner_id));
+    inbox_before := value_as(owner_id, 'select count(*) from my_inbox()');
+    select coalesce(string_agg(day::text || ':' || at::text, ',' order by day), '') into days_before
+    from circle_member_days(owner_id, now() - interval '7 days', now() + interval '1 day');
+    select count(*) into events_before from circle_events;
+    perform assert_true(array_length(string_to_array(feed_before, ','), 1) = 2 and inbox_before::int > 0 and days_before <> '', 'card repush fixtures are empty');
+    perform must_run(owner_id, format('insert into sessions (id,user_id,local_id,label,started_at,completed_at,audience,feed_card) select id,user_id,local_id,label,started_at,completed_at,audience,feed_card from sessions where id = %L on conflict (user_id,local_id) do update set label = excluded.label, feed_card = excluded.feed_card', s_profile), 'session repush with a card failed');
+    perform must_run(owner_id, format('update sessions set feed_card = ''{"v":1,"hardSets":12}'' where id = %L', s_profile), 'card change failed');
+    perform assert_true(feed_before = value_as(ally, format('select coalesce(string_agg(session_id::text, '','' order by completed_at desc, session_id), '''') from public_feed where user_id = %L', owner_id))
+        and inbox_before = value_as(owner_id, 'select count(*) from my_inbox()')
+        and days_before = (select coalesce(string_agg(day::text || ':' || at::text, ',' order by day), '') from circle_member_days(owner_id, now() - interval '7 days', now() + interval '1 day'))
+        and events_before = (select count(*) from circle_events),
+        'a card repush changed feed order, inbox, circle days or circle events');
+
+    perform must_run(owner_id, 'select delete_my_account()', 'owner cannot erase account');
+    delete from auth.users where id in (ally, stranger, blocked);
+    perform set_config('probe.uid', '', true);
+end $feed$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

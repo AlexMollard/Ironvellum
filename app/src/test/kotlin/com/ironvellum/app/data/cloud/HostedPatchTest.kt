@@ -27,6 +27,7 @@ class HostedPatchTest {
         "2026-10-23-web-viewer.sql",
         "2026-10-28-web-snapshot-cap.sql",
         "2026-10-28-web-snapshot-hardening.sql",
+        "2026-10-29-feed-card.sql",
     )
 
     private val root: File = run {
@@ -107,7 +108,8 @@ class HostedPatchTest {
         val baseline = sql("supabase/migrations/0001_baseline.sql")
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
         assertEquals(30, beacon.find(patch)!!.groupValues[1].toInt())
-        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(baseline)!!.groupValues[1].toInt())
+        // The baseline is ahead of the app's minimum since schema 32 (the optional feed card).
+        assertEquals(32, beacon.find(baseline)!!.groupValues[1].toInt())
         val tables = listOf("session_set_details", "imported_sessions", "imported_session_sets", "web_snapshots")
         val create = Regex("""create table if not exists\s+(?:public\.)?(\w+)""", RegexOption.IGNORE_CASE)
         assertEquals(tables.toSet(), create.findAll(patch).map { it.groupValues[1] }.toSet())
@@ -123,6 +125,28 @@ class HostedPatchTest {
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
         assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(patch)!!.groupValues[1].toInt())
         assertTrue("web_snapshots_size_cap" in patch)
+    }
+
+    @Test
+    fun `the feed card patch carries schema 32, the bounded column and the feed that ends with it`() {
+        val patch = sql("supabase/hosted/2026-10-29-feed-card.sql")
+        val baseline = sql("supabase/migrations/0001_baseline.sql")
+        val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
+        assertEquals(32, beacon.find(patch)!!.groupValues[1].toInt())
+        assertEquals(32, beacon.find(baseline)!!.groupValues[1].toInt())
+        // The app's minimum stays below the new schema: a backend still at 31 must keep syncing.
+        assertTrue(NEEDED_SCHEMA_VERSION <= 31)
+        for (text in listOf(patch, baseline)) {
+            val flat = text.replace("\r\n", "\n")
+            assertTrue("add column if not exists feed_card jsonb" in flat.lowercase())
+            assertTrue("sessions_feed_card_check" in flat)
+            assertTrue("char_length(feed_card::text) <= 2048" in flat)
+            assertTrue("p.current_crest_id,\n    s.feed_card\nfrom sessions s" in flat)
+        }
+        // No new policy and no new grant: the column rides sessions_read and sessions_write.
+        val code = patch.lines().filterNot { it.trimStart().startsWith("--") }.joinToString("\n").lowercase()
+        assertTrue("create policy" !in code)
+        assertTrue("grant select" !in code)
     }
 
     @Test
