@@ -142,6 +142,16 @@ android {
     testOptions.unitTests.all {
         it.systemProperty("golden.update", System.getProperty("golden.update", "false"))
     }
+    lint {
+        // ImpliedQuantity fires when an `one` plural item carries no number, which is the
+        // design for unit-noun plurals (`REP` / `REPS`) and no-count sentences (`Deed
+        // earned`). The caller passes the count via getQuantityString, so the text is
+        // right; en never trips the rule because 1 is not a "special" one-number in
+        // English, and fr/pt (0, 1 both `one`) flag every such item, including faithful
+        // translations. StringsXmlTest and tools/check_translation.py still require the
+        // quantity set and placeholders to match English.
+        disable += "ImpliedQuantity"
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

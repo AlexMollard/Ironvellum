@@ -1,7 +1,7 @@
 # Glossary term table — French (`fr`)
 
 One translation per concept, used in every string. Plain column for `key`, themed for `key__t`.
-Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; escape only straight `'` as `\'`.
+Register: informal *tu*, direct, short, warm. Escape the straight apostrophe as `\'`; French elision (l'…) is normal.
 
 ## Glossary concepts (plain / themed)
 
@@ -9,7 +9,7 @@ Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; esca
 |---|---|---|---|
 | workout / trial | séance | épreuve | la séance / l'épreuve |
 | routine / rite | routine | rite | |
-| weekly plan / cycle | plan hebdo | cycle | "plan hebdo" in labels |
+| weekly plan / cycle | plan hebdo | cycle | |
 | streak / oath | série | serment | "série de 7 jours" |
 | PR / peak | record | sommet | "Nouveau record !" / "Nouveau sommet !" |
 | history / Chronicle | historique | Chronique | |
@@ -26,13 +26,13 @@ Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; esca
 | body / Frame | corps | carcasse | "TON CORPS" / "TA CARCASSE" |
 | profile / Folio | profil | feuillet | |
 | display name / True name | pseudonyme | vrai nom | |
-| lifter / Ironbound | pratiquant | Forgeron | app addresses "tu"; le Forgeron |
+| lifter / Ironbound | athlète | Forgeron | app addresses "tu"; le Forgeron |
 | finish (a workout) / Seal | terminer | sceller | "Sceller l'épreuve" |
 | rest day / Respite | jour de repos | répit | |
 | reminder / The Summons | rappel | l'Appel | |
-| setup / The Binding | configuration | le Serment initial | step titles plain: Qui tu es · Comment tu t'entraînes · Ton plan |
+| setup / The Binding | configuration initiale | le Serment | step titles: Qui tu es · Comment tu t'entraînes · Ton plan |
 | equipment / Armoury | matériel | armurerie | |
-| plan builder / The Forge | créateur de plans | la Forge | verb "F-forger" → "F-forger un plan" keep "Forger" |
+| plan builder / The Forge | créateur de plans | la Forge | verb "Forger" |
 | improve / Temper | améliorer | tremper | |
 | templates / Patterns | modèles | motifs | |
 | progress (tab) / Codex | progrès | Codex | |
@@ -43,8 +43,8 @@ Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; esca
 | measurement / Reading | mesure | relevé | "AJOUTER UNE MESURE" |
 | empty workout / Open Trial | séance libre | épreuve libre | |
 | today's workout | séance du jour | épreuve du jour | |
-| custom (exercise) / Yours | persos | tiens | section "Perso" |
-| ascension tier | same both modes | Novice · Adepte · Gardien · Magister · Archonte · Exarque · Souverain | |
+| custom (exercise) / Yours | perso | tien | section "Perso" |
+| ascension tier | same both modes | Novice · Adepte · Gardien · Magistère · Archonte · Exarque · Souverain | |
 | strength rank | same | Non classé, Désentraîné, Débutant, Intermédiaire, Avancé, Élité | |
 
 ## Reward layer (both modes, stays themed)
@@ -64,7 +64,7 @@ Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; esca
 | Relic | relique |
 | Vault | coffre |
 | Crest | emblème |
-| Rank ladder | Novice · Adepte · Gardien · Magister · Archonte · Exarque · Souverain |
+| Rank ladder | Novice · Adepte · Gardien · Magistère · Archonte · Exarque · Souverain |
 
 ## Gym terms (always plain, lifter's common form)
 
@@ -99,4 +99,4 @@ Register: informal *tu*, direct, short, warm. Apostrophes in text are fine; esca
 - Buttons imperative tu: "Démarrer", "Continuer", "Enregistrer", "Annuler".
 - Notifications: "Ta séance du jour t'attend", never "vous" for the lifter.
 - Themed narrator (le Registre): ink/vellum register ("Le Registre a trébuché — réessaie dans un instant").
-- French elision is normal ("L'Appel"); escape the straight apostrophe as \'.
+- Escape every straight apostrophe in the file as \'.
