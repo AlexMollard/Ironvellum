@@ -237,7 +237,7 @@ class ProgressPhotosScreensTest {
         var picked = 0
         fun tileWidth(canTake: Boolean): Float {
             show(light = false) {
-                PhotoSourceTiles(PhotoSource(canTake, take = {}, pick = { picked++ }), kept = false, enabled = true, helper = "Helper", onRemove = {})
+                PhotoSourceTiles(PhotoSource(canTake, take = {}, pick = { picked++ }), enabled = true, helper = "Helper")
             }
             compose.onNodeWithText("From gallery").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
             return compose.onNodeWithText("From gallery").getUnclippedBoundsInRoot().width.value

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -70,35 +69,27 @@ internal fun PhotoActions(
 }
 
 /**
- * The pose sheet's actions: Take photo and From gallery as two large side-by-side tiles (a 24dp icon above the label),
- * [helper] as one muted line under them, then Remove as a chip when a photo is [kept]. A phone with no camera app shows
- * only the gallery tile, at full width. Every tile is well over 48dp tall.
+ * The pose sheet's choices: Take photo and From gallery as two side-by-side tiles (the icon beside the label), with
+ * [helper] as one muted line under them. A phone with no camera app shows only the gallery tile, at full width.
+ * Remove is not here: the sheet puts it on its action row, across from Cancel.
  */
 @Composable
 internal fun PhotoSourceTiles(
     source: PhotoSource,
-    kept: Boolean,
     enabled: Boolean,
     helper: String,
-    onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (enabled) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (source.canTake) {
                     PhotoTile(stringResource(R.string.photo_take_button), Icons.Outlined.PhotoCamera, accent = true, onClick = source.take, modifier = Modifier.weight(1f))
                 }
                 PhotoTile(stringResource(R.string.photo_gallery_tile), Icons.Outlined.PhotoLibrary, accent = false, onClick = source.pick, modifier = Modifier.weight(1f))
             }
         }
-        Text(helper, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 12.dp))
-        if (kept && enabled) {
-            // The chip carries 8dp of its own leading margin: pull it back so it lines up with the tiles.
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp).offset(x = (-8).dp), horizontalArrangement = Arrangement.Start) {
-                InkChip(stringResource(R.string.photo_remove_button), stringResource(R.string.photo_remove_description), Icons.Outlined.Delete, height = 48.dp, onClick = onRemove)
-            }
-        }
+        Text(helper, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
     }
 }
 
@@ -106,18 +97,18 @@ internal fun PhotoSourceTiles(
 private fun PhotoTile(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = MaterialTheme.shapes.medium
     val fill = if (accent) IronvellumColors.Emerald.copy(alpha = 0.28f).compositeOver(IronvellumColors.Raised) else IronvellumColors.Raised
-    Column(
+    Row(
         modifier
-            .heightIn(min = 96.dp)
+            .heightIn(min = 56.dp)
             .clip(shape)
             .background(fill)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(24.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Ink, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+        Icon(icon, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(22.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, color = IronvellumColors.Ink, textAlign = TextAlign.Center, modifier = Modifier.padding(start = 8.dp))
     }
 }
 

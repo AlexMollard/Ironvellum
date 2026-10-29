@@ -290,10 +290,13 @@ fun ProgressPhotosScreen(
                         take = { target = key; editing = null; source.take() },
                         pick = { target = key; editing = null; source.pick() },
                     ),
-                    kept = photo != null,
                     enabled = viewModel.saving == null,
-                    onRemove = { editing = null; removing = photo?.id ?: NONE },
                 )
+            },
+            dismissButton = if (photo != null && viewModel.saving == null) {
+                { IronvellumButton(label = stringResource(R.string.photo_remove_button), onClick = { editing = null; removing = photo.id }, danger = true) }
+            } else {
+                null
             },
             confirmButton = { IronvellumButton(label = stringResource(R.string.common_cancel), onClick = { editing = null }, quiet = true) },
         )
