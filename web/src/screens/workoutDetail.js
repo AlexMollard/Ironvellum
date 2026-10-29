@@ -8,11 +8,12 @@ import { setTable } from '../components/setTable.js';
 import { copyButton } from '../components/copyWorkout.js';
 import { formatWorkoutText, groupSets } from '../workoutText.js';
 import { prTag } from '../components/prTag.js';
+import { alliesLine } from '../components/alliesLine.js';
 const adjacent = (workout, day, router, previous) => {
   const a = link('', workoutPath(workout), router, 'adjacent'); a.append(node('span', previous ? `Previous ${t('concept_trial_s')}: ` : `Next ${t('concept_trial_s')}: `, 'sr-only'), `${previous ? '‹ ' : ''}${formatWeekday(day)} ${formatDayShort(day)}${previous ? '' : ' ›'}`);
   return a;
 };
-export async function renderWorkoutDetail(root, { source, snapshot, router }, origin, id) {
+export async function renderWorkoutDetail(root, { source, snapshot, router, social }, origin, id) {
   root.replaceChildren();
   const workouts = sortedWorkouts(await source.listWorkouts(), source, snapshot?.zone);
   const index = workouts.findIndex(w => w.origin === origin && String(w.id) === String(id));
@@ -31,6 +32,8 @@ export async function renderWorkoutDetail(root, { source, snapshot, router }, or
   top.append(node('span', `${formatWeekday(day)} ${formatDay(day)} · ${formatClock(workout.startedAt, snapshot?.zone)} · ${entry?.min ?? '—'} min`, 'muted'));
   if (entry) top.append(node('span', `+${entry.xp} XP`, 'lw-xp'));
   summary.append(top, factRow('Hard sets', entry ? formatSets(entry.hardSets) : null), factRow('Volume', entry ? formatVolume(entry.volumeKg, snapshot.unit) : null), factRow(word('Records', 'concept_peak_cpl'), entry?.peaks), factRow('Strength', entry?.strength)); side.append(summary);
+  // The friends line: counts from this workout's own public_feed row, names from its reactors; absent when there is nothing or a read fails.
+  if (social && workout.origin === 'synced') social.workoutFeedRow(workout.id).then(async row => { const reactors = row && Object.values(row.reactions ?? {}).some(n => n > 0) ? await social.reactors(workout.id).catch(() => []) : []; const line = alliesLine(row, { reactors }); if (line) summary.append(line); }).catch(() => {});
   if (entry) {
     const muscles = card('Muscles worked', 'muscles-card'); const maps = node('div', null, 'body-map-pair');
     for (const view of ['front', 'back']) { const map = node('div', null, 'body-map'); renderBodyMap(map, { levels: entry.muscleLevels, figure: snapshot.profile?.figure || 'male', view, look: 'worked', names: snapshot.muscles }); maps.append(map); }

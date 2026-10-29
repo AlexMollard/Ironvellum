@@ -50,7 +50,7 @@ describe('friends shell', () => {
   });
   it('showsTheEmptyFeedStateAndTheFiveSubTabs', async () => {
     const root = document.createElement('div');
-    await renderFriends(root, { source: source(), social: createFakeSocial({}), router: router() }, 'feed');
+    await renderFriends(root, { source: source(), social: createFakeSocial({ feed: async () => [] }), router: router() }, 'feed');
     expect(root.textContent).toContain(t('feed_empty'));
     expect([...root.querySelectorAll('.friends-tab')].map(a => a.dataset.tab)).toEqual(['feed', 'inbox', 'allies', 'boards', 'circle']);
     expect(root.querySelector('[aria-current="page"]').dataset.tab).toBe('feed');

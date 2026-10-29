@@ -7,6 +7,7 @@ import { plate } from '../components/plate.js';
 import { node, card, kpi, sortedWorkouts, workoutDay, weekPassed, link } from '../components/statCard.js';
 import { renderFatigueCard } from '../components/fatigueCard.js';
 import { lastWorkoutCard } from '../components/lastWorkoutCard.js';
+import { alliesLine } from '../components/alliesLine.js';
 import { deedRow } from '../components/deedRow.js';
 import { recordRow } from '../components/recordRow.js';
 const tier = level => [...tokens.ladder].reverse().find(step => step.level <= level)?.title;
@@ -23,7 +24,7 @@ function levelCard(profile, week) {
   const caption = node('div', null, 'level-caption'); caption.append(node('span', `${profile.intoLevel.toLocaleString()} / ${profile.needed.toLocaleString()} XP`, 'muted'), node('span', `+${week.xp} this week`, 'lw-xp'));
   el.append(bar, caption); return el;
 }
-export async function renderOverview(root, { source, snapshot, router, nowMs = Date.now() }) {
+export async function renderOverview(root, { source, snapshot, router, nowMs = Date.now(), social }) {
   root.replaceChildren();
   const heading = node('header', null, 'screen-header'); heading.append(node('h1', 'Overview'));
   root.append(heading);
@@ -46,11 +47,14 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
     const entry = snapshotForWorkout(snapshot, last), day = workoutDay(last, snapshot.zone);
     const sets = await source.getSets(last), chips = [...new Set(sets.filter(s => s.exerciseName).map(s => s.modifiers ? `${s.exerciseName} · ${s.modifiers}` : s.exerciseName))];
     const volumeText = entry ? splitVolume(entry.volumeKg, snapshot.unit).join(' ') : '—';
-    main.append(lastWorkoutCard({
+    const lastCard = lastWorkoutCard({
       heading: `Your last ${t('concept_trial_s')}`, profile, when: `${formatWeekday(day)} ${formatDay(day)}`, meta: `${formatClock(last.startedAt, snapshot.zone)}${entry ? ` · ${entry.min} min` : ''}`, xp: entry?.xp,
       title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, prs: entry?.prs, chips, levels: entry?.muscleLevels, names: snapshot.muscles, figure: profile.figure,
       stats: entry ? `${formatSets(entry.hardSets)} hard sets · ${volumeText} · STR ${entry.strength}` : '— hard sets · — volume · — STR'
-    }));
+    });
+    main.append(lastCard);
+    // What friends did on it, from its own public_feed row; absent when there is none or the read fails (never blocks the screen).
+    if (social && last.origin === 'synced') social.workoutFeedRow(last.id).then(row => { const line = alliesLine(row); if (line) lastCard.append(line); }).catch(() => {});
   } else main.append(node('p', `No ${t('concept_trial_pl')} yet.`));
   const pair = node('div', null, 'ov-pair');
   const records = card(word('Recent records', 'concept_peak_pl', w => `Recent ${w}`), 'records-card', `${trends.records30d} in the last 30 days`);

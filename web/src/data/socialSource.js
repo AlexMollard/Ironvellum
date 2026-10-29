@@ -7,6 +7,7 @@
 
 /** @typedef {{
  *  feed(o:{beforeMs?:number, limit?:number}): Promise<any[]>,                          // public_feed
+ *  workoutFeedRow(sessionId:string): Promise<any|null>,                                // public_feed filtered to one session (the owner's allies line)
  *  react(sessionId:string, kind:'salute'|'iron'|'flame'|null): Promise<void>,          // session_likes
  *  reactors(sessionId:string): Promise<any[]>, comments(sessionId:string): Promise<any[]>,
  *  addComment(sessionId:string, body:string): Promise<any>, deleteComment(id:string): Promise<void>,
@@ -21,7 +22,7 @@
  *  leaveCircle(): Promise<void>, setCircleGoal(n:number): Promise<void>, setCircleName(name:string): Promise<void>,
  *  rotateCircleCode(): Promise<void>, kickCircleMember(userId:string): Promise<void>, circleBonuses(): Promise<any[]> }} SocialSource */
 
-export const METHODS = ['feed', 'react', 'reactors', 'comments', 'addComment', 'deleteComment', 'inbox', 'markInboxSeen', 'friends', 'findHunter',
+export const METHODS = ['feed', 'workoutFeedRow', 'react', 'reactors', 'comments', 'addComment', 'deleteComment', 'inbox', 'markInboxSeen', 'friends', 'findHunter',
   'requestFriend', 'acceptFriend', 'removeFriend', 'lifter', 'lifterWorkout', 'leaderboard', 'liftBoard', 'shadowBoard', 'mute', 'unmute', 'block',
   'unblock', 'report', 'circle', 'createCircle', 'joinCircle', 'leaveCircle', 'setCircleGoal', 'setCircleName', 'rotateCircleCode',
   'kickCircleMember', 'circleBonuses'];
@@ -43,9 +44,80 @@ export async function checked(query) {
 }
 export const rowsOf = async query => (await checked(query)).data ?? [];
 
-/** The methods implemented so far; each screen's task adds its own here. */
+const iso = ms => new Date(ms).toISOString();
+const COMMENT_COLUMNS = 'id,session_id,user_id,author_name,body,created_at';
+export const REACTIONS = ['salute', 'iron', 'flame'];
+
+const feedRow = r => ({
+  sessionId: r.session_id, userId: r.user_id, name: r.display_name, titleId: r.current_title_id, crestId: r.current_crest_id, level: r.level,
+  label: r.label, title: r.title, note: r.note, completedAtMs: Date.parse(r.completed_at), durationSec: r.duration_sec, xp: r.xp_awarded,
+  strength: r.strength_score, setsDone: r.sets_done, likeCount: r.like_count ?? 0, likedByMe: !!r.liked_by_me, topMovements: r.top_movements,
+  bestSet: r.best_set, commentCount: r.comment_count ?? 0, reactions: r.reactions ?? {}, myReaction: REACTIONS.includes(r.my_reaction) ? r.my_reaction : null,
+  editedAt: r.edited_at ?? null, card: r.feed_card ?? null,
+});
+const commentRow = r => ({ id: r.id, sessionId: r.session_id, userId: r.user_id, authorName: r.author_name, body: r.body, createdAtMs: Date.parse(r.created_at) });
+
+function feedApi(client, userId) {
+  return {
+    // public_feed
+    async feed({ beforeMs, limit = FEED_PAGE } = {}) {
+      let query = client.from('public_feed').select('*').order('completed_at', { ascending: false }).limit(limit);
+      if (beforeMs != null) query = query.lt('completed_at', iso(beforeMs));
+      return (await rowsOf(query)).map(feedRow);
+    },
+    // public_feed filtered to one of the owner's own sessions: the reaction and comment counts of the allies line
+    async workoutFeedRow(sessionId) {
+      const { data } = await checked(client.from('public_feed').select('*').eq('session_id', sessionId).maybeSingle());
+      return data ? feedRow(data) : null;
+    },
+    // session_likes: a merge on (session_id, user_id), so switching kind is the conflict path; null deletes my row
+    async react(sessionId, kind) {
+      if (kind == null) { await checked(client.from('session_likes').delete().eq('session_id', sessionId).eq('user_id', userId)); return; }
+      await checked(client.from('session_likes').upsert({ session_id: sessionId, user_id: userId, kind }, { onConflict: 'session_id,user_id' }));
+    },
+    // session_likes embedding profiles(display_name): names without a second request; capped at 50
+    async reactors(sessionId) {
+      const rows = await rowsOf(client.from('session_likes').select('user_id,kind,created_at,profiles(display_name)').eq('session_id', sessionId).order('created_at', { ascending: false }).limit(50));
+      return rows.map(r => ({ userId: r.user_id, name: r.profiles?.display_name ?? null, kind: REACTIONS.includes(r.kind) ? r.kind : null, atMs: Date.parse(r.created_at) }));
+    },
+    // session_comments, oldest first, at the server's per-workout ceiling so the thread is whole
+    async comments(sessionId) {
+      return (await rowsOf(client.from('session_comments').select(COMMENT_COLUMNS).eq('session_id', sessionId).order('created_at', { ascending: true }).limit(COMMENT_LIMIT))).map(commentRow);
+    },
+    // session_comments insert of (session_id, user_id, body) only, read back for the server's author_name and created_at
+    async addComment(sessionId, body) {
+      const { data } = await checked(client.from('session_comments').insert({ session_id: sessionId, user_id: userId, body }).select(COMMENT_COLUMNS).single());
+      return commentRow(data);
+    },
+    // session_comments delete asking the rows back: RLS answers a refused delete with zero rows, not an error
+    async deleteComment(id) {
+      const { data } = await checked(client.from('session_comments').delete().eq('id', id).select('id'));
+      if (!data?.length) { const gone = new Error('comment gone'); gone.name = 'CommentGone'; throw gone; }
+    },
+  };
+}
+
+function safetyApi(client, userId) {
+  const plain = async query => { try { await checked(query); } catch (error) { if (error?.code !== '23505') throw error; } };
+  return {
+    // mutes / blocks: already muted or blocked (23505) is success
+    mute: id => plain(client.from('mutes').insert({ muter_id: userId, muted_id: id })),
+    unmute: async id => { await checked(client.from('mutes').delete().eq('muter_id', userId).eq('muted_id', id)); },
+    block: id => plain(client.from('blocks').insert({ blocker_id: userId, blocked_id: id })),
+    unblock: async id => { await checked(client.from('blocks').delete().eq('blocker_id', userId).eq('blocked_id', id)); },
+    // reports: write-only, nothing is selected back (no client can read reports)
+    async report({ targetUserId, sessionId, commentId, reason, note }) {
+      const row = { reporter_id: userId, target_user_id: targetUserId, reason, note: String(note ?? '').trim() };
+      if (sessionId) row.session_id = sessionId;
+      if (commentId) row.comment_id = commentId;
+      await checked(client.from('reports').insert(row));
+    },
+  };
+}
+
+/** The methods implemented so far; each screen's task adds its area here. */
 function implementations(client, userId) {
-  return {};
+  return { ...feedApi(client, userId), ...safetyApi(client, userId) };
 }
 
 /** @returns {SocialSource} */

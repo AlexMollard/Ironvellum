@@ -1,8 +1,9 @@
-import { word, t } from '../../i18n.js';
+import { word } from '../../i18n.js';
 import { explain } from '../../explain.js';
 import { FRIENDS_SCHEMA_VERSION } from '../../schema.js';
 import { node, link } from '../../components/statCard.js';
 import { NotYet } from '../../data/socialSource.js';
+import { renderFeed } from './feed.js';
 
 /** The sub-tabs, in the order the app shows them. Each screen is `(root, ctx, arg) => Promise<void>`, added by its task. */
 export const TABS = [['feed', () => 'Feed'], ['inbox', () => word('Inbox', 'concept_inbox_c')], ['allies', () => word('Friends', 'concept_ally_cpl')], ['boards', () => 'Boards'], ['circle', () => word('Group', 'concept_circle_c')]];
@@ -57,6 +58,5 @@ export async function renderFriends(root, ctx, tab = 'feed', arg) {
   } catch (error) { body.replaceChildren(node('p', explain(error), 'notice friends-notice')); }
 }
 
-/** Feed is the app's first sub-tab; until its screen lands the empty state is the phone's own line. */
-SCREENS.feed = async body => { body.append(node('p', t('feed_empty'), 'empty')); };
+SCREENS.feed = renderFeed;
 for (const [id] of TABS) SCREENS[id] ??= async () => { throw new NotYet(id); };
