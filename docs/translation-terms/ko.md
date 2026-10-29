@@ -1,7 +1,7 @@
 # Glossary term table — Korean (`ko`)
 
 One translation per concept, used in every string. Plain column for `key`, themed for `key__t`.
-Register: neutral polite (합쇼/해요체 as common in fitness apps). Count characters, not bytes.
+Register: friendly polite 해요체 everywhere, plain and themed alike (no 습니다/합니다, no 반말, no 귀하). Short labels, buttons and headers stay noun phrases. Count characters, not bytes.
 
 ## Glossary concepts (plain / themed)
 
@@ -26,7 +26,7 @@ Register: neutral polite (합쇼/해요체 as common in fitness apps). Count cha
 | body / Frame | 신체 | 체격 | |
 | profile / Folio | 프로필 | 두루마리 | |
 | display name / True name | 표시 이름 | 참된 이름 | |
-| lifter / Ironbound | 사용자 → 러너 none: use 운동인 plain; themed 철의 자 | 철의 자 | app addresses 당신 |
+| lifter / Ironbound | 리프터 | 철의 자 | app addresses 당신 |
 | finish (a workout) / Seal | 마무리 | 봉인 | "시련을 봉인" |
 | rest day / Respite | 휴식일 | 휴전 | |
 | reminder / The Summons | 알림 | 부름 | |
@@ -43,7 +43,7 @@ Register: neutral polite (합쇼/해요체 as common in fitness apps). Count cha
 | measurement / Reading | 측정 | 기록 | plain 측정; themed 기록 |
 | empty workout / Open Trial | 자유 운동 | 자유 시련 | |
 | today's workout | 오늘의 운동 | 오늘의 시련 | |
-| custom (exercise) / Yours | 내 용 → 사용자 제작 | 너의 것 | |
+| custom (exercise) / Yours | 사용자 제작 | 당신의 것 | |
 | ascension tier | same both modes | 수습 · 현자 · 수호자 · 마검사 · 집정관 · 총독 · 군주 | |
 | strength rank | same | 미평가, 미트레이닝, 초심자, 중수, 고수, 엘리트 | |
 
@@ -74,7 +74,7 @@ Register: neutral polite (합쇼/해요체 as common in fitness apps). Count cha
 | RIR | RIR (keep; "남은 횟수") |
 | PR | 개인 기록 (신기록) |
 | set | 세트 |
-| rep | 횟수 / 레프 → 횟수 |
+| rep | 횟수 |
 | rest | 휴식 |
 | warm-up | 워밍업 |
 | top set | 탑 세트 |
@@ -83,7 +83,7 @@ Register: neutral polite (합쇼/해요체 as common in fitness apps). Count cha
 | kg / lb | kg / lb |
 | 1-rep max | 1RM |
 | drop set | 드롭 세트 |
-| failure | 실패 지점 → 한계 |
+| failure | 한계 |
 | rest-pause | 레스트포즈 |
 | superset | 슈퍼 세트 |
 | tempo | 템포 |
@@ -98,5 +98,5 @@ Register: neutral polite (합쇼/해요체 as common in fitness apps). Count cha
 
 - Buttons: "시작", "계속", "저장", "취소".
 - Notifications: "오늘의 운동이 당신을 기다려요".
-- Themed narrator (대장): ink/vellum register ("대장이 비틀거렸어 — 잠시 후 다시 시도해").
+- Themed narrator (대장): ink/vellum register ("대장이 비틀거렸어요 — 잠시 후 다시 시도하세요").
 - Particles follow the chosen term consistently (시련을, 의식을…).
