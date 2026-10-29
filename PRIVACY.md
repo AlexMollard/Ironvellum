@@ -114,6 +114,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Idle-game aggregates (muster essence, figure count, figure rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
 | Set rows: exercise name, position, set index, reps, weight, modifiers, done, duration, distance and grade | `session_sets` |
+| A card of each completed workout, on schema 32 or newer: hard sets, tonnes of loaded work, the lifts that set a record with the load and reps as logged, and muscle levels from 0 to 3. It never holds a strength estimate or any figure derived from body weight, and it is visible exactly as the workout is (your profile and workout visibility settings decide who sees it) | `sessions.feed_card` |
 | Set kind, effort (RPE) and superset group where recorded | `session_set_details`, readable only by you |
 | Completed imported workouts and their sets, including set kind, effort and superset group | `imported_sessions`, `imported_session_sets`, readable only by you and never in feeds |
 | Web stats snapshot: phone-computed workout and lift figures, including bodyweight-lift strength estimates, weekly sets, fatigue, streak, level and deed names; muscle-map figure (male or female) and appearance settings | `web_snapshots`, one owner-only row replaced when its contents change |

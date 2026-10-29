@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.domain.FeedCard
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.WorkoutSession
@@ -14,6 +15,27 @@ import org.junit.Test
 class WebUploadTest {
     private val working = SessionSet(exerciseId = 1, exerciseName = "Pull-up", setIndex = 0, reps = 8, done = true)
     private val imported = WorkoutSession(id = 1, label = "Imported", startedAtMs = 1, completedAtMs = 2, imported = true)
+
+    @Test
+    fun feedReadyNeeds32() {
+        assertFalse(CloudSync.feedReady(null))
+        assertFalse(CloudSync.feedReady(31))
+        assertTrue(CloudSync.feedReady(32))
+        assertTrue(CloudSync.feedReady(33))
+    }
+
+    @Test
+    fun olderBackendSendsNoFeedCard() {
+        val session = WorkoutSession(id = 5, label = "Pull", startedAtMs = 1, completedAtMs = 2)
+        val encoder = Json { encodeDefaults = true }
+        val old = encoder.encodeToString(CloudSync.sessionDto("u", session, null))
+        assertFalse("feed_card" in old)
+        val card = FeedCard(9, 600.0, emptyList(), emptyMap())
+        val current = encoder.encodeToString(CloudSync.sessionDto("u", session, mapOf(5L to card)))
+        assertTrue("\"feed_card\":{\"v\":1" in current)
+        // A workout with no card clears a stale one with an explicit null rather than leaving the column alone.
+        assertTrue("\"feed_card\":null" in encoder.encodeToString(CloudSync.sessionDto("u", session, emptyMap())))
+    }
 
     @Test
     fun plainWorkingSetsNeedNoDetail() {

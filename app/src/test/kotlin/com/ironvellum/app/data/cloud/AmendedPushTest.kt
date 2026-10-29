@@ -1,5 +1,6 @@
 package com.ironvellum.app.data.cloud
 
+import com.ironvellum.app.domain.FeedCard
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetKind
@@ -43,6 +44,29 @@ class AmendedPushTest {
         )
         assertEquals(legacyFriends, CloudSync.pushFingerprint(friends, sets))
     }
+    @Test
+    fun `a card changes the fingerprint once`() {
+        val card = FeedCard(9, 600.0, emptyList(), emptyMap())
+        val plain = CloudSync.pushFingerprint(session, sets)
+        // Below schema 32 no card is passed, so the fingerprint is the one already pushed.
+        assertEquals(plain, CloudSync.pushFingerprint(session, sets, null))
+        val withCard = CloudSync.pushFingerprint(session, sets, card)
+        assertNotEquals(plain, withCard)
+        // Stable: the same card gives the same fingerprint, so it re-pushes once and then settles.
+        assertEquals(withCard, CloudSync.pushFingerprint(session, sets, card.copy()))
+        val pushed = mapOf(session.id to withCard)
+        assertTrue(CloudSync.pendingForPush(listOf(session to sets), pushed, mapOf(session.id to card)).isEmpty())
+        assertEquals(1, CloudSync.pendingForPush(listOf(session to sets), mapOf(session.id to plain), mapOf(session.id to card)).size)
+    }
+
+    @Test
+    fun `an amended workout refreshes its card`() {
+        val card = FeedCard(9, 600.0, emptyList(), emptyMap())
+        val pushed = mapOf(session.id to CloudSync.pushFingerprint(session, sets, card))
+        val changed = card.copy(hardSets = 10)
+        assertEquals(1, CloudSync.pendingForPush(listOf(session to sets), pushed, mapOf(session.id to changed)).size)
+    }
+
     @Test
     fun `a set with kind rpe or group changes the fingerprint`() {
         val baseline = CloudSync.pushFingerprint(session, sets)

@@ -8,6 +8,10 @@ import com.ironvellum.app.data.AppearanceStore
 import com.ironvellum.app.data.EffortSetting
 import com.ironvellum.app.data.Units
 import androidx.compose.runtime.snapshots.Snapshot
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.FeedCard
+import com.ironvellum.app.domain.FeedCardJson
+import com.ironvellum.app.domain.RepBook
 import com.ironvellum.app.domain.SnapshotInput
 import com.ironvellum.app.domain.WebSnapshotBuilder
 import com.ironvellum.app.domain.WebSnapshotJson
@@ -58,6 +62,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -247,7 +252,13 @@ class CloudSync(
             val onServer = serverLocalIds(client, me.userId)
             val storedWatermark = repo.pushWatermark()
             val watermark = storedWatermark.filterKeys { it in onServer }
-            val pending = pendingForPush(completed, watermark)
+            // The friend-safe cards join the push from schema 32 on. They are part of each workout's fingerprint
+            // then, so the first sync against a backend that reached 32 re-sends every workout once with its card,
+            // and an amended one refreshes it. A card that cannot be built never blocks the training push.
+            val cards = if (feedReady(schemaVersion)) {
+                runCatching { FeedCardJson.cards(completed, repo.observeExercises().first().associateBy { it.id }) }.getOrNull()
+            } else null
+            val pending = pendingForPush(completed, watermark, cards.orEmpty())
             val level = Xp.progress(profile.totalXp).level
             // Same rule as Today and the deeds: rest days are rest, so the
             // leaderboard cannot publish a different streak from the one the
@@ -381,21 +392,7 @@ class CloudSync(
             var setCount = 0
             for (batch in pending.chunked(SESSION_BATCH)) {
                 val pushedBatch = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
-                val sessionDtos = batch.map { (session, _) ->
-                    SessionDto(
-                        userId = me.userId,
-                        localId = session.id,
-                        label = session.label,
-                        startedAt = Instant.ofEpochMilli(session.startedAtMs).toString(),
-                        completedAt = session.completedAtMs?.let { Instant.ofEpochMilli(it).toString() },
-                        xpAwarded = session.xpAwarded,
-                        strengthScore = session.strengthScore,
-                        title = session.title,
-                        note = session.note,
-                        audience = session.audience.wire,
-                        editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
-                    )
-                }
+                val sessionDtos = batch.map { (session, _) -> sessionDto(me.userId, session, cards) }
                 chunks(sessionDtos).forEach { rows ->
                     client.postgrest.from("sessions").upsert(rows) {
                         onConflict = "user_id,local_id"
@@ -516,7 +513,7 @@ class CloudSync(
                 }
                 sessionCount += sessionDtos.size
                 pushedNow += pushedBatch
-                pushedBatch.forEach { (session, sets) -> progress[session.id] = pushFingerprint(session, sets) }
+                pushedBatch.forEach { (session, sets) -> progress[session.id] = pushFingerprint(session, sets, cards?.get(session.id)) }
                 repo.recordPushWatermark(progress.filterKeys { it in completedIds })
             }
 
@@ -1861,9 +1858,10 @@ class CloudSync(
         internal fun pendingForPush(
             completed: List<Pair<WorkoutSession, List<SessionSet>>>,
             watermark: Map<Long, Int>,
+            cards: Map<Long, FeedCard> = emptyMap(),
         ): List<Pair<WorkoutSession, List<SessionSet>>> = completed
             .filterNot { (session, _) -> session.imported }
-            .filter { (session, sets) -> pushFingerprint(session, sets) != watermark[session.id] }
+            .filter { (session, sets) -> pushFingerprint(session, sets, cards[session.id]) != watermark[session.id] }
         internal fun pendingImportedForPush(
             completed: List<Pair<WorkoutSession, List<SessionSet>>>,
             watermark: Map<Long, Int>,
@@ -1917,6 +1915,29 @@ class CloudSync(
 
         internal fun webReady(version: Int?): Boolean = version != null && version >= 30
 
+        /** The friend-safe workout card needs the schema that added `sessions.feed_card`. */
+        internal fun feedReady(version: Int?): Boolean = version != null && version >= 32
+
+        /** [FeedCardJson.build] for one workout: null for an imported one or one with no done set. */
+        internal fun feedCardFor(session: WorkoutSession, sets: List<SessionSet>, book: RepBook, exercises: Map<Long, Exercise>): FeedCard? =
+            FeedCardJson.build(session, sets, book, exercises)
+
+        /** [cards] is null below schema 32: the `feed_card` key is then left out of the row entirely. */
+        internal fun sessionDto(userId: String, session: WorkoutSession, cards: Map<Long, FeedCard>?): SessionDto = SessionDto(
+            userId = userId,
+            localId = session.id,
+            label = session.label,
+            startedAt = Instant.ofEpochMilli(session.startedAtMs).toString(),
+            completedAt = session.completedAtMs?.let { Instant.ofEpochMilli(it).toString() },
+            xpAwarded = session.xpAwarded,
+            strengthScore = session.strengthScore,
+            title = session.title,
+            note = session.note,
+            audience = session.audience.wire,
+            editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
+            feedCard = cards?.let { map -> map[session.id]?.let { FeedCardJson.element(it) } ?: JsonNull },
+        )
+
         internal fun detailRows(userId: String, cloudId: String, sets: List<SessionSet>): List<SessionSetDetailDto> {
             val indexes = wireSetIndexes(sets)
             return sets.mapIndexedNotNull { index, set ->
@@ -1931,7 +1952,7 @@ class CloudSync(
          * uploads, sets included. Equality with the stored watermark means
          * "the cloud already holds exactly this", so the session is skipped.
          */
-        internal fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int {
+        internal fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>, card: FeedCard? = null): Int {
             val fields = arrayOf<Any?>(
                 session.label,
                 session.title,
@@ -1963,6 +1984,9 @@ class CloudSync(
             val extra = buildList<Any> {
                 if (session.audience != SessionAudience.PROFILE) add(session.audience.wire)
                 session.editedAtMs?.let { add(it) }
+                // The card joins only from schema 32, so a fingerprint taken below it is unchanged. It is the
+                // serialised text, never an object hash: that would differ on every process start.
+                card?.let { add(FeedCardJson.write(it)) }
             }
             // The sentinel is reserved for tombstones; a real fingerprint must not equal it.
             return Objects.hash(*fields, *extra.toTypedArray()).let {

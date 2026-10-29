@@ -49,6 +49,12 @@ Code references:
 - Code: `CS` `push()`; `M1` `sessions`, `session_sets`,
   `session_set_details`, `imported_sessions` and `imported_session_sets`.
 
+- On schema 32 or newer each completed workout also carries a small friend-safe
+  card in `sessions.feed_card` (hard sets, tonnes of loaded work, record lifts
+  with load and reps as logged, muscle levels 0 to 3; no strength estimate and
+  nothing derived from body weight). It follows the workout's own audience: it
+  is shared exactly as the workout already is, and never beyond it.
+
 ### Fitness info — web stats snapshot (collected, not shared)
 - On schema 31 or newer, signed-in sync uploads one owner-only `web_snapshots`
   row containing phone-computed lift and workout figures, weekly sets, fatigue,

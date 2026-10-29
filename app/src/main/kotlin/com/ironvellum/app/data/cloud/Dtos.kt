@@ -8,6 +8,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
@@ -105,6 +106,11 @@ data class SessionDto(
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     @SerialName("edited_at") val editedAt: String? = null,
+    // The friend-safe card (schema 32). Absent (the default) on a backend below 32: an unknown column would fail
+    // the whole upsert with PGRST204. On 32 it is the card object, or an explicit JsonNull to clear a stale one.
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("feed_card") val feedCard: JsonElement? = null,
 )
 
 /** Just enough of a pushed set row to find the ones an amendment removed. */
