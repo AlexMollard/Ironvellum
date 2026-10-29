@@ -7,7 +7,7 @@
  -->
     <string name="widget_today_label">今天</string>
     <string name="widget_today_description">今日计划及开始训练的按钮。</string>
-    <string name="widget_week_label">连续打卡 &amp;amp; 本周</string>
+    <string name="widget_week_label">连续打卡 &amp; 本周</string>
     <string name="widget_week_description">一览连续打卡与本周情况，并可开始今日训练。</string>
     <string name="settings_summons_evening_label">晚间提醒</string>
     <string name="settings_summons_evening_caption">周计划中有尚未开始的计划时，当晚提醒一次。</string>
@@ -2020,12 +2020,12 @@
     <string name="forge_priorities_label">优先训练 · 最多 3 项 · 已选 %1$d 项</string>
     <string name="forge_priorities_caption">每项优先训练的肌肉每周会额外增加一到两组高强度训练。不选择则所有肌肉一视同仁。</string>
     <string name="forge_starting_sets_label">起始组数</string>
-    <string name="forge_compound_label">仅复合动作 &amp;amp; 技能</string>
-    <string name="forge_compound_label__t">仅复合动作 &amp;amp; 绝技</string>
-    <string name="forge_compound_on_description">仅复合动作 &amp;amp; 技能，已开启</string>
-    <string name="forge_compound_on_description__t">仅复合动作 &amp;amp; 绝技，已开启</string>
-    <string name="forge_compound_off_description">仅复合动作 &amp;amp; 技能，已关闭</string>
-    <string name="forge_compound_off_description__t">仅复合动作 &amp;amp; 绝技，已关闭</string>
+    <string name="forge_compound_label">仅复合动作 &amp; 技能</string>
+    <string name="forge_compound_label__t">仅复合动作 &amp; 绝技</string>
+    <string name="forge_compound_on_description">仅复合动作 &amp; 技能，已开启</string>
+    <string name="forge_compound_on_description__t">仅复合动作 &amp; 绝技，已开启</string>
+    <string name="forge_compound_off_description">仅复合动作 &amp; 技能，已关闭</string>
+    <string name="forge_compound_off_description__t">仅复合动作 &amp; 绝技，已关闭</string>
     <string name="forge_compound_caption">不包含弯举、平举、小腿、臀桥或器械孤立训练。</string>
     <string name="forge_max_exercises_label">每个计划的最大动作数</string>
     <string name="forge_max_exercises_label__t">每个仪轨的最大动作数</string>
@@ -2104,8 +2104,8 @@
     </plurals>
     <string name="builder_error_history">无法读取你的历史：%1$s</string>
     <string name="builder_error_history__t">无法翻阅你的编年史：%1$s</string>
-    <string name="builder_error_isolation_only">只有孤立动作能填补缺口。请在更多选项中关闭“仅复合动作 &amp;amp; 技法”以添加。</string>
-    <string name="builder_error_isolation_only__t">唯有孤立动作能填补缺口。请在更多选项中关闭“仅复合动作 &amp;amp; 绝技”以纳入。</string>
+    <string name="builder_error_isolation_only">只有孤立动作能填补缺口。请在更多选项中关闭“仅复合动作 &amp; 技法”以添加。</string>
+    <string name="builder_error_isolation_only__t">唯有孤立动作能填补缺口。请在更多选项中关闭“仅复合动作 &amp; 绝技”以纳入。</string>
     <string name="builder_error_week_covered">你的周计划已让每块肌肉达到目标。选择全身、上肢或下肢来添加一项计划。</string>
     <string name="builder_error_week_covered__t">你的循环已让每块肌肉达到目标。选择全身、上肢或下肢，另铸一项仪轨。</string>
     <string name="builder_error_cannot_fill">动作目录中没有足够适合你器械的动作来填充此计划。</string>
@@ -3056,10 +3056,10 @@
     <string name="program_why_reps_strength_isolation">次数设为 %1$d（%2$d-%3$d）：辅助动作以较高次数增肌</string>
     <string name="program_why_reps_general_compound">次数设为 %1$d（%2$d-%3$d）：复合动作保持较大负重</string>
     <string name="program_why_reps_general_isolation">次数设为 %1$d（%2$d-%3$d）：辅助动作以较高次数承担训练容量</string>
-    <string name="program_why_swap_compound">替换为 %1$s：已启用仅复合动作 &amp;amp; 技法，且此动作训练相同肌肉</string>
-    <string name="program_why_swap_compound__t">换为 %1$s：仅保留复合动作 &amp;amp; 绝技，且覆盖相同肌肉</string>
-    <string name="program_why_removed_compound">已移除：启用仅复合动作 &amp;amp; 技法后，没有动作可替代其肌肉训练</string>
-    <string name="program_why_removed_compound__t">已移除：仅保留复合动作 &amp;amp; 绝技时，无动作可替代其肌肉训练</string>
+    <string name="program_why_swap_compound">替换为 %1$s：已启用仅复合动作 &amp; 技法，且此动作训练相同肌肉</string>
+    <string name="program_why_swap_compound__t">换为 %1$s：仅保留复合动作 &amp; 绝技，且覆盖相同肌肉</string>
+    <string name="program_why_removed_compound">已移除：启用仅复合动作 &amp; 技法后，没有动作可替代其肌肉训练</string>
+    <string name="program_why_removed_compound__t">已移除：仅保留复合动作 &amp; 绝技时，无动作可替代其肌肉训练</string>
     <string name="program_why_swap_stretch">替换为 %1$s：让 %2$s 在拉伸位承受负重，更有利于增长</string>
     <string name="program_target_muscle_fallback">目标肌肉</string>
     <string name="program_why_sets_floor">组数 %1$d → 2：一组的训练量不足以取得进步</string>
@@ -3076,8 +3076,8 @@
     <string name="program_sex_note">男女使用相同的周计划；负重根据你自己的估计 1RM 调整（%1$s）。</string>
     <string name="program_sex_note__t">男女遵循相同的循环；负重依据你自身的估计 1RM 调整（%1$s）。</string>
     <string name="program_why_dumbbell_light">你的哑铃对 %1$s 来说太轻；%2$s 更难</string>
-    <string name="program_why_template_compound_only">仅复合动作 &amp;amp; 技法：用 %1$s 替代 %2$s</string>
-    <string name="program_why_template_compound_only__t">仅复合动作 &amp;amp; 绝技：以 %1$s 代替 %2$s</string>
+    <string name="program_why_template_compound_only">仅复合动作 &amp; 技法：用 %1$s 替代 %2$s</string>
+    <string name="program_why_template_compound_only__t">仅复合动作 &amp; 绝技：以 %1$s 代替 %2$s</string>
     <string name="program_why_template_nothing">你的器械无法完成 %1$s；%2$s 是最接近的替代动作</string>
     <string name="program_why_template_nothing__t">军械库无法支持 %1$s；%2$s 是最接近的替代动作</string>
     <string name="program_why_template_stretch">针对你的 %1$s，在完全拉伸位训练</string>
@@ -3090,7 +3090,7 @@
     <string name="program_gear_parallettes">低双杠</string>
     <string name="program_gear_rings">吊环</string>
     <string name="program_gear_dumbbells">哑铃</string>
-    <string name="program_gear_barbell">杠铃 &amp;amp; 杠铃架</string>
+    <string name="program_gear_barbell">杠铃 &amp; 杠铃架</string>
     <string name="program_gear_bench">训练凳</string>
     <string name="program_gear_ab_wheel">健腹轮</string>
     <string name="program_volume_low">低</string>
@@ -3537,14 +3537,14 @@
     <plurals name="chart_summary_gaps_range">
         <item quantity="other">图表包含 %1$d 个数值，%3$d 个位置中有 %2$d 个为空。最新为 %4$s，最低为 %5$s，最高为 %6$s。范围为 %7$s 至 %8$s。</item>
     </plurals>
-    <string name="accent_emerald_gold">翡翠 &amp;amp; 金</string>
-    <string name="accent_sapphire_amber">蓝宝石 &amp;amp; 琥珀</string>
-    <string name="accent_violet_rose">紫罗兰 &amp;amp; 玫瑰</string>
-    <string name="accent_ice_copper">冰蓝 &amp;amp; 铜</string>
-    <string name="accent_forest_gold">森林绿 &amp;amp; 金</string>
-    <string name="accent_oxblood_gold">牛血红 &amp;amp; 金</string>
-    <string name="accent_ink_gold">墨黑 &amp;amp; 金</string>
-    <string name="accent_copper_teal">铜 &amp;amp; 青绿</string>
+    <string name="accent_emerald_gold">翡翠 &amp; 金</string>
+    <string name="accent_sapphire_amber">蓝宝石 &amp; 琥珀</string>
+    <string name="accent_violet_rose">紫罗兰 &amp; 玫瑰</string>
+    <string name="accent_ice_copper">冰蓝 &amp; 铜</string>
+    <string name="accent_forest_gold">森林绿 &amp; 金</string>
+    <string name="accent_oxblood_gold">牛血红 &amp; 金</string>
+    <string name="accent_ink_gold">墨黑 &amp; 金</string>
+    <string name="accent_copper_teal">铜 &amp; 青绿</string>
     <string name="rank_band_unranked">未评级</string>
     <string name="rank_band_untrained">未训练</string>
     <string name="rank_band_novice">新手</string>

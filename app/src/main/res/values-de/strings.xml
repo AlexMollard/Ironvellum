@@ -7,7 +7,7 @@
  -->
     <string name="widget_today_label">Heute</string>
     <string name="widget_today_description">Deine heutige Routine und ein Startknopf.</string>
-    <string name="widget_week_label">Serie &amp;amp; Woche</string>
+    <string name="widget_week_label">Serie &amp; Woche</string>
     <string name="widget_week_description">Deine Serie und Woche auf einen Blick, mit Startknopf fürs heutige Training.</string>
     <string name="settings_summons_evening_label">Abenderinnerung</string>
     <string name="settings_summons_evening_caption">Eine Erinnerung am Abend, wenn du eine geplante Routine noch nicht begonnen hast.</string>
@@ -34,8 +34,8 @@
     <string name="concept_true_name_c__t">Wahrer Name</string>
     <string name="concept_true_name_pl">Anzeigenamen</string>
     <string name="concept_true_name_pl__t">Wahre Namen</string>
-    <string name="concept_true_name_a">der Anzeigename</string>
-    <string name="concept_true_name_a__t">der Wahre Name</string>
+    <string name="concept_true_name_a">ein Anzeigename</string>
+    <string name="concept_true_name_a__t">ein wahrer Name</string>
     <string name="concept_folio_s">Profil</string>
     <string name="concept_folio_s__t">Foliant</string>
     <string name="concept_folio_c">Profil</string>
@@ -54,8 +54,8 @@
     <string name="concept_rite_cpl__t">Riten</string>
     <string name="concept_rite_upl">ROUTINEN</string>
     <string name="concept_rite_upl__t">RITEN</string>
-    <string name="concept_rite_a">die Routine</string>
-    <string name="concept_rite_a__t">der Ritus</string>
+    <string name="concept_rite_a">eine Routine</string>
+    <string name="concept_rite_a__t">ein Ritus</string>
     <string name="concept_rite_ca">Die Routine</string>
     <string name="concept_rite_ca__t">Der Ritus</string>
     <string name="concept_cycle_s">Wochenplan</string>
@@ -70,8 +70,8 @@
     <string name="concept_cycle_pl__t">Zyklen</string>
     <string name="concept_cycle_cpl">Wochenpläne</string>
     <string name="concept_cycle_cpl__t">Zyklen</string>
-    <string name="concept_cycle_a">der Wochenplan</string>
-    <string name="concept_cycle_a__t">der Zyklus</string>
+    <string name="concept_cycle_a">ein Wochenplan</string>
+    <string name="concept_cycle_a__t">ein Zyklus</string>
     <string name="concept_trial_s">Training</string>
     <string name="concept_trial_s__t">Prüfung</string>
     <string name="concept_trial_c">Training</string>
@@ -86,8 +86,8 @@
     <string name="concept_trial_cpl__t">Prüfungen</string>
     <string name="concept_trial_upl">TRAININGS</string>
     <string name="concept_trial_upl__t">PRÜFUNGEN</string>
-    <string name="concept_trial_a">das Training</string>
-    <string name="concept_trial_a__t">die Prüfung</string>
+    <string name="concept_trial_a">ein Training</string>
+    <string name="concept_trial_a__t">eine Prüfung</string>
     <string name="concept_trial_ca">Das Training</string>
     <string name="concept_trial_ca__t">Die Prüfung</string>
     <string name="always_trial_name">Prüfung</string>
@@ -95,8 +95,8 @@
     <string name="concept_open_trial_s__t">Offene Prüfung</string>
     <string name="concept_open_trial_c">Freies Training</string>
     <string name="concept_open_trial_c__t">Offene Prüfung</string>
-    <string name="concept_open_trial_a">das freie Training</string>
-    <string name="concept_open_trial_a__t">die offene Prüfung</string>
+    <string name="concept_open_trial_a">ein freies Training</string>
+    <string name="concept_open_trial_a__t">eine offene Prüfung</string>
     <string name="concept_seal_s">abschließen</string>
     <string name="concept_seal_s__t">besiegeln</string>
     <string name="concept_seal_c">Abschließen</string>
@@ -109,8 +109,8 @@
     <string name="concept_sealed_c__t">Besiegelt</string>
     <string name="concept_sealed_u">ABGESCHLOSSEN</string>
     <string name="concept_sealed_u__t">BESIEGELT</string>
-    <string name="concept_sealed_a">das abgeschlossene</string>
-    <string name="concept_sealed_a__t">das besiegelte</string>
+    <string name="concept_sealed_a">ein abgeschlossenes</string>
+    <string name="concept_sealed_a__t">ein besiegeltes</string>
     <string name="concept_sealed_ca">Das abgeschlossene</string>
     <string name="concept_sealed_ca__t">Das besiegelte</string>
     <string name="concept_sealing_s">abschließen</string>
@@ -149,8 +149,8 @@
     <string name="concept_peak_cpl__t">Gipfel</string>
     <string name="concept_peak_upl">BESTLEISTUNGEN</string>
     <string name="concept_peak_upl__t">GIPFEL</string>
-    <string name="concept_peak_a">die Bestleistung</string>
-    <string name="concept_peak_a__t">der Gipfel</string>
+    <string name="concept_peak_a">eine Bestleistung</string>
+    <string name="concept_peak_a__t">ein Gipfel</string>
     <string name="concept_oath_s">Serie</string>
     <string name="concept_oath_s__t">Eid</string>
     <string name="concept_oath_c">Serie</string>
@@ -159,8 +159,8 @@
     <string name="concept_oath_t__t">Eid</string>
     <string name="concept_oath_pl">Serien</string>
     <string name="concept_oath_pl__t">Eide</string>
-    <string name="concept_oath_a">die Serie</string>
-    <string name="concept_oath_a__t">der Eid</string>
+    <string name="concept_oath_a">eine Serie</string>
+    <string name="concept_oath_a__t">ein Eid</string>
     <string name="always_oath_name">Eid</string>
     <string name="concept_respite_s">Ruhetag</string>
     <string name="concept_respite_s__t">Rasttag</string>
@@ -176,8 +176,8 @@
     <string name="concept_pattern_s__t">Muster</string>
     <string name="concept_pattern_cpl">Vorlagen</string>
     <string name="concept_pattern_cpl__t">Muster</string>
-    <string name="concept_pattern_a">die Vorlage</string>
-    <string name="concept_pattern_a__t">das Muster</string>
+    <string name="concept_pattern_a">eine Vorlage</string>
+    <string name="concept_pattern_a__t">ein Muster</string>
     <string name="concept_forge_s">erstellen</string>
     <string name="concept_forge_s__t">schmieden</string>
     <string name="concept_forge_c">Erstellen</string>
@@ -213,8 +213,8 @@
     <string name="concept_path_s__t">Pfad</string>
     <string name="concept_path_pl">Fähigkeitenbäume</string>
     <string name="concept_path_pl__t">Pfade</string>
-    <string name="concept_path_a">der Fähigkeitenbaum</string>
-    <string name="concept_path_a__t">der Pfad</string>
+    <string name="concept_path_a">ein Fähigkeitenbaum</string>
+    <string name="concept_path_a__t">ein Pfad</string>
     <string name="concept_paths_c">Fähigkeiten</string>
     <string name="concept_paths_c__t">Pfade</string>
     <string name="concept_paths_u">FÄHIGKEITEN</string>
@@ -231,8 +231,8 @@
     <string name="concept_technique_pl__t">Künste</string>
     <string name="concept_technique_cpl">Fähigkeiten</string>
     <string name="concept_technique_cpl__t">Künste</string>
-    <string name="concept_technique_a">die Fähigkeit</string>
-    <string name="concept_technique_a__t">die Kunst</string>
+    <string name="concept_technique_a">eine Fähigkeit</string>
+    <string name="concept_technique_a__t">eine Kunst</string>
     <string name="always_technique_name">Kunst</string>
     <string name="concept_claim_s">als gemeistert markieren</string>
     <string name="concept_claim_s__t">beanspruchen</string>
@@ -280,8 +280,8 @@
     <string name="concept_ally_tpl__t">Verbündete</string>
     <string name="concept_ally_upl">FREUNDE</string>
     <string name="concept_ally_upl__t">VERBÜNDETE</string>
-    <string name="concept_ally_a">der Freund</string>
-    <string name="concept_ally_a__t">der Verbündete</string>
+    <string name="concept_ally_a">ein Freund</string>
+    <string name="concept_ally_a__t">ein Verbündeter</string>
     <string name="concept_circle_s">Gruppe</string>
     <string name="concept_circle_s__t">Bund</string>
     <string name="concept_circle_c">Gruppe</string>
@@ -290,8 +290,8 @@
     <string name="concept_circle_pl__t">Bünde</string>
     <string name="concept_circle_cpl">Gruppen</string>
     <string name="concept_circle_cpl__t">Bünde</string>
-    <string name="concept_circle_a">die Gruppe</string>
-    <string name="concept_circle_a__t">der Bund</string>
+    <string name="concept_circle_a">eine Gruppe</string>
+    <string name="concept_circle_a__t">ein Bund</string>
     <string name="concept_circle_ca">Die Gruppe</string>
     <string name="concept_circle_ca__t">Der Bund</string>
     <string name="concept_keeper_s">Besitzer</string>
@@ -314,8 +314,8 @@
     <string name="concept_reckoning_c__t">Abrechnung</string>
     <string name="concept_reckoning_pl">Ranglisten</string>
     <string name="concept_reckoning_pl__t">Abrechnungen</string>
-    <string name="concept_reckoning_a">die Rangliste</string>
-    <string name="concept_reckoning_a__t">die Abrechnung</string>
+    <string name="concept_reckoning_a">eine Rangliste</string>
+    <string name="concept_reckoning_a__t">eine Abrechnung</string>
     <string name="concept_the_reckoning_s">Rangliste</string>
     <string name="concept_the_reckoning_s__t">die Abrechnung</string>
     <string name="concept_the_reckoning_t">Rangliste</string>
@@ -352,8 +352,8 @@
     <string name="concept_remark_cpl__t">Bemerkungen</string>
     <string name="concept_remark_upl">KOMMENTARE</string>
     <string name="concept_remark_upl__t">BEMERKUNGEN</string>
-    <string name="concept_remark_a">der Kommentar</string>
-    <string name="concept_remark_a__t">die Bemerkung</string>
+    <string name="concept_remark_a">ein Kommentar</string>
+    <string name="concept_remark_a__t">eine Bemerkung</string>
     <string name="concept_missive_s">Nachricht</string>
     <string name="concept_missive_s__t">Botschaft</string>
     <string name="concept_missive_pl">Nachrichten</string>
@@ -899,8 +899,8 @@
     <string name="settings_data_restore_confirm_button">Wiederherstellen</string>
     <string name="settings_data_restore_keep_button">Lokale Daten behalten</string>
     <string name="settings_health_intro">Liest Körper-, Aktivitäts- und Schlafdaten. Schreibt nur, was du unten aktivierst.</string>
-    <string name="settings_health_connect_button">Verbinden &amp;amp; synchronisieren</string>
-    <string name="settings_health_heart_rate_missing">Die Herzfrequenz wird nicht mit Ironvellum geteilt, daher bleibt der Ruhepuls leer. Verbinden &amp;amp; synchronisieren fragt sie an.</string>
+    <string name="settings_health_connect_button">Verbinden &amp; synchronisieren</string>
+    <string name="settings_health_heart_rate_missing">Die Herzfrequenz wird nicht mit Ironvellum geteilt, daher bleibt der Ruhepuls leer. Verbinden &amp; synchronisieren fragt sie an.</string>
     <plurals name="settings_health_steps_today">
         <item quantity="one">%1$d Schritt heute</item>
         <item quantity="other">%1$d Schritte heute</item>
@@ -1011,7 +1011,7 @@
     </plurals>
     <string name="settings_advanced_crash_share_title">Ironvellum-Absturzprotokoll teilen</string>
     <string name="settings_advanced_coverage_label">Health-Connect-Abdeckung</string>
-    <string name="settings_advanced_coverage_empty">Erfasste Tage pro Messgröße; erscheint nach Verbinden &amp;amp; synchronisieren.</string>
+    <string name="settings_advanced_coverage_empty">Erfasste Tage pro Messgröße; erscheint nach Verbinden &amp; synchronisieren.</string>
     <string name="settings_profile_height_error">Größe muss %1$d–%2$d cm betragen</string>
     <string name="settings_profile_rename_failed">Name konnte nicht geändert werden</string>
     <string name="settings_export_error">Export fehlgeschlagen: %1$s</string>
@@ -1072,7 +1072,7 @@
     <string name="onboarding_welcome_import_action">Trainings aus CSV-Datei importieren</string>
     <string name="onboarding_welcome_import_action__t">Prüfungen aus CSV-Datei übernehmen</string>
     <string name="onboarding_welcome_begin_button">Beginnen</string>
-    <string name="onboarding_prefs_title">Mach es zu deinem</string>
+    <string name="onboarding_prefs_title">Ganz nach deinem Geschmack</string>
     <string name="onboarding_prefs_intro">Wähle Namen für Trainings und Routinen, die Gewichtseinheit und die Farben.</string>
     <string name="onboarding_prefs_intro__t">Wähle Namen für Prüfungen und Riten, die Gewichtseinheit und die Farben.</string>
     <string name="onboarding_prefs_names_title">Namen</string>
@@ -2116,12 +2116,12 @@
     <string name="forge_priorities_label">Prioritäten · bis zu 3 · %1$d gewählt</string>
     <string name="forge_priorities_caption">Prioritäten erhalten jede Woche ein bis zwei zusätzliche harte Sätze. Ohne Auswahl werden alle Muskeln gleich behandelt.</string>
     <string name="forge_starting_sets_label">Anfangssätze</string>
-    <string name="forge_compound_label">Nur Verbundübungen &amp;amp; Fähigkeiten</string>
-    <string name="forge_compound_label__t">Nur Verbundübungen &amp;amp; Künste</string>
-    <string name="forge_compound_on_description">Nur Verbundübungen &amp;amp; Fähigkeiten, an</string>
-    <string name="forge_compound_on_description__t">Nur Verbundübungen &amp;amp; Künste, an</string>
-    <string name="forge_compound_off_description">Nur Verbundübungen &amp;amp; Fähigkeiten, aus</string>
-    <string name="forge_compound_off_description__t">Nur Verbundübungen &amp;amp; Künste, aus</string>
+    <string name="forge_compound_label">Nur Verbundübungen &amp; Fähigkeiten</string>
+    <string name="forge_compound_label__t">Nur Verbundübungen &amp; Künste</string>
+    <string name="forge_compound_on_description">Nur Verbundübungen &amp; Fähigkeiten, an</string>
+    <string name="forge_compound_on_description__t">Nur Verbundübungen &amp; Künste, an</string>
+    <string name="forge_compound_off_description">Nur Verbundübungen &amp; Fähigkeiten, aus</string>
+    <string name="forge_compound_off_description__t">Nur Verbundübungen &amp; Künste, aus</string>
     <string name="forge_compound_caption">Keine Curls, Hebeübungen, Waden-, Brücken- oder Maschinenisolationsübungen.</string>
     <string name="forge_max_exercises_label">Max. Übungen pro Routine</string>
     <string name="forge_max_exercises_label__t">Max. Übungen pro Ritus</string>
@@ -2213,8 +2213,8 @@
     </plurals>
     <string name="builder_error_history">Dein Verlauf konnte nicht gelesen werden: %1$s</string>
     <string name="builder_error_history__t">Deine Chronik konnte nicht gelesen werden: %1$s</string>
-    <string name="builder_error_isolation_only">Nur Isolationsübungen würden die Lücken füllen. Deaktiviere unter Weitere Optionen „Nur Verbund &amp;amp; Fähigkeiten“, um sie hinzuzufügen.</string>
-    <string name="builder_error_isolation_only__t">Nur Isolationsübungen füllen die Lücken. Deaktiviere unter Weitere Optionen „Nur Verbund &amp;amp; Künste“, um sie aufzunehmen.</string>
+    <string name="builder_error_isolation_only">Nur Isolationsübungen würden die Lücken füllen. Deaktiviere unter Weitere Optionen „Nur Verbund &amp; Fähigkeiten“, um sie hinzuzufügen.</string>
+    <string name="builder_error_isolation_only__t">Nur Isolationsübungen füllen die Lücken. Deaktiviere unter Weitere Optionen „Nur Verbund &amp; Künste“, um sie aufzunehmen.</string>
     <string name="builder_error_week_covered">Dein Wochenplan erreicht bereits das Ziel für jeden Muskel. Wähle Ganzkörper, Oberkörper oder Unterkörper für eine zusätzliche Routine.</string>
     <string name="builder_error_week_covered__t">Dein Zyklus erreicht bereits das Ziel für jeden Muskel. Wähle Ganzkörper, Oberkörper oder Unterkörper für einen weiteren Ritus.</string>
     <string name="builder_error_cannot_fill">Der Katalog kann diese Routine mit deiner Ausrüstung nicht füllen.</string>
@@ -3229,10 +3229,10 @@
     <string name="program_why_reps_strength_isolation">Wdh. auf %1$d gesetzt (%2$d–%3$d): Zusatzübungen bauen mit mehr Wdh. Muskeln auf</string>
     <string name="program_why_reps_general_compound">Wdh. auf %1$d gesetzt (%2$d–%3$d): Grundübungen bleiben schwer</string>
     <string name="program_why_reps_general_isolation">Wdh. auf %1$d gesetzt (%2$d–%3$d): Zusatzübungen liefern Volumen mit mehr Wdh.</string>
-    <string name="program_why_swap_compound">Zu %1$s gewechselt: nur Grundübungen &amp;amp; Fähigkeiten, und sie trainiert dieselben Muskeln</string>
-    <string name="program_why_swap_compound__t">Gegen %1$s getauscht: nur Grundübungen &amp;amp; Künste, und sie trainiert dieselben Muskeln</string>
-    <string name="program_why_removed_compound">Entfernt: Bei nur Grundübungen &amp;amp; Fähigkeiten ersetzt nichts ihre Muskeln</string>
-    <string name="program_why_removed_compound__t">Entfernt: Bei nur Grundübungen &amp;amp; Künsten ersetzt nichts ihre Muskeln</string>
+    <string name="program_why_swap_compound">Zu %1$s gewechselt: nur Grundübungen &amp; Fähigkeiten, und sie trainiert dieselben Muskeln</string>
+    <string name="program_why_swap_compound__t">Gegen %1$s getauscht: nur Grundübungen &amp; Künste, und sie trainiert dieselben Muskeln</string>
+    <string name="program_why_removed_compound">Entfernt: Bei nur Grundübungen &amp; Fähigkeiten ersetzt nichts ihre Muskeln</string>
+    <string name="program_why_removed_compound__t">Entfernt: Bei nur Grundübungen &amp; Künsten ersetzt nichts ihre Muskeln</string>
     <string name="program_why_swap_stretch">Zu %1$s gewechselt: belastet %2$s in Dehnung, wo mehr Wachstum entsteht</string>
     <string name="program_target_muscle_fallback">Zielmuskel</string>
     <string name="program_why_sets_floor">Sätze %1$d → 2: Ein Satz ist zu wenig für Fortschritt</string>
@@ -3249,8 +3249,8 @@
     <string name="program_sex_note">Gleicher Wochenplan für Männer und Frauen; Gewichte richten sich nach deinem geschätzten 1RM (%1$s).</string>
     <string name="program_sex_note__t">Gleicher Zyklus für Männer und Frauen; Gewichte richten sich nach deinem geschätzten 1RM (%1$s).</string>
     <string name="program_why_dumbbell_light">Deine Kurzhantel ist für %1$s zu leicht; %2$s ist schwerer</string>
-    <string name="program_why_template_compound_only">Nur Grundübungen &amp;amp; Fähigkeiten: %1$s ersetzt %2$s</string>
-    <string name="program_why_template_compound_only__t">Nur Grundübungen &amp;amp; Künste: %1$s tritt an die Stelle von %2$s</string>
+    <string name="program_why_template_compound_only">Nur Grundübungen &amp; Fähigkeiten: %1$s ersetzt %2$s</string>
+    <string name="program_why_template_compound_only__t">Nur Grundübungen &amp; Künste: %1$s tritt an die Stelle von %2$s</string>
     <string name="program_why_template_nothing">Deine Ausrüstung bietet nichts für %1$s; %2$s kommt am nächsten</string>
     <string name="program_why_template_nothing__t">Deine Waffenkammer bietet nichts für %1$s; %2$s kommt dem am nächsten</string>
     <string name="program_why_template_stretch">Für %1$s, unter voller Dehnung belastet</string>
@@ -3263,7 +3263,7 @@
     <string name="program_gear_parallettes">Parallettes</string>
     <string name="program_gear_rings">Ringe</string>
     <string name="program_gear_dumbbells">Kurzhanteln</string>
-    <string name="program_gear_barbell">Langhantel &amp;amp; Rack</string>
+    <string name="program_gear_barbell">Langhantel &amp; Rack</string>
     <string name="program_gear_bench">Bank</string>
     <string name="program_gear_ab_wheel">Bauchroller</string>
     <string name="program_volume_low">Niedrig</string>
@@ -3746,14 +3746,14 @@
         <item quantity="one">Diagramm mit %1$d Wert, %2$d von %3$d Feldern leer. Zuletzt %4$s, Tiefstwert %5$s, Höchstwert %6$s. Von %7$s bis %8$s.</item>
         <item quantity="other">Diagramm mit %1$d Werten, %2$d von %3$d Feldern leer. Zuletzt %4$s, Tiefstwert %5$s, Höchstwert %6$s. Von %7$s bis %8$s.</item>
     </plurals>
-    <string name="accent_emerald_gold">Smaragd &amp;amp; Gold</string>
-    <string name="accent_sapphire_amber">Saphir &amp;amp; Bernstein</string>
-    <string name="accent_violet_rose">Violett &amp;amp; Rosa</string>
-    <string name="accent_ice_copper">Eis &amp;amp; Kupfer</string>
-    <string name="accent_forest_gold">Wald &amp;amp; Gold</string>
-    <string name="accent_oxblood_gold">Ochsenblut &amp;amp; Gold</string>
-    <string name="accent_ink_gold">Tinte &amp;amp; Gold</string>
-    <string name="accent_copper_teal">Kupfer &amp;amp; Petrol</string>
+    <string name="accent_emerald_gold">Smaragd &amp; Gold</string>
+    <string name="accent_sapphire_amber">Saphir &amp; Bernstein</string>
+    <string name="accent_violet_rose">Violett &amp; Rosa</string>
+    <string name="accent_ice_copper">Eis &amp; Kupfer</string>
+    <string name="accent_forest_gold">Wald &amp; Gold</string>
+    <string name="accent_oxblood_gold">Ochsenblut &amp; Gold</string>
+    <string name="accent_ink_gold">Tinte &amp; Gold</string>
+    <string name="accent_copper_teal">Kupfer &amp; Petrol</string>
     <string name="rank_band_unranked">Ungewertet</string>
     <string name="rank_band_untrained">Untrainiert</string>
     <string name="rank_band_novice">Anfänger</string>

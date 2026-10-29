@@ -7,7 +7,7 @@
  -->
     <string name="widget_today_label">Aujourd’hui</string>
     <string name="widget_today_description">La routine du jour et son bouton de démarrage.</string>
-    <string name="widget_week_label">Série &amp;amp; semaine</string>
+    <string name="widget_week_label">Série &amp; semaine</string>
     <string name="widget_week_description">Ta série et ta semaine en bref, avec un bouton pour démarrer ta séance du jour.</string>
     <string name="settings_summons_evening_label">Rappel du soir</string>
     <string name="settings_summons_evening_caption">Un rappel le soir si tu n’as pas encore commencé la routine prévue dans ton plan hebdo.</string>
@@ -2116,12 +2116,12 @@
     <string name="forge_priorities_label">Priorités · 3 max · %1$d choisies</string>
     <string name="forge_priorities_caption">Chaque priorité reçoit une ou deux séries difficiles supplémentaires par semaine. Sans sélection, tous les muscles sont traités de la même façon.</string>
     <string name="forge_starting_sets_label">Séries initiales</string>
-    <string name="forge_compound_label">Polyarticulaires &amp;amp; compétences uniquement</string>
-    <string name="forge_compound_label__t">Polyarticulaires &amp;amp; arts uniquement</string>
-    <string name="forge_compound_on_description">Polyarticulaires &amp;amp; compétences uniquement, activé</string>
-    <string name="forge_compound_on_description__t">Polyarticulaires &amp;amp; arts uniquement, activé</string>
-    <string name="forge_compound_off_description">Polyarticulaires &amp;amp; compétences uniquement, désactivé</string>
-    <string name="forge_compound_off_description__t">Polyarticulaires &amp;amp; arts uniquement, désactivé</string>
+    <string name="forge_compound_label">Polyarticulaires &amp; compétences uniquement</string>
+    <string name="forge_compound_label__t">Polyarticulaires &amp; arts uniquement</string>
+    <string name="forge_compound_on_description">Polyarticulaires &amp; compétences uniquement, activé</string>
+    <string name="forge_compound_on_description__t">Polyarticulaires &amp; arts uniquement, activé</string>
+    <string name="forge_compound_off_description">Polyarticulaires &amp; compétences uniquement, désactivé</string>
+    <string name="forge_compound_off_description__t">Polyarticulaires &amp; arts uniquement, désactivé</string>
     <string name="forge_compound_caption">Pas de curls, élévations, mollets, ponts ou exercices d’isolation sur machine.</string>
     <string name="forge_max_exercises_label">Exercices max par routine</string>
     <string name="forge_max_exercises_label__t">Exercices max par rite</string>
@@ -2789,7 +2789,7 @@
     <string name="effort_hint_rir">Le RIR est le nombre de répétitions restantes ; 0 est ta limite.</string>
     <string name="setkind_working_label">Travail</string>
     <string name="setkind_working_blurb">Une série normale comptabilisée : elle rapporte des XP et peut établir un record.</string>
-    <string name="setkind_working_blurb__t">Une série normale inscrite au Registre : elle rapporte des XP et peut établir un sommet.</string>
+    <string name="setkind_working_blurb__t">Une série normale qui compte : elle rapporte des XP et peut établir un sommet.</string>
     <string name="setkind_warmup_label">Échauffement</string>
     <string name="setkind_warmup_tag">É</string>
     <string name="setkind_warmup_blurb">Une série légère pour te préparer. Elle ne rapporte ni XP, ni volume, ni record.</string>
@@ -3746,14 +3746,14 @@
         <item quantity="one">Graphique de %1$d valeur, %2$d cases vides sur %3$d. Dernière : %4$s, minimum : %5$s, maximum : %6$s. Du %7$s au %8$s.</item>
         <item quantity="other">Graphique de %1$d valeurs, %2$d cases vides sur %3$d. Dernière : %4$s, minimum : %5$s, maximum : %6$s. Du %7$s au %8$s.</item>
     </plurals>
-    <string name="accent_emerald_gold">Émeraude &amp;amp; or</string>
-    <string name="accent_sapphire_amber">Saphir &amp;amp; ambre</string>
-    <string name="accent_violet_rose">Violet &amp;amp; rose</string>
-    <string name="accent_ice_copper">Glace &amp;amp; cuivre</string>
-    <string name="accent_forest_gold">Forêt &amp;amp; or</string>
-    <string name="accent_oxblood_gold">Bordeaux &amp;amp; or</string>
-    <string name="accent_ink_gold">Encre &amp;amp; or</string>
-    <string name="accent_copper_teal">Cuivre &amp;amp; sarcelle</string>
+    <string name="accent_emerald_gold">Émeraude &amp; or</string>
+    <string name="accent_sapphire_amber">Saphir &amp; ambre</string>
+    <string name="accent_violet_rose">Violet &amp; rose</string>
+    <string name="accent_ice_copper">Glace &amp; cuivre</string>
+    <string name="accent_forest_gold">Forêt &amp; or</string>
+    <string name="accent_oxblood_gold">Bordeaux &amp; or</string>
+    <string name="accent_ink_gold">Encre &amp; or</string>
+    <string name="accent_copper_teal">Cuivre &amp; sarcelle</string>
     <string name="rank_band_unranked">Non classé</string>
     <string name="rank_band_untrained">Désentraîné</string>
     <string name="rank_band_novice">Débutant</string>
@@ -5069,8 +5069,8 @@
     <string name="circle_stay_button">Rester</string>
     <string name="circle_paid_name_fallback">Le groupe</string>
     <string name="circle_paid_name_fallback__t">Le cercle</string>
-    <string name="circle_pitch">Forme un groupe de 8 amis maximum — partagez un code et poursuivez un objectif hebdomadaire commun.</string>
-    <string name="circle_pitch__t">Forme un cercle de 8 alliés maximum — partagez un code et poursuivez un objectif hebdomadaire commun.</string>
+    <string name="circle_pitch">Forme un groupe de 8 amis maximum — partage un code et poursuis un objectif hebdomadaire commun.</string>
+    <string name="circle_pitch__t">Forme un cercle de 8 alliés maximum — partage un code et poursuis un objectif hebdomadaire commun.</string>
     <string name="circle_join_button">Rejoindre un groupe</string>
     <string name="circle_join_button__t">Rejoindre un cercle</string>
     <string name="circle_goal_met">Objectif atteint</string>

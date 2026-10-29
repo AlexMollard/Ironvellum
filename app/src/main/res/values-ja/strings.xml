@@ -2020,12 +2020,12 @@
     <string name="forge_priorities_label">優先部位 · 最大3つ · %1$dつ選択</string>
     <string name="forge_priorities_caption">優先部位には毎週ハードセットが1〜2セット追加されます。選ばなければすべての筋肉が同等に扱われます。</string>
     <string name="forge_starting_sets_label">初期セット数</string>
-    <string name="forge_compound_label">複合種目 &amp;amp; スキルのみ</string>
-    <string name="forge_compound_label__t">複合種目 &amp;amp; 技のみ</string>
-    <string name="forge_compound_on_description">複合種目 &amp;amp; スキルのみ、オン</string>
-    <string name="forge_compound_on_description__t">複合種目 &amp;amp; 技のみ、オン</string>
-    <string name="forge_compound_off_description">複合種目 &amp;amp; スキルのみ、オフ</string>
-    <string name="forge_compound_off_description__t">複合種目 &amp;amp; 技のみ、オフ</string>
+    <string name="forge_compound_label">複合種目 &amp; スキルのみ</string>
+    <string name="forge_compound_label__t">複合種目 &amp; 技のみ</string>
+    <string name="forge_compound_on_description">複合種目 &amp; スキルのみ、オン</string>
+    <string name="forge_compound_on_description__t">複合種目 &amp; 技のみ、オン</string>
+    <string name="forge_compound_off_description">複合種目 &amp; スキルのみ、オフ</string>
+    <string name="forge_compound_off_description__t">複合種目 &amp; 技のみ、オフ</string>
     <string name="forge_compound_caption">カール、レイズ、カーフ、ブリッジ、マシンでの単関節種目は含みません。</string>
     <string name="forge_max_exercises_label">ルーチンごとの最大種目数</string>
     <string name="forge_max_exercises_label__t">儀礼ごとの最大種目数</string>
@@ -2104,8 +2104,8 @@
     </plurals>
     <string name="builder_error_history">履歴を読み取れませんでした: %1$s</string>
     <string name="builder_error_history__t">年代記を読み取れませんでした: %1$s</string>
-    <string name="builder_error_isolation_only">不足を補えるのは単関節種目だけです。追加するには「その他のオプション」で「複合種目 &amp;amp; スキルのみ」をオフにしてください。</string>
-    <string name="builder_error_isolation_only__t">不足を補えるのは単関節種目だけです。追加するには「その他のオプション」で「複合種目 &amp;amp; 技のみ」をオフにしてください。</string>
+    <string name="builder_error_isolation_only">不足を補えるのは単関節種目だけです。追加するには「その他のオプション」で「複合種目 &amp; スキルのみ」をオフにしてください。</string>
+    <string name="builder_error_isolation_only__t">不足を補えるのは単関節種目だけです。追加するには「その他のオプション」で「複合種目 &amp; 技のみ」をオフにしてください。</string>
     <string name="builder_error_week_covered">ウィークリープランはすべての筋肉で目標に達しています。ルーチンを追加するなら全身、上半身、下半身から選んでください。</string>
     <string name="builder_error_week_covered__t">周期はすべての筋肉で目標に達しています。儀礼を加えるなら全身、上半身、下半身から選んでください。</string>
     <string name="builder_error_cannot_fill">選んだ器具では、このルーチンに十分な種目を用意できません。</string>
@@ -3056,10 +3056,10 @@
     <string name="program_why_reps_strength_isolation">%1$dレップに設定（%2$d-%3$d）：補助種目は高レップで筋肉を育てます</string>
     <string name="program_why_reps_general_compound">%1$dレップに設定（%2$d-%3$d）：複合種目は高重量を維持します</string>
     <string name="program_why_reps_general_isolation">%1$dレップに設定（%2$d-%3$d）：補助種目は高レップで総負荷量を確保します</string>
-    <string name="program_why_swap_compound">%1$sに変更：複合種目 &amp;amp; スキルのみの設定で、同じ筋肉を鍛えます</string>
-    <string name="program_why_swap_compound__t">%1$sに交換：複合種目 &amp;amp; 技のみの設定で、同じ筋肉を鍛えます</string>
-    <string name="program_why_removed_compound">削除：複合種目 &amp;amp; スキルのみの設定では、同じ筋肉を鍛える代替種目がありません</string>
-    <string name="program_why_removed_compound__t">除外：複合種目 &amp;amp; 技のみでは、その筋肉を鍛える代替種目がありません</string>
+    <string name="program_why_swap_compound">%1$sに変更：複合種目 &amp; スキルのみの設定で、同じ筋肉を鍛えます</string>
+    <string name="program_why_swap_compound__t">%1$sに交換：複合種目 &amp; 技のみの設定で、同じ筋肉を鍛えます</string>
+    <string name="program_why_removed_compound">削除：複合種目 &amp; スキルのみの設定では、同じ筋肉を鍛える代替種目がありません</string>
+    <string name="program_why_removed_compound__t">除外：複合種目 &amp; 技のみでは、その筋肉を鍛える代替種目がありません</string>
     <string name="program_why_swap_stretch">%1$sに変更：%2$sの成長に効果的な伸張位で負荷をかけます</string>
     <string name="program_target_muscle_fallback">対象筋</string>
     <string name="program_why_sets_floor">セット数 %1$d → 2：1セットでは進歩するための運動量が不足します</string>
@@ -3076,8 +3076,8 @@
     <string name="program_sex_note">男女とも同じウィークリープランです。重量は各自の推定1RMに合わせます（%1$s）。</string>
     <string name="program_sex_note__t">男女とも同じ周期を歩みます。重量は各自の推定1RMに合わせます（%1$s）。</string>
     <string name="program_why_dumbbell_light">%1$sにはダンベルが軽すぎるため、より難しい%2$sを選択</string>
-    <string name="program_why_template_compound_only">複合種目 &amp;amp; スキルのみ：%2$sの代わりに%1$s</string>
-    <string name="program_why_template_compound_only__t">複合種目 &amp;amp; 技のみ：%2$sの代わりに%1$sを用います</string>
+    <string name="program_why_template_compound_only">複合種目 &amp; スキルのみ：%2$sの代わりに%1$s</string>
+    <string name="program_why_template_compound_only__t">複合種目 &amp; 技のみ：%2$sの代わりに%1$sを用います</string>
     <string name="program_why_template_nothing">%1$sに対応する器具がないため、最も近い%2$sを選択</string>
     <string name="program_why_template_nothing__t">%1$sに対応する武具がないため、最も近い%2$sを選びます</string>
     <string name="program_why_template_stretch">%1$sを伸張位で鍛えるため</string>
@@ -3090,7 +3090,7 @@
     <string name="program_gear_parallettes">パラレット</string>
     <string name="program_gear_rings">リング</string>
     <string name="program_gear_dumbbells">ダンベル</string>
-    <string name="program_gear_barbell">バーベル &amp;amp; ラック</string>
+    <string name="program_gear_barbell">バーベル &amp; ラック</string>
     <string name="program_gear_bench">ベンチ</string>
     <string name="program_gear_ab_wheel">腹筋ローラー</string>
     <string name="program_volume_low">低</string>
@@ -3796,7 +3796,7 @@
     <string name="deeds_earn_pointer_today">「今日」からワークアウトを終了すると獲得できます。</string>
     <string name="deeds_earn_pointer_today__t">「今日」から試練を封じると獲得できます。</string>
     <string name="deeds_earn_pointer_level">ワークアウトを完了してレベルを上げてください。</string>
-    <string name="deeds_earn_pointer_level__t">試練を封じしてレベルを上げましょう。</string>
+    <string name="deeds_earn_pointer_level__t">試練を封じてレベルを上げましょう。</string>
     <string name="deeds_earn_pointer_volume">ワークアウトのセットと回数を記録すると、ここに合計されます。</string>
     <string name="deeds_earn_pointer_volume__t">試練のセットとレップを記録すると、ここに合計されます。</string>
     <string name="deeds_earn_pointer_strength">ワークアウトでトレーニングする。あなたの記録されたリフトはそれにカウントされます。</string>
@@ -3826,11 +3826,11 @@
     <plurals name="always_deeds_category_description">
         <item quantity="other">%1$s。 %2$s。 %4$d 件中 %3$d 件の功績を獲得しました。</item>
     </plurals>
-    <string name="deeds_earned_header">%1$d を獲得しました</string>
+    <string name="deeds_earned_header">獲得 %1$d</string>
     <string name="deeds_earned_of_total">%1$d/%2$d を獲得</string>
     <string name="deeds_complete_description">完了</string>
     <string name="deeds_wall_empty">ここにはまだ何も書かれていません。ワークアウトを完了して最初の功績を獲得してください。</string>
-    <string name="deeds_wall_empty__t">ここにはまだ何も書かれていません。試練を封じして最初の功績を獲得します。</string>
+    <string name="deeds_wall_empty__t">ここにはまだ何も書かれていません。試練を封じて最初の功績を獲得します。</string>
     <string name="deeds_worn_date">着用中 · %1$s</string>
     <string name="deeds_worn_value">着用中</string>
     <string name="deeds_row_description_earned">%1$s、%2$s、獲得</string>
@@ -3841,7 +3841,7 @@
     <string name="always_deeds_category_summary">%1$s の功績: %2$d/%3$d を獲得しました。 %4$s。</string>
     <string name="always_deeds_all_earned">%1$sの功績をすべて獲得しました。</string>
     <string name="always_deeds_page_empty">ここにはまだ何も書かれていません。獲得した功績はこのページに表示されます。</string>
-    <string name="always_deeds_none_here">ここには行為はありません。</string>
+    <string name="always_deeds_none_here">ここには功績はありません。</string>
     <plurals name="always_deeds_ladder_held">
         <item quantity="other">%2$d 件中 %1$d 件の功績を獲得しました。</item>
     </plurals>
@@ -3905,7 +3905,7 @@
     <plurals name="skilldetail_unclaim_question_passes__t">
         <item quantity="other">技を返しますか？ %1$d XPと、通過済みにした技%2$d個も取り消されます。</item>
     </plurals>
-    <string name="skilldetail_keep_button">そのままにしておいてください</string>
+    <string name="skilldetail_keep_button">そのままにする</string>
     <string name="skilldetail_unclaim_button">習得を取り消す −%1$d XP</string>
     <string name="skilldetail_train_button">訓練してください</string>
     <string name="skilldetail_give_back_button">恩返しする</string>
