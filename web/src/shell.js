@@ -4,6 +4,9 @@ import {renderWorkoutDetail} from './screens/workoutDetail.js';
 import {renderLifts} from './screens/lifts.js';
 import {renderTrends} from './screens/trends.js';
 import {renderFriends,friendsTitle} from './screens/friends/index.js';
+import {unreadCount} from './screens/friends/inbox.js';
+import {startPolling} from './data/poll.js';
+import {FRIENDS_SCHEMA_VERSION} from './schema.js';
 import {createRouter} from './router.js';
 import {createAppearanceMenu} from './appearance.js';
 import {plate} from './components/plate.js';
@@ -59,5 +62,12 @@ export function renderShell(root, {source,snapshot,social,onSignOut,nowMs=Date.n
   if(!snapshot) {const hint=node('p','No phone snapshot yet. Sync the app to see your statistics.','notice');main.insertBefore(hint,content);}
   else if(weekPassed(snapshot,nowMs)) {const hint=node('p',`Stats from ${formatDay(dayKey(snapshot.builtAtMs,snapshot.zone))}. Open the app to sync.`,'notice');main.insertBefore(hint,content);}
   const footer=node('footer');credit(footer);main.append(footer);
-  const disposeRouter=router.dispose;router.dispose=()=>{disposeRouter();appearance.dispose();};router.start();return router;
+  // The inbox badge: read once and then every half hour while the tab is visible, only where the backend has the social schema.
+  let stopPolling,disposed=false;
+  if(social) (async()=>{
+    const version=await source.schemaVersion?.().catch?.(()=>null);if(disposed||(version!=null&&version<FRIENDS_SCHEMA_VERSION)) return;
+    const refresh=async()=>{try {const {items,seenAtMs}=await social.inbox();if(!disposed) setInboxUnread(unreadCount(items,seenAtMs));} catch {}};
+    refresh();stopPolling=startPolling(refresh);
+  })();
+  const disposeRouter=router.dispose;router.dispose=()=>{disposed=true;stopPolling?.();disposeRouter();appearance.dispose();};router.start();return router;
 }

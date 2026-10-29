@@ -61,6 +61,17 @@
 .comment-counter { font-size: 12px; }
 .comment-counter.is-over { color: var(--secondary); font-weight: 700; }
 
+/* inbox */
+.inbox { display: grid; gap: 20px; }
+.inbox-section { display: grid; gap: 4px; }
+.inbox-section .eyebrow { margin-bottom: 4px; flex: none; }
+.inbox-item { position: relative; display: grid; gap: 8px; padding: 12px 14px 12px 22px; border-top: 1px solid var(--paper-rune); }
+.inbox-dot { position: absolute; left: 6px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: var(--fill); }
+.inbox-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.inbox-quote { font-size: 13px; }
+.inbox-when { font-size: 12px; }
+.inbox-note { font-size: 12px; }
+
 @media (max-width: 720px) {
   .friends-tabs { flex-wrap: nowrap; overflow-x: auto; }
   .friends-tab { flex: none; }

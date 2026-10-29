@@ -28,6 +28,17 @@ export function createFixtureSocial() {
     comments: async () => comments.map(c => ({ ...c })),
     addComment: async (_id, body) => ({ id: `c${Date.now()}`, sessionId: 's1', userId: 'fixture', authorName: 'Fictional lifter', body, createdAtMs: Date.now() }),
     deleteComment: async () => {},
+    inbox: async () => ({
+      seenAtMs: hours(5),
+      items: [
+        { kind: 'request', occurredAtMs: hours(1), actorId: 'u-ines', actorName: 'Ines Vale', sessionId: null, headline: '', commentId: null, body: '', reaction: null },
+        { kind: 'comment', occurredAtMs: hours(2), actorId: 'u-jonah', actorName: 'Jonah Reed', sessionId: 's3', headline: 'Upper B', commentId: 'c1', body: 'Great bench numbers', reaction: null },
+        { kind: 'reaction', occurredAtMs: hours(3), actorId: 'u-mara', actorName: 'Mara Quill', sessionId: 's3', headline: 'Upper B', commentId: null, body: '', reaction: 'flame' },
+        { kind: 'circle_join', occurredAtMs: hours(9), actorId: 'u-ines', actorName: 'Ines Vale', sessionId: null, headline: '', commentId: null, body: 'Iron Tide', reaction: null },
+        { kind: 'accepted', occurredAtMs: hours(40), actorId: 'u-mara', actorName: 'Mara Quill', sessionId: null, headline: '', commentId: null, body: '', reaction: null },
+      ],
+    }),
+    markInboxSeen: async () => {}, acceptFriend: async () => {}, removeFriend: async () => {},
     friends: async () => [],
   });
 }

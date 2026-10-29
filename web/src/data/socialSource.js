@@ -115,9 +115,46 @@ function safetyApi(client, userId) {
   };
 }
 
+const KNOWN_INBOX_KINDS = new Set(['request', 'accepted', 'comment', 'reply', 'reaction', 'band_join', 'circle_join', 'band_goal', 'circle_goal', 'circle_left', 'circle_keeper', 'circle_removed']);
+// The wire kinds keep their original spelling ("band_*"); the circle_* spellings are accepted too, as the app does.
+const INBOX_KIND = { band_join: 'circle_join', band_goal: 'circle_goal' };
+
+/** One my_inbox() row as an item, or null for a row this viewer cannot show (unknown kind or reaction, or a comment or reaction without its workout). */
+export function inboxItem(r) {
+  if (!KNOWN_INBOX_KINDS.has(r.kind)) return null;
+  const kind = INBOX_KIND[r.kind] ?? r.kind, at = Date.parse(r.occurred_at);
+  if (!Number.isFinite(at)) return null;
+  if (['comment', 'reply', 'reaction'].includes(kind) && !r.session_id) return null;
+  if (['comment', 'reply'].includes(kind) && !r.comment_id) return null;
+  if (kind === 'reaction' && !REACTIONS.includes(r.reaction)) return null;
+  return { kind, occurredAtMs: at, actorId: r.actor_id, actorName: r.actor_name || null, sessionId: r.session_id ?? null, headline: r.session_headline ?? '', commentId: r.comment_id ?? null, body: r.body ?? '', reaction: r.reaction ?? null };
+}
+
+function inboxApi(client, userId) {
+  return {
+    // my_inbox() (derived on the server, never stored) and inbox_seen.seen_at: unread is the phone's own rule over these two
+    async inbox() {
+      const rows = (await checked(client.rpc('my_inbox'))).data ?? [];
+      const seen = (await rowsOf(client.from('inbox_seen').select('seen_at').eq('user_id', userId)))[0];
+      return { items: rows.map(inboxItem).filter(Boolean), seenAtMs: seen ? Date.parse(seen.seen_at) : null };
+    },
+    // mark_inbox_seen: no argument, so the server's clock stamps it (a phone or browser clock running behind would leave items unread)
+    async markInboxSeen() { await checked(client.rpc('mark_inbox_seen')); },
+    // friendships: accepting asks the updated rows back (RLS turns a refused update into zero rows, not an error)
+    async acceptFriend(otherId) {
+      const { data } = await checked(client.from('friendships').update({ accepted: true }).eq('requester_id', otherId).eq('addressee_id', userId).select('requester_id'));
+      if (!data?.length) { const none = new Error('no pending request'); none.name = 'NoPending'; throw none; }
+    },
+    // friendships: ends an alliance or withdraws or declines a pending request, whichever side made the row
+    async removeFriend(otherId) {
+      await checked(client.from('friendships').delete().or(`and(requester_id.eq.${userId},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${userId})`));
+    },
+  };
+}
+
 /** The methods implemented so far; each screen's task adds its area here. */
 function implementations(client, userId) {
-  return { ...feedApi(client, userId), ...safetyApi(client, userId) };
+  return { ...feedApi(client, userId), ...safetyApi(client, userId), ...inboxApi(client, userId) };
 }
 
 /** @returns {SocialSource} */

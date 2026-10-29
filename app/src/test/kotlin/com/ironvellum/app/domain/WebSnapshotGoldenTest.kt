@@ -1,6 +1,8 @@
 package com.ironvellum.app.domain
 
 import com.ironvellum.app.data.cloud.CloudSync
+import com.ironvellum.app.data.cloud.Inbox
+import com.ironvellum.app.data.cloud.InboxItem
 import java.time.Instant
 import java.io.File
 import kotlinx.serialization.json.Json
@@ -102,6 +104,18 @@ class WebSnapshotGoldenTest {
             put("loadCases", buildJsonArray {
                 for (kg in listOf(102.058, 0.0, 0.45359237, 1000.5)) for (unit in LoadUnit.entries) add(buildJsonObject {
                     put("kg", kg); put("unit", unit.name.lowercase()); put("text", Loads.format(kg, unit))
+                })
+            })
+            // The phone's Inbox.unread rule, for the web inbox badge: unread when never seen or newer than the last visit.
+            put("inboxUnreadCases", buildJsonArray {
+                val cases = listOf(
+                    listOf(100L, 200L, 300L) to null, listOf(100L, 200L, 300L) to 200L, listOf(100L, 200L, 300L) to 300L,
+                    listOf(100L, 200L, 300L) to 50L, emptyList<Long>() to null, emptyList<Long>() to 10L,
+                )
+                for ((times, seen) in cases) add(buildJsonObject {
+                    put("itemsAtMs", buildJsonArray { times.forEach { add(kotlinx.serialization.json.JsonPrimitive(it)) } })
+                    put("seenAtMs", seen?.let { kotlinx.serialization.json.JsonPrimitive(it) } ?: kotlinx.serialization.json.JsonNull)
+                    put("unread", Inbox(times.map { InboxItem.FriendRequest(it, "a", "n") }, seen).unread)
                 })
             })
             put("formatSetsCases", buildJsonArray {
