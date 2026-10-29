@@ -1379,7 +1379,7 @@
     <string name="session_seal_confirm_text">Todas as séries foram registradas. Finalizar agora?</string>
     <string name="session_seal_confirm_text__t">Todas as séries foram registradas. Selar agora?</string>
     <plurals name="session_seal_unlogged_text">
-        <item quantity="one">Ela não contará.</item>
+        <item quantity="one">Nenhum set será contado.</item>
         <item quantity="other">Elas não contarão.</item>
     </plurals>
     <string name="session_seal_anyway_button">Finalizar mesmo assim</string>
@@ -2661,7 +2661,7 @@
     <string name="coverage_empty_cycle">Ainda não há rotinas. Crie um plano semanal e ele será mapeado aqui.</string>
     <string name="coverage_empty_cycle__t">Ainda não há ritos inscritos. Forje um ciclo e ele será mapeado aqui.</string>
     <plurals name="coverage_unattributed_sets">
-        <item quantity="one">%1$d série não contada: não há dados musculares para esse exercício.</item>
+        <item quantity="one">%1$d set não contado: sem dados musculares para esse exercício.</item>
         <item quantity="other">%1$d séries não contadas: não há dados musculares para esses exercícios.</item>
     </plurals>
     <plurals name="coverage_uncounted_rites">
@@ -2673,11 +2673,11 @@
         <item quantity="other">%1$d ritos não têm dia definido e não são contados</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint">
-        <item quantity="one">Abra essa rotina para definir um dia</item>
+        <item quantity="one">Abra essa rotina para definir uma data</item>
         <item quantity="other">Abra suas rotinas para definir os dias</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint__t">
-        <item quantity="one">Abra esse rito para definir um dia</item>
+        <item quantity="one">Abra esse rite para definir uma data</item>
         <item quantity="other">Abra teus ritos para definir os dias</item>
     </plurals>
     <string name="coverage_covered_empty">Todos os músculos cobertos</string>
@@ -2835,7 +2835,7 @@
     <string name="plates_pairs_fewer_description">Menos pares de %1$s</string>
     <string name="plates_pairs_more_description">Mais pares de %1$s</string>
     <plurals name="plates_pair_word">
-        <item quantity="one">par</item>
+        <item quantity="one">dupla</item>
         <item quantity="other">pares</item>
     </plurals>
     <string name="plates_rack_heaviest">Carga máxima possível: %1$s</string>
@@ -2855,7 +2855,7 @@
         <item quantity="other">Série pesada + %1$d séries leves</item>
     </plurals>
     <plurals name="scheme_drop_last">
-        <item quantity="one">última série</item>
+        <item quantity="one">série final</item>
         <item quantity="other">últimas %1$d séries</item>
     </plurals>
     <string name="scheme_times_once">uma vez</string>
@@ -3631,7 +3631,7 @@
     <string name="stats_drill_from_reading__t">Da leitura de %1$s, a mais recente com gordura corporal inscrita.</string>
     <string name="stats_add_weight_label">Peso (kg)</string>
     <string name="stats_add_weight_error">Informe um peso entre %1$d e %2$d kg.</string>
-    <string name="stats_add_body_fat_label">Gordura corporal % (opcional)</string>
+    <string name="stats_add_body_fat_label">Percentual de gordura (opcional)</string>
     <string name="stats_add_body_fat_error">Informe gordura corporal entre %1$d e %2$d%% ou deixe em branco.</string>
     <string name="stats_add_height_hint">A altura libera o IMC e o FFMI.</string>
     <string name="stats_add_set_height">Definir altura</string>
@@ -3825,7 +3825,7 @@
     <string name="celebration_deed_wearing_link">Em uso ✓</string>
     <string name="celebration_deed_wear_button">Exibir título</string>
     <plurals name="always_celebration_deed_earned">
-        <item quantity="one">Proeza conquistada</item>
+        <item quantity="one">Conquista obtida</item>
         <item quantity="other">Proezas conquistadas</item>
     </plurals>
     <string name="xp_subline_hard_easy">%1$d difíceis · %2$d leves</string>
@@ -3858,7 +3858,7 @@
     <string name="xp_page_spoken_level_up">Subiu de nível, de %1$d para %2$d.</string>
     <string name="xp_page_spoken_level">Nível %1$d.</string>
     <plurals name="always_xp_veil_line">
-        <item quantity="one">Uma inscrição aguarda no Véu</item>
+        <item quantity="one">Uma inscrição te espera no Véu</item>
         <item quantity="other">%1$d inscrições aguardam no Véu</item>
     </plurals>
     <plurals name="xp_headline">

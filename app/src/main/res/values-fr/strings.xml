@@ -1379,7 +1379,7 @@
     <string name="session_seal_confirm_text">Toutes les séries sont enregistrées. Terminer maintenant ?</string>
     <string name="session_seal_confirm_text__t">Toutes les séries sont inscrites. Sceller maintenant ?</string>
     <plurals name="session_seal_unlogged_text">
-        <item quantity="one">Elle ne comptera pas.</item>
+        <item quantity="one">Aucune série ne sera comptée.</item>
         <item quantity="other">Elles ne compteront pas.</item>
     </plurals>
     <string name="session_seal_anyway_button">Terminer quand même</string>
@@ -2661,7 +2661,7 @@
     <string name="coverage_empty_cycle">Aucune routine n’est encore enregistrée. Crée un plan hebdo pour voir sa couverture ici.</string>
     <string name="coverage_empty_cycle__t">Aucun rite n’est encore inscrit. Forge un cycle pour voir sa couverture ici.</string>
     <plurals name="coverage_unattributed_sets">
-        <item quantity="one">%1$d série non comptée : aucune donnée musculaire pour cet exercice.</item>
+        <item quantity="one">%1$d série non comptée : pas de donnée musculaire pour cet exercice.</item>
         <item quantity="other">%1$d séries non comptées : aucune donnée musculaire pour ces exercices.</item>
     </plurals>
     <plurals name="coverage_uncounted_rites">
@@ -2673,11 +2673,11 @@
         <item quantity="other">%1$d rites sans jour ne figurent pas dans le compte</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint">
-        <item quantity="one">Ouvre cette routine pour lui attribuer un jour</item>
+        <item quantity="one">Ouvre cette routine pour lui attribuer une date</item>
         <item quantity="other">Ouvre tes routines pour leur attribuer des jours</item>
     </plurals>
     <plurals name="coverage_uncounted_open_hint__t">
-        <item quantity="one">Ouvre ce rite pour lui attribuer un jour</item>
+        <item quantity="one">Ouvre ce rite pour lui attribuer une date</item>
         <item quantity="other">Ouvre tes rites pour leur attribuer des jours</item>
     </plurals>
     <string name="coverage_covered_empty">Tous les muscles couverts</string>
@@ -2835,7 +2835,7 @@
     <string name="plates_pairs_fewer_description">Moins de paires de %1$s</string>
     <string name="plates_pairs_more_description">Plus de paires de %1$s</string>
     <plurals name="plates_pair_word">
-        <item quantity="one">paire</item>
+        <item quantity="one">duo</item>
         <item quantity="other">paires</item>
     </plurals>
     <string name="plates_rack_heaviest">Charge maximale possible : %1$s</string>
@@ -2855,7 +2855,7 @@
         <item quantity="other">Série lourde + %1$d séries allégées</item>
     </plurals>
     <plurals name="scheme_drop_last">
-        <item quantity="one">dernière série</item>
+        <item quantity="one">série finale</item>
         <item quantity="other">%1$d dernières séries</item>
     </plurals>
     <string name="scheme_times_once">une fois</string>
@@ -3631,7 +3631,7 @@
     <string name="stats_drill_from_reading__t">D’après ton relevé du %1$s, le dernier portant ta masse grasse.</string>
     <string name="stats_add_weight_label">Poids (kg)</string>
     <string name="stats_add_weight_error">Saisis un poids entre %1$d et %2$d kg.</string>
-    <string name="stats_add_body_fat_label">Masse grasse % (facultatif)</string>
+    <string name="stats_add_body_fat_label">Masse grasse pourcentage (facultatif)</string>
     <string name="stats_add_body_fat_error">Saisis une masse grasse entre %1$d et %2$d%%, ou laisse ce champ vide.</string>
     <string name="stats_add_height_hint">La taille débloque l\'IMC et le FFMI.</string>
     <string name="stats_add_set_height">Indiquer la taille</string>
@@ -4662,7 +4662,7 @@
     <string name="health_not_wired">Health Connect non connecté</string>
     <string name="health_read_failed">échec de la lecture : %1$s</string>
     <plurals name="health_no_activity">
-        <item quantity="one">Health Connect n\'a renvoyé aucune activité pour le dernier jour</item>
+        <item quantity="one">Health Connect n\'a pas renvoyé d\'activité pour le dernier jour</item>
         <item quantity="other">Health Connect n\'a renvoyé aucune activité pour les %d derniers jours</item>
     </plurals>
     <string name="health_writeback_unavailable">Health Connect n\'est pas disponible</string>
