@@ -108,8 +108,6 @@ internal fun PhotoCompare(
         Box(Modifier.fillMaxSize().drawWithContent { clipRect(left = size.width * fraction) { this@drawWithContent.drawContent() } }) {
             PhotoImage(rightFile, stringResource(R.string.photos_compare_description, pose, rightWeek), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         }
-        WeekLabel(leftWeek, Modifier.align(Alignment.TopStart))
-        WeekLabel(rightWeek, Modifier.align(Alignment.TopEnd))
 
         val description = stringResource(R.string.photos_compare_handle_description, leftWeek, rightWeek)
         val state = stringResource(R.string.photos_compare_state, (fraction * 100).roundToInt())
@@ -143,6 +141,9 @@ internal fun PhotoCompare(
                 Icon(Icons.Filled.SwapHoriz, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
             }
         }
+        // Last, so the labels sit above the divider line and handle wherever it is dragged.
+        WeekLabel(leftWeek, Modifier.align(Alignment.TopStart))
+        WeekLabel(rightWeek, Modifier.align(Alignment.TopEnd))
     }
 }
 

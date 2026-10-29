@@ -11,11 +11,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -25,6 +27,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertRangeInfoEquals
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
@@ -50,6 +53,7 @@ import com.ironvellum.app.domain.Pose
 import com.ironvellum.app.ui.components.PhotoSource
 import com.ironvellum.app.ui.components.PhotoSourceTiles
 import com.ironvellum.app.ui.dashboard.PoseTodayCard
+import com.ironvellum.app.ui.stats.PhotoCompare
 import com.ironvellum.app.ui.stats.ProgressPhotosScreen
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.PhotoOfferPage
@@ -293,6 +297,27 @@ class ProgressPhotosScreensTest {
     }
 
     @Test
+    fun theWeekLabelsStayAboveTheDividerLineAtEitherEdge() {
+        val left = File(requireNotNull(picture("left photo", 20f, 1f).path))
+        val right = File(requireNotNull(picture("right photo", 200f, 1.1f).path))
+        show(light = false) { PhotoCompare("Front", "Week of 12 Oct", "Week of 26 Oct", left, right, 400.dp, Modifier.fillMaxWidth()) }
+        val handle = sliders()[0]
+        for ((progress, week) in listOf(0f to "Week of 12 Oct", 1f to "Week of 26 Oct")) {
+            handle.performSemanticsAction(SemanticsActions.SetProgress) { it(progress) }
+            compose.waitForIdle()
+            val label = compose.onNodeWithText(week).assertIsDisplayed()
+            val bounds = label.getUnclippedBoundsInRoot()
+            val lineX = handle.getUnclippedBoundsInRoot().let { (it.left + it.right) / 2 }
+            assertTrue("the divider line runs behind the label at $progress", lineX > bounds.left && lineX < bounds.right)
+            val image = label.captureToImage().asAndroidBitmap()
+            val scale = image.width / bounds.width.value
+            // The label's top padding is clear of its text, so only the line could put white there.
+            val pixel = image.getPixel(((lineX - bounds.left).value * scale).toInt(), (2f * scale).toInt())
+            assertTrue("the line is drawn over the label at $progress: ${Integer.toHexString(pixel)}", Color.red(pixel) < 200)
+        }
+    }
+
+    @Test
     fun aWeekWithoutAPhotoForAPoseShowsTheOtherWeeksPhotoAloneWithANote() {
         runBlocking {
             val library = app.repository.photoLibrary
@@ -376,6 +401,13 @@ class ProgressPhotosScreensTest {
             handle.performTouchInput { down(center); moveBy(Offset(-width * 4f, 0f)); up() }
             Thread.sleep(500)
             shoot("compare-dragged-$tag")
+            // Near either edge the line and handle sit under the week labels in the top corners.
+            handle.performSemanticsAction(SemanticsActions.SetProgress) { it(0.03f) }
+            Thread.sleep(500)
+            shoot("compare-left-edge-$tag")
+            handle.performSemanticsAction(SemanticsActions.SetProgress) { it(0.97f) }
+            Thread.sleep(500)
+            shoot("compare-right-edge-$tag")
         }
         // 720dp wide: the comparison grows and keeps its two sides.
         show(light = false, density = 720f) { ProgressPhotosScreen(onBack = {}) }

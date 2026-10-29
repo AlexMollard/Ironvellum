@@ -15,9 +15,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -38,6 +40,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -132,10 +136,14 @@ class TwinSwitchTrialRecreationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var db: IronvellumDatabase
     private lateinit var repo: Repository
-    private lateinit var vm: SessionViewModel
     private val owner = object : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
     }
+    // Built on first use and kept in the owner's store, so tearDown can let its start-up load finish and then clear it.
+    private val sessionModel = lazy {
+        ViewModelProvider(owner, viewModelFactory { initializer { SessionViewModel(repo, context, sessionId) } })["session", SessionViewModel::class.java]
+    }
+    private val vm: SessionViewModel get() = sessionModel.value
     private var sessionId = 0L
     private var pullUp = 0L
     private var weightedPullUp = 0L
@@ -165,14 +173,21 @@ class TwinSwitchTrialRecreationTest {
             Repository.PresetDraftEntry(pullUp, 2, 7, null),
         ))
         sessionId = repo.startSessionFromPreset(preset)
-        vm = SessionViewModel(repo, context, sessionId)
         ViewModelProvider(owner, viewModelFactory {
             initializer { MuscleFatigueViewModel(repo) }
         })[MuscleFatigueViewModel::class.java]
         Unit
     }
 
+    // A session view model reads the database as it is made (its warm-up load). Closing the database under that load kills
+    // the process from a Room executor thread, and the quick tests reach tearDown before it has finished: cancel what the
+    // models have running and wait until it has stopped (a query already on a Room thread finishes first).
+    private fun settle(vararg models: ViewModel) = runBlocking {
+        models.forEach { model -> model.viewModelScope.coroutineContext.job.children.toList().forEach { it.cancelAndJoin() } }
+    }
+
     @After fun tearDown() {
+        if (sessionModel.isInitialized()) settle(vm)
         owner.viewModelStore.clear()
         db.close()
         context.deleteDatabase(DB_NAME)
@@ -198,11 +213,11 @@ class TwinSwitchTrialRecreationTest {
         // View models made here live in their own store, cleared at the end: a leftover one would keep reading
         // the database after tearDown closes it and fail whichever test runs next.
         val store = ViewModelStore()
-        var made = 0
+        val made = mutableListOf<SessionViewModel>()
         fun session(saved: SavedStateHandle) = ViewModelProvider(
             object : ViewModelStoreOwner { override val viewModelStore = store },
             viewModelFactory { initializer { SessionViewModel(repo, context, sessionId, saved) } },
-        )["saved-state-${made++}", SessionViewModel::class.java]
+        )["saved-state-${made.size}", SessionViewModel::class.java].also { made += it }
         try {
         val handle = SavedStateHandle()
         val first = session(handle)
@@ -222,6 +237,7 @@ class TwinSwitchTrialRecreationTest {
         // Answered: the next process is not asked again.
         assertEquals(null, session(SavedStateHandle(restoredHandle.keys().associateWith { restoredHandle.get<Any>(it) })).twinPrompt)
         } finally {
+            settle(*made.toTypedArray())
             store.clear()
         }
     }

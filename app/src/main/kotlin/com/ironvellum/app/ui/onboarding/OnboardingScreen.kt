@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -857,6 +859,7 @@ internal fun StepBar(step: Int, onBack: () -> Unit, onSkip: (() -> Unit)?) {
     ) {
         InkChip(
             label = stringResource(R.string.onboarding_back_chip),
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
             description = stringResource(
                 when (step) {
                     0 -> R.string.onboarding_back_to_preferences

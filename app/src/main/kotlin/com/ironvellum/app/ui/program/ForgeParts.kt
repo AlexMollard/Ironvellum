@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -106,7 +108,7 @@ internal fun ForgeHeader(
                 Text(subtitle, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
             }
         }
-        NavChip(stringResource(R.string.forge_back_button), null, onClick = onBack)
+        NavChip(stringResource(R.string.forge_back_button), Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
     }
 }
 
