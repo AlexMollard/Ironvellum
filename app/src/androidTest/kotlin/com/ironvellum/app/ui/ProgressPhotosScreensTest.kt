@@ -15,9 +15,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertRangeInfoEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -27,6 +38,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
@@ -35,10 +47,13 @@ import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.PhotoKind
 import com.ironvellum.app.domain.PhotoRules
 import com.ironvellum.app.domain.Pose
+import com.ironvellum.app.ui.components.PhotoSource
+import com.ironvellum.app.ui.components.PhotoSourceTiles
 import com.ironvellum.app.ui.dashboard.PoseTodayCard
 import com.ironvellum.app.ui.stats.ProgressPhotosScreen
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.ui.train.PhotoOfferPage
+import com.ironvellum.app.ui.train.TrainScreen
 import com.ironvellum.app.ui.train.WorkoutDetailScreen
 import java.io.File
 import java.time.DayOfWeek
@@ -211,8 +226,84 @@ class ProgressPhotosScreensTest {
         show(light = false) { ProgressPhotosScreen(onBack = {}) }
         waitForSlots()
         slot("Front").performClick()
-        compose.onNodeWithText("Choose photo").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Take photo").assertExists()
+        compose.onNodeWithText("From gallery").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Stand where your last front photo was taken. Same light, same distance.").assertIsDisplayed()
         compose.onNodeWithText("Remove").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun withNoCameraTheSheetOffersOnlyTheGalleryAtFullWidth() {
+        var picked = 0
+        fun tileWidth(canTake: Boolean): Float {
+            show(light = false) {
+                PhotoSourceTiles(PhotoSource(canTake, take = {}, pick = { picked++ }), kept = false, enabled = true, helper = "Helper", onRemove = {})
+            }
+            compose.onNodeWithText("From gallery").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+            return compose.onNodeWithText("From gallery").getUnclippedBoundsInRoot().width.value
+        }
+        val withCamera = tileWidth(true)
+        compose.onNodeWithText("Take photo").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        val galleryOnly = tileWidth(false)
+        compose.onNodeWithText("Take photo").assertDoesNotExist()
+        compose.onNodeWithText("Remove").assertDoesNotExist()
+        assertTrue("the lone tile fills the row: $galleryOnly vs $withCamera", galleryOnly > withCamera * 1.8f)
+        compose.onNodeWithText("From gallery").performClick()
+        compose.runOnIdle { assertEquals(1, picked) }
+    }
+
+    @Test
+    fun anEmptySlotKeepsItsAddCueAndOnlyAFilledOneDescribesAPhoto() {
+        // No silhouette art exists for a pose, so the empty field is the camera-with-plus mark: it still names what a tap does.
+        show(light = false) { ProgressPhotosScreen(onBack = {}) }
+        slot("Front").assertExists().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithContentDescription("Front photo, this week").assertDoesNotExist()
+        seedPoses(withLastWeek = false)
+        show(light = false) { ProgressPhotosScreen(onBack = {}) }
+        waitForSlots()
+        compose.onNodeWithContentDescription("Front photo, this week").assertExists()
+    }
+
+    private fun sliders() = compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+
+    @Test
+    fun theCompareHandleIsASliderThatStartsAtHalfAndMovesByDragAndByAction() {
+        seedPoses()
+        show(light = false) { ProgressPhotosScreen(onBack = {}) }
+        waitForSlots()
+        sliders().assertCountEquals(3)
+        val handle = sliders()[0]
+        handle.performScrollTo().assertRangeInfoEquals(ProgressBarRangeInfo(0.5f, 0f..1f))
+        handle.assertHeightIsAtLeast(48.dp)
+        assertTrue("the handle is at least 48dp wide", handle.getUnclippedBoundsInRoot().width.value >= 48f)
+        handle.performSemanticsAction(SemanticsActions.SetProgress) { it(0.8f) }
+        handle.assertRangeInfoEquals(ProgressBarRangeInfo(0.8f, 0f..1f))
+        handle.performSemanticsAction(SemanticsActions.SetProgress) { it(7f) }
+        handle.assertRangeInfoEquals(ProgressBarRangeInfo(1f, 0f..1f))
+        // The two custom actions step a tenth each way and stop at the edge.
+        val actions = handle.fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        assertEquals(2, actions.size)
+        compose.runOnIdle { actions[0].action() }
+        handle.assertRangeInfoEquals(ProgressBarRangeInfo(0.9f, 0f..1f))
+        // A real drag moves it too.
+        handle.performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
+        handle.performTouchInput { down(center); moveBy(Offset(-width * 4f, 0f)); up() }
+        val value = handle.fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current
+        assertTrue("dragging left moved the divider left: $value", value < 0.5f)
+    }
+
+    @Test
+    fun aWeekWithoutAPhotoForAPoseShowsTheOtherWeeksPhotoAloneWithANote() {
+        runBlocking {
+            val library = app.repository.photoLibrary
+            Pose.entries.forEachIndexed { i, pose -> library.savePose(app, picture("${pose.key} before", 20f + i * 40f, 1.0f), thisWeek.minusWeeks(2).toEpochDay(), pose) }
+            library.savePose(app, picture("front now", 200f, 1.15f), thisWeek.toEpochDay(), Pose.FRONT)
+        }
+        show(light = false) { ProgressPhotosScreen(onBack = {}) }
+        waitForSlots()
+        sliders().assertCountEquals(1)
+        compose.onNode(hasText("has a side photo", substring = true)).assertExists()
+        compose.onNode(hasText("has a back photo", substring = true)).assertExists()
     }
 
     @Test
@@ -268,15 +359,45 @@ class ProgressPhotosScreensTest {
             shoot("poses-filled-$tag")
             slot("Front").performClick()
             compose.mainClock.autoAdvance = true
-            compose.waitUntil(10_000) { runCatching { compose.onNodeWithText("Choose photo").assertExists() }.isSuccess }
+            compose.waitUntil(10_000) { runCatching { compose.onNodeWithText("From gallery").assertExists() }.isSuccess }
             Thread.sleep(1500)
             shoot("poses-sheet-$tag")
+        }
+        // Swipe compare: the divider at half, then dragged left.
+        for (light in listOf(false, true)) {
+            val tag = if (light) "light" else "dark"
+            show(light = light) { ProgressPhotosScreen(onBack = {}) }
+            waitForSlots()
+            compose.mainClock.autoAdvance = true
+            val handle = sliders()[0]
+            handle.performScrollTo()
+            Thread.sleep(800)
+            shoot("compare-50-$tag")
+            handle.performTouchInput { down(center); moveBy(Offset(-width * 4f, 0f)); up() }
+            Thread.sleep(500)
+            shoot("compare-dragged-$tag")
         }
         // 720dp wide: the comparison grows and keeps its two sides.
         show(light = false, density = 720f) { ProgressPhotosScreen(onBack = {}) }
         waitForSlots()
         Thread.sleep(800)
         shoot("poses-wide-dark")
+    }
+
+    @Test
+    fun captureTheTrainChips() {
+        if (!shots) return
+        for ((light, themed) in listOf(false to true, true to false)) {
+            val tag = if (light) "light" else "dark"
+            show(light = light, themed = themed) {
+                TrainScreen(
+                    onOpenRite = {}, onNew = {}, onGenerate = { _, _ -> }, onStartSession = {},
+                    onQuickSession = {}, onOpenExercises = {}, onOpenLog = {}, onOpenMuscles = {},
+                )
+            }
+            Thread.sleep(1500)
+            shoot("train-chips-$tag")
+        }
     }
 
     @Test

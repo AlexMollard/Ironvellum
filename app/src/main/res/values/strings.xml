@@ -7013,6 +7013,9 @@
     <!-- Buttons under a photo, on a workout\'s detail and in the pose sheet. -->
     <string name="photo_take_button">Take photo</string>
     <string name="photo_pick_button">Choose photo</string>
+    <!-- The pose sheet's two big tiles; the helper line under them. %1$s is the pose, lower case (front, side, back). -->
+    <string name="photo_gallery_tile">From gallery</string>
+    <string name="photos_pose_helper">Stand where your last %1$s photo was taken. Same light, same distance.</string>
     <string name="photo_retake_button">Take a new photo</string>
     <string name="photo_repick_button">Choose another</string>
     <string name="photo_remove_button">Remove</string>
@@ -7037,7 +7040,8 @@
     <string name="photos_slot_add_description">Add the %1$s photo</string>
     <string name="photos_slot_change_description">Change the %1$s photo</string>
     <string name="photos_day_label">Pose day</string>
-    <string name="photos_day_caption">Today asks for your poses on this day.</string>
+    <string name="photos_day_row">Pose day: %1$s</string>
+    <string name="photos_day_change_description">Change the pose day. Today asks for your poses on this day.</string>
     <string name="photos_compare_label">Compare weeks</string>
     <string name="photos_compare_empty">Take your poses in two different weeks to compare them side by side.</string>
     <string name="photos_left_week_label">Left week</string>
@@ -7047,6 +7051,12 @@
     <string name="photos_picked">Picked</string>
     <string name="photos_no_photo">No photo</string>
     <string name="photos_compare_description">%1$s photo, week of %2$s</string>
+    <!-- The compare slider: %1$s and %2$s are the two weeks, %3$d a percentage, %4$s a pose name. -->
+    <string name="photos_compare_handle_description">Divider between the week of %1$s and the week of %2$s</string>
+    <string name="photos_compare_state">%1$d percent from the left</string>
+    <string name="photos_compare_move_left">Move the divider left</string>
+    <string name="photos_compare_move_right">Move the divider right</string>
+    <string name="photos_compare_only">Only the week of %1$s has a %2$s photo.</string>
     <string name="photos_privacy_caption">Photos stay on this phone and in your own backup folder. They are never uploaded.</string>
     <!-- The row on Body that opens the screen. -->
     <string name="ledger_photos_label">Progress photos</string>

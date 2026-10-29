@@ -21,7 +21,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.AddAPhoto
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,14 +56,13 @@ import com.ironvellum.app.domain.PhotoRules
 import com.ironvellum.app.domain.Pose
 import com.ironvellum.app.domain.ProgressPhoto
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.LedgerSpace
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PanelLabel
-import com.ironvellum.app.ui.components.PhotoActions
+import com.ironvellum.app.ui.components.PhotoSourceTiles
 import com.ironvellum.app.ui.components.PhotoFrame
 import com.ironvellum.app.ui.components.PhotoRemoveDialog
 import com.ironvellum.app.ui.components.PhotoSource
@@ -114,9 +114,9 @@ class ProgressPhotosViewModel(private val repo: Repository, private val appConte
 }
 
 /**
- * Stats > Body > Progress photos: this week's three poses (front, side, back) with the weekday they are asked on, and
- * any two weeks side by side, pose by pose. Photos live only on this phone and in the lifter's backup folder.
- * At 600dp and wider the pictures grow; the pair is side by side at every width.
+ * Stats > Body > Progress photos: the weekday the poses are asked on, this week's three poses (front, side, back), and
+ * any two weeks compared pose by pose with a draggable divider. Photos live only on this phone and in the lifter's
+ * backup folder. At 600dp and wider the pictures grow.
  */
 @Composable
 fun ProgressPhotosScreen(
@@ -164,6 +164,7 @@ fun ProgressPhotosScreen(
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             val wide = maxWidth >= 600.dp
             val frameHeight = if (wide) 320.dp else 180.dp
+            val compareHeight = if (wide) 480.dp else 400.dp
             Column(
                 Modifier
                     .fillMaxSize()
@@ -172,18 +173,34 @@ fun ProgressPhotosScreen(
                     .widthIn(max = 840.dp),
                 verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
             ) {
-                Spacer(Modifier.height(LedgerSpace.Panel))
-
-                // --- this week ---
-                InkPanel(Modifier.fillMaxWidth()) {
-                    PanelLabel(stringResource(R.string.photos_this_week_label))
+                // --- pose day: one quiet row under the header ---
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = LedgerSpace.Target)
+                        .clickable(onClickLabel = stringResource(R.string.photos_day_change_description), role = Role.Button) { pickingDay = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     Text(
-                        stringResource(R.string.photos_week_of, thisWeek.format(dateFormat)),
+                        stringResource(R.string.photos_day_row, PhotoPrefs.poseDay.getDisplayName(TextStyle.FULL, locale)),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
                     )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
+                }
+
+                // --- this week ---
+                Column(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
+                        PanelLabel(stringResource(R.string.photos_this_week_label))
+                        Text(
+                            stringResource(R.string.photos_week_of, thisWeek.format(dateFormat)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Pose.entries.forEach { pose ->
                             val photo = bySlot[thisWeek.toEpochDay() to pose]
                             PoseSlot(
@@ -206,17 +223,8 @@ fun ProgressPhotosScreen(
                     }
                 }
 
-                InkRowPanel(Modifier.fillMaxWidth()) {
-                    ListRow(
-                        stringResource(R.string.photos_day_label),
-                        subline = stringResource(R.string.photos_day_caption),
-                        value = PhotoPrefs.poseDay.getDisplayName(TextStyle.FULL, locale),
-                        onClick = { pickingDay = true },
-                    )
-                }
-
                 // --- compare ---
-                InkPanel(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth()) {
                     PanelLabel(stringResource(R.string.photos_compare_label))
                     if (weeks.size < 2) {
                         Text(
@@ -242,32 +250,17 @@ fun ProgressPhotosScreen(
                         )
                     }
                     Pose.entries.forEach { pose ->
-                        InkPanel(Modifier.fillMaxWidth()) {
-                            val label = stringResource(poseLabel(pose))
-                            PanelLabel(label)
-                            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf(left, right).forEach { week ->
-                                    val file = week?.let { bySlot[it.toEpochDay() to pose] }?.let(viewModel::fileOf)
-                                    val weekText = week?.format(dateFormat).orEmpty()
-                                    Column(Modifier.weight(1f)) {
-                                        if (file != null) {
-                                            PhotoFrame(
-                                                file,
-                                                stringResource(R.string.photos_compare_description, label, weekText),
-                                                height = frameHeight + 60.dp,
-                                            )
-                                        } else {
-                                            EmptyField(frameHeight + 60.dp, stringResource(R.string.photos_no_photo))
-                                        }
-                                        Text(
-                                            weekText,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = IronvellumColors.InkMuted,
-                                            modifier = Modifier.padding(top = 4.dp),
-                                        )
-                                    }
-                                }
-                            }
+                        val label = stringResource(poseLabel(pose))
+                        Column(Modifier.fillMaxWidth()) {
+                            PanelLabel(label, Modifier.padding(bottom = 8.dp))
+                            PhotoCompare(
+                                pose = label,
+                                leftWeek = left?.format(dateFormat).orEmpty(),
+                                rightWeek = right?.format(dateFormat).orEmpty(),
+                                leftFile = left?.let { bySlot[it.toEpochDay() to pose] }?.let(viewModel::fileOf),
+                                rightFile = right?.let { bySlot[it.toEpochDay() to pose] }?.let(viewModel::fileOf),
+                                height = compareHeight,
+                            )
                         }
                     }
                 }
@@ -290,7 +283,8 @@ fun ProgressPhotosScreen(
             onDismissRequest = { editing = null },
             title = { Text(stringResource(poseLabel(pose))) },
             text = {
-                PhotoActions(
+                PhotoSourceTiles(
+                    helper = stringResource(R.string.photos_pose_helper, stringResource(poseLabel(pose)).lowercase(locale)),
                     source = PhotoSource(
                         canTake = source.canTake,
                         take = { target = key; editing = null; source.take() },
@@ -369,7 +363,7 @@ private fun poseLabel(pose: Pose): Int = when (pose) {
     Pose.BACK -> R.string.photos_pose_back
 }
 
-/** One of this week's three slots: the photo, or a plus on an empty field. The whole slot is the 48dp-plus target. */
+/** One of this week's three slots: the photo, or a camera-with-plus mark on an empty field (no silhouette art exists for a pose). The whole slot is the 48dp-plus target. */
 @Composable
 private fun PoseSlot(pose: Pose, file: File?, busy: Boolean, height: Dp, modifier: Modifier, onClick: () -> Unit) {
     val label = stringResource(poseLabel(pose))
@@ -382,7 +376,7 @@ private fun PoseSlot(pose: Pose, file: File?, busy: Boolean, height: Dp, modifie
             PhotoFrame(file, stringResource(R.string.photos_slot_description, label), height = height, scale = ContentScale.Crop)
         } else {
             EmptyField(height, null) {
-                Icon(Icons.Filled.Add, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(28.dp))
+                Icon(Icons.Outlined.AddAPhoto, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(28.dp))
             }
         }
         Text(
@@ -395,7 +389,7 @@ private fun PoseSlot(pose: Pose, file: File?, busy: Boolean, height: Dp, modifie
 }
 
 @Composable
-private fun EmptyField(height: Dp, text: String?, content: @Composable () -> Unit = {}) {
+internal fun EmptyField(height: Dp, text: String?, content: @Composable () -> Unit = {}) {
     Box(
         Modifier.fillMaxWidth().height(height).clip(MaterialTheme.shapes.small).background(IronvellumColors.VaultHigh),
         contentAlignment = Alignment.Center,
