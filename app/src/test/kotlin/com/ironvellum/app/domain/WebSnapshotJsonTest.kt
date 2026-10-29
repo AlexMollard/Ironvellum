@@ -39,7 +39,7 @@ class WebSnapshotJsonTest {
         assertEquals(7.89, chartValue, 0.0)
     }
     @Test fun emptySnapshotIsValidAndTiny() {
-        val input = WebSnapshotFixtures.input().copy(history = emptyList(), exercises = emptyMap(), stats = emptyList())
+        val input = WebSnapshotFixtures.input().copy(history = emptyList(), exercises = emptyMap(), stats = emptyList(), presets = emptyList())
         val json = WebSnapshotJson.write(WebSnapshotBuilder.build(input))
         val value = Json.parseToJsonElement(json).jsonObject
         assertTrue(json.toByteArray(Charsets.UTF_8).size < 8192)
@@ -62,7 +62,13 @@ class WebSnapshotJsonTest {
             }
             session to sets
         }
-        val size = WebSnapshotJson.write(WebSnapshotBuilder.build(input.copy(history = history, exercises = exercises))).toByteArray(Charsets.UTF_8).size
+        // Twelve routines of ten entries and twenty custom exercises ride along: the section must stay a small share of the cap.
+        val presets = (1L..12L).map { p -> WorkoutPreset(p, "Routine $p", "A note for routine $p, kept to a sentence.", (1L..10L).map { e ->
+            PresetEntry(id = p * 100 + e, exerciseId = e, exerciseName = exercises.getValue(e).name, targetSets = 3, targetReps = 8, targetWeightKg = 60.0, position = e.toInt(),
+                scheme = SetScheme(SchemeType.TOP_BACKOFF, backoffSets = 2), modifiers = "Weighted")
+        }, scheduledDay = (p % 7 + 1).toInt()) }
+        val custom = (101L..120L).associateWith { Exercise(it, "Custom lift $it", MuscleGroup.PULL, true, custom = true, needs = setOf(CustomNeed.BARBELL), shares = mapOf(Muscle.LATS to 1.0, Muscle.BICEPS to 0.5)) }
+        val size = WebSnapshotJson.write(WebSnapshotBuilder.build(input.copy(history = history, exercises = exercises + custom, presets = presets))).toByteArray(Charsets.UTF_8).size
         assertTrue("$size bytes", size < WireLimits.SNAPSHOT_MAX_BYTES / 2)
     }
 }

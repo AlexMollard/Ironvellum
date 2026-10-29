@@ -332,6 +332,82 @@ class WebSnapshotBuilderTest {
             assertEquals(wanted, variation.setRecords)
         }
     }
+    private fun routines(input: SnapshotInput = WebSnapshotFixtures.input()) = WebSnapshotBuilder.routinesSection(input)
+    private fun plain(block: () -> Unit) { val old = com.ironvellum.app.data.Words.themed; com.ironvellum.app.data.Words.useForTest(false); try { block() } finally { com.ironvellum.app.data.Words.useForTest(old) } }
+
+    @Test fun routineEntriesKeepOrderAndWarmups() = plain {
+        val upperB = routines().presets.first { it.name == "Upper B" }
+        assertEquals(listOf("Plank", "Pull-up", "Pull-up", "Push-up", "Weighted Dip"), upperB.entries.map { it.name })
+        assertEquals(listOf(0, 1, 2, 3, 4), upperB.entries.map { it.position })
+        assertEquals(listOf(true, false, false, false, false), upperB.entries.map { it.warmup })
+    }
+    @Test fun schemeLineIsThePhonesOwn() = plain {
+        val upperB = routines().presets.first { it.name == "Upper B" }
+        val top = upperB.entries[1]
+        assertEquals(SchemeText.summary(SetScheme(SchemeType.TOP_BACKOFF, backoffSets = 3), 4), top.scheme)
+        assertNull(upperB.entries[3].scheme)
+        assertEquals(SchemeText.figure(SetScheme(SchemeType.TOP_BACKOFF, topReps = 3..5, backoffSets = 3, backoffPercent = 10, backoffReps = 4..6), 4, 4, 12.5, { Loads.withUnit(it, LoadUnit.KG) }, MovementDifficulty.isHoldByName("Pull-up")), top.figure)
+        assertEquals("Weighted", top.label); assertEquals("", upperB.entries[3].label)
+    }
+    @Test fun figureUsesTheSnapshotUnit() = plain {
+        val figure = routines(WebSnapshotFixtures.input().copy(unit = LoadUnit.LB)).presets.first { it.name == "Lower A" }.entries[0].figure
+        assertEquals("4 × 6 @" + Loads.withUnit(80.0, LoadUnit.LB), figure)
+        assertTrue(figure, figure.contains("lb"))
+    }
+    @Test fun holdRepsReadAsSeconds() = plain {
+        val plank = routines().presets.first { it.name == "Lower A" }.entries[1]
+        assertEquals(SchemeText.figure(SetScheme(), 3, 40, null, null, hold = MovementDifficulty.isHoldByName("Plank")), plank.figure)
+    }
+    @Test fun supersetGroupIsCarried() = plain {
+        val upperB = routines().presets.first { it.name == "Upper B" }
+        assertEquals(listOf(null, null, null, 1, 1), upperB.entries.map { it.supersetGroup })
+    }
+    @Test fun scheduledDayIsCarriedAndUnscheduledIsNull() = plain {
+        val byName = routines().presets.associateBy { it.name }
+        assertEquals(listOf(1, 3, 5, 7, null), listOf("Upper A", "Lower A", "Upper B", "Lower B", "Mobility").map { byName.getValue(it).day })
+    }
+    @Test fun minutesAndHardSetsMatchTheRulesObject() = plain {
+        val input = WebSnapshotFixtures.input()
+        val lowerB = routines(input).presets.first { it.name == "Lower B" }
+        val planned = PlannedPreset("Lower B", "", 7, listOf(PlannedEntry("Back Squat", 5, 5, 90.0)))
+        val pace = SessionClock.pace(input.history).secondsPerSet(input.presets.first { it.name == "Lower B" })
+        val seconds = SessionClock.planSeconds(planned.entries, input.focus, pace) { input.exercises.values.firstOrNull { e -> e.name == it.exerciseName }?.metric }
+        assertEquals(SessionClock.minutes(seconds), lowerB.minutes)
+        assertEquals(5, lowerB.hardSets)
+        assertEquals(ProgramRules.weeklyVolume(listOf(planned)).filterValues { it > 0 }.mapKeys { it.key.name }.mapValues { FeedCardJson.level(it.value) }, lowerB.levels)
+    }
+    @Test fun weekCoversMatchesCoverageTally() = plain {
+        val input = WebSnapshotFixtures.input(); val week = routines(input).week
+        val tally = com.ironvellum.app.ui.program.coverageTally(input.presets.filter { it.scheduledDay != null }.map { p ->
+            PlannedPreset(p.name, p.note, p.scheduledDay, p.working.map { PlannedEntry(it.exerciseName, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers) })
+        })
+        assertEquals(com.ironvellum.app.ui.program.coverageHeadline(tally), week.headline)
+        val expected = com.ironvellum.app.ui.program.JUDGED_MUSCLES.associate { m ->
+            m.name to when (tally.states.getValue(m)) {
+                com.ironvellum.app.ui.program.CoverageState.COVERED -> "covered"; com.ironvellum.app.ui.program.CoverageState.BELOW_MINIMUM -> "below"
+                com.ironvellum.app.ui.program.CoverageState.HEAVY -> "heavy"; else -> "none"
+            }
+        }
+        assertEquals(expected, week.covers)
+        assertEquals(4, week.days); assertEquals(6 + 7 + 13 + 5, week.hardSets)
+    }
+    @Test fun customExerciseCarriesMusclesAndGear() = plain {
+        val custom = routines().custom
+        assertEquals(listOf("Fictional lift", "Fictional press"), custom.map { it.name })
+        val press = custom[1]
+        assertEquals(mapOf("MID_CHEST" to "main", "TRICEPS" to "assist"), press.muscles)
+        assertEquals(listOf(CustomNeed.BARBELL.label, CustomNeed.BENCH.label), press.needs)
+        assertEquals(emptyMap<String, String>(), custom[0].muscles)
+    }
+    @Test fun emptyPresetsGiveEmptyRoutines() = plain {
+        val r = routines(WebSnapshotFixtures.input().copy(presets = emptyList()))
+        assertEquals(emptyList<WebSnapshot.RoutinePreset>(), r.presets); assertEquals(0, r.week.days); assertEquals(0, r.week.hardSets)
+        assertTrue(r.week.covers.values.all { it == "none" })
+    }
+    @Test fun weekPlannedDaysAgreesWithRoutines() = plain {
+        val input = WebSnapshotFixtures.input()
+        assertEquals(routines(input).presets.mapNotNull { it.day }.distinct().size, WebSnapshotBuilder.weekAndTrends(input).first.plannedDays)
+    }
     @Test fun prTagsCapAtSix() {
         val exercises = (1L..7L).associateWith { Exercise(it, "Lift $it", MuscleGroup.PULL, true) }
         fun sets(reps: Int) = exercises.values.map {

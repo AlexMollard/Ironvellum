@@ -666,6 +666,8 @@ class CloudSync(
                     val stats = repo.observeStats().first()
                     val presets = repo.observePresets().first()
                     val figure = repo.observeSex().first().name.lowercase()
+                    // shortcut: the profile's training mode only; the phone also lets the generator's saved answers override it (needs a Context)
+                    val focus = com.ironvellum.app.domain.SessionClock.focusFor(null, repo.observeProfile().first()?.trainingMode)
                     val mode = appearance.mode.value
                     val dark = appearance.palette.value
                     val light = appearance.lightPalette.value
@@ -685,7 +687,7 @@ class CloudSync(
                                     nowMs = WebSnapshotBuilder.stableNowMs(now, zone, completed),
                                     appearance = WebAppearance.of(mode, dark, light, themed),
                                     fatigueText = WebFatigueText, displayName = me.displayName,
-                                    figure = figure, crestId = wornCrest, builtAtMs = now,
+                                    figure = figure, crestId = wornCrest, builtAtMs = now, focus = focus,
                                 )
                                 WebSnapshotJson.write(WebSnapshotBuilder.build(input))
                             }

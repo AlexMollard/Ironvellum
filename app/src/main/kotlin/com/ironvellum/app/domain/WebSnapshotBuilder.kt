@@ -17,6 +17,8 @@ data class SnapshotInput(
     val displayName: String, val figure: String, val crestId: String?,
     /** When the snapshot is stamped. [nowMs] may sit earlier, see [WebSnapshotBuilder.stableNowMs]. */
     val builtAtMs: Long = nowMs,
+    /** The focus a routine's minutes are priced at (the phone's [SessionClock.focusFor]); the generator's default when unknown. */
+    val focus: TrainingFocus = TrainingFocus.MUSCLE,
 )
 
 object WebSnapshotBuilder {
@@ -49,7 +51,7 @@ object WebSnapshotBuilder {
             rir = Effort.CHIPS.associate { it.toString() to Effort.rir(it) }, appearance = input.appearance,
             profile = profile, deeds = deeds, muscles = Muscle.entries.associate { it.name to it.label },
             week = week, months = monthEntries(input), sessions = sessionEntries(input).mapKeys { it.key.toString() },
-            lifts = liftEntries(input), fatigue = fatigueSection(input), trends = trends,
+            lifts = liftEntries(input), fatigue = fatigueSection(input), trends = trends, routines = routinesSection(input),
         )
     }
 
@@ -202,6 +204,68 @@ object WebSnapshotBuilder {
                     if (com.ironvellum.app.ui.program.shareLevel(v) == com.ironvellum.app.ui.program.ShareLevel.MAIN) 3 else 2
                 }, entries)
         }
+    }
+
+    /**
+     * The routines section: each saved routine with the figures the phone's Train screen prints (its own scheme and figure wording, the
+     * plan line's minutes at the lifter's focus and measured pace, the planned working sets and the muscles it works), and the week they
+     * cover through the same coverage rule as the phone's card (scheduled routines, else the whole board).
+     */
+    internal fun routinesSection(input: SnapshotInput): WebSnapshot.Routines {
+        val pace = SessionClock.pace(input.history)
+        val metrics = input.exercises.values.associate { it.name to it.metric }
+        val unit = input.unit
+        val presets = input.presets.map { preset ->
+            val planned = PlannedPreset(preset.name, preset.note, preset.scheduledDay, preset.working.map {
+                PlannedEntry(it.exerciseName, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers)
+            })
+            val credit = ProgramRules.weeklyVolume(listOf(planned))
+            WebSnapshot.RoutinePreset(
+                id = preset.id, name = preset.name, note = preset.note, day = preset.scheduledDay,
+                minutes = SessionClock.minutes(SessionClock.planSeconds(planned.entries, input.focus, pace.secondsPerSet(preset)) { metrics[it.exerciseName] }),
+                hardSets = planned.entries.sumOf { it.sets },
+                levels = credit.filterValues { it > 0 }.mapKeys { it.key.name }.mapValues { FeedCardJson.level(it.value) },
+                entries = preset.entries.mapIndexed { index, entry ->
+                    WebSnapshot.RoutineEntry(
+                        position = index, name = entry.exerciseName, art = ExerciseArtIndex.forName(entry.exerciseName)?.id?.removePrefix("own_"),
+                        // The variation chip is the rite row's own subline: the modifiers, one per segment.
+                        label = entry.modifiers.split(",").map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" · "),
+                        sets = entry.targetSets, reps = entry.targetReps, loadKg = entry.targetWeightKg,
+                        figure = SchemeText.figure(entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { Loads.withUnit(it, unit) }, MovementDifficulty.isHoldByName(entry.exerciseName)),
+                        scheme = SchemeText.summary(entry.scheme, entry.targetSets), modifiers = entry.modifiers,
+                        supersetGroup = entry.supersetGroup, warmup = entry.warmup,
+                    )
+                },
+            )
+        }
+        val scheduled = input.presets.filter { it.scheduledDay != null }
+        val counted = scheduled.ifEmpty { input.presets }.map { preset ->
+            PlannedPreset(preset.name, preset.note, preset.scheduledDay, preset.working.map { PlannedEntry(it.exerciseName, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers) })
+        }
+        val tally = com.ironvellum.app.ui.program.coverageTally(counted)
+        val week = WebSnapshot.RoutineWeek(
+            days = scheduled.mapNotNull { it.scheduledDay }.distinct().size,
+            hardSets = scheduled.sumOf { p -> p.working.sumOf { it.targetSets } },
+            covers = com.ironvellum.app.ui.program.JUDGED_MUSCLES.associate { muscle ->
+                muscle.name to when (tally.states[muscle]) {
+                    com.ironvellum.app.ui.program.CoverageState.COVERED -> "covered"
+                    com.ironvellum.app.ui.program.CoverageState.BELOW_MINIMUM -> "below"
+                    com.ironvellum.app.ui.program.CoverageState.HEAVY -> "heavy"
+                    else -> "none"
+                }
+            },
+            headline = com.ironvellum.app.ui.program.coverageHeadline(tally),
+        )
+        val custom = input.exercises.values.filter { it.custom }.sortedBy { it.name }.map { exercise ->
+            WebSnapshot.CustomExercise(
+                exercise.name,
+                exercise.shares.filterValues { it > 0 }.mapKeys { it.key.name }.mapValues {
+                    if (com.ironvellum.app.ui.program.shareLevel(it.value) == com.ironvellum.app.ui.program.ShareLevel.MAIN) "main" else "assist"
+                },
+                exercise.needs.map { it.label },
+            )
+        }
+        return WebSnapshot.Routines(presets, week, custom)
     }
 
     internal fun profileAndDeeds(input: SnapshotInput): Pair<WebSnapshot.Profile, List<WebSnapshot.Deed>> {

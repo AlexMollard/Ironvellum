@@ -18,6 +18,8 @@ data class WebSnapshot(
     val rir: Map<String, Int>, val appearance: Appearance, val profile: Profile, val deeds: List<Deed>,
     val muscles: Map<String, String>, val week: Week, val months: Map<String, Month>,
     val sessions: Map<String, SessionEntry>, val lifts: List<Lift>, val fatigue: Fatigue, val trends: Trends,
+    /** Additive to v1: a web that does not know it ignores it. */
+    val routines: Routines = Routines(),
 ) {
     @Serializable data class AccentSet(val preset: String?, val primary: String, val secondary: String, val bright: String,
         val deep: String, val muted: String, val panelTint: String, val panelTintBorder: String, val fill: String,
@@ -54,6 +56,15 @@ data class WebSnapshot(
     @Serializable data class TrendWindow(val from: Long, val to: Long, val perWeek: Map<String, Double>, val state: Map<String, String>)
     @Serializable data class TrendWeek(val start: String, val hardSets: Double, val volumeKg: Double, val workouts: Int, val groups: Map<String, Double>)
     @Serializable data class RecordsMonth(val month: String, val count: Int)
+    /** The saved routines as the phone's Train screen words them, the week they cover, and the custom exercises. */
+    @Serializable data class Routines(val presets: List<RoutinePreset> = emptyList(), val week: RoutineWeek = RoutineWeek(),
+        val custom: List<CustomExercise> = emptyList())
+    @Serializable data class RoutinePreset(val id: Long, val name: String, val note: String, val day: Int?, val minutes: Int,
+        val hardSets: Int, val levels: Map<String, Int>, val entries: List<RoutineEntry>)
+    @Serializable data class RoutineEntry(val position: Int, val name: String, val art: String?, val label: String, val sets: Int,
+        val reps: Int, val loadKg: Double?, val figure: String, val scheme: String?, val modifiers: String, val supersetGroup: Int?, val warmup: Boolean)
+    @Serializable data class RoutineWeek(val days: Int = 0, val hardSets: Int = 0, val covers: Map<String, String> = emptyMap(), val headline: String = "")
+    @Serializable data class CustomExercise(val name: String, val muscles: Map<String, String>, val needs: List<String>)
     @Serializable data class RecentRecord(val atMs: Long, val localId: Long, val name: String, val label: String,
         val art: String?, val e1rmKg: Double, val gainKg: Double)
 }

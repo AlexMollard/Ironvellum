@@ -18,7 +18,29 @@ internal object WebSnapshotFixtures {
         Exercise(5, "Run", MuscleGroup.LEGS, false, ExerciseMetric.DISTANCE_TIME),
         Exercise(6, "Fictional lift", MuscleGroup.PULL, true, custom = true),
         Exercise(7, "Weighted Dip", MuscleGroup.PUSH, true),
+        Exercise(8, "Fictional press", MuscleGroup.PUSH, true, custom = true, needs = setOf(CustomNeed.BARBELL, CustomNeed.BENCH),
+            shares = mapOf(Muscle.MID_CHEST to 1.0, Muscle.TRICEPS to 0.5)),
     ).associateBy { it.id }
+    private fun entry(id: Long, name: String, sets: Int, reps: Int, kg: Double? = null, position: Int = 0, modifiers: String = "",
+        scheme: SetScheme = SetScheme(), superset: Int? = null, warmup: Boolean = false) =
+        PresetEntry(id = id * 10 + position, exerciseId = id, exerciseName = name, targetSets = sets, targetReps = reps, targetWeightKg = kg,
+            modifiers = modifiers, position = position, supersetGroup = superset, scheme = scheme, warmup = warmup)
+
+    /** Upper A, Lower A, Upper B (a weighted pull-up top set with back-offs, an archer range, a superset pair and a warm-up), Lower B and an unscheduled Mobility. */
+    fun presets(): List<WorkoutPreset> = listOf(
+        WorkoutPreset(1, "Upper A", "Pull first.", listOf(entry(1, "Pull-up", 3, 6, position = 0), entry(2, "Push-up", 3, 10, position = 1)), scheduledDay = 1),
+        WorkoutPreset(2, "Lower A", "", listOf(entry(3, "Back Squat", 4, 6, 80.0, 0), entry(4, "Plank", 3, 40, position = 1)), scheduledDay = 3),
+        WorkoutPreset(3, "Upper B", "Heavy pulls.", listOf(
+            entry(4, "Plank", 1, 30, position = 0, warmup = true),
+            entry(1, "Pull-up", 4, 4, 12.5, 1, "Weighted", SetScheme(SchemeType.TOP_BACKOFF, topReps = 3..5, backoffSets = 3, backoffPercent = 10, backoffReps = 4..6)),
+            entry(1, "Pull-up", 3, 4, null, 2, "Archer", SetScheme(workingReps = 4..6)),
+            entry(2, "Push-up", 3, 10, null, 3, "", SetScheme(), superset = 1),
+            entry(7, "Weighted Dip", 3, 8, 30.0, 4, "", SetScheme(), superset = 1),
+        ), scheduledDay = 5),
+        WorkoutPreset(4, "Lower B", "", listOf(entry(3, "Back Squat", 5, 5, 90.0, 0)), scheduledDay = 7),
+        WorkoutPreset(5, "Mobility", "Easy day.", listOf(entry(4, "Plank", 2, 30, position = 0)), scheduledDay = null),
+    )
+
     fun input(): SnapshotInput {
         val history = (0 until 14).map { n ->
             val at = now - listOf(69, 62, 55, 48, 41, 26, 23, 20, 17, 14, 11, 8, 5, 2)[n] * DAY
@@ -54,7 +76,7 @@ internal object WebSnapshotFixtures {
             session to sets
         }
         return SnapshotInput(history, exercises, listOf(StatEntry(takenAtMs = now - 100 * DAY, weightKg = 80.0, heightCm = 180.0)),
-            PlayerProfile(totalXp = 126420), emptyList(), emptyList(), LoadUnit.KG, EffortScale.RPE, false,
+            PlayerProfile(totalXp = 126420), emptyList(), presets(), LoadUnit.KG, EffortScale.RPE, false,
             ZoneId.of("Australia/Sydney"), now,
             WebAppearance.of(ThemeMode.SYSTEM, AccentPalette.Default, AccentPalette.LightDefault, themed = false),
             WebFatigueText, "Fictional lifter", "female", null)
