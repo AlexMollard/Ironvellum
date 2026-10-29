@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -109,7 +111,7 @@ internal fun RecoveryPage(
                     if (rite.causeRite != null) {
                         stringResource(R.string.optimise_recovery_cause, rite.causeRite, startedOn(cause.atMs), cause.exerciseName)
                     } else {
-                        stringResource(R.string.optimise_recovery_cause_free, startedOn(cause.atMs), cause.exerciseName)
+                        UiText.themed(R.string.optimise_recovery_cause_free, R.string.optimise_recovery_cause_free__t, startedOn(cause.atMs), cause.exerciseName).asString()
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,

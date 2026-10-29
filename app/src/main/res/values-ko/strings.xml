@@ -2402,6 +2402,7 @@
     <string name="optimise_recovery_starts_label">시작 시점</string>
     <string name="optimise_recovery_cause">주로 %2$s(%3$s) %1$s 때문이에요.</string>
     <string name="optimise_recovery_cause_free">주로 %1$s(%2$s) 운동 때문이에요.</string>
+    <string name="optimise_recovery_cause_free__t">주로 %1$s(%2$s) 시련 때문이에요.</string>
     <string name="optimise_recovery_choose_label">대처 방법</string>
     <string name="optimise_recovery_move_option">%1$s → %2$s로 이동</string>
     <string name="optimise_recovery_move_reason">%1$s 이후 하루 더 휴식</string>
@@ -3944,6 +3945,7 @@
     <string name="skilltree_row_tier">티어 %1$s</string>
     <string name="skilltree_row_mastered">마스터</string>
     <string name="skilltree_row_passed">통과, 더 어려운 기술로 인정</string>
+    <string name="skilltree_row_passed__t">통과, 더 어려운 절기로 인정</string>
     <string name="skilltree_row_available">사용 가능, 다음</string>
     <string name="skilltree_row_standard">기준 %1$s</string>
     <string name="skilltree_row_locked_needs">잠김, %1$s 필요</string>
@@ -4462,7 +4464,9 @@
     <string name="cloud_sync_set_skipped">\"%1$s\"의 세트 하나에 운동 이름이 없어서 건너뛰었어요</string>
     <string name="cloud_sync_set_unsyncable">\"%1$s\"의 세트 하나는 운동 이름이 클라우드에 비해 너무 길어서 건너뛰었어요</string>
     <string name="cloud_sync_web_unavailable">이 클라우드에서는 웹 운동 상세 정보를 사용할 수 없어요.</string>
+    <string name="cloud_sync_web_unavailable__t">이 클라우드에서는 웹 시련 상세 정보를 사용할 수 없어요.</string>
     <string name="cloud_sync_web_failed">웹 운동 상세 정보를 동기화하지 못했어요: %1$s</string>
+    <string name="cloud_sync_web_failed__t">웹 시련 상세 정보를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_web_needs_schema">웹 통계를 쓰려면 클라우드 스키마 31 이상이 필요해요.</string>
     <string name="cloud_sync_web_snapshot_failed">웹 통계를 동기화하지 못했어요: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">웹 통계가 너무 커서 동기화할 수 없어요(%1$d바이트).</string>
@@ -5410,18 +5414,27 @@
     <string name="twin_switch_split_note">체크한 세트는 %1$s 그대로 남아요. 나머지는 별도 묶음이 돼요.</string>
     <string name="twin_switch_unlink_note">이 운동이 꽉 찬 슈퍼 세트에 있어서, 자리를 만들려고 슈퍼 세트를 해제해요.</string>
     <string name="twinconvert_title">운동 이동</string>
-    <string name="twinconvert_intro">기록한 세트와 저장된 운동 항목을 각각의 전용 운동으로 옮겨요.</string>
-    <string name="twinconvert_empty">옮겨야 할 기록 세트나 저장된 운동 항목이 없어요.</string>
+    <string name="twinconvert_intro">기록한 세트와 저장된 루틴 항목을 각각의 전용 운동으로 옮겨요.</string>
+    <string name="twinconvert_intro__t">기록한 세트와 저장된 의식 항목을 각각의 전용 운동으로 옮겨요.</string>
+    <string name="twinconvert_empty">옮겨야 할 기록 세트나 저장된 루틴 항목이 없어요.</string>
+    <string name="twinconvert_empty__t">옮겨야 할 기록 세트나 저장된 의식 항목이 없어요.</string>
     <string name="twinconvert_history_heading">운동 기록</string>
+    <string name="twinconvert_history_heading__t">시련 기록</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="other">저장된 운동 · 항목 %1$d개</item>
+        <item quantity="other">저장된 루틴 · 항목 %1$d개</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="other">저장된 의식 · 항목 %1$d개</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="other">저장된 운동 항목 %1$d개를 옮겼어요.</item>
+        <item quantity="other">저장된 루틴 항목 %1$d개를 옮겼어요.</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="other">저장된 의식 항목 %1$d개를 옮겼어요.</item>
     </plurals>
     <string name="twinconvert_review_button">운동 이동</string>
     <string name="twinconvert_confirm_title">이 운동을 옮길까요?</string>
-    <string name="twinconvert_confirm_text">먼저 이 휴대전화에 백업을 저장해요. 표시된 세트와 저장된 운동 항목이 함께 이동해요.</string>
+    <string name="twinconvert_confirm_text">먼저 이 휴대전화에 백업을 저장해요. 표시된 세트와 저장된 항목이 함께 이동해요.</string>
     <string name="twinconvert_confirm_button">운동 이동</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5439,7 +5452,8 @@
     <string name="twinconvert_card_review">확인</string>
     <string name="twinconvert_card_dismiss">나중에</string>
     <string name="settings_data_twin_label">운동을 전용 항목으로 이동</string>
-    <string name="settings_data_twin_caption">일치하는 기록 세트와 저장된 운동 항목을 각각의 전용 운동으로 옮겨요.</string>
+    <string name="settings_data_twin_caption">일치하는 기록 세트와 저장된 루틴 항목을 각각의 전용 운동으로 옮겨요.</string>
+    <string name="settings_data_twin_caption__t">일치하는 기록 세트와 저장된 의식 항목을 각각의 전용 운동으로 옮겨요.</string>
     <string name="settings_training_fatigue_advice_label">피로도 조언</string>
     <string name="settings_training_fatigue_advice_caption">근육이 아직 피로하면 오늘 화면에서 가볍게 운동하도록 제안하고, 운동 선택기에 피로한 근육을 표시하며, 최적화에서 계속 피로한 상태로 시작하는 루틴을 알려줘요. 직접 탭하지 않으면 아무것도 바뀌지 않아요.</string>
     <string name="settings_training_fatigue_advice_caption__t">근육이 아직 지쳐 있다면 오늘 화면에서 가볍게 나아가도록 권하고, 운동 선택기에 지친 근육을 표시하며, 최적화에서 계속 지친 채 시작하는 의식을 알려줘요. 직접 탭하지 않으면 아무것도 바뀌지 않아요.</string>

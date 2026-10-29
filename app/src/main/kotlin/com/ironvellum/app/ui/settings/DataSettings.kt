@@ -138,7 +138,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             InkDivider()
             ListRow(
                 stringResource(R.string.settings_data_twin_label),
-                subline = stringResource(R.string.settings_data_twin_caption),
+                subline = UiText.themed(R.string.settings_data_twin_caption, R.string.settings_data_twin_caption__t).asString(),
                 value = if (twinGroups.isEmpty()) null else pluralStringResource(R.plurals.common_sets_count, twinGroups.sumOf { it.sets }, twinGroups.sumOf { it.sets }),
                 onClick = {
                     twinConvert.reset()

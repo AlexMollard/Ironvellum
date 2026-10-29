@@ -2531,6 +2531,7 @@
     <string name="optimise_recovery_starts_label">Beim Start</string>
     <string name="optimise_recovery_cause">Der Großteil stammt von %1$s am %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">Der Großteil stammt von einem Training am %1$s (%2$s).</string>
+    <string name="optimise_recovery_cause_free__t">Der Großteil stammt von einer Prüfung am %1$s (%2$s).</string>
     <string name="optimise_recovery_choose_label">Was tun</string>
     <string name="optimise_recovery_move_option">%1$s auf %2$s verschieben</string>
     <string name="optimise_recovery_move_reason">Ein Tag mehr nach %1$s</string>
@@ -4193,6 +4194,7 @@
     <string name="skilltree_row_tier">Stufe %1$s</string>
     <string name="skilltree_row_mastered">gemeistert</string>
     <string name="skilltree_row_passed">bestanden, durch eine schwierigere Fähigkeit</string>
+    <string name="skilltree_row_passed__t">bestanden, durch eine schwierigere Kunst</string>
     <string name="skilltree_row_available">verfügbar, als Nächstes</string>
     <string name="skilltree_row_standard">Standard %1$s</string>
     <string name="skilltree_row_locked_needs">gesperrt, benötigt %1$s</string>
@@ -4746,7 +4748,9 @@
     <string name="cloud_sync_set_skipped">Ein Satz in \"%1$s\" hat keinen Übungsnamen und wurde übersprungen</string>
     <string name="cloud_sync_set_unsyncable">Ein Übungsname in \"%1$s\" ist für die Cloud zu lang; der Satz wurde übersprungen</string>
     <string name="cloud_sync_web_unavailable">Web-Trainingsdetails sind in dieser Cloud nicht verfügbar.</string>
+    <string name="cloud_sync_web_unavailable__t">Web-Prüfungsdetails sind in dieser Cloud nicht verfügbar.</string>
     <string name="cloud_sync_web_failed">Web-Trainingsdetails wurden nicht synchronisiert: %1$s</string>
+    <string name="cloud_sync_web_failed__t">Web-Prüfungsdetails wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web-Statistiken benötigen Cloud-Schema 31 oder neuer.</string>
     <string name="cloud_sync_web_snapshot_failed">Web-Statistiken wurden nicht synchronisiert: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web-Statistiken sind zu groß zum Synchronisieren (%1$d Bytes).</string>
@@ -5746,20 +5750,31 @@
     <string name="twin_switch_split_note">Abgehakte Sätze bleiben bei %1$s. Die übrigen bilden einen eigenen Block.</string>
     <string name="twin_switch_unlink_note">Diese Übung ist Teil eines vollständigen Supersatzes. Der Supersatz wird aufgelöst, um Platz zu schaffen.</string>
     <string name="twinconvert_title">Übungen verschieben</string>
-    <string name="twinconvert_intro">Verschiebe diese erfassten Sätze und gespeicherten Trainingseinträge zu ihren eigenen Übungen.</string>
-    <string name="twinconvert_empty">Keine erfassten Sätze oder gespeicherten Trainingseinträge müssen verschoben werden.</string>
+    <string name="twinconvert_intro">Verschiebe diese erfassten Sätze und gespeicherten Routineneinträge zu ihren eigenen Übungen.</string>
+    <string name="twinconvert_intro__t">Verschiebe diese erfassten Sätze und gespeicherten Ritus-Einträge zu ihren eigenen Übungen.</string>
+    <string name="twinconvert_empty">Keine erfassten Sätze oder gespeicherten Routineneinträge müssen verschoben werden.</string>
+    <string name="twinconvert_empty__t">Keine erfassten Sätze oder gespeicherten Ritus-Einträge müssen verschoben werden.</string>
     <string name="twinconvert_history_heading">Trainingsverlauf</string>
+    <string name="twinconvert_history_heading__t">Prüfungsverlauf</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="one">Gespeicherte Trainings · %1$d Eintrag</item>
-        <item quantity="other">Gespeicherte Trainings · %1$d Einträge</item>
+        <item quantity="one">Gespeicherte Routinen · %1$d Eintrag</item>
+        <item quantity="other">Gespeicherte Routinen · %1$d Einträge</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="one">Gespeicherte Riten · %1$d Eintrag</item>
+        <item quantity="other">Gespeicherte Riten · %1$d Einträge</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="one">%1$d gespeicherten Trainingseintrag verschoben.</item>
-        <item quantity="other">%1$d gespeicherte Trainingseinträge verschoben.</item>
+        <item quantity="one">%1$d gespeicherter Routineneintrag verschoben.</item>
+        <item quantity="other">%1$d gespeicherte Routineneinträge verschoben.</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="one">%1$d gespeicherter Ritus-Eintrag verschoben.</item>
+        <item quantity="other">%1$d gespeicherte Ritus-Einträge verschoben.</item>
     </plurals>
     <string name="twinconvert_review_button">Übungen verschieben</string>
     <string name="twinconvert_confirm_title">Diese Übungen verschieben?</string>
-    <string name="twinconvert_confirm_text">Zuerst wird eine Sicherung auf diesem Gerät gespeichert. Die aufgeführten Sätze und gespeicherten Trainingseinträge werden gemeinsam verschoben.</string>
+    <string name="twinconvert_confirm_text">Zuerst wird eine Sicherung auf diesem Gerät gespeichert. Die aufgeführten Sätze und gespeicherten Einträge werden gemeinsam verschoben.</string>
     <string name="twinconvert_confirm_button">Übungen verschieben</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5779,7 +5794,8 @@
     <string name="twinconvert_card_review">Prüfen</string>
     <string name="twinconvert_card_dismiss">Nicht jetzt</string>
     <string name="settings_data_twin_label">Übungen zu eigenen Einträgen verschieben</string>
-    <string name="settings_data_twin_caption">Verschiebe passende erfasste Sätze und gespeicherte Trainingseinträge zu ihren eigenen Übungen.</string>
+    <string name="settings_data_twin_caption">Verschiebe passende erfasste Sätze und gespeicherte Routineneinträge zu ihren eigenen Übungen.</string>
+    <string name="settings_data_twin_caption__t">Verschiebe passende erfasste Sätze und gespeicherte Ritus-Einträge zu ihren eigenen Übungen.</string>
     <string name="settings_training_fatigue_advice_label">Ermüdungshinweise</string>
     <string name="settings_training_fatigue_advice_caption">Ist ein Muskel noch müde, schlägt Heute eine leichtere Einheit vor, die Übungsauswahl markiert müde Muskeln und Optimieren kennzeichnet Routinen, die wiederholt mit müden Muskeln beginnen. Nichts ändert sich ohne dein Zutun.</string>
     <string name="settings_training_fatigue_advice_caption__t">Ist ein Muskel noch erschöpft, bietet Heute eine leichtere Prüfung an, die Übungsauswahl markiert müde Muskeln und Optimieren kennzeichnet Riten, die wiederholt erschöpft beginnen. Nichts ändert sich ohne dein Zutun.</string>

@@ -2402,6 +2402,7 @@
     <string name="optimise_recovery_starts_label">开始时</string>
     <string name="optimise_recovery_cause">主要来自 %2$s 的 %1$s（%3$s）。</string>
     <string name="optimise_recovery_cause_free">主要来自 %1$s 的一次训练（%2$s）。</string>
+    <string name="optimise_recovery_cause_free__t">主要来自 %1$s 的一次试炼（%2$s）。</string>
     <string name="optimise_recovery_choose_label">如何处理</string>
     <string name="optimise_recovery_move_option">将 %1$s 移至 %2$s</string>
     <string name="optimise_recovery_move_reason">在 %1$s 后多留一天</string>
@@ -3944,6 +3945,7 @@
     <string name="skilltree_row_tier">第 %1$s 阶</string>
     <string name="skilltree_row_mastered">已掌握</string>
     <string name="skilltree_row_passed">已通过，由更难的技法推定</string>
+    <string name="skilltree_row_passed__t">已通过，由更难的绝技推定</string>
     <string name="skilltree_row_available">可用，下一个</string>
     <string name="skilltree_row_standard">标准 %1$s</string>
     <string name="skilltree_row_locked_needs">已锁定，需要 %1$s</string>
@@ -4462,7 +4464,9 @@
     <string name="cloud_sync_set_skipped">\"%1$s\" 中的一组没有动作名称，已跳过</string>
     <string name="cloud_sync_set_unsyncable">\"%1$s\" 中的一组动作名称过长，无法同步到云端，已跳过</string>
     <string name="cloud_sync_web_unavailable">此云端不提供网页版训练详情。</string>
+    <string name="cloud_sync_web_unavailable__t">此云端不提供网页版试炼详情。</string>
     <string name="cloud_sync_web_failed">网页版训练详情未同步：%1$s</string>
+    <string name="cloud_sync_web_failed__t">网页版试炼详情未同步：%1$s</string>
     <string name="cloud_sync_web_needs_schema">网页版统计需要云端架构 31 或更高版本。</string>
     <string name="cloud_sync_web_snapshot_failed">网页版统计未同步：%1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">网页版统计数据过大，无法同步（%1$d 字节）。</string>
@@ -5410,18 +5414,27 @@
     <string name="twin_switch_split_note">已勾选的组仍归属于 %1$s，其余组将单独组成一个区块。</string>
     <string name="twin_switch_unlink_note">此动作所在的超级组已满，因此会解散该超级组以腾出空间。</string>
     <string name="twinconvert_title">移动动作</string>
-    <string name="twinconvert_intro">将这些已记录的组和保存的训练条目移至各自对应的动作。</string>
-    <string name="twinconvert_empty">没有需要移动的已记录组或保存的训练条目。</string>
+    <string name="twinconvert_intro">将这些已记录的组和保存的计划条目移至各自对应的动作。</string>
+    <string name="twinconvert_intro__t">将这些已记录的组和保存的仪轨条目移至各自对应的动作。</string>
+    <string name="twinconvert_empty">没有需要移动的已记录组或保存的计划条目。</string>
+    <string name="twinconvert_empty__t">没有需要移动的已记录组或保存的仪轨条目。</string>
     <string name="twinconvert_history_heading">训练历史</string>
+    <string name="twinconvert_history_heading__t">试炼历史</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="other">已保存的训练 · %1$d 条</item>
+        <item quantity="other">已保存的计划 · %1$d 条</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="other">已保存的仪轨 · %1$d 条</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="other">已移动 %1$d 条保存的训练条目。</item>
+        <item quantity="other">已移动 %1$d 条保存的计划条目。</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="other">已移动 %1$d 条保存的仪轨条目。</item>
     </plurals>
     <string name="twinconvert_review_button">移动动作</string>
     <string name="twinconvert_confirm_title">移动这些动作？</string>
-    <string name="twinconvert_confirm_text">首先在此手机上保存备份。所列的组和保存的训练条目将一起移动。</string>
+    <string name="twinconvert_confirm_text">首先在此手机上保存备份。所列的组和保存的条目将一起移动。</string>
     <string name="twinconvert_confirm_button">移动动作</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5439,7 +5452,8 @@
     <string name="twinconvert_card_review">查看</string>
     <string name="twinconvert_card_dismiss">暂不</string>
     <string name="settings_data_twin_label">将动作移至各自的条目</string>
-    <string name="settings_data_twin_caption">将匹配的已记录组和保存的训练条目移至各自对应的动作。</string>
+    <string name="settings_data_twin_caption">将匹配的已记录组和保存的计划条目移至各自对应的动作。</string>
+    <string name="settings_data_twin_caption__t">将匹配的已记录组和保存的仪轨条目移至各自对应的动作。</string>
     <string name="settings_training_fatigue_advice_label">疲劳建议</string>
     <string name="settings_training_fatigue_advice_caption">肌肉尚未恢复时，今日页面会建议降低训练强度，动作选择器会标记疲劳肌肉，优化功能会标出反复在疲劳状态下开始的计划。只有点击后才会更改。</string>
     <string name="settings_training_fatigue_advice_caption__t">肌肉尚未恢复时，今日页面会建议减轻试炼，动作选择器会标记疲劳肌肉，优化功能会标出反复在疲劳状态下开始的仪轨。只有点击后才会更改。</string>

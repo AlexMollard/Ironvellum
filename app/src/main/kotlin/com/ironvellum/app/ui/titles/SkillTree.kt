@@ -351,7 +351,7 @@ internal fun rowDescription(
     add(skill.name)
     add(Words.text(UiText.res(R.string.skilltree_row_tier, Skills.tierLabel(skill.tier))))
     when {
-        mastered -> add(Words.text(UiText.res(if (passed) R.string.skilltree_row_passed else R.string.skilltree_row_mastered)))
+        mastered -> add(Words.text(if (passed) UiText.themed(R.string.skilltree_row_passed, R.string.skilltree_row_passed__t) else UiText.res(R.string.skilltree_row_mastered)))
         unlocked -> {
             add(Words.text(UiText.res(R.string.skilltree_row_available)))
             add(Words.text(UiText.res(R.string.skilltree_row_standard, skill.standard)))

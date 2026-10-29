@@ -283,11 +283,11 @@ class CloudSync(
                     }) {
                     webAvailable = false
                     webTableMissing = true
-                    if (problems.none { it == cloudText(R.string.cloud_sync_web_unavailable) }) {
-                        problems += cloudText(R.string.cloud_sync_web_unavailable)
+                    if (problems.none { it == UiText.themed(R.string.cloud_sync_web_unavailable, R.string.cloud_sync_web_unavailable__t) }) {
+                        problems += UiText.themed(R.string.cloud_sync_web_unavailable, R.string.cloud_sync_web_unavailable__t)
                     }
                 } else {
-                    problems += cloudText(R.string.cloud_sync_web_failed, Cloud.explain(error))
+                    problems += UiText.themed(R.string.cloud_sync_web_failed, R.string.cloud_sync_web_failed__t, Cloud.explain(error))
                 }
             }
 

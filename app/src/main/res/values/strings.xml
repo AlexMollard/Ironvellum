@@ -2818,6 +2818,7 @@
     <string name="optimise_recovery_starts_label">When it began</string>
     <string name="optimise_recovery_cause">Most of it came from %1$s on %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">Most of it came from a workout on %1$s (%2$s).</string>
+    <string name="optimise_recovery_cause_free__t">Most of it came from a trial on %1$s (%2$s).</string>
     <string name="optimise_recovery_choose_label">What to do</string>
     <string name="optimise_recovery_move_option">Move %1$s to %2$s</string>
     <string name="optimise_recovery_move_reason">One more day after %1$s</string>
@@ -4932,6 +4933,7 @@
     <string name="skilltree_row_tier">tier %1$s</string>
     <string name="skilltree_row_mastered">mastered</string>
     <string name="skilltree_row_passed">passed, implied by a harder skill</string>
+    <string name="skilltree_row_passed__t">passed, implied by a harder technique</string>
     <string name="skilltree_row_available">available, next</string>
     <string name="skilltree_row_standard">standard %1$s</string>
     <string name="skilltree_row_locked_needs">locked, needs %1$s</string>
@@ -5632,7 +5634,9 @@
     <!-- %1$s is the name the user gave the workout. -->
     <string name="cloud_sync_set_unsyncable">A set in \"%1$s\" has an exercise name too long for the cloud and was skipped</string>
     <string name="cloud_sync_web_unavailable">Web workout details are unavailable on this cloud.</string>
+    <string name="cloud_sync_web_unavailable__t">Web trial details are unavailable on this cloud.</string>
     <string name="cloud_sync_web_failed">Web workout details were not synced: %1$s</string>
+    <string name="cloud_sync_web_failed__t">Web trial details were not synced: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web stats need cloud schema 31 or newer.</string>
     <string name="cloud_sync_web_snapshot_failed">Web stats were not synced: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web stats are too large to sync (%1$d bytes).</string>
@@ -6914,14 +6918,19 @@
 
     <!-- Move past sets onto dedicated exercises: the confirm screen, Settings > Data and the History card. -->
     <string name="twinconvert_title">Move exercises</string>
-    <string name="twinconvert_intro">Move these logged sets and saved workout entries to their dedicated exercises.</string>
-    <string name="twinconvert_empty">No logged sets or saved workout entries need moving.</string>
+    <string name="twinconvert_intro">Move these logged sets and saved routine entries to their dedicated exercises.</string>
+    <string name="twinconvert_intro__t">Move these logged sets and saved rite entries to their dedicated exercises.</string>
+    <string name="twinconvert_empty">No logged sets or saved routine entries need moving.</string>
+    <string name="twinconvert_empty__t">No logged sets or saved rite entries need moving.</string>
     <string name="twinconvert_history_heading">Workout history</string>
-    <plurals name="twinconvert_routine_heading"><item quantity="one">Saved workouts · %1$d entry</item><item quantity="other">Saved workouts · %1$d entries</item></plurals>
-    <plurals name="twinconvert_routine_done"><item quantity="one">Moved %1$d saved workout entry.</item><item quantity="other">Moved %1$d saved workout entries.</item></plurals>
+    <string name="twinconvert_history_heading__t">Trial history</string>
+    <plurals name="twinconvert_routine_heading"><item quantity="one">Saved routines · %1$d entry</item><item quantity="other">Saved routines · %1$d entries</item></plurals>
+    <plurals name="twinconvert_routine_heading__t"><item quantity="one">Saved rites · %1$d entry</item><item quantity="other">Saved rites · %1$d entries</item></plurals>
+    <plurals name="twinconvert_routine_done"><item quantity="one">Moved %1$d saved routine entry.</item><item quantity="other">Moved %1$d saved routine entries.</item></plurals>
+    <plurals name="twinconvert_routine_done__t"><item quantity="one">Moved %1$d saved rite entry.</item><item quantity="other">Moved %1$d saved rite entries.</item></plurals>
     <string name="twinconvert_review_button">Move exercises</string>
     <string name="twinconvert_confirm_title">Move these exercises?</string>
-    <string name="twinconvert_confirm_text">A backup is saved on this phone first. The listed sets and saved workout entries will move together.</string>
+    <string name="twinconvert_confirm_text">A backup is saved on this phone first. The listed sets and saved entries will move together.</string>
     <string name="twinconvert_confirm_button">Move exercises</string>
     <!-- %1$s is the exercise the sets were logged as, %2$s the exercise they move to. -->
     <string name="twinconvert_group">%1$s → %2$s</string>
@@ -6938,7 +6947,8 @@
     <string name="twinconvert_card_dismiss">Not now</string>
     <!-- Settings > Data row. -->
     <string name="settings_data_twin_label">Move exercises to their own entries</string>
-    <string name="settings_data_twin_caption">Move matching logged sets and saved workout entries to their dedicated exercises.</string>
+    <string name="settings_data_twin_caption">Move matching logged sets and saved routine entries to their dedicated exercises.</string>
+    <string name="settings_data_twin_caption__t">Move matching logged sets and saved rite entries to their dedicated exercises.</string>
     <!-- Fatigue advice: one switch in Settings > Training for the suggestions that read the fatigue estimate. -->
     <string name="settings_training_fatigue_advice_label">Fatigue advice</string>
     <string name="settings_training_fatigue_advice_caption">When a muscle is still tired, Today offers to go easier, the exercise picker marks tired muscles, and Optimise flags routines that keep starting tired. Nothing changes unless you tap it.</string>

@@ -2531,6 +2531,7 @@
     <string name="optimise_recovery_starts_label">Au début</string>
     <string name="optimise_recovery_cause">La majeure partie venait de %1$s le %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">La majeure partie venait d’une séance le %1$s (%2$s).</string>
+    <string name="optimise_recovery_cause_free__t">La majeure partie venait d’une épreuve le %1$s (%2$s).</string>
     <string name="optimise_recovery_choose_label">Que faire</string>
     <string name="optimise_recovery_move_option">Déplacer %1$s au %2$s</string>
     <string name="optimise_recovery_move_reason">Un jour de plus après %1$s</string>
@@ -4193,6 +4194,7 @@
     <string name="skilltree_row_tier">palier %1$s</string>
     <string name="skilltree_row_mastered">maîtrisé</string>
     <string name="skilltree_row_passed">validé par une technique plus difficile</string>
+    <string name="skilltree_row_passed__t">validé par un art plus difficile</string>
     <string name="skilltree_row_available">disponible, suivant</string>
     <string name="skilltree_row_standard">objectif %1$s</string>
     <string name="skilltree_row_locked_needs">verrouillé, nécessite %1$s</string>
@@ -4746,7 +4748,9 @@
     <string name="cloud_sync_set_skipped">Une série de \"%1$s\" n\'a pas de nom d\'exercice et a été ignorée</string>
     <string name="cloud_sync_set_unsyncable">Une série de \"%1$s\" a un nom d\'exercice trop long pour le cloud et a été ignorée</string>
     <string name="cloud_sync_web_unavailable">Les détails des séances sur le Web sont indisponibles sur ce cloud.</string>
+    <string name="cloud_sync_web_unavailable__t">Les détails des épreuves sur le Web sont indisponibles sur ce cloud.</string>
     <string name="cloud_sync_web_failed">Les détails des séances sur le Web n\'ont pas été synchronisés : %1$s</string>
+    <string name="cloud_sync_web_failed__t">Les détails des épreuves sur le Web n\'ont pas été synchronisés : %1$s</string>
     <string name="cloud_sync_web_needs_schema">Les stats Web nécessitent la version 31 ou ultérieure du schéma cloud.</string>
     <string name="cloud_sync_web_snapshot_failed">Les stats Web n\'ont pas été synchronisées : %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Les stats Web sont trop volumineuses pour être synchronisées (%1$d octets).</string>
@@ -5746,20 +5750,31 @@
     <string name="twin_switch_split_note">Les séries cochées restent sous %1$s. Les autres forment un bloc distinct.</string>
     <string name="twin_switch_unlink_note">Cet exercice fait partie d\'une supersérie complète, qui sera donc dissoute pour faire de la place.</string>
     <string name="twinconvert_title">Déplacer les exercices</string>
-    <string name="twinconvert_intro">Déplace ces séries enregistrées et ces entrées de séances sauvegardées vers leurs exercices dédiés.</string>
-    <string name="twinconvert_empty">Aucune série enregistrée ni entrée de séance sauvegardée à déplacer.</string>
+    <string name="twinconvert_intro">Déplace ces séries enregistrées et ces entrées de routines sauvegardées vers leurs exercices dédiés.</string>
+    <string name="twinconvert_intro__t">Déplace ces séries enregistrées et ces entrées de rites sauvegardés vers leurs exercices dédiés.</string>
+    <string name="twinconvert_empty">Aucune série enregistrée ni entrée de routine sauvegardée à déplacer.</string>
+    <string name="twinconvert_empty__t">Aucune série enregistrée ni entrée de rite sauvegardé à déplacer.</string>
     <string name="twinconvert_history_heading">Historique des séances</string>
+    <string name="twinconvert_history_heading__t">Historique des épreuves</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="one">Séances sauvegardées · %1$d entrée</item>
-        <item quantity="other">Séances sauvegardées · %1$d entrées</item>
+        <item quantity="one">Routines sauvegardées · %1$d entrée</item>
+        <item quantity="other">Routines sauvegardées · %1$d entrées</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="one">Rites sauvegardés · %1$d entrée</item>
+        <item quantity="other">Rites sauvegardés · %1$d entrées</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="one">%1$d entrée de séance sauvegardée déplacée.</item>
-        <item quantity="other">%1$d entrées de séances sauvegardées déplacées.</item>
+        <item quantity="one">%1$d entrée de routine sauvegardée déplacée.</item>
+        <item quantity="other">%1$d entrées de routines sauvegardées déplacées.</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="one">%1$d entrée de rite sauvegardé déplacée.</item>
+        <item quantity="other">%1$d entrées de rites sauvegardés déplacées.</item>
     </plurals>
     <string name="twinconvert_review_button">Déplacer les exercices</string>
     <string name="twinconvert_confirm_title">Déplacer ces exercices ?</string>
-    <string name="twinconvert_confirm_text">Une sauvegarde sera d\'abord créée sur ce téléphone. Les séries et entrées de séances sauvegardées affichées seront déplacées ensemble.</string>
+    <string name="twinconvert_confirm_text">Une sauvegarde sera d\'abord créée sur ce téléphone. Les séries et entrées sauvegardées affichées seront déplacées ensemble.</string>
     <string name="twinconvert_confirm_button">Déplacer les exercices</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5779,7 +5794,8 @@
     <string name="twinconvert_card_review">Vérifier</string>
     <string name="twinconvert_card_dismiss">Pas maintenant</string>
     <string name="settings_data_twin_label">Déplacer les exercices vers leurs propres entrées</string>
-    <string name="settings_data_twin_caption">Déplace les séries enregistrées et les entrées de séances sauvegardées correspondantes vers leurs exercices dédiés.</string>
+    <string name="settings_data_twin_caption">Déplace les séries enregistrées et les entrées de routines sauvegardées correspondantes vers leurs exercices dédiés.</string>
+    <string name="settings_data_twin_caption__t">Déplace les séries enregistrées et les entrées de rites sauvegardés correspondantes vers leurs exercices dédiés.</string>
     <string name="settings_training_fatigue_advice_label">Conseils de fatigue</string>
     <string name="settings_training_fatigue_advice_caption">Quand un muscle est encore fatigué, Aujourd\'hui te propose d\'y aller plus doucement, le sélecteur d\'exercices signale les muscles fatigués et Optimiser indique les routines souvent commencées avec de la fatigue. Rien ne change sans ton action.</string>
     <string name="settings_training_fatigue_advice_caption__t">Quand un muscle est encore fatigué, Aujourd\'hui te propose d\'y aller plus doucement, le sélecteur d\'exercices signale les muscles fatigués et Optimiser indique les rites souvent commencés avec de la fatigue. Rien ne change sans ton action.</string>

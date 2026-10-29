@@ -36,6 +36,8 @@ import com.ironvellum.app.data.AutoBackup
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.TwinConvertBackup
 import com.ironvellum.app.domain.TwinConversion
+import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
@@ -140,13 +142,14 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
             PushedHeader(stringResource(R.string.twinconvert_title), onBack = onDismiss)
             Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(if (hasMoves) R.string.twinconvert_intro else R.string.twinconvert_empty),
+                if (hasMoves) UiText.themed(R.string.twinconvert_intro, R.string.twinconvert_intro__t).asString()
+                else UiText.themed(R.string.twinconvert_empty, R.string.twinconvert_empty__t).asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             if (shown.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
-                Text(stringResource(R.string.twinconvert_history_heading), style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+                Text(UiText.themed(R.string.twinconvert_history_heading, R.string.twinconvert_history_heading__t).asString(), style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
                 Spacer(Modifier.height(8.dp))
                 InkRowPanel {
                     shown.forEachIndexed { i, group ->
@@ -158,7 +161,7 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
             if (shownRoutines.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    pluralStringResource(R.plurals.twinconvert_routine_heading, shownRoutines.size, shownRoutines.size),
+                    UiText.themedPlural(R.plurals.twinconvert_routine_heading, R.plurals.twinconvert_routine_heading__t, shownRoutines.size).asString(),
                     style = MaterialTheme.typography.titleSmall,
                     color = IronvellumColors.Ink,
                 )
@@ -185,7 +188,7 @@ fun TwinConvertOverlay(viewModel: TwinConvertViewModel, onDismiss: () -> Unit) {
                 }
                 if (it.routines.isNotEmpty()) {
                     Text(
-                        pluralStringResource(R.plurals.twinconvert_routine_done, it.routines.size, it.routines.size),
+                        UiText.themedPlural(R.plurals.twinconvert_routine_done, R.plurals.twinconvert_routine_done__t, it.routines.size).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.SystemGreen,
                     )

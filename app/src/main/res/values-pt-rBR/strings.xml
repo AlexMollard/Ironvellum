@@ -2531,6 +2531,7 @@
     <string name="optimise_recovery_starts_label">Quando começou</string>
     <string name="optimise_recovery_cause">A maior parte veio de %1$s em %2$s (%3$s).</string>
     <string name="optimise_recovery_cause_free">A maior parte veio de um treino em %1$s (%2$s).</string>
+    <string name="optimise_recovery_cause_free__t">A maior parte veio de uma prova em %1$s (%2$s).</string>
     <string name="optimise_recovery_choose_label">O que fazer</string>
     <string name="optimise_recovery_move_option">Mover %1$s para %2$s</string>
     <string name="optimise_recovery_move_reason">Mais um dia após %1$s</string>
@@ -4193,6 +4194,7 @@
     <string name="skilltree_row_tier">nível %1$s</string>
     <string name="skilltree_row_mastered">dominada</string>
     <string name="skilltree_row_passed">superada, implícita em uma habilidade mais difícil</string>
+    <string name="skilltree_row_passed__t">superado, implícito em um domínio mais difícil</string>
     <string name="skilltree_row_available">disponível, próxima</string>
     <string name="skilltree_row_standard">padrão %1$s</string>
     <string name="skilltree_row_locked_needs">bloqueada, precisa de %1$s</string>
@@ -4746,7 +4748,9 @@
     <string name="cloud_sync_set_skipped">Uma série em \"%1$s\" não tem nome de exercício e foi ignorada</string>
     <string name="cloud_sync_set_unsyncable">Uma série em \"%1$s\" tem nome de exercício longo demais para a nuvem e foi ignorada</string>
     <string name="cloud_sync_web_unavailable">Detalhes dos treinos na web não estão disponíveis nesta nuvem.</string>
+    <string name="cloud_sync_web_unavailable__t">Detalhes das provas na web não estão disponíveis nesta nuvem.</string>
     <string name="cloud_sync_web_failed">Detalhes dos treinos na web não foram sincronizados: %1$s</string>
+    <string name="cloud_sync_web_failed__t">Detalhes das provas na web não foram sincronizados: %1$s</string>
     <string name="cloud_sync_web_needs_schema">As estatísticas da web precisam do esquema 31 ou mais recente na nuvem.</string>
     <string name="cloud_sync_web_snapshot_failed">As estatísticas da web não foram sincronizadas: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">As estatísticas da web são grandes demais para sincronizar (%1$d bytes).</string>
@@ -5746,20 +5750,31 @@
     <string name="twin_switch_split_note">As séries marcadas continuam como %1$s. As demais passam a formar um bloco próprio.</string>
     <string name="twin_switch_unlink_note">Este exercício está em uma série composta completa, que será desfeita para abrir espaço.</string>
     <string name="twinconvert_title">Mover exercícios</string>
-    <string name="twinconvert_intro">Mova estas séries registradas e entradas de treinos salvos para seus exercícios específicos.</string>
-    <string name="twinconvert_empty">Nenhuma série registrada ou entrada de treino salvo precisa ser movida.</string>
+    <string name="twinconvert_intro">Mova estas séries registradas e entradas de rotinas salvas para seus exercícios específicos.</string>
+    <string name="twinconvert_intro__t">Mova estas séries registradas e entradas de ritos salvos para seus exercícios específicos.</string>
+    <string name="twinconvert_empty">Nenhuma série registrada ou entrada de rotina salva precisa ser movida.</string>
+    <string name="twinconvert_empty__t">Nenhuma série registrada ou entrada de rito salvo precisa ser movida.</string>
     <string name="twinconvert_history_heading">Histórico de treinos</string>
+    <string name="twinconvert_history_heading__t">Histórico de provas</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="one">Treinos salvos · %1$d entrada</item>
-        <item quantity="other">Treinos salvos · %1$d entradas</item>
+        <item quantity="one">Rotinas salvas · %1$d entrada</item>
+        <item quantity="other">Rotinas salvas · %1$d entradas</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="one">Ritos salvos · %1$d entrada</item>
+        <item quantity="other">Ritos salvos · %1$d entradas</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="one">%1$d entrada de treino salvo movida.</item>
-        <item quantity="other">%1$d entradas de treinos salvos movidas.</item>
+        <item quantity="one">%1$d entrada de rotina salva movida.</item>
+        <item quantity="other">%1$d entradas de rotinas salvas movidas.</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="one">%1$d entrada de rito salvo movida.</item>
+        <item quantity="other">%1$d entradas de ritos salvos movidas.</item>
     </plurals>
     <string name="twinconvert_review_button">Mover exercícios</string>
     <string name="twinconvert_confirm_title">Mover estes exercícios?</string>
-    <string name="twinconvert_confirm_text">Primeiro, um backup é salvo neste celular. As séries e entradas de treinos salvos listadas serão movidas juntas.</string>
+    <string name="twinconvert_confirm_text">Primeiro, um backup é salvo neste celular. As séries e entradas salvas listadas serão movidas juntas.</string>
     <string name="twinconvert_confirm_button">Mover exercícios</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5779,7 +5794,8 @@
     <string name="twinconvert_card_review">Revisar</string>
     <string name="twinconvert_card_dismiss">Agora não</string>
     <string name="settings_data_twin_label">Mover exercícios para suas próprias entradas</string>
-    <string name="settings_data_twin_caption">Mova séries registradas e entradas de treinos salvos correspondentes para seus exercícios específicos.</string>
+    <string name="settings_data_twin_caption">Mova séries registradas e entradas de rotinas salvas correspondentes para seus exercícios específicos.</string>
+    <string name="settings_data_twin_caption__t">Mova séries registradas e entradas de ritos salvos correspondentes para seus exercícios específicos.</string>
     <string name="settings_training_fatigue_advice_label">Orientações de fadiga</string>
     <string name="settings_training_fatigue_advice_caption">Quando um músculo ainda está cansado, Hoje sugere pegar mais leve, o seletor marca músculos cansados e Otimizar sinaliza rotinas que começam repetidamente com fadiga. Nada muda sem seu toque.</string>
     <string name="settings_training_fatigue_advice_caption__t">Quando um músculo ainda está cansado, Hoje sugere aliviar, o seletor marca músculos fatigados e Otimizar sinaliza ritos que começam repetidamente com fadiga. Nada muda sem seu toque.</string>

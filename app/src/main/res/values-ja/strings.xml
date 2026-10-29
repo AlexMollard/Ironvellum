@@ -2402,6 +2402,7 @@
     <string name="optimise_recovery_starts_label">開始時の状態</string>
     <string name="optimise_recovery_cause">主な原因は%2$sの%1$s（%3$s）です。</string>
     <string name="optimise_recovery_cause_free">主な原因は%1$sのワークアウト（%2$s）です。</string>
+    <string name="optimise_recovery_cause_free__t">主な原因は%1$sの試練（%2$s）です。</string>
     <string name="optimise_recovery_choose_label">何をするか</string>
     <string name="optimise_recovery_move_option">%1$s を %2$s に移動</string>
     <string name="optimise_recovery_move_reason">%1$sからさらに1日</string>
@@ -3944,6 +3945,7 @@
     <string name="skilltree_row_tier">層 %1$s</string>
     <string name="skilltree_row_mastered">マスターした</string>
     <string name="skilltree_row_passed">合格、より難しいスキルを暗示</string>
+    <string name="skilltree_row_passed__t">合格、より難しい技を暗示</string>
     <string name="skilltree_row_available">利用可能です、次へ</string>
     <string name="skilltree_row_standard">標準 %1$s</string>
     <string name="skilltree_row_locked_needs">ロックされています。%1$s が必要です</string>
@@ -4462,7 +4464,9 @@
     <string name="cloud_sync_set_skipped">\"%1$s\" のセットに種目名がないため、スキップしました</string>
     <string name="cloud_sync_set_unsyncable">\"%1$s\" のセットの種目名がクラウドには長すぎるため、スキップしました</string>
     <string name="cloud_sync_web_unavailable">このクラウドではWebのワークアウト詳細を利用できません。</string>
+    <string name="cloud_sync_web_unavailable__t">このクラウドではWebの試練詳細を利用できません。</string>
     <string name="cloud_sync_web_failed">Webのワークアウト詳細を同期できませんでした: %1$s</string>
+    <string name="cloud_sync_web_failed__t">Webの試練詳細を同期できませんでした: %1$s</string>
     <string name="cloud_sync_web_needs_schema">Web統計にはクラウドスキーマ31以降が必要です。</string>
     <string name="cloud_sync_web_snapshot_failed">Web統計を同期できませんでした: %1$s</string>
     <string name="cloud_sync_web_snapshot_too_large">Web統計が大きすぎるため同期できません（%1$dバイト）。</string>
@@ -5410,18 +5414,27 @@
     <string name="twin_switch_split_note">チェック済みのセットは%1$sのまま残ります。残りは別のブロックになります。</string>
     <string name="twin_switch_unlink_note">この種目が含まれるスーパーセットは満枠のため、切り替えに伴い解除されます。</string>
     <string name="twinconvert_title">種目を移動</string>
-    <string name="twinconvert_intro">記録済みのセットと保存済みワークアウトの項目を、それぞれ専用の種目に移動します。</string>
-    <string name="twinconvert_empty">移動が必要な記録済みセットや保存済みワークアウトの項目はありません。</string>
+    <string name="twinconvert_intro">記録済みのセットと保存済みルーチンの項目を、それぞれ専用の種目に移動します。</string>
+    <string name="twinconvert_intro__t">記録済みのセットと保存済み儀礼の項目を、それぞれ専用の種目に移動します。</string>
+    <string name="twinconvert_empty">移動が必要な記録済みセットや保存済みルーチンの項目はありません。</string>
+    <string name="twinconvert_empty__t">移動が必要な記録済みセットや保存済み儀礼の項目はありません。</string>
     <string name="twinconvert_history_heading">ワークアウト履歴</string>
+    <string name="twinconvert_history_heading__t">試練の履歴</string>
     <plurals name="twinconvert_routine_heading">
-        <item quantity="other">保存済みワークアウト · %1$d項目</item>
+        <item quantity="other">保存済みルーチン · %1$d項目</item>
+    </plurals>
+    <plurals name="twinconvert_routine_heading__t">
+        <item quantity="other">保存済み儀礼 · %1$d項目</item>
     </plurals>
     <plurals name="twinconvert_routine_done">
-        <item quantity="other">保存済みワークアウトの%1$d項目を移動しました。</item>
+        <item quantity="other">保存済みルーチンの%1$d項目を移動しました。</item>
+    </plurals>
+    <plurals name="twinconvert_routine_done__t">
+        <item quantity="other">保存済み儀礼の%1$d項目を移動しました。</item>
     </plurals>
     <string name="twinconvert_review_button">種目を移動</string>
     <string name="twinconvert_confirm_title">これらの種目を移動しますか？</string>
-    <string name="twinconvert_confirm_text">まずこの端末にバックアップを保存します。表示されたセットと保存済みワークアウトの項目をまとめて移動します。</string>
+    <string name="twinconvert_confirm_text">まずこの端末にバックアップを保存します。表示されたセットと保存済みの項目をまとめて移動します。</string>
     <string name="twinconvert_confirm_button">種目を移動</string>
     <string name="twinconvert_group">%1$s → %2$s</string>
     <string name="twinconvert_group_count">%1$s · %2$s</string>
@@ -5439,7 +5452,8 @@
     <string name="twinconvert_card_review">確認</string>
     <string name="twinconvert_card_dismiss">今はしない</string>
     <string name="settings_data_twin_label">種目を専用の項目に移動</string>
-    <string name="settings_data_twin_caption">該当する記録済みセットと保存済みワークアウトの項目を、それぞれの専用種目に移動します。</string>
+    <string name="settings_data_twin_caption">該当する記録済みセットと保存済みルーチンの項目を、それぞれの専用種目に移動します。</string>
+    <string name="settings_data_twin_caption__t">該当する記録済みセットと保存済み儀礼の項目を、それぞれの専用種目に移動します。</string>
     <string name="settings_training_fatigue_advice_label">疲労のアドバイス</string>
     <string name="settings_training_fatigue_advice_caption">筋肉の疲労が残っていると、「今日」で負荷を軽くする提案が表示され、種目選択画面では疲れた筋肉に印が付きます。最適化では疲労が残ったまま繰り返すルーチンを知らせます。タップしない限り変更されません。</string>
     <string name="settings_training_fatigue_advice_caption__t">筋肉の疲労が残ると、「今日」は負荷を緩めるよう告げ、種目選択画面は疲れた筋肉に印を刻みます。最適化は疲労を抱えたまま繰り返す儀礼を示します。タップしない限り何も変わりません。</string>
