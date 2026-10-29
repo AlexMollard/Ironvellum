@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Only the export staging directory is shared. The database, its snapshots and
-  the crash journal live elsewhere in private storage and stay unreachable
+  Only two cache directories are shared: the export staging directory, and the
+  empty file the camera app writes a new photo into (the app copies it into its
+  own photo folder at once). The database, its snapshots, the crash journal and
+  the kept photos live elsewhere in private storage and stay unreachable
   through this provider.
 -->
 <paths>
     <cache-path name="exports" path="exports/" />
+    <cache-path name="photo_capture" path="photo-capture/" />
 </paths>

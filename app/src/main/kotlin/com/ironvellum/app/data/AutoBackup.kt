@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * The weekly file backup: the same archive "Export archive" shares
- * ([Repository.exportJson]), written to a folder the lifter picked through the
+ * ([Repository.exportJson]) plus the progress photos' pictures ([PhotoBackup]), written to a folder the lifter picked through the
  * Storage Access Framework. Off until a folder is chosen. The newest
  * [BackupFiles.KEEP] files this feature wrote are kept; nothing else in the
  * folder is touched.
@@ -144,6 +144,12 @@ object AutoBackup {
         val failure = if (lost) null else runCatching {
             val json = repo.exportJson()
             withContext(Dispatchers.IO) { write(context, tree, json) }
+            // The progress photos ride beside the archive in the same folder: the archive names them, this copies the pictures.
+            val store = repo.photoLibrary.store
+            if (store != null) {
+                val names = repo.photoLibrary.fileNames()
+                withContext(Dispatchers.IO) { PhotoBackup.mirror(context, tree, store, names) }
+            }
         }.exceptionOrNull()
         prefs(context).edit {
             if (!lost && failure == null) {
@@ -158,6 +164,17 @@ object AutoBackup {
         }
         publish(context)
         !lost && failure == null
+    }
+
+    /**
+     * Brings back the pictures a restore named but this phone lacks, from [tree] (a folder the lifter just picked) or,
+     * when none is given, from the backup folder. Returns how many came back; 0 when there is no folder to read.
+     */
+    suspend fun restorePhotos(context: Context, repo: Repository, tree: Uri? = null): Int = lock.withLock {
+        val store = repo.photoLibrary.store ?: return 0
+        val from = tree ?: folder(context)?.takeIf { hasAccess(context, it) } ?: return 0
+        val wanted = repo.photoLibrary.missingFiles()
+        withContext(Dispatchers.IO) { PhotoBackup.restore(context, from, store, wanted) }
     }
 
     private fun write(context: Context, tree: Uri, json: String) {

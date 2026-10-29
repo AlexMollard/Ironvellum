@@ -6999,4 +6999,8 @@
     <string name="fatigue_rest_do_button">Do %1$s</string>
     <string name="fatigue_rest_rest_button">Rest today</string>
     <string name="fatigue_rest_anyway">Begin %1$s anyway</string>
+    <!-- Settings > Data: after a restore, photos the archive names that this phone has no picture for yet. %1$d is how many. -->
+    <plurals name="settings_photos_missing_label"><item quantity="one">%1$d photo to bring back</item><item quantity="other">%1$d photos to bring back</item></plurals>
+    <string name="settings_photos_missing_caption">Pick your backup folder. The pictures are copied from the photos folder inside it.</string>
+    <plurals name="settings_photos_restored"><item quantity="one">%1$d photo brought back</item><item quantity="other">%1$d photos brought back</item></plurals>
 </resources>

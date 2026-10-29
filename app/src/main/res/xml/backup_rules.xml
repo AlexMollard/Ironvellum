@@ -11,6 +11,8 @@
     -->
     <exclude domain="file" path="db-snapshots" />
     <exclude domain="file" path="crash" />
+    <!-- Progress photos stay on this phone and in the lifter's own backup folder; Google's backup and device transfer never carry them. -->
+    <exclude domain="file" path="photos" />
     <!--
       App state that only makes sense beside the database above. Restored
       without it, "onboarding" (dismissed) and "program_answers" skip first run

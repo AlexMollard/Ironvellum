@@ -257,6 +257,8 @@ class Repository(
     private val archiveSettings: ArchiveSettings? = null,
     /** The "Keep as is" answers to the dedicated-exercise prompt ([ExerciseTwins.keepKey]): a convert leaves those routine entries alone. */
     private val twinKept: () -> Set<String> = { emptySet() },
+    /** Where progress photos are kept; null in tests that take none. */
+    photoStore: PhotoStore? = null,
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -272,6 +274,9 @@ class Repository(
     private val idleDao: IdleDao = db.idleDao()
     private val gachaDao = db.gachaDao()
     private val favouriteExerciseDao = db.favouriteExerciseDao()
+
+    /** The progress photos: device-only, never part of the cloud copy or the web snapshot. */
+    val photoLibrary = PhotoLibrary(db.progressPhotoDao(), photoStore)
 
     /** The figures the lifter moved by hand in live trials, so a tick never overwrites them. */
     private val carryEdits = CarryEdits()
@@ -3313,7 +3318,10 @@ class Repository(
      * deletes are only ever recorded here, never inferred from the cloud.
      */
     suspend fun deleteWorkout(sessionId: Long) {
+        // The photo rows go with the workout (cascade); their files are named first, and removed once it is gone.
+        val photoFiles = photoLibrary.namesFor(sessionId)
         val gone = db.withTransaction { deleteWorkoutRows(sessionId) }
+        if (gone != null) photoLibrary.deleteFiles(photoFiles)
         gone?.let { writeBack?.removed(it.id, it.startedAtMs) }
     }
 
@@ -3764,6 +3772,8 @@ class Repository(
             exportedAtMs = System.currentTimeMillis(),
             settings = archiveSettings?.snapshot(includeDeviceOnly),
             includeDeviceOnly = includeDeviceOnly,
+            // Rows only, and never in the cloud copy (the writer drops them there too).
+            photos = if (includeDeviceOnly) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null,
         )
         return ExportResult(json, exportProblems)
     }
@@ -3778,6 +3788,8 @@ class Repository(
         val healthDays: Int,
         val measurements: Int = 0,
         val problems: List<UiText>,
+        /** Photo rows restored; their pictures come from the backup folder ([PhotoBackup.restore]), not from the archive. */
+        val photos: Int = 0,
     )
 
     /** The Room transaction committed, but preference persistence or refresh failed afterward. */
@@ -3801,6 +3813,10 @@ class Repository(
         // Settings never fail a training restore: what this build cannot read is dropped and reported below.
         val settingsPlan = archive.settings?.takeIf { archiveSettings != null }?.let(ArchiveSettings::sanitize)
         val result = db.withTransaction {
+                // An archive with no photos section (older, or the cloud copy) keeps this device's photos: their rows are
+                // read now, before the workouts go, and put back against the workouts that come back.
+                val keptPhotos = if (archive.photos == null) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null
+                val sessionIdByStart = mutableMapOf<Long, Long>()
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
                 sessionDao.clearAll()
@@ -3930,6 +3946,7 @@ class Repository(
                             sealedXp = session.sealedXp,
                         ),
                     )
+                    sessionIdByStart[session.startedAtMs] = newSessionId
                     session.exerciseNotes.forEach { n ->
                         val exerciseId = resolveExercise(n.exerciseName) ?: return@forEach
                         sessionDao.putExerciseNote(SessionExerciseNoteEntity(newSessionId, exerciseId, n.note.take(EXERCISE_NOTE_MAX)))
@@ -4110,6 +4127,9 @@ class Repository(
                     reconcileCrests(queue = false)
                 }
 
+                val photoRows = archive.photos ?: keptPhotos.orEmpty()
+                photoLibrary.restoreRows(photoRows, sessionIdByStart)
+
                 exerciseDao.observeAll().first().syncCustomExercises()
                 ImportResult(
                     presets = archive.presets.size,
@@ -4121,8 +4141,11 @@ class Repository(
                     healthDays = archive.healthDays.size,
                     measurements = archive.measurements.size,
                     problems = problems,
+                    photos = photoRows.size,
                 )
             }
+        // Files outside the transaction: what no row names any more (a replaced set, a workout that did not come back) goes.
+        runCatching { photoLibrary.sweep() }
         if (settingsPlan != null && archiveSettings != null) {
             try {
                 archiveSettings.restore(settingsPlan.accepted, includeDeviceOnly = !archive.deviceDataOmitted)

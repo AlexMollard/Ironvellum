@@ -41,6 +41,8 @@ import com.ironvellum.app.data.db.SyncStateEntity
 import com.ironvellum.app.data.db.TitleDao
 import com.ironvellum.app.data.db.TitleUnlockEntity
 import com.ironvellum.app.data.db.OwnedRelicEntity
+import com.ironvellum.app.data.db.ProgressPhotoDao
+import com.ironvellum.app.data.db.ProgressPhotoEntity
 
 @Database(
     entities = [
@@ -62,6 +64,7 @@ import com.ironvellum.app.data.db.OwnedRelicEntity
         OwnedRelicEntity::class,
         FavouriteExerciseEntity::class,
         SessionExerciseNoteEntity::class,
+        ProgressPhotoEntity::class,
     ],
     version = IronvellumDatabase.VERSION,
     exportSchema = true,
@@ -80,10 +83,11 @@ abstract class IronvellumDatabase : RoomDatabase() {
     abstract fun idleDao(): IdleDao
     abstract fun gachaDao(): GachaDao
     abstract fun favouriteExerciseDao(): FavouriteExerciseDao
+    abstract fun progressPhotoDao(): ProgressPhotoDao
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 45
+        const val VERSION = 46
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -671,6 +675,23 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Progress photos: a new table for the photo rows (the pictures are files in app-private storage). A new table
+         * touches no existing row; the DDL matches [ProgressPhotoEntity] or Room refuses to open.
+         */
+        private val MIGRATION_45_46 = object : Migration(45, 46) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `progress_photos` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`kind` TEXT NOT NULL, `day` INTEGER NOT NULL, `sessionId` INTEGER, `pose` TEXT NOT NULL, " +
+                        "`fileName` TEXT NOT NULL, `takenAtMs` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_progress_photos_sessionId` ON `progress_photos` (`sessionId`)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_progress_photos_kind_day_pose` ON `progress_photos` (`kind`, `day`, `pose`)")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -706,6 +727,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_42_43,
             MIGRATION_43_44,
             MIGRATION_44_45,
+            MIGRATION_45_46,
         )
 
         const val NAME = "ironvellum.db"

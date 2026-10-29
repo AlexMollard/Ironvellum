@@ -622,3 +622,31 @@ interface GachaDao {
     @Query("DELETE FROM owned_relics")
     suspend fun clearRelics()
 }
+
+@Dao
+interface ProgressPhotoDao {
+    @Query("SELECT * FROM progress_photos ORDER BY day DESC, id DESC")
+    fun observeAll(): Flow<List<ProgressPhotoEntity>>
+
+    @Query("SELECT * FROM progress_photos ORDER BY day DESC, id DESC")
+    suspend fun all(): List<ProgressPhotoEntity>
+
+    @Query("SELECT * FROM progress_photos WHERE kind = :kind AND day = :day AND pose = :pose")
+    suspend fun find(kind: String, day: Long, pose: String): ProgressPhotoEntity?
+
+    @Query("SELECT * FROM progress_photos WHERE id = :id")
+    suspend fun byId(id: Long): ProgressPhotoEntity?
+
+    @Query("SELECT * FROM progress_photos WHERE sessionId = :sessionId")
+    suspend fun forSession(sessionId: Long): List<ProgressPhotoEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(row: ProgressPhotoEntity): Long
+
+    @Query("DELETE FROM progress_photos WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    /** Archive restore replaces the photo rows wholesale (the files are swept afterwards). */
+    @Query("DELETE FROM progress_photos")
+    suspend fun clearAll()
+}

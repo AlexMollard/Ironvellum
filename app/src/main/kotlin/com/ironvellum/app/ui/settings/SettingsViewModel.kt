@@ -67,6 +67,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -539,11 +540,31 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         _import.value = ImportUi(summary = say(R.string.settings_import_empty))
     }
 
-    fun importArchive(json: String) {
+    private val photoRefresh = MutableStateFlow(0)
+
+    /** Photos the archive names that this phone has no picture for: the backup folder still owes them ([restorePhotos]). */
+    val photosMissing: StateFlow<Int> = combine(repo.photoLibrary.photos, photoRefresh) { rows, _ ->
+        withContext(Dispatchers.IO) { rows.count { !repo.photoLibrary.hasFile(it) } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** The lifter picked the folder that holds the photos copy: bring the missing pictures back from it. */
+    fun restorePhotos(context: Context, tree: Uri) {
+        viewModelScope.launch {
+            val back = runCatching { AutoBackup.restorePhotos(context.applicationContext, repo, tree) }.getOrDefault(0)
+            photoRefresh.value++
+            _import.value = ImportUi(summary = UiText.plural(R.plurals.settings_photos_restored, back, back))
+        }
+    }
+
+    fun importArchive(json: String, context: Context) {
         if (_import.value.importing) return
         viewModelScope.launch {
             _import.value = ImportUi(importing = true)
-            _import.value = repo.importArchive(json).fold(
+            _import.value = repo.importArchive(json).onSuccess {
+                // The pictures come from the backup folder when it is on; otherwise the Data page offers to pick it.
+                runCatching { AutoBackup.restorePhotos(context.applicationContext, repo) }
+                photoRefresh.value++
+            }.fold(
                 { r ->
                     ImportUi(
                         summary = SettingsSummaries.archiveRestored(

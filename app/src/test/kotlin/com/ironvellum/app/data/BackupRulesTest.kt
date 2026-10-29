@@ -24,7 +24,7 @@ class BackupRulesTest {
     private val dbDependent = setOf("onboarding", "program_answers", "reminders", "auto_backup", "warmup", "inbox_notifier", "warband_payout", "circle_payout", "rank_state", "health_write", "health_resume", "weekly_recap", "suggestion_dismissals")
 
     /** Safe to restore alone: appearance, a custom backend URL/key or a seen-this-hint flag, not training state. */
-    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance", "deeds", "trial_prefs", "share_card")
+    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance", "deeds", "trial_prefs", "share_card", "progress_photos")
 
     @Test
     fun `every prefs file the app opens is classified`() {
@@ -55,6 +55,24 @@ class BackupRulesTest {
             }
             assertTrue("${section.tagName} must still exclude the database", "ironvellum.db" in excludes(section, "database"))
         }
+    }
+
+    @Test
+    fun `progress photos are excluded from every backup channel`() {
+        val sections = listOf(
+            parse("backup_rules.xml").documentElement,
+            section("data_extraction_rules.xml", "cloud-backup"),
+            section("data_extraction_rules.xml", "device-transfer"),
+        )
+        for (section in sections) {
+            assertTrue("${section.tagName} must exclude the photos folder", "photos" in excludes(section, "file"))
+        }
+    }
+
+    @Test
+    fun `the photos folder is where the store writes`() {
+        // The exclusion above names the folder by string; the store builds its path from this constant.
+        assertEquals("photos", PhotoStore.DIR)
     }
 
     private fun parse(name: String) =

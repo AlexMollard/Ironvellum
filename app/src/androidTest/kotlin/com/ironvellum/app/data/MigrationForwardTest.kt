@@ -1169,4 +1169,37 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 45 -> 46, progress photos: a new table. Every existing row survives (a session is the one a photo points
+     * at), the table starts empty, a workout photo cascades away with its session, and the unique index allows one
+     * workout photo a day and one of each pose a week.
+     */
+    @Test
+    fun upgradeTo46AddsAnEmptyPhotoTableThatCascadesAndKeepsOneAPlace() = runTest {
+        helper.createDatabase(dbName, 45).use { old ->
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (7, NULL, 'Push', 1000, 2000, 10, 0, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 46, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT COUNT(*) FROM progress_photos").use { c -> assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0)) }
+            db.query("SELECT label FROM sessions WHERE id = 7").use { c -> assertTrue(c.moveToFirst()); assertEquals("Push", c.getString(0)) }
+            db.execSQL("INSERT INTO progress_photos (kind, day, sessionId, pose, fileName, takenAtMs) VALUES ('WORKOUT', 20000, 7, '', 'w-20000-a.jpg', 1)")
+            db.execSQL("INSERT INTO progress_photos (kind, day, sessionId, pose, fileName, takenAtMs) VALUES ('POSE', 19999, NULL, 'front', 'p-19999-front-a.jpg', 1)")
+            db.execSQL("INSERT INTO progress_photos (kind, day, sessionId, pose, fileName, takenAtMs) VALUES ('POSE', 19999, NULL, 'side', 'p-19999-side-a.jpg', 1)")
+            val duplicate = runCatching {
+                db.execSQL("INSERT INTO progress_photos (kind, day, sessionId, pose, fileName, takenAtMs) VALUES ('POSE', 19999, NULL, 'front', 'p-19999-front-b.jpg', 2)")
+            }
+            assertTrue("a second front pose in one week must be refused", duplicate.isFailure)
+            db.execSQL("PRAGMA foreign_keys = ON")
+            db.execSQL("DELETE FROM sessions WHERE id = 7")
+            db.query("SELECT kind FROM progress_photos ORDER BY id").use { c ->
+                assertEquals(2, c.count)
+                while (c.moveToNext()) assertEquals("POSE", c.getString(0))
+            }
+        }
+    }
 }

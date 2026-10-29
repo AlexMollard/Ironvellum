@@ -88,7 +88,7 @@ class ArchiveSettings(
     }
 
     companion object {
-        private val files = listOf("appearance", "trial_prefs", "trial", "onboarding", "reminders", "inbox_notifier", "weekly_recap", "program_answers", "deeds", "health_write", "warmup", "info_sheet_hints", "share_card")
+        private val files = listOf("appearance", "trial_prefs", "trial", "onboarding", "reminders", "inbox_notifier", "weekly_recap", "program_answers", "deeds", "health_write", "warmup", "info_sheet_hints", "share_card", "progress_photos")
         private fun kind(file: String, key: String): String? = when (file) {
             "appearance" -> when (key) {
                 "theme", "primary", "secondary", "light_primary", "light_secondary", "liftingExperience", "loadUnit", "effortScale" -> "s"
@@ -110,6 +110,7 @@ class ArchiveSettings(
             "deeds" -> if (key == "earned_order") "s" else null
             "health_write", "warmup" -> if (key == "enabled") "b" else null
             "info_sheet_hints" -> if (key == "page_peek") "b" else null
+            "progress_photos" -> if (key == "pose_day") "i" else null
             "share_card" -> if (key in setOf("include_exercise_notes", "include_effort", "sign_with_crest", "recap_records", "recap_streak")) "b" else null
             "program_answers" -> when (key) {
                 "volume", "split", "focus", "gear", "dumbbellMaxKg", "vestMaxKg", "vestBlockKg", "priorities" -> "s"
@@ -178,6 +179,7 @@ class ArchiveSettings(
                         key == "maxExercises" -> it in ProgramRules.MAX_EXERCISES_RANGE
                         key == "sessionMinutes" -> it in ProgramRules.SESSION_MINUTES_OPTIONS
                         key.contains(".pairs.") -> it in 0..PlateStore.MAX_PAIRS
+                        key == "pose_day" -> it in 1..7
                         else -> it >= 0
                     })
                 }

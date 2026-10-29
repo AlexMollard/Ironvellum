@@ -46,6 +46,8 @@ object ExportReader {
         val settings: Map<String, Map<String, String>>? = null,
         /** 0 when the archive predates the field. */
         val settingsVersion: Int = 0,
+        /** v14. Null when the archive has no photos section (older, or the cloud copy): a restore then keeps this device's photos. */
+        val photos: List<PhotoSnapshot>? = null,
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -79,6 +81,7 @@ object ExportReader {
             deviceDataOmitted = deviceDataOmitted,
             settings = root.settings(),
             settingsVersion = root.int("settingsVersion") ?: 0,
+            photos = root.arr("photos")?.mapNotNull { readPhoto(it as Obj) },
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.
@@ -220,6 +223,22 @@ object ExportReader {
         valueCm = o.dbl("valueCm") ?: fail("measurement missing valueCm"),
         takenAtMs = o.long("takenAtMs") ?: fail("measurement missing takenAtMs"),
     )
+
+    /** A photo row this build cannot make sense of (an unknown kind or pose, a name that is not ours) is dropped, never fatal. */
+    private fun readPhoto(o: Obj): PhotoSnapshot? {
+        val kind = PhotoKind.entries.firstOrNull { it.name == o.str("kind") } ?: return null
+        val pose = o.str("pose")?.let { key -> Pose.fromKey(key) ?: return null }
+        val file = o.str("file")?.takeIf(PhotoRules::isOurName) ?: return null
+        if (kind == PhotoKind.POSE && pose == null) return null
+        return PhotoSnapshot(
+            kind = kind,
+            day = o.long("day") ?: return null,
+            sessionStartedAtMs = o.long("session"),
+            pose = pose,
+            fileName = file,
+            takenAtMs = o.long("takenAtMs") ?: 0L,
+        )
+    }
 
     private fun readExerciseMeta(o: Obj) = ExportWriter.ExerciseMeta(
         name = o.str("name") ?: fail("exercise missing name"),

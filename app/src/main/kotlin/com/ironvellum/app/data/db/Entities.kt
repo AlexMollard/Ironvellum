@@ -418,3 +418,31 @@ data class FavouriteExerciseEntity(
     @PrimaryKey val exerciseId: Long,
     val addedAtMs: Long,
 )
+
+/**
+ * A progress photo's row: the picture itself is a file in app-private storage ([fileName]), never in the database and
+ * never in the cloud. A WORKOUT row is the one photo of [day] (the epoch day, in the zone it was taken) and names the
+ * workout it was last set from; a POSE row is one pose of the week whose Monday is [day], with no workout. [pose] is ''
+ * for a workout photo so the unique index (kind, day, pose) holds both rules: one workout photo a day, one of each pose a week.
+ */
+@Entity(
+    tableName = "progress_photos",
+    foreignKeys = [
+        ForeignKey(
+            entity = SessionEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("sessionId"), Index(value = ["kind", "day", "pose"], unique = true)],
+)
+data class ProgressPhotoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val kind: String,
+    val day: Long,
+    val sessionId: Long?,
+    val pose: String,
+    val fileName: String,
+    val takenAtMs: Long,
+)

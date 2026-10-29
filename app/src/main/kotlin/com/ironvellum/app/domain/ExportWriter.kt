@@ -16,7 +16,9 @@ object ExportWriter {
     // 12: a rite entry's set scheme (top set and back-offs, drops, custom), written only when it is not Straight; sets
     // may now be of kind top or backoff.
     // 13: a rite entry's warm-up flag, written only for a warm-up exercise.
-    const val FORMAT_VERSION = 13
+    // 14: the lifter's progress photos as rows (kind, day, workout start, pose, file name, taken time): never the
+    // pictures, never in the cloud copy. Absent in an older archive, which a restore reads as "keep this device's photos".
+    const val FORMAT_VERSION = 14
 
     /**
      * Version of the `settings` section, written beside it as `settingsVersion`. Kept apart from
@@ -106,6 +108,9 @@ object ExportWriter {
         // byte-identical.
         includeDeviceOnly: Boolean = true,
         settings: Map<String, Map<String, String>>? = null,
+        // null keeps the key out (an archive with no photos section); an empty list writes an empty section, which a
+        // restore reads as "no photos". Never written in the cloud copy, whatever is passed.
+        photos: List<PhotoSnapshot>? = null,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
@@ -132,6 +137,10 @@ object ExportWriter {
             appendHealthDays(healthDays)
             append(",\"measurements\":")
             appendMeasurements(measurements)
+        }
+        if (includeDeviceOnly && photos != null) {
+            append(",\"photos\":")
+            appendPhotos(photos)
         }
         append(",\"exercises\":")
         appendExercises(exercises)
@@ -422,6 +431,21 @@ object ExportWriter {
             append(",\"activeKcal\":").append(day.activeKcal)
             append(",\"sleepMinutes\":").append(day.sleepMinutes)
             append(",\"restingHr\":").appendNullable(day.restingHr) { append(it) }
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendPhotos(photos: List<PhotoSnapshot>) {
+        append("[")
+        photos.forEachIndexed { i, p ->
+            if (i > 0) append(",")
+            append("{\"kind\":").appendEscaped(p.kind.name)
+            append(",\"day\":").append(p.day)
+            p.sessionStartedAtMs?.let { append(",\"session\":").append(it) }
+            p.pose?.let { append(",\"pose\":").appendEscaped(it.key) }
+            append(",\"file\":").appendEscaped(p.fileName)
+            append(",\"takenAtMs\":").append(p.takenAtMs)
             append("}")
         }
         append("]")

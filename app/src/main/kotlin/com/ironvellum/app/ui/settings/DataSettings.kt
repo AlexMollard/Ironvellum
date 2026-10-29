@@ -89,11 +89,17 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         }
     }
 
+    // The folder that holds the photos copy, picked to bring back the pictures an archive named. Read access lasts this visit only.
+    val photosMissing by viewModel.photosMissing.collectAsStateWithLifecycle()
+    val photosFolderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) viewModel.restorePhotos(context, uri)
+    }
+
     pendingArchive?.let { archive ->
         RestoreConfirmDialog(
             onConfirm = {
                 pendingArchive = null
-                viewModel.importArchive(archive)
+                viewModel.importArchive(archive, context)
             },
             onDismiss = { pendingArchive = null },
         )
@@ -157,6 +163,16 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         exportError?.let {
             Spacer(Modifier.height(8.dp))
             SettingsCaption(it.asString(), color = IronvellumColors.DangerRed)
+        }
+        if (photosMissing > 0) {
+            Spacer(Modifier.height(12.dp))
+            InkRowPanel(Modifier.fillMaxWidth()) {
+                ListRow(
+                    pluralStringResource(R.plurals.settings_photos_missing_label, photosMissing, photosMissing),
+                    subline = stringResource(R.string.settings_photos_missing_caption),
+                    onClick = { photosFolderLauncher.launch(null) },
+                )
+            }
         }
         importUi.summary?.let {
             Spacer(Modifier.height(8.dp))

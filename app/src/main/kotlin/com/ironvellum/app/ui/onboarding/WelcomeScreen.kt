@@ -115,7 +115,7 @@ internal fun WelcomeScreen(
             onConfirm = {
                 pendingArchive = null
                 onRestoreStarted()
-                settings.importArchive(archive)
+                settings.importArchive(archive, context)
             },
             onDismiss = { pendingArchive = null },
         )

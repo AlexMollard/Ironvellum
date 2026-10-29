@@ -51,6 +51,7 @@ class IronvellumApp : Application() {
             loadKit = { kotlinx.coroutines.withContext(Dispatchers.IO) { com.ironvellum.app.data.ProgramAnswersStore.kit(this@IronvellumApp) } },
             adjustments = com.ironvellum.app.data.PrefsSessionAdjustments(getSharedPreferences("suggestion_dismissals", MODE_PRIVATE)),
             twinKept = { com.ironvellum.app.data.TrialPrefs(this).twinKept },
+            photoStore = com.ironvellum.app.data.PhotoStore(this),
             archiveSettings = com.ironvellum.app.data.ArchiveSettings(this, permitted = { file ->
                 // A restored switch is only a wish: it turns on once this device has granted what it needs.
                 when (file) {
@@ -73,6 +74,7 @@ class IronvellumApp : Application() {
                         com.ironvellum.app.data.FirstRunPrefs.setSexUnset(this@IronvellumApp, getSharedPreferences("onboarding", MODE_PRIVATE).getBoolean("sex_unset", false))
                     }
                     if ("weekly_recap" in restored) com.ironvellum.app.data.ReviewDismissals.init(this@IronvellumApp)
+                    if ("progress_photos" in restored) com.ironvellum.app.data.PhotoPrefs.init(this@IronvellumApp)
                     if ("program_answers" in restored) {
                         com.ironvellum.app.data.ProgramAnswersStore.get(this@IronvellumApp)
                         com.ironvellum.app.data.PlateStore.load(this@IronvellumApp)
@@ -121,6 +123,7 @@ class IronvellumApp : Application() {
         appearanceStore // Restore accents before any window or notification reads them.
         com.ironvellum.app.data.Units.init(this) // And the load unit, before any screen or notification prints a load.
         com.ironvellum.app.data.ReviewDismissals.init(this) // Which reviews were closed on Today, before it draws.
+        com.ironvellum.app.data.PhotoPrefs.init(this) // Which weekday asks for pose photos, and whether Today's prompt was closed.
         com.ironvellum.app.data.EffortSetting.init(this) // And whether effort is asked for, before the trial screen reads it.
         com.ironvellum.app.data.LiftingExperienceSetting.init(this) // And how long they have lifted, before the fatigue estimate reads it.
         com.ironvellum.app.data.FatigueAdviceSetting.init(this) // And whether fatigue may advise, before Today reads it.
