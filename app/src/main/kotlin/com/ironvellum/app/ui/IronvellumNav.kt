@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -288,7 +289,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             val id = repo.resumableSessionId(System.currentTimeMillis()) ?: return@LaunchedEffect
             // Only on a started screen: navigating while the activity is being
             // torn down strands a back stack entry mid-lifecycle and crashes.
-            lifecycle.withStarted {
+            navController.whenReady(lifecycle) {
                 if (navController.currentDestination?.route != Routes.SESSION) navController.navigate(Routes.session(id))
             }
         }
@@ -306,7 +307,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         androidx.compose.runtime.LaunchedEffect(inboxRequest) {
             if (inboxRequest <= servedInboxRequest) return@LaunchedEffect
             servedInboxRequest = inboxRequest
-            lifecycle.withStarted {
+            navController.whenReady(lifecycle) {
                 navController.navigate(Routes.SOCIAL) {
                     popUpTo(Routes.DASHBOARD) { saveState = false }
                     launchSingleTop = true
@@ -320,7 +321,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         androidx.compose.runtime.LaunchedEffect(todayRequest) {
             if (todayRequest <= servedTodayRequest) return@LaunchedEffect
             servedTodayRequest = todayRequest
-            lifecycle.withStarted {
+            navController.whenReady(lifecycle) {
                 // The same options as tapping the tab, so Back returns to Today.
                 navController.navigate(Routes.PRESETS) {
                     popUpTo(Routes.DASHBOARD) { saveState = true }
@@ -335,7 +336,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             val request = routeRequest ?: return@LaunchedEffect
             if (request.serial <= servedRouteRequest) return@LaunchedEffect
             servedRouteRequest = request.serial
-            lifecycle.withStarted {
+            navController.whenReady(lifecycle) {
                 navController.navigate(request.route) {
                     popUpTo(Routes.DASHBOARD) { saveState = false }
                     launchSingleTop = true
@@ -356,7 +357,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 sealFor = request.sessionId
                 sealSerial++
             }
-            lifecycle.withStarted {
+            navController.whenReady(lifecycle) {
                 // Already on the trial (or the launch resume put it there): stay.
                 if (navController.currentDestination?.route != Routes.SESSION) {
                     navController.navigate(Routes.session(request.sessionId)) { launchSingleTop = true }
@@ -938,4 +939,16 @@ private fun IronvellumBottomBar(
                 .background(IronvellumColors.VaultHigh),
         )
     }
+}
+
+/**
+ * Runs [block] once the NavHost has set its graph and the screen is started.
+ * The NavHost sits inside Scaffold's content, which is composed at layout time,
+ * after the launch effects above have already started, so a quick database
+ * answer used to navigate on a controller that had no graph yet. The back stack
+ * flow replays its latest entry, so this returns at once on a later call.
+ */
+internal suspend fun NavController.whenReady(lifecycle: androidx.lifecycle.Lifecycle, block: () -> Unit) {
+    currentBackStackEntryFlow.first()
+    lifecycle.withStarted(block)
 }
