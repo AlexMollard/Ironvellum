@@ -1,16 +1,24 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -20,6 +28,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.UiText
+import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -89,5 +98,63 @@ internal fun MuscleLine(level: ShareLevel, muscles: List<Muscle>) {
             color = IronvellumColors.Ink,
             modifier = Modifier.weight(1f),
         )
+    }
+}
+
+/**
+ * The About page's muscles panel: both bodies side by side (tappable, glowing the muscle under a tap) beside a
+ * swatch list, MAIN then ASSIST. The swatches are the figure's own fills, so they are the legend; an unlit muscle
+ * is the bare figure and needs no entry. One spoken summary stands for the figure and the lists.
+ */
+@Composable
+fun ExerciseMusclesPanel(
+    shares: Map<Muscle, Double>,
+    exerciseName: String,
+    modifier: Modifier = Modifier,
+    figureHeight: Dp = 96.dp,
+) {
+    val description = exerciseMuscleSummary(shares)
+    val figure = BodyFigures.of(LocalBodySex.current)
+    val selection = rememberMuscleSelection()
+    InkPanel(modifier.semantics { contentDescription = description }, contentPadding = PaddingValues(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            TappableFigure(
+                figure, figureHeight,
+                { muscle -> shareFill(shares[muscle]) },
+                selection.value, { selection.value = it },
+                { muscle -> exerciseMuscleLine(muscle, shares[muscle], exerciseName) },
+                Modifier.width(figureWidth(figure, figureHeight)),
+            )
+            Column(Modifier.weight(1f).clearAndSetSemantics {}, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SwatchGroup(ShareLevel.MAIN, musclesAt(shares, ShareLevel.MAIN), shareFill(1.0))
+                SwatchGroup(ShareLevel.ASSIST, musclesAt(shares, ShareLevel.ASSIST), shareFill(0.5))
+            }
+        }
+    }
+}
+
+/** One level's label over its swatch and the muscles at it; nothing when the exercise has none at that level. */
+@Composable
+private fun SwatchGroup(level: ShareLevel, muscles: List<Muscle>, swatch: Color) {
+    if (muscles.isEmpty()) return
+    val main = level == ShareLevel.MAIN
+    Column {
+        Text(
+            level.label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
+        )
+        Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.Top) {
+            Box(Modifier.padding(top = 4.dp).size(12.dp).background(swatch, MaterialTheme.shapes.extraSmall))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                muscles.joinToString(", ") { it.label },
+                style = if (main) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodySmall,
+                fontWeight = if (main) FontWeight.SemiBold else FontWeight.Normal,
+                color = IronvellumColors.Ink,
+            )
+        }
     }
 }

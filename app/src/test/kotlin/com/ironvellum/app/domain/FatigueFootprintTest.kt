@@ -133,4 +133,16 @@ class FatigueFootprintTest {
         assertEquals(3, FatigueTuning.FOOTPRINT_SETS)
         assertEquals(1, FatigueTuning.FOOTPRINT_RIR)
     }
+
+    @Test
+    fun `the recovery curve crosses the light line at the hour the page names`() {
+        // The chart and the "back to light in about N hours" line must come from one rule.
+        for (muscle in listOf(Muscle.LATS, Muscle.BICEPS, Muscle.QUADS, Muscle.CALVES)) {
+            val dose = 2.5
+            val hours = FatigueFootprints.lightInHours(muscle, dose)!!
+            assertTrue(FatigueFootprints.residualFraction(muscle, dose, hours - 1.0) >= FatigueTuning.LIGHT_BELOW - 1e-9)
+            assertTrue(FatigueFootprints.residualFraction(muscle, dose, hours + 1.0) <= FatigueTuning.LIGHT_BELOW + 1e-9)
+        }
+        assertEquals(1.0 * 2.5 / FatigueTuning.REFERENCE_SETS, FatigueFootprints.residualFraction(Muscle.LATS, 2.5, 0.0), 1e-9)
+    }
 }

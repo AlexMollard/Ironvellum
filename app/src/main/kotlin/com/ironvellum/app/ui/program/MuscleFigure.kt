@@ -87,6 +87,14 @@ internal fun TappableFigure(
     }
 }
 
+/**
+ * The width a [TappableFigure] of [height] needs to draw both bodies at full height and no wider: each body
+ * takes half the width, and a body is its height times its span (twice [BodyFigure.halfWidth]) wide.
+ */
+internal fun figureWidth(figure: BodyFigure, height: Dp): Dp = height * (4f * figure.halfWidth / FIGURE_FILL)
+
+private const val FIGURE_FILL = 0.96f
+
 /** The accessibility nodes of [TappableFigure]: one empty box per drawn muscle, placed over its bounds. */
 @Composable
 private fun MuscleNodes(

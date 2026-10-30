@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -252,6 +253,10 @@ fun InfoSheetInline(
     }
 }
 
+private val PAGE_TOP_GAP = 8.dp
+private val PAGE_SECTION_GAP = 12.dp
+private val PAGE_LABEL_GAP = 6.dp
+private val PAGE_BOTTOM_GAP = 12.dp
 private const val PEEK_DELAY_MS = 500L
 private const val PEEK_LEG_MS = 300
 private const val PEEK_FRACTION = 0.15f
@@ -283,10 +288,11 @@ private fun PageBody(page: BuiltPage, compact: Boolean) {
             .verticalScroll(scroll)
             .padding(horizontal = LedgerSpace.Gutter),
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(PAGE_TOP_GAP))
         SummaryStrip(page.summary, leadingGap = false)
-        SectionList(page.sections, compact, afterTabs = page.summary == null)
-        Spacer(Modifier.height(20.dp))
+        // Tighter than a flat sheet's sections: a page is meant to fit its viewport without a scroll.
+        SectionList(page.sections, compact, afterTabs = page.summary == null, gap = PAGE_SECTION_GAP, labelGap = PAGE_LABEL_GAP)
+        Spacer(Modifier.height(PAGE_BOTTOM_GAP))
     }
 }
 
@@ -299,15 +305,15 @@ private fun SummaryStrip(summary: (@Composable ColumnScope.() -> Unit)?, leading
 
 /** The sections in order, each under its PanelLabel. [afterTabs] drops the gap above the first: the page already has one. */
 @Composable
-private fun SectionList(sections: List<SheetSection>, compact: Boolean, afterTabs: Boolean = false) {
+private fun SectionList(sections: List<SheetSection>, compact: Boolean, afterTabs: Boolean = false, gap: Dp = 20.dp, labelGap: Dp = 8.dp) {
     sections.forEachIndexed { index, section ->
-        val gap = when {
+        val above = when {
             index == 0 && afterTabs -> 0.dp
             index == 0 && section.label == null -> 14.dp
-            else -> 20.dp
+            else -> gap
         }
-        Spacer(Modifier.height(gap))
-        section.Render(index, collapsible = !compact)
+        Spacer(Modifier.height(above))
+        section.Render(index, collapsible = !compact, labelGap = labelGap)
     }
 }
 
@@ -495,12 +501,12 @@ private abstract class SheetSection(val label: String?) {
     abstract fun Body(collapsible: Boolean, expanded: Boolean, onToggle: (() -> Unit)?)
 
     @Composable
-    fun Render(index: Int, collapsible: Boolean) {
+    fun Render(index: Int, collapsible: Boolean, labelGap: Dp = 8.dp) {
         var expanded by rememberSaveable(index, label) { mutableStateOf(false) }
         Column(Modifier.fillMaxWidth()) {
             if (label != null) {
                 PanelLabel(label)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(labelGap))
             }
             Body(collapsible, expanded) { expanded = !expanded }
         }

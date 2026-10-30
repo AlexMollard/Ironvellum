@@ -341,7 +341,7 @@ private fun coverageSummary(tally: CoverageTally): String {
 }
 
 @Composable
-private fun FigureLabel(text: String, modifier: Modifier) {
+internal fun FigureLabel(text: String, modifier: Modifier) {
     Text(
         text,
         modifier = modifier,

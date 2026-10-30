@@ -63,7 +63,7 @@ class ExerciseInfoFatigueTest {
     fun benchListsBandsAndTheTypicalLineWithoutTags() {
         show(bench)
         openFatigue()
-        compose.onNodeWithText("Where the fatigue lands").assertIsDisplayed()
+        compose.onNodeWithText("Tap a muscle on the body or in the list").assertIsDisplayed()
         compose.onAllNodesWithText("Strong").onFirst().assertIsDisplayed()
         compose.onAllNodesWithText("Medium").onFirst().assertIsDisplayed()
         compose.onNodeWithText("Three hard sets, one rep left").assertIsDisplayed()

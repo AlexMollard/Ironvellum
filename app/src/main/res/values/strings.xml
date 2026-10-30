@@ -5131,6 +5131,17 @@
     <!-- Under the summary of a bodyweight lift, when no body weight is logged so the estimate cannot count the body. -->
     <string name="infosheet_history_body_missing">The estimate counts the added load only. Log your body weight and it counts your body too.</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
+    <!-- Exercise sheet, About: the heading over the movement's purpose, when to pick it and its tags. -->
+    <string name="infosheet_why_label">WHY DO IT</string>
+    <!-- Exercise sheet, History: the row that opens the rest of the list. %d is how many workouts there are. -->
+    <plurals name="infosheet_history_see_all">
+        <item quantity="one">See all %d workout</item>
+        <item quantity="other">See all %d workouts</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="one">See all %d trial</item>
+        <item quantity="other">See all %d trials</item>
+    </plurals>
     <string name="infosheet_last_label">LAST WORKOUT</string>
     <string name="infosheet_last_label__t">LAST TRIAL</string>
     <!-- Exercise sheet, skill section. %1$s is the skills to clear first, already joined ("Dead Hang" or "A and B"). -->
@@ -6904,6 +6915,16 @@
     </plurals>
     <!-- %1$s a muscle, %2$s its band (Strong, Medium or Light). Read by a screen reader for one muscle of the footprint figure. -->
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <!-- Exercise sheet, Fatigue: the line above the figure and the muscle rows. -->
+    <string name="fatigue_footprint_hint">Tap a muscle on the body or in the list</string>
+    <!-- Exercise sheet, Fatigue: the recovery chart's title and the button that lists the muscles. %1$s is the muscle, shown in capitals. -->
+    <string name="fatigue_recovery_caption">%1$s recovery, first 24 hours</string>
+    <string name="fatigue_recovery_pick_hint">Choose a muscle</string>
+    <!-- Recovery chart tick: %1$d is the hour, 0 to 24. Keep it short. -->
+    <string tools:ignore="PluralsCandidate" name="fatigue_recovery_hours_tick">%1$d h</string>
+    <!-- Recovery chart, spoken: %1$s the muscle, %2$s its level right after the sets (Moderate), %3$s a duration (7 hours). -->
+    <string name="fatigue_recovery_description">%1$s recovery over the first 24 hours: %2$s right after the sets, back to light after about %3$s.</string>
+    <string name="fatigue_recovery_description_light">%1$s recovery over the first 24 hours: only %2$s right after the sets.</string>
     <string name="fatigue_footprint_why_title">WHY IT LEAVES THIS MUCH BEHIND</string>
     <string name="fatigue_footprint_why_long">It loads the muscle while it is long and stretched, which tends to leave more behind than the same sets worked short.</string>
     <string name="fatigue_footprint_why_heavy">It is a heavy whole-body lift: the load runs through the spine and the legs, so the same hard sets leave more behind.</string>

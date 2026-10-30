@@ -1,20 +1,35 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseGuides
+import com.ironvellum.app.domain.ExerciseWhy
+import com.ironvellum.app.domain.ExerciseWhys
 import com.ironvellum.app.domain.FatigueFootprints
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.LiftBoards
@@ -24,12 +39,12 @@ import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
-import com.ironvellum.app.ui.program.ExerciseMuscles
+import com.ironvellum.app.ui.program.ExerciseMusclesPanel
 import com.ironvellum.app.ui.program.FootprintBody
-import com.ironvellum.app.ui.program.FootprintExplainLink
-import com.ironvellum.app.ui.program.FootprintTypical
+import com.ironvellum.app.ui.program.FootprintWhy
 import com.ironvellum.app.ui.program.whyLines
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
 
 /**
  * Facts about one exercise, all read from data the app already holds: the
@@ -39,6 +54,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
+ *
+ * Each page is built to fit the sheet on a 412x891dp phone at the default text size without scrolling
+ * (ExerciseInfoSheetFitsTest holds it to that); a larger text size scrolls instead.
  */
 @Composable
 internal fun ExerciseInfoSheet(
@@ -50,6 +68,8 @@ internal fun ExerciseInfoSheet(
     modifiers: String = "",
     /** Shown for the lifter's own movements: opens the exercise form on this one. */
     onEdit: (() -> Unit)? = null,
+    /** The WHY DO IT entry; the catalogue's for [exercise] unless a test brings its own. */
+    why: ExerciseWhy? = ExerciseWhys.forName(exercise.name),
 ) {
     val skill = Skills.forName(exercise.name)
     val boards = LiftBoards.boardsFor(exercise.name)
@@ -74,33 +94,24 @@ internal fun ExerciseInfoSheet(
         // lifter's own sets and Fatigue is the movement's derived footprint. The sheet drops a page with nothing on it (History never is: it says "not logged yet").
         pages = listOf(
             InfoPage(stringResource(R.string.infosheet_page_about)) {
-                // The drawing leads: what the movement looks like before anything is said about it.
-                section(null) {
-                    ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(200.dp))
-                }
-                if (lastLine != null) text(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
+                // The drawing leads, small, beside the two facts a lifter looks for first.
+                section(null) { AboutTop(exercise, lastLine) }
+                if (why != null) section(Words.text(UiText.res(R.string.infosheet_why_label))) { WhyBody(why) }
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
-                gearFacts(exercise.name)
                 if (skill != null) {
                     section(Words.technique.u) {
-                        TechniqueLine("${skill.line} · ${Lines.claimAt}: ${skill.standard}", IronvellumColors.Ink)
-                        if (skill.why.isNotBlank()) TechniqueLine(skill.why, IronvellumColors.InkMuted)
-                        if (skill.prerequisites.isNotEmpty()) {
-                            TechniqueLine(UiText.res(R.string.infosheet_skill_needs, ListText.and(skill.prerequisites)).asString(), IronvellumColors.InkMuted)
-                        }
+                        SkillPanel(skill.line, "${Lines.claimAt.replaceFirstChar { it.uppercase() }}: ${skill.standard}", skill.why, skill.prerequisites)
                     }
                 }
                 if (boards.isNotEmpty()) {
-                    bullets(
-                        Words.theReckoning.u,
-                        boards.map { board ->
+                    val lines = boards.joinToString("\n") { board ->
                             if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
                                 Words.text(UiText.themed(R.string.infosheet_board_rung, R.string.infosheet_board_rung__t, board.lift.label, board.rung.toString(), board.rungCount.toString()))
                             } else {
                                 Words.text(UiText.themed(R.string.infosheet_board_counts, R.string.infosheet_board_counts__t, board.lift.label.lowercase()))
                             }
-                        },
-                    )
+                        }
+                    section(Words.theReckoning.u) { Text(lines, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink) }
                 }
             },
             InfoPage(stringResource(R.string.infosheet_page_form)) { formFacts(exercise.name) },
@@ -110,60 +121,136 @@ internal fun ExerciseInfoSheet(
     )
 }
 
+/** The drawing at [ART_SIZE] beside LAST WORKOUT and EQUIPMENT, each only when there is something to say. */
 @Composable
-private fun TechniqueLine(text: String, color: Color) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = color,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-    )
+private fun AboutTop(exercise: Exercise, lastLine: String?) {
+    val gear = gearLine(exercise.name)
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.size(ART_SIZE))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (lastLine != null) AboutFact(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
+            if (gear != null) AboutFact(Words.armoury.u, gear)
+        }
+    }
+}
+
+@Composable
+private fun AboutFact(label: String, value: String) {
+    Column {
+        PanelLabel(label)
+        Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+    }
+}
+
+/** What the movement builds, when to pick it over its neighbours, and up to three tags. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WhyBody(why: ExerciseWhy) {
+    Text(why.purpose, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+    Spacer(Modifier.height(4.dp))
+    Text(why.pickIt, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    if (why.tags.isNotEmpty()) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            why.tags.take(MAX_WHY_TAGS).forEach { tag ->
+                Text(
+                    tag,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier
+                        .inkBorder(LedgerContrast.Graphic, MaterialTheme.shapes.extraSmall, 1.dp)
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The skill in one panel: its line and what it needs on the title row, how it is claimed, then why it matters. */
+@Composable
+private fun SkillPanel(line: String, claim: String, why: String, prerequisites: List<String>) {
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(10.dp)) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(line, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+            if (prerequisites.isNotEmpty()) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    UiText.res(R.string.infosheet_skill_needs, ListText.and(prerequisites)).asString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                )
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        Text(claim, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        if (why.isNotBlank()) {
+            Spacer(Modifier.height(2.dp))
+            Text(why, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        }
+    }
 }
 
 /**
- * The FORM page of an exercise or technique sheet: HOW TO (setup and steps), CUES and COMMON
- * MISTAKES, each left out when the app holds no data for it. Shared by the exercise sheet and the
- * technique detail so the two always agree.
+ * The FORM page of an exercise or technique sheet: CUES first, as the thing to take to the bar, then HOW TO (setup
+ * and steps) and COMMON MISTAKES, each left out when the app holds no data for it. Shared by the exercise sheet and
+ * the technique detail so the two always agree.
  */
 internal fun InfoSheetScope.formFacts(name: String) {
-    howToFacts(name)
     cueFacts(name)
+    howToFacts(name)
     mistakeFacts(name)
 }
 
-/** The muscle figure with its MAIN / ASSIST lines: the coverage screen's, so an exercise reads the same wherever the lifter asks. */
+/** The muscle figure with its MAIN / ASSIST lines: both bodies beside the swatch lists, the same fills as the coverage screen's. */
 internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", showMissingMuscles: Boolean = false) {
     val shares = MuscleMap.profile(name, modifiers)?.muscles.orEmpty()
     if (shares.isNotEmpty()) {
-        section(Words.text(UiText.res(R.string.infosheet_section_muscles))) { ExerciseMuscles(shares, name, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
+        section(Words.text(UiText.res(R.string.infosheet_section_muscles))) { ExerciseMusclesPanel(shares, name, Modifier.fillMaxWidth()) }
     } else if (showMissingMuscles) {
         text(Words.text(UiText.res(R.string.infosheet_section_muscles)), Lines.noMuscleData, IronvellumColors.InkMuted)
     }
 }
 
 /**
- * The FATIGUE page: where the movement's fatigue lands, what three hard sets at one rep left typically do and why
- * this lift leaves what it does. All derived by [FatigueFootprints] from the same dose rule the Muscles tab uses;
- * a movement with no muscle profile has no page.
+ * The FATIGUE page: where the movement's fatigue lands, what three hard sets at one rep left typically do to the
+ * lit muscle and how it recovers, and why this lift leaves what it does. All derived by [FatigueFootprints] from
+ * the same dose rule the Muscles tab uses; a movement with no muscle profile has no page.
  */
 internal fun InfoSheetScope.fatigueFacts(name: String, modifiers: String = "") {
     val footprint = FatigueFootprints.of(name, modifiers) ?: return
     section(Words.text(UiText.res(R.string.fatigue_footprint_title))) { FootprintBody(footprint) }
-    section(null) { FootprintTypical(footprint) }
-    text(Words.text(UiText.res(R.string.fatigue_footprint_why_title)), whyLines(footprint).joinToString(" "), collapseAfterLines = WHY_LINES)
-    section(null) { FootprintExplainLink() }
+    section(null) { FootprintWhy(whyLines(footprint).joinToString(" ")) }
 }
 
-private const val WHY_LINES = 8
+private const val MAX_WHY_TAGS = 3
+private val ART_SIZE = 76.dp
 
 private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
     steps(Words.text(UiText.res(R.string.infosheet_section_how_to)), guide.steps, lead = guide.setup)
 }
 
+/** The cues in one panel, a row each at 16sp semibold: short enough to read mid-set. */
 private fun InfoSheetScope.cueFacts(name: String) {
-    val guide = ExerciseGuides.forName(name) ?: return
-    bullets(Words.text(UiText.res(R.string.infosheet_section_cues)), guide.cues)
+    val cues = ExerciseGuides.forName(name)?.cues.orEmpty()
+    if (cues.isEmpty()) return
+    section(Words.text(UiText.res(R.string.infosheet_section_cues))) {
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp)) {
+            cues.forEachIndexed { index, cue ->
+                if (index > 0) InkDivider()
+                Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(10.dp).background(IronvellumColors.Emerald, MaterialTheme.shapes.extraSmall))
+                    Spacer(Modifier.width(12.dp))
+                    Text(cue, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+                }
+            }
+        }
+    }
 }
 
 private fun InfoSheetScope.mistakeFacts(name: String) {
@@ -171,8 +258,14 @@ private fun InfoSheetScope.mistakeFacts(name: String) {
     bullets(Words.text(UiText.res(R.string.infosheet_section_mistakes)), guide.commonMistakes, IronvellumColors.InkMuted)
 }
 
+/** The gear a movement needs, as one EQUIPMENT section (the technique detail's). */
 internal fun InfoSheetScope.gearFacts(name: String) {
+    gearLine(name)?.let { text(Words.armoury.u, it) }
+}
+
+/** The gear a movement needs ("Pull-up bar or rings"), or null when it needs none. */
+private fun gearLine(name: String): String? {
     val gear = GearRequirements.needs(name)
         .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
-    if (gear.isNotEmpty()) text(Words.armoury.u, gear.replaceFirstChar { it.uppercase() })
+    return gear.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }
 }

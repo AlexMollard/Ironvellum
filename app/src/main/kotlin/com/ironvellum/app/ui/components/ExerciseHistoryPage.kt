@@ -1,17 +1,23 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -101,7 +108,7 @@ private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () ->
         factory = viewModelFactory { initializer { ExerciseHistoryViewModel(ironvellumRepository(), exercise) } },
     )
     val log by vm.log.collectAsStateWithLifecycle()
-    var shown by rememberSaveable { mutableIntStateOf(ExerciseLog.PAGE) }
+    var shown by rememberSaveable { mutableIntStateOf(RECENT_ROWS) }
     val open = LocalOpenWorkout.current
     // Nothing until Room has answered: an empty state for a frame would read as "never logged".
     val current = log ?: return
@@ -134,52 +141,92 @@ private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () ->
         )
     }
     if (current.trend.size >= 2) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(10.dp))
         HistoryTrend(current, dateFormat)
     }
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(10.dp))
     PanelLabel(Words.text(UiText.themed(R.string.infosheet_history_list_label, R.string.infosheet_history_list_label__t)))
-    Spacer(Modifier.height(4.dp))
+    Spacer(Modifier.height(2.dp))
     current.visible(shown).forEach { session ->
         HistoryRow(exercise, session, dateFormat, open?.let { go -> { onDismiss(); go(session.sessionId) } })
     }
     if (current.sessions.size > shown) {
-        ShowMoreRow { shown += ExerciseLog.PAGE }
+        SeeAllRow(current.sessions.size) { shown = Int.MAX_VALUE }
     }
 }
 
+/** The past workouts a page shows before "See all": enough to read the trend, few enough to fit the page. */
+private const val RECENT_ROWS = 4
+
+/**
+ * One panel, the best set as its lead (with the best estimated 1RM beside it for a weighted lift), then how many
+ * times and when last, inline. Every label keeps its words; each figure is one spoken line.
+ */
 @Composable
 private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: String) {
     val hold = exercise.metric == ExerciseMetric.HOLD
     val judged = exercise.metric == ExerciseMetric.REPS || hold
-    val figures = buildList {
-        add(stringResource(R.string.infosheet_history_done_label) to log.sessions.size.toString())
-        log.lastAtMs?.let { add(stringResource(R.string.infosheet_history_last_label) to formatDate(it, dateFormat)) }
-        if (judged) {
-            log.best?.let { best ->
-                val label = stringResource(if (hold) R.string.infosheet_history_best_hold_label else R.string.infosheet_history_best_set_label)
-                add(label to bestSetText(exercise, best))
+    val lead = if (judged) log.best?.let { best ->
+        stringResource(if (hold) R.string.infosheet_history_best_hold_label else R.string.infosheet_history_best_set_label) to bestSetText(exercise, best)
+    } else null
+    val e1rm = log.bestE1rmKg?.let { stringResource(R.string.infosheet_history_best_e1rm_label) to e1rmText(it, log.addsToBody, 1) }
+    val done = stringResource(R.string.infosheet_history_done_label) to log.sessions.size.toString()
+    val last = log.lastAtMs?.let { stringResource(R.string.infosheet_history_last_label) to formatDate(it, dateFormat) }
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(10.dp)) {
+        when {
+            lead != null && e1rm != null -> {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LeadFigure(lead, Modifier.weight(1f))
+                    LeadFigure(e1rm, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                InkDivider()
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    InlineFigure(done, Modifier.weight(1f))
+                    if (last != null) InlineFigure(last, Modifier.weight(1f))
+                }
             }
-        }
-        log.bestE1rmKg?.let { add(stringResource(R.string.infosheet_history_best_e1rm_label) to e1rmText(it, log.addsToBody, 1)) }
-    }
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        figures.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                pair.forEach { (label, value) ->
-                    Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                        PanelLabel(label)
-                        Text(
-                            value,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = IronvellumColors.Ink,
-                        )
+            lead != null -> {
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LeadFigure(lead, Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(IronvellumColors.Rune))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)) {
+                        InlineFigure(done, Modifier.fillMaxWidth())
+                        if (last != null) InlineFigure(last, Modifier.fillMaxWidth())
                     }
                 }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+            else -> {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LeadFigure(done, Modifier.weight(1f))
+                    if (last != null) LeadFigure(last, Modifier.weight(1f))
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun LeadFigure(figure: Pair<String, String>, modifier: Modifier) {
+    Column(modifier.semantics(mergeDescendants = true) {}) {
+        PanelLabel(figure.first)
+        StatValue(figure.second, size = StatSize.Tile)
+    }
+}
+
+@Composable
+private fun InlineFigure(figure: Pair<String, String>, modifier: Modifier) {
+    Row(modifier.semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+        PanelLabel(figure.first, Modifier.padding(end = 8.dp), )
+        Spacer(Modifier.weight(1f))
+        Text(
+            figure.second,
+            style = MaterialTheme.typography.titleSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
+        )
     }
 }
 
@@ -209,11 +256,12 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
     }
     val context = LocalContext.current
     val values = log.trend.map { it.value }
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(10.dp)) {
     PanelLabel(Words.text(title))
     TrendChart(
         values,
         fromZero = false,
-        modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
+        modifier = Modifier.fillMaxWidth().height(TREND_HEIGHT).padding(top = 4.dp),
         startLabel = formatDate(log.trend.first().atMs, dateFormat),
         endLabel = formatDate(log.trend.last().atMs, dateFormat),
         valueText = {
@@ -233,10 +281,13 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
         },
         dateText = { formatDate(log.trend[it].atMs, dateFormat) },
         atMs = log.trend.map { it.atMs },
-        surface = IronvellumColors.VaultHigh,
+        surface = IronvellumColors.Vault,
         smooth = false,
     )
+    }
 }
+
+private val TREND_HEIGHT = 80.dp
 
 @Composable
 private fun HistoryRow(exercise: Exercise, session: ExerciseLogSession, dateFormat: String, onOpen: (() -> Unit)?) {
@@ -260,7 +311,7 @@ private fun HistoryRow(exercise: Exercise, session: ExerciseLogSession, dateForm
             .heightIn(min = LedgerSpace.Target)
             .then(if (onOpen != null) Modifier.clickable(role = Role.Button, onClickLabel = openLabel, onClick = onOpen) else Modifier)
             .semantics(mergeDescendants = true) { contentDescription = spoken }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 5.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Text(
@@ -306,8 +357,10 @@ private fun HistoryRow(exercise: Exercise, session: ExerciseLogSession, dateForm
     InkDivider()
 }
 
+/** "See all 24 workouts ›": opens the rest of the list in place. A 48dp target. */
 @Composable
-private fun ShowMoreRow(onClick: () -> Unit) {
+private fun SeeAllRow(count: Int, onClick: () -> Unit) {
+    val label = Words.text(UiText.themedPlural(R.plurals.infosheet_history_see_all, R.plurals.infosheet_history_see_all__t, count))
     Row(
         Modifier
             .fillMaxWidth()
@@ -316,10 +369,12 @@ private fun ShowMoreRow(onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            stringResource(R.string.infosheet_show_more_button),
+            label,
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
+            modifier = Modifier.weight(1f),
         )
+        Text("›", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.InkMuted, modifier = Modifier.clearAndSetSemantics {})
     }
 }

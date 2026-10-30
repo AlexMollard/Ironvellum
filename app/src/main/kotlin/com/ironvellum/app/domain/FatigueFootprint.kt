@@ -63,6 +63,10 @@ object FatigueFootprints {
         else -> FootprintBand.LIGHT
     }
 
+    /** [muscle]'s residual [hours] after [dose] at time 0, as a fraction of [FatigueTuning.REFERENCE_SETS]: the scale [FatigueTuning.LIGHT_BELOW] is read on. */
+    fun residualFraction(muscle: Muscle, dose: Double, hours: Double): Double =
+        dose * Math.pow(0.5, hours / muscle.recoveryClass().halfLifeHours) / FatigueTuning.REFERENCE_SETS
+
     private fun leadOf(profile: ExerciseProfile): Muscle? =
         profile.muscles.entries.firstOrNull { it.value >= 1.0 - 1e-9 }?.key
 
@@ -77,8 +81,8 @@ object FatigueFootprints {
         return out
     }
 
-    /** The residual rule itself: one contribution at time 0, solved for the light-by threshold. */
-    private fun lightInHours(lead: Muscle, dose: Double): Int? {
+    /** The residual rule itself: one contribution at time 0, solved for the light-by threshold. Hours until [lead] is back to light after [dose]; null when it never rises above it. */
+    fun lightInHours(lead: Muscle, dose: Double): Int? {
         val contribution = FatigueContribution(
             muscle = lead, sessionId = 0L, sessionAtMs = 0L, exerciseName = "", modifiers = "", liftKey = "",
             dose = dose, qualifyingDose = 0.0, stretched = false, novel = false, halfLifeHours = lead.recoveryClass().halfLifeHours,
