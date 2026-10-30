@@ -16,7 +16,7 @@ store listing; this is the whole list.
 ### Training
 - The effort of your last set is asked above slide to seal, so you rate it before you finish.
 - Muscle fatigue: a per-muscle estimate shown on a body heatmap, with a Most worked list and the
-  cause behind each muscle. Train is split into Plan and Muscles tabs.
+  cause behind each muscle. A Muscles card on Train opens muscle fatigue and weekly coverage.
 - Today can offer Keep, Lighten or Swap for tired exercises, or another routine or rest. Turn it
   off in Settings > Training (Fatigue advice). The exercise picker marks tired muscles.
 - Variations are kept apart: each variation has its own last set and progression history. The
