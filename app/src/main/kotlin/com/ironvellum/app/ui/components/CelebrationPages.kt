@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -192,11 +193,12 @@ internal fun CelebrationDock(
     onPrimary: () -> Unit,
     link: String? = null,
     linkOn: Boolean = true,
-    linkColor: Color = IronvellumColors.SystemGreen,
+    linkColor: Color = IronvellumColors.Ink,
     onLink: () -> Unit = {},
     primaryEnabled: Boolean = true,
     reserveLink: Boolean = true,
     caption: (@Composable ColumnScope.() -> Unit)? = null,
+    primaryIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) {
     Column(
         Modifier
@@ -216,19 +218,24 @@ internal fun CelebrationDock(
                 .clickable(enabled = primaryEnabled, role = Role.Button, onClick = onPrimary),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                primary,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = if (primaryEnabled) MaterialTheme.colorScheme.onPrimary else IronvellumColors.InkMuted,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val tint = if (primaryEnabled) MaterialTheme.colorScheme.onPrimary else IronvellumColors.InkMuted
+                if (primaryIcon != null) Icon(primaryIcon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                Text(
+                    primary,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    color = tint,
+                )
+            }
         }
         if (primary != null && (link != null || reserveLink)) Spacer(Modifier.height(16.dp))
         if (primary != null && (link != null || reserveLink)) Box(
             Modifier
                 .fillMaxWidth()
                 .height(48.dp)
+                .then(if (link != null && linkOn) Modifier.clip(MaterialTheme.shapes.medium).background(IronvellumColors.Raised) else Modifier)
                 .then(
                     if (link != null && linkOn) {
                         Modifier.clickable(role = Role.Button, onClick = onLink)
@@ -276,12 +283,13 @@ internal fun DockedActionBar(
     onPrimary: () -> Unit,
     link: String? = null,
     linkOn: Boolean = true,
-    linkColor: Color = IronvellumColors.SystemGreen,
+    linkColor: Color = IronvellumColors.Ink,
     onLink: () -> Unit = {},
     primaryEnabled: Boolean = true,
     reserveLink: Boolean = true,
     caption: (@Composable ColumnScope.() -> Unit)? = null,
-) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink, primaryEnabled, reserveLink, caption)
+    primaryIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink, primaryEnabled, reserveLink, caption, primaryIcon)
 
 /** "1 of 2": two dots and a count at the top of a step page. */
 @Composable
@@ -588,7 +596,7 @@ internal fun DeedsPage(
                 onPrimary = onContinue,
                 link = if (target == null) null else if (worn) stringResource(R.string.celebration_deed_wearing_link) else stringResource(R.string.celebration_deed_wear_button),
                 linkOn = !worn,
-                linkColor = if (worn) IronvellumColors.EmeraldText else IronvellumColors.SystemGreen,
+                linkColor = if (worn) IronvellumColors.EmeraldText else IronvellumColors.Ink,
                 onLink = {
                     if (target != null) {
                         onWear(target.id)

@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,7 +31,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.R
 import com.ironvellum.app.ui.components.CappedDialog
 import com.ironvellum.app.ui.components.CelebrationDock
-import com.ironvellum.app.ui.components.InkTextLink
+import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.rememberPhotoSource
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -79,13 +80,14 @@ internal fun PhotoOfferPage(
                 }
                 if (source.canTake) {
                     Spacer(Modifier.height(16.dp))
-                    InkTextLink(stringResource(R.string.photo_offer_pick), onClick = source.pick, enabled = !saving)
+                    InkChip(stringResource(R.string.photo_offer_pick), icon = Icons.Outlined.PhotoLibrary, height = 48.dp, onClick = { if (!saving) source.pick() })
                 }
             }
             CelebrationDock(
                 primary = stringResource(if (saving) R.string.photo_offer_saving else if (source.canTake) R.string.photo_offer_take else R.string.photo_offer_pick),
                 onPrimary = { if (source.canTake) source.take() else source.pick() },
                 primaryEnabled = !saving,
+                primaryIcon = if (source.canTake) Icons.Outlined.PhotoCamera else Icons.Outlined.PhotoLibrary,
                 link = stringResource(R.string.photo_offer_skip),
                 linkOn = !saving,
                 onLink = onSkip,

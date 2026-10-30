@@ -257,7 +257,9 @@ fun IronvellumButton(
         return
     }
     val shape = MaterialTheme.shapes.medium
-    val boxless = quiet || danger || LocalTextButtons.current
+    // A quiet button is the app's raised neutral one; a danger button, or any button in a dialog, stays a bare text button.
+    val boxless = danger || LocalTextButtons.current
+    val raised = quiet && !boxless
     Box(
         modifier
             .heightIn(min = 48.dp)
@@ -266,7 +268,7 @@ fun IronvellumButton(
                 if (boxless) {
                     Modifier
                 } else {
-                    Modifier.background(if (enabled) IronvellumColors.Emerald else IronvellumColors.Rune)
+                    Modifier.background(if (raised) IronvellumColors.Raised else if (enabled) IronvellumColors.Emerald else IronvellumColors.Rune)
                 },
             )
             .clickable(enabled = enabled, onClick = onClick),
@@ -279,7 +281,8 @@ fun IronvellumButton(
             color = when {
                 !enabled -> IronvellumColors.InkMuted
                 danger -> IronvellumColors.DangerRed
-                quiet || boxless -> IronvellumColors.SystemGreen
+                raised -> IronvellumColors.Ink
+                boxless -> IronvellumColors.SystemGreen
                 else -> MaterialTheme.colorScheme.onPrimary
             },
             // labelLarge carries the theme's 0.5sp tracking: no override.

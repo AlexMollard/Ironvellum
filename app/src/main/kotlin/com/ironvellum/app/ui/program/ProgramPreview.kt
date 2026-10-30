@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -652,9 +653,8 @@ internal fun splitCaption(split: TrainingSplit, days: Int): String = Words.text(
 )
 
 /**
- * One cell of a pick grid, drawn as an outlined chip: SystemGreen text on a half-strength SystemGreen
- * outline when off, Ink on a tinted fill with a check and a full outline when chosen. [role] is Button
- * for a single choice, Checkbox for a toggle.
+ * One cell of a pick grid, drawn like an [InkChip]: the raised neutral fill with Ink text when off, a tinted
+ * fill with a check when chosen. [role] is Button for a single choice, Checkbox for a toggle.
  */
 @Composable
 internal fun PickCell(
@@ -670,12 +670,7 @@ internal fun PickCell(
         modifier
             .heightIn(min = 48.dp)
             .clip(shape)
-            .background(if (selected) IronvellumColors.SystemGreen.copy(alpha = 0.16f) else Color.Transparent)
-            .inkBorder(
-                if (selected) IronvellumColors.SystemGreen else IronvellumColors.SystemGreen.copy(alpha = 0.55f),
-                shape,
-                1.dp,
-            )
+            .background(if (selected) IronvellumColors.Emerald.copy(alpha = 0.28f).compositeOver(IronvellumColors.Raised) else IronvellumColors.Raised)
             .clickable(role = role, onClick = onClick)
             // The unscheduled option is drawn as "—", which a screen reader
             // announces as a dash. Say what it means (same rule as the editor).
@@ -691,7 +686,7 @@ internal fun PickCell(
             Icon(
                 Icons.Filled.Check,
                 contentDescription = null,
-                tint = IronvellumColors.Ink,
+                tint = IronvellumColors.SystemGreen,
                 modifier = Modifier.padding(end = 4.dp).size(14.dp),
             )
         } else if (role == Role.Checkbox) {
@@ -700,14 +695,14 @@ internal fun PickCell(
                 Modifier
                     .padding(end = 6.dp)
                     .size(14.dp)
-                    .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall, 1.dp),
+                    .inkBorder(IronvellumColors.InkMuted, MaterialTheme.shapes.extraSmall, 1.dp),
             )
         }
         Text(
             label,
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
-            color = if (selected) IronvellumColors.Ink else IronvellumColors.SystemGreen,
+            color = IronvellumColors.Ink,
         )
     }
 }

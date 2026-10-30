@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -178,7 +179,7 @@ fun InkListRow(
     onClick: (() -> Unit)? = null,
 ) = ListRow(label, modifier, value = value, subline = supporting, onClick = onClick)
 
-/** A quiet text link: SystemGreen, sentence case, no box, a 48dp-high tap target. */
+/** A quiet button: the raised neutral fill with the label in Ink, drawn 36dp high inside a 48dp tap target. */
 @Composable
 fun InkTextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Box(
@@ -188,11 +189,20 @@ fun InkTextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifie
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.CenterStart,
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (enabled) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-        )
+        Box(
+            Modifier
+                .heightIn(min = 36.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(IronvellumColors.Raised)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (enabled) IronvellumColors.Ink else IronvellumColors.InkMuted,
+            )
+        }
     }
 }
 

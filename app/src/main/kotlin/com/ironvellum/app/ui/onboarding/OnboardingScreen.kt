@@ -894,6 +894,7 @@ private fun StepHeader(step: Int) {
                 SKIP_COST,
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 8.dp),
             )
             Spacer(Modifier.height(12.dp))
         }

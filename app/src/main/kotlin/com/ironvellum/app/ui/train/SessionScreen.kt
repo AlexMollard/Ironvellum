@@ -141,6 +141,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -3451,9 +3452,7 @@ internal fun EffortStrip(setLabel: String, rpe: Int?, onPick: (Int?) -> Unit, mo
                         .heightIn(min = 48.dp)
                         .selectable(selected = chosen, role = Role.RadioButton, onClick = { onPick(if (chosen) null else value) })
                         .padding(horizontal = 2.dp, vertical = 4.dp)
-                        .clip(shape)
-                        .background(if (chosen) IronvellumColors.Emerald.copy(alpha = 0.16f) else Color.Transparent)
-                        .inkBorder(if (chosen) IronvellumColors.Emerald else IronvellumColors.Rune, shape, 1.dp),
+                        .effortChipFace(chosen, shape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -3474,6 +3473,12 @@ internal fun EffortStrip(setLabel: String, rpe: Int?, onPick: (Int?) -> Unit, mo
         )
     }
 }
+
+/** An effort chip's face: the app's raised neutral fill, the chosen one tinted and outlined in the accent. */
+private fun Modifier.effortChipFace(chosen: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier = this
+    .clip(shape)
+    .background(if (chosen) IronvellumColors.Emerald.copy(alpha = 0.28f).compositeOver(IronvellumColors.Raised) else IronvellumColors.Raised)
+    .then(if (chosen) Modifier.inkBorder(IronvellumColors.Emerald, shape, 1.dp) else Modifier)
 
 /** − number +, plain glyphs on 48dp-high targets; tapping the number types it. */
 @Composable
@@ -3955,9 +3960,7 @@ private fun RestEffort(set: SessionSet, label: String, onRate: (Int?) -> Unit) {
                                 )
                                 .semantics { contentDescription = restEffortSpoken(value, scale) }
                                 .padding(horizontal = 2.dp, vertical = 4.dp)
-                                .clip(shape)
-                                .background(if (chosen) IronvellumColors.Emerald.copy(alpha = 0.16f) else Color.Transparent)
-                                .inkBorder(if (chosen) IronvellumColors.Emerald else IronvellumColors.Rune, shape, 1.dp),
+                                .effortChipFace(chosen, shape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
