@@ -573,7 +573,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys2() {
     put(
         "kip-up",
         ExerciseWhy(
-            purpose = "Springs from lying to standing with a hip snap, using the abs, quads and lower back in a quick floor move.",
+            purpose = "Springs from lying to standing with a hip snap, using the abs, hip flexors, quads and lower back in a quick floor move.",
             pickIt = "Pick it for an explosive floor-to-feet balance and coordination; it builds timing more than strength, so it complements ab work.",
             tags = listOf("Hip snap", "Coordination", "Bodyweight only"),
         ),

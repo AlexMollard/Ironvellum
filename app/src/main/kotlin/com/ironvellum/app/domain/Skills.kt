@@ -739,7 +739,7 @@ object Skills {
         ),
         SkillDef(
             "Wrist Prep", 1, "Mobility",
-            standard = "10-minute drill: rocks, pulses and stretches both directions, pain-free",
+            standard = "5-minute drill: rocks, pulses and stretches both directions, pain-free",
             why = "Keeps wrists healthy enough to load every handstand and planche ${Words.technique.s}.",
         ),
     ) }

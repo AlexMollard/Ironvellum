@@ -14,7 +14,7 @@ package com.ironvellum.app.domain
  *   [MovementDifficulty.FREE_WEIGHT_LOAD]) need a full gym - they are never
  *   toggles. The table therefore lists no machine rows; the rule covers them.
  * - Bar-hanging moves need a PULL_UP_BAR or RINGS, except where the
- *   implement is fixed (muscle-up: bar; skin the cat / ring muscle-up: rings).
+ *   implement is fixed (muscle-up: bar; ring muscle-up: rings).
  * - Inverted row / australian pull-up: RINGS, a BARBELL set low in a rack, or DIP_BARS (rowed lying under them).
  * - Dip / parallel bar dip: DIP_BARS or RINGS. Bench dip needs nothing
  *   (a chair). Ab wheel rollout: AB_WHEEL. L-sit: parallettes, dip bars or
@@ -61,7 +61,8 @@ object GearRequirements {
         "strict muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),
         // The standard ends in a handstand ON the bar.
         "inverted muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),
-        "skin the cat" to listOf(setOf(Gear.RINGS)),
+        // A bar or rings: the guide allows either, and it is routinely done on a bar.
+        "skin the cat" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "ring muscle-up" to listOf(setOf(Gear.RINGS)),
         "ring row" to listOf(setOf(Gear.RINGS)),
         "ring dip" to listOf(setOf(Gear.RINGS)),
@@ -167,9 +168,8 @@ object GearRequirements {
         "dumbbell bench press" to listOf(setOf(Gear.DUMBBELLS, Gear.BENCH)),
         "incline dumbbell press" to listOf(setOf(Gear.DUMBBELLS, Gear.BENCH)),
         "dumbbell fly" to listOf(setOf(Gear.DUMBBELLS, Gear.BENCH)),
-        // Cable movements the machine rule cannot see (no loadFactor entry):
-        // an empty alternative list means no toggle expresses them - full gym only.
-        "face pull" to emptyList(),
+        // A split squat is loaded like its Bulgarian child: dumbbells or a bar.
+        "split squat" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
     ) + ExerciseLibrary.rows.filter { it.gear.isNotEmpty() }.associate { it.name.lowercase() to it.gear }
 
     /** Movements that physically need TWO dumbbells; a single one rules them out. */

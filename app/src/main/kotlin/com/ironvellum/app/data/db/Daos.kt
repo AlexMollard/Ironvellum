@@ -55,6 +55,13 @@ interface ExerciseDao {
     /** Marks the named rows weighted; returns how many were still unweighted. */
     @Query("UPDATE exercises SET isWeighted = 1 WHERE name COLLATE NOCASE IN (:names) AND isWeighted = 0")
     suspend fun markWeighted(names: List<String>): Int
+
+    /** Switches the named REPS rows to HOLD, only while nothing is logged against them; returns how many changed. */
+    @Query(
+        "UPDATE exercises SET metric = 'HOLD' WHERE name COLLATE NOCASE IN (:names) AND metric = 'REPS' " +
+            "AND NOT EXISTS (SELECT 1 FROM set_logs WHERE set_logs.exerciseId = exercises.id)",
+    )
+    suspend fun markHoldWhenUnlogged(names: List<String>): Int
 }
 
 @Dao

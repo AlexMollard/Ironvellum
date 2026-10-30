@@ -185,6 +185,9 @@ object MuscleMap {
         // The library's variants of those presses and the one-leg cable and band hip work, which the exact names above miss.
         "half-kneeling pallof press", "banded pallof press", "banded woodchop", "cable standing hip abduction",
         "cable standing hip adduction", "banded standing hip abduction", "landmine press", "body leg lift",
+        // One side at a time, all reps before switching (or alternating, for the oblique raise).
+        "hanging oblique knee raise", "meadows row", "concentration curl", "dumbbell side bend",
+        "cable internal rotation",
     )
 
     private val profiles: Map<String, ExerciseProfile> = buildMap {
@@ -433,6 +436,8 @@ object MuscleMap {
         put("front row hold", ExerciseProfile(
             muscles = mapOf(
                 Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.REAR_DELTS to 0.5,
+                // The elbows stay bent, so the elbow flexors hold as in row().
+                Muscle.BICEPS to 0.5, Muscle.BRACHIALIS to 0.5, Muscle.TRAPS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
                 Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = false,
@@ -550,7 +555,7 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("dumbbell shrug", shrug())
-        put("goblet squat", deepSquat())
+        put("goblet squat", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
         put("walking lunge", squatProfile(MovementPattern.LUNGE))
         put("dumbbell step-up", stepUp())
         put("triceps kickback", ExerciseProfile(
@@ -600,7 +605,7 @@ object MuscleMap {
             pattern = MovementPattern.CORE, compound = false, stretchBias = false,
         ))
         // ---- Gym floor: sled machines ----
-        put("leg press", squatProfile(MovementPattern.SQUAT))
+        put("leg press", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
         put("hack squat", ExerciseProfile(
             muscles = mapOf(Muscle.QUADS to 1.0, Muscle.GLUTES to 0.5, Muscle.ADDUCTORS to 0.5, Muscle.HAMSTRINGS to 0.0),
             pattern = MovementPattern.SQUAT, compound = true, stretchBias = true,
@@ -715,12 +720,15 @@ object MuscleMap {
             ),
             pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = true,
         ))
-        put("skin the cat", verticalPull(rearDelts = false))
+        put("skin the cat", verticalPull(rearDelts = false, elbows = false))
         put("ring row", row())
         put("ring dip", dip())
         put("ring muscle-up", muscleUp(Muscle.TRICEPS))
         put("kip-up", ExerciseProfile(
-            muscles = mapOf(Muscle.ABS to 1.0, Muscle.QUADS to 0.5, Muscle.LOWER_BACK to 0.5),
+            muscles = mapOf(
+                Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 0.5, Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5,
+                Muscle.LOWER_BACK to 0.5,
+            ),
             pattern = MovementPattern.CORE, compound = false, stretchBias = false,
         ))
         put("muscle-up", muscleUp(Muscle.TRICEPS))
@@ -849,8 +857,8 @@ object MuscleMap {
         // ---- Mobility holds ----
         // The muscles held long or working to hold the position, at the
         // helper share. The pure stretches have no lead by design: a stretch
-        // is not a hard set, and a 1.0 would pad the week. The bridge and
-        // the wrist prep load a muscle, so they lead. A squat hold, like
+        // is not a hard set, and a 1.0 would pad the week. The bridge
+        // loads a muscle, so it leads; the wrist prep is a drill, so it does not. A squat hold, like
         // every squat, credits no hamstrings.
         put("deep squat hold", hold(
             Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5, Muscle.ADDUCTORS to 0.5, Muscle.CALVES to 0.5,
@@ -879,7 +887,7 @@ object MuscleMap {
             Muscle.FOREARMS to 0.5,
             pattern = MovementPattern.VERTICAL_PULL, noLead = true,
         ))
-        put("wrist prep", hold(Muscle.FOREARMS to 1.0, pattern = MovementPattern.ISOLATION, compound = false))
+        put("wrist prep", hold(Muscle.FOREARMS to 0.5, pattern = MovementPattern.ISOLATION, compound = false, noLead = true))
         // ---- Activities: cardio ----
         val gait = arrayOf(Muscle.CALVES, Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.HIP_FLEXORS)
         put("running", activity(MovementPattern.LUNGE, *gait))
@@ -973,11 +981,11 @@ object MuscleMap {
             Muscle.HAMSTRINGS,
         ))
         put("pilates", activity(MovementPattern.CORE, Muscle.ABS, Muscle.OBLIQUES, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.LOWER_BACK))
-        put("stretching", activity(
+        put("stretching", stretchActivity(
             MovementPattern.CORE, Muscle.HAMSTRINGS, Muscle.HIP_FLEXORS, Muscle.CALVES, Muscle.ADDUCTORS,
             Muscle.LOWER_BACK,
         ))
-        put("mobility flow", activity(
+        put("mobility flow", stretchActivity(
             MovementPattern.CORE, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.ADDUCTORS, Muscle.LOWER_BACK,
             Muscle.ROTATOR_CUFF, Muscle.ABS,
         ))
@@ -1022,6 +1030,16 @@ object MuscleMap {
      */
     private fun activity(pattern: MovementPattern, vararg muscles: Muscle) = ExerciseProfile(
         muscles = linkedMapOf(*muscles.map { it to 0.5 }.toTypedArray()),
+        pattern = pattern, compound = true, stretchBias = false, noLeadByDesign = true,
+    )
+
+    /**
+     * Stretching and mobility sessions: the muscles lengthened or moved, each at the minor 0.25 like the knee-to-wall
+     * drill - a stretch is not work against load, so it must not read as "trains the muscle" (0.5) for the
+     * generator's frequency and coverage counts. No lead by design.
+     */
+    private fun stretchActivity(pattern: MovementPattern, vararg muscles: Muscle) = ExerciseProfile(
+        muscles = linkedMapOf(*muscles.map { it to 0.25 }.toTypedArray()),
         pattern = pattern, compound = true, stretchBias = false, noLeadByDesign = true,
     )
 
@@ -1202,15 +1220,18 @@ object MuscleMap {
         pattern = MovementPattern.VERTICAL_PUSH, compound = true, stretchBias = true,
     )
 
-    /** Pull-ups, chin-ups, pulldowns and their archer / L-sit variants. The one-arm work has no rear-delt share. */
-    private fun verticalPull(rearDelts: Boolean = true) = ExerciseProfile(
+    /**
+     * Pull-ups, chin-ups, pulldowns and their archer / L-sit variants. The one-arm work has no rear-delt share;
+     * the skin the cat's arms stay straight, so it has no [elbows] (biceps and brachialis), as in the levers.
+     */
+    private fun verticalPull(rearDelts: Boolean = true, elbows: Boolean = true) = ExerciseProfile(
         muscles = buildMap {
             put(Muscle.LATS, 1.0)
             put(Muscle.RHOMBOIDS, 0.5)
             put(Muscle.TRAPS, 0.5)
-            put(Muscle.BICEPS, 0.5)
+            if (elbows) put(Muscle.BICEPS, 0.5)
             if (rearDelts) put(Muscle.REAR_DELTS, 0.5)
-            put(Muscle.BRACHIALIS, 0.5)
+            if (elbows) put(Muscle.BRACHIALIS, 0.5)
             put(Muscle.FOREARMS, 0.5)
             put(Muscle.ROTATOR_CUFF, 0.5)
         },
@@ -1265,8 +1286,9 @@ object MuscleMap {
      * adductors about as much as the glutes, its half squat well under
      * half that; parallel-or-deeper sits between, so the worked-hard step
      * and not a lead. The leg press and hack squat keep 0.5 (the pad limits
-     * depth), the front squat too (its upright torso is also why its glutes
-     * are 0.5), and the single-leg squats 0.5 (no trial measured them).
+     * depth, so their glutes are 0.5 too), the front squat and goblet squat
+     * too (their upright torso is why their glutes are 0.5), and the
+     * single-leg squats 0.5 (no trial measured them).
      */
     private fun deepSquat() = squatProfile(MovementPattern.SQUAT, adductors = 0.75)
 

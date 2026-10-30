@@ -151,10 +151,10 @@ class MuscleMapTest {
     fun `quarter steps follow the squat and hip thrust trials`() {
         // Kubo 2019: squats to depth grew the adductors nearly as much as
         // the glutes; machines that cap depth keep the helper share.
-        for (name in listOf("Back Squat", "Goblet Squat", "Smith Machine Squat", "Bodyweight Squat", "Pause Squat")) {
+        for (name in listOf("Back Squat", "Smith Machine Squat", "Bodyweight Squat", "Pause Squat")) {
             assertEquals(name, 0.75, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
         }
-        for (name in listOf("Leg Press", "Hack Squat", "Front Squat")) {
+        for (name in listOf("Leg Press", "Hack Squat", "Front Squat", "Goblet Squat")) {
             assertEquals(name, 0.5, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
         }
         // Plotkin 2023: the squat grew the adductors more than the hip thrust.

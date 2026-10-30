@@ -286,7 +286,7 @@ class SkillsTest {
 
         val wristPrep = Skills.forName("Wrist Prep")!!
         assertEquals(Skills.Metric.SECONDS, wristPrep.metric)
-        assertEquals("Wrist Prep target in seconds", 600, wristPrep.target)
+        assertEquals("Wrist Prep target in seconds", 300, wristPrep.target)
 
         val walk = Skills.forName("Handstand Walk")!!
         assertEquals(Skills.Metric.METRES, walk.metric)

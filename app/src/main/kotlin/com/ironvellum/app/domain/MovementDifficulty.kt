@@ -81,7 +81,7 @@ object MovementDifficulty {
         "side-lying hip abduction" to 1, // isolation: single-joint, leg weight only
         // Core
         "ab wheel rollout" to 3,
-        "weighted plank" to 2,
+        "weighted plank" to 1,
         "plank" to 1,
         "side plank" to 1,
         "lying leg raise" to 1,
@@ -293,6 +293,7 @@ object MovementDifficulty {
         // The existing pulldown is a pin-stack station; leaving it off the map
         // would score its marked kilos as free-weight ones.
         "lat pulldown" to STACK_LOAD,
+        "face pull" to STACK_LOAD,
         // Dual-pulley band (2:1 on most crossover stations) - the flagged,
         // least-certain ratio in the class KDoc.
         "cable fly" to DUAL_PULLEY_LOAD,

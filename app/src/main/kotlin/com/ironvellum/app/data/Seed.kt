@@ -44,6 +44,7 @@ object Seed {
         // Legs
         ExerciseEntity(name = "Pistol Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Back Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Split Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Bulgarian Split Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Single-Leg Glute Bridge", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Single-Leg Calf Raise", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
@@ -150,13 +151,11 @@ object Seed {
      * known mixed cases are overridden by name.
      */
     private val skillGroupOverrides: Map<String, MuscleGroup> = mapOf(
-        // Rings mixes straight-arm holds/presses with rows; these push, Ring Row
-        // and Ring Muscle-up genuinely pull and stay on the line rule.
+        // Rings mixes straight-arm holds/presses with rows; these push, Ring Row,
+        // Ring Muscle-up and the iron crosses (a lats-led pull) stay on the line rule.
         "Ring Support Hold" to MuscleGroup.PUSH,
         "RTO Support Hold" to MuscleGroup.PUSH,
-        "Banded Iron Cross" to MuscleGroup.PUSH,
         "Ring Dip" to MuscleGroup.PUSH,
-        "Iron Cross" to MuscleGroup.PUSH,
         // Movement mixes hand-balance/core tricks with muscle-up pulls.
         "Kip-up" to MuscleGroup.CORE,
         "Handstand-to-Bridge" to MuscleGroup.CORE,
@@ -261,6 +260,9 @@ object Seed {
 
     val exercises: List<ExerciseEntity>
         get() = allExercises
+
+    /** Library movements timed in seconds that first shipped as REPS; [Repository.ensureSeeded] repairs old rows. */
+    val timedWorkNames: List<String> = listOf("Bear Crawl", "Crab Walk", "Mountain Climber", "Plank Jack", "Flutter Kick")
 
     private val weightedByName: Map<String, Boolean> by lazy { allExercises.associate { it.name.trim().lowercase() to it.isWeighted } }
 

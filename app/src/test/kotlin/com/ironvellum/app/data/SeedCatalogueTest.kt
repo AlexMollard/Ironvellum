@@ -153,9 +153,7 @@ class SeedCatalogueTest {
         val expected = mapOf(
             "Ring Support Hold" to MuscleGroup.PUSH,
             "Ring Dip" to MuscleGroup.PUSH,
-            "Iron Cross" to MuscleGroup.PUSH,
             "RTO Support Hold" to MuscleGroup.PUSH,
-            "Banded Iron Cross" to MuscleGroup.PUSH,
             "Tuck Human Flag" to MuscleGroup.CORE,
             "Kip-up" to MuscleGroup.CORE,
             "Handstand-to-Bridge" to MuscleGroup.CORE,
@@ -163,6 +161,9 @@ class SeedCatalogueTest {
             // Line-mates that genuinely pull stay on the line rule.
             "Ring Row" to MuscleGroup.PULL,
             "Ring Muscle-up" to MuscleGroup.PULL,
+            // The iron crosses are a lats-led straight-arm pull, so the line rule stands.
+            "Iron Cross" to MuscleGroup.PULL,
+            "Banded Iron Cross" to MuscleGroup.PULL,
         )
         val wrong = expected.mapNotNull { (name, group) ->
             val entity = catalogue[name]
@@ -181,7 +182,10 @@ class SeedCatalogueTest {
         val pullCue = listOf("Pull-up", "Row", "Hang", "Curl", "Lever")
         // The elbow lever is a bent-arm balance that presses into the floor:
         // "lever" names its shape, not a pull.
-        val sanctioned = setOf("Muscle-up", "Strict Muscle-up", "Inverted Muscle-up", "Elbow Lever")
+        // The iron crosses are named for the cross, but the lats pull the arms down: PULL.
+        val sanctioned = setOf(
+            "Muscle-up", "Strict Muscle-up", "Inverted Muscle-up", "Elbow Lever", "Iron Cross", "Banded Iron Cross",
+        )
         val wrong = Seed.exercises.mapNotNull { e ->
             val group = MuscleGroup.valueOf(e.muscleGroup)
             when {

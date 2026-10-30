@@ -300,6 +300,10 @@ class Repository(
         exerciseDao.markWeighted(
             Skills.ALL.filter { it.line in Skills.GYM_LINES && Skills.isWeighted(it) }.map { it.name },
         )
+        // These five library rows were seeded as REPS before their guides' timed work made them holds; the insert
+        // above never touches an existing row. The query only flips a row nothing is logged against, so no history
+        // is reinterpreted, and it is a no-op once repaired.
+        exerciseDao.markHoldWhenUnlogged(Seed.timedWorkNames)
         // Presets are NOT seeded here any more. A fresh install used to wake
         // up owning somebody else's training week; setup now asks a few
         // questions and writes a plan through applyRoutine, or applies
