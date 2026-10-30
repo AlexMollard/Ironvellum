@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.DropdownMenu
@@ -50,10 +51,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -164,7 +165,13 @@ internal fun ColumnScope.FootprintBody(footprint: FatigueFootprint) {
     )
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.width(figureWidth(figure, FIGURE_HEIGHT))) {
-          Box {
+            // The words sit above the figures, each centred over its body, never over a head, in any language.
+            CappedFontScale {
+                Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
+                    FigureLabel(stringResource(R.string.bodymap_label_front), Modifier.weight(1f).wrapContentWidth(unbounded = true), TextAlign.Center, wrap = false)
+                    FigureLabel(stringResource(R.string.bodymap_label_back), Modifier.weight(1f).wrapContentWidth(unbounded = true), TextAlign.Center, wrap = false)
+                }
+            }
             TappableFigure(
                 figure, FIGURE_HEIGHT,
                 { muscle -> bands[muscle]?.let(::bandFill) ?: IronvellumColors.Rune },
@@ -172,13 +179,6 @@ internal fun ColumnScope.FootprintBody(footprint: FatigueFootprint) {
                 { muscle -> if (muscle != null && muscle in bands) picked = muscle },
                 { muscle -> muscleLine(muscle, bands[muscle]?.let(::bandWord)) },
             )
-            CappedFontScale {
-                Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
-                    FigureLabel(stringResource(R.string.bodymap_label_front), Modifier.weight(1f))
-                    FigureLabel(stringResource(R.string.bodymap_label_back), Modifier.weight(1f))
-                }
-            }
-          }
             FootprintLegend(bands.values.toSet())
         }
         Column(Modifier.weight(1f)) {
@@ -221,11 +221,12 @@ private fun FootprintRow(item: FootprintMuscle, share: Float, selected: Boolean,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 16.sp),
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             color = IronvellumColors.Ink,
-            maxLines = 1,
+            // Two lines, not an ellipsis: "Hintere Schu…" hid which muscle it was. The share is a weight so a larger font wraps instead of squeezing the bar.
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(NAME_WIDTH * LocalDensity.current.fontScale.coerceAtLeast(1f)),
+            modifier = Modifier.weight(NAME_SHARE).padding(end = 4.dp),
         )
-        Box(Modifier.weight(1f).height(6.dp).background(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall)) {
+        Box(Modifier.weight(1f - NAME_SHARE).height(6.dp).background(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall)) {
             Box(Modifier.fillMaxWidth(share).fillMaxHeight().background(bandFill(item.band), MaterialTheme.shapes.extraSmall))
         }
         Spacer(Modifier.width(6.dp))
@@ -393,7 +394,7 @@ private fun rule(x0: Float, y0: Float, x1: Float, y1: Float) = Path().apply { mo
 private const val CHART_HOURS = 24
 private val CHART_HEIGHT = 60.dp
 private val ROW_HEIGHT = 18.dp
-private val NAME_WIDTH = 92.dp
+private const val NAME_SHARE = 0.56f
 
 /**
  * WHY IT LEAVES THIS MUCH BEHIND with its text, and "How this is estimated ›" on the heading row, opening the same
@@ -419,4 +420,4 @@ internal fun ColumnScope.FootprintWhy(why: String) {
     if (open) FatigueExplainerSheet { open = false }
 }
 
-private val FIGURE_HEIGHT = 136.dp
+private val FIGURE_HEIGHT = 130.dp

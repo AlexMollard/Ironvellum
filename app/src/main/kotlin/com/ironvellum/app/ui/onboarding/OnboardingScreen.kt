@@ -511,9 +511,9 @@ internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weigh
     }
 }
 
-private fun heightRangeLine() = say(R.string.onboarding_height_range, BodyLimits.say(BodyLimits.HEIGHT_CM))
+private fun heightRangeLine() = say(R.string.onboarding_height_range, *BodyLimits.ends(BodyLimits.HEIGHT_CM).toTypedArray())
 
-private fun weightRangeLine() = say(R.string.onboarding_weight_range, BodyLimits.weightRangeText(Units.current), Units.name)
+private fun weightRangeLine() = say(R.string.onboarding_weight_range, *BodyLimits.weightEnds(Units.current).toTypedArray(), Units.name)
 
 /**
  * First-run setup, walked in three windows: who you are, how you train, and a
@@ -1057,8 +1057,8 @@ private fun ProfileStep(
             if (ranges.isEmpty()) {
                 stringResource(
                     R.string.onboarding_profile_range_hint,
-                    BodyLimits.say(BodyLimits.HEIGHT_CM),
-                    BodyLimits.weightRangeText(Units.current),
+                    *BodyLimits.ends(BodyLimits.HEIGHT_CM).toTypedArray(),
+                    *BodyLimits.weightEnds(Units.current).toTypedArray(),
                     Units.name,
                 )
             } else {

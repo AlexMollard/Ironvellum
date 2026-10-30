@@ -1106,9 +1106,9 @@
     <string name="onboarding_missing_sex">das Geschlecht</string>
     <string name="onboarding_profile_hint_add">Ergänze %1$s, um fortzufahren.</string>
     <string name="onboarding_profile_hint_add_then">Ergänze %1$s. %2$s</string>
-    <string name="onboarding_height_range">Größe muss %1$s cm betragen.</string>
-    <string name="onboarding_weight_range">Gewicht muss %1$s %2$s betragen.</string>
-    <string name="onboarding_profile_range_hint">Größe %1$s cm. Gewicht %2$s %3$s.</string>
+    <string name="onboarding_height_range">Größe muss %1$s bis %2$s cm betragen.</string>
+    <string name="onboarding_weight_range">Gewicht muss %1$s bis %2$s %3$s betragen.</string>
+    <string name="onboarding_profile_range_hint">Größe %1$s bis %2$s cm. Gewicht %3$s bis %4$s %5$s.</string>
     <string name="onboarding_replace_title">Deine Routinen ersetzen?</string>
     <string name="onboarding_replace_title__t">Deine Riten ersetzen?</string>
     <plurals name="onboarding_replace_text">
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SATZ</item>
         <item quantity="other">%1$d SÄTZE</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d Übung</item>
         <item quantity="other">%1$d Übungen</item>
@@ -3280,7 +3280,7 @@
     <string name="program_volume_standard">Standard</string>
     <string name="program_volume_high">Hoch</string>
     <string name="program_split_full_body">Ganzkörper</string>
-    <string name="program_split_upper_lower">Ober- / Unterkörper</string>
+    <string name="program_split_upper_lower">Oben / Unten</string>
     <string name="program_split_push_pull_legs">Push / Pull / Beine</string>
     <string name="program_split_push_pull_legs_short">PPL</string>
     <string name="program_split_hybrid">Ober- / Unterkörper + PPL</string>
@@ -3409,7 +3409,8 @@
     <string name="bodydetails_title_both">Deine Größe und dein Gewicht</string>
     <string name="bodydetails_title_height">Deine Größe</string>
     <string name="bodydetails_title_weight">Dein Gewicht</string>
-    <string name="bodydetails_height_range">%1$s cm</string>
+    <string name="bodydetails_height_range">%1$s bis %2$s cm</string>
+    <string name="bodydetails_weight_range">%1$s bis %2$s %3$s</string>
     <string name="bodydetails_intro">Sie bestimmen deine Wertungen, deinen BMI und FFMI. Dein Gewicht kannst du jederzeit unter Statistiken erneut erfassen.</string>
     <string name="bodydetails_intro__t">Sie bestimmen deine Wertungen, deinen BMI und FFMI. Dein Gewicht kannst du jederzeit im Archiv erneut erfassen.</string>
     <string name="settings_advanced_dev_header">ENTWICKLUNG</string>
@@ -5765,8 +5766,10 @@
     <string name="fatigue_footprint_why_neither">Diese Übung belastet den Muskel weder in gedehnter Position noch den ganzen Körper schwer. Daher entspricht die Ermüdung etwa den Muskelanteilen.</string>
     <string name="fatigue_footprint_compare_long">%1$s trainiert denselben Muskel ohne Belastung in gedehnter Position, sodass dieselben Sätze weniger Ermüdung hinterlassen.</string>
     <string name="fatigue_footprint_compare_heavy">%1$s trainiert denselben Muskel ohne Ganzkörperbelastung, sodass dieselben Sätze weniger Ermüdung hinterlassen.</string>
-    <string name="titles_tab_journal">FÄHIGKEITEN ÜBEN</string>
+    <string name="titles_tab_journal">ÜBEN</string>
     <string name="titles_tab_journal__t">TAGEBUCH</string>
+    <string name="titles_first_workout_desc">Schließe dein erstes Training ab.</string>
+    <string name="titles_first_workout_desc__t">Besiegle deine erste Prüfung.</string>
     <string name="twin_switch_prompt">%1$s ist eine eigene Übung mit eigener Abbildung und Ausführungsanleitung. Wechseln?</string>
     <string name="twin_switch_button">Wechseln</string>
     <string name="twin_keep_button">So lassen</string>

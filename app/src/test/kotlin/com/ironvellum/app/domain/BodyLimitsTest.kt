@@ -30,8 +30,8 @@ class BodyLimitsTest {
         assertEquals(BodyLimits.Reading.VALID, BodyLimits.readWeight("176", LoadUnit.LB))
         assertEquals(BodyLimits.Reading.OUT_OF_RANGE, BodyLimits.readWeight("30", LoadUnit.LB))
         assertEquals(BodyLimits.Reading.EMPTY, BodyLimits.readWeight("", LoadUnit.LB))
-        assertEquals("45 to 881", BodyLimits.weightRangeText(LoadUnit.LB))
-        assertEquals("20 to 400", BodyLimits.weightRangeText(LoadUnit.KG))
+        assertEquals(listOf("45", "881"), BodyLimits.weightEnds(LoadUnit.LB))
+        assertEquals(listOf("20", "400"), BodyLimits.weightEnds(LoadUnit.KG))
     }
 
     @Test

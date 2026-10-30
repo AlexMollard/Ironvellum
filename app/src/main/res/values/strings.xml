@@ -1178,10 +1178,10 @@
     <!-- %1$s is the list of what is missing, %2$s the ranges that were refused. -->
     <string name="onboarding_profile_hint_add_then">Add %1$s. %2$s</string>
     <!-- %1$s is a range of centimetres, e.g. "50 to 272". -->
-    <string name="onboarding_height_range">Height must be %1$s cm.</string>
+    <string name="onboarding_height_range">Height must be %1$s to %2$s cm.</string>
     <!-- %1$s is a range of weights, %2$s the unit. -->
-    <string name="onboarding_weight_range">Weight must be %1$s %2$s.</string>
-    <string name="onboarding_profile_range_hint">Height %1$s cm. Weight %2$s %3$s.</string>
+    <string name="onboarding_weight_range">Weight must be %1$s to %2$s %3$s.</string>
+    <string name="onboarding_profile_range_hint">Height %1$s to %2$s cm. Weight %3$s to %4$s %5$s.</string>
     <string name="onboarding_replace_title">Replace your routines?</string>
     <string name="onboarding_replace_title__t">Replace your rites?</string>
     <!-- %d is how many routines the lifter already has. -->
@@ -4007,7 +4007,8 @@
     <!-- Title of the sheet when only the weight is missing. -->
     <string name="bodydetails_title_weight">Your weight</string>
     <!-- Supporting text under the height field. %1$s is the allowed range (for example 100 to 250). -->
-    <string name="bodydetails_height_range">%1$s cm</string>
+    <string name="bodydetails_height_range">%1$s to %2$s cm</string>
+    <string name="bodydetails_weight_range">%1$s to %2$s %3$s</string>
     <!-- Body figures sheet, line under the title. Stats / Ledger is the name of the second tab. -->
     <string name="bodydetails_intro">They scale your scores, BMI and FFMI. Log weight again any time from Stats.</string>
     <string name="bodydetails_intro__t">They scale your scores, BMI and FFMI. Log weight again any time from Ledger.</string>
@@ -6937,6 +6938,8 @@
     <!-- Progress tab label for the skill-attempt log; the themed name stays Journal. Words.journal keeps "practice log" for the sentences built from it. -->
     <string name="titles_tab_journal">SKILL PRACTICE</string>
     <string name="titles_tab_journal__t">JOURNAL</string>
+    <string name="titles_first_workout_desc">Finish your first workout.</string>
+    <string name="titles_first_workout_desc__t">Seal your first trial.</string>
 
     <!-- Prompt when a modifier or load makes a base exercise a dedicated one. %1$s is the dedicated exercise's name. -->
     <string name="twin_switch_prompt">%1$s is its own exercise, with its own art and form guide. Switch to it?</string>

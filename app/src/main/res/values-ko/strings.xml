@@ -1054,9 +1054,9 @@
     <string name="onboarding_missing_sex">성별</string>
     <string name="onboarding_profile_hint_add">계속하려면 %1$s 항목을 입력하세요.</string>
     <string name="onboarding_profile_hint_add_then">%1$s 항목을 입력하세요. %2$s</string>
-    <string name="onboarding_height_range">키는 %1$s cm 범위여야 해요.</string>
-    <string name="onboarding_weight_range">체중은 %1$s %2$s 범위여야 해요.</string>
-    <string name="onboarding_profile_range_hint">키 %1$s cm. 체중 %2$s %3$s.</string>
+    <string name="onboarding_height_range">키는 %1$s~%2$s cm 범위여야 해요.</string>
+    <string name="onboarding_weight_range">체중은 %1$s~%2$s %3$s 범위여야 해요.</string>
+    <string name="onboarding_profile_range_hint">키 %1$s~%2$s cm. 체중 %3$s~%4$s %5$s.</string>
     <string name="onboarding_replace_title">루틴을 바꿀까요?</string>
     <string name="onboarding_replace_title__t">의식을 바꿀까요?</string>
     <plurals name="onboarding_replace_text">
@@ -3227,7 +3227,8 @@
     <string name="bodydetails_title_both">키와 몸무게</string>
     <string name="bodydetails_title_height">키</string>
     <string name="bodydetails_title_weight">몸무게</string>
-    <string name="bodydetails_height_range">%1$s cm</string>
+    <string name="bodydetails_height_range">%1$s~%2$s cm</string>
+    <string name="bodydetails_weight_range">%1$s~%2$s %3$s</string>
     <string name="bodydetails_intro">키와 몸무게는 점수, BMI, FFMI를 계산하는 데 사용돼요. 통계에서 언제든지 몸무게를 다시 기록할 수 있어요.</string>
     <string name="bodydetails_intro__t">키와 몸무게는 점수, BMI, FFMI를 계산하는 데 쓰여요. 대장에서 언제든지 몸무게를 다시 기록할 수 있어요.</string>
     <string name="settings_advanced_dev_header">개발자</string>
@@ -5427,6 +5428,8 @@
     <string name="fatigue_footprint_compare_heavy">%1$s: 같은 근육을 쓰지만 전신 부하가 없어, 같은 세트에도 피로가 덜 남아요.</string>
     <string name="titles_tab_journal">숙련 기술 연습</string>
     <string name="titles_tab_journal__t">일지</string>
+    <string name="titles_first_workout_desc">첫 운동을 마무리하세요.</string>
+    <string name="titles_first_workout_desc__t">첫 시련을 봉인하세요.</string>
     <string name="twin_switch_prompt">%1$s: 전용 그림과 자세 가이드가 있는 별도 운동이에요. 전환할까요?</string>
     <string name="twin_switch_button">전환</string>
     <string name="twin_keep_button">그대로 유지</string>

@@ -1106,9 +1106,9 @@
     <string name="onboarding_missing_sex">sexo</string>
     <string name="onboarding_profile_hint_add">Adicione %1$s para continuar.</string>
     <string name="onboarding_profile_hint_add_then">Adicione %1$s. %2$s</string>
-    <string name="onboarding_height_range">A altura deve ser %1$s cm.</string>
-    <string name="onboarding_weight_range">O peso deve ser %1$s %2$s.</string>
-    <string name="onboarding_profile_range_hint">Altura %1$s cm. Peso %2$s %3$s.</string>
+    <string name="onboarding_height_range">A altura deve estar entre %1$s e %2$s cm.</string>
+    <string name="onboarding_weight_range">O peso deve estar entre %1$s e %2$s %3$s.</string>
+    <string name="onboarding_profile_range_hint">Altura %1$s a %2$s cm. Peso %3$s a %4$s %5$s.</string>
     <string name="onboarding_replace_title">Substituir suas rotinas?</string>
     <string name="onboarding_replace_title__t">Substituir seus ritos?</string>
     <plurals name="onboarding_replace_text">
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SÉRIE</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercício</item>
         <item quantity="other">%1$d exercícios</item>
@@ -3409,7 +3409,8 @@
     <string name="bodydetails_title_both">Sua altura e seu peso</string>
     <string name="bodydetails_title_height">Sua altura</string>
     <string name="bodydetails_title_weight">Seu peso</string>
-    <string name="bodydetails_height_range">%1$s cm</string>
+    <string name="bodydetails_height_range">%1$s a %2$s cm</string>
+    <string name="bodydetails_weight_range">%1$s a %2$s %3$s</string>
     <string name="bodydetails_intro">Eles ajustam suas pontuações, IMC e FFMI. Registre seu peso novamente quando quiser em Estatísticas.</string>
     <string name="bodydetails_intro__t">Eles ajustam suas pontuações, IMC e FFMI. Registre seu peso novamente a qualquer momento no Registro.</string>
     <string name="settings_advanced_dev_header">DESENVOLVEDOR</string>
@@ -5765,8 +5766,10 @@
     <string name="fatigue_footprint_why_neither">Este exercício não aplica carga ao músculo alongado nem carga pesada ao corpo inteiro, então as mesmas séries difíceis deixam aproximadamente a fadiga indicada pela participação muscular.</string>
     <string name="fatigue_footprint_compare_long">%1$s trabalha o mesmo músculo sem carregá-lo alongado, então as mesmas séries deixam menos fadiga.</string>
     <string name="fatigue_footprint_compare_heavy">%1$s trabalha o mesmo músculo sem a carga no corpo inteiro, então as mesmas séries deixam menos fadiga.</string>
-    <string name="titles_tab_journal">PRÁTICA DE HABILIDADES</string>
+    <string name="titles_tab_journal">PRÁTICA</string>
     <string name="titles_tab_journal__t">DIÁRIO</string>
+    <string name="titles_first_workout_desc">Finalize seu primeiro treino.</string>
+    <string name="titles_first_workout_desc__t">Sele sua primeira prova.</string>
     <string name="twin_switch_prompt">%1$s é um exercício próprio, com ilustração e guia de execução próprios. Trocar para ele?</string>
     <string name="twin_switch_button">Trocar</string>
     <string name="twin_keep_button">Manter como está</string>

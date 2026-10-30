@@ -1106,9 +1106,9 @@
     <string name="onboarding_missing_sex">le sexe</string>
     <string name="onboarding_profile_hint_add">Ajoute %1$s pour continuer.</string>
     <string name="onboarding_profile_hint_add_then">Ajoute %1$s. %2$s</string>
-    <string name="onboarding_height_range">La taille doit être de %1$s cm.</string>
-    <string name="onboarding_weight_range">Le poids doit être de %1$s %2$s.</string>
-    <string name="onboarding_profile_range_hint">Taille : %1$s cm. Poids : %2$s %3$s.</string>
+    <string name="onboarding_height_range">La taille doit être comprise entre %1$s et %2$s cm.</string>
+    <string name="onboarding_weight_range">Le poids doit être compris entre %1$s et %2$s %3$s.</string>
+    <string name="onboarding_profile_range_hint">Taille : %1$s à %2$s cm. Poids : %3$s à %4$s %5$s.</string>
     <string name="onboarding_replace_title">Remplacer tes routines ?</string>
     <string name="onboarding_replace_title__t">Remplacer tes rites ?</string>
     <plurals name="onboarding_replace_text">
@@ -2655,7 +2655,7 @@
     <string name="coverage_preview_title">Couverture de ce plan hebdo</string>
     <string name="coverage_preview_title__t">Couverture de ce cycle</string>
     <string name="coverage_hint_caption">Une indication seulement. L’enregistrement reste possible.</string>
-    <string name="coverage_dock_optimise_button">Optimiser les routines</string>
+    <string name="coverage_dock_optimise_button">Optimiser</string>
     <string name="coverage_dock_optimise_button__t">Optimiser les rites</string>
     <string name="coverage_dock_forge_button">Créer une routine</string>
     <string name="coverage_dock_forge_button__t">Forger un rite</string>
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SÉRIE</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercice</item>
         <item quantity="other">%1$d exercices</item>
@@ -3409,7 +3409,8 @@
     <string name="bodydetails_title_both">Ta taille et ton poids</string>
     <string name="bodydetails_title_height">Ta taille</string>
     <string name="bodydetails_title_weight">Ton poids</string>
-    <string name="bodydetails_height_range">%1$s cm</string>
+    <string name="bodydetails_height_range">%1$s à %2$s cm</string>
+    <string name="bodydetails_weight_range">%1$s à %2$s %3$s</string>
     <string name="bodydetails_intro">Ils servent à calculer tes scores, ton IMC et ton FFMI. Enregistre ton poids à tout moment depuis Stats.</string>
     <string name="bodydetails_intro__t">Ils servent à calculer tes scores, ton IMC et ton FFMI. Inscris ton poids à tout moment depuis le Registre.</string>
     <string name="settings_advanced_dev_header">DÉVELOPPEUR</string>
@@ -3553,8 +3554,8 @@
     <string name="ledger_log_weight_button">Enregistrer le poids</string>
     <string name="ledger_consistency_label">Régularité</string>
     <string name="ledger_consistency_per_week">%1$s par semaine</string>
-    <string name="ledger_consistency_caption">jours terminés par semaine, 12 dernières semaines</string>
-    <string name="ledger_consistency_caption__t">jours scellés par semaine, 12 dernières semaines</string>
+    <string name="ledger_consistency_caption">jours par semaine, sur 12 semaines</string>
+    <string name="ledger_consistency_caption__t">jours scellés par semaine, sur 12 semaines</string>
     <string name="ledger_consistency_empty">Chaque semaine apparaît ici lorsque tu termines des séances.</string>
     <string name="ledger_consistency_empty__t">Chaque semaine s\'inscrit ici lorsque tu scelles des épreuves.</string>
     <plurals name="ledger_week_strip_description">
@@ -5702,7 +5703,7 @@
     <string name="fatigue_light_by_tomorrow">Fatigue légère d\'ici demain</string>
     <string name="fatigue_light_by_weekday">Fatigue légère d\'ici %1$s</string>
     <string name="fatigue_light_by_over_week">Fatigue légère dans plus d\'une semaine</string>
-    <string name="fatigue_explainer_link">Comment cette estimation fonctionne ›</string>
+    <string name="fatigue_explainer_link">Comment c\'est estimé ›</string>
     <string name="fatigue_explainer_title">Comment la fatigue est estimée</string>
     <string name="fatigue_explainer_intro">Les séries difficiles que tu as enregistrées sont additionnées pour estimer la fatigue de chaque muscle. Cela ne modifie jamais ton plan.</string>
     <string name="fatigue_explainer_intro__t">Les séries difficiles que tu as enregistrées sont additionnées pour estimer la fatigue de chaque muscle. Cela ne modifie jamais ton cycle.</string>
@@ -5765,8 +5766,10 @@
     <string name="fatigue_footprint_why_neither">Cet exercice ne sollicite pas le muscle en position étirée et n\'impose pas de charge lourde à tout le corps : les mêmes séries difficiles laissent donc une fatigue proche de celle indiquée par la contribution de chaque muscle.</string>
     <string name="fatigue_footprint_compare_long">%1$s sollicite le même muscle sans le charger en position étirée : les mêmes séries laissent donc moins de fatigue.</string>
     <string name="fatigue_footprint_compare_heavy">%1$s sollicite le même muscle sans charger tout le corps : les mêmes séries laissent donc moins de fatigue.</string>
-    <string name="titles_tab_journal">ENTRAÎNEMENT TECHNIQUE</string>
+    <string name="titles_tab_journal">PRATIQUE</string>
     <string name="titles_tab_journal__t">JOURNAL</string>
+    <string name="titles_first_workout_desc">Termine ta première séance.</string>
+    <string name="titles_first_workout_desc__t">Scelle ta première épreuve.</string>
     <string name="twin_switch_prompt">%1$s est un exercice à part entière, avec son illustration et son guide. Le choisir ?</string>
     <string name="twin_switch_button">Changer</string>
     <string name="twin_keep_button">Garder tel quel</string>

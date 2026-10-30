@@ -341,11 +341,12 @@ private fun coverageSummary(tally: CoverageTally): String {
 }
 
 @Composable
-internal fun FigureLabel(text: String, modifier: Modifier) {
+internal fun FigureLabel(text: String, modifier: Modifier, align: TextAlign = TextAlign.Start, wrap: Boolean = true) {
     Text(
         text,
         modifier = modifier,
-        textAlign = TextAlign.Start,
+        textAlign = align,
+        softWrap = wrap,
         style = MaterialTheme.typography.labelSmall,
         fontFamily = ChakraPetch,
         color = IronvellumColors.InkMuted,

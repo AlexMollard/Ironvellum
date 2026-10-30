@@ -23,8 +23,8 @@ class ProfileHintTest {
 
     @Test
     fun `ranges are said as whole numbers`() {
-        assertEquals("50 to 272", BodyLimits.say(BodyLimits.HEIGHT_CM))
-        assertEquals("20 to 400", BodyLimits.say(BodyLimits.WEIGHT_KG))
+        assertEquals(listOf("50", "272"), BodyLimits.ends(BodyLimits.HEIGHT_CM))
+        assertEquals(listOf("20", "400"), BodyLimits.ends(BodyLimits.WEIGHT_KG))
     }
 
     @Test

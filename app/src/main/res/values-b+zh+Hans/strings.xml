@@ -1054,9 +1054,9 @@
     <string name="onboarding_missing_sex">性别</string>
     <string name="onboarding_profile_hint_add">添加%1$s以继续。</string>
     <string name="onboarding_profile_hint_add_then">添加%1$s。%2$s</string>
-    <string name="onboarding_height_range">身高必须为 %1$s cm。</string>
-    <string name="onboarding_weight_range">体重必须为 %1$s %2$s。</string>
-    <string name="onboarding_profile_range_hint">身高 %1$s cm。体重 %2$s %3$s。</string>
+    <string name="onboarding_height_range">身高必须为 %1$s 至 %2$s cm。</string>
+    <string name="onboarding_weight_range">体重必须为 %1$s 至 %2$s %3$s。</string>
+    <string name="onboarding_profile_range_hint">身高 %1$s 至 %2$s cm。体重 %3$s 至 %4$s %5$s。</string>
     <string name="onboarding_replace_title">替换你的计划？</string>
     <string name="onboarding_replace_title__t">替换你的仪轨？</string>
     <plurals name="onboarding_replace_text">
@@ -3227,7 +3227,8 @@
     <string name="bodydetails_title_both">你的身高和体重</string>
     <string name="bodydetails_title_height">你的身高</string>
     <string name="bodydetails_title_weight">你的体重</string>
-    <string name="bodydetails_height_range">%1$s 厘米</string>
+    <string name="bodydetails_height_range">%1$s 至 %2$s 厘米</string>
+    <string name="bodydetails_weight_range">%1$s 至 %2$s %3$s</string>
     <string name="bodydetails_intro">这些数据用于计算评分、BMI 和 FFMI。你可以随时在统计中再次记录体重。</string>
     <string name="bodydetails_intro__t">这些数据用于计算评分、BMI 和 FFMI。你可随时在账册中再次记下体重。</string>
     <string name="settings_advanced_dev_header">开发者</string>
@@ -5427,6 +5428,8 @@
     <string name="fatigue_footprint_compare_heavy">%1$s 训练同一块肌肉，但没有全身负荷，所以同样组数留下的疲劳较少。</string>
     <string name="titles_tab_journal">技法练习</string>
     <string name="titles_tab_journal__t">手记</string>
+    <string name="titles_first_workout_desc">完成你的第一次训练。</string>
+    <string name="titles_first_workout_desc__t">封存你的第一次试炼。</string>
     <string name="twin_switch_prompt">%1$s 是独立动作，有自己的图示和动作指南。切换到该动作？</string>
     <string name="twin_switch_button">切换</string>
     <string name="twin_keep_button">保持原样</string>

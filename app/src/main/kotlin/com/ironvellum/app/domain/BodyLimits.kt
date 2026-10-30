@@ -40,12 +40,12 @@ object BodyLimits {
         return if (Loads.toKg(value, unit) in WEIGHT_KG) Reading.VALID else Reading.OUT_OF_RANGE
     }
 
-    /** The weight range as it is typed in [unit]: "20 to 400" kg, "45 to 880" lb. */
-    fun weightRangeText(unit: LoadUnit): String =
-        "${plain(Math.ceil(Loads.toUnit(WEIGHT_KG.start, unit)))} to ${plain(Math.floor(Loads.toUnit(WEIGHT_KG.endInclusive, unit)))}"
+    /** The weight range as it is typed in [unit], as its two ends: 20 and 400 kg, 45 and 881 lb. The words between them are a translated resource. */
+    fun weightEnds(unit: LoadUnit): List<String> =
+        listOf(plain(Math.ceil(Loads.toUnit(WEIGHT_KG.start, unit))), plain(Math.floor(Loads.toUnit(WEIGHT_KG.endInclusive, unit))))
 
-    /** "50 to 272": a range as a person says it, whole numbers without their ".0". */
-    fun say(range: ClosedFloatingPointRange<Double>): String = "${plain(range.start)} to ${plain(range.endInclusive)}"
+    /** The two ends of a range as a person says them, whole numbers without their ".0": 50 and 272. */
+    fun ends(range: ClosedFloatingPointRange<Double>): List<String> = listOf(plain(range.start), plain(range.endInclusive))
 
     private fun read(raw: String, range: ClosedFloatingPointRange<Double>): Reading {
         val value = DecimalInput.parse(raw) ?: return Reading.EMPTY

@@ -132,7 +132,7 @@ object Titles {
 
     val ALL: List<TitleDef> by Words.perMode { listOf(
         // Deeds of war
-        TitleDef("awakened", "First Mark", "${Words.seal.c} your first ${Words.trial.s}.", TitleRule.FirstWorkout, TitleRarity.Common),
+        TitleDef("awakened", "First Mark", Words.text(UiText.themed(R.string.titles_first_workout_desc, R.string.titles_first_workout_desc__t)), TitleRule.FirstWorkout, TitleRarity.Common),
         TitleDef("iron_discipline", "Iron Discipline", "${Words.seal.c} 25 ${Words.trial.pl}.", TitleRule.Workouts(25), TitleRarity.Rare),
         TitleDef("relentless", "Relentless", "${Words.seal.c} 50 ${Words.trial.pl}.", TitleRule.Workouts(50), TitleRarity.Rare),
         TitleDef("unbroken", "Unbroken", "${Words.seal.c} 100 ${Words.trial.pl}.", TitleRule.Workouts(100), TitleRarity.Epic),
