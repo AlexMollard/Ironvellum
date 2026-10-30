@@ -28,6 +28,11 @@ store listing; this is the whole list.
   incline on inverted rows. Past sets can be converted onto the dedicated exercise.
 - The last five workouts are listed under Recent on Train, and a routine's movements open their
   exercise sheet.
+- The exercise sheet is redrawn as About, Form, History and Fatigue pages that each fit without
+  scrolling. About says why to do each of the 584 movements and when to pick it, with both sides of
+  the body; Fatigue shows each muscle's recovery, picked on the figure or the list.
+- A catalogue check corrected muscles, gear, one-sided flags and load factors across the library.
+  Bear crawl, crab walk, mountain climber, plank jack and flutter kick are now timed.
 
 ### Languages
 - Spanish, German, French, Portuguese (Brazil), Japanese, Korean and Simplified Chinese, with

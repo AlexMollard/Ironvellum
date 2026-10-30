@@ -4,6 +4,6 @@
 • Muscle fatigue heatmap, with Lighten or Swap offers on Today
 • Last set's effort is asked above slide to seal
 • Raised buttons everywhere, a redrawn light theme
-• Sixteen variation deeds, clearer modifiers
+• Exercise sheet: why do it, muscles, recovery
 
 Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md
