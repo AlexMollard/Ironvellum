@@ -72,7 +72,8 @@ internal fun ExerciseInfoSheet(
     why: ExerciseWhy? = ExerciseWhys.forName(exercise.name),
 ) {
     val skill = Skills.forName(exercise.name)
-    val boards = LiftBoards.boardsFor(exercise.name)
+    // One line per board: an archer push-up is rung 4 itself and counts as a push-up (rung 2), so show the higher.
+    val boards = LiftBoards.boardsFor(exercise.name).groupBy { it.lift }.values.map { same -> same.maxBy { it.rung ?: 0 } }
     val chips = buildList {
         add(InfoChip(exercise.muscleGroup.displayName))
         add(InfoChip(metricWord(exercise.metric).replaceFirstChar { it.uppercase() }))
