@@ -121,12 +121,15 @@ internal fun ExerciseInfoSheet(
     )
 }
 
-/** The drawing at [ART_SIZE] beside LAST WORKOUT and EQUIPMENT, each only when there is something to say. */
+/** The drawing at [ART_SIZE], grown into any spare page height, beside LAST WORKOUT and EQUIPMENT, each only when there is something to say. */
 @Composable
 private fun AboutTop(exercise: Exercise, lastLine: String?) {
     val gear = gearLine(exercise.name)
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.size(ART_SIZE))
+        val grow = LocalPageRoom.current?.take(ART_GROWTH) ?: 0.dp
+        // Wider than tall, so a lying-down drawing (a push-up) is not shrunk to fit a square; the whole row when alone.
+        val width = if (lastLine == null && gear == null) 1f else ART_WIDTH_SHARE
+        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth(width).height(ART_SIZE + grow))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (lastLine != null) AboutFact(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
             if (gear != null) AboutFact(Words.armoury.u, gear)
@@ -229,6 +232,12 @@ internal fun InfoSheetScope.fatigueFacts(name: String, modifiers: String = "") {
 
 private const val MAX_WHY_TAGS = 3
 private val ART_SIZE = 76.dp
+
+/** How far the drawing grows into a page's empty space: up to 140dp on a page with room to spare. */
+private val ART_GROWTH = 64.dp
+
+/** The drawing's share of the row when facts sit beside it. */
+private const val ART_WIDTH_SHARE = 0.45f
 
 private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return

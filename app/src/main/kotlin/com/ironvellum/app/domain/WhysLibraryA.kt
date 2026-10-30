@@ -107,7 +107,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
         "chest dip",
         ExerciseWhy(
             purpose = "Works the lower chest and triceps by pressing your own bodyweight up between bars with a forward lean.",
-            pickIt = "Pick it over the bench for heavy bodyweight pressing you can belt-load; deep dips stress the front shoulder, so stop where it is solid.",
+            pickIt = "Pick it for bodyweight pressing loaded with a vest or a belt and plates; deep dips stress the front shoulder, so stop where it is solid.",
             tags = listOf("Lower chest", "Triceps", "Bodyweight loading"),
         ),
     )
@@ -203,7 +203,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
         "weighted chin-up",
         ExerciseWhy(
             purpose = "Adds load to the chin-up for heavy lat and biceps work, a clear test of upper-body pulling strength.",
-            pickIt = "Pick it over the plain chin-up once bodyweight sets pass about ten reps; it needs a belt or dumbbell, and heavy volume taxes the elbows.",
+            pickIt = "Pick it over the plain chin-up past about ten bodyweight reps; it needs a vest or a belt and plates, and heavy volume taxes the elbows.",
             tags = listOf("Lats", "Biceps", "Heavy loading"),
         ),
     )
@@ -953,7 +953,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
         "stability ball hamstring curl",
         ExerciseWhy(
             purpose = "Rolls a ball in with the heels from a bridge, training the hamstrings while the glutes hold the hips up.",
-            pickIt = "Pick it over the towel curl for a smooth, steadier path; it needs a ball and balance, and is harder than a seated leg curl.",
+            pickIt = "Pick it over the towel curl for a smooth roll; it needs a ball and balance, and is harder than a seated leg curl.",
             tags = listOf("Hamstrings", "Core control", "Home friendly"),
         ),
     )
@@ -1153,7 +1153,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
         "plank jack",
         ExerciseWhy(
             purpose = "Jumps the feet out and in from a plank, working the abs and obliques, with the shoulders holding you up.",
-            pickIt = "Pick it for conditioning on top of the plank; it is a high-impact move for wrists, so land lightly.",
+            pickIt = "Pick it for conditioning on top of the plank; only the feet leave the floor, so land softly and keep the wrists stacked under the shoulders.",
             tags = listOf("Conditioning", "Abs", "Bodyweight only"),
         ),
     )

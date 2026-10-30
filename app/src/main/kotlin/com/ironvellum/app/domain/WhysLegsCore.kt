@@ -26,7 +26,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys1() {
     put(
         "bulgarian split squat",
         ExerciseWhy(
-            purpose = "Loads the quads and glutes deeply on one leg, with the rear foot raised to stretch the front hip and test balance.",
+            purpose = "Loads the quads and glutes deeply on one leg, with the rear foot raised to stretch the back hip and test balance.",
             pickIt = "Pick it over the walking lunge for a deep one-leg set at moderate weight; it tires the legs fast and the stance takes tuning.",
             tags = listOf("Quad size", "Glute size", "One-leg strength"),
         ),
@@ -123,7 +123,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys1() {
         "hip thrust",
         ExerciseWhy(
             purpose = "Loads the glutes hardest at hip lockout, where a squat or deadlift gives them least resistance.",
-            pickIt = "Pick it for glute growth with less spinal load than a deadlift; it needs a bench and bar setup, and it does little for the quads.",
+            pickIt = "Pick it for glute growth with less spinal load than a deadlift; it needs a bar and a bench or couch to brace on, and skips the quads.",
             tags = listOf("Glute size", "Lockout strength", "Low spinal load"),
         ),
     )
@@ -307,7 +307,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys1() {
         "split squat",
         ExerciseWhy(
             purpose = "Lowers on one leg from a fixed long stance, loading the quads and glutes with the side hip steadying you.",
-            pickIt = "Pick it over the Bulgarian split squat for an easier setup with a flat rear foot; there is less range, but it is steadier.",
+            pickIt = "Pick it over the Bulgarian split squat for an easier setup with the rear foot on the floor; there is less range, but it is steadier.",
             tags = listOf("One-leg strength", "Quad size", "Easy to balance"),
         ),
     )
@@ -347,7 +347,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys1() {
         "elevated pistol squat",
         ExerciseWhy(
             purpose = "Lowers on one leg from a block, so the free leg hangs clear and the range goes deeper than a standard pistol.",
-            pickIt = "Pick it once the pistol squat feels easy for a harder, deeper rep; the extra range demands more knee, hip and ankle mobility.",
+            pickIt = "Pick it for a deeper, harder pistol; the free leg hangs below the block, so the bottom needs more knee, hip and ankle mobility.",
             tags = listOf("Deep range", "One-leg strength", "Advanced move"),
         ),
     )
@@ -355,7 +355,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys1() {
         "airborne squat",
         ExerciseWhy(
             purpose = "Squats on one leg with the other held behind you, loading the quads and glutes with a high balance demand.",
-            pickIt = "Pick it as an advanced single-leg move after the pistol squat; the free leg behind you removes the counterbalance.",
+            pickIt = "Pick it as the last balance step before the pistol squat; the free leg held behind you removes the counterbalance, so go slowly.",
             tags = listOf("One-leg strength", "Balance", "Advanced move"),
         ),
     )
@@ -502,7 +502,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys2() {
         "l-sit",
         ExerciseWhy(
             purpose = "Holds your legs straight out in front while supported on straight arms, loading the abs and hip flexors in compression.",
-            pickIt = "Pick it for a static trunk and shoulder move with a clear path to harder holds; it needs bars or boxes, and the tuck l-sit scales it down.",
+            pickIt = "Pick it for a static trunk and shoulder move with a clear path to harder holds; the floor works, bars help, and tuck l-sit scales it down.",
             tags = listOf("Compression", "Triceps", "Learning curve"),
         ),
     )
@@ -518,7 +518,7 @@ private fun MutableMap<String, ExerciseWhy>.legsCoreWhys2() {
         "weighted plank",
         ExerciseWhy(
             purpose = "Holds a plank with a plate on your back, making the abs and obliques brace harder once bodyweight is easy.",
-            pickIt = "Pick it over the plain plank once that holds easily; short, loaded holds beat ever longer ones, but it needs a plate and a helper.",
+            pickIt = "Pick it over the plain plank once that holds easily; short, loaded holds beat ever longer ones, but it needs a plate or a weight vest.",
             tags = listOf("Ab bracing", "Progressive load", "Trunk strength"),
         ),
     )

@@ -32,11 +32,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -47,8 +51,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
@@ -280,21 +286,49 @@ private class BuiltPage(val label: String, val summary: (@Composable ColumnScope
 @Composable
 private fun PageBody(page: BuiltPage, compact: Boolean) {
     val scroll = rememberScrollState()
-    Column(
-        Modifier
-            .fillMaxSize()
-            .fadeWhenMore(scroll.canScrollForward)
-            .nestedScroll(KeepForwardScrollInside)
-            .verticalScroll(scroll)
-            .padding(horizontal = LedgerSpace.Gutter),
-    ) {
-        Spacer(Modifier.height(PAGE_TOP_GAP))
-        SummaryStrip(page.summary, leadingGap = false)
-        // Tighter than a flat sheet's sections: a page is meant to fit its viewport without a scroll.
-        SectionList(page.sections, compact, afterTabs = page.summary == null, gap = PAGE_SECTION_GAP, labelGap = PAGE_LABEL_GAP)
-        Spacer(Modifier.height(PAGE_BOTTOM_GAP))
+    val room = remember { PageRoom() }
+    val density = LocalDensity.current
+    var viewport by remember { mutableIntStateOf(0) }
+    var content by remember { mutableIntStateOf(0) }
+    fun measure() {
+        if (viewport > 0 && content > 0) room.spare = with(density) { (viewport - content).toDp() } + room.used
+    }
+    CompositionLocalProvider(LocalPageRoom provides room) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .onSizeChanged { viewport = it.height; measure() }
+                .fadeWhenMore(scroll.canScrollForward)
+                .nestedScroll(KeepForwardScrollInside)
+                .verticalScroll(scroll)
+                .onSizeChanged { content = it.height; measure() }
+                .padding(horizontal = LedgerSpace.Gutter),
+        ) {
+            Spacer(Modifier.height(PAGE_TOP_GAP))
+            SummaryStrip(page.summary, leadingGap = false)
+            // Tighter than a flat sheet's sections: a page is meant to fit its viewport without a scroll.
+            SectionList(page.sections, compact, afterTabs = page.summary == null, gap = PAGE_SECTION_GAP, labelGap = PAGE_LABEL_GAP)
+            Spacer(Modifier.height(PAGE_BOTTOM_GAP))
+        }
     }
 }
+
+/**
+ * The empty height below a page's content, so one element can grow into it (the About drawing) without
+ * ever making the page scroll. [spare] excludes what [take] has already claimed, so growing is stable.
+ */
+@Stable
+internal class PageRoom {
+    var spare by mutableStateOf(0.dp)
+    var used = 0.dp
+        private set
+
+    /** Up to [max] of the spare height, less a 1dp margin against rounding. */
+    fun take(max: Dp): Dp = (spare - 1.dp).coerceIn(0.dp, max).also { used = it }
+}
+
+/** The current page's [PageRoom]; null outside a paged sheet, where nothing grows. */
+internal val LocalPageRoom = staticCompositionLocalOf<PageRoom?> { null }
 
 @Composable
 private fun SummaryStrip(summary: (@Composable ColumnScope.() -> Unit)?, leadingGap: Boolean = true) {

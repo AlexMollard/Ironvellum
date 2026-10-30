@@ -11,7 +11,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys1() {
         "dip",
         ExerciseWhy(
             purpose = "Loads the lower chest and triceps through a deep stretch, with the front delts helping, using your own bodyweight.",
-            pickIt = "Pick it over the push-up when bodyweight presses get easy; it needs bars and shoulder comfort at depth, and extra load takes a belt.",
+            pickIt = "Pick it once push-ups get easy; it needs bars and comfortable shoulders, and load takes a vest or a belt and plates.",
             tags = listOf("Chest and triceps", "Loadable weight", "Deep stretch"),
         ),
     )
@@ -58,7 +58,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys1() {
     put(
         "overhead press",
         ExerciseWhy(
-            purpose = "Builds the shoulders and triceps pressing a barbell up, with the upper chest and traps helping and the trunk braced.",
+            purpose = "Builds the shoulders and triceps pressing a barbell up, with the traps and serratus helping and the trunk braced.",
             pickIt = "Pick it as your main standing press when you have a barbell; it loads more than dumbbells but is less forgiving of tight shoulders.",
             tags = listOf("Shoulders", "Triceps", "Full-body bracing"),
         ),
@@ -299,7 +299,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys1() {
         "weighted dip",
         ExerciseWhy(
             purpose = "Adds load to the dip, overloading the lower chest and triceps beyond what bodyweight allows.",
-            pickIt = "Pick it once bodyweight dips feel easy for ten or so reps; it is a heavy press without a barbell, but needs a belt and shoulder comfort.",
+            pickIt = "Pick it once bodyweight dips feel easy for ten or so reps; it is a heavy press without a barbell, but needs a vest or a belt and plates.",
             tags = listOf("Progressive load", "Chest and triceps", "Heavy pressing"),
         ),
     )
@@ -323,7 +323,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys1() {
         "pike press",
         ExerciseWhy(
             purpose = "Presses upward from a pike with your hips high, loading the front delts and triceps with a vertical push.",
-            pickIt = "Pick it as a step after pike push-ups toward handstand push-ups; the more vertical your torso, the harder it gets, so adjust your feet.",
+            pickIt = "Pick it as the first vertical press on the way to handstand push-ups; it is a pike push-up, and raising your feet makes it harder.",
             tags = listOf("Shoulders", "Vertical press", "Handstand prep"),
         ),
     )
@@ -437,7 +437,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys2() {
     put(
         "planche push-up",
         ExerciseWhy(
-            purpose = "Presses up from a planche lean, loading the front delts, triceps and upper chest with the shoulders far past the hands.",
+            purpose = "Presses up from a planche lean, loading the front delts, chest and triceps with the shoulders far past the hands.",
             pickIt = "Pick it once you can lean forward and hold a planche; it builds pressing strength beyond holds, but it is hard on the wrists and elbows.",
             tags = listOf("Planche strength", "Front delts", "Pressing"),
         ),
@@ -509,7 +509,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys2() {
     put(
         "bodyweight overhead press",
         ExerciseWhy(
-            purpose = "Presses a barbell equal to your own bodyweight overhead, loading the shoulders and triceps with the trunk braced.",
+            purpose = "Presses a barbell at four fifths of bodyweight overhead for reps, loading the shoulders and triceps, trunk braced.",
             pickIt = "Pick it as a milestone once you press heavy consistently; it needs good form and a rack, and suits only free overhead mobility.",
             tags = listOf("Shoulder strength", "Milestone", "Full-body bracing"),
         ),
@@ -525,7 +525,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys2() {
     put(
         "half-again overhead press",
         ExerciseWhy(
-            purpose = "Presses a barbell one and a half times your bodyweight overhead, a very heavy load for the shoulders and triceps.",
+            purpose = "Presses a barbell one and a quarter times your bodyweight overhead, an elite load for the shoulders and triceps.",
             pickIt = "Pick it only after bodyweight pressing is easy; it is a long-term strength target, and demands safety bars, good form and patience.",
             tags = listOf("Max strength", "Long-term goal", "Shoulders"),
         ),
@@ -817,7 +817,7 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys3() {
         "weighted pull-up",
         ExerciseWhy(
             purpose = "Adds load to the pull-up, overloading the lats, upper back and biceps beyond what bodyweight allows.",
-            pickIt = "Pick it once bodyweight pull-ups feel easy at about ten reps; it builds heavy pulling strength, but needs a belt or a held weight.",
+            pickIt = "Pick it once bodyweight pull-ups feel easy at about ten reps; it builds heavy pulling strength, but needs a vest or a belt and plates.",
             tags = listOf("Progressive load", "Lats", "Pulling strength"),
         ),
     )
