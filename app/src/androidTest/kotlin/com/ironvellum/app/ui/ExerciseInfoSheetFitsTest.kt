@@ -73,12 +73,10 @@ class ExerciseInfoSheetFitsTest {
             hammerCurl = Exercise(id = curl.id, name = curl.name, muscleGroup = MuscleGroup.PULL, isWeighted = true)
             val press = exercises.byName("Bench Press")!!
             bench = Exercise(id = press.id, name = press.name, muscleGroup = MuscleGroup.PUSH, isWeighted = true)
-            // The bench press has six logged workouts and nothing else on this install in the way.
-            app.database.openHelper.writableDatabase.execSQL("DELETE FROM set_logs WHERE exerciseId = ${press.id}")
+            // The bench press has six logged workouts. Nothing already logged is touched: other tests lean on it.
             val day = 24L * 60 * 60 * 1000
             val now = System.currentTimeMillis()
-            // Pull-up has six logged bodyweight workouts, for its History page.
-            app.database.openHelper.writableDatabase.execSQL("DELETE FROM set_logs WHERE exerciseId = ${pull.id}")
+            // Pull-up gets six more recent bodyweight workouts, for its History page.
             for ((age, reps) in listOf(2 to listOf(10, 9, 8), 5 to listOf(9, 9, 8), 8 to listOf(8, 8, 7), 11 to listOf(8, 7, 6), 15 to listOf(7, 6, 6), 19 to listOf(6, 6, 5))) {
                 val started = now - age * day
                 val id = dao.insertSession(
