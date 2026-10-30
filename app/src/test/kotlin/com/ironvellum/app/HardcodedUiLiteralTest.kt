@@ -40,6 +40,10 @@ class HardcodedUiLiteralTest {
     private val exempt = mapOf(
         "main/domain/LibraryGuides.kt" to "exercise guides: English data for a later step (owner, 2026-10-16)",
         "main/domain/ExerciseGuides.kt" to "exercise guides: English data for a later step",
+        "main/domain/WhysPushPull.kt" to "why-do-it text: English-only exercise data like the guides (owner, 2026-10-30)",
+        "main/domain/WhysLegsCore.kt" to "why-do-it text: English-only exercise data like the guides (owner, 2026-10-30)",
+        "main/domain/WhysLibraryA.kt" to "why-do-it text: English-only exercise data like the guides (owner, 2026-10-30)",
+        "main/domain/WhysLibraryB.kt" to "why-do-it text: English-only exercise data like the guides (owner, 2026-10-30)",
         "main/domain/ExerciseArtIndex.kt" to "exercise names and art ids",
         "main/domain/ExerciseLibrary.kt" to "exercise names and cues: English data for a later step",
         "main/domain/Evidence.kt" to "citations, always plain (journal titles)",
