@@ -879,17 +879,15 @@
   "like": "Reverse Fly",
   "profile": {
    "muscles": {
-    "REAR_DELTS": 1.0,
-    "RHOMBOIDS": 0.5,
-    "TRAPS": 0.5,
-    "ROTATOR_CUFF": 0.5
+    "FRONT_DELTS": 1.0,
+    "UPPER_CHEST": 0.5
    },
    "pattern": "ISOLATION",
    "compound": false,
    "stretchBias": false,
    "noLead": false
   },
-  "group": "PULL",
+  "group": "PUSH",
   "metric": "REPS",
   "category": "",
   "weighted": true,
@@ -927,17 +925,15 @@
   "like": "Reverse Fly",
   "profile": {
    "muscles": {
-    "REAR_DELTS": 1.0,
-    "RHOMBOIDS": 0.5,
-    "TRAPS": 0.5,
-    "ROTATOR_CUFF": 0.5
+    "FRONT_DELTS": 1.0,
+    "UPPER_CHEST": 0.5
    },
    "pattern": "ISOLATION",
    "compound": false,
    "stretchBias": false,
    "noLead": false
   },
-  "group": "PULL",
+  "group": "PUSH",
   "metric": "REPS",
   "category": "",
   "weighted": true,
@@ -1386,7 +1382,7 @@
     "RINGS"
    ]
   ],
-  "tier": 2
+  "tier": 3
  },
  {
   "name": "Belt Squat",
@@ -2928,12 +2924,12 @@
   "like": "Seated Calf Raise",
   "profile": {
    "muscles": {
-    "CALVES": 0.5
+    "CALVES": 1.0
    },
    "pattern": "ISOLATION",
    "compound": false,
    "stretchBias": true,
-   "noLead": true
+   "noLead": false
   },
   "group": "LEGS",
   "metric": "REPS",
@@ -2979,12 +2975,12 @@
   "like": "Seated Calf Raise",
   "profile": {
    "muscles": {
-    "CALVES": 0.5
+    "CALVES": 1.0
    },
    "pattern": "ISOLATION",
    "compound": false,
    "stretchBias": true,
-   "noLead": true
+   "noLead": false
   },
   "group": "LEGS",
   "metric": "REPS",
@@ -7651,8 +7647,9 @@
   "like": "Plank",
   "profile": {
    "muscles": {
-    "ABS": 1.0,
-    "OBLIQUES": 0.5
+    "ADDUCTORS": 1.0,
+    "OBLIQUES": 0.5,
+    "ABS": 0.25
    },
    "pattern": "CORE",
    "compound": false,
@@ -10352,10 +10349,10 @@
   "like": "Reverse Fly",
   "profile": {
    "muscles": {
-    "REAR_DELTS": 1.0,
-    "RHOMBOIDS": 0.5,
-    "TRAPS": 0.5,
-    "ROTATOR_CUFF": 0.5
+    "LATS": 1.0,
+    "FRONT_DELTS": 1.0,
+    "MID_CHEST": 0.5,
+    "TRICEPS": 0.5
    },
    "pattern": "ISOLATION",
    "compound": false,
