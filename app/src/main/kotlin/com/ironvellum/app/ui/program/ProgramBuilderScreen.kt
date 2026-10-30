@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.domain.NumberText
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
@@ -1181,7 +1182,7 @@ private fun historySpan(years: Double): UiText {
 /** One decimal, no trailing .0 - "1.4 years", never "1.4000001 years". */
 private fun trimYears(value: Double): String {
     val rounded = (value * 10).toLong() / 10.0
-    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
+    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else NumberText.decimal(rounded, 1)
 }
 
 private val ARMOURY_PICK_CAPTION: String

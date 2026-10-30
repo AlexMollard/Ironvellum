@@ -49,13 +49,13 @@ object Loads {
         LoadUnit.KG -> (kg * 100.0).roundToLong() / 100.0
     }
 
-    /** "220.5", "225", "8.75": the snapped number, no unit, trailing zeros dropped. */
-    fun format(kg: Double, unit: LoadUnit): String =
-        String.format(java.util.Locale.US, "%.2f", snap(kg, unit)).trimEnd('0').trimEnd('.')
+    /** "220.5", "225", "8.75": the snapped number, no unit, trailing zeros dropped, in the app's language. */
+    fun format(kg: Double, unit: LoadUnit, locale: java.util.Locale = java.util.Locale.getDefault()): String =
+        NumberText.trimmed(snap(kg, unit), 2, locale)
 
     /** [kg] to [decimals] places in kg; in lb the nearest 0.5, or a whole pound when [decimals] is 0. */
     fun fixed(kg: Double, unit: LoadUnit, decimals: Int): String = when {
-        unit == LoadUnit.KG -> String.format(java.util.Locale.US, "%.${decimals}f", kg)
+        unit == LoadUnit.KG -> NumberText.decimal(kg, decimals)
         decimals == 0 -> Math.round(toUnit(kg, unit)).toString()
         else -> format(kg, unit)
     }
@@ -76,8 +76,8 @@ object Loads {
     /** The ceiling as the "Enter 0 to N" hint reads it. */
     fun ceilingText(maxKg: Double, unit: LoadUnit): String = floor(snap(maxKg, unit)).toLong().toString()
 
-    /** The text field's prefill: the snapped figure, no unit. */
-    fun fieldText(kg: Double, unit: LoadUnit): String = format(kg, unit)
+    /** The text field's prefill: the snapped figure, no unit, always with a "." (a field holds one canonical form; see [DecimalInput]). */
+    fun fieldText(kg: Double, unit: LoadUnit): String = format(kg, unit, java.util.Locale.ROOT)
 
     /**
      * A typed load in [unit] as kg: blank is bodyweight (0.0), a comma is a decimal point, and the

@@ -147,7 +147,7 @@ object Energy {
      */
     private fun netMet(met: Double): Double = (met - 1.0).coerceAtLeast(0.0)
 
-    private fun fmtMet(met: Double): String = String.format(java.util.Locale.US, "%.1f", netMet(met))
+    private fun fmtMet(met: Double): String = NumberText.decimal(netMet(met), 1)
 
     private fun metKcal(met: Double, kg: Double, minutes: Double): Int =
         (netMet(met) * 3.5 * kg / 200.0 * minutes).toInt()

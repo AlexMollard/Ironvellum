@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Words
@@ -353,7 +354,7 @@ internal fun LifterScreen(
                         ).asString(),
                     )
                     add(stringResource(R.string.lifter_xp_gain, grouped(figures.xp)))
-                    add(stringResource(R.string.lifter_summary_per_week, String.format(Locale.ENGLISH, "%.1f", perWeek)))
+                    add(stringResource(R.string.lifter_summary_per_week, "%.1f".fmt(perWeek)))
                     daysSince?.let {
                         add(
                             when (it) {

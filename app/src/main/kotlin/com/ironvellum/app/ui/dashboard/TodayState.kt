@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.domain.NumberText
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
@@ -298,7 +299,7 @@ private fun linesThatFit(b: TodayBudget, room: Int, mayTruncate: Boolean): Pair<
 
 /** "40" for a whole rate, "12.5" otherwise. */
 internal fun rateLabel(perHour: Double): String =
-    if (perHour % 1.0 == 0.0) "%.0f".format(java.util.Locale.US, perHour) else "%.1f".format(java.util.Locale.US, perHour)
+    NumberText.decimal(perHour, if (perHour % 1.0 == 0.0) 0 else 1)
 
 /**
  * The Veil's reserved inscriptions line. It is shown in every Veil form whether or not any wait, so the

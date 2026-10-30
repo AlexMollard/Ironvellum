@@ -324,7 +324,7 @@ private fun PeakCard(history: ExerciseHistory) {
         }
         frequency?.let {
             InkDivider()
-            ListRow(stringResource(R.string.explorer_frequency_label), value = stringResource(R.string.explorer_frequency_value, String.format(Locale.US, "%.1f", it)))
+            ListRow(stringResource(R.string.explorer_frequency_label), value = stringResource(R.string.explorer_frequency_value, "%.1f".fmt(it)))
         }
         InkDivider()
         ListRow(Words.trial.cpl, value = history.sessions.toString())
@@ -332,7 +332,7 @@ private fun PeakCard(history: ExerciseHistory) {
 }
 
 private fun formatScore(v: Double): String =
-    if (v >= 100.0) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
+    if (v >= 100.0) v.toInt().toString() else "%.1f".fmt(v)
 
 /** One flat line of best-set score per trial; gold only on the peak point, which the chart draws. */
 @Composable

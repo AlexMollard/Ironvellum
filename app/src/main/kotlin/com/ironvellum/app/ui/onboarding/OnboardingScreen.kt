@@ -569,7 +569,7 @@ fun OnboardingScreen(
             // A weight already typed keeps its meaning when the unit flips.
             onUnitPicked = { unit ->
                 DecimalInput.parse(weightInput)?.let { typed ->
-                    weightInput = Loads.format(Loads.toKg(typed, Units.current), unit)
+                    weightInput = Loads.fieldText(Loads.toKg(typed, Units.current), unit)
                 }
             },
         )

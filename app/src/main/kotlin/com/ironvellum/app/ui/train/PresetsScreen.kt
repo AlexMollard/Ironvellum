@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -494,7 +495,7 @@ private fun TrialRow(
         done.size.takeIf { it > 0 }?.let { UiText.plural(R.plurals.common_sets_count, it).asString() },
         volumeKg.takeIf { it > 0.0 }?.let {
             if (Units.current == com.ironvellum.app.domain.LoadUnit.LB) Units.volume(it)
-            else if (it < 1000) "${it.toInt()} kg" else "${"%.1f".format(java.util.Locale.US, it / 1000)} t"
+            else if (it < 1000) "${it.toInt()} kg" else "${"%.1f".fmt(it / 1000)} t"
         },
     ).joinToString(" · ")
     Row(

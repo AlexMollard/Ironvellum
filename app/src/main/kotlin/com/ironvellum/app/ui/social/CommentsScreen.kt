@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
@@ -604,7 +605,7 @@ internal fun AllySet.figure(): String {
     val metres = distanceM?.takeIf { it > 0.0 }
     val seconds = durationSec?.takeIf { it > 0 }
     return when {
-        metres != null -> (if (metres >= 1000) String.format(Locale.US, "%.1f km", metres / 1000) else "${metres.toInt()} m") +
+        metres != null -> (if (metres >= 1000) "%.1f km".fmt(metres / 1000) else "${metres.toInt()} m") +
             (seconds?.let { " · ${it}s" }.orEmpty())
         !grade.isNullOrBlank() -> "$reps × $grade"
         seconds != null -> "${seconds}s" + (load?.let { " × $it" }.orEmpty())

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.clickable
@@ -925,7 +926,7 @@ private fun MovementLine(entry: FeedEntry) {
 /** 48m under the hour, "1h 12m" past it, whole hours drop the zero minutes. */
 /** Metres read as km past 1000 — "10.0 KM" beats "10000 M" on a card. */
 private fun formatDistance(metres: Double): String =
-    if (metres >= 1000) String.format(Locale.ENGLISH, "%.1f KM", metres / 1000) else "${metres.toInt()} M"
+    if (metres >= 1000) "%.1f KM".fmt(metres / 1000) else "${metres.toInt()} M"
 
 private fun formatDuration(sec: Int): String {
     val h = sec / 3600

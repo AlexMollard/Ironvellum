@@ -108,7 +108,7 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: Words.text(UiText.res(R.string.share_movement_fallback)) }
                 val peak = peakByLift[Variation.liftKey(full, group.first().modifiers)]
-                val text = movementText(Variation.label(full, group.first().modifiers), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort })
+                val text = movementText(Variation.label(full, group.first().modifiers), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort }, locale)
                     ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
                 text to note
@@ -189,6 +189,7 @@ object WorkoutShare {
         peak: SessionPeaks.Peak?,
         unit: LoadUnit,
         effort: EffortScale?,
+        locale: Locale,
     ): String? {
         val done = working.filter { it.done }
         return when (exercise?.metric ?: ExerciseMetric.REPS) {
@@ -203,7 +204,7 @@ object WorkoutShare {
                 if (done.isEmpty()) return null
                 val km = done.sumOf { it.distanceM ?: 0.0 } / 1000.0
                 val secs = done.sumOf { it.durationSec ?: 0 }
-                val distance = if (km > 0.0) Words.text(UiText.res(R.string.share_distance_km, trimmed(km))) else ""
+                val distance = if (km > 0.0) Words.text(UiText.res(R.string.share_distance_km, NumberText.trimmed(km, 2, locale))) else ""
                 val time = if (secs > 0) ClockText.elapsed(secs.toLong()) else ""
                 val figure = when {
                     distance.isNotEmpty() && time.isNotEmpty() -> Words.text(UiText.res(R.string.share_distance_in_time, distance, time))
@@ -232,7 +233,7 @@ object WorkoutShare {
                 // The top set is the one the load line names: heaviest, then most reps or longest.
                 val top = done.maxWithOrNull(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { figure(it) }))
                 val rated = if (effort != null) top?.rpe?.let { "· ${Effort.value(it, effort)}" }.orEmpty() else ""
-                val head = listOf(name, load(done, exercise, unit)).filter { it.isNotEmpty() }.joinToString(" · ")
+                val head = listOf(name, load(done, exercise, unit, locale)).filter { it.isNotEmpty() }.joinToString(" · ")
                 val tail = listOf(squares, figures(done.map(::figure), hold), rated).filter { it.isNotEmpty() }.joinToString(" ")
                 "$head\n$tail"
             }
@@ -259,10 +260,10 @@ object WorkoutShare {
      * dropped: the 1.25 kg isolation step lands on 8.75 kg, and one place would
      * print "8.8kg", a load nobody can rack.
      */
-    private fun load(done: List<SessionSet>, exercise: Exercise?, unit: LoadUnit): String {
+    private fun load(done: List<SessionSet>, exercise: Exercise?, unit: LoadUnit, locale: Locale): String {
         val loads = done.map { it.weightKg?.takeIf { kg -> kg > 0.0 } ?: 0.0 }
         val top = loads.maxOrNull()?.takeIf { it > 0.0 } ?: return ""
-        val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit) else trimmed(top)) + unit.label
+        val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit, locale) else NumberText.trimmed(top, 2, locale)) + unit.label
         return if (loads.distinct().size > 1) Words.text(UiText.res(R.string.share_load_top, text)) else text
     }
 
@@ -274,8 +275,5 @@ object WorkoutShare {
         return "  " + Words.text(UiText.res(R.string.share_exercise_note, text))
     }
 
-    private fun trimmed(value: Double): String =
-        String.format(Locale.ENGLISH, "%.2f", value).trimEnd('0').trimEnd('.')
-
-    private fun format(value: Int, locale: Locale): String = String.format(locale, "%,d", value)
+    private fun format(value: Int, locale: Locale): String = NumberText.grouped(value.toLong(), locale)
 }

@@ -307,7 +307,7 @@ private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
             value = if (perWeek == 0.0) {
                 stringResource(R.string.stats_dash)
             } else {
-                stringResource(R.string.ledger_consistency_per_week, "%.1f".format(java.util.Locale.US, perWeek))
+                stringResource(R.string.ledger_consistency_per_week, "%.1f".fmt(perWeek))
             },
             supporting = UiText.themed(R.string.ledger_consistency_caption, R.string.ledger_consistency_caption__t).asString(),
             onClick = onOpen,

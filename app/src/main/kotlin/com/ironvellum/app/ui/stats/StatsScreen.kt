@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.ui.components.bodyFieldText
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.ironvellum.app.data.Lines
@@ -407,7 +408,7 @@ fun StatsScreen(
 
     if (showAdd) {
         AddStatDialog(
-            initialWeight = latest?.weightKg?.let { formatBodyValue(it) } ?: "",
+            initialWeight = latest?.weightKg?.let { bodyFieldText(it) } ?: "",
             heightCm = ui.profileHeight,
             sex = ui.sex,
             measurements = remember(ui.measurements) {
@@ -768,9 +769,9 @@ private fun AddStatDialog(
 
     // Estimator state: prefill the tapes from the lifter's latest measurements.
     var showEstimator by rememberSaveable { mutableStateOf(false) }
-    val neck = rememberSaveable { mutableStateOf(measurements[MeasurementSite.NECK]?.let { formatBodyValue(it) } ?: "") }
-    val waist = rememberSaveable { mutableStateOf(measurements[MeasurementSite.WAIST]?.let { formatBodyValue(it) } ?: "") }
-    val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.let { formatBodyValue(it) } ?: "") }
+    val neck = rememberSaveable { mutableStateOf(measurements[MeasurementSite.NECK]?.let { bodyFieldText(it) } ?: "") }
+    val waist = rememberSaveable { mutableStateOf(measurements[MeasurementSite.WAIST]?.let { bodyFieldText(it) } ?: "") }
+    val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.let { bodyFieldText(it) } ?: "") }
     val estimate = if (showEstimator) BodyStats.estimateBodyFatNavy(
         sex, heightCm ?: 0.0,
         Ledger.parseDecimal(neck.value) ?: 0.0,

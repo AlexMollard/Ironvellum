@@ -118,7 +118,7 @@ class PlateRack(val unit: LoadUnit, val bar: Double, pairs: Map<Double, Int>) {
 
         /** A plate or bar figure as printed: "25", "1.25". */
         fun number(x: Double): String =
-            String.format(java.util.Locale.US, "%.2f", x).trimEnd('0').trimEnd('.')
+            NumberText.trimmed(x, 2)
     }
 }
 

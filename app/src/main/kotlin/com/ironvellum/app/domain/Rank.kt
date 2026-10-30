@@ -240,6 +240,6 @@ object Rank {
 
     private fun kg(value: Double): String {
         val r = Math.round(value * 10) / 10.0
-        return if (r % 1.0 == 0.0) String.format(Locale.ROOT, "%.0f", r) else String.format(Locale.ROOT, "%.1f", r)
+        return if (r % 1.0 == 0.0) "%.0f".fmt(r) else "%.1f".fmt(r)
     }
 }

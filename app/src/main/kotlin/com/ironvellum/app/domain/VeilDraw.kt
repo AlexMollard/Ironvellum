@@ -121,7 +121,7 @@ object VeilDraw {
             name?.let { UiText.res(R.string.veil_joined_collection, it) } ?: when (reward) {
                 is Reward.Relic -> when (reward.outcome) {
                     RelicOutcome.Refined ->
-                        UiText.res(R.string.veil_relic_refined, reward.name, "%.2f".format(java.util.Locale.US, reward.multiplier))
+                        UiText.res(R.string.veil_relic_refined, reward.name, "%.2f".fmt(reward.multiplier))
                     else -> UiText.res(R.string.veil_relic_paid_echoes, reward.name, echoText(reward.echoes))
                 }
                 is Reward.Figures -> UiText.res(R.string.always_veil_echoes_added, echoText(reward.count))

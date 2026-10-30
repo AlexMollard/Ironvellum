@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.domain.NumberText
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -126,9 +127,9 @@ internal fun xpCounted(gain: Int, toLevelEnd: Int, t: Long): Float {
 internal fun phase(t: Long, from: Long, ms: Long, easing: (Float) -> Float = { it }): Float =
     easing(((t - from) / ms.toFloat()).coerceIn(0f, 1f))
 
-internal fun count(value: Int): String = String.format(Locale.ENGLISH, "%,d", value)
+internal fun count(value: Int): String = NumberText.grouped(value.toLong())
 
-internal fun count(value: Long): String = String.format(Locale.ENGLISH, "%,d", value)
+internal fun count(value: Long): String = NumberText.grouped(value)
 
 /** Time since the page landed, in ms: one clock per page; at its end everything has landed. */
 @Composable

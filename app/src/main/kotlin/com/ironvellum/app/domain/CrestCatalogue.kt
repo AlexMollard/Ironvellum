@@ -73,8 +73,8 @@ object CrestCatalogue {
 
     /** "64/100", "12/42 km" (tenths), "1.6/2×" (hundredths of a bodyweight multiple). */
     fun countOf(p: Titles.Progress): String = when {
-        p.unit.startsWith("km") -> "%.0f/%.0f km".format(Locale.ROOT, p.current / p.scale.toDouble(), p.target / p.scale.toDouble())
-        p.unit.startsWith("%") -> "%.1f/%.1f×".format(Locale.ROOT, p.current / 100.0, p.target / 100.0)
+        p.unit.startsWith("km") -> "%.0f/%.0f km".fmt(p.current / p.scale.toDouble(), p.target / p.scale.toDouble())
+        p.unit.startsWith("%") -> "%.1f/%.1f×".fmt(p.current / 100.0, p.target / 100.0)
         else -> "${p.current}/${p.target}"
     }
 
@@ -86,7 +86,7 @@ object CrestCatalogue {
         def.kind == CrestKind.Offering -> "Pays when you buy an inscription: the price you are shown is the price you pay."
         def.id in DRAW_PERKS -> "Pays on every draw: the odds panel shows what it adds."
         def.kind == CrestKind.Away -> "Pays when you have been away: it changes what an absence banks, not your rate."
-        perHour >= 0.05 -> "At your rate now this adds about +${"%.1f".format(Locale.ROOT, perHour)} essence an hour."
+        perHour >= 0.05 -> "At your rate now this adds about +${"%.1f".fmt(perHour)} essence an hour."
         else -> "At your rate now this adds almost nothing. It pays when its part of the rate grows."
     }
 

@@ -11,7 +11,8 @@ import java.util.Locale
  * (their numpad follows the phone's region), so a typed "," is read as ".".
  *
  * Nothing here consults [Locale.getDefault]: "1,5" and "1.5" mean the same
- * thing on a German phone as on an Australian one.
+ * thing on a German phone as on an Australian one. Typed text is cleaned to a "."; showing a
+ * number is [NumberText]'s job, in the app's language.
  *
  * Pair with `decimalKeyboard()` / `wholeKeyboard()` in `ui/components`, which
  * pick the soft keyboard; this object cleans what arrives and reads it back.
@@ -85,8 +86,33 @@ object DecimalInput {
 }
 
 /**
- * [String.format] pinned to [Locale.ROOT], so "%.1f" prints "82.5" and "%,d"
- * prints "1,234" whatever the phone's region. Plain `"%.1f".format(x)` uses the
- * device locale and prints "82,5" on a European one.
+ * [String.format] in the app's language, for screen text: "%.1f" prints "82.5" in English and "82,5" in German, "%,d"
+ * prints "1,234", "1.234" or "1 234" (narrow no-break space, French). The locale is read at the call, so it is the
+ * per-app language ([Locale.getDefault] follows it on Android) and a screen formatted after a language switch is right.
+ *
+ * Only for text a person reads. A number that is stored, exported, synced or parsed back uses [fmtRoot].
  */
-fun String.fmt(vararg args: Any?): String = String.format(Locale.ROOT, this, *args)
+fun String.fmt(vararg args: Any?): String = String.format(Locale.getDefault(), this, *args)
+
+/** [fmt] for a given [locale] (a shared text already carries the one it was built for). */
+fun String.fmtIn(locale: Locale, vararg args: Any?): String = String.format(locale, this, *args)
+
+/** [String.format] pinned to [Locale.ROOT]: "82.5" and "1,234" whatever the language. For data, never for screen text. */
+fun String.fmtRoot(vararg args: Any?): String = String.format(Locale.ROOT, this, *args)
+
+/** The numbers a person reads, in the app's language. Field text and stored values keep a ".": see [DecimalInput]. */
+object NumberText {
+    /** [value] to [places] decimals: "82.5" or "82,5". */
+    fun decimal(value: Double, places: Int, locale: Locale = Locale.getDefault()): String =
+        String.format(locale, "%.${places}f", value)
+
+    /** [decimal] with trailing zeros and a bare separator dropped: "8.75", "225", never "225.00" or "225,". */
+    fun trimmed(value: Double, maxPlaces: Int, locale: Locale = Locale.getDefault()): String {
+        val text = decimal(value, maxPlaces, locale)
+        val separator = java.text.DecimalFormatSymbols.getInstance(locale).decimalSeparator
+        return if (separator in text) text.trimEnd('0').trimEnd(separator) else text
+    }
+
+    /** A whole count with the language's thousands separator: "2,000", "2.000", "2 000" (French, narrow no-break space). */
+    fun grouped(value: Long, locale: Locale = Locale.getDefault()): String = String.format(locale, "%,d", value)
+}

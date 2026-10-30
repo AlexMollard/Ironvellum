@@ -91,15 +91,15 @@ class DecimalInputTest {
     }
 
     @Test
-    fun `parsing and formatting ignore the device locale`() {
+    fun `parsing and the data formatter ignore the device locale`() {
         val saved = Locale.getDefault()
         try {
             Locale.setDefault(Locale.GERMANY)
             assertEquals(1.5, DecimalInput.parse("1,5")!!, 1e-9)
             assertEquals(1.5, DecimalInput.parse("1.5")!!, 1e-9)
-            assertEquals("82.5", "%.1f".fmt(82.5))
-            assertEquals("1,234", "%,d".fmt(1234))
-            assertEquals("2026-W05", "%04d-W%02d".fmt(2026, 5))
+            assertEquals("82.5", "%.1f".fmtRoot(82.5))
+            assertEquals("1,234", "%,d".fmtRoot(1234))
+            assertEquals("2026-W05", "%04d-W%02d".fmtRoot(2026, 5))
         } finally {
             Locale.setDefault(saved)
         }

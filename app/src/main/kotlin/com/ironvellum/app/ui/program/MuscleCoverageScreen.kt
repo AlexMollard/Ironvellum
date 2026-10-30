@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.domain.NumberText
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -660,5 +661,5 @@ private fun ExerciseRow(
 /** One decimal, trimmed of a trailing .0 - "14" and "14.5", never "14.0000". */
 internal fun trimSets(value: Double): String {
     val rounded = (value * 10).toLong() / 10.0
-    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
+    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else NumberText.decimal(rounded, 1)
 }

@@ -157,7 +157,7 @@ object Bands {
     /** "below 18.5", "18.5 to under 25.0", "40.0 and over" - one decimal, no rounding surprises. */
     fun rangeText(table: BandTable, index: Int): String {
         val bands = table.bands
-        fun f(v: Double) = String.format(java.util.Locale.US, "%.1f", v)
+        fun f(v: Double) = NumberText.decimal(v, 1)
         return Words.text(
             when {
                 index == 0 -> UiText.res(R.string.bands_range_below, f(bands[0].upTo))

@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.components
 
+import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.NumberText
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -374,7 +376,10 @@ fun formatDate(ms: Long, pattern: String = "MMM d · HH:mm"): String =
  * only accepts `.`, so a locale rendering `79,1` would blank the field every
  * time a European lifter opened the dialog.
  */
-fun formatBodyValue(value: Double): String = String.format(Locale.US, "%.1f", value)
+fun formatBodyValue(value: Double): String = NumberText.decimal(value, 1)
+
+/** [formatBodyValue] for a text field's prefill: always a ".", the one form a field holds (see [DecimalInput]). */
+fun bodyFieldText(value: Double): String = NumberText.decimal(value, 1, Locale.ROOT)
 
 /**
  * A load exactly as it can be racked: up to two places, trailing zeros

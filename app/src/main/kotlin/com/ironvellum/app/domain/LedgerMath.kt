@@ -149,7 +149,7 @@ object Ledger {
             rounded < 0.0 -> "\u2212"
             else -> ""
         }
-        return "$sign${String.format(java.util.Locale.US, "%.1f", abs(rounded))} $unit"
+        return "$sign${NumberText.decimal(abs(rounded), 1)} $unit"
     }
 
     /** A typed decimal as the keyboard may give it: a comma is a point. */

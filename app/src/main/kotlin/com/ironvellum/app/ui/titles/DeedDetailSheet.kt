@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.domain.NumberText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -68,7 +69,7 @@ internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier, earn
 internal fun railFill(earned: Boolean): Brush =
     SolidColor(if (earned) IronvellumColors.SovereignGold else IronvellumColors.Emerald)
 
-internal fun formatCount(n: Long): String = String.format(Locale.US, "%,d", n)
+internal fun formatCount(n: Long): String = NumberText.grouped(n)
 
 /** A progress figure in the units the bar counts: whole numbers, or one decimal for tenths of a km. */
 internal fun formatProgress(value: Long, scale: Int): String =
