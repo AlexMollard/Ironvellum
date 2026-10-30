@@ -38,6 +38,9 @@ store listing; this is the whole list.
 - Spanish, German, French, Portuguese (Brazil), Japanese, Korean and Simplified Chinese, with
   themed names in each. The translations were produced with AI and checked
   against per-language term tables.
+- Numbers follow the app's language, with a decimal comma and local thousands separators where
+  that language uses them. Weights accept a comma or a point when you type them.
+- Deed names and descriptions, the why-do-it text and the exercise guides are still in English.
 
 ### Web dashboard
 - Sign in at alexmollard.github.io/Ironvellum to read your training on a computer: overview,
@@ -62,6 +65,13 @@ store listing; this is the whole list.
 - Backups include your portable settings.
 - A Privacy policy link in Settings > Support, and the Play data-safety notes cover heart rate
   and background reads.
+
+### Fixes
+- Opening the app after it was closed mid-workout no longer crashes on the way back into the
+  workout. Shortcuts, widgets and notification taps wait for the app to be ready the same way.
+- The elevated pistol squat sits after the pistol squat in the Legs line: it is a deficit
+  pistol, deeper and harder. The airborne squat now follows the box pistol squat.
+- The exercise sheet lists each board once, at the highest rung the movement counts for.
 
 ## 1.8
 

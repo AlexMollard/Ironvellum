@@ -29,8 +29,10 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
   from the top set and round to the plates you own.
 - **Warm-ups:** ramps for loaded lifts, and warm-up exercises in a routine that
   never count toward your stats.
-- **905 exercises**: 584 movements, each with a line drawing and a swipeable
-  info sheet of the muscles it works, and 321 variations of them (deficit,
+- **905 exercises**: 584 movements, each with a line drawing and an info
+  sheet: why to do it and when to pick it, the muscles it works on both sides
+  of the body, how to do it, your history with it and the fatigue it leaves.
+  Then 321 variations of them (deficit,
   archer, one-arm, incline, assisted and their combinations), each with its own
   records and progression. Add your own exercises with their muscles and gear.
 
@@ -77,6 +79,10 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
 - **125 skills** on progression paths (pull, push, handstand, lever, planche,
   rings, legs, core, mobility and the barbell ladders), each gated on the one
   before it with a written standard, and **121 deeds** to earn.
+- **Progress photos:** an optional photo after a workout, once a day, and a
+  front, side and back pose each week on a day you choose, with a compare view
+  between two weeks. Photos stay on the phone and ride along in the weekly
+  backup folder; they are never synced.
 - **Share a workout** as plain text in the shape of a Wordle grid: a row per
   movement, a square per set, a trophy on a record set. No link, no image.
 - **The Veil** is an idle layer: workouts leave echoes, echoes gather essence

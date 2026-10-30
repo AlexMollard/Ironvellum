@@ -41,9 +41,10 @@ Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a s
 
 - **Plan:** a weekly plan built around hard sets, a floor for every muscle and days spaced for recovery.
 - **Train:** a fast live workout with rest timers, supersets, a plate calculator and lock-screen controls.
-- **Progress:** body-scaled scoring, PRs that agree everywhere, 125 skills, 121 deeds and weekly recaps.
+- **Progress:** body-scaled scoring, PRs that agree everywhere, 126 skills, 121 deeds, weekly recaps and progress photos that never leave the phone.
 - **Recover:** a per-muscle fatigue estimate that suggests when to lighten, swap or rest.
 - **Your data:** stored on the phone first, exported or backed up whenever you like, cloud sync optional.
+- **Languages:** English, Spanish, German, French, Portuguese (Brazil), Japanese, Korean and Simplified Chinese.
 
 Plain gym words by default; turn on **Themed names** for the fantasy version. The full list is in [Features](docs/FEATURES.md).
 
