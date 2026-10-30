@@ -5396,7 +5396,6 @@
     <string name="fatigue_plan_unchanged__t">疲労は道しるべであり、歩みを阻むものではありません。周期は変わっていません。</string>
     <string name="infosheet_page_fatigue">疲労</string>
     <string name="fatigue_footprint_title">疲労の影響 · 推定</string>
-    <string name="fatigue_footprint_where">疲労が生じる部位</string>
     <string name="fatigue_band_strong">強い</string>
     <string name="fatigue_band_medium">中程度</string>
     <string name="fatigue_band_light">軽い</string>

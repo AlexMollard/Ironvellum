@@ -5396,7 +5396,6 @@
     <string name="fatigue_plan_unchanged__t">피로도는 조언일 뿐 길을 막지 않아요. 주기는 바뀌지 않았어요.</string>
     <string name="infosheet_page_fatigue">피로도</string>
     <string name="fatigue_footprint_title">피로 영향 · 추정치</string>
-    <string name="fatigue_footprint_where">피로가 쌓이는 부위</string>
     <string name="fatigue_band_strong">강함</string>
     <string name="fatigue_band_medium">보통</string>
     <string name="fatigue_band_light">낮음</string>

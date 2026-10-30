@@ -482,12 +482,12 @@ object Skills {
             why = "Takes the post away and gives the hips a target, so the pistol's balance is learned with the depth capped.",
         ),
         SkillDef(
-            "Elevated Pistol Squat", 3, "Legs", prerequisites = listOf("Box Pistol Squat"),
+            "Elevated Pistol Squat", 3, "Legs", prerequisites = listOf("Pistol Squat"),
             standard = "5 reps per leg, standing on a low block, free leg hanging below it, full depth",
             why = "A deficit pistol: the free leg clears the floor by more, so the bottom position gets deeper and harder.",
         ),
         SkillDef(
-            "Airborne Squat", 3, "Legs", prerequisites = listOf("Elevated Pistol Squat"),
+            "Airborne Squat", 3, "Legs", prerequisites = listOf("Box Pistol Squat"),
             standard = "5 reps per leg to full depth, free leg held in the air behind you, no touchdown",
             why = "Holds the free leg out of the way for the whole rep, the last balance step before the pistol.",
         ),

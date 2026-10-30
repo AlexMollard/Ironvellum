@@ -6892,7 +6892,6 @@
     <!-- Exercise info sheet: the fourth page, an exercise's fatigue footprint. -->
     <string name="infosheet_page_fatigue">Fatigue</string>
     <string name="fatigue_footprint_title">FATIGUE FOOTPRINT · ESTIMATE</string>
-    <string name="fatigue_footprint_where">Where the fatigue lands</string>
     <string name="fatigue_band_strong">Strong</string>
     <string name="fatigue_band_medium">Medium</string>
     <string name="fatigue_band_light">Light</string>

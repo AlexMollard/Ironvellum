@@ -5734,7 +5734,6 @@
     <string name="fatigue_plan_unchanged__t">A fadiga é um sinal, não uma barreira. Seu ciclo permanece intacto.</string>
     <string name="infosheet_page_fatigue">Fadiga</string>
     <string name="fatigue_footprint_title">IMPACTO DE FADIGA · ESTIMATIVA</string>
-    <string name="fatigue_footprint_where">Onde fica a fadiga</string>
     <string name="fatigue_band_strong">Forte</string>
     <string name="fatigue_band_medium">Médio</string>
     <string name="fatigue_band_light">Leve</string>

@@ -5734,7 +5734,6 @@
     <string name="fatigue_plan_unchanged__t">Ermüdung ist ein Hinweis, keine Fessel. Dein Zyklus bleibt unberührt.</string>
     <string name="infosheet_page_fatigue">Ermüdung</string>
     <string name="fatigue_footprint_title">ERMÜDUNGSPROFIL · SCHÄTZUNG</string>
-    <string name="fatigue_footprint_where">Wo die Ermüdung entsteht</string>
     <string name="fatigue_band_strong">Stark</string>
     <string name="fatigue_band_medium">Mittel</string>
     <string name="fatigue_band_light">Leicht</string>

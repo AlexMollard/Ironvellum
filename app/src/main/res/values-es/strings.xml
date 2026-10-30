@@ -5734,7 +5734,6 @@
     <string name="fatigue_plan_unchanged__t">La fatiga es una señal, nunca un impedimento. Tu ciclo permanece intacto.</string>
     <string name="infosheet_page_fatigue">Fatiga</string>
     <string name="fatigue_footprint_title">HUELLA DE FATIGA · ESTIMACIÓN</string>
-    <string name="fatigue_footprint_where">Dónde se concentra la fatiga</string>
     <string name="fatigue_band_strong">Fuerte</string>
     <string name="fatigue_band_medium">Media</string>
     <string name="fatigue_band_light">Ligera</string>

@@ -466,7 +466,7 @@ class SkillsTest {
     @Test
     fun `the single-leg squat chain runs box pistol to cobra, each step needing the one before`() {
         val chain = listOf(
-            "Supported Pistol Squat", "Box Pistol Squat", "Elevated Pistol Squat", "Airborne Squat", "Pistol Squat",
+            "Supported Pistol Squat", "Box Pistol Squat", "Airborne Squat", "Pistol Squat",
             "Shrimp Squat", "Dragon Squat", "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat",
         )
         chain.zipWithNext().forEach { (before, step) ->
@@ -474,6 +474,8 @@ class SkillsTest {
         }
         val catalogue = Seed.exercises.associateBy { it.name }
         chain.forEach { assertEquals("$it", "LEGS", catalogue.getValue(it).muscleGroup) }
+        // The elevated pistol is a deficit pistol, deeper and harder, so it branches off after the pistol.
+        assertEquals(listOf("Pistol Squat"), Skills.forName("Elevated Pistol Squat")!!.prerequisites)
         assertEquals(
             listOf("Pistol Squat", "Shrimp Squat", "Dragon Squat", "Advanced Shrimp Squat", "Deficit Advanced Shrimp Squat", "Cobra Squat"),
             LiftBoards.rungs(Lift.PISTOL).map { it.exercise }.drop(2),

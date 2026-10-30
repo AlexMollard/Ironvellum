@@ -5734,7 +5734,6 @@
     <string name="fatigue_plan_unchanged__t">La fatigue est un repère, jamais un blocage. Rien n\'a changé dans ton cycle.</string>
     <string name="infosheet_page_fatigue">Fatigue</string>
     <string name="fatigue_footprint_title">EMPREINTE DE FATIGUE · ESTIMATION</string>
-    <string name="fatigue_footprint_where">Où se concentre la fatigue</string>
     <string name="fatigue_band_strong">Forte</string>
     <string name="fatigue_band_medium">Moyenne</string>
     <string name="fatigue_band_light">Légère</string>

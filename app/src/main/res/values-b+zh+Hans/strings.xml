@@ -5396,7 +5396,6 @@
     <string name="fatigue_plan_unchanged__t">疲劳只是一道提示，并非阻碍。你的循环未曾改变。</string>
     <string name="infosheet_page_fatigue">疲劳</string>
     <string name="fatigue_footprint_title">疲劳分布 · 估计</string>
-    <string name="fatigue_footprint_where">疲劳集中部位</string>
     <string name="fatigue_band_strong">强</string>
     <string name="fatigue_band_medium">中</string>
     <string name="fatigue_band_light">轻</string>
