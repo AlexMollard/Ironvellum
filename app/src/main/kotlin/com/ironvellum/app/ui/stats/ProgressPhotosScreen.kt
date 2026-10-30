@@ -193,7 +193,7 @@ fun ProgressPhotosScreen(
                 // --- this week ---
                 Column(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
-                        PanelLabel(stringResource(R.string.photos_this_week_label))
+                        PanelLabel(stringResource(R.string.photos_this_week_label).uppercase())
                         Text(
                             stringResource(R.string.photos_week_of, thisWeek.format(dateFormat)),
                             style = MaterialTheme.typography.bodySmall,
@@ -225,7 +225,7 @@ fun ProgressPhotosScreen(
 
                 // --- compare ---
                 Column(Modifier.fillMaxWidth()) {
-                    PanelLabel(stringResource(R.string.photos_compare_label))
+                    PanelLabel(stringResource(R.string.photos_compare_label).uppercase())
                     if (weeks.size < 2) {
                         Text(
                             stringResource(R.string.photos_compare_empty),
@@ -252,7 +252,7 @@ fun ProgressPhotosScreen(
                     Pose.entries.forEach { pose ->
                         val label = stringResource(poseLabel(pose))
                         Column(Modifier.fillMaxWidth()) {
-                            PanelLabel(label, Modifier.padding(bottom = 8.dp))
+                            PanelLabel(label.uppercase(), Modifier.padding(bottom = 8.dp))
                             PhotoCompare(
                                 pose = label,
                                 leftWeek = left?.format(dateFormat).orEmpty(),

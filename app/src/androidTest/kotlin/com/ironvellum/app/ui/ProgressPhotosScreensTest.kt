@@ -209,7 +209,7 @@ class ProgressPhotosScreensTest {
         waitForSlots()
         slot("Side").assertExists()
         slot("Back").assertExists()
-        compose.onNodeWithText("Compare weeks").assertExists()
+        compose.onNodeWithText("COMPARE WEEKS").assertExists()
         compose.onNodeWithText("Left week").assertExists()
         compose.onNodeWithText("Right week").assertExists()
         // The left side opens on the older week, the right on this one: a front photo for each is described by its week.
