@@ -349,7 +349,7 @@ internal object LibraryGuides {
         put(
             "neutral-grip pull-up",
             ExerciseGuide(
-                setup = "Grasp the bar with an supinated (overhand) grip so that your palms are facing.",
+                setup = "Grasp the parallel handles with a neutral grip, so that your palms are facing each other.",
                 steps = listOf(
                     "Let your body hang from the bar with your arms straight.",
                     "Slowly pull yourself up so that your chin is higher than the bar.",
@@ -967,9 +967,9 @@ internal object LibraryGuides {
                 setup = "This exercise is credited to the late Vince Gironda, the \"Iron Guru\". It not only blasts the biceps and works the forearms as well.",
                 steps = listOf(
                     "Stand with your feet shoulder width apart, your knees slightly bent, and your abs drawn in.",
-                    "Grasp the bar with palms down, shoulder width apart.",
+                    "Grasp the bar with palms up, shoulder width apart.",
                     "Extend your arms fully so they are against your thighs.",
-                    "Slowly raise your arms, palms down, to touch your chest.",
+                    "Slowly raise your arms, palms up, dragging the bar up your torso to touch your chest.",
                     "Note: Do not move your elbows or shoulders during this exercise.",
                 ),
                 cues = listOf(),

@@ -98,7 +98,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
     put(
         "landmine press",
         ExerciseWhy(
-            purpose = "Presses a barbell along an arc, working the chest, front delts and triceps while the trunk braces against the angle.",
+            purpose = "Presses a barbell along an arc, working the front delts, upper chest and triceps with the trunk bracing.",
             pickIt = "Pick it over overhead presses if a straight bar path is uncomfortable; it needs a landmine anchor and tops out lighter.",
             tags = listOf("Angled press", "Chest and delts", "Trunk bracing"),
         ),
@@ -218,7 +218,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
     put(
         "trap bar deadlift",
         ExerciseWhy(
-            purpose = "Lifts from the floor with hands at your sides, working the glutes and hamstrings while the back, traps and grip hold on.",
+            purpose = "Lifts from the floor with hands at your sides, working the glutes, hamstrings and quads as the back and grip hold.",
             pickIt = "Pick it over the barbell deadlift for an easier pull to learn with a more upright torso; it needs a trap bar and stretches hamstrings less.",
             tags = listOf("Posterior chain", "Grip", "Easy to learn"),
         ),
@@ -234,7 +234,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
     put(
         "cable kickback",
         ExerciseWhy(
-            purpose = "Isolates the glutes and outer hips by driving the leg back against a low cable while standing.",
+            purpose = "Isolates the glutes by driving the leg back against a low cable while standing.",
             pickIt = "Pick it as a glute finisher after hip thrusts or squats; it is light, single-leg work, so it will not replace heavy lower-body lifts.",
             tags = listOf("Glutes", "Isolation", "Single leg"),
         ),
@@ -298,7 +298,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
     put(
         "machine glute kickback",
         ExerciseWhy(
-            purpose = "Isolates the glutes and outer hips by pushing a pedal back with the chest supported against a pad.",
+            purpose = "Isolates the glutes by pushing a pedal back with the chest supported against a pad.",
             pickIt = "Pick it over cable kickbacks for stable, easy-to-load work; it is single-leg and lighter than thrusts or squats, and needs the machine.",
             tags = listOf("Glutes", "Stable support", "Isolation"),
         ),
@@ -362,9 +362,9 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA1() {
     put(
         "dumbbell sumo deadlift",
         ExerciseWhy(
-            purpose = "Pulls one dumbbell from the floor in a wide stance, loading the glutes and hamstrings, with back and grip holding on.",
+            purpose = "Pulls one dumbbell from the floor in a wide stance, loading the glutes and inner thighs, with back and grip holding on.",
             pickIt = "Pick it over a conventional dumbbell deadlift if a wide stance fits you; the pull is shorter, but one dumbbell caps the load.",
-            tags = listOf("Glutes and hams", "Short pull", "Grip"),
+            tags = listOf("Glutes, adductors", "Short pull", "Grip"),
         ),
     )
     put(
@@ -429,7 +429,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA2() {
     put(
         "glute-focused back extension",
         ExerciseWhy(
-            purpose = "Extends the hips over a back extension bench, working the lower back, glutes and hamstrings; the cues favour the glutes.",
+            purpose = "Extends the hips over a back extension bench, working the glutes, hamstrings and lower back; the cues favour the glutes.",
             pickIt = "Pick it for bodyweight hip extension on a bench you may already have; adding load means holding a plate.",
             tags = listOf("Glutes", "Lower back", "Hip extension"),
         ),
@@ -896,7 +896,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
     put(
         "donkey kick",
         ExerciseWhy(
-            purpose = "Kicks one leg up from all fours, working the glutes and outer hips with bodyweight.",
+            purpose = "Kicks one leg up from all fours, working the glutes with bodyweight.",
             pickIt = "Pick it for bodyweight glute isolation; it is light, and cable or machine kickbacks give a load you can adjust.",
             tags = listOf("Glutes", "Bodyweight only", "Isolation"),
         ),
@@ -1016,9 +1016,9 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
     put(
         "banded donkey kick",
         ExerciseWhy(
-            purpose = "Kicks one leg back against a band from all fours, working the glutes and outer hips.",
+            purpose = "Kicks one leg back against a band from all fours, working the glutes.",
             pickIt = "Pick it over the plain donkey kick when that feels easy; the band adds modest resistance, and you can keep it at home.",
-            tags = listOf("Glutes", "Outer hips", "Light kit"),
+            tags = listOf("Glutes", "Hip extension", "Light kit"),
         ),
     )
     put(
@@ -1032,7 +1032,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
     put(
         "banded kickback",
         ExerciseWhy(
-            purpose = "Kicks the leg back against a band anchored at the ankle, working the glutes and outer hips.",
+            purpose = "Kicks the leg back against a band anchored at the ankle, working the glutes.",
             pickIt = "Pick it over the cable kickback when you lack a cable; tension is highest at the end of the stroke, and the load stays light.",
             tags = listOf("Glutes", "Portable", "Isolation"),
         ),
@@ -1168,7 +1168,7 @@ private fun MutableMap<String, ExerciseWhy>.libraryWhysA3() {
     put(
         "bear crawl",
         ExerciseWhy(
-            purpose = "Crawls with the knees hovering, training the abs, hip flexors, shoulders and coordination.",
+            purpose = "Crawls with the knees hovering, training the shoulders, quads, abs and coordination.",
             pickIt = "Pick it for full-body conditioning with no kit; it needs space, and a level back matters more than speed.",
             tags = listOf("Conditioning", "Coordination", "Bodyweight only"),
         ),

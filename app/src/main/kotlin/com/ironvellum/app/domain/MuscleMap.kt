@@ -179,8 +179,12 @@ object MuscleMap {
         "shrimp squat", "dragon squat", "split squat", "bulgarian split squat", "cossack squat", "barbell lunge",
         "walking lunge", "barbell step-up", "dumbbell step-up", "archer pull-up", "archer push-up",
         "one-arm pull-up", "one-arm negative", "one-arm push-up", "one-arm negative push-up", "dumbbell row",
-        "supported pistol squat",
+        "supported pistol squat", "box pistol squat", "elevated pistol squat", "airborne squat",
+        "advanced shrimp squat", "deficit advanced shrimp squat", "cobra squat",
         "side-lying hip abduction", "dumbbell external rotation", "woodchop", "pallof press",
+        // The library's variants of those presses and the one-leg cable and band hip work, which the exact names above miss.
+        "half-kneeling pallof press", "banded pallof press", "banded woodchop", "cable standing hip abduction",
+        "cable standing hip adduction", "banded standing hip abduction", "landmine press", "body leg lift",
     )
 
     private val profiles: Map<String, ExerciseProfile> = buildMap {
@@ -410,7 +414,7 @@ object MuscleMap {
         put("tuck l-sit", lSit(triceps = true))
         // Wider or higher legs load the same compression harder.
         put("straddle l-sit", lSit(triceps = true))
-        put("v-sit", lSit())
+        put("v-sit", lSit(triceps = true))
         // The lever and planche lines. No longitudinal trial measured growth
         // from any of them, so every share is movement anatomy on the 1.0 /
         // 0.5 scale, and a helper is listed only where its joint action is

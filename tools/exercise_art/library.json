@@ -377,16 +377,11 @@
   "profile": {
    "muscles": {
     "LATS": 1.0,
-    "RHOMBOIDS": 0.5,
-    "TRAPS": 0.5,
-    "BICEPS": 0.5,
-    "REAR_DELTS": 0.5,
-    "BRACHIALIS": 0.5,
-    "FOREARMS": 0.5,
-    "ROTATOR_CUFF": 0.5
+    "TRICEPS": 0.25,
+    "ABS": 0.25
    },
-   "pattern": "VERTICAL_PULL",
-   "compound": true,
+   "pattern": "ISOLATION",
+   "compound": false,
    "stretchBias": true,
    "noLead": false
   },
@@ -655,14 +650,12 @@
   "like": "Bench Press",
   "profile": {
    "muscles": {
-    "MID_CHEST": 1.0,
+    "FRONT_DELTS": 1.0,
     "UPPER_CHEST": 0.5,
-    "LOWER_CHEST": 0.5,
-    "FRONT_DELTS": 0.7,
-    "TRICEPS": 0.6,
-    "SIDE_DELTS": 0.3
+    "TRICEPS": 0.5,
+    "SERRATUS": 0.5
    },
-   "pattern": "HORIZONTAL_PUSH",
+   "pattern": "VERTICAL_PUSH",
    "compound": true,
    "stretchBias": true,
    "noLead": false
@@ -734,7 +727,14 @@
   "category": "",
   "weighted": false,
   "loadFactor": 1.0,
-  "gear": [],
+  "gear": [
+   [
+    "DIP_BARS"
+   ],
+   [
+    "RINGS"
+   ]
+  ],
   "tier": 2
  },
  {
@@ -1468,7 +1468,8 @@
     "LOWER_BACK": 0.5,
     "TRAPS": 0.5,
     "FOREARMS": 0.5,
-    "ADDUCTORS": 0.5
+    "ADDUCTORS": 0.5,
+    "QUADS": 0.5
    },
    "pattern": "HINGE",
    "compound": true,
@@ -1586,8 +1587,8 @@
   "like": "Hip Abduction",
   "profile": {
    "muscles": {
-    "ABDUCTORS": 1.0,
-    "GLUTES": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.25
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -1992,8 +1993,8 @@
   "like": "Hip Abduction",
   "profile": {
    "muscles": {
-    "ABDUCTORS": 1.0,
-    "GLUTES": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.25
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -2387,15 +2388,15 @@
    "steps": [],
    "tips": []
   },
-  "like": "Romanian Deadlift",
+  "like": "Sumo Deadlift",
   "profile": {
    "muscles": {
-    "HAMSTRINGS": 1.0,
     "GLUTES": 1.0,
+    "ADDUCTORS": 1.0,
+    "HAMSTRINGS": 0.5,
+    "QUADS": 0.5,
     "LOWER_BACK": 0.5,
-    "TRAPS": 0.5,
-    "FOREARMS": 0.5,
-    "ADDUCTORS": 0.5
+    "FOREARMS": 0.5
    },
    "pattern": "HINGE",
    "compound": true,
@@ -2823,9 +2824,9 @@
   "like": "Back Extension",
   "profile": {
    "muscles": {
-    "LOWER_BACK": 1.0,
-    "GLUTES": 0.5,
-    "HAMSTRINGS": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.5,
+    "LOWER_BACK": 0.5
    },
    "pattern": "HINGE",
    "compound": false,
@@ -3130,7 +3131,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PULL",
@@ -3351,11 +3352,11 @@
    ],
    "tips": []
   },
-  "like": "Bicep Curl",
+  "like": "Hammer Curl",
   "profile": {
    "muscles": {
-    "BICEPS": 1.0,
-    "BRACHIALIS": 0.5,
+    "BRACHIALIS": 1.0,
+    "BICEPS": 0.5,
     "FOREARMS": 0.5
    },
    "pattern": "ISOLATION",
@@ -3581,7 +3582,7 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "BARBELL",
+    "DUMBBELLS",
     "BENCH"
    ]
   ],
@@ -4166,13 +4167,11 @@
    "muscles": {
     "ABS": 1.0,
     "HIP_FLEXORS": 1.0,
-    "OBLIQUES": 0.5,
-    "LATS": 0.5,
-    "FOREARMS": 0.5
+    "OBLIQUES": 0.5
    },
    "pattern": "CORE",
    "compound": false,
-   "stretchBias": true,
+   "stretchBias": false,
    "noLead": false
   },
   "group": "CORE",
@@ -4505,9 +4504,9 @@
   "like": "Push-up",
   "profile": {
    "muscles": {
-    "LOWER_CHEST": 1.0,
     "MID_CHEST": 1.0,
     "UPPER_CHEST": 0.5,
+    "LOWER_CHEST": 0.5,
     "FRONT_DELTS": 0.7,
     "TRICEPS": 0.6,
     "SIDE_DELTS": 0.3,
@@ -4872,20 +4871,15 @@
    "steps": [],
    "tips": []
   },
-  "like": "Push-up",
+  "like": "Plank Shoulder Tap",
   "profile": {
    "muscles": {
-    "MID_CHEST": 1.0,
-    "UPPER_CHEST": 0.5,
-    "LOWER_CHEST": 0.5,
-    "FRONT_DELTS": 0.7,
-    "TRICEPS": 0.6,
-    "SIDE_DELTS": 0.3,
-    "SERRATUS": 0.5
+    "ABS": 1.0,
+    "OBLIQUES": 0.5
    },
-   "pattern": "HORIZONTAL_PUSH",
-   "compound": true,
-   "stretchBias": true,
+   "pattern": "CORE",
+   "compound": false,
+   "stretchBias": false,
    "noLead": false
   },
   "group": "PUSH",
@@ -5799,8 +5793,8 @@
   "like": "Hip Abduction",
   "profile": {
    "muscles": {
-    "ABDUCTORS": 1.0,
-    "GLUTES": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.25
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -6504,8 +6498,8 @@
   "like": "Hip Abduction",
   "profile": {
    "muscles": {
-    "ABDUCTORS": 1.0,
-    "GLUTES": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.25
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -6597,8 +6591,8 @@
   "like": "Hip Abduction",
   "profile": {
    "muscles": {
-    "ABDUCTORS": 1.0,
-    "GLUTES": 0.5
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.25
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -7405,16 +7399,19 @@
    "steps": [],
    "tips": []
   },
-  "like": "Lying Leg Raise",
+  "like": "Mountain Climber",
   "profile": {
    "muscles": {
-    "ABS": 1.0,
-    "HIP_FLEXORS": 1.0
+    "ABS": 0.5,
+    "FRONT_DELTS": 0.5,
+    "QUADS": 0.5,
+    "SERRATUS": 0.5,
+    "TRICEPS": 0.25
    },
    "pattern": "CORE",
    "compound": false,
    "stretchBias": false,
-   "noLead": false
+   "noLead": true
   },
   "group": "CORE",
   "metric": "REPS",
@@ -7453,16 +7450,18 @@
    "steps": [],
    "tips": []
   },
-  "like": "Plank",
+  "like": "Mountain Climber",
   "profile": {
    "muscles": {
-    "ABS": 1.0,
-    "OBLIQUES": 0.5
+    "TRICEPS": 0.5,
+    "GLUTES": 0.5,
+    "REAR_DELTS": 0.5,
+    "ABS": 0.25
    },
    "pattern": "CORE",
    "compound": false,
    "stretchBias": false,
-   "noLead": false
+   "noLead": true
   },
   "group": "CORE",
   "metric": "REPS",
@@ -7552,13 +7551,11 @@
    "muscles": {
     "ABS": 1.0,
     "HIP_FLEXORS": 1.0,
-    "OBLIQUES": 0.5,
-    "LATS": 0.5,
-    "FOREARMS": 0.5
+    "OBLIQUES": 0.5
    },
    "pattern": "CORE",
    "compound": false,
-   "stretchBias": true,
+   "stretchBias": false,
    "noLead": false
   },
   "group": "CORE",
@@ -7600,8 +7597,8 @@
   "like": "Plank",
   "profile": {
    "muscles": {
-    "ABS": 1.0,
-    "OBLIQUES": 0.5
+    "OBLIQUES": 1.0,
+    "ABS": 0.5
    },
    "pattern": "CORE",
    "compound": false,
@@ -9206,7 +9203,11 @@
   "category": "",
   "weighted": false,
   "loadFactor": 1.0,
-  "gear": [],
+  "gear": [
+   [
+    "BENCH"
+   ]
+  ],
   "tier": 1
  },
  {
@@ -10676,7 +10677,8 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "BARBELL"
+    "BARBELL",
+    "BENCH"
    ]
   ],
   "tier": 2
@@ -10742,7 +10744,7 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "BARBELL",
+    "DUMBBELLS",
     "BENCH"
    ]
   ],
@@ -10865,8 +10867,7 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "BARBELL",
-    "BENCH"
+    "BARBELL"
    ]
   ],
   "tier": 2
@@ -11473,8 +11474,7 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "DUMBBELLS",
-    "BENCH"
+    "DUMBBELLS"
    ]
   ],
   "tier": 1
@@ -11514,13 +11514,15 @@
    ],
    "tips": []
   },
-  "like": "Romanian Deadlift",
+  "like": "Deadlift",
   "profile": {
    "muscles": {
     "HAMSTRINGS": 1.0,
     "GLUTES": 1.0,
-    "LOWER_BACK": 0.5,
+    "LOWER_BACK": 1.0,
+    "RHOMBOIDS": 0.5,
     "TRAPS": 0.5,
+    "QUADS": 0.5,
     "FOREARMS": 0.5,
     "ADDUCTORS": 0.5
    },
@@ -11682,13 +11684,15 @@
     "Do not increase the weight on this exercise until you have mastered the correct form."
    ]
   },
-  "like": "Romanian Deadlift",
+  "like": "Deadlift",
   "profile": {
    "muscles": {
     "HAMSTRINGS": 1.0,
     "GLUTES": 1.0,
-    "LOWER_BACK": 0.5,
+    "LOWER_BACK": 1.0,
+    "RHOMBOIDS": 0.5,
     "TRAPS": 0.5,
+    "QUADS": 0.5,
     "FOREARMS": 0.5,
     "ADDUCTORS": 0.5
    },
@@ -11741,18 +11745,18 @@
    ],
    "tips": []
   },
-  "like": "Lying Leg Raise",
+  "like": "Cable Kickback",
   "profile": {
    "muscles": {
-    "ABS": 1.0,
-    "HIP_FLEXORS": 1.0
+    "GLUTES": 1.0,
+    "HAMSTRINGS": 0.5
    },
-   "pattern": "CORE",
+   "pattern": "ISOLATION",
    "compound": false,
    "stretchBias": false,
    "noLead": false
   },
-  "group": "CORE",
+  "group": "LEGS",
   "metric": "REPS",
   "category": "",
   "weighted": false,
@@ -13069,16 +13073,13 @@
    ],
    "tips": []
   },
-  "like": "Back Squat",
+  "like": "Sissy Squat",
   "profile": {
    "muscles": {
-    "QUADS": 1.0,
-    "GLUTES": 1.0,
-    "ADDUCTORS": 0.75,
-    "HAMSTRINGS": 0.0
+    "QUADS": 1.0
    },
-   "pattern": "SQUAT",
-   "compound": true,
+   "pattern": "ISOLATION",
+   "compound": false,
    "stretchBias": true,
    "noLead": false
   },
@@ -13453,12 +13454,9 @@
   "like": "Bench Press",
   "profile": {
    "muscles": {
-    "LOWER_CHEST": 1.0,
-    "MID_CHEST": 1.0,
-    "UPPER_CHEST": 0.5,
-    "FRONT_DELTS": 0.7,
-    "TRICEPS": 0.6,
-    "SIDE_DELTS": 0.3
+    "TRICEPS": 1.0,
+    "LOWER_CHEST": 0.5,
+    "FRONT_DELTS": 0.5
    },
    "pattern": "HORIZONTAL_PUSH",
    "compound": true,
@@ -13688,7 +13686,8 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "BARBELL"
+    "BARBELL",
+    "BENCH"
    ]
   ],
   "tier": 2
@@ -13941,7 +13940,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PUSH",
@@ -13951,7 +13950,8 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "DUMBBELLS"
+    "DUMBBELLS",
+    "BENCH"
    ]
   ],
   "tier": 1
@@ -13994,7 +13994,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PUSH",
@@ -14004,7 +14004,8 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "DUMBBELLS"
+    "DUMBBELLS",
+    "BENCH"
    ]
   ],
   "tier": 1
@@ -14090,19 +14091,16 @@
    ],
    "tips": []
   },
-  "like": "Bench Press",
+  "like": "Close-Grip Bench Press",
   "profile": {
    "muscles": {
-    "LOWER_CHEST": 1.0,
-    "MID_CHEST": 1.0,
-    "UPPER_CHEST": 0.5,
-    "FRONT_DELTS": 0.7,
-    "TRICEPS": 0.6,
-    "SIDE_DELTS": 0.3
+    "TRICEPS": 1.0,
+    "MID_CHEST": 0.5,
+    "FRONT_DELTS": 0.5
    },
    "pattern": "HORIZONTAL_PUSH",
    "compound": true,
-   "stretchBias": true,
+   "stretchBias": false,
    "noLead": false
   },
   "group": "PUSH",
@@ -14372,7 +14370,8 @@
   "loadFactor": 1.0,
   "gear": [
    [
-    "DUMBBELLS"
+    "DUMBBELLS",
+    "BENCH"
    ]
   ],
   "tier": 1
@@ -14679,11 +14678,11 @@
    ],
    "tips": []
   },
-  "like": "Bicep Curl",
+  "like": "Hammer Curl",
   "profile": {
    "muscles": {
-    "BICEPS": 1.0,
-    "BRACHIALIS": 0.5,
+    "BRACHIALIS": 1.0,
+    "BICEPS": 0.5,
     "FOREARMS": 0.5
    },
    "pattern": "ISOLATION",
@@ -14804,7 +14803,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PULL",
@@ -14963,11 +14962,11 @@
    ],
    "tips": []
   },
-  "like": "Bicep Curl",
+  "like": "Hammer Curl",
   "profile": {
    "muscles": {
-    "BICEPS": 1.0,
-    "BRACHIALIS": 0.5,
+    "BRACHIALIS": 1.0,
+    "BICEPS": 0.5,
     "FOREARMS": 0.5
    },
    "pattern": "ISOLATION",
@@ -15311,7 +15310,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PULL",
@@ -15424,7 +15423,7 @@
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PULL",
@@ -15471,16 +15470,16 @@
    ],
    "tips": []
   },
-  "like": "Bicep Curl",
+  "like": "Hammer Curl",
   "profile": {
    "muscles": {
-    "BICEPS": 1.0,
-    "BRACHIALIS": 0.5,
+    "BRACHIALIS": 1.0,
+    "BICEPS": 0.5,
     "FOREARMS": 0.5
    },
    "pattern": "ISOLATION",
    "compound": false,
-   "stretchBias": false,
+   "stretchBias": true,
    "noLead": false
   },
   "group": "PULL",
@@ -15528,12 +15527,12 @@
    ],
    "tips": []
   },
-  "like": "Bicep Curl",
+  "like": "Reverse Curl",
   "profile": {
    "muscles": {
-    "BICEPS": 1.0,
-    "BRACHIALIS": 0.5,
-    "FOREARMS": 0.5
+    "BRACHIALIS": 1.0,
+    "FOREARMS": 1.0,
+    "BICEPS": 0.5
    },
    "pattern": "ISOLATION",
    "compound": false,
@@ -15988,7 +15987,8 @@
     "QUADS": 1.0,
     "GLUTES": 1.0,
     "ADDUCTORS": 0.75,
-    "HAMSTRINGS": 0.0
+    "HAMSTRINGS": 0.0,
+    "BICEPS": 0.5
    },
    "pattern": "SQUAT",
    "compound": true,
@@ -16046,15 +16046,18 @@
    ],
    "tips": []
   },
-  "like": "Romanian Deadlift",
+  "like": "Deadlift",
   "profile": {
    "muscles": {
     "HAMSTRINGS": 1.0,
     "GLUTES": 1.0,
-    "LOWER_BACK": 0.5,
+    "LOWER_BACK": 1.0,
+    "RHOMBOIDS": 0.5,
     "TRAPS": 0.5,
+    "QUADS": 0.5,
     "FOREARMS": 0.5,
-    "ADDUCTORS": 0.5
+    "ADDUCTORS": 0.5,
+    "BICEPS": 0.5
    },
    "pattern": "HINGE",
    "compound": true,
@@ -16174,7 +16177,8 @@
     "GLUTES": 1.0,
     "ADDUCTORS": 0.5,
     "HAMSTRINGS": 0.0,
-    "ABDUCTORS": 0.5
+    "ABDUCTORS": 0.5,
+    "BICEPS": 0.5
    },
    "pattern": "LUNGE",
    "compound": true,
@@ -16241,7 +16245,8 @@
     "GLUTES": 1.0,
     "ADDUCTORS": 0.5,
     "HAMSTRINGS": 0.0,
-    "ABDUCTORS": 0.5
+    "ABDUCTORS": 0.5,
+    "BICEPS": 0.5
    },
    "pattern": "LUNGE",
    "compound": true,
@@ -16308,7 +16313,8 @@
     "GLUTES": 1.0,
     "ADDUCTORS": 0.5,
     "HAMSTRINGS": 0.0,
-    "ABDUCTORS": 0.5
+    "ABDUCTORS": 0.5,
+    "BICEPS": 0.5
    },
    "pattern": "LUNGE",
    "compound": true,
