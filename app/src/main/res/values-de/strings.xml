@@ -4364,6 +4364,15 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Alle</string>
     <string name="infosheet_history_body_missing">Die Schätzung zählt nur das Zusatzgewicht. Erfasse dein Körpergewicht, damit es ebenfalls zählt.</string>
+    <string name="infosheet_why_label">WARUM DIESE ÜBUNG</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="one">%d Training ansehen</item>
+        <item quantity="other">Alle %d Trainings ansehen</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="one">%d Prüfung ansehen</item>
+        <item quantity="other">Alle %d Prüfungen ansehen</item>
+    </plurals>
     <string name="infosheet_last_label">LETZTES TRAINING</string>
     <string name="infosheet_last_label__t">LETZTE PRÜFUNG</string>
     <string name="infosheet_skill_needs">Benötigt zuerst %1$s</string>
@@ -5744,6 +5753,12 @@
         <item quantity="other">%d Tage</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <string name="fatigue_footprint_hint">Tippe auf einen Muskel am Körper oder in der Liste</string>
+    <string name="fatigue_recovery_caption">Erholung %1$s, erste 24 Stunden</string>
+    <string name="fatigue_recovery_pick_hint">Muskel wählen</string>
+    <string name="fatigue_recovery_hours_tick">%1$d Std.</string>
+    <string name="fatigue_recovery_description">Erholung %1$s in den ersten 24 Stunden: %2$s direkt nach den Sätzen, nach etwa %3$s wieder leicht.</string>
+    <string name="fatigue_recovery_description_light">Erholung %1$s in den ersten 24 Stunden: direkt nach den Sätzen nur %2$s.</string>
     <string name="fatigue_footprint_why_title">WARUM SO VIEL ERMÜDUNG BLEIBT</string>
     <string name="fatigue_footprint_why_long">Die Übung belastet den Muskel in gedehnter Position. Das hinterlässt meist mehr Ermüdung als dieselben Sätze in verkürzter Position.</string>
     <string name="fatigue_footprint_why_heavy">Es ist eine schwere Ganzkörperübung: Das Gewicht belastet Wirbelsäule und Beine, sodass dieselben harten Sätze mehr Ermüdung hinterlassen.</string>

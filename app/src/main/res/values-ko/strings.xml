@@ -4104,6 +4104,13 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">전체</string>
     <string name="infosheet_history_body_missing">추정치는 추가 중량만 계산해요. 체중을 기록하면 체중도 포함돼요.</string>
+    <string name="infosheet_why_label">왜 하나요</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="other">운동 %d개 모두 보기</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="other">시련 %d개 모두 보기</item>
+    </plurals>
     <string name="infosheet_last_label">마지막 운동</string>
     <string name="infosheet_last_label__t">마지막 시련</string>
     <string name="infosheet_skill_needs">먼저 필요: %1$s</string>
@@ -5406,6 +5413,12 @@
         <item quantity="other">%d일</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <string name="fatigue_footprint_hint">몸 또는 목록에서 근육을 탭하세요</string>
+    <string name="fatigue_recovery_caption">%1$s 회복, 처음 24시간</string>
+    <string name="fatigue_recovery_pick_hint">근육 선택</string>
+    <string name="fatigue_recovery_hours_tick">%1$d시간</string>
+    <string name="fatigue_recovery_description">%1$s 회복, 처음 24시간: 세트 직후 %2$s, 약 %3$s 후 낮음으로 돌아옵니다.</string>
+    <string name="fatigue_recovery_description_light">%1$s 회복, 처음 24시간: 세트 직후에도 %2$s 수준입니다.</string>
     <string name="fatigue_footprint_why_title">이만큼 피로가 남는 이유</string>
     <string name="fatigue_footprint_why_long">늘어난 상태의 근육에 부하를 주므로 짧아진 상태에서 같은 세트를 하는 것보다 피로가 더 남는 경향이 있어요.</string>
     <string name="fatigue_footprint_why_heavy">고중량 전신 운동이라 척추와 다리에 부하가 전달돼 같은 고강도 세트에도 피로가 더 남아요.</string>

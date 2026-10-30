@@ -4364,6 +4364,15 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Toutes</string>
     <string name="infosheet_history_body_missing">L\'estimation ne compte que la charge ajoutée. Enregistre ton poids pour qu\'elle tienne aussi compte de ton corps.</string>
+    <string name="infosheet_why_label">POURQUOI LA FAIRE</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="one">Voir %d séance</item>
+        <item quantity="other">Voir les %d séances</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="one">Voir %d épreuve</item>
+        <item quantity="other">Voir les %d épreuves</item>
+    </plurals>
     <string name="infosheet_last_label">DERNIÈRE SÉANCE</string>
     <string name="infosheet_last_label__t">DERNIÈRE ÉPREUVE</string>
     <string name="infosheet_skill_needs">Nécessite d\'abord %1$s</string>
@@ -5744,6 +5753,12 @@
         <item quantity="other">%d jours</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s : %2$s</string>
+    <string name="fatigue_footprint_hint">Touchez un muscle sur le corps ou dans la liste</string>
+    <string name="fatigue_recovery_caption">Récupération de %1$s, 24 premières heures</string>
+    <string name="fatigue_recovery_pick_hint">Choisir un muscle</string>
+    <string name="fatigue_recovery_hours_tick">%1$d h</string>
+    <string name="fatigue_recovery_description">Récupération de %1$s sur les 24 premières heures : %2$s juste après les séries, de nouveau légère après environ %3$s.</string>
+    <string name="fatigue_recovery_description_light">Récupération de %1$s sur les 24 premières heures : seulement %2$s juste après les séries.</string>
     <string name="fatigue_footprint_why_title">POURQUOI CETTE FATIGUE ?</string>
     <string name="fatigue_footprint_why_long">Il sollicite le muscle en position étirée, ce qui tend à laisser plus de fatigue que les mêmes séries en position raccourcie.</string>
     <string name="fatigue_footprint_why_heavy">Cet exercice lourd sollicite tout le corps : la charge passe par la colonne et les jambes, donc les mêmes séries difficiles laissent plus de fatigue.</string>

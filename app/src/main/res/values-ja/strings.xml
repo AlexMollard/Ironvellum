@@ -4104,6 +4104,13 @@
     <string name="infosheet_history_row_description">%1$s、%2$s。 %3$s</string>
     <string name="infosheet_history_variation_all">すべて</string>
     <string name="infosheet_history_body_missing">推定では、追加された負荷のみがカウントされます。体重を記録すると、あなたの体もカウントされます。</string>
+    <string name="infosheet_why_label">なぜやるのか</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="other">%d件のトレーニングをすべて見る</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="other">%d件の試練をすべて見る</item>
+    </plurals>
     <string name="infosheet_last_label">最後のトレーニング</string>
     <string name="infosheet_last_label__t">最後の試練</string>
     <string name="infosheet_skill_needs">最初に %1$s が必要です</string>
@@ -5406,6 +5413,12 @@
         <item quantity="other">%d日</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s：%2$s</string>
+    <string name="fatigue_footprint_hint">体の図かリストで筋肉をタップ</string>
+    <string name="fatigue_recovery_caption">%1$sの回復、最初の24時間</string>
+    <string name="fatigue_recovery_pick_hint">筋肉を選ぶ</string>
+    <string name="fatigue_recovery_hours_tick">%1$d時間</string>
+    <string name="fatigue_recovery_description">%1$sの最初の24時間の回復：セット直後は%2$s、約%3$sで軽度に戻ります。</string>
+    <string name="fatigue_recovery_description_light">%1$sの最初の24時間の回復：セット直後でも%2$sにとどまります。</string>
     <string name="fatigue_footprint_why_title">これだけの疲労が残る理由</string>
     <string name="fatigue_footprint_why_long">筋肉を伸ばした状態で負荷をかけるため、短縮した状態で同じセットを行うより疲労が残りやすくなります。</string>
     <string name="fatigue_footprint_why_heavy">全身を使う高重量の種目です。背骨と脚に負荷がかかるため、同じ高強度のセットでも疲労が多く残ります。</string>

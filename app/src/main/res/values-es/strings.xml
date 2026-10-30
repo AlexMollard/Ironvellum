@@ -4364,6 +4364,15 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Todas</string>
     <string name="infosheet_history_body_missing">La estimación solo cuenta la carga añadida. Registra tu peso corporal para que también lo incluya.</string>
+    <string name="infosheet_why_label">POR QUÉ HACERLO</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="one">Ver %d entrenamiento</item>
+        <item quantity="other">Ver los %d entrenamientos</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="one">Ver %d prueba</item>
+        <item quantity="other">Ver las %d pruebas</item>
+    </plurals>
     <string name="infosheet_last_label">ÚLTIMO ENTRENAMIENTO</string>
     <string name="infosheet_last_label__t">ÚLTIMA PRUEBA</string>
     <string name="infosheet_skill_needs">Requiere %1$s primero</string>
@@ -5744,6 +5753,12 @@
         <item quantity="other">%d días</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <string name="fatigue_footprint_hint">Toca un músculo en el cuerpo o en la lista</string>
+    <string name="fatigue_recovery_caption">Recuperación de %1$s, primeras 24 horas</string>
+    <string name="fatigue_recovery_pick_hint">Elegir un músculo</string>
+    <string name="fatigue_recovery_hours_tick">%1$d h</string>
+    <string name="fatigue_recovery_description">Recuperación de %1$s en las primeras 24 horas: nivel %2$s justo después de las series; vuelve a ligera tras unas %3$s.</string>
+    <string name="fatigue_recovery_description_light">Recuperación de %1$s en las primeras 24 horas: solo nivel %2$s justo después de las series.</string>
     <string name="fatigue_footprint_why_title">POR QUÉ DEJA ESTA FATIGA</string>
     <string name="fatigue_footprint_why_long">Carga el músculo en posición estirada, lo que suele dejar más fatiga que las mismas series en posición acortada.</string>
     <string name="fatigue_footprint_why_heavy">Es un ejercicio pesado de cuerpo entero: la carga pasa por la columna y las piernas, así que las mismas series exigentes dejan más fatiga.</string>

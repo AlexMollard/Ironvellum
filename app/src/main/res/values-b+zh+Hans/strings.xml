@@ -4104,6 +4104,13 @@
     <string name="infosheet_history_row_description">%1$s，%2$s。%3$s</string>
     <string name="infosheet_history_variation_all">全部</string>
     <string name="infosheet_history_body_missing">估算目前只计算额外负重。记录体重后，也会计入自身重量。</string>
+    <string name="infosheet_why_label">为什么要练</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="other">查看全部 %d 次训练</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="other">查看全部 %d 场试炼</item>
+    </plurals>
     <string name="infosheet_last_label">上次训练</string>
     <string name="infosheet_last_label__t">上次试炼</string>
     <string name="infosheet_skill_needs">需先掌握 %1$s</string>
@@ -5406,6 +5413,12 @@
         <item quantity="other">%d 天</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s：%2$s</string>
+    <string name="fatigue_footprint_hint">点按身体图或列表中的肌肉</string>
+    <string name="fatigue_recovery_caption">%1$s恢复，前 24 小时</string>
+    <string name="fatigue_recovery_pick_hint">选择肌肉</string>
+    <string name="fatigue_recovery_hours_tick">%1$d 小时</string>
+    <string name="fatigue_recovery_description">%1$s前 24 小时的恢复：组后即为%2$s，约 %3$s 后回到轻度。</string>
+    <string name="fatigue_recovery_description_light">%1$s前 24 小时的恢复：组后仅为%2$s。</string>
     <string name="fatigue_footprint_why_title">为何留下这么多疲劳</string>
     <string name="fatigue_footprint_why_long">这个动作在肌肉伸展时施加负荷，比起同样组数的短肌长训练，通常会留下更多疲劳。</string>
     <string name="fatigue_footprint_why_heavy">这是大重量全身动作：负荷经过脊柱和腿部，因此相同有效组数会留下更多疲劳。</string>

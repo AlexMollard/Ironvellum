@@ -4364,6 +4364,15 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Todas</string>
     <string name="infosheet_history_body_missing">A estimativa considera apenas a carga adicionada. Registre seu peso corporal para incluí-lo também.</string>
+    <string name="infosheet_why_label">POR QUE FAZER</string>
+    <plurals name="infosheet_history_see_all">
+        <item quantity="one">Ver %d treino</item>
+        <item quantity="other">Ver todos os %d treinos</item>
+    </plurals>
+    <plurals name="infosheet_history_see_all__t">
+        <item quantity="one">Ver %d prova</item>
+        <item quantity="other">Ver todas as %d provas</item>
+    </plurals>
     <string name="infosheet_last_label">ÚLTIMO TREINO</string>
     <string name="infosheet_last_label__t">ÚLTIMA PROVA</string>
     <string name="infosheet_skill_needs">Precisa de %1$s primeiro</string>
@@ -5744,6 +5753,12 @@
         <item quantity="other">%d dias</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
+    <string name="fatigue_footprint_hint">Toque em um músculo no corpo ou na lista</string>
+    <string name="fatigue_recovery_caption">Recuperação de %1$s, primeiras 24 horas</string>
+    <string name="fatigue_recovery_pick_hint">Escolher um músculo</string>
+    <string name="fatigue_recovery_hours_tick">%1$d h</string>
+    <string name="fatigue_recovery_description">Recuperação de %1$s nas primeiras 24 horas: %2$s logo após as séries, volta a leve após cerca de %3$s.</string>
+    <string name="fatigue_recovery_description_light">Recuperação de %1$s nas primeiras 24 horas: apenas %2$s logo após as séries.</string>
     <string name="fatigue_footprint_why_title">POR QUE DEIXA ESSA FADIGA</string>
     <string name="fatigue_footprint_why_long">Aplica carga ao músculo alongado, o que tende a deixar mais fadiga que as mesmas séries com o músculo encurtado.</string>
     <string name="fatigue_footprint_why_heavy">É um exercício pesado de corpo inteiro: a carga passa pela coluna e pelas pernas, então as mesmas séries difíceis deixam mais fadiga.</string>
