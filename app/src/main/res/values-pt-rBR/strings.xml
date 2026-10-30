@@ -446,8 +446,8 @@
     <string name="narration_respite__t">O Registro repousa sua pena.</string>
     <string name="narration_respite_streak">Nada planejado para hoje. Sua sequência continua.</string>
     <string name="narration_respite_streak__t">O Registro repousa sua pena. Seu juramento permanece.</string>
-    <string name="narration_no_cycle">Você ainda não tem plano semanal. Crie um e suas rotinas aparecerão aqui.</string>
-    <string name="narration_no_cycle__t">Seu ciclo ainda não foi escrito. Forje um e seus ritos aparecerão aqui.</string>
+    <string name="narration_no_cycle">Crie um plano semanal e suas rotinas aparecerão aqui.</string>
+    <string name="narration_no_cycle__t">Forje um ciclo e seus ritos aparecerão aqui.</string>
     <plurals name="narration_begin_streak">
         <item quantity="one">Comece quando quiser. Sua sequência é de %1$d dia.</item>
         <item quantity="other">Comece quando quiser. Sua sequência é de %1$d dias.</item>
@@ -655,7 +655,7 @@
     <string name="widget_duration_hm">%1$dh %2$dm</string>
     <string name="widget_duration_m">%1$dm</string>
     <string name="widget_preview_title">EMPURRAR</string>
-    <string name="widget_preview_meta">5 exercícios · 18 séries · cerca de 45 min</string>
+    <string name="widget_preview_meta">5 exercícios · 18 séries · ~45 min</string>
     <string name="widget_preview_compact_meta">4 · 18 séries</string>
     <string name="widget_preview_streak_caption">dias em sequência</string>
     <string name="widget_preview_week_meta">Hoje · 18 séries</string>
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SÉRIE</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · cerca de %3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercício</item>
         <item quantity="other">%1$d exercícios</item>
@@ -5724,7 +5724,7 @@
     <string name="fatigue_plan_unchanged">A fadiga é uma dica, nunca um impedimento. Nada no seu plano mudou.</string>
     <string name="fatigue_plan_unchanged__t">A fadiga é um sinal, não uma barreira. Seu ciclo permanece intacto.</string>
     <string name="infosheet_page_fatigue">Fadiga</string>
-    <string name="fatigue_footprint_title">Impacto de fadiga · estimativa</string>
+    <string name="fatigue_footprint_title">IMPACTO DE FADIGA · ESTIMATIVA</string>
     <string name="fatigue_footprint_where">Onde fica a fadiga</string>
     <string name="fatigue_band_strong">Forte</string>
     <string name="fatigue_band_medium">Médio</string>
@@ -5732,8 +5732,8 @@
     <string name="fatigue_tag_stretch_heavy">Ênfase no alongamento</string>
     <string name="fatigue_tag_heavy_whole_body">Corpo inteiro pesado</string>
     <string name="fatigue_footprint_typical_head">Três séries difíceis, uma rep na reserva</string>
-    <string name="fatigue_footprint_typical">Normalmente %1$s %2$s, voltando a leve em cerca de %3$s.</string>
-    <string name="fatigue_footprint_typical_short">Normalmente %1$s %2$s.</string>
+    <string name="fatigue_footprint_typical">Resultado típico: %1$s %2$s, voltando a leve em cerca de %3$s.</string>
+    <string name="fatigue_footprint_typical_short">Resultado típico: %1$s %2$s.</string>
     <string name="fatigue_footprint_typical_note">Menos se parar com três ou mais reps na reserva. Mais na primeira vez ou após três semanas sem fazê-lo.</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="one">%d hora</item>
@@ -5744,7 +5744,7 @@
         <item quantity="other">%d dias</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
-    <string name="fatigue_footprint_why_title">Por que deixa essa fadiga</string>
+    <string name="fatigue_footprint_why_title">POR QUE DEIXA ESSA FADIGA</string>
     <string name="fatigue_footprint_why_long">Aplica carga ao músculo alongado, o que tende a deixar mais fadiga que as mesmas séries com o músculo encurtado.</string>
     <string name="fatigue_footprint_why_heavy">É um exercício pesado de corpo inteiro: a carga passa pela coluna e pelas pernas, então as mesmas séries difíceis deixam mais fadiga.</string>
     <string name="fatigue_footprint_why_both">Aplica carga ao músculo alongado e é um exercício pesado de corpo inteiro, então as mesmas séries difíceis deixam mais fadiga que a maioria.</string>
@@ -5893,6 +5893,7 @@
     <string name="photos_pose_back">Costas</string>
     <string name="photos_slot_description">Foto de %1$s, esta semana</string>
     <string name="photos_slot_add_description">Adicionar foto de %1$s</string>
+    <string name="photos_slot_add_label">Adicionar</string>
     <string name="photos_slot_change_description">Trocar foto de %1$s</string>
     <string name="photos_day_label">Dia das poses</string>
     <string name="photos_day_row">Dia das poses: %1$s</string>

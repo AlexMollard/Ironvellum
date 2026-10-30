@@ -379,7 +379,10 @@ private fun PoseSlot(pose: Pose, file: File?, busy: Boolean, height: Dp, modifie
             PhotoFrame(file, stringResource(R.string.photos_slot_description, label), height = height, scale = ContentScale.Crop)
         } else {
             EmptyField(height, null) {
-                Icon(Icons.Outlined.AddAPhoto, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(28.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.AddAPhoto, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(28.dp))
+                    Text(stringResource(R.string.photos_slot_add_label), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 4.dp))
+                }
             }
         }
         Text(

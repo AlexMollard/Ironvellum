@@ -446,8 +446,8 @@
     <string name="narration_respite__t">Das Archiv legt die Feder nieder.</string>
     <string name="narration_respite_streak">Heute ist nichts geplant. Deine Serie bleibt bestehen.</string>
     <string name="narration_respite_streak__t">Das Archiv legt die Feder nieder. Dein Eid besteht fort.</string>
-    <string name="narration_no_cycle">Du hast noch keinen Wochenplan. Erstelle einen, dann erscheinen seine Routinen hier.</string>
-    <string name="narration_no_cycle__t">Dein Zyklus ist ungeschrieben. Schmiede einen, dann erscheinen seine Riten hier.</string>
+    <string name="narration_no_cycle">Erstelle einen Wochenplan, dann erscheinen seine Routinen hier.</string>
+    <string name="narration_no_cycle__t">Schmiede einen Zyklus, dann erscheinen seine Riten hier.</string>
     <plurals name="narration_begin_streak">
         <item quantity="one">Bereit, wenn du es bist. Deine Serie hält seit %1$d Tag.</item>
         <item quantity="other">Bereit, wenn du es bist. Deine Serie hält seit %1$d Tagen.</item>
@@ -655,7 +655,7 @@
     <string name="widget_duration_hm">%1$dh %2$dm</string>
     <string name="widget_duration_m">%1$dm</string>
     <string name="widget_preview_title">PUSH</string>
-    <string name="widget_preview_meta">5 Übungen · 18 Sätze · etwa 45 Min.</string>
+    <string name="widget_preview_meta">5 Übungen · 18 Sätze · ~45 min</string>
     <string name="widget_preview_compact_meta">4 · 18 Sätze</string>
     <string name="widget_preview_streak_caption">Tage-Serie</string>
     <string name="widget_preview_week_meta">Heute · 18 Sätze</string>
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SATZ</item>
         <item quantity="other">%1$d SÄTZE</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · etwa %3$d Min.</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d Übung</item>
         <item quantity="other">%1$d Übungen</item>
@@ -5724,7 +5724,7 @@
     <string name="fatigue_plan_unchanged">Ermüdung ist ein Hinweis, keine Sperre. Dein Plan bleibt unverändert.</string>
     <string name="fatigue_plan_unchanged__t">Ermüdung ist ein Hinweis, keine Fessel. Dein Zyklus bleibt unberührt.</string>
     <string name="infosheet_page_fatigue">Ermüdung</string>
-    <string name="fatigue_footprint_title">Ermüdungsprofil · Schätzung</string>
+    <string name="fatigue_footprint_title">ERMÜDUNGSPROFIL · SCHÄTZUNG</string>
     <string name="fatigue_footprint_where">Wo die Ermüdung entsteht</string>
     <string name="fatigue_band_strong">Stark</string>
     <string name="fatigue_band_medium">Mittel</string>
@@ -5732,8 +5732,8 @@
     <string name="fatigue_tag_stretch_heavy">Starke Dehnung</string>
     <string name="fatigue_tag_heavy_whole_body">Schwere Ganzkörperübung</string>
     <string name="fatigue_footprint_typical_head">Drei harte Sätze, eine Wdh. in Reserve</string>
-    <string name="fatigue_footprint_typical">Typisch %1$s %2$s, nach etwa %3$s wieder leicht.</string>
-    <string name="fatigue_footprint_typical_short">Typisch %1$s %2$s.</string>
+    <string name="fatigue_footprint_typical">Typisches Ergebnis: %1$s %2$s, nach etwa %3$s wieder leicht.</string>
+    <string name="fatigue_footprint_typical_short">Typisches Ergebnis: %1$s %2$s.</string>
     <string name="fatigue_footprint_typical_note">Weniger, wenn du drei oder mehr Wdh. vorher stoppst. Mehr beim ersten Mal oder nach drei Wochen Pause.</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="one">%d Stunde</item>
@@ -5744,7 +5744,7 @@
         <item quantity="other">%d Tage</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
-    <string name="fatigue_footprint_why_title">Warum so viel Ermüdung bleibt</string>
+    <string name="fatigue_footprint_why_title">WARUM SO VIEL ERMÜDUNG BLEIBT</string>
     <string name="fatigue_footprint_why_long">Die Übung belastet den Muskel in gedehnter Position. Das hinterlässt meist mehr Ermüdung als dieselben Sätze in verkürzter Position.</string>
     <string name="fatigue_footprint_why_heavy">Es ist eine schwere Ganzkörperübung: Das Gewicht belastet Wirbelsäule und Beine, sodass dieselben harten Sätze mehr Ermüdung hinterlassen.</string>
     <string name="fatigue_footprint_why_both">Sie belastet den Muskel in gedehnter Position und ist eine schwere Ganzkörperübung. Daher hinterlassen dieselben harten Sätze mehr Ermüdung als die meisten.</string>
@@ -5893,6 +5893,7 @@
     <string name="photos_pose_back">Hinten</string>
     <string name="photos_slot_description">%1$s-Foto, diese Woche</string>
     <string name="photos_slot_add_description">%1$s-Foto hinzufügen</string>
+    <string name="photos_slot_add_label">Hinzufügen</string>
     <string name="photos_slot_change_description">%1$s-Foto ändern</string>
     <string name="photos_day_label">Posentag</string>
     <string name="photos_day_row">Posentag: %1$s</string>

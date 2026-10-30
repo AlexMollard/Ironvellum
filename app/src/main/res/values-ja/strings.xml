@@ -446,8 +446,8 @@
     <string name="narration_respite__t">台帳は筆を休めます。</string>
     <string name="narration_respite_streak">今日は予定がありません。ストリークは継続中です。</string>
     <string name="narration_respite_streak__t">台帳は筆を休めます。誓いは続きます。</string>
-    <string name="narration_no_cycle">ウィークリープランがまだありません。作成するとルーチンがここに表示されます。</string>
-    <string name="narration_no_cycle__t">周期はまだ記されていません。鍛えれば儀礼がここに並びます。</string>
+    <string name="narration_no_cycle">ウィークリープランを作成すると、ルーチンがここに表示されます。</string>
+    <string name="narration_no_cycle__t">周期を鍛えれば、儀礼がここに並びます。</string>
     <plurals name="narration_begin_streak">
         <item quantity="other">準備ができたら始めましょう。ストリークは%1$d日です。</item>
     </plurals>
@@ -5396,8 +5396,8 @@
     <string name="fatigue_tag_stretch_heavy">伸長時の負荷が大きい</string>
     <string name="fatigue_tag_heavy_whole_body">全身への高重量負荷</string>
     <string name="fatigue_footprint_typical_head">高強度3セット、残り1レップ</string>
-    <string name="fatigue_footprint_typical">通常は%1$s %2$s、約%3$sで軽度まで回復します。</string>
-    <string name="fatigue_footprint_typical_short">通常は%1$s %2$sです。</string>
+    <string name="fatigue_footprint_typical">通常の結果：%1$s %2$s。約%3$sで軽度まで回復します。</string>
+    <string name="fatigue_footprint_typical_short">通常の結果：%1$s %2$s。</string>
     <string name="fatigue_footprint_typical_note">あと3レップ以上できる状態で終えると疲労は少なくなります。初めて行う場合や3週間空けた後は多くなります。</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="other">%d時間</item>
@@ -5543,6 +5543,7 @@
     <string name="photos_pose_back">背面</string>
     <string name="photos_slot_description">今週の%1$sの写真</string>
     <string name="photos_slot_add_description">%1$sの写真を追加</string>
+    <string name="photos_slot_add_label">追加</string>
     <string name="photos_slot_change_description">%1$sの写真を変更</string>
     <string name="photos_day_label">撮影日</string>
     <string name="photos_day_row">撮影日：%1$s</string>

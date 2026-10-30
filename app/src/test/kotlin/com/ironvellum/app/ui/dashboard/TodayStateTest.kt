@@ -377,7 +377,7 @@ class TodayStateTest {
             assertEquals("Planned for this day.", narratorLine(DayKind.PLANNED))
             assertEquals("Nothing planned today. Your streak holds.", narratorLine(DayKind.RESPITE, daysKept = 4))
             assertEquals("Nothing planned today. Recover well.", narratorLine(DayKind.RESPITE))
-            assertEquals("You have no weekly plan yet. Build one and its routines land here.", narratorLine(DayKind.NO_CYCLE))
+            assertEquals("Build a weekly plan and its routines will land here.", narratorLine(DayKind.NO_CYCLE))
             val lines = DayKind.entries.flatMap { kind -> listOf(narratorLine(kind), narratorLine(kind, 3, 10, 2), narratorLine(kind, 10, 10, 1)) }
             assertEquals(emptyList<String>(), lines.filter { line -> com.ironvellum.app.THEMED_WORDS.any { it.containsMatchIn(line) } })
         } finally {

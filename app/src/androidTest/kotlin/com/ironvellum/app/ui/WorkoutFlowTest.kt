@@ -229,7 +229,7 @@ class WorkoutFlowTest {
         return line.substringBefore('/').trim().toInt()
     }
 
-    /** The day card's plan line, "5 exercises · 19 sets · about 54 min": a scheduled rite is showing. */
+    /** The day card's plan line, "5 exercises · 19 sets · ~54 min": a scheduled rite is showing. */
     private fun isQuestCard(label: String): Boolean = label.contains(" sets · about ", ignoreCase = true)
 
     /** Polls until some string matches, and returns it. */

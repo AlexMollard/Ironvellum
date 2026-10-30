@@ -446,8 +446,8 @@
     <string name="narration_respite__t">Le Registre repose sa plume.</string>
     <string name="narration_respite_streak">Rien de prévu aujourd’hui. Ta série continue.</string>
     <string name="narration_respite_streak__t">Le Registre repose sa plume. Ton serment tient bon.</string>
-    <string name="narration_no_cycle">Tu n’as pas encore de plan hebdo. Crées-en un pour voir ses routines ici.</string>
-    <string name="narration_no_cycle__t">Ton cycle reste à écrire. Forges-en un et ses rites apparaîtront ici.</string>
+    <string name="narration_no_cycle">Crée un plan hebdo et ses routines apparaîtront ici.</string>
+    <string name="narration_no_cycle__t">Forge un cycle et ses rites apparaîtront ici.</string>
     <plurals name="narration_begin_streak">
         <item quantity="one">Prêt quand tu veux. Ta série dure depuis %1$d jour.</item>
         <item quantity="other">Prêt quand tu veux. Ta série dure depuis %1$d jours.</item>
@@ -655,7 +655,7 @@
     <string name="widget_duration_hm">%1$dh %2$dm</string>
     <string name="widget_duration_m">%1$dm</string>
     <string name="widget_preview_title">POUSSÉE</string>
-    <string name="widget_preview_meta">5 exercices · 18 séries · environ 45 min</string>
+    <string name="widget_preview_meta">5 exercices · 18 séries · ~45 min</string>
     <string name="widget_preview_compact_meta">4 · 18 séries</string>
     <string name="widget_preview_streak_caption">jours de série</string>
     <string name="widget_preview_week_meta">Aujourd’hui · 18 séries</string>
@@ -2829,7 +2829,7 @@
         <item quantity="one">%1$d SÉRIE</item>
         <item quantity="other">%1$d SÉRIES</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · environ %3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercice</item>
         <item quantity="other">%1$d exercices</item>
@@ -5724,7 +5724,7 @@
     <string name="fatigue_plan_unchanged">La fatigue est un repère, jamais un blocage. Rien n\'a changé dans ton plan.</string>
     <string name="fatigue_plan_unchanged__t">La fatigue est un repère, jamais un blocage. Rien n\'a changé dans ton cycle.</string>
     <string name="infosheet_page_fatigue">Fatigue</string>
-    <string name="fatigue_footprint_title">Empreinte de fatigue · estimation</string>
+    <string name="fatigue_footprint_title">EMPREINTE DE FATIGUE · ESTIMATION</string>
     <string name="fatigue_footprint_where">Où se concentre la fatigue</string>
     <string name="fatigue_band_strong">Forte</string>
     <string name="fatigue_band_medium">Moyenne</string>
@@ -5744,7 +5744,7 @@
         <item quantity="other">%d jours</item>
     </plurals>
     <string name="fatigue_footprint_muscle_line">%1$s : %2$s</string>
-    <string name="fatigue_footprint_why_title">Pourquoi cette fatigue ?</string>
+    <string name="fatigue_footprint_why_title">POURQUOI CETTE FATIGUE ?</string>
     <string name="fatigue_footprint_why_long">Il sollicite le muscle en position étirée, ce qui tend à laisser plus de fatigue que les mêmes séries en position raccourcie.</string>
     <string name="fatigue_footprint_why_heavy">Cet exercice lourd sollicite tout le corps : la charge passe par la colonne et les jambes, donc les mêmes séries difficiles laissent plus de fatigue.</string>
     <string name="fatigue_footprint_why_both">Il sollicite le muscle en position étirée et impose une charge lourde à tout le corps : les mêmes séries difficiles laissent donc plus de fatigue que la plupart des exercices.</string>
@@ -5893,6 +5893,7 @@
     <string name="photos_pose_back">Dos</string>
     <string name="photos_slot_description">Photo %1$s, cette semaine</string>
     <string name="photos_slot_add_description">Ajouter la photo %1$s</string>
+    <string name="photos_slot_add_label">Ajouter</string>
     <string name="photos_slot_change_description">Changer la photo %1$s</string>
     <string name="photos_day_label">Jour des poses</string>
     <string name="photos_day_row">Jour des poses : %1$s</string>

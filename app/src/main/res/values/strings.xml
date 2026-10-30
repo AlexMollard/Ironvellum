@@ -529,8 +529,8 @@
     <string name="narration_respite__t">The Ledger rests its pen.</string>
     <string name="narration_respite_streak">Nothing planned today. Your streak holds.</string>
     <string name="narration_respite_streak__t">The Ledger rests its pen. Your oath holds.</string>
-    <string name="narration_no_cycle">You have no weekly plan yet. Build one and its routines land here.</string>
-    <string name="narration_no_cycle__t">Your cycle is unwritten. Forge one and its rites land here.</string>
+    <string name="narration_no_cycle">Build a weekly plan and its routines will land here.</string>
+    <string name="narration_no_cycle__t">Forge a cycle and its rites will land here.</string>
     <!-- Today, nothing started: %1$d is the current streak in days. The themed twin is a quiet, literary line. -->
     <plurals name="narration_begin_streak"><item quantity="one">Ready when you are. Your streak is %1$d day.</item><item quantity="other">Ready when you are. Your streak is %1$d days.</item></plurals>
     <!-- Themed wording of narration_begin_streak. Today, nothing started: %1$d is the current streak in days. The themed twin is a quiet, literary line. -->
@@ -736,7 +736,7 @@
 
     <!-- Widget picker preview and layout placeholders: shown only as a sample, the app redraws every face. -->
     <string name="widget_preview_title">PUSH</string>
-    <string name="widget_preview_meta">5 exercises · 18 sets · about 45 min</string>
+    <string name="widget_preview_meta">5 exercises · 18 sets · ~45 min</string>
     <string name="widget_preview_compact_meta">4 · 18 sets</string>
     <string name="widget_preview_streak_caption">day streak</string>
     <string name="widget_preview_week_meta">Today · 18 sets</string>
@@ -3214,7 +3214,7 @@
         <item quantity="other">%1$d SETS</item>
     </plurals>
     <!-- Today's card: the plan line read as a sentence, in lower case. %1$s the exercise count, %2$s the set count, %3$d the estimated minutes. -->
-    <string name="session_plan_line_sentence">%1$s · %2$s · about %3$d min</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d min</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="one">%1$d exercise</item>
         <item quantity="other">%1$d exercises</item>
@@ -6880,7 +6880,7 @@
 
     <!-- Exercise info sheet: the fourth page, an exercise's fatigue footprint. -->
     <string name="infosheet_page_fatigue">Fatigue</string>
-    <string name="fatigue_footprint_title">Fatigue footprint · estimate</string>
+    <string name="fatigue_footprint_title">FATIGUE FOOTPRINT · ESTIMATE</string>
     <string name="fatigue_footprint_where">Where the fatigue lands</string>
     <string name="fatigue_band_strong">Strong</string>
     <string name="fatigue_band_medium">Medium</string>
@@ -6890,9 +6890,9 @@
     <!-- The footprint is worked out for three hard sets at one rep left (FatigueTuning.FOOTPRINT_SETS, FOOTPRINT_RIR): change the words with the constants. -->
     <string name="fatigue_footprint_typical_head">Three hard sets, one rep left</string>
     <!-- %1$s the lead muscle, %2$s its level in lower case, %3$s a duration such as "13 hours" or "3 days". -->
-    <string name="fatigue_footprint_typical">Typically %1$s %2$s, back to light in about %3$s.</string>
+    <string name="fatigue_footprint_typical">Typical result: %1$s %2$s, back to light in about %3$s.</string>
     <!-- %1$s the lead muscle, %2$s its level in lower case. -->
-    <string name="fatigue_footprint_typical_short">Typically %1$s %2$s.</string>
+    <string name="fatigue_footprint_typical_short">Typical result: %1$s %2$s.</string>
     <string name="fatigue_footprint_typical_note">Less if you stop three or more reps short. More the first time you do it, or after three weeks off it.</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="one">%d hour</item>
@@ -6904,7 +6904,7 @@
     </plurals>
     <!-- %1$s a muscle, %2$s its band (Strong, Medium or Light). Read by a screen reader for one muscle of the footprint figure. -->
     <string name="fatigue_footprint_muscle_line">%1$s: %2$s</string>
-    <string name="fatigue_footprint_why_title">Why it leaves this much behind</string>
+    <string name="fatigue_footprint_why_title">WHY IT LEAVES THIS MUCH BEHIND</string>
     <string name="fatigue_footprint_why_long">It loads the muscle while it is long and stretched, which tends to leave more behind than the same sets worked short.</string>
     <string name="fatigue_footprint_why_heavy">It is a heavy whole-body lift: the load runs through the spine and the legs, so the same hard sets leave more behind.</string>
     <string name="fatigue_footprint_why_both">It loads the muscle while it is long and stretched, and it is a heavy whole-body lift, so the same hard sets leave more behind than most.</string>
@@ -7009,8 +7009,9 @@
     <string name="picker_row_tired">%1$s %2$s</string>
     <string name="picker_fatigue_note">Fresh muscles first · from your fatigue right now</string>
     <string name="fatigue_rest_title">Most of today\'s muscles are still High</string>
-    <!-- %1$s a muscle name, %2$s when it is fresh: "Quads Wed". -->
+    <!-- %1$s muscle names, %2$s their level: "Quads Very high". The same shape as fatigue_rest_fresh_item, a separate string so a language can word each one alone. -->
     <string name="fatigue_rest_level_item">%1$s %2$s</string>
+    <!-- %1$s a muscle name in lower case, %2$s when it is fresh: "quads Wed". -->
     <string name="fatigue_rest_fresh_item">%1$s %2$s</string>
     <string name="fatigue_rest_fresh_line">Fresh by %1$s</string>
     <string name="fatigue_fresh_word_today">later today</string>
@@ -7060,6 +7061,7 @@
     <string name="photos_pose_back">Back</string>
     <string name="photos_slot_description">%1$s photo, this week</string>
     <string name="photos_slot_add_description">Add the %1$s photo</string>
+    <string name="photos_slot_add_label">Add</string>
     <string name="photos_slot_change_description">Change the %1$s photo</string>
     <string name="photos_day_label">Pose day</string>
     <string name="photos_day_row">Pose day: %1$s</string>

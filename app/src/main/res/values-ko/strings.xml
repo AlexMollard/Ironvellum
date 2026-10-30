@@ -446,8 +446,8 @@
     <string name="narration_respite__t">대장이 펜을 내려놓아요.</string>
     <string name="narration_respite_streak">오늘은 계획이 없어요. 연속 기록은 유지돼요.</string>
     <string name="narration_respite_streak__t">대장이 펜을 내려놓아요. 서약은 이어져요.</string>
-    <string name="narration_no_cycle">아직 주간 계획이 없어요. 계획을 만들면 그 루틴이 여기에 표시돼요.</string>
-    <string name="narration_no_cycle__t">주기가 아직 쓰이지 않았어요. 주기를 단조하면 그 의식이 여기에 나타나요.</string>
+    <string name="narration_no_cycle">주간 계획을 만들면 그 루틴이 여기에 표시돼요.</string>
+    <string name="narration_no_cycle__t">주기를 단조하면 그 의식이 여기에 나타나요.</string>
     <plurals name="narration_begin_streak">
         <item quantity="other">준비되면 시작하세요. %1$d일 연속 기록 중이에요.</item>
     </plurals>
@@ -629,7 +629,7 @@
     <string name="widget_duration_hm">%1$d시간 %2$d분</string>
     <string name="widget_duration_m">%1$d분</string>
     <string name="widget_preview_title">푸시</string>
-    <string name="widget_preview_meta">운동 5개 · 18세트 · 약 45분</string>
+    <string name="widget_preview_meta">운동 5개 · 18세트 · ~45분</string>
     <string name="widget_preview_compact_meta">4개 · 18세트</string>
     <string name="widget_preview_streak_caption">일 연속</string>
     <string name="widget_preview_week_meta">오늘 · 18세트</string>
@@ -2681,7 +2681,7 @@
     <plurals name="session_plan_sets">
         <item quantity="other">%1$d세트</item>
     </plurals>
-    <string name="session_plan_line_sentence">%1$s · %2$s · 약 %3$d분</string>
+    <string name="session_plan_line_sentence">%1$s · %2$s · ~%3$d분</string>
     <plurals name="session_plan_exercises_sentence">
         <item quantity="other">운동 %1$d개</item>
     </plurals>
@@ -5396,8 +5396,8 @@
     <string name="fatigue_tag_stretch_heavy">신장 부하 큼</string>
     <string name="fatigue_tag_heavy_whole_body">고중량 전신</string>
     <string name="fatigue_footprint_typical_head">고강도 3세트, 1회 남김</string>
-    <string name="fatigue_footprint_typical">보통 %1$s 피로도 %2$s, 약 %3$s 후 낮음으로 돌아와요.</string>
-    <string name="fatigue_footprint_typical_short">보통 %1$s 피로도 %2$s.</string>
+    <string name="fatigue_footprint_typical">일반적인 결과: %1$s 피로도 %2$s, 약 %3$s 후 낮음으로 돌아와요.</string>
+    <string name="fatigue_footprint_typical_short">일반적인 결과: %1$s 피로도 %2$s.</string>
     <string name="fatigue_footprint_typical_note">3회 이상 남기고 멈추면 줄어들고, 처음 하거나 3주 쉬었다가 하면 늘어나요.</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="other">%d시간</item>
@@ -5543,6 +5543,7 @@
     <string name="photos_pose_back">후면</string>
     <string name="photos_slot_description">이번 주 %1$s 사진</string>
     <string name="photos_slot_add_description">%1$s 사진 추가</string>
+    <string name="photos_slot_add_label">추가</string>
     <string name="photos_slot_change_description">%1$s 사진 변경</string>
     <string name="photos_day_label">포즈 촬영일</string>
     <string name="photos_day_row">포즈 촬영일: %1$s</string>

@@ -208,7 +208,7 @@ object SessionClock {
         )
     }
 
-    /** [planLine] read as a sentence for Today's card: "5 exercises · 19 sets · about 54 min", each language's own. */
+    /** [planLine] read as a sentence for Today's card: "5 exercises · 19 sets · ~54 min", each language's own. */
     fun planSentence(
         entries: List<PlannedEntry>,
         focus: TrainingFocus,

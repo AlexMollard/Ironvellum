@@ -75,7 +75,7 @@ class SessionClockTest {
         )
         // 3 × 220 + 2 × 100 = 860 s → 15 min.
         assertEquals("2 EXERCISES · 5 SETS · ~15 MIN", SessionClock.planLine(entries, TrainingFocus.STRENGTH))
-        assertEquals("2 exercises · 5 sets · about 15 min", SessionClock.planSentence(entries, TrainingFocus.STRENGTH))
+        assertEquals("2 exercises · 5 sets · ~15 min", SessionClock.planSentence(entries, TrainingFocus.STRENGTH))
     }
 
     @Test

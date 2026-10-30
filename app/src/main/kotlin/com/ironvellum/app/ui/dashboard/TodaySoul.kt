@@ -495,7 +495,7 @@ internal fun RiteHeader(
                             meta,
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
-                            // Three lines: "Today's workout · 5 exercises · 18 sets · about 126 min" needs them at 200% text.
+                            // Three lines: "Today's workout · 5 exercises · 18 sets · ~126 min" needs them at 200% text.
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(top = 6.dp),

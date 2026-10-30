@@ -67,7 +67,7 @@ internal fun durationWord(hours: Int): String =
 private const val HOURS_UNTIL_DAYS = 48
 private const val HOURS_PER_DAY = 24.0
 
-/** "Typically Hamstrings high, back to light in about 3 days." */
+/** "Typical result: Hamstrings high, back to light in about 3 days." */
 internal fun typicalLine(footprint: FatigueFootprint): String {
     val muscle = footprint.lead.label
     val level = levelWord(footprint.typicalLevel).lowercase()

@@ -446,8 +446,8 @@
     <string name="narration_respite__t">账册搁笔休憩。</string>
     <string name="narration_respite_streak">今天没有安排，连续打卡不受影响。</string>
     <string name="narration_respite_streak__t">账册搁笔休憩，誓言依然延续。</string>
-    <string name="narration_no_cycle">你还没有周计划。构建一个后，计划就会显示在这里。</string>
-    <string name="narration_no_cycle__t">你的循环尚未写就。锻造一个，仪轨便会出现在此。</string>
+    <string name="narration_no_cycle">构建周计划后，其中的计划会显示在这里。</string>
+    <string name="narration_no_cycle__t">锻造一个循环，其中的仪轨便会出现在此。</string>
     <plurals name="narration_begin_streak">
         <item quantity="other">准备好了就开始。你已连续打卡 %1$d 天。</item>
     </plurals>
@@ -5396,8 +5396,8 @@
     <string name="fatigue_tag_stretch_heavy">伸展负荷高</string>
     <string name="fatigue_tag_heavy_whole_body">大重量全身动作</string>
     <string name="fatigue_footprint_typical_head">三组有效组，剩余 1 次余力</string>
-    <string name="fatigue_footprint_typical">通常为 %1$s %2$s，约 %3$s 后降至轻度。</string>
-    <string name="fatigue_footprint_typical_short">通常为 %1$s %2$s。</string>
+    <string name="fatigue_footprint_typical">通常结果：%1$s %2$s，约 %3$s 后降至轻度。</string>
+    <string name="fatigue_footprint_typical_short">通常结果：%1$s %2$s。</string>
     <string name="fatigue_footprint_typical_note">如果保留至少 3 次余力，疲劳会更少。首次做这个动作或停练三周后再做，疲劳会更多。</string>
     <plurals name="fatigue_footprint_hours">
         <item quantity="other">%d 小时</item>
@@ -5543,6 +5543,7 @@
     <string name="photos_pose_back">背面</string>
     <string name="photos_slot_description">本周的%1$s照片</string>
     <string name="photos_slot_add_description">添加%1$s照片</string>
+    <string name="photos_slot_add_label">添加</string>
     <string name="photos_slot_change_description">更换%1$s照片</string>
     <string name="photos_day_label">姿势拍摄日</string>
     <string name="photos_day_row">姿势拍摄日：%1$s</string>
