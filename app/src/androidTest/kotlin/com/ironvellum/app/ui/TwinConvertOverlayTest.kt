@@ -82,7 +82,7 @@ class TwinConvertOverlayTest {
         val vm = TwinConvertViewModel(repo, isolatedContext)
         compose.setContent { IronvellumTheme { TwinConvertOverlay(vm, onDismiss = {}) } }
         compose.waitUntil(10_000) { compose.onAllNodes(hasText("Pull day")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Saved workouts · 1 entry").assertIsDisplayed()
+        compose.onNodeWithText("Saved rites · 1 entry").assertIsDisplayed()
         compose.onNodeWithText("Pull-up → Weighted Pull-up").assertIsDisplayed()
         compose.onNodeWithText("Workout history").assertDoesNotExist()
         ShotRecorder.take(compose, "twin-convert-routine-preview")
@@ -93,9 +93,9 @@ class TwinConvertOverlayTest {
         assertEquals(baseId, runBlocking { db.presetDao().presetWithEntries(presetId)!!.entries.single().exerciseId })
         compose.onNode(hasText("Move exercises") and hasAnyAncestor(isDialog())).performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasText("Moved 1 saved workout entry.")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(hasText("Moved 1 saved rite entry.")).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Moved 1 saved workout entry.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Moved 1 saved rite entry.").performScrollTo().assertIsDisplayed()
         assertEquals(targetId, runBlocking { db.presetDao().presetWithEntries(presetId)!!.entries.single().exerciseId })
         val backups = files.resolve("backups").listFiles().orEmpty()
         assertEquals(1, backups.size)

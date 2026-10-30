@@ -108,7 +108,7 @@ class RoutineUpdateOfferFlowTest {
         driver.click("Keep rite")
     }
 
-    private fun isQuestCard(label: String) = label.contains(" sets · about ", ignoreCase = true)
+    private fun isQuestCard(label: String) = label.contains(" sets · ~", ignoreCase = true)
 
     /** Quest cards whose node sits inside the screen: the pager's neighbours are composed to either side of it. */
     private fun onScreenQuestCards(): List<String> =
