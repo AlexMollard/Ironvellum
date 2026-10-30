@@ -46,7 +46,7 @@ store listing; this is the whole list.
 - Whole rows and cards are one click target, and focus follows navigation.
 
 ### Look and feel
-- Buttons are now raised neutral buttons across the app, with an icon on Back and the photo
+- Most buttons are now raised neutral buttons, with an icon on Back and the photo
   actions.
 - The light theme is redrawn as Vellum, with readable small text and chart ink. Charts use a
   checked colour palette and thinner marks.
