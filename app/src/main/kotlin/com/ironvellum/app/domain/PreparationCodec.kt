@@ -56,7 +56,7 @@ object PreparationCodec {
             append(']')
         }
         keys("completedUnitKeys", progress.completedUnitKeys); keys("skippedUnitKeys", progress.skippedUnitKeys)
-        append(",\"remainingMs\":${progress.remainingMs},\"readyUntilMs\":${progress.readyUntilMs},\"deadlineMs\":${progress.deadlineMs}}")
+        append(",\"remainingMs\":${progress.remainingMs},\"readyUntilMs\":${progress.readyUntilMs},\"deadlineMs\":${progress.deadlineMs},\"legacyOnly\":${progress.legacyOnly}}")
     }
     fun decodeProgress(json: String): Result<PreparationProgress> = runCatching { progress(ExportReader.Parser(json).parseDocument()) }
     internal fun progress(o: Obj) = PreparationProgress(
@@ -65,6 +65,7 @@ object PreparationCodec {
         completedUnitKeys = (o.arr("completedUnitKeys") ?: emptyList()).map { it as String }.toSet(),
         skippedUnitKeys = (o.arr("skippedUnitKeys") ?: emptyList()).map { it as String }.toSet(),
         remainingMs = o.long("remainingMs") ?: 0, readyUntilMs = o.long("readyUntilMs"), deadlineMs = o.long("deadlineMs"),
+        legacyOnly = o.bool("legacyOnly") ?: false,
     ).also { p ->
         require(p.stepIndex >= 0 && p.roundIndex >= 0 && p.repeatIndex in 0..1 && p.remainingMs >= 0)
         require((p.completedUnitKeys + p.skippedUnitKeys).all { it.matches(Regex("\\d+:\\d+:[01]")) })

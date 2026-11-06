@@ -26,7 +26,9 @@ class PreparationRunnerViewModel(
         viewModelScope.launch {
             try {
                 repo.preparations.ensureSession(sessionId)
-                combine(repo.preparations.observeSession(sessionId, kind), repo.observeExercises()) { state, exercises -> state to exercises }
+                combine(repo.preparations.observeSession(sessionId, kind), repo.observeExercises()) { state, exercises ->
+                    state?.forWarmupSetting(repo.preparations.warmupEnabled) to exercises
+                }
                     .collect { (state, exercises) -> _ui.update { it.copy(loaded = true, state = state, exercises = exercises) } }
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) { _ui.update { it.copy(failed = true) } }

@@ -4,6 +4,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PreparationProgressTest {
+    @Test fun legacyOnlyScopeRoundTripsAndOldJsonDefaultsToFullScope() {
+        val original = PreparationProgress(legacyOnly = true)
+        assertEquals(original, PreparationCodec.decodeProgress(PreparationCodec.encodeProgress(original)).getOrThrow())
+        assertEquals(PreparationProgress(), PreparationCodec.decodeProgress("{\"status\":\"OPEN\"}").getOrThrow())
+    }
     @Test fun importedNonContiguousLegacyTicksAreNotRepeated() {
         val legacy = snapshot.copy(legacyStepCount = 2)
         var p = legacyPreparationProgress(legacy, WarmupStep.State.OPEN, setOf(2))

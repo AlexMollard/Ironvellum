@@ -7,13 +7,14 @@ class PreparationArchiveTest {
     private val step = PreparationStep(99, "A custom preparation", PreparationMeasure.SECONDS, 35, note = "a \"quote\"\nand line")
     private val routine = PreparationRoutine(77, PreparationKind.COOLDOWN, "Unused routine", listOf(step))
     private val snapshot = PreparationSnapshot(PreparationKind.COOLDOWN, routine.name, routine.steps, routine.id)
-    private fun write(device: Boolean = true) = ExportWriter.write(
+    private fun write(device: Boolean = true, preparation: SessionPreparation = SessionPreparation(41, snapshot,
+        PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 12345))) = ExportWriter.write(
         profile = PlayerProfile(), trainingMode = TrainingMode.STRENGTH,
         presets = listOf(WorkoutPreset(31, "Preset", preparation = mapOf(PreparationKind.COOLDOWN to PreparationChoice(PreparationMode.SAVED, 77)))),
         sessions = listOf(WorkoutSession(41, 31, "sealed", 1, 2) to emptyList()),
         stats = emptyList(), titles = emptyList(), skills = emptyList(), healthDays = emptyList(), exportedAtMs = 100,
         includeDeviceOnly = device, preparationRoutines = listOf(routine),
-        sessionPreparations = listOf(SessionPreparation(41, snapshot, PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 12345))),
+        sessionPreparations = listOf(preparation),
     )
     @Test fun v15LocalAndCloudCarryUnusedRoutinesAttachmentsAndSealedPausedProgress() {
         listOf(true, false).forEach { device ->
@@ -30,6 +31,17 @@ class PreparationArchiveTest {
             .replace("\"formatVersion\":15", "\"formatVersion\":14")).getOrThrow()
         assertTrue(archive.preparationRoutines.isEmpty())
         assertTrue(archive.sessionPreparations.isEmpty())
+    }
+    @Test fun v15CarriesLegacyOnlyScopeAndMissingFieldKeepsOldFullScope() {
+        val warmup = SessionPreparation(41, PreparationSnapshot(PreparationKind.WARMUP, "Auto",
+            listOf(step, step.copy(exerciseId = 100, exerciseName = "Another")), legacyStepCount = 1),
+            PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 12345, legacyOnly = true))
+        listOf(true, false).forEach { device ->
+            val json = write(device, warmup)
+            assertEquals(warmup, ExportReader.read(json).getOrThrow().sessionPreparations.single())
+            val older = json.replace(",\"legacyOnly\":true", "")
+            assertFalse(ExportReader.read(older).getOrThrow().sessionPreparations.single().progress.legacyOnly)
+        }
     }
     @Test fun malformedPreparationIsReportedWhileTrainingStillRestores() {
         val archive = ExportReader.read(write().replace("\"exerciseName\":\"A custom preparation\"", "\"exerciseName\":\"\"")).getOrThrow()

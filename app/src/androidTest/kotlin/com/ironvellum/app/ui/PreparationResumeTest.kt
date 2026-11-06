@@ -17,11 +17,14 @@ class PreparationResumeTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var db: IronvellumDatabase
     private lateinit var repo: Repository
+    private val prefs get() = context.getSharedPreferences("preparation-resume-legacy", 0)
+    private val warmups get() = WarmupStore(prefs)
     @Before fun setup() = runBlocking {
         SeededDb.fresh(context, DB)
-        db = IronvellumDatabase.create(context, DB); repo = Repository(db); repo.ensureSeeded()
+        prefs.edit().clear().commit()
+        db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups); repo.ensureSeeded()
     }
-    @After fun close() { db.close(); context.deleteDatabase(DB) }
+    @After fun close() { db.close(); context.deleteDatabase(DB); prefs.edit().clear().commit() }
     private suspend fun session(): Long {
         val e = repo.observeExercises().first().first { it.name == "Arm Circles" }
         val routine = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.COOLDOWN, name = "Recovery", steps = listOf(
@@ -62,11 +65,12 @@ class PreparationResumeTest {
     @Test fun legacyChecklistImportsOnceAndChangingRoutineDoesNotReapplyOldDone() = runBlocking {
         val id = session()
         db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
-        repo.preparations.prepareWarmupOffer(id, true, WarmupStep.State.DONE, emptySet())
+        warmups.setState(id, WarmupStep.State.DONE)
+        repo.preparations.ensureSession(id)
         assertEquals(PreparationStatus.DONE, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
         repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
-        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db)
-        repo.preparations.prepareWarmupOffer(id, true, WarmupStep.State.DONE, emptySet())
+        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups)
+        repo.preparations.ensureSession(id)
         val restored = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
         assertEquals(PreparationProgress(), restored.progress)
     }
@@ -74,16 +78,80 @@ class PreparationResumeTest {
         val e = repo.observeExercises().first().first { it.name == "Arm Circles" }
         val p = repo.savePreset(null, "Legacy", "", null, listOf(Repository.PresetDraftEntry(e.id, 1, 7, null, warmup = true)))
         val id = repo.startSessionFromPreset(p)
-        repo.preparations.prepareWarmupOffer(id, false, WarmupStep.State.OPEN, emptySet())
-        val legacy = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        val frozen = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertTrue(frozen.snapshot.steps.size > 1)
+        warmups.enabled = false
+        val legacy = frozen.forWarmupSetting(repo.preparations.warmupEnabled)
         assertEquals(listOf(e.id), legacy.snapshot.steps.map { it.exerciseId })
+        warmups.enabled = true
+        assertEquals(frozen, frozen.forWarmupSetting(repo.preparations.warmupEnabled))
+        assertEquals(frozen, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+        val savedId = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Explicit", steps = listOf(
+            PreparationStep(e.id, e.name, PreparationMeasure.REPS, 10))))
+        repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice(PreparationMode.SAVED, savedId))
+        val saved = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertEquals(saved, saved.forWarmupSetting(false))
         repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice(PreparationMode.NONE))
         assertEquals(legacy.snapshot.steps, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot.steps)
         repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
         repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, System.currentTimeMillis())
         val running = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
-        repo.preparations.prepareWarmupOffer(id, false, WarmupStep.State.OPEN, emptySet())
-        assertEquals(running.snapshot, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot)
+        assertEquals(running, running.forWarmupSetting(false))
+    }
+    @Test fun presetEditBeforeSessionScreenImportsDone() = firstWriter(0, WarmupStep.State.DONE)
+    @Test fun presetDeleteBeforeSessionScreenImportsNonContiguousTicks() = firstWriter(1, WarmupStep.State.OPEN)
+    @Test fun routineEditBeforeSessionScreenImportsSkipped() = firstWriter(2, WarmupStep.State.SKIPPED)
+    @Test fun routineDeleteBeforeSessionScreenImportsNonContiguousTicks() = firstWriter(3, WarmupStep.State.OPEN)
+    private fun firstWriter(mutation: Int, state: WarmupStep.State) = runBlocking {
+        val exercises = repo.observeExercises().first().take(3)
+        val routine = PreparationRoutine(kind = PreparationKind.WARMUP, name = "Original", steps = listOf(
+            PreparationStep(exercises[0].id, exercises[0].name, PreparationMeasure.REPS, 7)))
+        val routineId = repo.preparations.saveRoutine(routine)
+        val entries = exercises.map { Repository.PresetDraftEntry(it.id, 1, 7, null, warmup = true) }
+        val preset = repo.savePreset(null, "Original", "", null, entries,
+            mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routineId)))
+        val id = repo.startSessionFromPreset(preset)
+        val snapshot = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot
+        db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
+        warmups.setState(id, state)
+        warmups.setTicked(id, setOf(exercises[0].id, exercises[2].id))
+        when (mutation) {
+            0 -> repo.savePreset(preset, "Edited", "", null, emptyList())
+            1 -> repo.deletePreset(preset)
+            2 -> repo.preparations.saveRoutine(routine.copy(id = routineId, name = "Edited", steps = routine.steps.map { it.copy(target = 12) }))
+            else -> repo.preparations.deleteRoutine(routineId)
+        }
+        val first = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertEquals(snapshot, first.snapshot)
+        assertEquals(legacyPreparationProgress(snapshot, state, setOf(exercises[0].id, exercises[2].id)), first.progress)
+        if (state == WarmupStep.State.OPEN) assertEquals(setOf("0:0:0", "2:0:0"), first.progress.completedUnitKeys)
+        repo.preparations.ensureSession(id) // Later SessionScreen initialization must be inert.
+        assertEquals(first, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+        repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
+        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups)
+        repo.preparations.ensureSession(id)
+        assertEquals(PreparationProgress(), repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress)
+    }
+    @Test fun togglingDuringLegacyOnlyExecutionKeepsItsScopeAndRawSnapshot() = runBlocking {
+        val e = repo.observeExercises().first().first { it.name == "Arm Circles" }
+        val preset = repo.savePreset(null, "Legacy only", "", null, listOf(Repository.PresetDraftEntry(e.id, 2, 7, null, warmup = true)))
+        val id = repo.startSessionFromPreset(preset)
+        val frozen = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot
+        warmups.enabled = false
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, 1000)
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.COMPLETE_UNIT, 1000, "0:0:0")
+        warmups.enabled = true
+        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups)
+        val resumed = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertEquals(frozen, resumed.snapshot)
+        assertTrue(resumed.progress.legacyOnly)
+        assertEquals(1, resumed.forWarmupSetting(true).snapshot.steps.size)
+        assertEquals(setOf("0:0:0"), resumed.progress.completedUnitKeys)
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.SKIP_UNIT, 1000, "0:1:0")
+        val done = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertEquals(PreparationStatus.DONE, done.progress.status)
+        assertEquals(frozen, done.snapshot)
+        assertEquals(setOf("0:1:0"), done.progress.skippedUnitKeys)
     }
     @Test fun freeformAndDeletedWorkoutKeepTheirSnapshotAndStoredSummary() = runBlocking {
         val id = repo.startFreeformSession("Empty freeform")

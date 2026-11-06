@@ -265,9 +265,11 @@ class Repository(
     private val twinKept: () -> Set<String> = { emptySet() },
     /** Where progress photos are kept; null in tests that take none. */
     photoStore: PhotoStore? = null,
+    /** Device legacy answers are imported by whichever operation first snapshots an upgraded live session. */
+    warmupStore: WarmupStore? = null,
 ) {
 
-    val preparations: PreparationRepository = PreparationRepository(db)
+    val preparations: PreparationRepository = PreparationRepository(db, warmupStore)
     private val exerciseDao = db.exerciseDao()
     private val presetDao = db.presetDao()
     private val sessionDao = db.sessionDao()

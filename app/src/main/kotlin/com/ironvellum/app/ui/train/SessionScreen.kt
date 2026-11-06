@@ -9,6 +9,7 @@ import com.ironvellum.app.domain.PreparationKind
 import com.ironvellum.app.domain.PreparationChoice
 import com.ironvellum.app.domain.PreparationMode
 import com.ironvellum.app.domain.PreparationAction
+import com.ironvellum.app.domain.forWarmupSetting
 import com.ironvellum.app.ui.preparation.*
 import com.ironvellum.app.domain.levelAt
 import com.ironvellum.app.domain.UiText
@@ -569,7 +570,7 @@ class SessionViewModel(
 
     private val warmupStore = WarmupStore(appContext)
 
-    val warmupEnabled: Boolean = warmupStore.enabled
+    val warmupEnabled: Boolean get() = warmupStore.enabled
     val warmupPreparation = repo.preparations.observeSession(sessionId, PreparationKind.WARMUP)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val cooldownPreparation = repo.preparations.observeSession(sessionId, PreparationKind.COOLDOWN)
@@ -582,7 +583,7 @@ class SessionViewModel(
 
     init {
         viewModelScope.launch {
-            repo.preparations.prepareWarmupOffer(sessionId, warmupEnabled, warmupStore.stateFor(sessionId), warmupStore.tickedFor(sessionId))
+            repo.preparations.ensureSession(sessionId)
             val sealed = repo.observeSession(sessionId).first()?.takeIf { it.completedAtMs != null }
             if (sealed != null) {
                 // These optional offers are read-only. At-seal XP/levels/deeds are never reconstructed.
@@ -1352,7 +1353,7 @@ fun SessionScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 // A single Room-backed offer replaces the old reminder and legacy checklist.
-                val preparation = warmupPreparation
+                val preparation = warmupPreparation?.forWarmupSetting(viewModel.warmupEnabled)
                 AnimatedVisibility(preparation != null && warmupOffered(preparation, viewModel.warmupEnabled) && doneCount == 0) {
                     preparation?.let { PreparationOfferCard(it,
                         { openPreparation(PreparationKind.WARMUP) }, { openPreparation(PreparationKind.WARMUP, change = true) },

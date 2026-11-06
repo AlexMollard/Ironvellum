@@ -52,6 +52,7 @@ class IronvellumApp : Application() {
             adjustments = com.ironvellum.app.data.PrefsSessionAdjustments(getSharedPreferences("suggestion_dismissals", MODE_PRIVATE)),
             twinKept = { com.ironvellum.app.data.TrialPrefs(this).twinKept },
             photoStore = com.ironvellum.app.data.PhotoStore(this),
+            warmupStore = com.ironvellum.app.data.WarmupStore(this),
             archiveSettings = com.ironvellum.app.data.ArchiveSettings(this, permitted = { file ->
                 // A restored switch is only a wish: it turns on once this device has granted what it needs.
                 when (file) {

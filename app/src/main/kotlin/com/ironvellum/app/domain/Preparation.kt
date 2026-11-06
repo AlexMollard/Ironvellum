@@ -44,3 +44,9 @@ data class PreparationSnapshot(
     val legacyStepCount: Int = 0,
 )
 data class SessionPreparation(val sessionId: Long, val snapshot: PreparationSnapshot, val progress: PreparationProgress)
+
+/** A reversible offer projection until started. Persisted identities and the complete frozen snapshot never change. */
+fun SessionPreparation.forWarmupSetting(enabled: Boolean): SessionPreparation =
+    if (snapshot.kind != PreparationKind.WARMUP || snapshot.sourceRoutineId != null ||
+        !progress.legacyOnly && (enabled || progress != PreparationProgress())) this
+    else copy(snapshot = snapshot.copy(name = "", steps = snapshot.steps.take(snapshot.legacyStepCount)))

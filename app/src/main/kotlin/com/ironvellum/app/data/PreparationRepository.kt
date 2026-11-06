@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /** Owns preparation only. It never writes a set, score, profile or reward. */
-class PreparationRepository(private val db: IronvellumDatabase) {
+class PreparationRepository(private val db: IronvellumDatabase, private val warmupStore: WarmupStore? = null) {
     private val dao = db.preparationDao()
+    val warmupEnabled: Boolean get() = warmupStore?.enabled ?: true
     fun observeRoutines(kind: PreparationKind): Flow<List<PreparationRoutine>> = dao.observeRoutines(kind.name).map { rows -> rows.map { it.domain() } }
     fun observeChoices(presetId: Long): Flow<Map<PreparationKind, PreparationChoice>> = dao.observeChoices(presetId).map { it.domainChoices() }
     fun observeSession(sessionId: Long, kind: PreparationKind): Flow<SessionPreparation?> = dao.observeSession(sessionId, kind.name).map { it?.domain() }
@@ -41,24 +42,19 @@ class PreparationRepository(private val db: IronvellumDatabase) {
 
     private suspend fun snapshotLiveSession() { db.sessionDao().liveSession()?.let { ensureSession(it.id) } }
 
-    suspend fun ensureSession(sessionId: Long, legacyState: WarmupStep.State = WarmupStep.State.OPEN, legacyTicked: Set<Long> = emptySet()): Unit = db.withTransaction {
+    suspend fun ensureSession(sessionId: Long): Unit = db.withTransaction {
         if (db.sessionDao().byId(sessionId) == null) return@withTransaction
         PreparationKind.entries.forEach { kind ->
             if (dao.session(sessionId, kind.name) == null) {
                 val presetId = db.sessionDao().byId(sessionId)?.presetId
                 val choice = presetId?.let { choices(it)[kind] } ?: PreparationChoice()
                 val snapshot = resolve(sessionId, kind, choice)
-                put(sessionId, snapshot, if (kind == PreparationKind.WARMUP) legacyPreparationProgress(snapshot, legacyState, legacyTicked) else PreparationProgress())
+                // Read at the single first-writer boundary, including preset/routine mutation guards.
+                val progress = if (kind == PreparationKind.WARMUP) legacyPreparationProgress(snapshot,
+                    warmupStore?.stateFor(sessionId) ?: WarmupStep.State.OPEN,
+                    warmupStore?.tickedFor(sessionId).orEmpty()) else PreparationProgress()
+                put(sessionId, snapshot, progress)
             }
-        }
-    }
-    /** The reminder toggle suppresses automatic general steps, never an explicit routine or work already begun. */
-    suspend fun prepareWarmupOffer(sessionId: Long, enabled: Boolean, legacyState: WarmupStep.State, legacyTicked: Set<Long>): Unit = db.withTransaction {
-        ensureSession(sessionId, legacyState, legacyTicked)
-        val current = dao.session(sessionId, PreparationKind.WARMUP.name)?.domain() ?: return@withTransaction
-        val p = current.progress
-        if (!enabled && current.snapshot.sourceRoutineId == null && p == PreparationProgress()) {
-            put(sessionId, current.snapshot.copy(name = "", steps = current.snapshot.steps.take(current.snapshot.legacyStepCount)), p)
         }
     }
     suspend fun changeSession(sessionId: Long, kind: PreparationKind, choice: PreparationChoice): Unit = db.withTransaction {
@@ -69,7 +65,12 @@ class PreparationRepository(private val db: IronvellumDatabase) {
         ensureSession(sessionId)
         val current = dao.session(sessionId, kind.name)?.domain(nowMs) ?: return@withTransaction
         // Compare against the persisted cursor under the same Room write transaction, not a caller's stale state.
-        val next = current.progress.advance(current.snapshot, action, nowMs, expectedUnitKey)
+        val selected = if (action in listOf(PreparationAction.START, PreparationAction.RESUME) &&
+            kind == PreparationKind.WARMUP && !warmupEnabled && current.snapshot.sourceRoutineId == null && current.progress == PreparationProgress()) {
+            current.copy(progress = current.progress.copy(legacyOnly = true))
+        } else current
+        // Freeze the chosen execution scope, not a destructively shortened snapshot. Unit indices stay unchanged.
+        val next = selected.progress.advance(selected.forWarmupSetting(true).snapshot, action, nowMs, expectedUnitKey)
         if (next != current.progress) put(sessionId, current.snapshot, next)
     }
 

@@ -11,6 +11,8 @@ data class PreparationProgress(
     val remainingMs: Long = 0,
     val readyUntilMs: Long? = null,
     val deadlineMs: Long? = null,
+    /** This run began with automatic general preparation disabled; its explicit legacy prefix remains its scope. */
+    val legacyOnly: Boolean = false,
 ) {
     val currentUnitKey: String get() = "$stepIndex:$roundIndex:$repeatIndex"
 
