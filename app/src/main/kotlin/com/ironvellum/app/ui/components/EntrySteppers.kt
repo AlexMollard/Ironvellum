@@ -91,6 +91,7 @@ internal fun EntryCard(
     onFold: () -> Unit,
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
+    titleMaxLines: Int = 1,
     actions: @Composable RowScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -110,7 +111,7 @@ internal fun EntryCard(
                 name,
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
-                maxLines = 1,
+                maxLines = titleMaxLines,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(start = if (leading == null) 12.dp else 0.dp),
             )

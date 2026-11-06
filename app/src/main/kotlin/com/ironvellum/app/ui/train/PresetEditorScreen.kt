@@ -62,6 +62,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.os.Bundle
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.compose.runtime.LaunchedEffect
+import com.ironvellum.app.domain.PreparationKind
+import com.ironvellum.app.domain.PreparationChoice
+import com.ironvellum.app.domain.PreparationMode
+import com.ironvellum.app.ui.preparation.preparationDraft
+import com.ironvellum.app.ui.preparation.withPreparationDraft
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -123,6 +132,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class EditorEntry(
@@ -153,15 +163,29 @@ data class EditorUi(
     val exercises: List<Exercise> = emptyList(),
     /** The lifter's latest body weight, which the Sets sheet's preview takes a bodyweight lift's back-off off. */
     val bodyweightKg: Double? = null,
+    val preparation: Map<PreparationKind, PreparationChoice> = PreparationKind.entries.associateWith { PreparationChoice() },
 )
 
 class PresetEditorViewModel(
     private val repo: Repository,
     private val presetId: Long?,
+    private val savedState: SavedStateHandle? = null,
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(EditorUi(presetId = presetId))
     val ui: StateFlow<EditorUi> = _ui.asStateFlow()
+    private var draft: EditorUi
+        get() = _ui.value
+        set(value) { savedState?.set("workout_draft", value.preparationDraft()); _ui.value = value }
+    val preparationNames = kotlinx.coroutines.flow.combine(
+        repo.preparations.observeRoutines(PreparationKind.WARMUP),
+        repo.preparations.observeRoutines(PreparationKind.COOLDOWN),
+    ) { warm, cool -> (warm + cool).associate { it.id to it.name } }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    fun setPreparation(kind: PreparationKind, choice: PreparationChoice) {
+        draft = _ui.value.copy(preparation = _ui.value.preparation + (kind to choice))
+    }
 
     // The editor itself is retained across configuration changes; so is an unanswered offer.
     private val _twinPrompt = MutableStateFlow<Triple<Int, EditorEntry, ExerciseTwins.Resolution>?>(null)
@@ -215,6 +239,7 @@ class PresetEditorViewModel(
                         },
                         exercises = exercises,
                         bodyweightKg = bodyweightKg,
+                        preparation = PreparationKind.entries.associateWith { existing.preparation[it] ?: PreparationChoice() },
                     )
                 } else {
                     EditorUi(presetId = presetId, exercises = exercises, bodyweightKg = bodyweightKg)
@@ -222,36 +247,37 @@ class PresetEditorViewModel(
             } else {
                 EditorUi(exercises = exercises, bodyweightKg = bodyweightKg)
             }
-            _baseline.value = loaded
-            _ui.value = loaded
+            _baseline.value = savedState?.get<Bundle>("workout_baseline")?.let { loaded.withPreparationDraft(it) } ?: loaded
+            savedState?.set("workout_baseline", _baseline.value.preparationDraft())
+            draft = savedState?.get<Bundle>("workout_draft")?.let { loaded.withPreparationDraft(it) } ?: loaded
         }
     }
 
     fun setName(value: String) {
-        _ui.value = _ui.value.copy(name = value)
+        draft = _ui.value.copy(name = value)
     }
 
     fun setNote(value: String) {
-        _ui.value = _ui.value.copy(note = value)
+        draft = _ui.value.copy(note = value)
     }
 
     fun setScheduledDay(value: Int?) {
-        _ui.value = _ui.value.copy(scheduledDay = value)
+        draft = _ui.value.copy(scheduledDay = value)
     }
 
     fun addEntry(exercise: Exercise) {
-        _ui.value = _ui.value.copy(entries = _ui.value.entries + newEntry(exercise))
+        draft = _ui.value.copy(entries = _ui.value.entries + newEntry(exercise))
     }
 
     fun removeEntry(index: Int) {
-        _ui.value = _ui.value.copy(entries = _ui.value.entries.filterIndexed { i, _ -> i != index })
+        draft = _ui.value.copy(entries = _ui.value.entries.filterIndexed { i, _ -> i != index })
     }
 
     /** Puts a removed [entry] back where it was, for Undo. */
     fun insertEntry(index: Int, entry: EditorEntry) {
         val list = _ui.value.entries.toMutableList()
         list.add(index.coerceIn(0, list.size), entry)
-        _ui.value = _ui.value.copy(entries = list)
+        draft = _ui.value.copy(entries = list)
     }
 
     /**
@@ -266,7 +292,7 @@ class PresetEditorViewModel(
         val moved = list.arranged(layout)
         // Warm-ups lead the rite: a move that would carry one past a worked exercise, or the reverse, goes nowhere.
         if (!moved.warmupsFirst()) return null
-        _ui.value = _ui.value.copy(entries = moved)
+        draft = _ui.value.copy(entries = moved)
         return layout
     }
 
@@ -284,7 +310,7 @@ class PresetEditorViewModel(
             if (i == index) e2.copy(warmup = warmup, scheme = if (warmup) SetScheme.DEFAULT else e2.scheme) else e2
         }
         val order = marked.indices.sortedBy { if (marked[it].warmup) 0 else 1 }
-        _ui.value = _ui.value.copy(entries = order.map { marked[it] })
+        draft = _ui.value.copy(entries = order.map { marked[it] })
         return order.indexOf(index)
     }
 
@@ -295,7 +321,7 @@ class PresetEditorViewModel(
         if (list.getOrNull(index)?.warmup != false || list.getOrNull(partner)?.warmup != false) return null
         val layout = Supersets.link(list.map { it.supersetGroup }, index, partner) ?: return null
         // A superset cannot hold drops, so a lift joining one drops its drop sets.
-        _ui.value = _ui.value.copy(
+        draft = _ui.value.copy(
             entries = list.arranged(layout).map { if (it.supersetGroup != null) it.copy(scheme = it.scheme.withoutDrops()) else it },
         )
         return layout
@@ -305,11 +331,11 @@ class PresetEditorViewModel(
     fun unlinkEntry(index: Int) {
         val list = _ui.value.entries
         val groups = Supersets.unlink(list.map { it.supersetGroup }, index)
-        _ui.value = _ui.value.copy(entries = list.mapIndexed { i, e -> e.copy(supersetGroup = groups[i]) })
+        draft = _ui.value.copy(entries = list.mapIndexed { i, e -> e.copy(supersetGroup = groups[i]) })
     }
 
     fun updateEntry(index: Int, newEntry: EditorEntry) {
-        _ui.value = _ui.value.copy(
+        draft = _ui.value.copy(
             entries = _ui.value.entries.mapIndexed { i, entry ->
                 if (i == index) newEntry.followingLoad(entry, _ui.value.exercises) else entry
             },
@@ -325,6 +351,7 @@ class PresetEditorViewModel(
                 name = current.name.trim(),
                 note = current.note.trim(),
                 scheduledDay = current.scheduledDay,
+                preparation = current.preparation,
                 entries = current.entries.map {
                     Repository.PresetDraftEntry(
                         exerciseId = it.exerciseId,
@@ -438,7 +465,8 @@ internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
     baseline.name != current.name ||
         baseline.note != current.note ||
         baseline.scheduledDay != current.scheduledDay ||
-        baseline.entries != current.entries
+        baseline.entries != current.entries ||
+        baseline.preparation != current.preparation
 
 
 /** The cycle day as the Day row shows it. */
@@ -546,11 +574,22 @@ fun PresetEditorScreen(
     viewModel: PresetEditorViewModel =
         viewModel(
             key = "preset_editor_$presetId",
-            factory = viewModelFactory { initializer { PresetEditorViewModel(ironvellumRepository(), presetId) } },
+            factory = viewModelFactory { initializer { PresetEditorViewModel(ironvellumRepository(), presetId, createSavedStateHandle()) } },
         ),
+    onPreparation: ((PreparationKind, PreparationChoice, List<Long>) -> Unit)? = null,
+    returnedPreparation: Pair<PreparationKind, PreparationChoice>? = null,
+    onPreparationConsumed: () -> Unit = {},
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
+    val preparationNames by viewModel.preparationNames.collectAsStateWithLifecycle()
+    LaunchedEffect(returnedPreparation) {
+        returnedPreparation?.let { (kind, choice) ->
+            viewModel.ui.first { it.exercises.isNotEmpty() }
+            viewModel.setPreparation(kind, choice)
+            onPreparationConsumed()
+        }
+    }
     var adding by remember { mutableStateOf(false) }
     var swapping by remember { mutableStateOf<Int?>(null) }
     // The movement whose exercise sheet is open, as (name, modifiers).
@@ -639,6 +678,23 @@ fun PresetEditorScreen(
                 )
                 InkDivider()
 
+                if (onPreparation != null) {
+                    SectionHeader(UiText.themed(R.string.preparation_section, R.string.preparation_section__t).asString(), topPadding = 14.dp)
+                    PreparationKind.entries.forEach { kind ->
+                        val choice = ui.preparation[kind] ?: PreparationChoice()
+                        val selected = when (choice.mode) {
+                            PreparationMode.AUTO -> stringResource(R.string.preparation_auto)
+                            PreparationMode.NONE -> stringResource(R.string.preparation_none)
+                            PreparationMode.SAVED -> preparationNames[choice.routineId] ?: stringResource(R.string.preparation_auto)
+                        }
+                        ListRow(
+                            label = stringResource(if (kind == PreparationKind.WARMUP) R.string.preparation_warmup else R.string.preparation_cooldown),
+                            value = selected, wrapValue = true,
+                            onClick = { onPreparation(kind, choice, ui.entries.filter { !it.warmup }.map { it.exerciseId }) },
+                        )
+                        InkDivider()
+                    }
+                }
                 SectionHeader(stringResource(R.string.preseteditor_exercises_header), topPadding = 14.dp)
                 val groups = ui.entries.map { it.supersetGroup }
                 val runs = Supersets.runs(groups)

@@ -5600,4 +5600,122 @@
     <string name="preparation_invalid__t">이 준비 운동은 유효하지 않습니다.</string>
     <string name="preparation_import_dropped">준비 운동 데이터를 복원하지 못했습니다: %1$s</string>
     <string name="preparation_import_dropped__t">준비 운동 데이터를 복원하지 못했습니다: %1$s</string>
+
+    <!-- Reusable warmups and cooldowns -->
+    <string name="preparation_library">워밍업과 쿨다운</string>
+    <string name="preparation_library__t">워밍업과 쿨다운</string>
+    <string name="preparation_warmup">워밍업</string>
+    <string name="preparation_warmup__t">워밍업</string>
+    <string name="preparation_cooldown">쿨다운</string>
+    <string name="preparation_cooldown__t">쿨다운</string>
+    <string name="preparation_warmups">워밍업</string>
+    <string name="preparation_warmups__t">워밍업</string>
+    <string name="preparation_cooldowns">쿨다운</string>
+    <string name="preparation_cooldowns__t">쿨다운</string>
+    <string name="preparation_create">루틴 만들기</string>
+    <string name="preparation_create__t">루틴 만들기</string>
+    <string name="preparation_personal">내 루틴</string>
+    <string name="preparation_personal__t">내 루틴</string>
+    <string name="preparation_empty">저장된 루틴이 없습니다. 추천으로 시작하거나 직접 만드세요.</string>
+    <string name="preparation_empty__t">저장된 루틴이 없습니다. 추천으로 시작하거나 직접 만드세요.</string>
+    <string name="preparation_starters">시작 루틴</string>
+    <string name="preparation_starters__t">시작 루틴</string>
+    <string name="preparation_copy_hint">시작 루틴을 선택하여 편집 가능한 사본을 만드세요.</string>
+    <string name="preparation_copy_hint__t">시작 루틴을 선택하여 편집 가능한 사본을 만드세요.</string>
+    <string name="preparation_edit_copy">사본 편집</string>
+    <string name="preparation_edit_copy__t">사본 편집</string>
+    <string name="preparation_save">루틴 저장</string>
+    <string name="preparation_save__t">루틴 저장</string>
+    <string name="preparation_name">루틴 이름</string>
+    <string name="preparation_name__t">루틴 이름</string>
+    <string name="preparation_future_only">변경 사항은 이후 운동에 적용됩니다. 진행 중인 운동은 현재 루틴을 유지합니다.</string>
+    <string name="preparation_future_only__t">변경 사항은 이후 운동에 적용됩니다. 진행 중인 운동은 현재 루틴을 유지합니다.</string>
+    <string name="preparation_target">목표</string>
+    <string name="preparation_target__t">목표</string>
+    <string name="preparation_seconds">초</string>
+    <string name="preparation_seconds__t">초</string>
+    <string name="preparation_reps">회</string>
+    <string name="preparation_reps__t">회</string>
+    <string name="preparation_rounds">라운드</string>
+    <string name="preparation_rounds__t">라운드</string>
+    <string name="preparation_once">한 번</string>
+    <string name="preparation_once__t">한 번</string>
+    <string name="preparation_sides">양쪽 각각</string>
+    <string name="preparation_sides__t">양쪽 각각</string>
+    <string name="preparation_directions">각 방향</string>
+    <string name="preparation_directions__t">각 방향</string>
+    <string name="preparation_selected">선택됨</string>
+    <string name="preparation_selected__t">선택됨</string>
+    <string name="preparation_validation">1~100회 또는 5~600초, 1~10라운드, 메모는 1000자 이내로 입력하세요.</string>
+    <string name="preparation_validation__t">1~100회 또는 5~600초, 1~10라운드, 메모는 1000자 이내로 입력하세요.</string>
+    <string name="preparation_add_hint">운동을 추가하여 루틴을 만드세요.</string>
+    <string name="preparation_add_hint__t">운동을 추가하여 루틴을 만드세요.</string>
+    <string name="preparation_error">루틴을 불러오거나 저장하지 못했습니다. 다시 시도하세요.</string>
+    <string name="preparation_error__t">루틴을 불러오거나 저장하지 못했습니다. 다시 시도하세요.</string>
+    <string name="preparation_delete">루틴 삭제</string>
+    <string name="preparation_delete__t">루틴 삭제</string>
+    <string name="preparation_delete_title">이 루틴을 삭제할까요?</string>
+    <string name="preparation_delete_title__t">이 루틴을 삭제할까요?</string>
+    <string name="preparation_delete_body">이 루틴을 사용하는 저장된 운동은 자동 추천으로 돌아갑니다. 진행 중인 운동은 유지됩니다.</string>
+    <string name="preparation_delete_body__t">이 루틴을 사용하는 저장된 운동은 자동 추천으로 돌아갑니다. 진행 중인 운동은 유지됩니다.</string>
+    <string name="preparation_discard_title">변경 사항을 버릴까요?</string>
+    <string name="preparation_discard_title__t">변경 사항을 버릴까요?</string>
+    <string name="preparation_discard_body">저장하지 않은 변경 사항이 사라집니다.</string>
+    <string name="preparation_discard_body__t">저장하지 않은 변경 사항이 사라집니다.</string>
+    <string name="preparation_discard">버리기</string>
+    <string name="preparation_discard__t">버리기</string>
+    <string name="preparation_keep_editing">계속 편집</string>
+    <string name="preparation_keep_editing__t">계속 편집</string>
+    <string name="preparation_choose">%1$s 선택</string>
+    <string name="preparation_choose__t">%1$s 선택</string>
+    <string name="preparation_use">이 루틴 사용</string>
+    <string name="preparation_use__t">이 루틴 사용</string>
+    <string name="preparation_auto">자동 추천</string>
+    <string name="preparation_auto__t">자동 추천</string>
+    <string name="preparation_auto_hint">현재 운동의 작업 운동에 맞춰 추천합니다.</string>
+    <string name="preparation_auto_hint__t">현재 운동의 작업 운동에 맞춰 추천합니다.</string>
+    <string name="preparation_manage">루틴 관리</string>
+    <string name="preparation_manage__t">루틴 관리</string>
+    <string name="preparation_none">없음</string>
+    <string name="preparation_none__t">없음</string>
+    <string name="preparation_none_hint">일반 루틴 제안을 생략합니다. 명시된 워밍업은 유지됩니다.</string>
+    <string name="preparation_none_hint__t">일반 루틴 제안을 생략합니다. 명시된 워밍업은 유지됩니다.</string>
+    <plurals name="preparation_exercise_count">
+        <item quantity="other">운동 %1$d개</item>
+    </plurals>
+    <plurals name="preparation_exercise_count__t">
+        <item quantity="other">운동 %1$d개</item>
+    </plurals>
+    <string name="preparation_used_by">사용 중: %1$s</string>
+    <string name="preparation_used_by__t">사용 중: %1$s</string>
+    <plurals name="preparation_target_reps">
+        <item quantity="other">%1$d회</item>
+    </plurals>
+    <plurals name="preparation_target_reps__t">
+        <item quantity="other">%1$d회</item>
+    </plurals>
+    <plurals name="preparation_target_seconds">
+        <item quantity="other">%1$d초</item>
+    </plurals>
+    <plurals name="preparation_target_seconds__t">
+        <item quantity="other">%1$d초</item>
+    </plurals>
+    <string name="preparation_each_side">각 쪽 %1$s</string>
+    <string name="preparation_each_side__t">각 쪽 %1$s</string>
+    <string name="preparation_each_direction">각 방향 %1$s</string>
+    <string name="preparation_each_direction__t">각 방향 %1$s</string>
+    <plurals name="preparation_target_rounds">
+        <item quantity="other">%1$d라운드 · %2$s</item>
+    </plurals>
+    <plurals name="preparation_target_rounds__t">
+        <item quantity="other">%1$d라운드 · %2$s</item>
+    </plurals>
+    <string name="preparation_move_up">%1$s 위로 이동</string>
+    <string name="preparation_move_up__t">%1$s 위로 이동</string>
+    <string name="preparation_move_down">%1$s 아래로 이동</string>
+    <string name="preparation_move_down__t">%1$s 아래로 이동</string>
+    <string name="preparation_section">준비와 회복</string>
+    <string name="preparation_section__t">준비와 회복</string>
+    <string name="preparation_preview">루틴 미리보기</string>
+    <string name="preparation_preview__t">루틴 미리보기</string>
 </resources>

@@ -49,6 +49,7 @@ fun SettingsScreen(
     onOpenSignIn: () -> Unit,
     onOpenSupport: () -> Unit,
     onBack: () -> Unit,
+    onOpenPreparation: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appearance = viewModel.currentAppearance()
@@ -104,6 +105,12 @@ fun SettingsScreen(
         }
 
         SettingsGroup(stringResource(R.string.settings_hub_group_training), topSpace = 10.dp, rows = true) {
+            SettingsValueRow(
+                UiText.themed(R.string.preparation_library, R.string.preparation_library__t).asString(),
+                UiText.themed(R.string.preparation_manage, R.string.preparation_manage__t).asString(),
+            ) {
+                onOpenPreparation()
+            }
             SettingsValueRow(stringResource(R.string.settings_hub_training_mode_label), (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
             }

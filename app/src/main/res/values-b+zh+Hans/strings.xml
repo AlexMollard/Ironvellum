@@ -5600,4 +5600,122 @@
     <string name="preparation_invalid__t">此准备活动无效。</string>
     <string name="preparation_import_dropped">无法恢复准备活动数据：%1$s</string>
     <string name="preparation_import_dropped__t">无法恢复准备活动数据：%1$s</string>
+
+    <!-- Reusable warmups and cooldowns -->
+    <string name="preparation_library">热身与放松</string>
+    <string name="preparation_library__t">热身与放松</string>
+    <string name="preparation_warmup">热身</string>
+    <string name="preparation_warmup__t">热身</string>
+    <string name="preparation_cooldown">放松</string>
+    <string name="preparation_cooldown__t">放松</string>
+    <string name="preparation_warmups">热身</string>
+    <string name="preparation_warmups__t">热身</string>
+    <string name="preparation_cooldowns">放松</string>
+    <string name="preparation_cooldowns__t">放松</string>
+    <string name="preparation_create">创建流程</string>
+    <string name="preparation_create__t">创建流程</string>
+    <string name="preparation_personal">我的流程</string>
+    <string name="preparation_personal__t">我的流程</string>
+    <string name="preparation_empty">尚未保存流程。可从推荐开始，或自行创建。</string>
+    <string name="preparation_empty__t">尚未保存流程。可从推荐开始，或自行创建。</string>
+    <string name="preparation_starters">入门流程</string>
+    <string name="preparation_starters__t">入门流程</string>
+    <string name="preparation_copy_hint">选择入门流程，创建可编辑的副本。</string>
+    <string name="preparation_copy_hint__t">选择入门流程，创建可编辑的副本。</string>
+    <string name="preparation_edit_copy">编辑副本</string>
+    <string name="preparation_edit_copy__t">编辑副本</string>
+    <string name="preparation_save">保存流程</string>
+    <string name="preparation_save__t">保存流程</string>
+    <string name="preparation_name">流程名称</string>
+    <string name="preparation_name__t">流程名称</string>
+    <string name="preparation_future_only">更改仅影响今后的训练。进行中的训练保留当前流程。</string>
+    <string name="preparation_future_only__t">更改仅影响今后的训练。进行中的训练保留当前流程。</string>
+    <string name="preparation_target">目标</string>
+    <string name="preparation_target__t">目标</string>
+    <string name="preparation_seconds">秒</string>
+    <string name="preparation_seconds__t">秒</string>
+    <string name="preparation_reps">次数</string>
+    <string name="preparation_reps__t">次数</string>
+    <string name="preparation_rounds">轮数</string>
+    <string name="preparation_rounds__t">轮数</string>
+    <string name="preparation_once">一次</string>
+    <string name="preparation_once__t">一次</string>
+    <string name="preparation_sides">每侧</string>
+    <string name="preparation_sides__t">每侧</string>
+    <string name="preparation_directions">每个方向</string>
+    <string name="preparation_directions__t">每个方向</string>
+    <string name="preparation_selected">已选择</string>
+    <string name="preparation_selected__t">已选择</string>
+    <string name="preparation_validation">请设置1至100次或5至600秒、1至10轮，备注不超过1000字。</string>
+    <string name="preparation_validation__t">请设置1至100次或5至600秒、1至10轮，备注不超过1000字。</string>
+    <string name="preparation_add_hint">添加动作，创建你的流程。</string>
+    <string name="preparation_add_hint__t">添加动作，创建你的流程。</string>
+    <string name="preparation_error">无法加载或保存流程，请重试。</string>
+    <string name="preparation_error__t">无法加载或保存流程，请重试。</string>
+    <string name="preparation_delete">删除流程</string>
+    <string name="preparation_delete__t">删除流程</string>
+    <string name="preparation_delete_title">删除此流程？</string>
+    <string name="preparation_delete_title__t">删除此流程？</string>
+    <string name="preparation_delete_body">使用此流程的已保存训练将恢复为自动推荐。进行中的训练保留当前流程。</string>
+    <string name="preparation_delete_body__t">使用此流程的已保存训练将恢复为自动推荐。进行中的训练保留当前流程。</string>
+    <string name="preparation_discard_title">放弃更改？</string>
+    <string name="preparation_discard_title__t">放弃更改？</string>
+    <string name="preparation_discard_body">未保存的更改将丢失。</string>
+    <string name="preparation_discard_body__t">未保存的更改将丢失。</string>
+    <string name="preparation_discard">放弃</string>
+    <string name="preparation_discard__t">放弃</string>
+    <string name="preparation_keep_editing">继续编辑</string>
+    <string name="preparation_keep_editing__t">继续编辑</string>
+    <string name="preparation_choose">选择%1$s</string>
+    <string name="preparation_choose__t">选择%1$s</string>
+    <string name="preparation_use">使用此流程</string>
+    <string name="preparation_use__t">使用此流程</string>
+    <string name="preparation_auto">自动推荐</string>
+    <string name="preparation_auto__t">自动推荐</string>
+    <string name="preparation_auto_hint">根据本次训练当前的正式动作推荐。</string>
+    <string name="preparation_auto_hint__t">根据本次训练当前的正式动作推荐。</string>
+    <string name="preparation_manage">管理流程</string>
+    <string name="preparation_manage__t">管理流程</string>
+    <string name="preparation_none">无</string>
+    <string name="preparation_none__t">无</string>
+    <string name="preparation_none_hint">跳过通用流程提示。训练中明确设置的热身仍保留。</string>
+    <string name="preparation_none_hint__t">跳过通用流程提示。训练中明确设置的热身仍保留。</string>
+    <plurals name="preparation_exercise_count">
+        <item quantity="other">%1$d个动作</item>
+    </plurals>
+    <plurals name="preparation_exercise_count__t">
+        <item quantity="other">%1$d个动作</item>
+    </plurals>
+    <string name="preparation_used_by">用于%1$s</string>
+    <string name="preparation_used_by__t">用于%1$s</string>
+    <plurals name="preparation_target_reps">
+        <item quantity="other">%1$d次</item>
+    </plurals>
+    <plurals name="preparation_target_reps__t">
+        <item quantity="other">%1$d次</item>
+    </plurals>
+    <plurals name="preparation_target_seconds">
+        <item quantity="other">%1$d秒</item>
+    </plurals>
+    <plurals name="preparation_target_seconds__t">
+        <item quantity="other">%1$d秒</item>
+    </plurals>
+    <string name="preparation_each_side">每侧%1$s</string>
+    <string name="preparation_each_side__t">每侧%1$s</string>
+    <string name="preparation_each_direction">每个方向%1$s</string>
+    <string name="preparation_each_direction__t">每个方向%1$s</string>
+    <plurals name="preparation_target_rounds">
+        <item quantity="other">%1$d轮 · %2$s</item>
+    </plurals>
+    <plurals name="preparation_target_rounds__t">
+        <item quantity="other">%1$d轮 · %2$s</item>
+    </plurals>
+    <string name="preparation_move_up">上移%1$s</string>
+    <string name="preparation_move_up__t">上移%1$s</string>
+    <string name="preparation_move_down">下移%1$s</string>
+    <string name="preparation_move_down__t">下移%1$s</string>
+    <string name="preparation_section">准备与恢复</string>
+    <string name="preparation_section__t">准备与恢复</string>
+    <string name="preparation_preview">预览流程</string>
+    <string name="preparation_preview__t">预览流程</string>
 </resources>

@@ -32,6 +32,7 @@ fun PushedHeader(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     backDescription: String? = null,
+    titleMaxLines: Int = 1,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -42,7 +43,7 @@ fun PushedHeader(
             title,
             style = MaterialTheme.typography.titleMedium,
             color = IronvellumColors.Ink,
-            maxLines = 1,
+            maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).semantics { heading() },
         )

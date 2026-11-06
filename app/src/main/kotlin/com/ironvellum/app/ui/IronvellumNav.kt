@@ -114,6 +114,12 @@ import com.ironvellum.app.ui.social.BoardKind
 import com.ironvellum.app.ui.social.BoardScreen
 import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
+import com.ironvellum.app.domain.PreparationKind
+import com.ironvellum.app.domain.PreparationChoice
+import com.ironvellum.app.domain.PreparationMode
+import com.ironvellum.app.ui.preparation.PreparationLibraryScreen
+import com.ironvellum.app.ui.preparation.PreparationEditorScreen
+import com.ironvellum.app.ui.preparation.PreparationSelectorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
 import com.ironvellum.app.ui.program.OptimiseScreen
 import com.ironvellum.app.ui.train.SessionScreen
@@ -160,6 +166,14 @@ object Routes {
     const val COMMENTS = "comments/{sessionId}?owner={ownerId}&headline={headline}"
     const val MEASUREMENT = "measurement/{site}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
+    const val PREPARATION_LIBRARY = "preparation/library/{kind}"
+    const val PREPARATION_EDITOR = "preparation/editor/{kind}?routineId={routineId}&starter={starter}"
+    const val PREPARATION_SELECTOR = "preparation/select/{kind}?presetId={presetId}&sessionId={sessionId}"
+    fun preparationLibrary(kind: PreparationKind = PreparationKind.WARMUP) = "preparation/library/${kind.name}"
+    fun preparationEditor(kind: PreparationKind, routineId: Long? = null, starter: Int? = null): String =
+        PREPARATION_EDITOR.replace("{kind}", kind.name).replace("{routineId}", (routineId ?: -1).toString()).replace("{starter}", (starter ?: -1).toString())
+    fun preparationSelector(kind: PreparationKind, presetId: Long? = null, sessionId: Long? = null): String =
+        PREPARATION_SELECTOR.replace("{kind}", kind.name).replace("{presetId}", (presetId ?: -1).toString()).replace("{sessionId}", (sessionId ?: -1).toString())
     const val RITE_DETAIL = "rite/{presetId}"
     const val SESSION = "session/{sessionId}"
     const val PROGRAM_BUILDER = "program_builder?mode={mode}&presetId={presetId}"
@@ -524,9 +538,68 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     Routes.PRESET_EDITOR,
                     arguments = listOf(navArgument("presetId") { type = NavType.LongType; defaultValue = -1L }),
                 ) { entry ->
+                    val selection by entry.savedStateHandle.getStateFlow<android.os.Bundle?>("preparation_result", null).collectAsState()
                     PresetEditorScreen(
                         presetId = entry.arguments?.getLong("presetId")?.takeIf { it > 0 },
                         onDone = { navController.popBackStack() },
+                        onPreparation = { kind, choice, ids ->
+                            entry.savedStateHandle["preparation_working_ids"] = ids.toLongArray()
+                            entry.savedStateHandle["preparation_initial_mode"] = choice.mode.name
+                            entry.savedStateHandle["preparation_initial_routine"] = choice.routineId
+                            navController.navigate(Routes.preparationSelector(kind, entry.arguments?.getLong("presetId")?.takeIf { it > 0 }))
+                        },
+                        returnedPreparation = selection?.let { bundle ->
+                            PreparationKind.valueOf(bundle.getString("kind")!!) to PreparationChoice(
+                                PreparationMode.valueOf(bundle.getString("mode")!!),
+                                bundle.getLong("routine").takeIf { it > 0 },
+                            )
+                        },
+                        onPreparationConsumed = { entry.savedStateHandle["preparation_result"] = null },
+                    )
+                }
+                composable(Routes.PREPARATION_LIBRARY, arguments = listOf(navArgument("kind") { type = NavType.StringType })) { entry ->
+                    val kind = PreparationKind.entries.firstOrNull { it.name == entry.arguments?.getString("kind") } ?: PreparationKind.WARMUP
+                    PreparationLibraryScreen(kind,
+                        onEdit = { id, k -> navController.navigate(Routes.preparationEditor(k, id)) },
+                        onCopyStarter = { index, k -> navController.navigate(Routes.preparationEditor(k, starter = index)) },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(Routes.PREPARATION_EDITOR, arguments = listOf(
+                    navArgument("kind") { type = NavType.StringType },
+                    navArgument("routineId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("starter") { type = NavType.IntType; defaultValue = -1 },
+                )) { entry ->
+                    val kind = PreparationKind.entries.firstOrNull { it.name == entry.arguments?.getString("kind") } ?: PreparationKind.WARMUP
+                    PreparationEditorScreen(entry.arguments?.getLong("routineId")?.takeIf { it > 0 }, kind,
+                        entry.arguments?.getInt("starter")?.takeIf { it >= 0 }, onDone = { navController.popBackStack() })
+                }
+                composable(Routes.PREPARATION_SELECTOR, arguments = listOf(
+                    navArgument("kind") { type = NavType.StringType },
+                    navArgument("presetId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("sessionId") { type = NavType.LongType; defaultValue = -1L },
+                )) { entry ->
+                    val kind = PreparationKind.entries.firstOrNull { it.name == entry.arguments?.getString("kind") } ?: PreparationKind.WARMUP
+                    val owner = remember(entry) { navController.previousBackStackEntry }
+                    // Freeze owner context in this route's handle: nested create/manage routes must not change the owner.
+                    if (!entry.savedStateHandle.contains("preparation_context_loaded")) {
+                        owner?.savedStateHandle?.get<LongArray>("preparation_working_ids")?.let { entry.savedStateHandle["preparation_working_ids"] = it }
+                        entry.savedStateHandle["preparation_initial_mode"] = owner?.savedStateHandle?.get<String>("preparation_initial_mode")
+                        entry.savedStateHandle["preparation_initial_routine"] = owner?.savedStateHandle?.get<Long>("preparation_initial_routine")
+                        entry.savedStateHandle["preparation_context_loaded"] = true
+                    }
+                    PreparationSelectorScreen(kind, entry.arguments?.getLong("presetId")?.takeIf { it > 0 }, entry.arguments?.getLong("sessionId")?.takeIf { it > 0 },
+                        onSelected = { choice ->
+                            owner?.savedStateHandle?.set("preparation_result", android.os.Bundle().apply {
+                                putString("kind", kind.name); putString("mode", choice.mode.name); choice.routineId?.let { putLong("routine", it) }
+                            })
+                            navController.popBackStack()
+                        },
+                        onBack = { navController.popBackStack() },
+                        workingExerciseIds = entry.savedStateHandle.get<LongArray>("preparation_working_ids")?.toList(),
+                        initialChoice = entry.savedStateHandle.get<String>("preparation_initial_mode")?.let { PreparationChoice(PreparationMode.valueOf(it), entry.savedStateHandle["preparation_initial_routine"]) },
+                        onCreate = { index -> navController.navigate(Routes.preparationEditor(kind, starter = index)) },
+                        onManage = { navController.navigate(Routes.preparationLibrary(kind)) },
                     )
                 }
                 composable(
@@ -575,6 +648,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenSignIn = { navController.navigate(Routes.SIGN_IN) },
                         onOpenSupport = { navController.navigate(Routes.SUPPORT) },
                         onBack = { navController.popBackStack() },
+                        onOpenPreparation = { navController.navigate(Routes.preparationLibrary()) },
                     )
                 }
                 composable(

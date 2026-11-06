@@ -5600,4 +5600,122 @@
     <string name="preparation_invalid__t">この準備は無効です。</string>
     <string name="preparation_import_dropped">準備データを復元できませんでした: %1$s</string>
     <string name="preparation_import_dropped__t">準備データを復元できませんでした: %1$s</string>
+
+    <!-- Reusable warmups and cooldowns -->
+    <string name="preparation_library">ウォームアップとクールダウン</string>
+    <string name="preparation_library__t">ウォームアップとクールダウン</string>
+    <string name="preparation_warmup">ウォームアップ</string>
+    <string name="preparation_warmup__t">ウォームアップ</string>
+    <string name="preparation_cooldown">クールダウン</string>
+    <string name="preparation_cooldown__t">クールダウン</string>
+    <string name="preparation_warmups">ウォームアップ</string>
+    <string name="preparation_warmups__t">ウォームアップ</string>
+    <string name="preparation_cooldowns">クールダウン</string>
+    <string name="preparation_cooldowns__t">クールダウン</string>
+    <string name="preparation_create">ルーティンを作成</string>
+    <string name="preparation_create__t">ルーティンを作成</string>
+    <string name="preparation_personal">保存したルーティン</string>
+    <string name="preparation_personal__t">保存したルーティン</string>
+    <string name="preparation_empty">保存されたルーティンはありません。提案を使うか、自分で作成しましょう。</string>
+    <string name="preparation_empty__t">保存されたルーティンはありません。提案を使うか、自分で作成しましょう。</string>
+    <string name="preparation_starters">スタータールーティン</string>
+    <string name="preparation_starters__t">スタータールーティン</string>
+    <string name="preparation_copy_hint">スターターを選んで編集可能なコピーを作成します。</string>
+    <string name="preparation_copy_hint__t">スターターを選んで編集可能なコピーを作成します。</string>
+    <string name="preparation_edit_copy">コピーを編集</string>
+    <string name="preparation_edit_copy__t">コピーを編集</string>
+    <string name="preparation_save">ルーティンを保存</string>
+    <string name="preparation_save__t">ルーティンを保存</string>
+    <string name="preparation_name">ルーティン名</string>
+    <string name="preparation_name__t">ルーティン名</string>
+    <string name="preparation_future_only">変更は今後のワークアウトに適用されます。進行中のルーティンは維持されます。</string>
+    <string name="preparation_future_only__t">変更は今後のワークアウトに適用されます。進行中のルーティンは維持されます。</string>
+    <string name="preparation_target">目標</string>
+    <string name="preparation_target__t">目標</string>
+    <string name="preparation_seconds">秒</string>
+    <string name="preparation_seconds__t">秒</string>
+    <string name="preparation_reps">回</string>
+    <string name="preparation_reps__t">回</string>
+    <string name="preparation_rounds">ラウンド</string>
+    <string name="preparation_rounds__t">ラウンド</string>
+    <string name="preparation_once">1回</string>
+    <string name="preparation_once__t">1回</string>
+    <string name="preparation_sides">左右それぞれ</string>
+    <string name="preparation_sides__t">左右それぞれ</string>
+    <string name="preparation_directions">各方向</string>
+    <string name="preparation_directions__t">各方向</string>
+    <string name="preparation_selected">選択中</string>
+    <string name="preparation_selected__t">選択中</string>
+    <string name="preparation_validation">回数は1～100回、時間は5～600秒、ラウンドは1～10、メモは1000文字以内にしてください。</string>
+    <string name="preparation_validation__t">回数は1～100回、時間は5～600秒、ラウンドは1～10、メモは1000文字以内にしてください。</string>
+    <string name="preparation_add_hint">エクササイズを追加してルーティンを作成します。</string>
+    <string name="preparation_add_hint__t">エクササイズを追加してルーティンを作成します。</string>
+    <string name="preparation_error">ルーティンを読み込み、または保存できませんでした。もう一度お試しください。</string>
+    <string name="preparation_error__t">ルーティンを読み込み、または保存できませんでした。もう一度お試しください。</string>
+    <string name="preparation_delete">ルーティンを削除</string>
+    <string name="preparation_delete__t">ルーティンを削除</string>
+    <string name="preparation_delete_title">このルーティンを削除しますか？</string>
+    <string name="preparation_delete_title__t">このルーティンを削除しますか？</string>
+    <string name="preparation_delete_body">このルーティンを使う保存済みワークアウトは自動提案に戻ります。進行中のワークアウトは維持されます。</string>
+    <string name="preparation_delete_body__t">このルーティンを使う保存済みワークアウトは自動提案に戻ります。進行中のワークアウトは維持されます。</string>
+    <string name="preparation_discard_title">変更を破棄しますか？</string>
+    <string name="preparation_discard_title__t">変更を破棄しますか？</string>
+    <string name="preparation_discard_body">未保存の変更は失われます。</string>
+    <string name="preparation_discard_body__t">未保存の変更は失われます。</string>
+    <string name="preparation_discard">破棄</string>
+    <string name="preparation_discard__t">破棄</string>
+    <string name="preparation_keep_editing">編集を続ける</string>
+    <string name="preparation_keep_editing__t">編集を続ける</string>
+    <string name="preparation_choose">%1$sを選択</string>
+    <string name="preparation_choose__t">%1$sを選択</string>
+    <string name="preparation_use">このルーティンを使う</string>
+    <string name="preparation_use__t">このルーティンを使う</string>
+    <string name="preparation_auto">自動提案</string>
+    <string name="preparation_auto__t">自動提案</string>
+    <string name="preparation_auto_hint">現在のワークアウトのワークエクササイズに合わせて提案します。</string>
+    <string name="preparation_auto_hint__t">現在のワークアウトのワークエクササイズに合わせて提案します。</string>
+    <string name="preparation_manage">ルーティンを管理</string>
+    <string name="preparation_manage__t">ルーティンを管理</string>
+    <string name="preparation_none">なし</string>
+    <string name="preparation_none__t">なし</string>
+    <string name="preparation_none_hint">全体ルーティンの提案を省略します。明示的なウォームアップは維持されます。</string>
+    <string name="preparation_none_hint__t">全体ルーティンの提案を省略します。明示的なウォームアップは維持されます。</string>
+    <plurals name="preparation_exercise_count">
+        <item quantity="other">エクササイズ%1$d種目</item>
+    </plurals>
+    <plurals name="preparation_exercise_count__t">
+        <item quantity="other">エクササイズ%1$d種目</item>
+    </plurals>
+    <string name="preparation_used_by">使用先：%1$s</string>
+    <string name="preparation_used_by__t">使用先：%1$s</string>
+    <plurals name="preparation_target_reps">
+        <item quantity="other">%1$d回</item>
+    </plurals>
+    <plurals name="preparation_target_reps__t">
+        <item quantity="other">%1$d回</item>
+    </plurals>
+    <plurals name="preparation_target_seconds">
+        <item quantity="other">%1$d秒</item>
+    </plurals>
+    <plurals name="preparation_target_seconds__t">
+        <item quantity="other">%1$d秒</item>
+    </plurals>
+    <string name="preparation_each_side">各側%1$s</string>
+    <string name="preparation_each_side__t">各側%1$s</string>
+    <string name="preparation_each_direction">各方向%1$s</string>
+    <string name="preparation_each_direction__t">各方向%1$s</string>
+    <plurals name="preparation_target_rounds">
+        <item quantity="other">%1$dラウンド · %2$s</item>
+    </plurals>
+    <plurals name="preparation_target_rounds__t">
+        <item quantity="other">%1$dラウンド · %2$s</item>
+    </plurals>
+    <string name="preparation_move_up">%1$sを上に移動</string>
+    <string name="preparation_move_up__t">%1$sを上に移動</string>
+    <string name="preparation_move_down">%1$sを下に移動</string>
+    <string name="preparation_move_down__t">%1$sを下に移動</string>
+    <string name="preparation_section">準備と回復</string>
+    <string name="preparation_section__t">準備と回復</string>
+    <string name="preparation_preview">ルーティンをプレビュー</string>
+    <string name="preparation_preview__t">ルーティンをプレビュー</string>
 </resources>
