@@ -6112,8 +6112,8 @@
     <string name="preparation_pause__t">Timer pausieren</string>
     <string name="preparation_start_timer">Timer starten / fortsetzen</string>
     <string name="preparation_start_timer__t">Timer starten / fortsetzen</string>
-    <string name="preparation_skip_unit">Übung überspringen</string>
-    <string name="preparation_skip_unit__t">Übung überspringen</string>
+    <string name="preparation_skip_unit">Schritt überspringen</string>
+    <string name="preparation_skip_unit__t">Schritt überspringen</string>
     <string name="preparation_no_scoring">Die Vorbereitung fügt keine Arbeitssätze oder XP hinzu.</string>
     <string name="preparation_no_scoring__t">Die Vorbereitung fügt keine Arbeitssätze oder XP hinzu.</string>
     <string name="preparation_leave_title">Vorbereitung verlassen?</string>
@@ -6126,4 +6126,32 @@
     <string name="preparation_change_title__t">Vorbereitung ändern?</string>
     <string name="preparation_change_body">Dies ersetzt die Vorbereitung dieser Einheit und setzt ihren Fortschritt zurück. Dein gespeichertes Training bleibt unverändert.</string>
     <string name="preparation_change_body__t">Dies ersetzt die Vorbereitung dieser Einheit und setzt ihren Fortschritt zurück. Dein gespeichertes Training bleibt unverändert.</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">Vorbereitungsaktionen</string>
+    <string name="preparation_actions__t">Vorbereitungsaktionen</string>
+    <string name="preparation_estimate">%1$s · ca. %2$d Min.</string>
+    <string name="preparation_estimate__t">%1$s · ca. %2$d Min.</string>
+    <string name="preparation_view">Ansehen</string>
+    <string name="preparation_view__t">Ansehen</string>
+    <string name="preparation_movement_progress">Bewegung %1$d von %2$d</string>
+    <string name="preparation_movement_progress__t">Bewegung %1$d von %2$d</string>
+    <string name="preparation_result_counts">Abgeschlossen: %1$d / %2$d · Übersprungen: %3$d</string>
+    <string name="preparation_result_counts__t">Abgeschlossen: %1$d / %2$d · Übersprungen: %3$d</string>
+    <string name="preparation_finish">Vorbereitung beenden</string>
+    <string name="preparation_finish__t">Vorbereitung beenden</string>
+    <string name="preparation_finish_title">Vorbereitung beenden?</string>
+    <string name="preparation_finish_title__t">Vorbereitung beenden?</string>
+    <string name="preparation_finish_body">Die verbleibenden Übungen werden übersprungen. Abgeschlossene Übungen bleiben gespeichert.</string>
+    <string name="preparation_finish_body__t">Die verbleibenden Übungen werden übersprungen. Abgeschlossene Übungen bleiben gespeichert.</string>
+    <string name="preparation_up_next">Als Nächstes</string>
+    <string name="preparation_up_next__t">Als Nächstes</string>
+    <string name="preparation_complete_description">%1$s: %2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s: %2$s · %3$s</string>
+    <string name="preparation_fold">%1$s einklappen</string>
+    <string name="preparation_fold__t">%1$s einklappen</string>
+    <string name="preparation_unfold">%1$s ausklappen</string>
+    <string name="preparation_unfold__t">%1$s ausklappen</string>
+    <string name="preparation_final_next">%1$s beenden</string>
+    <string name="preparation_final_next__t">%1$s beenden</string>
 </resources>

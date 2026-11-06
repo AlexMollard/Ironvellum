@@ -92,6 +92,8 @@ internal fun EntryCard(
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
     titleMaxLines: Int = 1,
+    headerActions: @Composable RowScope.() -> Unit = {},
+    showFooter: Boolean = true,
     actions: @Composable RowScope.() -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -115,10 +117,13 @@ internal fun EntryCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(start = if (leading == null) 12.dp else 0.dp),
             )
+            headerActions()
         }
         Column(Modifier.padding(start = 12.dp), content = content)
-        InkDivider()
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, content = actions)
+        if (showFooter) {
+            InkDivider()
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, content = actions)
+        }
     }
 }
 

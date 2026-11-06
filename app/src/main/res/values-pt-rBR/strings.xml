@@ -6120,8 +6120,8 @@
     <string name="preparation_pause__t">Pausar cronômetro</string>
     <string name="preparation_start_timer">Iniciar / retomar cronômetro</string>
     <string name="preparation_start_timer__t">Iniciar / retomar cronômetro</string>
-    <string name="preparation_skip_unit">Pular exercício</string>
-    <string name="preparation_skip_unit__t">Pular exercício</string>
+    <string name="preparation_skip_unit">Pular etapa</string>
+    <string name="preparation_skip_unit__t">Pular etapa</string>
     <string name="preparation_no_scoring">A preparação não adiciona séries de trabalho nem XP.</string>
     <string name="preparation_no_scoring__t">A preparação não adiciona séries de trabalho nem XP.</string>
     <string name="preparation_leave_title">Sair da preparação?</string>
@@ -6134,4 +6134,32 @@
     <string name="preparation_change_title__t">Trocar rotina?</string>
     <string name="preparation_change_body">Isso substitui a preparação desta sessão e reinicia seu progresso. Seu treino salvo permanece igual.</string>
     <string name="preparation_change_body__t">Isso substitui a preparação desta sessão e reinicia seu progresso. Seu treino salvo permanece igual.</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">Ações de preparação</string>
+    <string name="preparation_actions__t">Ações de preparação</string>
+    <string name="preparation_estimate">%1$s · ~%2$d min</string>
+    <string name="preparation_estimate__t">%1$s · ~%2$d min</string>
+    <string name="preparation_view">Ver</string>
+    <string name="preparation_view__t">Ver</string>
+    <string name="preparation_movement_progress">Movimento %1$d de %2$d</string>
+    <string name="preparation_movement_progress__t">Movimento %1$d de %2$d</string>
+    <string name="preparation_result_counts">Concluídos: %1$d / %2$d · Pulados: %3$d</string>
+    <string name="preparation_result_counts__t">Concluídos: %1$d / %2$d · Pulados: %3$d</string>
+    <string name="preparation_finish">Finalizar preparação</string>
+    <string name="preparation_finish__t">Finalizar preparação</string>
+    <string name="preparation_finish_title">Finalizar preparação?</string>
+    <string name="preparation_finish_title__t">Finalizar preparação?</string>
+    <string name="preparation_finish_body">O trabalho restante será pulado. Os exercícios concluídos continuarão registrados.</string>
+    <string name="preparation_finish_body__t">O trabalho restante será pulado. Os exercícios concluídos continuarão registrados.</string>
+    <string name="preparation_up_next">A seguir</string>
+    <string name="preparation_up_next__t">A seguir</string>
+    <string name="preparation_complete_description">%1$s: %2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s: %2$s · %3$s</string>
+    <string name="preparation_fold">Recolher %1$s</string>
+    <string name="preparation_fold__t">Recolher %1$s</string>
+    <string name="preparation_unfold">Expandir %1$s</string>
+    <string name="preparation_unfold__t">Expandir %1$s</string>
+    <string name="preparation_final_next">Finalizar %1$s</string>
+    <string name="preparation_final_next__t">Finalizar %1$s</string>
 </resources>

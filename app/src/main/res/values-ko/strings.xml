@@ -5752,8 +5752,8 @@
     <string name="preparation_pause__t">타이머 일시 정지</string>
     <string name="preparation_start_timer">타이머 시작 / 재개</string>
     <string name="preparation_start_timer__t">타이머 시작 / 재개</string>
-    <string name="preparation_skip_unit">운동 건너뛰기</string>
-    <string name="preparation_skip_unit__t">운동 건너뛰기</string>
+    <string name="preparation_skip_unit">단계 건너뛰기</string>
+    <string name="preparation_skip_unit__t">단계 건너뛰기</string>
     <string name="preparation_no_scoring">준비 운동은 작업 세트나 XP를 추가하지 않습니다.</string>
     <string name="preparation_no_scoring__t">준비 운동은 작업 세트나 XP를 추가하지 않습니다.</string>
     <string name="preparation_leave_title">준비 운동을 나갈까요?</string>
@@ -5766,4 +5766,32 @@
     <string name="preparation_change_title__t">루틴을 변경할까요?</string>
     <string name="preparation_change_body">이 세션의 준비 운동을 바꾸고 진행 상황을 초기화합니다. 저장한 운동은 바뀌지 않습니다.</string>
     <string name="preparation_change_body__t">이 세션의 준비 운동을 바꾸고 진행 상황을 초기화합니다. 저장한 운동은 바뀌지 않습니다.</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">준비 동작 메뉴</string>
+    <string name="preparation_actions__t">준비 동작 메뉴</string>
+    <string name="preparation_estimate">%1$s · 약 %2$d분</string>
+    <string name="preparation_estimate__t">%1$s · 약 %2$d분</string>
+    <string name="preparation_view">보기</string>
+    <string name="preparation_view__t">보기</string>
+    <string name="preparation_movement_progress">동작 %1$d / %2$d</string>
+    <string name="preparation_movement_progress__t">동작 %1$d / %2$d</string>
+    <string name="preparation_result_counts">완료: %1$d / %2$d · 건너뜀: %3$d</string>
+    <string name="preparation_result_counts__t">완료: %1$d / %2$d · 건너뜀: %3$d</string>
+    <string name="preparation_finish">준비 종료</string>
+    <string name="preparation_finish__t">준비 종료</string>
+    <string name="preparation_finish_title">준비를 종료할까요?</string>
+    <string name="preparation_finish_title__t">준비를 종료할까요?</string>
+    <string name="preparation_finish_body">남은 운동은 건너뜁니다. 완료한 운동 기록은 유지됩니다.</string>
+    <string name="preparation_finish_body__t">남은 운동은 건너뜁니다. 완료한 운동 기록은 유지됩니다.</string>
+    <string name="preparation_up_next">다음 동작</string>
+    <string name="preparation_up_next__t">다음 동작</string>
+    <string name="preparation_complete_description">%1$s: %2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s: %2$s · %3$s</string>
+    <string name="preparation_fold">%1$s 접기</string>
+    <string name="preparation_fold__t">%1$s 접기</string>
+    <string name="preparation_unfold">%1$s 펼치기</string>
+    <string name="preparation_unfold__t">%1$s 펼치기</string>
+    <string name="preparation_final_next">%1$s 종료</string>
+    <string name="preparation_final_next__t">%1$s 종료</string>
 </resources>

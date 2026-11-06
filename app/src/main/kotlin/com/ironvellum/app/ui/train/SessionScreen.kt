@@ -596,6 +596,19 @@ class SessionViewModel(
         }
     }
 
+    private var preparationEntryPending = false
+
+    fun beginPreparation(kind: PreparationKind, after: () -> Unit) {
+        if (preparationEntryPending) return
+        preparationEntryPending = true
+        viewModelScope.launchGuarded("begin preparation") {
+            try {
+                withContext(NonCancellable) { repo.preparations.act(sessionId, kind, PreparationAction.START, System.currentTimeMillis()) }
+                after()
+            } finally { preparationEntryPending = false }
+        }
+    }
+
     fun skipPreparation(kind: PreparationKind) {
         viewModelScope.launchGuarded("skip preparation") { repo.preparations.act(sessionId, kind, PreparationAction.SKIP_ROUTINE, System.currentTimeMillis()) }
     }
@@ -862,6 +875,7 @@ fun SessionScreen(
     onChangePreparation: (PreparationKind, PreparationChoice) -> Unit = { _, _ -> },
     preparationResult: Bundle? = null,
     onPreparationResultConsumed: () -> Unit = {},
+    onViewPreparation: (PreparationKind) -> Unit = onPreparation,
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val peakBook by viewModel.peakBook.collectAsStateWithLifecycle()
@@ -1024,9 +1038,13 @@ fun SessionScreen(
             else -> PreparationChoice()
         }
     }
-    fun openPreparation(kind: PreparationKind, change: Boolean = false) {
+    fun openPreparation(kind: PreparationKind, change: Boolean = false, preview: Boolean = false) {
         if (kind == PreparationKind.COOLDOWN) viewModel.advanceFinish(SessionViewModel.Finish.SUMMARY)
-        if (change) onChangePreparation(kind, preparationChoice(kind)) else onPreparation(kind)
+        when {
+            change -> onChangePreparation(kind, preparationChoice(kind))
+            preview -> onViewPreparation(kind)
+            else -> viewModel.beginPreparation(kind) { onPreparation(kind) }
+        }
     }
     var confirmPreparation by rememberSaveable { mutableStateOf(false) }
     val resultKind = preparationResult?.getString("kind")?.let { PreparationKind.valueOf(it) }
@@ -1055,7 +1073,8 @@ fun SessionScreen(
     @Composable fun CooldownCard() {
         cooldownPreparation?.let { PreparationSummaryCard(it,
             { openPreparation(PreparationKind.COOLDOWN) }, { openPreparation(PreparationKind.COOLDOWN, change = true) },
-            { viewModel.skipPreparation(PreparationKind.COOLDOWN) }) }
+            { viewModel.skipPreparation(PreparationKind.COOLDOWN) },
+            onView = { openPreparation(PreparationKind.COOLDOWN, preview = true) }) }
     }
 
     // The notification's Seal action: the same confirmation the slider gives,
@@ -1357,7 +1376,8 @@ fun SessionScreen(
                 AnimatedVisibility(preparation != null && warmupOffered(preparation, viewModel.warmupEnabled) && doneCount == 0) {
                     preparation?.let { PreparationOfferCard(it,
                         { openPreparation(PreparationKind.WARMUP) }, { openPreparation(PreparationKind.WARMUP, change = true) },
-                        { viewModel.skipPreparation(PreparationKind.WARMUP) }) }
+                        { viewModel.skipPreparation(PreparationKind.WARMUP) },
+                        onView = { openPreparation(PreparationKind.WARMUP, preview = true) }) }
                 }
                 var previousFolded = false
 

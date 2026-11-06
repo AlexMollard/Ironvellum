@@ -169,8 +169,8 @@ object Routes {
     const val PREPARATION_LIBRARY = "preparation/library/{kind}"
     const val PREPARATION_EDITOR = "preparation/editor/{kind}?routineId={routineId}&starter={starter}"
     const val PREPARATION_SELECTOR = "preparation/select/{kind}?presetId={presetId}&sessionId={sessionId}"
-    const val PREPARATION_RUNNER = "preparation/run/{kind}/{sessionId}"
-    fun preparationRunner(kind: PreparationKind, sessionId: Long): String = PREPARATION_RUNNER.replace("{kind}", kind.name).replace("{sessionId}", sessionId.toString())
+    const val PREPARATION_RUNNER = "preparation/run/{kind}/{sessionId}?preview={preview}"
+    fun preparationRunner(kind: PreparationKind, sessionId: Long, initialPreview: Boolean = false): String = PREPARATION_RUNNER.replace("{kind}", kind.name).replace("{sessionId}", sessionId.toString()).replace("{preview}", initialPreview.toString())
     fun preparationLibrary(kind: PreparationKind = PreparationKind.WARMUP) = "preparation/library/${kind.name}"
     fun preparationEditor(kind: PreparationKind, routineId: Long? = null, starter: Int? = null): String =
         PREPARATION_EDITOR.replace("{kind}", kind.name).replace("{routineId}", (routineId ?: -1).toString()).replace("{starter}", (starter ?: -1).toString())
@@ -611,10 +611,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(Routes.PREPARATION_RUNNER, arguments = listOf(
                     navArgument("kind") { type = NavType.StringType }, navArgument("sessionId") { type = NavType.LongType },
+                    navArgument("preview") { type = NavType.BoolType; defaultValue = false },
                 )) { entry ->
                     val kind = PreparationKind.valueOf(entry.arguments!!.getString("kind")!!)
                     val id = entry.arguments!!.getLong("sessionId")
                     com.ironvellum.app.ui.preparation.PreparationRunnerScreen(id, kind,
+                        initialPreview = entry.arguments?.getBoolean("preview") ?: false,
                         onBack = { navController.popBackStack() }, onComplete = { navController.popBackStack() },
                         onChange = { choice ->
                             navController.popBackStack()
@@ -649,6 +651,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         preparationResult = preparationResult,
                         onPreparationResultConsumed = { entry.savedStateHandle["preparation_result"] = null },
                         onPreparation = { kind -> navController.navigate(Routes.preparationRunner(kind, id)) },
+                        onViewPreparation = { kind -> navController.navigate(Routes.preparationRunner(kind, id, initialPreview = true)) },
                         onChangePreparation = { kind, choice ->
                             entry.savedStateHandle["preparation_initial_mode"] = choice.mode.name
                             entry.savedStateHandle["preparation_initial_routine"] = choice.routineId

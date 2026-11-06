@@ -7289,8 +7289,8 @@
     <string name="preparation_pause__t">Pause timer</string>
     <string name="preparation_start_timer">Start / resume timer</string>
     <string name="preparation_start_timer__t">Start / resume timer</string>
-    <string name="preparation_skip_unit">Skip exercise</string>
-    <string name="preparation_skip_unit__t">Skip exercise</string>
+    <string name="preparation_skip_unit">Skip step</string>
+    <string name="preparation_skip_unit__t">Skip step</string>
     <string name="preparation_no_scoring">Preparation does not add working sets or XP.</string>
     <string name="preparation_no_scoring__t">Preparation does not add working sets or XP.</string>
     <string name="preparation_leave_title">Leave preparation?</string>
@@ -7303,4 +7303,32 @@
     <string name="preparation_change_title__t">Change preparation?</string>
     <string name="preparation_change_body">This replaces preparation for this session and resets its progress. Your saved workout stays unchanged.</string>
     <string name="preparation_change_body__t">This replaces preparation for this trial and resets its progress. Your saved rite stays unchanged.</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">Preparation actions</string>
+    <string name="preparation_actions__t">Preparation actions</string>
+    <string name="preparation_estimate">%1$s · ~%2$d min</string>
+    <string name="preparation_estimate__t">%1$s · ~%2$d min</string>
+    <string name="preparation_view">View</string>
+    <string name="preparation_view__t">View</string>
+    <string name="preparation_movement_progress">Movement %1$d of %2$d</string>
+    <string name="preparation_movement_progress__t">Movement %1$d of %2$d</string>
+    <string name="preparation_result_counts">Completed: %1$d / %2$d · Skipped: %3$d</string>
+    <string name="preparation_result_counts__t">Completed: %1$d / %2$d · Skipped: %3$d</string>
+    <string name="preparation_finish">Finish preparation</string>
+    <string name="preparation_finish__t">Finish preparation</string>
+    <string name="preparation_finish_title">Finish preparation?</string>
+    <string name="preparation_finish_title__t">Finish preparation?</string>
+    <string name="preparation_finish_body">The remaining work will be skipped. Completed exercises stay recorded.</string>
+    <string name="preparation_finish_body__t">The remaining work will be skipped. Completed exercises stay recorded.</string>
+    <string name="preparation_up_next">Up next</string>
+    <string name="preparation_up_next__t">Up next</string>
+    <string name="preparation_complete_description">%1$s: %2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s: %2$s · %3$s</string>
+    <string name="preparation_fold">Fold %1$s</string>
+    <string name="preparation_fold__t">Fold %1$s</string>
+    <string name="preparation_unfold">Expand %1$s</string>
+    <string name="preparation_unfold__t">Expand %1$s</string>
+    <string name="preparation_final_next">Finish %1$s</string>
+    <string name="preparation_final_next__t">Finish %1$s</string>
 </resources>

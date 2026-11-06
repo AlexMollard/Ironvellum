@@ -24,6 +24,25 @@ import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
 
+/** Bounded real-device capture: a running wall clock must not wait for Compose to become idle. */
+internal fun preparationCapture(compose: androidx.compose.ui.test.junit4.ComposeTestRule, name: String) {
+    if (InstrumentationRegistry.getArguments().getString("shots") != "true") return
+    compose.mainClock.advanceTimeBy(250)
+    Thread.sleep(300)
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    val automation = instrumentation.uiAutomation
+    fun shell(command: String) {
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
+    }
+    shell("input keyevent KEYCODE_WAKEUP")
+    shell("mkdir -p /data/local/tmp/optimise-shots")
+    val bitmap = checkNotNull(automation.takeScreenshot())
+    val file = java.io.File(checkNotNull(instrumentation.targetContext.getExternalFilesDir(null)), "$name.png")
+    file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+    shell("cp ${file.absolutePath} /data/local/tmp/optimise-shots/$name.png")
+    file.delete()
+}
+
 @RunWith(AndroidJUnit4::class)
 class PreparationRunnerLayoutTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
@@ -40,21 +59,49 @@ class PreparationRunnerLayoutTest {
     @After fun close() { db.close(); context.deleteDatabase(DB) }
     @Test fun runnerNormalFontActionsRemainReachable() = runner(1f)
     @Test fun runnerLargeFontActionsRemainReachable() = runner(2f)
+    @Test fun runnerNormalLightActionsRemainReachable() = runner(1f, light = true)
+    @Test fun runnerLargeDarkActionsRemainReachable() = runner(2f, light = false)
     @Test fun rapidDoubleTapCompletesOnlyDisplayedUnit() = runner(1f, doubleTap = true)
-    private fun runner(scale: Float, doubleTap: Boolean = false) = runBlocking {
+    @Test fun expiryNeverAdvancesAndManualFinishKeepsRecordedCounts() = runBlocking {
+        val arm = repo.observeExercises().first().single { it.name == "Arm Circles" }
+        val routine = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Finish honestly", steps = listOf(
+            PreparationStep(arm.id, arm.name, PreparationMeasure.SECONDS, 30, rounds = 2, repeat = PreparationRepeat.DIRECTIONS))))
+        val preset = repo.savePreset(null, "Finish", "", null, emptyList(), mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routine)))
+        val id = repo.startSessionFromPreset(preset)
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, System.currentTimeMillis() - 60000)
+        val vm = withContext(Dispatchers.Main) { PreparationRunnerViewModel(repo, id, PreparationKind.WARMUP) }
+        withTimeout(10000) { vm.ui.first { it.loaded } }
+        compose.setContent { IronvellumTheme { PreparationRunnerScreen(id, PreparationKind.WARMUP, {}, {}, viewModel = vm) } }
+        compose.onNodeWithText(text(R.string.preparation_reached)).assertExists()
+        Thread.sleep(300)
+        assertEquals("0:0:0", vm.ui.value.state!!.progress.currentUnitKey)
+        compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).assertIsEnabled().performClick()
+        compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "0:0:1" }
+        compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick()
+        compose.onNodeWithText(text(R.string.preparation_finish)).performClick()
+        compose.onNodeWithText(text(R.string.preparation_finish_title)).assertExists()
+        compose.onNodeWithText(text(R.string.preparation_finish)).performClick()
+        compose.waitUntil(10000) { vm.ui.value.state?.progress?.status == PreparationStatus.SKIPPED }
+        assertEquals(setOf("0:0:0"), vm.ui.value.state!!.progress.completedUnitKeys)
+        assertTrue(vm.ui.value.state!!.progress.skippedUnitKeys.isEmpty())
+        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_result_counts, R.string.preparation_result_counts__t, 1, 4, 0))).assertExists()
+        assertTrue(repo.observeSessionSets(id).first().isEmpty())
+    }
+    private fun runner(scale: Float, doubleTap: Boolean = false, light: Boolean = scale == 2f) = runBlocking {
         val exercises = repo.observeExercises().first()
         val arm = exercises.single { it.name == "Arm Circles" }
         val squat = exercises.single { it.name == "Bodyweight Squat" }
         val routine = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Preparation with a long personal name", steps = listOf(
-            PreparationStep(arm.id, arm.name, PreparationMeasure.SECONDS, 30, repeat = PreparationRepeat.DIRECTIONS),
-            PreparationStep(squat.id, squat.name, PreparationMeasure.REPS, 10))))
+            PreparationStep(arm.id, arm.name, PreparationMeasure.SECONDS, 30, rounds = 2, repeat = PreparationRepeat.DIRECTIONS),
+            PreparationStep(squat.id, "Bodyweight Squat with a long personal movement name for controlled repetitions", PreparationMeasure.REPS, 10))))
         val preset = repo.savePreset(null, "Runner", "", null, emptyList(), mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routine)))
         val id = repo.startSessionFromPreset(preset)
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, System.currentTimeMillis())
         val vm = withContext(Dispatchers.Main) { PreparationRunnerViewModel(repo, id, PreparationKind.WARMUP) }
         withTimeout(10000) { vm.ui.first { it.loaded } }
         var complete = false
         compose.setContent {
-            IronvellumTheme(light = scale == 2f) {
+            IronvellumTheme(light = light) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                     Surface(Modifier.systemBarsPadding(), color = MaterialTheme.colorScheme.background) {
@@ -63,29 +110,51 @@ class PreparationRunnerLayoutTest {
                 }
             }
         }
-        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_begin, R.string.preparation_begin__t, text(R.string.preparation_warmup))))
-            .assertIsDisplayed().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.status == PreparationStatus.RUNNING }
-        compose.onNodeWithText(text(R.string.preparation_complete_unit)).assertIsDisplayed()
+        fun check() = compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true))
+        fun menu() = compose.onNodeWithContentDescription(text(R.string.preparation_actions))
+        check().assertIsDisplayed().assertIsEnabled()
+        menu().assertIsDisplayed()
+        preparationCapture(compose, "refinement-runner-$scale-$light")
+        if (doubleTap) {
+            val running = vm.ui.value.state!!.progress
+            menu().performClick()
+            compose.onNodeWithText(text(R.string.preparation_preview)).performClick()
+            compose.onNodeWithText(text(R.string.preparation_no_scoring)).assertExists()
+            assertEquals(running, vm.ui.value.state!!.progress)
+            compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            check().assertIsDisplayed()
+            assertEquals(running, vm.ui.value.state!!.progress)
+        }
         compose.onNodeWithText(text(R.string.preparation_pause)).performScrollTo().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.status == PreparationStatus.PAUSED }
-        compose.onNodeWithText(ClockText.minutesSeconds(30)).assertExists()
-        compose.onNodeWithText(ExerciseGuides.forName(arm.name)!!.steps.first()).assertExists()
-        if (InstrumentationRegistry.getArguments().getString("shots") == "true") ShotRecorder.take(compose, "preparation-runner-$scale")
+        compose.onNodeWithText(ClockText.minutesSeconds((vm.ui.value.state!!.progress.remainingMs + 999) / 1000)).assertExists()
+        val guide = ExerciseGuides.forName(arm.name)!!
+        compose.onNodeWithText(guide.cues.firstOrNull() ?: guide.steps.first()).assertExists()
+        preparationCapture(compose, "refinement-paused-$scale-$light")
+        compose.onNodeWithContentDescription(context.getString(R.string.session_info_description, arm.name)).performScrollTo().assertIsDisplayed()
         compose.mainClock.autoAdvance = true
-        if (doubleTap) compose.onNodeWithText(text(R.string.preparation_complete_unit)).performTouchInput { doubleClick(delayMillis = 100) }
-        else compose.onNodeWithText(text(R.string.preparation_complete_unit)).performClick()
+        if (doubleTap) check().performTouchInput { doubleClick(delayMillis = 100) }
+        else check().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "0:0:1" }
         compose.waitForIdle()
         assertEquals(setOf("0:0:0"), vm.ui.value.state!!.progress.completedUnitKeys)
-        compose.onNodeWithText(text(R.string.preparation_direction_second)).assertExists()
-        compose.onNodeWithText(text(R.string.preparation_skip_unit)).performScrollTo().performClick()
+        compose.onAllNodesWithText(text(R.string.preparation_direction_second), substring = true).onFirst().assertExists()
+        menu().performClick()
+        compose.onNodeWithText(text(R.string.preparation_skip_unit)).performClick()
+        compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "0:1:0" }
+        check().performClick()
+        compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "0:1:1" }
+        check().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "1:0:0" }
-        compose.onNodeWithText(text(R.string.preparation_complete_unit)).assertIsDisplayed().performClick()
+        preparationCapture(compose, "refinement-long-movement-$scale-$light")
+        check().assertIsDisplayed().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.status == PreparationStatus.DONE }
+        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_result_counts, R.string.preparation_result_counts__t, 4, 5, 1))).assertExists()
+        preparationCapture(compose, "refinement-complete-$scale-$light")
         compose.onNodeWithText(text(R.string.preparation_return_workout)).assertIsDisplayed().performClick()
         compose.waitUntil(10000) { complete }
-        assertEquals(2, vm.ui.value.state!!.progress.completedUnitKeys.size)
+        assertEquals(4, vm.ui.value.state!!.progress.completedUnitKeys.size)
         assertEquals(1, vm.ui.value.state!!.progress.skippedUnitKeys.size)
         assertTrue(repo.observeSessionSets(id).first().isEmpty())
     }
@@ -110,7 +179,7 @@ class PreparationRunnerLayoutTest {
         compose.onNodeWithText("731").assertExists()
         compose.onNodeWithText("912").assertExists()
         compose.onNodeWithText(context.getString(R.string.common_done)).assertIsDisplayed()
-        if (InstrumentationRegistry.getArguments().getString("shots") == "true") ShotRecorder.take(compose, "preparation-summary-$scale")
+        preparationCapture(compose, "refinement-summary-$scale")
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText(context.getString(R.string.common_done)).performClick()
         assertTrue(done)

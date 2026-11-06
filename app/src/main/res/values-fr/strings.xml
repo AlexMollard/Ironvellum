@@ -6120,8 +6120,8 @@
     <string name="preparation_pause__t">Mettre en pause</string>
     <string name="preparation_start_timer">Démarrer / reprendre le minuteur</string>
     <string name="preparation_start_timer__t">Démarrer / reprendre le minuteur</string>
-    <string name="preparation_skip_unit">Passer l’exercice</string>
-    <string name="preparation_skip_unit__t">Passer l’exercice</string>
+    <string name="preparation_skip_unit">Ignorer cette étape</string>
+    <string name="preparation_skip_unit__t">Ignorer cette étape</string>
     <string name="preparation_no_scoring">La préparation n’ajoute ni séries de travail ni XP.</string>
     <string name="preparation_no_scoring__t">La préparation n’ajoute ni séries de travail ni XP.</string>
     <string name="preparation_leave_title">Quitter la préparation ?</string>
@@ -6134,4 +6134,32 @@
     <string name="preparation_change_title__t">Changer de préparation ?</string>
     <string name="preparation_change_body">Cela remplace la préparation de cette séance et réinitialise sa progression. Votre entraînement enregistré reste inchangé.</string>
     <string name="preparation_change_body__t">Cela remplace la préparation de cette séance et réinitialise sa progression. Votre entraînement enregistré reste inchangé.</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">Actions de préparation</string>
+    <string name="preparation_actions__t">Actions de préparation</string>
+    <string name="preparation_estimate">%1$s · ~%2$d min</string>
+    <string name="preparation_estimate__t">%1$s · ~%2$d min</string>
+    <string name="preparation_view">Voir</string>
+    <string name="preparation_view__t">Voir</string>
+    <string name="preparation_movement_progress">Mouvement %1$d sur %2$d</string>
+    <string name="preparation_movement_progress__t">Mouvement %1$d sur %2$d</string>
+    <string name="preparation_result_counts">Terminés : %1$d / %2$d · Ignorés : %3$d</string>
+    <string name="preparation_result_counts__t">Terminés : %1$d / %2$d · Ignorés : %3$d</string>
+    <string name="preparation_finish">Terminer la préparation</string>
+    <string name="preparation_finish__t">Terminer la préparation</string>
+    <string name="preparation_finish_title">Terminer la préparation ?</string>
+    <string name="preparation_finish_title__t">Terminer la préparation ?</string>
+    <string name="preparation_finish_body">Les exercices restants seront ignorés. Les exercices terminés restent enregistrés.</string>
+    <string name="preparation_finish_body__t">Les exercices restants seront ignorés. Les exercices terminés restent enregistrés.</string>
+    <string name="preparation_up_next">À suivre</string>
+    <string name="preparation_up_next__t">À suivre</string>
+    <string name="preparation_complete_description">%1$s: %2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s: %2$s · %3$s</string>
+    <string name="preparation_fold">Replier %1$s</string>
+    <string name="preparation_fold__t">Replier %1$s</string>
+    <string name="preparation_unfold">Déplier %1$s</string>
+    <string name="preparation_unfold__t">Déplier %1$s</string>
+    <string name="preparation_final_next">Terminer %1$s</string>
+    <string name="preparation_final_next__t">Terminer %1$s</string>
 </resources>

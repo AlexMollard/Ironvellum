@@ -5752,8 +5752,8 @@
     <string name="preparation_pause__t">暂停计时</string>
     <string name="preparation_start_timer">开始／继续计时</string>
     <string name="preparation_start_timer__t">开始／继续计时</string>
-    <string name="preparation_skip_unit">跳过动作</string>
-    <string name="preparation_skip_unit__t">跳过动作</string>
+    <string name="preparation_skip_unit">跳过此步骤</string>
+    <string name="preparation_skip_unit__t">跳过此步骤</string>
     <string name="preparation_no_scoring">准备活动不会增加正式组数或经验值。</string>
     <string name="preparation_no_scoring__t">准备活动不会增加正式组数或经验值。</string>
     <string name="preparation_leave_title">离开准备活动？</string>
@@ -5766,4 +5766,32 @@
     <string name="preparation_change_title__t">更换训练流程？</string>
     <string name="preparation_change_body">这会替换本次训练的准备活动并重置其进度。已保存的训练不会更改。</string>
     <string name="preparation_change_body__t">这会替换本次训练的准备活动并重置其进度。已保存的训练不会更改。</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">准备操作</string>
+    <string name="preparation_actions__t">准备操作</string>
+    <string name="preparation_estimate">%1$s · 约%2$d分钟</string>
+    <string name="preparation_estimate__t">%1$s · 约%2$d分钟</string>
+    <string name="preparation_view">查看</string>
+    <string name="preparation_view__t">查看</string>
+    <string name="preparation_movement_progress">动作 %1$d / %2$d</string>
+    <string name="preparation_movement_progress__t">动作 %1$d / %2$d</string>
+    <string name="preparation_result_counts">已完成：%1$d / %2$d · 已跳过：%3$d</string>
+    <string name="preparation_result_counts__t">已完成：%1$d / %2$d · 已跳过：%3$d</string>
+    <string name="preparation_finish">结束准备</string>
+    <string name="preparation_finish__t">结束准备</string>
+    <string name="preparation_finish_title">结束准备？</string>
+    <string name="preparation_finish_title__t">结束准备？</string>
+    <string name="preparation_finish_body">将跳过剩余动作。已完成的动作会保留记录。</string>
+    <string name="preparation_finish_body__t">将跳过剩余动作。已完成的动作会保留记录。</string>
+    <string name="preparation_up_next">接下来</string>
+    <string name="preparation_up_next__t">接下来</string>
+    <string name="preparation_complete_description">%1$s：%2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s：%2$s · %3$s</string>
+    <string name="preparation_fold">收起%1$s</string>
+    <string name="preparation_fold__t">收起%1$s</string>
+    <string name="preparation_unfold">展开%1$s</string>
+    <string name="preparation_unfold__t">展开%1$s</string>
+    <string name="preparation_final_next">结束%1$s</string>
+    <string name="preparation_final_next__t">结束%1$s</string>
 </resources>

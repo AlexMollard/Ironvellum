@@ -30,6 +30,11 @@ class PreparationSessionFlowTest {
         val themed = app.resources.getIdentifier(app.resources.getResourceEntryName(id) + "__t", "string", app.packageName)
         return Words.text(UiText.themed(id, themed.takeIf { it != 0 } ?: id, *args))
     }
+    private fun check() = compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true))
+    private fun awaitCheck() {
+        compose.waitUntil(10000) { driver.settle(); compose.onAllNodes(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).fetchSemanticsNodes().isNotEmpty() }
+    }
+    private fun offerMenu() { compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick(); driver.settle() }
     @Before fun setup() {
         if (InstrumentationRegistry.getArguments().getString("processProbe") != "verify") {
             TestProfile.ensureSetUp()
@@ -60,11 +65,69 @@ class PreparationSessionFlowTest {
         driver.awaitText("Today")
         assertFalse(driver.allText().any { it == app.getString(R.string.session_set_log_button) })
     }
+    @Test fun beginPersistsBeforeDirectMovementNavigation() = runBlocking {
+        val id = seed(); open(id)
+        driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
+        val state = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        preparationCapture(compose, "refinement-workout-offer")
+        driver.click(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
+        driver.awaitText(state.snapshot.steps.first().exerciseName)
+        assertEquals(PreparationStatus.RUNNING, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
+        assertFalse(driver.allText().contains(text(R.string.preparation_begin, text(R.string.preparation_warmup))))
+        compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).assertIsDisplayed()
+        Unit
+    }
+    @Test fun previewNeverStartsOrResumesAcrossRecreation() = runBlocking {
+        val id = seed(); open(id)
+        driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
+        val open = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        driver.click(open.snapshot.name)
+        driver.awaitText(text(R.string.preparation_no_scoring))
+        preparationCapture(compose, "refinement-overview")
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_no_scoring))
+        back()
+        assertEquals(open, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, System.currentTimeMillis())
+        repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.PAUSE, System.currentTimeMillis())
+        val paused = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        driver.awaitText(text(R.string.preparation_resume, text(R.string.preparation_warmup)))
+        driver.click(paused.snapshot.name)
+        driver.awaitText(text(R.string.preparation_no_scoring))
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_no_scoring))
+        back()
+        assertEquals(paused, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+    }
+    @Test fun cooldownPreviewKeepsStoredSummaryAndAwards() = runBlocking {
+        val id = seed()
+        repo.completeSession(id)
+        val session = repo.observeSession(id).first()
+        val profile = repo.observeProfile().first()
+        val sets = repo.observeSessionSets(id).first()
+        val rewards = rewardRows()
+        open(id)
+        driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_cooldown)))
+        val state = repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!
+        repeat(2) {
+            driver.click(state.snapshot.name)
+            driver.awaitText(text(R.string.preparation_no_scoring))
+            compose.activityRule.scenario.recreate()
+            driver.awaitText(text(R.string.preparation_no_scoring))
+            back()
+            driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_cooldown)))
+        }
+        assertEquals(state, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first())
+        assertEquals(session, repo.observeSession(id).first())
+        assertEquals(profile, repo.observeProfile().first())
+        assertEquals(sets, repo.observeSessionSets(id).first())
+        assertEquals(rewards, rewardRows())
+    }
     @Test fun selectorCreateManageBackRetainsOwnerAndOnlyUseChangesTheSession() {
         val id = seed(); open(id)
         driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
         val before = runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() }
-        driver.click(text(R.string.preparation_change))
+        offerMenu(); driver.click(text(R.string.preparation_change))
         driver.awaitText(text(R.string.preparation_use))
         driver.click(text(R.string.preparation_none))
         driver.click(text(R.string.preparation_create))
@@ -79,9 +142,9 @@ class PreparationSessionFlowTest {
         assertEquals(before, runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() })
         // Back cancels the draft choice.
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        driver.awaitText(text(R.string.preparation_change))
+        driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
         assertEquals(before, runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() })
-        driver.click(text(R.string.preparation_change))
+        offerMenu(); driver.click(text(R.string.preparation_change))
         driver.awaitText(text(R.string.preparation_use))
         driver.click(text(R.string.preparation_none))
         driver.click(text(R.string.preparation_manage))
@@ -104,28 +167,31 @@ class PreparationSessionFlowTest {
         // Opens without any transient CompletionResult, just as after a killed process.
         open(id)
         driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_cooldown)))
+        preparationCapture(compose, "refinement-cooldown-offer")
         driver.click(text(R.string.preparation_begin, text(R.string.preparation_cooldown)))
-        driver.awaitText(text(R.string.preparation_no_scoring))
-        driver.click(text(R.string.preparation_begin, text(R.string.preparation_cooldown)))
-        driver.awaitText(text(R.string.preparation_complete_unit))
+        awaitCheck()
+        preparationCapture(compose, "refinement-cooldown-runner")
         val deadline = repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.deadlineMs
         compose.activityRule.scenario.recreate()
-        driver.awaitText(text(R.string.preparation_complete_unit))
+        awaitCheck()
         assertEquals(deadline, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.deadlineMs)
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         driver.awaitText(text(R.string.preparation_leave_title))
+        preparationCapture(compose, "refinement-leave-confirmation")
         driver.click(text(R.string.preparation_leave))
         driver.awaitText(text(R.string.preparation_resume, text(R.string.preparation_cooldown)))
         assertEquals(PreparationStatus.PAUSED, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.status)
         driver.click(text(R.string.preparation_resume, text(R.string.preparation_cooldown)))
-        driver.awaitText(text(R.string.preparation_complete_unit))
-        driver.click(text(R.string.preparation_complete_unit))
+        awaitCheck()
+        check().performClick(); driver.settle()
         driver.awaitText(text(R.string.preparation_direction_second))
-        driver.click(text(R.string.preparation_complete_unit))
+        check().performClick(); driver.settle()
         driver.awaitText(text(R.string.preparation_return_summary))
+        preparationCapture(compose, "refinement-cooldown-complete")
         driver.click(text(R.string.preparation_return_summary))
         driver.awaitText(text(R.string.preparation_finished, text(R.string.preparation_cooldown)))
-        driver.click(text(R.string.preparation_preview))
+        preparationCapture(compose, "refinement-summary-terminal")
+        driver.click(text(R.string.preparation_view))
         driver.awaitText(text(R.string.preparation_return_summary))
         driver.click(text(R.string.preparation_return_summary))
         driver.awaitText(text(R.string.preparation_finished, text(R.string.preparation_cooldown)))
@@ -243,13 +309,13 @@ class PreparationSessionFlowTest {
         open(id)
         driver.awaitText(text(R.string.preparation_resume, text(R.string.preparation_cooldown)))
         driver.click(text(R.string.preparation_resume, text(R.string.preparation_cooldown)))
-        driver.awaitText(text(R.string.preparation_complete_unit))
+        awaitCheck()
         assertEquals(prefs.getLong("deadline", 0), repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.deadlineMs)
         assertEquals(prefs.getString("signature", null), resultSignature(id))
         if (phase != "seed") {
-            driver.click(text(R.string.preparation_complete_unit))
+            check().performClick(); driver.settle()
             driver.awaitText(text(R.string.preparation_direction_second))
-            driver.click(text(R.string.preparation_complete_unit))
+            check().performClick(); driver.settle()
             driver.awaitText(text(R.string.preparation_return_summary))
             driver.click(text(R.string.preparation_return_summary))
             driver.awaitText(text(R.string.preparation_finished, text(R.string.preparation_cooldown)))

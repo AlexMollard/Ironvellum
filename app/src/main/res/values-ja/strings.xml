@@ -5752,8 +5752,8 @@
     <string name="preparation_pause__t">タイマーを一時停止</string>
     <string name="preparation_start_timer">タイマーを開始／再開</string>
     <string name="preparation_start_timer__t">タイマーを開始／再開</string>
-    <string name="preparation_skip_unit">種目をスキップ</string>
-    <string name="preparation_skip_unit__t">種目をスキップ</string>
+    <string name="preparation_skip_unit">このステップをスキップ</string>
+    <string name="preparation_skip_unit__t">このステップをスキップ</string>
     <string name="preparation_no_scoring">準備運動ではワークセットやXPは追加されません。</string>
     <string name="preparation_no_scoring__t">準備運動ではワークセットやXPは追加されません。</string>
     <string name="preparation_leave_title">準備運動を終了しますか？</string>
@@ -5766,4 +5766,32 @@
     <string name="preparation_change_title__t">ルーティンを変更しますか？</string>
     <string name="preparation_change_body">このセッションの準備運動を置き換え、進捗をリセットします。保存済みのワークアウトは変わりません。</string>
     <string name="preparation_change_body__t">このセッションの準備運動を置き換え、進捗をリセットします。保存済みのワークアウトは変わりません。</string>
+
+    <!-- Compact preparation cards and guided execution. -->
+    <string name="preparation_actions">準備の操作</string>
+    <string name="preparation_actions__t">準備の操作</string>
+    <string name="preparation_estimate">%1$s · 約%2$d分</string>
+    <string name="preparation_estimate__t">%1$s · 約%2$d分</string>
+    <string name="preparation_view">表示</string>
+    <string name="preparation_view__t">表示</string>
+    <string name="preparation_movement_progress">動作 %1$d / %2$d</string>
+    <string name="preparation_movement_progress__t">動作 %1$d / %2$d</string>
+    <string name="preparation_result_counts">完了：%1$d / %2$d · スキップ：%3$d</string>
+    <string name="preparation_result_counts__t">完了：%1$d / %2$d · スキップ：%3$d</string>
+    <string name="preparation_finish">準備を終了</string>
+    <string name="preparation_finish__t">準備を終了</string>
+    <string name="preparation_finish_title">準備を終了しますか？</string>
+    <string name="preparation_finish_title__t">準備を終了しますか？</string>
+    <string name="preparation_finish_body">残りの運動をスキップします。完了した運動の記録は保持されます。</string>
+    <string name="preparation_finish_body__t">残りの運動をスキップします。完了した運動の記録は保持されます。</string>
+    <string name="preparation_up_next">次の動作</string>
+    <string name="preparation_up_next__t">次の動作</string>
+    <string name="preparation_complete_description">%1$s：%2$s · %3$s</string>
+    <string name="preparation_complete_description__t">%1$s：%2$s · %3$s</string>
+    <string name="preparation_fold">%1$sを折りたたむ</string>
+    <string name="preparation_fold__t">%1$sを折りたたむ</string>
+    <string name="preparation_unfold">%1$sを展開</string>
+    <string name="preparation_unfold__t">%1$sを展開</string>
+    <string name="preparation_final_next">%1$sを終了</string>
+    <string name="preparation_final_next__t">%1$sを終了</string>
 </resources>

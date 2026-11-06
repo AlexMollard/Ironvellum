@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.*
 import com.ironvellum.app.domain.*
 import com.ironvellum.app.ui.preparation.PreparationRunnerViewModel
+import com.ironvellum.app.ui.preparation.warmupOffered
 import com.ironvellum.app.ui.train.SealedSummary
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -97,6 +98,19 @@ class PreparationResumeTest {
         repo.preparations.act(id, PreparationKind.WARMUP, PreparationAction.START, System.currentTimeMillis())
         val running = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
         assertEquals(running, running.forWarmupSetting(false))
+    }
+    @Test fun globalOffSuppressesOnlyUntouchedAutoWarmupAndKeepsCooldownIndependent() = runBlocking {
+        val id = session()
+        val warmup = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        val cooldown = repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!
+        assertTrue(warmup.snapshot.steps.isNotEmpty())
+        warmups.enabled = false
+        val projected = warmup.forWarmupSetting(repo.preparations.warmupEnabled)
+        assertTrue(projected.snapshot.steps.isEmpty())
+        assertFalse(warmupOffered(projected, false))
+        assertEquals(warmup, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+        assertTrue(cooldown.snapshot.steps.isNotEmpty())
+        assertEquals(cooldown, cooldown.forWarmupSetting(false))
     }
     @Test fun presetEditBeforeSessionScreenImportsDone() = firstWriter(0, WarmupStep.State.DONE)
     @Test fun presetDeleteBeforeSessionScreenImportsNonContiguousTicks() = firstWriter(1, WarmupStep.State.OPEN)

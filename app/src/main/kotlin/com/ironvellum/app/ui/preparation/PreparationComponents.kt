@@ -2,6 +2,16 @@ package com.ironvellum.app.ui.preparation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -30,18 +40,54 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** The pushed header, scrollable ink content and thumb-reachable action shared by this flow. */
 @Composable internal fun PreparationFrame(
     title: String, onBack: () -> Unit, primary: String? = null, onPrimary: () -> Unit = {},
-    enabled: Boolean = true, content: @Composable ColumnScope.() -> Unit,
+    enabled: Boolean = true, actions: @Composable RowScope.() -> Unit = {},
+    dock: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().imePadding()) {
         Spacer(Modifier.height(8.dp))
-        PushedHeader(title, onBack, Modifier.padding(horizontal = 16.dp), titleMaxLines = Int.MAX_VALUE)
+        PushedHeader(title, onBack, Modifier.padding(horizontal = 16.dp), titleMaxLines = Int.MAX_VALUE, actions = actions)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             content()
             Spacer(Modifier.height(24.dp))
         }
-        if (primary != null) DockedActionBar(primary, onPrimary, primaryEnabled = enabled, reserveLink = false)
+        if (dock != null) dock() else if (primary != null) DockedActionBar(primary, onPrimary, primaryEnabled = enabled, reserveLink = false)
     }
+}
+
+/** The preparation equivalent of the workout NEXT/check strip, outside the scrolling movement. */
+@Composable internal fun PreparationNextDock(next: String, completionDescription: String, enabled: Boolean, onComplete: () -> Unit) {
+    Column(Modifier.fillMaxWidth().background(IronvellumColors.Raised)) {
+        InkDivider()
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(stringResource(R.string.session_next_label), style = MaterialTheme.typography.labelSmall,
+                    fontFamily = com.ironvellum.app.ui.theme.ChakraPetch, color = IronvellumColors.InkMuted)
+                Text(next, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
+            }
+            Box(Modifier.size(52.dp).clip(MaterialTheme.shapes.medium).background(IronvellumColors.Emerald)
+                .clickable(enabled = enabled, role = Role.Button, onClick = onComplete)
+                .semantics { contentDescription = completionDescription }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
+            }
+        }
+    }
+}
+
+@Composable internal fun PreparationMenu(content: @Composable (() -> Unit) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Filled.MoreVert, preparationText(R.string.preparation_actions, R.string.preparation_actions__t), tint = IronvellumColors.Ink)
+        }
+        DropdownMenu(expanded, { expanded = false }) { content { expanded = false } }
+    }
+}
+
+@Composable internal fun preparationMetadata(snapshot: PreparationSnapshot): String {
+    val count = preparationCount(R.plurals.preparation_exercise_count, R.plurals.preparation_exercise_count__t, snapshot.steps.size)
+    val minutes = preparationEstimatedMinutes(snapshot) ?: return count
+    return preparationText(R.string.preparation_estimate, R.string.preparation_estimate__t, count, minutes)
 }
 
 @Composable internal fun PreparationCaption(text: String, error: Boolean = false) {

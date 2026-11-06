@@ -78,9 +78,7 @@ class WarmupExerciseFlowTest {
         val initial = runBlocking { app.repository.preparations.observeSession(sessionId, PreparationKind.WARMUP).first()!! }
         assertEquals(pullUp, initial.snapshot.steps.first().exerciseId)
         assertTrue(initial.progress.completedUnitKeys.isEmpty())
-        driver.click("Begin Warmup")
-        driver.awaitText("Complete exercise")
-        driver.click("Complete exercise")
+        compose.onNode(hasContentDescription("Complete exercise", substring = true)).assertIsDisplayed().performClick()
         compose.waitUntil(10000) { runBlocking {
             app.repository.preparations.observeSession(sessionId, PreparationKind.WARMUP).first()!!.progress.completedUnitKeys.contains("0:0:0")
         } }

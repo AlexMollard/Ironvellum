@@ -1,10 +1,14 @@
 package com.ironvellum.app.ui.preparation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.*
@@ -18,25 +22,43 @@ internal fun warmupOffered(state: SessionPreparation, enabled: Boolean): Boolean
     state.progress.hasProgress || state.snapshot.steps.isNotEmpty() && (state.snapshot.sourceRoutineId != null || state.snapshot.legacyStepCount > 0 || enabled)
 
 @Composable
-fun PreparationOfferCard(state: SessionPreparation, onBegin: () -> Unit, onChange: () -> Unit, onSkip: () -> Unit) {
+fun PreparationOfferCard(state: SessionPreparation, onBegin: () -> Unit, onChange: () -> Unit, onSkip: () -> Unit, onView: () -> Unit = onBegin) {
     val kind = kindLabel(state.snapshot.kind)
     val finished = state.progress.status in listOf(PreparationStatus.DONE, PreparationStatus.SKIPPED)
     InkPanel(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), contentPadding = PaddingValues(12.dp)) {
-        Text(kind, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
-        if (state.snapshot.name.isNotBlank()) PreparationCaption(state.snapshot.name)
-        val done = state.progress.completedUnitKeys.size + state.progress.skippedUnitKeys.size
-        val total = state.snapshot.steps.sumOf { it.rounds * it.repetitions }
-        if (finished) PreparationCaption(preparationText(
-            if (state.progress.status == PreparationStatus.DONE) R.string.preparation_finished else R.string.preparation_skipped,
-            if (state.progress.status == PreparationStatus.DONE) R.string.preparation_finished__t else R.string.preparation_skipped__t, kind))
-        else if (done > 0) PreparationCaption(preparationText(R.string.preparation_progress, R.string.preparation_progress__t, done, total))
-        else PreparationCaption(preparationCount(R.plurals.preparation_exercise_count, R.plurals.preparation_exercise_count__t, state.snapshot.steps.size))
-        if (state.snapshot.steps.isNotEmpty()) IronvellumButton(
-            if (finished) preparationText(R.string.preparation_preview, R.string.preparation_preview__t)
-            else preparationText(if (state.progress.hasProgress) R.string.preparation_resume else R.string.preparation_begin,
-                if (state.progress.hasProgress) R.string.preparation_resume__t else R.string.preparation_begin__t, kind), onBegin,
-        )
-        TextAction(preparationText(R.string.preparation_change, R.string.preparation_change__t), onChange)
-        if (!finished && state.snapshot.steps.isNotEmpty()) TextAction(preparationText(R.string.preparation_skip, R.string.preparation_skip__t, kind), onSkip)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(kind, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(if (finished) preparationText(
+                    if (state.progress.status == PreparationStatus.DONE) R.string.preparation_finished else R.string.preparation_skipped,
+                    if (state.progress.status == PreparationStatus.DONE) R.string.preparation_finished__t else R.string.preparation_skipped__t, kind)
+                    else preparationMetadata(state.snapshot), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            }
+            PreparationMenu { close ->
+                DropdownMenuItem(text = { Text(preparationText(R.string.preparation_change, R.string.preparation_change__t)) }, onClick = { close(); onChange() })
+                if (!finished && state.snapshot.steps.isNotEmpty()) DropdownMenuItem(
+                    text = { Text(preparationText(R.string.preparation_skip, R.string.preparation_skip__t, kind)) }, onClick = { close(); onSkip() })
+            }
+        }
+        @Composable fun Title(modifier: Modifier) {
+            Text(state.snapshot.name, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink,
+                modifier = modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onView).padding(vertical = 10.dp))
+        }
+        @Composable fun Action() {
+            if (state.snapshot.steps.isNotEmpty()) {
+                if (finished) TextAction(preparationText(R.string.preparation_view, R.string.preparation_view__t), onView)
+                else IronvellumButton(preparationText(if (state.progress.hasProgress) R.string.preparation_resume else R.string.preparation_begin,
+                    if (state.progress.hasProgress) R.string.preparation_resume__t else R.string.preparation_begin__t, kind), onBegin)
+            }
+        }
+        if (LocalDensity.current.fontScale > 1.3f) {
+            Title(Modifier.fillMaxWidth())
+            Action()
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Title(Modifier.weight(1f))
+                Action()
+            }
+        }
     }
 }
