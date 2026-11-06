@@ -81,8 +81,15 @@ class PreparationRepository(private val db: IronvellumDatabase) {
         else session.presetId?.let { db.presetDao().presetWithEntries(it) }?.entries.orEmpty()
             .filter { it.warmup }.sortedBy { it.position }.mapNotNull { entry ->
                 val e = byId[entry.exerciseId] ?: return@mapNotNull null
-                PreparationStep(e.id, e.name, if (e.metric == ExerciseMetric.REPS) PreparationMeasure.REPS else PreparationMeasure.SECONDS,
-                    entry.targetReps, entry.targetSets, weightKg = entry.targetWeightKg)
+                val timed = e.metric == ExerciseMetric.HOLD || e.metric == ExerciseMetric.DURATION
+                val target = when (e.metric) {
+                    ExerciseMetric.DURATION -> Math.multiplyExact(entry.targetReps, 60)
+                    ExerciseMetric.DISTANCE_TIME -> 1 // One manual unit; its distance label comes from the original target.
+                    else -> entry.targetReps
+                }
+                PreparationStep(e.id, e.name, if (timed) PreparationMeasure.SECONDS else PreparationMeasure.REPS,
+                    target, entry.targetSets, weightKg = entry.targetWeightKg.takeIf { e.metric.isStrength },
+                    legacyTarget = PreparationLegacyTarget(e.metric, entry.targetReps, entry.targetWeightKg))
             }.distinctBy { it.exerciseId }
         return general.copy(steps = legacy + general.steps.filter { s -> legacy.none { it.exerciseId == s.exerciseId } }, legacyStepCount = legacy.size)
     }
@@ -137,7 +144,7 @@ class PreparationRepository(private val db: IronvellumDatabase) {
         val snapshot = PreparationCodec.decodeSnapshot(snapshotJson).getOrThrow()
         val progress = PreparationCodec.decodeProgress(progressJson).getOrNull()?.takeIf { p ->
             p.stepIndex <= snapshot.steps.size && (p.stepIndex == snapshot.steps.size || snapshot.steps.getOrNull(p.stepIndex)?.let { p.roundIndex < it.rounds && p.repeatIndex < it.repetitions } == true)
-        }?.recovered(nowMs) ?: PreparationProgress(status = PreparationStatus.PAUSED,
+        }?.recovered(snapshot, nowMs) ?: PreparationProgress(status = PreparationStatus.PAUSED,
             remainingMs = snapshot.steps.firstOrNull()?.takeIf { it.measure == PreparationMeasure.SECONDS }?.target?.toLong()?.times(1000) ?: 0)
         return SessionPreparation(sessionId, snapshot, progress)
     }

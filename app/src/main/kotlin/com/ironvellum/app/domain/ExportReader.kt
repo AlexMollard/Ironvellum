@@ -59,10 +59,14 @@ object ExportReader {
         val profileObj = root.obj("profile") ?: fail("missing profile")
         val deviceDataOmitted = root.bool("deviceDataOmitted") ?: false
         val preparationProblems = mutableListOf<String>()
+        // Count raw identities before malformed records are dropped: a valid survivor is still ambiguous.
+        val ambiguousPreparationIds = root.arr("preparationRoutines").orEmpty().mapNotNull { (it as? Obj)?.long("id") }
+            .groupingBy { it }.eachCount().filterValues { it > 1 }.keys
         fun <T> preparation(section: String, read: (Obj) -> T): List<T> = (root.arr(section) ?: emptyList()).mapNotNull { value ->
             runCatching { read(value as Obj) }.getOrElse { preparationProblems += "$section: ${it.message}"; null }
         }
         val routines = preparation("preparationRoutines") { o ->
+            require(o.long("id") !in ambiguousPreparationIds) { "ambiguous preparation ID ${o.long("id")}" }
             PreparationRoutine(o.long("id") ?: error("missing routine ID"), PreparationKind.valueOf(o.str("kind") ?: error("missing kind")),
                 o.str("name")?.takeIf { it.isNotBlank() } ?: error("missing routine name"), PreparationCodec.steps(o.arr("steps") ?: error("missing steps")))
                 .also { require(it.id > 0 && it.steps.isNotEmpty()) }
@@ -71,7 +75,7 @@ object ExportReader {
             val snapshot = PreparationCodec.snapshot(o.obj("snapshot") ?: error("missing snapshot"))
             val progress = PreparationCodec.progress(o.obj("progress") ?: error("missing progress"))
             SessionPreparation(o.long("sessionId") ?: error("missing sessionId"), snapshot,
-                progress.recovered(root.long("exportedAtMs") ?: 0).advance(snapshot, PreparationAction.PAUSE, root.long("exportedAtMs") ?: 0))
+                progress.recovered(snapshot, root.long("exportedAtMs") ?: 0).advance(snapshot, PreparationAction.PAUSE, root.long("exportedAtMs") ?: 0))
         }
         Archive(
             formatVersion = root.int("formatVersion") ?: fail("missing formatVersion"),

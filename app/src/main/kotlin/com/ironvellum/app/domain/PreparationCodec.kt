@@ -10,7 +10,12 @@ object PreparationCodec {
         append(",\"measure\":"); appendEscaped(s.measure.name)
         append(",\"target\":${s.target},\"rounds\":${s.rounds},\"repeat\":"); appendEscaped(s.repeat.name)
         append(",\"note\":"); appendEscaped(s.note)
-        append(",\"weightKg\":${s.weightKg}}")
+        append(",\"weightKg\":${s.weightKg}")
+        s.legacyTarget?.let { legacy ->
+            append(",\"legacyTarget\":{\"metric\":"); appendEscaped(legacy.metric.name)
+            append(",\"targetReps\":${legacy.targetReps},\"targetWeightKg\":${legacy.targetWeightKg}}")
+        }
+        append('}')
     } }
     fun decodeSteps(json: String): Result<List<PreparationStep>> = runCatching {
         steps(ExportReader.Parser("{\"steps\":$json}").parseDocument().arr("steps") ?: error("missing steps"))
@@ -21,10 +26,15 @@ object PreparationCodec {
             o.long("exerciseId") ?: error("missing exerciseId"), o.str("exerciseName") ?: error("missing exerciseName"),
             PreparationMeasure.valueOf(o.str("measure") ?: error("missing measure")), o.int("target") ?: error("missing target"),
             o.int("rounds") ?: 1, PreparationRepeat.valueOf(o.str("repeat") ?: "ONCE"), o.str("note") ?: "", o.dbl("weightKg"),
+            o.obj("legacyTarget")?.let { legacy ->
+                PreparationLegacyTarget(ExerciseMetric.valueOf(legacy.str("metric") ?: error("missing legacy metric")),
+                    legacy.int("targetReps") ?: error("missing legacy target"), legacy.dbl("targetWeightKg"))
+            },
         ).also {
             // Preserve positive legacy targets beyond today's editor bounds. Never accept an anonymous ID binding.
-            require(it.exerciseId > 0 && it.exerciseName.isNotBlank() && it.target > 0 && it.rounds in 1..10 && it.note.length <= 1000)
+            require(it.exerciseId > 0 && it.exerciseName.isNotBlank() && it.target > 0 && it.rounds > 0 && it.note.length <= 1000)
             require(it.weightKg == null || it.weightKg.isFinite() && it.weightKg >= 0)
+            require(it.legacyTarget?.targetWeightKg?.let { weight -> weight.isFinite() && weight >= 0 } != false)
         }
     }
     fun encodeSnapshot(snapshot: PreparationSnapshot): String = buildString {

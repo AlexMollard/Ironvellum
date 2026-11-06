@@ -142,7 +142,7 @@ object ExportWriter {
             append(",\"sessionPreparations\":[")
             preparations.forEachIndexed { i, value ->
                 if (i > 0) append(',')
-                val progress = value.progress.advance(value.snapshot, PreparationAction.PAUSE, exportedAtMs)
+                val progress = value.progress.recovered(value.snapshot, exportedAtMs).advance(value.snapshot, PreparationAction.PAUSE, exportedAtMs)
                 append("{\"sessionId\":${value.sessionId},\"snapshot\":${PreparationCodec.encodeSnapshot(value.snapshot)},\"progress\":${PreparationCodec.encodeProgress(progress)}}")
             }
             append(']')

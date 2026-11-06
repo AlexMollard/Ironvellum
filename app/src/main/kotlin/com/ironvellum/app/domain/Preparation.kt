@@ -7,6 +7,9 @@ enum class PreparationRepeat { ONCE, SIDES, DIRECTIONS }
 enum class PreparationStatus { OPEN, RUNNING, PAUSED, DONE, SKIPPED }
 enum class PreparationAction { START, PAUSE, RESUME, COMPLETE_UNIT, SKIP_UNIT, SKIP_ROUTINE }
 
+/** Original workout prescription; activity distance occupies the old weight column, not a preparation load. */
+data class PreparationLegacyTarget(val metric: ExerciseMetric, val targetReps: Int, val targetWeightKg: Double? = null)
+
 data class PreparationStep(
     val exerciseId: Long,
     val exerciseName: String,
@@ -16,7 +19,12 @@ data class PreparationStep(
     val repeat: PreparationRepeat = PreparationRepeat.ONCE,
     val note: String = "",
     val weightKg: Double? = null,
+    val legacyTarget: PreparationLegacyTarget? = null,
 ) {
+    /** Existing workout labels keep minutes, attempts and kilometres, independently of the runner's timer. */
+    fun legacyTargetLine(kg: (Double) -> String): String? = legacyTarget?.let {
+        WarmupStep.Item(exerciseId, exerciseName, it.metric, rounds, it.targetReps, it.targetWeightKg).line(kg)
+    }
     val repetitions: Int get() = if (repeat == PreparationRepeat.ONCE) 1 else 2
     fun validForEditor(): Boolean = exerciseId > 0 && exerciseName.isNotBlank() &&
         target in (if (measure == PreparationMeasure.REPS) 1..100 else 5..600) &&

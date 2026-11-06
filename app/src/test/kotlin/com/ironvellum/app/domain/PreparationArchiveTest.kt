@@ -43,4 +43,16 @@ class PreparationArchiveTest {
         assertEquals(p, PreparationCodec.decodeProgress(PreparationCodec.encodeProgress(p)).getOrThrow())
         assertTrue(PreparationCodec.decodeProgress(PreparationCodec.encodeProgress(p.copy(stepIndex = -1))).isFailure)
     }
+    @Test fun mixedMalformedAndValidDuplicateIdsNeverLeaveAnUnambiguousRoutine() {
+        val json = write().replace("\"preparationRoutines\":[", "\"preparationRoutines\":[{\"id\":77,\"kind\":\"COOLDOWN\",\"name\":\"Invalid duplicate\",\"steps\":[]},")
+        val archive = ExportReader.read(json).getOrThrow()
+        assertTrue(archive.preparationProblems.isNotEmpty())
+        assertTrue("raw duplicate IDs remain ambiguous even if one duplicate is malformed", archive.preparationRoutines.isEmpty())
+    }
+    @Test fun historicalRoundCountsRemainReadableWhileEditorBoundsStayStrict() {
+        val historical = step.copy(rounds = 30)
+        assertFalse(historical.validForEditor())
+        assertEquals(listOf(historical), PreparationCodec.decodeSteps(PreparationCodec.encodeSteps(listOf(historical))).getOrThrow())
+        assertTrue(PreparationCodec.decodeSteps(PreparationCodec.encodeSteps(listOf(historical.copy(rounds = 0)))).isFailure)
+    }
 }

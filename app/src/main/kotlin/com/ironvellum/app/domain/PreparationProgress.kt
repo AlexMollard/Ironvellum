@@ -19,6 +19,12 @@ data class PreparationProgress(
     } else remainingMs.coerceAtLeast(0)
 
     /** A clock moving behind readiness (e.g. reboot) cannot start a many-hour timer. */
+    fun recovered(snapshot: PreparationSnapshot, nowMs: Long): PreparationProgress {
+        val step = snapshot.steps.getOrNull(stepIndex)
+        val limit = if (step?.measure == PreparationMeasure.SECONDS) step.target.toLong() * 1000 else 0
+        return copy(remainingMs = remainingMs.coerceIn(0, limit)).recovered(nowMs)
+    }
+
     fun recovered(nowMs: Long): PreparationProgress {
         if (status != PreparationStatus.RUNNING) return this
         if (remainingMs == 0L && readyUntilMs == null && deadlineMs == null) return this

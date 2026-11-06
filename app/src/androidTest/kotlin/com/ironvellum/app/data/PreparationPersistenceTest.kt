@@ -74,7 +74,10 @@ class PreparationPersistenceTest {
             mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routine())))
         val session = repo.startSessionFromPreset(p)
         val steps = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!.snapshot.steps
-        assertEquals(1, steps.size); assertEquals(17, steps[0].target); assertEquals(2, steps[0].rounds); assertEquals(3.0, steps[0].weightKg!!, 0.0)
+        assertEquals(1, steps.size); assertEquals(1020, steps[0].target); assertEquals(2, steps[0].rounds)
+        assertEquals(17, steps[0].legacyTarget!!.targetReps)
+        assertEquals(3.0, steps[0].legacyTarget!!.targetWeightKg!!, 0.0)
+        assertNull(steps[0].weightKg) // Arm Circles uses minutes; its unused legacy column is not a preparation load.
         repo.deletePreset(p)
         repo.preparations.changeSession(session, PreparationKind.WARMUP, PreparationChoice(PreparationMode.NONE))
         assertEquals(steps, repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!.snapshot.steps)
@@ -187,5 +190,82 @@ class PreparationPersistenceTest {
         assertEquals(before, repo.preparations.observeSession(session, PreparationKind.WARMUP).first())
         assertEquals(20000L, before.progress.remainingMs)
         assertEquals(PreparationStatus.PAUSED, before.progress.status)
+    }
+
+    @Test fun legacyActivityTargetsUseTheirOriginalUnitsAndOnlyTimeMetricsStartTimers() = runTest {
+        val metrics = listOf(ExerciseMetric.DURATION, ExerciseMetric.HOLD, ExerciseMetric.ATTEMPTS_GRADE, ExerciseMetric.DISTANCE_TIME)
+        val ids = db.exerciseDao().insertAll(metrics.map { com.ironvellum.app.data.db.ExerciseEntity(name = "Legacy ${it.name}", muscleGroup = "CARDIO", isWeighted = false, metric = it.name, category = "Cardio") })
+        val targets = listOf(5, 45, 7, 0)
+        val entries = ids.mapIndexed { i, id -> Repository.PresetDraftEntry(id, 1, targets[i], if (i == 3) 3.5 else null, warmup = true) }
+        val p = repo.savePreset(null, "Legacy metrics", "", null, entries, mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.NONE)))
+        val session = repo.startSessionFromPreset(p)
+        val snapshot = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!.snapshot
+        assertEquals(listOf(300, 45, 7, 1), snapshot.steps.map { it.target })
+        assertEquals(listOf(PreparationMeasure.SECONDS, PreparationMeasure.SECONDS, PreparationMeasure.REPS, PreparationMeasure.REPS), snapshot.steps.map { it.measure })
+        assertEquals(metrics, snapshot.steps.map { it.legacyTarget?.metric })
+        assertEquals(targets, snapshot.steps.map { it.legacyTarget?.targetReps })
+        assertEquals(3.5, snapshot.steps.last().legacyTarget!!.targetWeightKg!!, 0.0)
+        assertNull(snapshot.steps.last().weightKg)
+        snapshot.steps.forEachIndexed { i, step ->
+            val original = WarmupStep.Item(ids[i], step.exerciseName, metrics[i], 1, targets[i], if (i == 3) 3.5 else null)
+            assertEquals(original.line { it.toString() }, step.legacyTargetLine { it.toString() })
+        }
+        repo.preparations.act(session, PreparationKind.WARMUP, PreparationAction.START, 1000)
+        val persisted = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!.progress
+        assertEquals(300000L, persisted.remainingMs)
+        assertEquals(306000L, persisted.deadlineMs)
+        var progress = PreparationProgress().advance(snapshot, PreparationAction.START, 1000)
+        assertEquals(300000L, progress.remainingMs(1000))
+        progress = progress.advance(snapshot, PreparationAction.COMPLETE_UNIT, 1000, progress.currentUnitKey)
+        progress = progress.advance(snapshot, PreparationAction.START, 1000)
+        assertEquals(45000L, progress.remainingMs(1000))
+        progress = progress.advance(snapshot, PreparationAction.COMPLETE_UNIT, 1000, progress.currentUnitKey)
+        progress = progress.advance(snapshot, PreparationAction.START, 1000)
+        assertNull(progress.deadlineMs)
+        progress = progress.advance(snapshot, PreparationAction.COMPLETE_UNIT, 1000, progress.currentUnitKey)
+        assertNull(progress.advance(snapshot, PreparationAction.START, 1000).deadlineMs)
+        db.sessionDao().updateSession(db.sessionDao().byId(session)!!.copy(completedAtMs = 2))
+        assertTrue(repo.importArchive(repo.exportJson()).getOrThrow().problems.isEmpty())
+        val restored = repo.preparations.observeSession(db.sessionDao().completedSessions().single().id, PreparationKind.WARMUP).first()!!.snapshot
+        assertEquals(snapshot, restored)
+    }
+
+    @Test fun thirtyLegacyRoundsSurviveStoredSnapshotAndSealedArchive() = runTest {
+        val e = exercise("Arm Circles")
+        val p = repo.savePreset(null, "Thirty legacy rounds", "", null, listOf(Repository.PresetDraftEntry(e.id, 30, 17, null, warmup = true)),
+            mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.NONE)))
+        val session = repo.startSessionFromPreset(p)
+        val before = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!
+        assertEquals(30, before.snapshot.steps.single().rounds)
+        assertFalse(before.snapshot.steps.single().validForEditor())
+        repo.preparations.act(session, PreparationKind.WARMUP, PreparationAction.COMPLETE_UNIT, 1000, "0:0:0")
+        db.sessionDao().updateSession(db.sessionDao().byId(session)!!.copy(completedAtMs = 2))
+        assertTrue(repo.importArchive(repo.exportJson()).getOrThrow().problems.isEmpty())
+        val restoredId = db.sessionDao().completedSessions().single().id
+        val restored = repo.preparations.observeSession(restoredId, PreparationKind.WARMUP).first()!!
+        assertEquals(30, restored.snapshot.steps.single().rounds)
+        assertEquals("0:1:0", restored.progress.currentUnitKey)
+    }
+
+    @Test fun mixedValidMalformedDuplicateArchivedRoutineIdsFallBackToAutoWithProblem() = runTest {
+        val e = exercise("Arm Circles")
+        val routine = PreparationRoutine(7, PreparationKind.WARMUP, "Valid duplicate", listOf(PreparationStep(e.id, e.name, PreparationMeasure.SECONDS, 30)))
+        val json = ExportWriter.write(PlayerProfile(), TrainingMode.STRENGTH,
+            listOf(WorkoutPreset(3, "Affected", preparation = mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, 7)))),
+            emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), exportedAtMs = 1, preparationRoutines = listOf(routine))
+            .replace("\"preparationRoutines\":[", "\"preparationRoutines\":[{\"id\":7,\"kind\":\"WARMUP\",\"name\":\"Malformed duplicate\",\"steps\":[]},")
+        val result = repo.importArchive(json).getOrThrow()
+        assertTrue(result.problems.isNotEmpty())
+        val preset = repo.observePresets().first().single()
+        assertEquals(PreparationChoice(), repo.preparations.choices(preset.id)[PreparationKind.WARMUP])
+        assertTrue(repo.preparations.observeRoutines(PreparationKind.WARMUP).first().isEmpty())
+    }
+
+    @Test fun pausedRemainingTimeIsClampedToTheCurrentStepBeforeDisplayOrExport() = runTest {
+        val session = repo.startSessionFromPreset(preset(routine()))
+        val row = db.preparationDao().session(session, PreparationKind.WARMUP.name)!!
+        db.preparationDao().putSession(row.copy(progressJson = PreparationCodec.encodeProgress(PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 9999999))))
+        val progress = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!.progress
+        assertEquals(30000L, progress.remainingMs(1000))
     }
 }
