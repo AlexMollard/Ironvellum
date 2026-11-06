@@ -49,6 +49,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 }
 
 @Composable internal fun preparationTarget(step: PreparationStep): String {
+    step.legacyTargetLine { com.ironvellum.app.data.Units.withUnit(it) }?.let { return it }
     val target = if (step.measure == PreparationMeasure.REPS) preparationCount(R.plurals.preparation_target_reps, R.plurals.preparation_target_reps__t, step.target)
         else preparationCount(R.plurals.preparation_target_seconds, R.plurals.preparation_target_seconds__t, step.target)
     val repeated = when (step.repeat) {
@@ -71,10 +72,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
     inspecting?.let { name -> ExerciseInspection(exercises, name, "") { inspecting = null } }
 }
 
-@Composable internal fun PreparationConfirm(title: String, body: String, confirm: String, onConfirm: () -> Unit, onDismiss: () -> Unit, danger: Boolean = false) {
+@Composable internal fun PreparationConfirm(title: String, body: String, confirm: String, onConfirm: () -> Unit, onDismiss: () -> Unit, danger: Boolean = false, dismissText: String? = null) {
     IronvellumDialog(
         onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(body) },
         confirmButton = { IronvellumButton(confirm, onConfirm, danger = danger) },
-        dismissButton = { IronvellumButton(preparationText(R.string.preparation_keep_editing, R.string.preparation_keep_editing__t), onDismiss, quiet = true) },
+        dismissButton = { IronvellumButton(dismissText ?: preparationText(R.string.preparation_keep_editing, R.string.preparation_keep_editing__t), onDismiss, quiet = true) },
     )
 }

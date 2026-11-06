@@ -3,9 +3,14 @@ package com.ironvellum.app.ui
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.*
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.data.WarmupStore
+import com.ironvellum.app.domain.PreparationKind
+import com.ironvellum.app.domain.PreparationStatus
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -57,7 +62,9 @@ class WarmupExerciseFlowTest {
         driver.click("Begin Heavy Pull")
         driver.awaitText("Trial in progress")
         // The step lists the drill; it is no longer a block of sets, so its name shows once, in the step.
-        driver.awaitAnyText { it == "WARM UP" }
+        driver.awaitAnyText { it == "Begin Warmup" }
+        driver.click("Begin Warmup")
+        driver.awaitAnyText { it == "Pull-up" }
         assertEquals("the pull-up is a warm-up item, not a block of sets", 1, driver.allText().count { it == "Pull-up" })
 
         val sessionId = app.database.openHelper.writableDatabase.query("SELECT id FROM sessions WHERE completedAtMs IS NULL").use { c ->
@@ -68,15 +75,27 @@ class WarmupExerciseFlowTest {
             assertTrue(c.moveToFirst())
             c.getLong(0)
         }
-        val store = WarmupStore(app)
-        assertFalse(pullUp in store.tickedFor(sessionId))
-        driver.click("Pull-up")
-        driver.settle()
-        assertTrue("ticking it is remembered for the trial", pullUp in store.tickedFor(sessionId))
+        val initial = runBlocking { app.repository.preparations.observeSession(sessionId, PreparationKind.WARMUP).first()!! }
+        assertEquals(pullUp, initial.snapshot.steps.first().exerciseId)
+        assertTrue(initial.progress.completedUnitKeys.isEmpty())
+        driver.click("Begin Warmup")
+        driver.awaitText("Complete exercise")
+        driver.click("Complete exercise")
+        compose.waitUntil(10000) { runBlocking {
+            app.repository.preparations.observeSession(sessionId, PreparationKind.WARMUP).first()!!.progress.completedUnitKeys.contains("0:0:0")
+        } }
         // And it is no set: the trial's own count never mentions it.
         app.database.openHelper.writableDatabase.query("SELECT COUNT(*) FROM set_logs WHERE exerciseId = $pullUp").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals(0, c.getInt(0))
         }
+        compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        driver.awaitText("Leave preparation?")
+        driver.click("Leave")
+        driver.awaitText("Trial in progress")
+        compose.onAllNodes(hasContentDescription("Log set", substring = true), useUnmergedTree = true)
+            .onFirst().performClick()
+        compose.waitUntil(10000) { runBlocking { app.repository.observeSessionSets(sessionId).first().any { it.done } } }
+        assertEquals(0, runBlocking { app.repository.observeSession(sessionId).first()!!.xpAwarded })
     }
 }

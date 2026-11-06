@@ -5,6 +5,11 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.FatigueAdviceSetting
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.PreparationKind
+import com.ironvellum.app.domain.PreparationChoice
+import com.ironvellum.app.domain.PreparationMode
+import com.ironvellum.app.domain.PreparationAction
+import com.ironvellum.app.ui.preparation.*
 import com.ironvellum.app.domain.levelAt
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
@@ -274,6 +279,7 @@ import com.ironvellum.app.ui.program.RiteMusclesSheet
 data class SessionUi(
     val session: WorkoutSession? = null,
     val sets: List<SessionSet> = emptyList(),
+    val loaded: Boolean = false,
 )
 
 private const val TWIN_PROMPT_KEY = "twin_prompt"
@@ -340,7 +346,7 @@ class SessionViewModel(
         repo.observeSession(sessionId),
         repo.observeSessionSets(sessionId),
     ) { session, sets ->
-        SessionUi(session, sets)
+        SessionUi(session, sets, loaded = true)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SessionUi())
 
     val exercises: StateFlow<List<Exercise>> =
@@ -497,7 +503,7 @@ class SessionViewModel(
      */
     private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
     val completion: StateFlow<Repository.CompletionResult?> = _completion
-    private val _finish = MutableStateFlow(Finish.XP)
+    private val _finish = MutableStateFlow(savedState.get<String>("finish_stage")?.let { runCatching { Finish.valueOf(it) }.getOrNull() } ?: Finish.XP)
 
     /**
      * Whether the optional "Add a photo?" step is offered: frozen at the seal (like [peaks]) from the photos kept then, so
@@ -518,7 +524,7 @@ class SessionViewModel(
         photoFailed = false
         viewModelScope.launch {
             runCatching { repo.photoLibrary.saveWorkout(appContext, uri, sessionId, photoDay) }
-                .onSuccess { _finish.value = Finish.ROUTINE }
+                .onSuccess { advanceFinish(Finish.ROUTINE) }
                 .onFailure { photoFailed = true }
             photoSaving = false
         }
@@ -530,6 +536,7 @@ class SessionViewModel(
     val finish: StateFlow<Finish> = _finish
 
     fun advanceFinish(to: Finish) {
+        savedState["finish_stage"] = to.name
         _finish.value = to
     }
 
@@ -562,34 +569,41 @@ class SessionViewModel(
 
     private val warmupStore = WarmupStore(appContext)
 
-    /** Whether the general warm-up reminder is on; the rite's own warm-up exercises show either way. */
     val warmupEnabled: Boolean = warmupStore.enabled
-
-    /** How this trial answered the warm-up step. */
-    private val _warmup = MutableStateFlow(warmupStore.stateFor(sessionId))
-    val warmup: StateFlow<WarmupStep.State> = _warmup
-
-    fun answerWarmup(state: WarmupStep.State) {
-        warmupStore.setState(sessionId, state)
-        _warmup.value = state
-    }
-
-    /** The rite's warm-up exercises, for the step to list; empty for a rite with none or a trial of no rite. */
-    private val _warmupItems = MutableStateFlow<List<WarmupStep.Item>>(emptyList())
-    val warmupItems: StateFlow<List<WarmupStep.Item>> = _warmupItems
-
-    /** The ones ticked so far (exercise ids). */
-    private val _warmupTicked = MutableStateFlow(warmupStore.tickedFor(sessionId))
-    val warmupTicked: StateFlow<Set<Long>> = _warmupTicked
+    val warmupPreparation = repo.preparations.observeSession(sessionId, PreparationKind.WARMUP)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val cooldownPreparation = repo.preparations.observeSession(sessionId, PreparationKind.COOLDOWN)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val sealedSummary = combine(repo.observeSession(sessionId), repo.observeSessionSets(sessionId), repo.observeExercises()) { session, sets, exercises ->
+        session?.let { SealedSummary.from(it, sets, exercises) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val _recoveryReady = MutableStateFlow(false)
+    val recoveryReady: StateFlow<Boolean> = _recoveryReady
 
     init {
-        viewModelScope.launch { _warmupItems.value = repo.trialWarmups(sessionId) }
+        viewModelScope.launch {
+            repo.preparations.prepareWarmupOffer(sessionId, warmupEnabled, warmupStore.stateFor(sessionId), warmupStore.tickedFor(sessionId))
+            val sealed = repo.observeSession(sessionId).first()?.takeIf { it.completedAtMs != null }
+            if (sealed != null) {
+                // These optional offers are read-only. At-seal XP/levels/deeds are never reconstructed.
+                _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
+                photoDay = java.time.Instant.ofEpochMilli(sealed.completedAtMs!!).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toEpochDay()
+                _photoOffered.value = runCatching { PhotoRules.workoutPhotoOffered(repo.photoLibrary.workoutPhotoDays(), photoDay) }.getOrDefault(false)
+                if (_finish.value.ordinal < Finish.SUMMARY.ordinal) advanceFinish(Finish.SUMMARY)
+            }
+            _recoveryReady.value = true
+        }
     }
 
-    fun tickWarmup(exerciseId: Long) {
-        val next = _warmupTicked.value.let { if (exerciseId in it) it - exerciseId else it + exerciseId }
-        warmupStore.setTicked(sessionId, next)
-        _warmupTicked.value = next
+    fun skipPreparation(kind: PreparationKind) {
+        viewModelScope.launchGuarded("skip preparation") { repo.preparations.act(sessionId, kind, PreparationAction.SKIP_ROUTINE, System.currentTimeMillis()) }
+    }
+
+    fun changePreparation(kind: PreparationKind, choice: PreparationChoice, after: () -> Unit) {
+        viewModelScope.launchGuarded("change preparation") {
+            withContext(NonCancellable) { repo.preparations.changeSession(sessionId, kind, choice) }
+            after()
+        }
     }
 
     fun keepPlan() {
@@ -777,7 +791,7 @@ class SessionViewModel(
                     _routineUpdate.value = null
                     _peaks.value = emptyList()
                     _photoOffered.value = false
-                    _finish.value = Finish.XP
+                    advanceFinish(Finish.XP)
                     _completion.value = null
                     _claiming.value = false
                     // The seal stopped the trial notification; the live trial wants it back.
@@ -843,18 +857,25 @@ fun SessionScreen(
     /** The request above was taken, shown or not: the next visit must not repeat it. */
     onSealRequestServed: () -> Unit = {},
     viewModel: SessionViewModel = rememberSessionViewModel(sessionId),
+    onPreparation: (PreparationKind) -> Unit = {},
+    onChangePreparation: (PreparationKind, PreparationChoice) -> Unit = { _, _ -> },
+    preparationResult: Bundle? = null,
+    onPreparationResultConsumed: () -> Unit = {},
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val peakBook by viewModel.peakBook.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
-    val xpBook by viewModel.xpBook.collectAsStateWithLifecycle()
+    val xpBook = if (ui.session?.let { it.completedAtMs == null } == true) viewModel.xpBook.collectAsStateWithLifecycle().value else null
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
     val pace by viewModel.pace.collectAsStateWithLifecycle()
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
-    val warmup by viewModel.warmup.collectAsStateWithLifecycle()
+    val warmupPreparation by viewModel.warmupPreparation.collectAsStateWithLifecycle()
+    val cooldownPreparation by viewModel.cooldownPreparation.collectAsStateWithLifecycle()
+    val sealedSummary by viewModel.sealedSummary.collectAsStateWithLifecycle()
+    val recoveryReady by viewModel.recoveryReady.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val photoOffered by viewModel.photoOffered.collectAsStateWithLifecycle()
@@ -949,10 +970,11 @@ fun SessionScreen(
     val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
-        if (granted) WorkoutSessionService.start(screenContext, sessionId)
+        if (granted && ui.session?.let { it.completedAtMs == null } == true) WorkoutSessionService.start(screenContext, sessionId)
     }
     var notificationSheet by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(sessionId) {
+    LaunchedEffect(sessionId, ui.session?.completedAtMs, ui.loaded) {
+        if (!ui.loaded || ui.session == null || ui.session?.completedAtMs != null) { notificationSheet = false; return@LaunchedEffect }
         WorkoutSessionService.start(screenContext, sessionId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(screenContext, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -965,7 +987,7 @@ fun SessionScreen(
             notificationSheet = true
         }
     }
-    if (notificationSheet) {
+    if (notificationSheet && ui.session?.let { it.completedAtMs == null } == true) {
         NotificationAskSheet(
             onAllow = {
                 notificationSheet = false
@@ -981,6 +1003,7 @@ fun SessionScreen(
 
     val session = ui.session
     if (session == null) {
+        LaunchedEffect(ui.loaded) { if (ui.loaded) onExit() }
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
             Text(
@@ -992,20 +1015,46 @@ fun SessionScreen(
         return
     }
 
-    // Claimed in an earlier process (killed mid-victory): the XP is banked and
-    // the live trial must not come back with a Seal the Trial that can only
-    // fail. This claim's own result is still on its way while [claiming].
-    if (session.completedAtMs != null && completion == null && !claiming) {
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                UiText.themed(R.string.session_already_sealed, R.string.session_already_sealed__t).asString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
+    fun preparationChoice(kind: PreparationKind): PreparationChoice {
+        val snapshot = (if (kind == PreparationKind.WARMUP) warmupPreparation else cooldownPreparation)?.snapshot
+        return when {
+            snapshot?.sourceRoutineId != null -> PreparationChoice(PreparationMode.SAVED, snapshot.sourceRoutineId)
+            snapshot != null && snapshot.steps.size == snapshot.legacyStepCount -> PreparationChoice(PreparationMode.NONE)
+            else -> PreparationChoice()
         }
-        LaunchedEffect(session.id) { onSealed() }
-        return
+    }
+    fun openPreparation(kind: PreparationKind, change: Boolean = false) {
+        if (kind == PreparationKind.COOLDOWN) viewModel.advanceFinish(SessionViewModel.Finish.SUMMARY)
+        if (change) onChangePreparation(kind, preparationChoice(kind)) else onPreparation(kind)
+    }
+    var confirmPreparation by rememberSaveable { mutableStateOf(false) }
+    val resultKind = preparationResult?.getString("kind")?.let { PreparationKind.valueOf(it) }
+    val currentPreparation = if (resultKind == PreparationKind.WARMUP) warmupPreparation else cooldownPreparation
+    fun applyPreparationResult() {
+        val result = preparationResult ?: return
+        val kind = resultKind ?: return
+        viewModel.changePreparation(kind, PreparationChoice(PreparationMode.valueOf(result.getString("mode")!!),
+            result.getLong("routine").takeIf { it > 0 })) {
+            confirmPreparation = false
+            onPreparationResultConsumed()
+        }
+    }
+    LaunchedEffect(preparationResult, currentPreparation != null) {
+        if (preparationResult != null && currentPreparation != null) {
+            if (currentPreparation.progress.hasProgress) confirmPreparation = true else applyPreparationResult()
+        }
+    }
+    if (confirmPreparation) PreparationConfirm(
+        preparationText(R.string.preparation_change_title, R.string.preparation_change_title__t),
+        preparationText(R.string.preparation_change_body, R.string.preparation_change_body__t),
+        preparationText(R.string.preparation_change, R.string.preparation_change__t),
+        ::applyPreparationResult, { confirmPreparation = false; onPreparationResultConsumed() },
+        dismissText = stringResource(R.string.common_cancel),
+    )
+    @Composable fun CooldownCard() {
+        cooldownPreparation?.let { PreparationSummaryCard(it,
+            { openPreparation(PreparationKind.COOLDOWN) }, { openPreparation(PreparationKind.COOLDOWN, change = true) },
+            { viewModel.skipPreparation(PreparationKind.COOLDOWN) }) }
     }
 
     // The notification's Seal action: the same confirmation the slider gives,
@@ -1016,7 +1065,7 @@ fun SessionScreen(
         if (sealRequest <= servedSealRequest || ui.sets.isEmpty()) return@LaunchedEffect
         servedSealRequest = sealRequest
         onSealRequestServed()
-        if (ui.sets.any { it.done } && completion == null && !claiming) confirmClaim = true
+        if (session.completedAtMs == null && ui.sets.any { it.done } && completion == null && !claiming) confirmClaim = true
     }
 
     // Render blocks in the rite's saved exercise order: sort explicitly by
@@ -1259,7 +1308,7 @@ fun SessionScreen(
 
     // Once sealed the live trial is not drawn under the finish pages (the routine question opens over this screen,
     // and it read "Trial in progress" behind a sealed trial).
-    if (completion != null) {
+    if (completion != null || session.completedAtMs != null) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(UiText.themed(R.string.session_sealed_placeholder_title, R.string.session_sealed_placeholder_title__t).asString(), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
             Text(session.title.ifBlank { session.label }, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
@@ -1302,25 +1351,12 @@ fun SessionScreen(
                     .verticalScroll(scroll)
                     .padding(horizontal = 16.dp),
             ) {
-                // Before the first set is logged; a logged set takes it away for good.
-                val warmupItems by viewModel.warmupItems.collectAsStateWithLifecycle()
-                val warmupTicked by viewModel.warmupTicked.collectAsStateWithLifecycle()
-                // Slides shut instead of vanishing: the whole list used to jump up under the finger on the first tick.
-                AnimatedVisibility((viewModel.warmupEnabled || warmupItems.isNotEmpty()) && ui.sets.isNotEmpty() && doneCount == 0) {
-                    val warmupText = remember(ui.sets, exercises) {
-                        val groupOf = exercises.associate { it.id to it.muscleGroup }
-                        WarmupStep.text(ui.sets.map { it.exerciseId }.distinct().mapNotNull { groupOf[it] })
-                    }
-                    Box(Modifier.fillMaxWidth().animateContentSize()) {
-                    WarmupRow(
-                        text = warmupText.takeIf { viewModel.warmupEnabled },
-                        items = warmupItems,
-                        ticked = warmupTicked,
-                        state = warmup,
-                        onTick = viewModel::tickWarmup,
-                        onAnswer = viewModel::answerWarmup,
-                    )
-                    }
+                // A single Room-backed offer replaces the old reminder and legacy checklist.
+                val preparation = warmupPreparation
+                AnimatedVisibility(preparation != null && warmupOffered(preparation, viewModel.warmupEnabled) && doneCount == 0) {
+                    preparation?.let { PreparationOfferCard(it,
+                        { openPreparation(PreparationKind.WARMUP) }, { openPreparation(PreparationKind.WARMUP, change = true) },
+                        { viewModel.skipPreparation(PreparationKind.WARMUP) }) }
                 }
                 var previousFolded = false
 
@@ -1980,12 +2016,13 @@ fun SessionScreen(
     // Celebrate first, then ask about the routine, then leave. The stage lives
     // in the view model, so a rotation resumes where the lifter was; the
     // session is already completed and paid, whatever the answer.
-    completion?.let { result ->
+    val result = completion
+    if (result != null || sealedSummary != null && !claiming && recoveryReady) {
         // Today's own deed and crest pages wait until this story, routine question included, is over.
         HoldsCelebration()
-        val hasXp = CelebrationFlow.hasXpPage(result)
-        val hasLevel = CelebrationFlow.hasLevelUp(result)
-        val hasDeeds = CelebrationFlow.deedsOf(result).isNotEmpty()
+        val hasXp = result?.let(CelebrationFlow::hasXpPage) == true
+        val hasLevel = result?.let(CelebrationFlow::hasLevelUp) == true
+        val hasDeeds = result?.let { CelebrationFlow.deedsOf(it).isNotEmpty() } == true
         when (val stage = CelebrationFlow.resolve(finish, hasXp, hasLevel, hasDeeds)) {
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
@@ -2018,7 +2055,15 @@ fun SessionScreen(
                 // Nothing to offer (a photo is already kept for today): straight on to the routine question.
                 LaunchedEffect(result) { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) }
             }
-            else -> TrialCelebration(
+            else -> if (result == null) {
+                sealedSummary?.let { summary -> RecoveredSessionSummary(summary, preparationContent = { CooldownCard() },
+                    onDone = { viewModel.advanceFinish(SessionViewModel.Finish.PHOTO) },
+                    onShare = {
+                        shareRender = { notes, effort -> WorkoutShare.format(summary.session, ui.sets, exercises.associateBy { it.id },
+                            targets = shareTargets, exerciseNotes = exerciseNotes, includeNotes = notes, unit = Units.current,
+                            includeEffort = effort, effortScale = EffortSetting.scale) }
+                    }) }
+            } else TrialCelebration(
                 stage = stage,
                 result = result,
                 title = session.title.ifBlank { session.label },
@@ -2058,6 +2103,7 @@ fun SessionScreen(
                     }
                 },
                 onReopen = { confirmReopen = true },
+                preparationContent = { CooldownCard() },
             )
         }
     }
@@ -4611,81 +4657,6 @@ private fun ToggleLine(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-    }
-}
-
-/**
- * The general warm-up before the first set: tick it done, skip it, or tap the
- * collapsed line to open it again. It is a reminder, never a set.
- */
-@Composable
-private fun WarmupRow(
-    /** The general reminder; null when that setting is off and only the rite's own warm-up exercises show. */
-    text: String?,
-    /** The rite's warm-up exercises, each tickable. */
-    items: List<WarmupStep.Item>,
-    ticked: Set<Long>,
-    state: WarmupStep.State,
-    onTick: (Long) -> Unit,
-    onAnswer: (WarmupStep.State) -> Unit,
-) {
-    if (state != WarmupStep.State.OPEN) {
-        Text(
-            stringResource(if (state == WarmupStep.State.DONE) R.string.session_warmup_done else R.string.session_warmup_skipped),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.session_warmup_reopen_label)) { onAnswer(WarmupStep.State.OPEN) }
-                .padding(vertical = 8.dp),
-        )
-        return
-    }
-    Column(
-        Modifier
-            .padding(top = 12.dp)
-            .fillMaxWidth()
-            .background(IronvellumColors.Ink.copy(alpha = 0.04f))
-            .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Text(
-            stringResource(R.string.session_warmup_heading),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            letterSpacing = 1.sp,
-            color = IronvellumColors.InkMuted,
-        )
-        if (text != null) Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
-        items.forEach { item ->
-            val on = item.exerciseId in ticked
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .toggleable(value = on, role = Role.Checkbox, onValueChange = { onTick(item.exerciseId) }),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Checkbox(
-                    checked = on,
-                    onCheckedChange = null,
-                    colors = CheckboxDefaults.colors(checkedColor = IronvellumColors.Emerald, uncheckedColor = IronvellumColors.InkMuted),
-                )
-                Text(
-                    item.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (on) IronvellumColors.InkMuted else IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(item.line(::formatKg), style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IronvellumButton(stringResource(R.string.common_done), onClick = { onAnswer(WarmupStep.State.DONE) }, modifier = Modifier.weight(1f))
-            IronvellumButton(stringResource(R.string.session_skip_button), quiet = true, onClick = { onAnswer(WarmupStep.State.SKIPPED) }, modifier = Modifier.weight(1f))
-        }
     }
 }
 

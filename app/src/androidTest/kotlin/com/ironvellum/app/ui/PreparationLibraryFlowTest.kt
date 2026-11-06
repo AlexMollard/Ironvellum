@@ -132,7 +132,7 @@ class PreparationLibraryFlowTest {
             IronvellumTheme(light = scale == 2f) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
-                    Surface(modifier = Modifier.systemBarsPadding(), color = MaterialTheme.colorScheme.background) { PreparationEditorScreen(null, PreparationKind.COOLDOWN, 2, { done = true }, vm) }
+                    Surface(modifier = Modifier.systemBarsPadding(), color = MaterialTheme.colorScheme.background) { PreparationEditorScreen(null, PreparationKind.COOLDOWN, 2, { done = true }, viewModel = vm) }
                 }
             }
         }

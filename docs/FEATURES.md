@@ -29,6 +29,12 @@ Everything Ironvellum does, by area. The words are the plain ones; [GLOSSARY.md]
   from the top set and round to the plates you own.
 - **Warm-ups:** ramps for loaded lifts, and warm-up exercises in a routine that
   never count toward your stats.
+- **Guided warmups and cooldowns:** reusable routines, workout-based suggestions or None,
+  separately attached to each saved workout. Edit copies of full-body, upper-body and lower-body
+  starters using existing gallery movements. Timers include five seconds to get ready; rep targets,
+  rounds and both sides or directions are tracked separately. Complete or skip each unit yourself.
+  Progress survives rotation and app restarts. The final workout summary offers cooldown after
+  awards, without adding sets or changing XP, strength or rewards.
 - **905 exercises**: 584 movements, each with a line drawing and an info
   sheet: why to do it and when to pick it, the muscles it works on both sides
   of the body, how to do it, your history with it and the fatigue it leaves.

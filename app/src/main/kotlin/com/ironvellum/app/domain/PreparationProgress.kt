@@ -56,6 +56,13 @@ data class PreparationProgress(
                 var s = stepIndex; var r = roundIndex; var repeat = repeatIndex + 1
                 if (repeat >= step.repetitions) { repeat = 0; r++ }
                 if (r >= step.rounds) { r = 0; s++ }
+                // A legacy checklist may have ticked later exercises before earlier ones.
+                while (s < snapshot.steps.size && ("$s:$r:$repeat" in completedUnitKeys || "$s:$r:$repeat" in skippedUnitKeys)) {
+                    val next = snapshot.steps[s]
+                    repeat++
+                    if (repeat >= next.repetitions) { repeat = 0; r++ }
+                    if (r >= next.rounds) { r = 0; s++ }
+                }
                 copy(status = if (s >= snapshot.steps.size) PreparationStatus.DONE else PreparationStatus.OPEN,
                     stepIndex = s, roundIndex = r, repeatIndex = repeat,
                     completedUnitKeys = if (action == PreparationAction.COMPLETE_UNIT) completedUnitKeys + currentUnitKey else completedUnitKeys,
@@ -65,4 +72,17 @@ data class PreparationProgress(
             PreparationAction.SKIP_ROUTINE -> this
         }
     }
+}
+
+/** One-time import when an old live session has no Room preparation row yet. */
+fun legacyPreparationProgress(snapshot: PreparationSnapshot, state: WarmupStep.State, ticked: Set<Long>): PreparationProgress {
+    val keys = snapshot.steps.flatMapIndexed { index, step ->
+        if (state == WarmupStep.State.DONE || index < snapshot.legacyStepCount && step.exerciseId in ticked)
+            (0 until step.rounds).flatMap { round -> (0 until step.repetitions).map { repeat -> "$index:$round:$repeat" } }
+        else emptyList()
+    }.toSet()
+    if (state == WarmupStep.State.SKIPPED) return PreparationProgress(status = PreparationStatus.SKIPPED, completedUnitKeys = keys)
+    val first = snapshot.steps.indices.firstOrNull { "$it:0:0" !in keys }
+    return PreparationProgress(status = if (first == null && keys.isNotEmpty()) PreparationStatus.DONE else PreparationStatus.OPEN,
+        stepIndex = first ?: if (keys.isNotEmpty()) snapshot.steps.size else 0, completedUnitKeys = keys)
 }

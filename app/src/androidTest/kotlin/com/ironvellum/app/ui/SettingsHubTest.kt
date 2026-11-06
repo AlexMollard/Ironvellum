@@ -7,9 +7,13 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.MainActivity
+import com.ironvellum.app.R
+import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.UiText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -59,6 +63,18 @@ class SettingsHubTest {
         compose.onNodeWithText("BACK").performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         row("Training mode").assertIsDisplayed()
+    }
+
+    @Test
+    fun preparationLibraryOpensFromTrainingSettingsAndReturnsThere() {
+        row("Training mode").performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        compose.onNodeWithText("Warmups & cooldowns").performScrollTo().assertIsDisplayed().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_create, R.string.preparation_create__t))).assertIsDisplayed()
+        compose.onNodeWithText("BACK").performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        compose.onNodeWithText("Warmups & cooldowns").assertIsDisplayed()
     }
 
     private companion object {

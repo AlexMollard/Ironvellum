@@ -34,6 +34,7 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsSwitchRow
+import com.ironvellum.app.ui.components.SettingsValueRow
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermChip
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -45,7 +46,7 @@ internal fun TrainingMode.label(): String = when (this) {
 }
 
 @Composable
-internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
+internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Unit, onOpenPreparation: () -> Unit = {}) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val mode = profile?.trainingMode ?: TrainingMode.STRENGTH
     SettingsPage(SettingsSection.TRAINING_MODE.title, onBack) {
@@ -80,6 +81,11 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
                 warmupOn = it
                 WarmupStore(context).enabled = it
             },
+        )
+        SettingsValueRow(
+            UiText.themed(R.string.preparation_library, R.string.preparation_library__t).asString(),
+            UiText.themed(R.string.preparation_manage, R.string.preparation_manage__t).asString(),
+            onOpenPreparation,
         )
         SectionHeader(stringResource(R.string.settings_training_units_title), topPadding = 16.dp)
         InkSegmented(

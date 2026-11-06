@@ -3,6 +3,8 @@ package com.ironvellum.app.ui
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -59,12 +61,12 @@ class RepeatedMovementSessionTest {
             // The Dip card is open; each Push-up entry is a folded row of its own.
             assertEquals("two Push-up blocks, not one", 2, count("Push-up"))
             assertEquals(0, count("incline"))
-            compose.onAllNodesWithText("Push-up", substring = true)[0].performClick()
+            compose.onAllNodesWithText("Push-up", substring = true)[0].performScrollTo().assertIsDisplayed().performClick()
             waitForText("weighted · incline")
             assertEquals(0, count("deficit"))
             // Opening the other one shows its own modifiers.
             compose.waitUntil(5_000) { count("Push-up") == 2 }
-            compose.onAllNodesWithText("Push-up", substring = true)[1].performClick()
+            compose.onAllNodesWithText("Push-up", substring = true)[1].performScrollTo().assertIsDisplayed().performClick()
             waitForText("weighted · deficit · elevated")
             assertTrue(count("weighted · incline") == 0)
         }

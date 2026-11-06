@@ -172,6 +172,7 @@ internal fun TrialCelebration(
     onReopen: () -> Unit,
     /** False when the lifter has animations off: the XP page then opens finished. */
     motion: Boolean = animatorsOn(LocalContext.current),
+    preparationContent: @Composable () -> Unit = {},
 ) {
     val hasXp = CelebrationFlow.hasXpPage(result)
     val hasLevel = CelebrationFlow.hasLevelUp(result)
@@ -229,6 +230,7 @@ internal fun TrialCelebration(
                     onDone = onContinue,
                     onShare = onShare,
                     onReopen = onReopen,
+                    preparationContent = preparationContent,
                 )
             }
         }
@@ -260,6 +262,7 @@ private fun SummaryPage(
     onDone: () -> Unit,
     onShare: () -> Unit,
     onReopen: () -> Unit,
+    preparationContent: @Composable () -> Unit = {},
 ) {
     val motion = animatorsOn(LocalContext.current)
     // The XP page has already played the reveal; the panel here is its finished state, then the rest lands.
@@ -427,6 +430,7 @@ private fun SummaryPage(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.reveal(t >= rowsAt + 150L * rows.size, motion),
             )
+            preparationContent()
             Spacer(Modifier.height(16.dp))
         }
         // More below: a fade at the foot says so, in place of a card cut off with no bottom edge.
@@ -466,6 +470,42 @@ private fun SummaryPage(
             link = UiText.themed(R.string.victory_share_button, R.string.victory_share_button__t).asString(),
             onLink = onShare,
         )
+    }
+}
+
+/** A sealed row recovered after process death has totals, but no recoverable at-seal awards story. */
+@Composable
+internal fun RecoveredSessionSummary(
+    summary: SealedSummary, preparationContent: @Composable () -> Unit,
+    onDone: () -> Unit, onShare: () -> Unit,
+) {
+    CappedDialog(onDismissRequest = onDone,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Column(Modifier.fillMaxSize().background(IronvellumColors.Abyss).statusBarsPadding()) {
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(42.dp))
+                Text(UiText.themed(R.string.session_sealed_placeholder_title, R.string.session_sealed_placeholder_title__t).asString(),
+                    style = MaterialTheme.typography.titleMedium, color = IronvellumColors.SovereignGold)
+                Text(summary.session.title.ifBlank { summary.session.label }, fontFamily = ChakraPetch,
+                    style = MaterialTheme.typography.headlineSmall, color = IronvellumColors.Ink, textAlign = TextAlign.Center)
+                Text(UiText.themedPlural(R.plurals.victory_summary, R.plurals.victory_summary__t, summary.totals.sets,
+                    summary.durationMinutes, summary.totals.sets).asString(), style = MaterialTheme.typography.bodySmall, color = Dim)
+                Spacer(Modifier.height(22.dp))
+                InkPanel(Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.victory_row_xp), style = MaterialTheme.typography.bodyMedium, color = Dim)
+                    Text(count(summary.session.xpAwarded), style = MaterialTheme.typography.headlineSmall, color = IronvellumColors.SovereignGold)
+                    Text(stringResource(R.string.workoutdetail_figure_strength), style = MaterialTheme.typography.bodyMedium, color = Dim)
+                    Text(count(summary.session.strengthScore), style = MaterialTheme.typography.headlineSmall, color = IronvellumColors.Ink)
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(totalsLine(summary.totals), style = MaterialTheme.typography.labelMedium, color = Dim, textAlign = TextAlign.Center)
+                preparationContent()
+                Spacer(Modifier.height(24.dp))
+            }
+            CelebrationDock(primary = stringResource(R.string.common_done), onPrimary = onDone,
+                link = UiText.themed(R.string.victory_share_button, R.string.victory_share_button__t).asString(), onLink = onShare)
+        }
     }
 }
 

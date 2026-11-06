@@ -41,14 +41,24 @@ class PreparationRepository(private val db: IronvellumDatabase) {
 
     private suspend fun snapshotLiveSession() { db.sessionDao().liveSession()?.let { ensureSession(it.id) } }
 
-    suspend fun ensureSession(sessionId: Long): Unit = db.withTransaction {
+    suspend fun ensureSession(sessionId: Long, legacyState: WarmupStep.State = WarmupStep.State.OPEN, legacyTicked: Set<Long> = emptySet()): Unit = db.withTransaction {
         if (db.sessionDao().byId(sessionId) == null) return@withTransaction
         PreparationKind.entries.forEach { kind ->
             if (dao.session(sessionId, kind.name) == null) {
                 val presetId = db.sessionDao().byId(sessionId)?.presetId
                 val choice = presetId?.let { choices(it)[kind] } ?: PreparationChoice()
-                put(sessionId, resolve(sessionId, kind, choice), PreparationProgress())
+                val snapshot = resolve(sessionId, kind, choice)
+                put(sessionId, snapshot, if (kind == PreparationKind.WARMUP) legacyPreparationProgress(snapshot, legacyState, legacyTicked) else PreparationProgress())
             }
+        }
+    }
+    /** The reminder toggle suppresses automatic general steps, never an explicit routine or work already begun. */
+    suspend fun prepareWarmupOffer(sessionId: Long, enabled: Boolean, legacyState: WarmupStep.State, legacyTicked: Set<Long>): Unit = db.withTransaction {
+        ensureSession(sessionId, legacyState, legacyTicked)
+        val current = dao.session(sessionId, PreparationKind.WARMUP.name)?.domain() ?: return@withTransaction
+        val p = current.progress
+        if (!enabled && current.snapshot.sourceRoutineId == null && p == PreparationProgress()) {
+            put(sessionId, current.snapshot.copy(name = "", steps = current.snapshot.steps.take(current.snapshot.legacyStepCount)), p)
         }
     }
     suspend fun changeSession(sessionId: Long, kind: PreparationKind, choice: PreparationChoice): Unit = db.withTransaction {

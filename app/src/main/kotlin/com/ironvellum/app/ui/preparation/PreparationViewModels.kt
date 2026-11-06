@@ -29,6 +29,7 @@ data class PreparationEditorUi(
 class PreparationEditorViewModel(
     private val repo: Repository, private val routineId: Long?, private val kind: PreparationKind,
     private val starterIndex: Int?, private val saved: SavedStateHandle,
+    private val copySnapshot: PreparationSnapshot? = null,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(PreparationEditorUi())
     val ui = _ui.asStateFlow()
@@ -43,7 +44,7 @@ class PreparationEditorViewModel(
                 _exercises.value = repo.observeExercises().first()
                 val routine = routineId?.let { id -> repo.preparations.observeRoutines(kind).first().firstOrNull { it.id == id } }
                 check(routineId == null || routine != null)
-                val template = starterIndex?.let { PreparationStarters.templates(kind, _exercises.value).getOrNull(it) }
+                val template = copySnapshot ?: starterIndex?.let { PreparationStarters.templates(kind, _exercises.value).getOrNull(it) }
                 val initial = PreparationEditorUi(routine?.name ?: template?.name.orEmpty(), routine?.steps ?: template?.steps.orEmpty(), loaded = true)
                 baseline = saved.get<Bundle>("baseline")?.toEditor() ?: initial.also { saved["baseline"] = it.bundle() }
                 val restored = saved.get<Bundle>("draft")?.toEditor() ?: initial

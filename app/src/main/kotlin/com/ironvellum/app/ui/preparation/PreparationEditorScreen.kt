@@ -28,8 +28,9 @@ private fun editorKey(kind: PreparationKind, routineId: Long?) = "preparation_ed
 @Composable
 fun PreparationEditorScreen(
     routineId: Long?, kind: PreparationKind, starterIndex: Int? = null, onDone: () -> Unit,
+    copySnapshot: PreparationSnapshot? = null,
     viewModel: PreparationEditorViewModel = viewModel(key = editorKey(kind, routineId), factory = viewModelFactory {
-        initializer { PreparationEditorViewModel(ironvellumRepository(), routineId, kind, starterIndex, createSavedStateHandle()) }
+        initializer { PreparationEditorViewModel(ironvellumRepository(), routineId, kind, starterIndex, createSavedStateHandle(), copySnapshot) }
     }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()

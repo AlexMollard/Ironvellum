@@ -59,11 +59,12 @@ fun SettingsSectionScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel,
     onOpenSection: (SettingsSection) -> Unit = {},
+    onOpenPreparation: () -> Unit = {},
 ) {
     when (section) {
         SettingsSection.PROFILE -> ProfileSettings(viewModel, onBack)
         SettingsSection.APPEARANCE -> AppearanceSettings(viewModel, onBack)
-        SettingsSection.TRAINING_MODE -> TrainingModeSettings(viewModel, onBack)
+        SettingsSection.TRAINING_MODE -> TrainingModeSettings(viewModel, onBack, onOpenPreparation)
         SettingsSection.DURING_TRIAL -> TrialSettings(onBack, onOpenLockScreen = { onOpenSection(SettingsSection.LOCK_SCREEN) })
         SettingsSection.LOCK_SCREEN -> LockScreenSettings(onOpenRest = { onOpenSection(SettingsSection.DURING_TRIAL) }, onBack = onBack)
         SettingsSection.ARMOURY -> ArmourySettings(onBack)

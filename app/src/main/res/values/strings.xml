@@ -1257,8 +1257,6 @@
     <!-- Live workout (SessionScreen.kt). Plain wording first, then its themed twin. -->
     <string name="session_opening">Opening the workout…</string>
     <string name="session_opening__t">Opening the trial…</string>
-    <string name="session_already_sealed">Workout already finished.</string>
-    <string name="session_already_sealed__t">Trial already sealed.</string>
     <string name="session_notifications_off_caption">Notifications are off, so the rest timer will not alert you when a rest ends.</string>
     <!-- Toasts when a today-only set change is not possible for this lift. -->
     <string name="session_top_set_refused">This lift cannot take a top set.</string>
@@ -1537,10 +1535,6 @@
     <string name="session_modifiers_weighted">weighted · set by load</string>
 
     <!-- Warm-up reminder before the first set. -->
-    <string name="session_warmup_done">Warmed up</string>
-    <string name="session_warmup_skipped">Warm-up skipped</string>
-    <string name="session_warmup_reopen_label">Open the warm-up again</string>
-    <string name="session_warmup_heading">WARM UP</string>
 
     <!-- Offer to update the routine after finishing. -->
     <string name="session_update_swaps_title">Keep today\'s swaps in your routine?</string>
@@ -7255,4 +7249,58 @@
     <string name="preparation_section__t">Preparation &amp; recovery</string>
     <string name="preparation_preview">Preview routine</string>
     <string name="preparation_preview__t">Preview preparation</string>
+
+    <!-- Guided preparation and sealed-summary recovery. -->
+    <string name="preparation_begin">Begin %1$s</string>
+    <string name="preparation_begin__t">Begin %1$s</string>
+    <string name="preparation_resume">Resume %1$s</string>
+    <string name="preparation_resume__t">Resume %1$s</string>
+    <string name="preparation_skip">Skip %1$s</string>
+    <string name="preparation_skip__t">Skip %1$s</string>
+    <string name="preparation_finished">%1$s complete</string>
+    <string name="preparation_finished__t">%1$s complete</string>
+    <string name="preparation_skipped">%1$s skipped</string>
+    <string name="preparation_skipped__t">%1$s skipped</string>
+    <string name="preparation_progress">Completed: %1$d / %2$d</string>
+    <string name="preparation_progress__t">Completed: %1$d / %2$d</string>
+    <string name="preparation_change">Change routine</string>
+    <string name="preparation_change__t">Change preparation</string>
+    <string name="preparation_complete_unit">Complete exercise</string>
+    <string name="preparation_complete_unit__t">Complete exercise</string>
+    <string name="preparation_return_workout">Return to workout</string>
+    <string name="preparation_return_workout__t">Return to trial</string>
+    <string name="preparation_return_summary">Return to summary</string>
+    <string name="preparation_return_summary__t">Return to summary</string>
+    <string name="preparation_round">Round %1$d of %2$d</string>
+    <string name="preparation_round__t">Round %1$d of %2$d</string>
+    <string name="preparation_left">Left side</string>
+    <string name="preparation_left__t">Left side</string>
+    <string name="preparation_right">Right side</string>
+    <string name="preparation_right__t">Right side</string>
+    <string name="preparation_direction_first">First direction</string>
+    <string name="preparation_direction_first__t">First direction</string>
+    <string name="preparation_direction_second">Other direction</string>
+    <string name="preparation_direction_second__t">Other direction</string>
+    <string name="preparation_ready">Get ready · %1$d</string>
+    <string name="preparation_ready__t">Get ready · %1$d</string>
+    <string name="preparation_reached">Target reached</string>
+    <string name="preparation_reached__t">Target reached</string>
+    <string name="preparation_pause">Pause timer</string>
+    <string name="preparation_pause__t">Pause timer</string>
+    <string name="preparation_start_timer">Start / resume timer</string>
+    <string name="preparation_start_timer__t">Start / resume timer</string>
+    <string name="preparation_skip_unit">Skip exercise</string>
+    <string name="preparation_skip_unit__t">Skip exercise</string>
+    <string name="preparation_no_scoring">Preparation does not add working sets or XP.</string>
+    <string name="preparation_no_scoring__t">Preparation does not add working sets or XP.</string>
+    <string name="preparation_leave_title">Leave preparation?</string>
+    <string name="preparation_leave_title__t">Leave preparation?</string>
+    <string name="preparation_leave_body">Your progress is saved and the timer is paused.</string>
+    <string name="preparation_leave_body__t">Your progress is saved and the timer is paused.</string>
+    <string name="preparation_leave">Leave</string>
+    <string name="preparation_leave__t">Leave</string>
+    <string name="preparation_change_title">Change routine?</string>
+    <string name="preparation_change_title__t">Change preparation?</string>
+    <string name="preparation_change_body">This replaces preparation for this session and resets its progress. Your saved workout stays unchanged.</string>
+    <string name="preparation_change_body__t">This replaces preparation for this trial and resets its progress. Your saved rite stays unchanged.</string>
 </resources>

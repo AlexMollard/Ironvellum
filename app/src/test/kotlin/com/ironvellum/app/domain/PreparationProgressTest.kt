@@ -4,6 +4,33 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PreparationProgressTest {
+    @Test fun importedNonContiguousLegacyTicksAreNotRepeated() {
+        val legacy = snapshot.copy(legacyStepCount = 2)
+        var p = legacyPreparationProgress(legacy, WarmupStep.State.OPEN, setOf(2))
+        assertEquals(setOf("1:0:0"), p.completedUnitKeys)
+        repeat(4) { p = p.advance(legacy, PreparationAction.COMPLETE_UNIT, 0, p.currentUnitKey) }
+        assertEquals(PreparationStatus.DONE, p.status)
+        assertEquals(5, p.completedUnitKeys.size)
+    }
+    @Test fun restoredTimerAtTargetStillNeedsAnExplicitCurrentTap() {
+        val open = PreparationProgress()
+        val running = open.advance(snapshot, PreparationAction.START, 1000)
+        val restored = PreparationCodec.decodeProgress(PreparationCodec.encodeProgress(running)).getOrThrow().recovered(snapshot, 36000)
+        assertEquals(running.currentUnitKey, restored.currentUnitKey)
+        val next = restored.advance(snapshot, PreparationAction.COMPLETE_UNIT, 36000, running.currentUnitKey)
+        assertEquals("0:0:1", next.currentUnitKey)
+        assertEquals(next, next.advance(snapshot, PreparationAction.COMPLETE_UNIT, 36001, running.currentUnitKey))
+    }
+
+    @Test fun pausingReadinessRetainsWholeTargetAndResumeGetsFreshReadiness() {
+        val paused = PreparationProgress().advance(snapshot, PreparationAction.START, 1000)
+            .advance(snapshot, PreparationAction.PAUSE, 3000)
+        assertEquals(30000L, paused.remainingMs)
+        assertNull(paused.readyUntilMs)
+        val resumed = paused.advance(snapshot, PreparationAction.RESUME, 100000)
+        assertEquals(105000L, resumed.readyUntilMs)
+        assertEquals(135000L, resumed.deadlineMs)
+    }
     private val snapshot = PreparationSnapshot(PreparationKind.WARMUP, "test", listOf(
         PreparationStep(1, "Arm Circles", PreparationMeasure.SECONDS, 30, rounds = 2, repeat = PreparationRepeat.DIRECTIONS),
         PreparationStep(2, "Squat", PreparationMeasure.REPS, 10),

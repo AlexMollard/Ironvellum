@@ -3,6 +3,13 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## 2.0 (unreleased)
+
+- Save reusable warmups and cooldowns, or choose suggestions based on each workout's working exercises.
+- Follow gallery movements with rep targets, timers, rounds and both sides or directions. Progress survives leaving, rotation and restarting the app.
+- Legacy warmup exercises share one guided warmup. Cooldown starts from the final workout summary and never changes working sets, XP or rewards.
+- Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
+
 ## 1.9
 
 ### Photos
