@@ -1,0 +1,54 @@
+# Warmup and cooldown routines
+
+Issue #4. Approved interaction reference: `C:/Users/alexm/.codex/visualizations/2026/11/06/01a1b040-5ebf-7c93-99d9-bd3f90d65578/warmup-cooldown.html`. The reference is a visual specification, not application source. User approved the complete flow and agent-driven implementation. Subsequent scope clarification requires every starter movement to be a real gallery exercise with its normal image, guide, muscles and metric.
+
+## User experience
+
+Saved workout editing gains Preparation & recovery rows for Warmup and Cooldown. Each independently selects Auto suggestion, a reusable saved routine, or None. Auto follows that workout's current working exercises; choosing a saved routine keeps that preference attached. The selector previews suggestions, offers editable starter copies, creation and management, and explains an empty personal library. Settings also opens Warmups & cooldowns.
+
+The manager has Warmups/Cooldowns tabs, personal routines and full/upper/lower starter templates. A starter is immutable; Edit a copy creates a personal routine. Editing supports name, ordered gallery exercises, time or reps, rounds, each side/direction, optional note, removal and reorder. Back with edits confirms discard. Deletion explains affected workouts and returns those attachments to Auto. Changes affect future sessions only.
+
+Before the first working set the existing reminder becomes a compact routine card with Begin warmup, Skip warmup and Change routine. Running it shows overview, exercise guide/image, instructions, progress, rep target or timer, rounds and sides/directions, complete and skip. Timer start includes five seconds of preparation. Completion returns to the workout. Leaving preserves progress and pauses an active timer; returning resumes explicitly. Never block a person from logging working sets.
+
+After the existing seal, XP, level and deeds sequence, the final summary offers Begin cooldown and Change routine. Cooldown completion returns to that same sealed summary. Done still proceeds through existing photo and routine-update offers. A restored process can display the sealed summary and pending cooldown without replaying awards. Warmup/cooldown write no set rows and never change stats, XP, achievements, strength, progression, volume or rewards. Existing loaded warmup ramps remain separate and unchanged.
+
+## Canonical starter catalogue
+
+Use canonical exercise names for lookup and their resolved Room IDs for routine steps. All thirteen movements already have gallery art and guides. Bodyweight Squat is an existing base-seed exercise; do not duplicate it. The owner explicitly excluded March in Place and new catalogue/art additions; that later decision supersedes the mockup.
+
+Every timed figure is seconds. `×2` means two explicit sides/directions, not double rounds. All starters use one round and bodyweight. Preparation measure is an explicit routine target, independent of gallery logging units.
+
+| Starter | Ordered exercise targets |
+| --- | --- |
+| Full-body warmup | Arm Circles 30s each direction; Bodyweight Squat 10 reps; Cat-Cow Stretch 45s; World's Greatest Stretch 30s each side |
+| Upper-body warmup | Arm Circles 30s each direction; Cat-Cow Stretch 45s; World's Greatest Stretch 30s each side |
+| Lower-body warmup | Leg Swing Stretch 30s ×2 sides; Bodyweight Squat 10 reps; Ankle Circles 30s ×2 sides |
+| Full-body cooldown | Standing Quad Stretch 30s ×2 sides; Doorway Chest Stretch 30s; Child's Pose 60s |
+| Upper-body cooldown | Doorway Chest Stretch 30s; Cross-Body Shoulder Stretch 30s ×2 sides; Child's Pose 60s |
+| Lower-body cooldown | Kneeling Hip Flexor Stretch 30s ×2 sides; Hamstring Stretch 30s ×2 sides; Standing Quad Stretch 30s ×2 sides; Wall Calf Stretch 30s ×2 sides |
+
+The complete pooled list is Arm Circles, Bodyweight Squat, Cat-Cow Stretch, World's Greatest Stretch, Leg Swing Stretch, Ankle Circles, Standing Quad Stretch, Doorway Chest Stretch, Child's Pose, Cross-Body Shoulder Stretch, Kneeling Hip Flexor Stretch, Hamstring Stretch and Wall Calf Stretch. Reuse existing guides, muscle mappings, gear requirements and images for all thirteen existing movements.
+
+Auto is deterministic: inspect distinct working exercise IDs, excluding legacy warmup entries and cardio/mobility groups. LEGS only selects lower; any PUSH/PULL/CLIMBING without LEGS selects upper; mixed upper+LEGS, core-only, activity-only and empty workouts select full. Available gear never causes a suggestion to require unavailable equipment: all six starters require no training equipment; ordinary wall/doorway support is explained in existing guides. No randomization, history or clock input.
+
+## Domain and persistence
+
+Use `PreparationKind { WARMUP, COOLDOWN }`, `PreparationMode { AUTO, SAVED, NONE }`, `PreparationMeasure { REPS, SECONDS }`, and `PreparationRepeat { ONCE, SIDES, DIRECTIONS }`. A `PreparationStep` contains `exerciseId: Long`, `exerciseName: String`, `measure`, `target: Int`, `rounds: Int = 1`, `repeat = ONCE`, `note: String = ""`, and `weightKg: Double? = null`. Name is an export/remapping fallback, never a replacement for a gallery identity. Reusable routine names are user text; starter names/instructions/copy use plain/themed resources. Validate nonblank name, nonempty steps, positive exercise IDs, target 1..100 reps or 5..600 seconds, rounds 1..10, notes bounded at 1000 characters. Legacy imported targets outside editor limits remain runnable; do not silently rewrite historical workout data.
+
+Room v46 → v47 adds three focused entities in `PreparationEntities.kt`: `PreparationRoutineEntity(id auto PK, kind, name, stepsJson)`, `PresetPreparationEntity(presetId, kind composite PK, mode, routineId nullable)`, `SessionPreparationEntity(sessionId, kind composite PK, snapshotJson, progressJson)`. Preset/session owner FKs cascade. Routine deletion is an explicit transaction: change affected SAVED attachments to AUTO and null their routineId, then delete; snapshots have no routine FK. JSON codecs are pure Kotlin using the existing archive parser/writer approach; malformed persisted progress recovers safely to paused initial progress without touching session/sets. Room schema export must include 47.json and migration tests must retain existing presets/sets/profile.
+
+A missing attachment means AUTO (including old backups); NONE is explicit. Keep global WarmupStore.enabled as the existing device-wide default-off override for automatic offers, while existing explicit workout warmup exercises remain visible. Reusable routines and attachments survive local/cloud full archives (format v14 → v15); cloud feed/workout DTOs and read-only web schema remain unchanged. Export resolved exercise names and metadata, then import via the existing case-insensitive `resolveExercise` closure and independent old→new routine/preset/session ID maps. Never trust archived numeric exercise IDs. Old archives restore with an empty personal library and Auto attachments. Backups continue to exclude active sessions as today; sealed session preparation snapshots/progress are included with their owning archived session. Imported timers restore paused, preserving remaining duration rather than a stale wall-clock deadline.
+
+`Repository` exposes `val preparations: PreparationRepository`. The facade receives the same database; it owns CRUD, attachment resolution, snapshots and progress. Extend existing `savePreset(..., entries, preparation: Map<PreparationKind, PreparationChoice>? = null)` atomically; null preserves attachments when non-editor callers update a workout. New editor drafts pass both choices. All existing constructor/copy/import/generator paths preserve attachments by owner ID; deliberate replacement/deletion cascades them. Exercise usage/deletion protection and twin conversion must count/remap routine and snapshot references, not only preset entries and set logs.
+
+Snapshot both kinds in the same transaction as a newly created preset session (`startFromPreset`), after work rows exist. An already-live session returned by `claimLiveSession` keeps its original snapshots. Freeform sessions lazily snapshot at first offer from their current work rows. Legacy ongoing sessions lacking rows lazily snapshot once. Merge legacy `PresetEntry.warmup` into the warmup snapshot before first run: legacy entries first, retaining order/targets/weight, followed by the selected routine's steps absent by exercise ID. Never create duplicate warmup cards or set rows. NONE disables the selected general routine, while preserving explicit legacy workout warmups. Snapshot before preset edit/delete can affect it.
+
+Progress is a persisted value: status OPEN/RUNNING/PAUSED/DONE/SKIPPED, stepIndex, roundIndex, repeatIndex, completed unit keys, skipped unit keys, remainingMs, readyUntilMs and deadlineMs. A unit is `(stepIndex, roundIndex, repeatIndex)`; completing a unit advances once. Timer expiry only reveals target reached; explicit completion advances. Persist on each user action, calculate displayed time from deadlines instead of decrement counters, clamp time to target bounds and clear deadlines on pause/leave. Rotation keeps running; process recreation reconstructs deadlines; reboot or invalid time bounds pauses safely. Back never abandons a workout. Session deletion cascades progress.
+
+## Integration boundaries and checks
+
+Keep screens in `ui/preparation/`, the runner and offer/summary cards there as reusable components. `SessionScreen.kt` should only wire offer callbacks and summary slots. Existing `Finish { XP, LEVEL, DEEDS, SUMMARY, PHOTO, ROUTINE }` ordering remains intact. Add a summary content slot to `TrialCelebration` and a sealed-summary recovery path; entering/exiting runner never calls `completeSession` or `reopenSession`.
+
+Routes live in the existing `IronvellumNav.kt` Routes object: library, routine editor, selector and runner routes use explicit kind, owner/session ID and return target; return selection through the owning navigation entry SavedStateHandle. Persist editor drafts through SavedStateHandle. UI copy, labels, accessibility descriptions, starter titles and error messages belong in `res/values/strings.xml`, paired plain `key` and themed `key__t`; lower HardcodedUiLiteralTest baselines when replacing literals. Exercise detail opens the same guide as the gallery.
+
+Tests must prove migration/data survival, archive remapping and old-version defaults, deterministic suggestions, preset-copy/edit preservation, legacy dedupe, snapshot isolation, interrupted timer/unit resume, deletion and missing references, None/global toggle behavior, and zero reward/stat changes across repeated cooldown entry. Include Compose flow tests at 200% font scale for manager, selector, runner and summary. Run the local gate alone under its emulator lock; never instrument the owner's phone or add Actions triggers.
