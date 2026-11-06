@@ -14,11 +14,21 @@ internal fun PreparationStep.draftBundle() = Bundle().apply {
     putLong("id", exerciseId); putString("name", exerciseName); putString("measure", measure.name)
     putInt("target", target); putInt("rounds", rounds); putString("repeat", repeat.name); putString("note", note)
     weightKg?.let { putDouble("weight", it) }
+    legacyTarget?.let { legacy ->
+        putBundle("legacy", Bundle().apply {
+            putString("metric", legacy.metric.name); putInt("reps", legacy.targetReps)
+            legacy.targetWeightKg?.let { putDouble("weight", it) }
+        })
+    }
 }
 internal fun Bundle.preparationStep() = PreparationStep(
     getLong("id"), getString("name").orEmpty(), PreparationMeasure.valueOf(getString("measure")!!),
     getInt("target"), getInt("rounds"), PreparationRepeat.valueOf(getString("repeat")!!), getString("note").orEmpty(),
     if (containsKey("weight")) getDouble("weight") else null,
+    getBundle("legacy")?.let { legacy -> PreparationLegacyTarget(
+        ExerciseMetric.valueOf(legacy.getString("metric")!!), legacy.getInt("reps"),
+        if (legacy.containsKey("weight")) legacy.getDouble("weight") else null,
+    ) },
 )
 
 data class PreparationEditorUi(
@@ -63,7 +73,13 @@ class PreparationEditorViewModel(
         _ui.value = changed
     }
     fun setName(value: String) = edit(_ui.value.copy(name = value))
-    fun update(index: Int, step: PreparationStep) = edit(_ui.value.copy(steps = _ui.value.steps.mapIndexed { i, old -> if (i == index) step else old }))
+    fun update(index: Int, step: PreparationStep) = edit(_ui.value.copy(steps = _ui.value.steps.mapIndexed { i, old ->
+        if (i != index) old
+        // A copied legacy prescription keeps its original units until the user replaces that prescription.
+        else if (step.exerciseId != old.exerciseId || step.measure != old.measure || step.target != old.target || step.weightKg != old.weightKg)
+            step.copy(legacyTarget = null)
+        else step
+    }))
     fun add(exercise: Exercise) = edit(_ui.value.copy(steps = _ui.value.steps + PreparationStep(exercise.id, exercise.name, if (exercise.metric == ExerciseMetric.REPS) PreparationMeasure.REPS else PreparationMeasure.SECONDS, if (exercise.metric == ExerciseMetric.REPS) 10 else 30)))
     fun remove(index: Int) = edit(_ui.value.copy(steps = _ui.value.steps.filterIndexed { i, _ -> i != index }))
     fun move(index: Int, delta: Int) {

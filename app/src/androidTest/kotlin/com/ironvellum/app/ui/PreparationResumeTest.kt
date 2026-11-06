@@ -170,5 +170,47 @@ class PreparationResumeTest {
         assertEquals(snapshot, repo.preparations.observeSession(planned, PreparationKind.COOLDOWN).first()!!.snapshot)
         assertEquals(17, SealedSummary.from(repo.observeSession(planned).first()!!, emptyList(), emptyList())!!.session.xpAwarded)
     }
+    @Test fun startingPresetBeforeScreenImportsLegacyDoneAndClaimsOriginalSession() = claimLegacy(WarmupStep.State.DONE, false)
+    @Test fun startingFreeformBeforeScreenImportsLegacySkippedAndClaimsOriginalSession() = claimLegacy(WarmupStep.State.SKIPPED, true)
+    @Test fun startingPresetBeforeScreenImportsLegacyTicksAndClaimsOriginalSession() = claimLegacy(WarmupStep.State.OPEN, false)
+    private fun claimLegacy(state: WarmupStep.State, freeform: Boolean) = runBlocking {
+        val exercises = repo.observeExercises().first().take(3)
+        val preset = repo.savePreset(null, "Upgraded warmup", "", null,
+            exercises.map { Repository.PresetDraftEntry(it.id, 1, 5, null, warmup = true) })
+        val id = repo.startSessionFromPreset(preset)
+        val frozen = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot
+        db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
+        warmups.setState(id, state)
+        warmups.setTicked(id, setOf(exercises[0].id, exercises[2].id))
+        val claimed = if (freeform) repo.startFreeformSession("New freeform") else repo.startSessionFromPreset(preset)
+        assertEquals("legacy preparation is real progress before SessionViewModel exists", id, claimed)
+        val imported = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
+        assertEquals(frozen, imported.snapshot)
+        assertEquals(legacyPreparationProgress(frozen, state, setOf(exercises[0].id, exercises[2].id)), imported.progress)
+        assertTrue(repo.observeSessionSets(id).first().none { it.done })
+        // Deliberately reset progress remains empty despite the stale legacy answers.
+        repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
+        val replacement = repo.startFreeformSession("After deliberate reset")
+        assertNotEquals(id, replacement)
+        assertNull(repo.observeSession(id).first())
+    }
+    @Test fun startingBeforeScreenStillDiscardsTrulyUntouchedLegacySession() = runBlocking {
+        val id = repo.startFreeformSession("Untouched")
+        db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
+        val next = repo.startFreeformSession("Replacement")
+        assertNotEquals(id, next)
+        assertNull(repo.observeSession(id).first())
+        repo.preparations.ensureSession(next)
+        assertEquals(PreparationProgress(), repo.preparations.observeSession(next, PreparationKind.WARMUP).first()!!.progress)
+    }
+    @Test fun untouchedNoneChoiceIsStillDisposableAfterMissingRowImport() = runBlocking {
+        val exercise = repo.observeExercises().first().first()
+        val preset = repo.savePreset(null, "None", "", null, listOf(Repository.PresetDraftEntry(exercise.id, 1, 5, null)),
+            PreparationKind.entries.associateWith { PreparationChoice(PreparationMode.NONE) })
+        val id = repo.startSessionFromPreset(preset)
+        db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
+        assertNotEquals(id, repo.startSessionFromPreset(preset))
+        assertNull(repo.observeSession(id).first())
+    }
     companion object { private const val DB = "preparation-resume.db" }
 }

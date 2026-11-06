@@ -989,6 +989,8 @@ class Repository(
      */
     private suspend fun claimLiveSession(): Long? {
         val live = sessionDao.liveSession() ?: return null
+        // Upgraded sessions may have only device warmup answers until their first preparation row is written.
+        preparations.ensureSession(live.id)
         val hasLoggedWork = sessionDao.setsFor(live.id).any { it.done }
         if (hasLoggedWork || preparations.hasProgress(live.id)) return live.id
         sessionDao.deleteAbandoned(live.id)

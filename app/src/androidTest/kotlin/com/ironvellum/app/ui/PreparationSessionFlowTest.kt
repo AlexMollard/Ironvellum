@@ -2,6 +2,8 @@ package com.ironvellum.app.ui
 
 import android.content.Intent
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -11,6 +13,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.*
 import com.ironvellum.app.domain.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.first
 import org.junit.*
 import org.junit.Assert.*
@@ -130,6 +133,87 @@ class PreparationSessionFlowTest {
         assertEquals(profile, repo.observeProfile().first())
         assertEquals(sets, repo.observeSessionSets(id).first())
         assertEquals(beforeRows, rewardRows())
+    }
+    @Test fun workoutDraftSurvivesNestedSavedRoutineManagementCancellationAndRecreation() = runBlocking {
+        val catalogue = repo.observeExercises().first()
+        val bench = catalogue.first { it.name == "Bench Press" }
+        val cool = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.COOLDOWN,
+            name = "Opposite cooldown retained", steps = PreparationStarters.templates(PreparationKind.COOLDOWN, catalogue)[0].steps))
+        val presetId = repo.savePreset(null, "Navigation draft original", "Original note", null,
+            listOf(Repository.PresetDraftEntry(bench.id, 1, 5, 20.0)),
+            mapOf(PreparationKind.COOLDOWN to PreparationChoice(PreparationMode.SAVED, cool)))
+        val original = repo.observePresets().first().single { it.id == presetId }
+        driver.tab("Train")
+        driver.awaitText(original.name)
+        driver.click(original.name)
+        driver.awaitText(app.getString(R.string.ritedetail_edit_button))
+        driver.click(app.getString(R.string.ritedetail_edit_button))
+        driver.awaitText(text(R.string.preseteditor_save_button))
+        driver.awaitText(bench.name)
+        setField(text(R.string.preseteditor_name_label), "Unsaved navigation workout")
+        setField(app.getString(R.string.preseteditor_note_label), "Unsaved note retained")
+        driver.click(bench.name)
+        setField(app.getString(R.string.preseteditor_sets_label), "3")
+        setField(app.getString(R.string.preseteditor_reps_label), "7")
+        driver.click(app.getString(R.string.preparation_warmup))
+        driver.awaitText(text(R.string.preparation_edit_copy))
+        driver.click(text(R.string.preparation_edit_copy))
+        driver.awaitText(text(R.string.preparation_target))
+        setField(text(R.string.preparation_name), "Created inside workout draft")
+        // Actual root NavHost recreation while the workout owner sits below selector and creator.
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_target))
+        compose.onNodeWithContentDescription(text(R.string.preparation_name)).assertTextEquals("Created inside workout draft")
+        driver.click(text(R.string.preparation_save))
+        driver.awaitText(text(R.string.preparation_use))
+        val created = withTimeout(10000) { repo.preparations.observeRoutines(PreparationKind.WARMUP).first { rows -> rows.any { it.name == "Created inside workout draft" } } }
+            .single { it.name == "Created inside workout draft" }
+        driver.awaitText(created.name)
+        driver.click(created.name)
+        driver.click(text(R.string.preparation_manage))
+        driver.awaitText(text(R.string.preparation_library))
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_library))
+        back()
+        driver.awaitText(text(R.string.preparation_use))
+        driver.click(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preseteditor_save_button))
+        compose.onNodeWithContentDescription(text(R.string.preseteditor_name_label)).assertTextEquals("Unsaved navigation workout")
+        compose.onNodeWithContentDescription(app.getString(R.string.preseteditor_note_label)).assertTextEquals("Unsaved note retained")
+        compose.onNodeWithText(created.name).assertExists()
+        compose.onNodeWithText("Opposite cooldown retained").assertExists()
+        // Cancel changes to the opposite kind; neither attachment nor the working draft is saved yet.
+        driver.click(app.getString(R.string.preparation_cooldown))
+        driver.awaitText(text(R.string.preparation_use))
+        driver.click(text(R.string.preparation_none))
+        back()
+        driver.awaitText(text(R.string.preseteditor_save_button))
+        compose.onNodeWithText("Opposite cooldown retained").assertExists()
+        compose.onNodeWithText(created.name).assertExists()
+        assertEquals(original, repo.observePresets().first().single { it.id == presetId })
+        driver.click(app.getString(R.string.preparation_cooldown))
+        driver.awaitText(text(R.string.preparation_use))
+        driver.click(text(R.string.preparation_none))
+        driver.click(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preseteditor_save_button))
+        compose.onNodeWithText(created.name).assertExists()
+        driver.click(text(R.string.preseteditor_save_button))
+        // Await save completion/navigation, not an intermediate combine emission of name and old attachments.
+        driver.awaitText(app.getString(R.string.ritedetail_edit_button))
+        val saved = repo.observePresets().first().single { it.id == presetId }
+        assertEquals("Unsaved navigation workout", saved.name)
+        assertEquals("Unsaved note retained", saved.note)
+        assertEquals(3, saved.entries.single().targetSets)
+        assertEquals(7, saved.entries.single().targetReps)
+        assertEquals(20.0, saved.entries.single().targetWeightKg!!, 0.0)
+        assertEquals(PreparationChoice(PreparationMode.SAVED, created.id), saved.preparation[PreparationKind.WARMUP])
+        assertEquals(PreparationChoice(PreparationMode.NONE), saved.preparation[PreparationKind.COOLDOWN])
+    }
+    private fun back() { compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }; driver.settle() }
+    private fun setField(description: String, value: String) {
+        // Like FlowDriver.click, use the control's accessibility action with the root's paused animation clock.
+        compose.onNodeWithContentDescription(description).performSemanticsAction(SemanticsActions.SetText) { it(AnnotatedString(value)) }
+        driver.settle()
     }
     private fun rewardRows(): List<String> = app.database.openHelper.writableDatabase.query("SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '%reward%' OR name LIKE '%title%' OR name LIKE '%achievement%') ORDER BY name").use { cursor ->
         buildList { while (cursor.moveToNext()) {
