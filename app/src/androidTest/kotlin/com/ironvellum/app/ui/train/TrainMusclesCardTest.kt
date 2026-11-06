@@ -37,6 +37,11 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.IronvellumApp
+import java.time.DayOfWeek
 import com.ironvellum.app.domain.FatigueModel
 import com.ironvellum.app.domain.FatigueSession
 import com.ironvellum.app.domain.LoggedSet
@@ -92,6 +97,11 @@ class TrainMusclesCardTest {
 
     private fun showTrain(onOpenMuscles: (MusclesView) -> Unit = {}) {
         compose.activityRule.scenario.onActivity {
+            // Keep the starter's full planned week visible even when this test runs on a weekend.
+            val monday = LocalDate.now().with(DayOfWeek.MONDAY).atTime(8, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            ViewModelProvider(it, viewModelFactory {
+                initializer { MuscleCoverageViewModel((it.application as IronvellumApp).repository) { monday } }
+            })[MuscleCoverageViewModel::class.java]
             it.setContent {
                 IronvellumTheme {
                     TrainScreen(

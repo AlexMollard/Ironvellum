@@ -16,6 +16,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.IronvellumApp
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
 import com.ironvellum.app.ui.FlowDriver
 import com.ironvellum.app.ui.TestProfile
 import com.ironvellum.app.ui.theme.IronvellumTheme
@@ -44,6 +51,11 @@ class MusclesScreenTest {
 
     private fun show(view: MusclesView, expanded: Boolean = false, onBack: () -> Unit = {}) {
         compose.activityRule.scenario.onActivity {
+            // The starter's final day is Friday; a weekend wall clock makes its remaining-week map empty.
+            val monday = LocalDate.now().with(DayOfWeek.MONDAY).atTime(8, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            ViewModelProvider(it, viewModelFactory {
+                initializer { MuscleCoverageViewModel((it.application as IronvellumApp).repository) { monday } }
+            })[MuscleCoverageViewModel::class.java]
             it.setContent {
                 val density = LocalDensity.current
                 val width = LocalWindowInfo.current.containerSize.width
