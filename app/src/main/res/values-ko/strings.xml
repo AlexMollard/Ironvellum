@@ -5584,4 +5584,20 @@
     <string name="photos_today_title">이번 주 포즈 사진을 찍을 시간이에요</string>
     <string name="photos_today_open_description">포즈 사진 열기</string>
     <string name="photos_today_dismiss_description">오늘은 닫기</string>
+    <string name="preparation_full_warmup">전신 준비 운동</string>
+    <string name="preparation_full_warmup__t">전신 준비 운동</string>
+    <string name="preparation_upper_warmup">상체 준비 운동</string>
+    <string name="preparation_upper_warmup__t">상체 준비 운동</string>
+    <string name="preparation_lower_warmup">하체 준비 운동</string>
+    <string name="preparation_lower_warmup__t">하체 준비 운동</string>
+    <string name="preparation_full_cooldown">전신 정리 운동</string>
+    <string name="preparation_full_cooldown__t">전신 정리 운동</string>
+    <string name="preparation_upper_cooldown">상체 정리 운동</string>
+    <string name="preparation_upper_cooldown__t">상체 정리 운동</string>
+    <string name="preparation_lower_cooldown">하체 정리 운동</string>
+    <string name="preparation_lower_cooldown__t">하체 정리 운동</string>
+    <string name="preparation_invalid">이 준비 운동은 유효하지 않습니다.</string>
+    <string name="preparation_invalid__t">이 준비 운동은 유효하지 않습니다.</string>
+    <string name="preparation_import_dropped">준비 운동 데이터를 복원하지 못했습니다: %1$s</string>
+    <string name="preparation_import_dropped__t">준비 운동 데이터를 복원하지 못했습니다: %1$s</string>
 </resources>

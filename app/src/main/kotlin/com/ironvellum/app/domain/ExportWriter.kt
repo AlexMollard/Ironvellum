@@ -18,7 +18,7 @@ object ExportWriter {
     // 13: a rite entry's warm-up flag, written only for a warm-up exercise.
     // 14: the lifter's progress photos as rows (kind, day, workout start, pose, file name, taken time): never the
     // pictures, never in the cloud copy. Absent in an older archive, which a restore reads as "keep this device's photos".
-    const val FORMAT_VERSION = 14
+    const val FORMAT_VERSION = 15
 
     /**
      * Version of the `settings` section, written beside it as `settingsVersion`. Kept apart from
@@ -111,6 +111,8 @@ object ExportWriter {
         // null keeps the key out (an archive with no photos section); an empty list writes an empty section, which a
         // restore reads as "no photos". Never written in the cloud copy, whatever is passed.
         photos: List<PhotoSnapshot>? = null,
+        preparationRoutines: List<PreparationRoutine> = emptyList(),
+        sessionPreparations: List<SessionPreparation> = emptyList(),
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
@@ -124,6 +126,27 @@ object ExportWriter {
         appendPresets(presets)
         append(",\"sessions\":")
         appendSessions(sessions, includeDeviceOnly)
+        if (preparationRoutines.isNotEmpty()) {
+            append(",\"preparationRoutines\":[")
+            preparationRoutines.forEachIndexed { i, routine ->
+                if (i > 0) append(',')
+                append("{\"id\":${routine.id},\"kind\":"); appendEscaped(routine.kind.name)
+                append(",\"name\":"); appendEscaped(routine.name)
+                append(",\"steps\":${PreparationCodec.encodeSteps(routine.steps)}}")
+            }
+            append(']')
+        }
+        val sealedIds = sessions.filter { it.first.completedAtMs != null }.map { it.first.id }.toSet()
+        val preparations = sessionPreparations.filter { it.sessionId in sealedIds }
+        if (preparations.isNotEmpty()) {
+            append(",\"sessionPreparations\":[")
+            preparations.forEachIndexed { i, value ->
+                if (i > 0) append(',')
+                val progress = value.progress.advance(value.snapshot, PreparationAction.PAUSE, exportedAtMs)
+                append("{\"sessionId\":${value.sessionId},\"snapshot\":${PreparationCodec.encodeSnapshot(value.snapshot)},\"progress\":${PreparationCodec.encodeProgress(progress)}}")
+            }
+            append(']')
+        }
         if (includeDeviceOnly) {
             append(",\"stats\":")
             appendStats(stats)
@@ -277,6 +300,16 @@ object ExportWriter {
             append(",\"name\":").appendEscaped(preset.name)
             append(",\"note\":").appendEscaped(preset.note)
             append(",\"scheduledDay\":").appendNullable(preset.scheduledDay) { append(it) }
+            if (preset.preparation.isNotEmpty()) {
+                append(",\"preparation\":[")
+                preset.preparation.entries.forEachIndexed { i, (kind, choice) ->
+                    if (i > 0) append(',')
+                    append("{\"kind\":"); appendEscaped(kind.name)
+                    append(",\"mode\":"); appendEscaped(choice.mode.name)
+                    append(",\"routineId\":${choice.routineId}}")
+                }
+                append(']')
+            }
             append(",\"entries\":[")
             preset.entries.forEachIndexed { ei, entry ->
                 if (ei > 0) append(",")
@@ -467,7 +500,7 @@ object ExportWriter {
         if (value == null) append("null") else block(value)
     }
 
-    private fun StringBuilder.appendEscaped(value: String) {
+    internal fun StringBuilder.appendEscaped(value: String) {
         append('"')
         for (ch in value) {
             when (ch) {

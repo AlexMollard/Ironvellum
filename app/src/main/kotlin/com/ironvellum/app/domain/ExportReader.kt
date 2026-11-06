@@ -48,6 +48,9 @@ object ExportReader {
         val settingsVersion: Int = 0,
         /** v14. Null when the archive has no photos section (older, or the cloud copy): a restore then keeps this device's photos. */
         val photos: List<PhotoSnapshot>? = null,
+        val preparationRoutines: List<PreparationRoutine> = emptyList(),
+        val sessionPreparations: List<SessionPreparation> = emptyList(),
+        val preparationProblems: List<String> = emptyList(),
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -55,6 +58,21 @@ object ExportReader {
         val root = p.parseDocument()
         val profileObj = root.obj("profile") ?: fail("missing profile")
         val deviceDataOmitted = root.bool("deviceDataOmitted") ?: false
+        val preparationProblems = mutableListOf<String>()
+        fun <T> preparation(section: String, read: (Obj) -> T): List<T> = (root.arr(section) ?: emptyList()).mapNotNull { value ->
+            runCatching { read(value as Obj) }.getOrElse { preparationProblems += "$section: ${it.message}"; null }
+        }
+        val routines = preparation("preparationRoutines") { o ->
+            PreparationRoutine(o.long("id") ?: error("missing routine ID"), PreparationKind.valueOf(o.str("kind") ?: error("missing kind")),
+                o.str("name")?.takeIf { it.isNotBlank() } ?: error("missing routine name"), PreparationCodec.steps(o.arr("steps") ?: error("missing steps")))
+                .also { require(it.id > 0 && it.steps.isNotEmpty()) }
+        }
+        val sessionPreparations = preparation("sessionPreparations") { o ->
+            val snapshot = PreparationCodec.snapshot(o.obj("snapshot") ?: error("missing snapshot"))
+            val progress = PreparationCodec.progress(o.obj("progress") ?: error("missing progress"))
+            SessionPreparation(o.long("sessionId") ?: error("missing sessionId"), snapshot,
+                progress.recovered(root.long("exportedAtMs") ?: 0).advance(snapshot, PreparationAction.PAUSE, root.long("exportedAtMs") ?: 0))
+        }
         Archive(
             formatVersion = root.int("formatVersion") ?: fail("missing formatVersion"),
             exportedAtMs = root.long("exportedAtMs") ?: fail("missing exportedAtMs"),
@@ -65,7 +83,7 @@ object ExportReader {
             trainingMode = root.str("trainingMode")?.let { mode ->
                 runCatching { TrainingMode.valueOf(mode) }.getOrElse { fail("unknown trainingMode \"$mode\"") }
             } ?: TrainingMode.STRENGTH,
-            presets = (root.arr("presets") ?: fail("missing presets")).map { readPreset(it as Obj) },
+            presets = (root.arr("presets") ?: fail("missing presets")).map { readPreset(it as Obj, preparationProblems) },
             sessions = (root.arr("sessions") ?: fail("missing sessions")).map { readSession(it as Obj) },
             stats = (root.arr("stats") ?: if (deviceDataOmitted) emptyList() else fail("missing stats"))
                 .map { readStat(it as Obj) },
@@ -82,6 +100,9 @@ object ExportReader {
             settings = root.settings(),
             settingsVersion = root.int("settingsVersion") ?: 0,
             photos = root.arr("photos")?.mapNotNull { readPhoto(it as Obj) },
+            preparationRoutines = routines,
+            sessionPreparations = sessionPreparations,
+            preparationProblems = preparationProblems,
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.
@@ -107,7 +128,7 @@ object ExportReader {
         trainingMode = TrainingMode.STRENGTH,
     )
 
-    private fun readPreset(o: Obj) = WorkoutPreset(
+    private fun readPreset(o: Obj, preparationProblems: MutableList<String>) = WorkoutPreset(
         id = o.long("id") ?: 0,
         name = o.str("name") ?: fail("preset missing name"),
         note = o.str("note") ?: "",
@@ -130,6 +151,13 @@ object ExportReader {
             )
         },
         scheduledDay = o.int("scheduledDay"),
+        preparation = (o.arr("preparation") ?: emptyList()).mapNotNull { raw ->
+            runCatching {
+                val value = raw as Obj
+                PreparationKind.valueOf(value.str("kind") ?: error("missing kind")) to
+                    PreparationChoice(PreparationMode.valueOf(value.str("mode") ?: error("missing mode")), value.long("routineId"))
+            }.getOrElse { preparationProblems += "preset preparation: ${it.message}"; null }
+        }.toMap(),
     )
 
     private fun readSession(o: Obj) = WorkoutSession(
@@ -298,7 +326,7 @@ object ExportReader {
 
     // --- JSON value model ---------------------------------------------------
 
-    private class Obj(private val map: Map<String, Any?>) {
+    internal class Obj(private val map: Map<String, Any?>) {
         fun str(key: String): String? = map[key] as? String
         fun int(key: String): Int? = (map[key] as? Long)?.toInt() ?: (map[key] as? Double)?.toInt()
         fun long(key: String): Long? = (map[key] as? Long) ?: (map[key] as? Double)?.toLong()
@@ -321,7 +349,7 @@ object ExportReader {
     }
 
     /** Recursive-descent parser over the raw archive text. */
-    private class Parser(private val s: String) {
+    internal class Parser(private val s: String) {
         private var i = 0
 
         fun parseDocument(): Obj {

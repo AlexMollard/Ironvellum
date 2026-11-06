@@ -68,6 +68,7 @@ class GlossaryTest {
         "domain/ImportAliases.kt" to "maps other apps' exercise names on import",
         "domain/ExportReader.kt" to "reads archive JSON keys",
         "domain/ExportWriter.kt" to "writes archive JSON keys",
+        "domain/PreparationStarters.kt" to "canonical exercise names, matched against the gallery; starter titles use resources",
         "data/IronvellumDatabase.kt" to "SQL and the migration that retires \"Lifter\"",
         "data/db/Daos.kt" to "SQL",
     )

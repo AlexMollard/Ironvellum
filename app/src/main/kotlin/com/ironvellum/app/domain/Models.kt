@@ -84,6 +84,7 @@ data class WorkoutPreset(
     val entries: List<PresetEntry> = emptyList(),
     /** ISO day-of-week (1 = Monday .. 7 = Sunday) or null for unscheduled. */
     val scheduledDay: Int? = null,
+    val preparation: Map<PreparationKind, PreparationChoice> = emptyMap(),
 ) {
     /** The entries that are worked: what counts as the rite's exercises and sets, and all a trial logs. */
     val working: List<PresetEntry> get() = entries.filterNot { it.warmup }

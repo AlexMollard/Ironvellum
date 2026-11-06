@@ -5584,4 +5584,20 @@
     <string name="photos_today_title">该拍摄本周的姿势照片了</string>
     <string name="photos_today_open_description">打开姿势照片</string>
     <string name="photos_today_dismiss_description">今天不再提醒</string>
+    <string name="preparation_full_warmup">全身热身</string>
+    <string name="preparation_full_warmup__t">全身热身</string>
+    <string name="preparation_upper_warmup">上肢热身</string>
+    <string name="preparation_upper_warmup__t">上肢热身</string>
+    <string name="preparation_lower_warmup">下肢热身</string>
+    <string name="preparation_lower_warmup__t">下肢热身</string>
+    <string name="preparation_full_cooldown">全身放松</string>
+    <string name="preparation_full_cooldown__t">全身放松</string>
+    <string name="preparation_upper_cooldown">上肢放松</string>
+    <string name="preparation_upper_cooldown__t">上肢放松</string>
+    <string name="preparation_lower_cooldown">下肢放松</string>
+    <string name="preparation_lower_cooldown__t">下肢放松</string>
+    <string name="preparation_invalid">此准备活动无效。</string>
+    <string name="preparation_invalid__t">此准备活动无效。</string>
+    <string name="preparation_import_dropped">无法恢复准备活动数据：%1$s</string>
+    <string name="preparation_import_dropped__t">无法恢复准备活动数据：%1$s</string>
 </resources>

@@ -5936,4 +5936,20 @@
     <string name="photos_today_title">Zeit für die Posen dieser Woche</string>
     <string name="photos_today_open_description">Posenfotos öffnen</string>
     <string name="photos_today_dismiss_description">Für heute ausblenden</string>
+    <string name="preparation_full_warmup">Ganzkörper-Aufwärmen</string>
+    <string name="preparation_full_warmup__t">Ganzkörper-Aufwärmen</string>
+    <string name="preparation_upper_warmup">Oberkörper-Aufwärmen</string>
+    <string name="preparation_upper_warmup__t">Oberkörper-Aufwärmen</string>
+    <string name="preparation_lower_warmup">Unterkörper-Aufwärmen</string>
+    <string name="preparation_lower_warmup__t">Unterkörper-Aufwärmen</string>
+    <string name="preparation_full_cooldown">Ganzkörper-Abwärmen</string>
+    <string name="preparation_full_cooldown__t">Ganzkörper-Abwärmen</string>
+    <string name="preparation_upper_cooldown">Oberkörper-Abwärmen</string>
+    <string name="preparation_upper_cooldown__t">Oberkörper-Abwärmen</string>
+    <string name="preparation_lower_cooldown">Unterkörper-Abwärmen</string>
+    <string name="preparation_lower_cooldown__t">Unterkörper-Abwärmen</string>
+    <string name="preparation_invalid">Diese Vorbereitung ist ungültig.</string>
+    <string name="preparation_invalid__t">Diese Vorbereitung ist ungültig.</string>
+    <string name="preparation_import_dropped">Vorbereitungsdaten konnten nicht wiederhergestellt werden: %1$s</string>
+    <string name="preparation_import_dropped__t">Vorbereitungsdaten konnten nicht wiederhergestellt werden: %1$s</string>
 </resources>

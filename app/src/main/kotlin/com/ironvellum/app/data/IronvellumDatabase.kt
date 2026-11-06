@@ -1,6 +1,10 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import com.ironvellum.app.data.db.PreparationDao
+import com.ironvellum.app.data.db.PreparationRoutineEntity
+import com.ironvellum.app.data.db.PresetPreparationEntity
+import com.ironvellum.app.data.db.SessionPreparationEntity
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -46,6 +50,9 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
 
 @Database(
     entities = [
+        PreparationRoutineEntity::class,
+        PresetPreparationEntity::class,
+        SessionPreparationEntity::class,
         ExerciseEntity::class,
         PresetEntity::class,
         PresetEntryEntity::class,
@@ -70,6 +77,7 @@ import com.ironvellum.app.data.db.ProgressPhotoEntity
     exportSchema = true,
 )
 abstract class IronvellumDatabase : RoomDatabase() {
+    abstract fun preparationDao(): PreparationDao
     abstract fun exerciseDao(): ExerciseDao
     abstract fun presetDao(): PresetDao
     abstract fun sessionDao(): SessionDao
@@ -87,7 +95,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 46
+        const val VERSION = 47
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -692,6 +700,14 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_46_47 = object : Migration(46, 47) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS preparation_routines (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, kind TEXT NOT NULL, name TEXT NOT NULL, stepsJson TEXT NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS preset_preparations (presetId INTEGER NOT NULL, kind TEXT NOT NULL, mode TEXT NOT NULL, routineId INTEGER, PRIMARY KEY(presetId, kind), FOREIGN KEY(presetId) REFERENCES presets(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS session_preparations (sessionId INTEGER NOT NULL, kind TEXT NOT NULL, snapshotJson TEXT NOT NULL, progressJson TEXT NOT NULL, PRIMARY KEY(sessionId, kind), FOREIGN KEY(sessionId) REFERENCES sessions(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -728,6 +744,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_43_44,
             MIGRATION_44_45,
             MIGRATION_45_46,
+            MIGRATION_46_47,
         )
 
         const val NAME = "ironvellum.db"

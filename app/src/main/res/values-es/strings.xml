@@ -5936,4 +5936,20 @@
     <string name="photos_today_title">Es hora de las poses de esta semana</string>
     <string name="photos_today_open_description">Abrir fotos de poses</string>
     <string name="photos_today_dismiss_description">Descartar por hoy</string>
+    <string name="preparation_full_warmup">Calentamiento de cuerpo completo</string>
+    <string name="preparation_full_warmup__t">Calentamiento de cuerpo completo</string>
+    <string name="preparation_upper_warmup">Calentamiento del tren superior</string>
+    <string name="preparation_upper_warmup__t">Calentamiento del tren superior</string>
+    <string name="preparation_lower_warmup">Calentamiento del tren inferior</string>
+    <string name="preparation_lower_warmup__t">Calentamiento del tren inferior</string>
+    <string name="preparation_full_cooldown">Vuelta a la calma de cuerpo completo</string>
+    <string name="preparation_full_cooldown__t">Vuelta a la calma de cuerpo completo</string>
+    <string name="preparation_upper_cooldown">Vuelta a la calma del tren superior</string>
+    <string name="preparation_upper_cooldown__t">Vuelta a la calma del tren superior</string>
+    <string name="preparation_lower_cooldown">Vuelta a la calma del tren inferior</string>
+    <string name="preparation_lower_cooldown__t">Vuelta a la calma del tren inferior</string>
+    <string name="preparation_invalid">Esta preparación no es válida.</string>
+    <string name="preparation_invalid__t">Esta preparación no es válida.</string>
+    <string name="preparation_import_dropped">No se pudieron restaurar los datos de preparación: %1$s</string>
+    <string name="preparation_import_dropped__t">No se pudieron restaurar los datos de preparación: %1$s</string>
 </resources>

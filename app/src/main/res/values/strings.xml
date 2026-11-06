@@ -7113,4 +7113,20 @@
     <string name="photos_today_title">Time for this week\'s poses</string>
     <string name="photos_today_open_description">Open pose photos</string>
     <string name="photos_today_dismiss_description">Dismiss for today</string>
+    <string name="preparation_full_warmup">Full-body warmup</string>
+    <string name="preparation_full_warmup__t">Full-body warmup</string>
+    <string name="preparation_upper_warmup">Upper-body warmup</string>
+    <string name="preparation_upper_warmup__t">Upper-body warmup</string>
+    <string name="preparation_lower_warmup">Lower-body warmup</string>
+    <string name="preparation_lower_warmup__t">Lower-body warmup</string>
+    <string name="preparation_full_cooldown">Full-body cooldown</string>
+    <string name="preparation_full_cooldown__t">Full-body cooldown</string>
+    <string name="preparation_upper_cooldown">Upper-body cooldown</string>
+    <string name="preparation_upper_cooldown__t">Upper-body cooldown</string>
+    <string name="preparation_lower_cooldown">Lower-body cooldown</string>
+    <string name="preparation_lower_cooldown__t">Lower-body cooldown</string>
+    <string name="preparation_invalid">This preparation routine is invalid.</string>
+    <string name="preparation_invalid__t">This preparation is invalid.</string>
+    <string name="preparation_import_dropped">Preparation data could not be restored: %1$s</string>
+    <string name="preparation_import_dropped__t">Preparation data could not be restored: %1$s</string>
 </resources>

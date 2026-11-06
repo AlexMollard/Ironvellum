@@ -5584,4 +5584,20 @@
     <string name="photos_today_title">今週のポーズ撮影の時間です</string>
     <string name="photos_today_open_description">ポーズ写真を開く</string>
     <string name="photos_today_dismiss_description">今日は閉じる</string>
+    <string name="preparation_full_warmup">全身のウォームアップ</string>
+    <string name="preparation_full_warmup__t">全身のウォームアップ</string>
+    <string name="preparation_upper_warmup">上半身のウォームアップ</string>
+    <string name="preparation_upper_warmup__t">上半身のウォームアップ</string>
+    <string name="preparation_lower_warmup">下半身のウォームアップ</string>
+    <string name="preparation_lower_warmup__t">下半身のウォームアップ</string>
+    <string name="preparation_full_cooldown">全身のクールダウン</string>
+    <string name="preparation_full_cooldown__t">全身のクールダウン</string>
+    <string name="preparation_upper_cooldown">上半身のクールダウン</string>
+    <string name="preparation_upper_cooldown__t">上半身のクールダウン</string>
+    <string name="preparation_lower_cooldown">下半身のクールダウン</string>
+    <string name="preparation_lower_cooldown__t">下半身のクールダウン</string>
+    <string name="preparation_invalid">この準備は無効です。</string>
+    <string name="preparation_invalid__t">この準備は無効です。</string>
+    <string name="preparation_import_dropped">準備データを復元できませんでした: %1$s</string>
+    <string name="preparation_import_dropped__t">準備データを復元できませんでした: %1$s</string>
 </resources>

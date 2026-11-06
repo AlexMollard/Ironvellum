@@ -5936,4 +5936,20 @@
     <string name="photos_today_title">Hora das poses desta semana</string>
     <string name="photos_today_open_description">Abrir fotos das poses</string>
     <string name="photos_today_dismiss_description">Dispensar por hoje</string>
+    <string name="preparation_full_warmup">Aquecimento de corpo inteiro</string>
+    <string name="preparation_full_warmup__t">Aquecimento de corpo inteiro</string>
+    <string name="preparation_upper_warmup">Aquecimento da parte superior</string>
+    <string name="preparation_upper_warmup__t">Aquecimento da parte superior</string>
+    <string name="preparation_lower_warmup">Aquecimento da parte inferior</string>
+    <string name="preparation_lower_warmup__t">Aquecimento da parte inferior</string>
+    <string name="preparation_full_cooldown">Desaquecimento de corpo inteiro</string>
+    <string name="preparation_full_cooldown__t">Desaquecimento de corpo inteiro</string>
+    <string name="preparation_upper_cooldown">Desaquecimento da parte superior</string>
+    <string name="preparation_upper_cooldown__t">Desaquecimento da parte superior</string>
+    <string name="preparation_lower_cooldown">Desaquecimento da parte inferior</string>
+    <string name="preparation_lower_cooldown__t">Desaquecimento da parte inferior</string>
+    <string name="preparation_invalid">Esta preparação é inválida.</string>
+    <string name="preparation_invalid__t">Esta preparação é inválida.</string>
+    <string name="preparation_import_dropped">Não foi possível restaurar os dados de preparação: %1$s</string>
+    <string name="preparation_import_dropped__t">Não foi possível restaurar os dados de preparação: %1$s</string>
 </resources>

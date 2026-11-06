@@ -1,5 +1,11 @@
 package com.ironvellum.app.data
 import androidx.room.withTransaction
+import com.ironvellum.app.domain.PreparationKind
+import com.ironvellum.app.domain.PreparationChoice
+import com.ironvellum.app.domain.PreparationMode
+import com.ironvellum.app.domain.PreparationStep
+import com.ironvellum.app.domain.PreparationCodec
+import com.ironvellum.app.data.db.PreparationRoutineEntity
 import com.ironvellum.app.R
 import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
@@ -261,6 +267,7 @@ class Repository(
     photoStore: PhotoStore? = null,
 ) {
 
+    val preparations: PreparationRepository = PreparationRepository(db)
     private val exerciseDao = db.exerciseDao()
     private val presetDao = db.presetDao()
     private val sessionDao = db.sessionDao()
@@ -498,11 +505,11 @@ class Repository(
     }
 
     /** How many logged sets, rite entries and trial notes hold the exercise; delete is only possible at zero. */
-    suspend fun customExerciseUsage(id: Long): Int = exerciseDao.usage(id)
+    suspend fun customExerciseUsage(id: Long): Int = exerciseDao.usage(id) + preparations.exerciseUsage(id)
 
     /** Deletes one of the lifter's own movements when nothing references it; false (and nothing deleted) otherwise. */
     suspend fun deleteCustomExercise(id: Long): Boolean = db.withTransaction {
-        if (exerciseDao.usage(id) > 0) return@withTransaction false
+        if (customExerciseUsage(id) > 0) return@withTransaction false
         val deleted = exerciseDao.deleteCustom(id) > 0
         exerciseDao.observeAll().first().syncCustomExercises()
         deleted
@@ -525,7 +532,8 @@ class Repository(
     fun observePresets(): Flow<List<WorkoutPreset>> = combine(
         presetDao.observePresets(),
         exerciseDao.observeAll(),
-    ) { presets, exercises ->
+        db.preparationDao().observeAllChoices(),
+    ) { presets, exercises, attachments ->
         val names = exercises.associate { it.id to it.name }
         presets.map { pw ->
             WorkoutPreset(
@@ -533,6 +541,9 @@ class Repository(
                 name = pw.preset.name,
                 note = pw.preset.note,
                 scheduledDay = pw.preset.scheduledDay,
+                preparation = attachments.filter { it.presetId == pw.preset.id }.associate {
+                    PreparationKind.valueOf(it.kind) to PreparationChoice(PreparationMode.valueOf(it.mode), it.routineId)
+                },
                 entries = pw.entries.sortedBy { it.position }.map { e ->
                     PresetEntry(
                         id = e.id,
@@ -572,7 +583,9 @@ class Repository(
         note: String,
         scheduledDay: Int?,
         entries: List<PresetDraftEntry>,
+        preparation: Map<PreparationKind, PreparationChoice>? = null,
     ): Long = db.withTransaction {
+        if (presetId != null) sessionDao.liveSession()?.takeIf { it.presetId == presetId }?.let { preparations.ensureSession(it.id) }
         val id = if (presetId == null) {
             presetDao.insertPreset(PresetEntity(name = name, note = note, scheduledDay = scheduledDay))
         } else {
@@ -601,10 +614,14 @@ class Repository(
                 )
             },
         )
+        if (preparation != null) preparations.setChoices(id, preparation)
         id
     }
 
-    suspend fun deletePreset(presetId: Long) = presetDao.deletePreset(presetId)
+    suspend fun deletePreset(presetId: Long) = db.withTransaction {
+        sessionDao.liveSession()?.takeIf { it.presetId == presetId }?.let { preparations.ensureSession(it.id) }
+        presetDao.deletePreset(presetId)
+    }
 
     /**
      * Puts one exercise on the end of rite [presetId], or into a new rite
@@ -971,7 +988,7 @@ class Repository(
     private suspend fun claimLiveSession(): Long? {
         val live = sessionDao.liveSession() ?: return null
         val hasLoggedWork = sessionDao.setsFor(live.id).any { it.done }
-        if (hasLoggedWork) return live.id
+        if (hasLoggedWork || preparations.hasProgress(live.id)) return live.id
         sessionDao.deleteAbandoned(live.id)
         return null
     }
@@ -1306,6 +1323,7 @@ class Repository(
             }
         }
         sessionDao.insertSets(sets)
+        preparations.ensureSession(sessionId)
         return sessionId
     }
 
@@ -2442,6 +2460,7 @@ class Repository(
         val sets: Int,
         val sessions: Int,
         val routines: List<RoutineTwinMove> = emptyList(),
+        val preparations: Int = 0,
     )
 
     /**
@@ -2461,7 +2480,7 @@ class Repository(
         nowMs: Long = System.currentTimeMillis(),
         afterGroup: (Int) -> Unit = {},
     ): TwinConvertResult {
-        if (twinMovesNow().isEmpty() && routineTwinMovesNow().isEmpty()) return TwinConvertResult(emptyList(), 0, 0)
+        if (twinMovesNow().isEmpty() && routineTwinMovesNow().isEmpty() && preparations.twinMoves(observeExercises().first(), twinKept()) == 0) return TwinConvertResult(emptyList(), 0, 0)
         backup(exportJson())
         val result = db.withTransaction {
             val moves = twinMovesNow()
@@ -2486,7 +2505,9 @@ class Repository(
                 val session = sessionDao.byId(id) ?: return@forEach
                 sessionDao.updateSession(session.copy(editedAtMs = nowMs, sealedXp = sealedBase(session)))
             }
-            TwinConvertResult(groups, moves.sumOf { it.sets }, touched.size, routines) to touched
+            val preparationMoves = preparations.convertTwins(observeExercises().first(), twinKept())
+            if (preparationMoves > 0) afterGroup(groups.size + routines.size + 1)
+            TwinConvertResult(groups, moves.sumOf { it.sets }, touched.size, routines, preparationMoves) to touched
         }
         result.second.forEach { writeBackSaved(it) }
         return result.first
@@ -3661,6 +3682,7 @@ class Repository(
                 name = pw.preset.name,
                 note = pw.preset.note,
                 scheduledDay = pw.preset.scheduledDay,
+                preparation = preparations.choices(pw.preset.id),
                 entries = pw.entries.sortedBy { it.position }.map { e ->
                     PresetEntry(
                         id = e.id,
@@ -3778,6 +3800,12 @@ class Repository(
             includeDeviceOnly = includeDeviceOnly,
             // Rows only, and never in the cloud copy (the writer drops them there too).
             photos = if (includeDeviceOnly) photoLibrary.snapshot { sessionDao.byId(it)?.startedAtMs } else null,
+            preparationRoutines = preparations.allRoutines().map { routine ->
+                routine.copy(steps = routine.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) })
+            },
+            sessionPreparations = preparations.allSessions(sessions.map { it.first.id }.toSet()).map { value ->
+                value.copy(snapshot = value.snapshot.copy(steps = value.snapshot.steps.map { it.copy(exerciseName = names[it.exerciseId] ?: it.exerciseName) }))
+            },
         )
         return ExportResult(json, exportProblems)
     }
@@ -3824,6 +3852,7 @@ class Repository(
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
                 sessionDao.clearAll()
+                db.preparationDao().clearRoutines()
                 titleDao.clearAll()
                 skillPracticeDao.clearAll()
                 if (!archive.deviceDataOmitted) {
@@ -3856,6 +3885,10 @@ class Repository(
                 val exerciseIdByName = mutableMapOf<String, Long>()
                 val metaByName = archive.exercises.associateBy { it.name.lowercase() }
                 val problems = mutableListOf<UiText>()
+                fun preparationProblem(message: String) {
+                    problems.add(UiText.themed(R.string.preparation_import_dropped, R.string.preparation_import_dropped__t, message))
+                }
+                archive.preparationProblems.forEach(::preparationProblem)
                 suspend fun resolveExercise(rawName: String): Long? {
                     val name = rawName.trim()
                     if (name.isEmpty()) return null
@@ -3896,6 +3929,21 @@ class Repository(
                 // a set or rite names.
                 archive.exercises.filter { it.custom }.forEach { resolveExercise(it.name) }
 
+                // Exercise identities always resolve by name, even if the archived numeric ID exists locally.
+                suspend fun remapPreparationSteps(steps: List<PreparationStep>): List<PreparationStep> =
+                    steps.map { step -> step.copy(exerciseId = resolveExercise(step.exerciseName) ?: error("missing preparation exercise name")) }
+                val preparationIdByOldId = mutableMapOf<Long, Long>()
+                archive.preparationRoutines.forEach { routine ->
+                    runCatching {
+                        require(archive.preparationRoutines.count { it.id == routine.id } == 1) { "duplicate preparation ID ${routine.id}" }
+                        val steps = remapPreparationSteps(routine.steps)
+                        // Restore positive historical targets verbatim, rather than passing today's editor bounds.
+                        val id = db.preparationDao().insertRoutine(PreparationRoutineEntity(
+                            kind = routine.kind.name, name = routine.name, stepsJson = PreparationCodec.encodeSteps(steps)))
+                        preparationIdByOldId[routine.id] = id
+                    }.onFailure { preparationProblem("${routine.name}: ${it.message}") }
+                }
+
                 var restoredSets = 0
                 val presetIdByOldId = mutableMapOf<Long, Long>()
                 archive.presets.forEach { preset ->
@@ -3930,8 +3978,18 @@ class Repository(
                             )
                         },
                     )
+                    val choices = preset.preparation.mapValues { (kind, choice) ->
+                        if (choice.mode != PreparationMode.SAVED) choice.copy(routineId = null) else {
+                            val mapped = choice.routineId?.let { preparationIdByOldId[it] }
+                            val matching = mapped?.let { db.preparationDao().routine(it) }?.kind == kind.name
+                            if (!matching) { preparationProblem(preset.name); PreparationChoice() }
+                            else choice.copy(routineId = mapped)
+                        }
+                    }
+                    preparations.setChoices(newPresetId, choices)
                 }
 
+                val sessionIdByOldId = mutableMapOf<Long, Long>()
                 archive.sessions.forEach { (session, sets) ->
                     val newSessionId = sessionDao.insertSession(
                         SessionEntity(
@@ -3951,6 +4009,7 @@ class Repository(
                         ),
                     )
                     sessionIdByStart[session.startedAtMs] = newSessionId
+                    sessionIdByOldId[session.id] = newSessionId
                     session.exerciseNotes.forEach { n ->
                         val exerciseId = resolveExercise(n.exerciseName) ?: return@forEach
                         sessionDao.putExerciseNote(SessionExerciseNoteEntity(newSessionId, exerciseId, n.note.take(EXERCISE_NOTE_MAX)))
@@ -3986,6 +4045,15 @@ class Repository(
                             )
                         },
                     ).size
+                }
+
+                archive.sessionPreparations.forEach { value ->
+                    runCatching {
+                        val sessionId = sessionIdByOldId[value.sessionId] ?: error("missing preparation owner")
+                        val snapshot = value.snapshot.copy(steps = remapPreparationSteps(value.snapshot.steps),
+                            sourceRoutineId = value.snapshot.sourceRoutineId?.let { preparationIdByOldId[it] })
+                        preparations.restoreSession(value.copy(sessionId = sessionId, snapshot = snapshot))
+                    }.onFailure { preparationProblem("${value.snapshot.name}: ${it.message}") }
                 }
 
                 // Drop implausible readings rather than refusing the restore:
