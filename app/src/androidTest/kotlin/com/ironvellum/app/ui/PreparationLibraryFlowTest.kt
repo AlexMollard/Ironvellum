@@ -134,10 +134,12 @@ class PreparationLibraryFlowTest {
         val actual = withTimeout(10000) { recovered.ui.first { it.loaded } }.steps
         assertEquals(expected, actual)
         assertTrue(recovered.ui.value.dirty)
-        compose.setContent { IronvellumTheme { androidx.compose.foundation.layout.Column { actual.forEach { androidx.compose.material3.Text(preparationTarget(it)) } } } }
+        compose.setContent { IronvellumTheme { PreparationEditorScreen(null, PreparationKind.WARMUP, onDone = {}, copySnapshot = snapshot, viewModel = recovered) } }
         actual.forEach { compose.onNodeWithText(it.legacyTargetLine(Units::withUnit)!!).assertExists() }
+        capture("legacy-recreated")
         withContext(Dispatchers.Main) { recovered.update(0, actual[0].copy(measure = PreparationMeasure.SECONDS, target = 30)) }
         assertNull(recovered.ui.value.steps[0].legacyTarget)
+        compose.onNodeWithText(actual[0].legacyTargetLine(Units::withUnit)!!).assertDoesNotExist()
         withContext(Dispatchers.Main) { recovered.update(1, actual[1].copy(exerciseId = actual[0].exerciseId, exerciseName = actual[0].exerciseName)) }
         assertNull(recovered.ui.value.steps[1].legacyTarget)
         assertEquals(steps[0].legacyTarget, snapshot.steps[0].legacyTarget)
@@ -150,26 +152,37 @@ class PreparationLibraryFlowTest {
         val cool = withContext(Dispatchers.Main) { PreparationLibraryViewModel(repo, PreparationKind.COOLDOWN) }
         var kind by mutableStateOf(PreparationKind.WARMUP)
         var copied: Pair<Int, PreparationKind>? = null
+        var edited: Pair<Long?, PreparationKind>? = null
         compose.activityRule.scenario.onActivity { ShotRecorder.darkWindow(it) }
         compose.setContent {
             IronvellumTheme(light = scale == 2f) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                     Surface(modifier = Modifier.systemBarsPadding(), color = MaterialTheme.colorScheme.background) {
-                        PreparationLibraryContent(kind, if (kind == PreparationKind.WARMUP) warm else cool, { _, _ -> }, { i, k -> copied = i to k }, { kind = it }, {})
+                        PreparationLibraryContent(kind, if (kind == PreparationKind.WARMUP) warm else cool, { id, k -> edited = id to k }, { i, k -> copied = i to k }, { kind = it }, {})
                     }
                 }
             }
         }
         compose.waitUntil(10000) { warm.ui.value.loaded }
         compose.onNodeWithText(text(R.string.preparation_empty)).assertExists()
+        capture("manager-empty-${scale}")
+        val personal = PreparationRoutine(kind = PreparationKind.WARMUP, name = "My upper-body warmup", steps = PreparationStarters.templates(PreparationKind.WARMUP, repo.observeExercises().first())[0].steps)
+        val personalId = repo.preparations.saveRoutine(personal)
+        compose.waitUntil(10000) { warm.ui.value.routines.size == 1 }
         capture("manager-${scale}")
+        compose.onNodeWithText(text(R.string.preparation_preview)).performScrollTo().performClick()
+        compose.onNodeWithText("Arm Circles").assertExists()
+        compose.onNodeWithText(text(R.string.preparation_edit)).performScrollTo().performClick()
+        assertEquals(personalId to PreparationKind.WARMUP, edited)
         compose.onNodeWithText(text(R.string.preparation_cooldowns), ignoreCase = true).performScrollTo().performClick()
         compose.waitUntil(10000) { cool.ui.value.loaded }
+        compose.onNodeWithText(text(R.string.preparation_create)).assertIsDisplayed().performClick()
+        assertEquals(null to PreparationKind.COOLDOWN, edited)
         compose.onNodeWithText(text(R.string.preparation_full_cooldown)).performScrollTo().performClick()
-        compose.onNodeWithText(text(R.string.preparation_edit_copy)).performScrollTo().performClick()
         assertEquals(0 to PreparationKind.COOLDOWN, copied)
         assertTrue(repo.preparations.observeRoutines(PreparationKind.COOLDOWN).first().isEmpty())
+        assertEquals(personal.copy(id = personalId), repo.preparations.observeRoutines(PreparationKind.WARMUP).first().single())
     }
 
     @Test fun deletingRequiresConfirmationAndDetachesFutureWorkout() = runBlocking {
@@ -204,20 +217,58 @@ class PreparationLibraryFlowTest {
                 }
             }
         }
+        capture("editor-normal-$scale")
         compose.onNodeWithContentDescription(text(R.string.preparation_name)).performTextReplacement("A long personal cooldown routine name for a quiet evening")
         compose.onNodeWithText(text(R.string.preparation_save)).assertIsDisplayed()
         capture("editor-${scale}")
+        val first = vm.ui.value.steps[0]
+        compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performScrollTo().performClick()
+        compose.onNodeWithText(context.getString(R.string.preseteditor_info_button)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.preseteditor_remove_exercise)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.preparation_reps)).performClick()
+        assertEquals(PreparationMeasure.REPS, vm.ui.value.steps[0].measure)
+        compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick()
+        compose.onNodeWithText(text(R.string.preparation_seconds)).performClick()
+        compose.onNodeWithContentDescription(text(R.string.preparation_seconds)).performScrollTo().performTextReplacement("0")
+        compose.onNodeWithText(text(R.string.preparation_save)).assertIsNotEnabled()
+        compose.onNodeWithContentDescription(text(R.string.preparation_seconds)).performScrollTo().performTextReplacement("47")
+        compose.onNodeWithContentDescription(text(R.string.preparation_rounds)).performScrollTo().performTextReplacement("3")
+        val repeatLabel = when (first.repeat) {
+            PreparationRepeat.ONCE -> R.string.preparation_once
+            PreparationRepeat.SIDES -> R.string.preparation_sides
+            PreparationRepeat.DIRECTIONS -> R.string.preparation_directions
+        }
+        compose.onNodeWithText(text(repeatLabel)).performScrollTo().performClick()
+        compose.onAllNodesWithText(text(R.string.preparation_once)).onLast().performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.preparation_once)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.preparation_directions)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.preparation_directions)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.preparation_sides)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.preparation_add_cue)).performScrollTo().performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.preseteditor_note_label)).performScrollTo().performClick().performTextReplacement("Slow and comfortable")
+        capture("editor-keyboard-$scale")
+        compose.onNodeWithText(text(R.string.preparation_reorder)).performScrollTo().performClick()
         compose.onAllNodesWithText(context.getString(R.string.preseteditor_move_down))[0].performScrollTo().performClick()
+        assertEquals(first.copy(target = 47, rounds = 3, repeat = PreparationRepeat.SIDES, note = "Slow and comfortable"), vm.ui.value.steps[1])
+        // Removing a different row keeps the edited movement expanded at its valid new index.
+        compose.onNodeWithText(vm.ui.value.steps[0].exerciseName).performScrollTo().performClick()
+        compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performScrollTo().performClick()
+        compose.onNodeWithText(context.getString(R.string.preseteditor_remove_exercise)).performClick()
+        assertEquals(first.exerciseId, vm.ui.value.steps[0].exerciseId)
+        compose.onNodeWithContentDescription(text(R.string.preparation_seconds)).assertTextEquals("47")
         capture("editor-controls-${scale}")
         compose.onNodeWithText(context.getString(R.string.pushedheader_back_chip)).performClick()
         compose.onNodeWithText(text(R.string.preparation_keep_editing)).performClick()
         assertFalse(done)
         compose.onNodeWithText(text(R.string.preparation_save)).performClick()
         compose.waitUntil(10000) { done }
+        val stored = withTimeout(10000) { repo.preparations.observeRoutines(PreparationKind.COOLDOWN).first { it.isNotEmpty() }.single() }
+        val reopened = withContext(Dispatchers.Main) { PreparationEditorViewModel(repo, stored.id, PreparationKind.COOLDOWN, null, SavedStateHandle()) }
+        assertEquals(vm.ui.value.steps, withTimeout(10000) { reopened.ui.first { it.loaded } }.steps)
     }
     private fun capture(name: String) {
         if (InstrumentationRegistry.getArguments().getString("shots") != "true") return
-        ShotRecorder.take(compose, "preparation-$name")
+        preparationCapture(compose, "refinement-task2-$name")
         compose.mainClock.autoAdvance = true
     }
     companion object { private const val DB = "preparation-library-flow.db" }

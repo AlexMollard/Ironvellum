@@ -75,6 +75,18 @@ class PreparationSessionFlowTest {
         assertEquals(PreparationStatus.RUNNING, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
         assertFalse(driver.allText().contains(text(R.string.preparation_begin, text(R.string.preparation_warmup))))
         compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).assertIsDisplayed()
+        preparationCapture(compose, "refinement-task2-nav-warmup")
+        repeat(state.snapshot.steps.sumOf { it.rounds * it.repetitions }) {
+            awaitCheck()
+            check().performClick()
+            driver.settle()
+        }
+        driver.awaitText(text(R.string.preparation_return_workout))
+        assertEquals(PreparationStatus.DONE, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
+        preparationCapture(compose, "refinement-task2-nav-warmup-complete")
+        driver.click(text(R.string.preparation_return_workout))
+        driver.awaitText(text(R.string.preparation_view))
+        preparationCapture(compose, "refinement-task2-nav-workout-terminal")
         Unit
     }
     @Test fun previewNeverStartsOrResumesAcrossRecreation() = runBlocking {
@@ -128,30 +140,30 @@ class PreparationSessionFlowTest {
         driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
         val before = runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() }
         offerMenu(); driver.click(text(R.string.preparation_change))
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         driver.click(text(R.string.preparation_none))
         driver.click(text(R.string.preparation_create))
         driver.awaitText(text(R.string.preparation_save))
         // Creation with no edits goes back without mutating the selector or its session owner.
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         driver.click(text(R.string.preparation_manage))
         driver.awaitText(text(R.string.preparation_library))
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         assertEquals(before, runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() })
         // Back cancels the draft choice.
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         driver.awaitText(text(R.string.preparation_begin, text(R.string.preparation_warmup)))
         assertEquals(before, runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first() })
         offerMenu(); driver.click(text(R.string.preparation_change))
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         driver.click(text(R.string.preparation_none))
         driver.click(text(R.string.preparation_manage))
         driver.awaitText(text(R.string.preparation_library))
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        driver.awaitText(text(R.string.preparation_use))
-        driver.click(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
+        driver.click(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         compose.waitUntil(10000) { runBlocking { repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot.steps.isEmpty() } }
         assertEquals(1, runBlocking { repo.observeSessionSets(id).first() }.size)
     }
@@ -223,15 +235,27 @@ class PreparationSessionFlowTest {
         setField(app.getString(R.string.preseteditor_reps_label), "7")
         driver.click(app.getString(R.string.preparation_warmup))
         driver.awaitText(text(R.string.preparation_edit_copy))
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
+        compose.onNodeWithText(app.getString(R.string.pushedheader_back_chip)).assertIsDisplayed()
+        preparationCapture(compose, "refinement-task2-nav-selector")
         driver.click(text(R.string.preparation_edit_copy))
-        driver.awaitText(text(R.string.preparation_target))
+        driver.awaitText(text(R.string.preparation_seconds))
+        compose.activityRule.scenario.recreate()
+        driver.awaitText(text(R.string.preparation_seconds))
+        compose.onNodeWithText(app.getString(R.string.pushedheader_back_chip)).assertIsDisplayed()
+        // Force the recreated window's next draw before reading its real framebuffer.
+        compose.activityRule.scenario.onActivity { it.window.decorView.requestLayout(); it.window.decorView.invalidate() }
+        driver.settle(8)
+        Thread.sleep(300)
+        preparationCapture(compose, "refinement-task2-nav-editor")
         setField(text(R.string.preparation_name), "Created inside workout draft")
         // Actual root NavHost recreation while the workout owner sits below selector and creator.
         compose.activityRule.scenario.recreate()
-        driver.awaitText(text(R.string.preparation_target))
+        driver.awaitText(text(R.string.preparation_seconds))
         compose.onNodeWithContentDescription(text(R.string.preparation_name)).assertTextEquals("Created inside workout draft")
         driver.click(text(R.string.preparation_save))
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         val created = withTimeout(10000) { repo.preparations.observeRoutines(PreparationKind.WARMUP).first { rows -> rows.any { it.name == "Created inside workout draft" } } }
             .single { it.name == "Created inside workout draft" }
         driver.awaitText(created.name)
@@ -240,9 +264,10 @@ class PreparationSessionFlowTest {
         driver.awaitText(text(R.string.preparation_library))
         compose.activityRule.scenario.recreate()
         driver.awaitText(text(R.string.preparation_library))
+        preparationCapture(compose, "refinement-task2-nav-library")
         back()
-        driver.awaitText(text(R.string.preparation_use))
-        driver.click(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
+        driver.click(text(R.string.preparation_use_kind, text(R.string.preparation_warmup)))
         driver.awaitText(text(R.string.preseteditor_save_button))
         compose.onNodeWithContentDescription(text(R.string.preseteditor_name_label)).assertTextEquals("Unsaved navigation workout")
         compose.onNodeWithContentDescription(app.getString(R.string.preseteditor_note_label)).assertTextEquals("Unsaved note retained")
@@ -250,7 +275,7 @@ class PreparationSessionFlowTest {
         compose.onNodeWithText("Opposite cooldown retained").assertExists()
         // Cancel changes to the opposite kind; neither attachment nor the working draft is saved yet.
         driver.click(app.getString(R.string.preparation_cooldown))
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_cooldown)))
         driver.click(text(R.string.preparation_none))
         back()
         driver.awaitText(text(R.string.preseteditor_save_button))
@@ -258,9 +283,9 @@ class PreparationSessionFlowTest {
         compose.onNodeWithText(created.name).assertExists()
         assertEquals(original, repo.observePresets().first().single { it.id == presetId })
         driver.click(app.getString(R.string.preparation_cooldown))
-        driver.awaitText(text(R.string.preparation_use))
+        driver.awaitText(text(R.string.preparation_use_kind, text(R.string.preparation_cooldown)))
         driver.click(text(R.string.preparation_none))
-        driver.click(text(R.string.preparation_use))
+        driver.click(text(R.string.preparation_use_kind, text(R.string.preparation_cooldown)))
         driver.awaitText(text(R.string.preseteditor_save_button))
         compose.onNodeWithText(created.name).assertExists()
         driver.click(text(R.string.preseteditor_save_button))

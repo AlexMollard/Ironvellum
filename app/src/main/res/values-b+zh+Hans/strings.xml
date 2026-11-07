@@ -5624,8 +5624,6 @@
     <string name="preparation_name__t">流程名称</string>
     <string name="preparation_future_only">更改仅影响今后的训练。进行中的训练保留当前流程。</string>
     <string name="preparation_future_only__t">更改仅影响今后的训练。进行中的训练保留当前流程。</string>
-    <string name="preparation_target">目标</string>
-    <string name="preparation_target__t">目标</string>
     <string name="preparation_seconds">秒</string>
     <string name="preparation_seconds__t">秒</string>
     <string name="preparation_reps">次数</string>
@@ -5638,8 +5636,6 @@
     <string name="preparation_sides__t">每侧</string>
     <string name="preparation_directions">每个方向</string>
     <string name="preparation_directions__t">每个方向</string>
-    <string name="preparation_selected">已选择</string>
-    <string name="preparation_selected__t">已选择</string>
     <string name="preparation_validation">请设置1至100次或5至600秒、1至10轮，备注不超过1000字。</string>
     <string name="preparation_validation__t">请设置1至100次或5至600秒、1至10轮，备注不超过1000字。</string>
     <string name="preparation_add_hint">添加动作，创建你的流程。</string>
@@ -5662,8 +5658,6 @@
     <string name="preparation_keep_editing__t">继续编辑</string>
     <string name="preparation_choose">选择%1$s</string>
     <string name="preparation_choose__t">选择%1$s</string>
-    <string name="preparation_use">使用此流程</string>
-    <string name="preparation_use__t">使用此流程</string>
     <string name="preparation_auto">自动推荐</string>
     <string name="preparation_auto__t">自动推荐</string>
     <string name="preparation_auto_hint">根据本次训练当前的正式动作推荐。</string>
@@ -5794,4 +5788,20 @@
     <string name="preparation_unfold__t">展开%1$s</string>
     <string name="preparation_final_next">结束%1$s</string>
     <string name="preparation_final_next__t">结束%1$s</string>
+
+    <!-- Compact preparation management -->
+    <string name="preparation_edit">编辑</string>
+    <string name="preparation_edit__t">编辑</string>
+    <string name="preparation_edit_kind">编辑%1$s</string>
+    <string name="preparation_edit_kind__t">编辑%1$s</string>
+    <string name="preparation_use_kind">使用%1$s</string>
+    <string name="preparation_use_kind__t">使用%1$s</string>
+    <string name="preparation_repeat">重复</string>
+    <string name="preparation_repeat__t">重复</string>
+    <string name="preparation_add_cue">添加提示</string>
+    <string name="preparation_add_cue__t">添加提示</string>
+    <string name="preparation_reorder">重新排序</string>
+    <string name="preparation_reorder__t">重新排序</string>
+    <string name="preparation_none_cooldown_hint">跳过常规放松建议。</string>
+    <string name="preparation_none_cooldown_hint__t">跳过常规放松建议。</string>
 </resources>

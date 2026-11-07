@@ -10,6 +10,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -37,10 +39,10 @@ class PreparationAttachmentFlowTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private lateinit var db: IronvellumDatabase
     private lateinit var repo: Repository
-    private fun text(id: Int): String {
+    private fun text(id: Int, vararg args: Any): String {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val themed = context.resources.getIdentifier(context.resources.getResourceEntryName(id) + "__t", "string", context.packageName)
-        return com.ironvellum.app.data.Words.text(UiText.themed(id, themed.takeIf { it != 0 } ?: id))
+        return com.ironvellum.app.data.Words.text(UiText.themed(id, themed.takeIf { it != 0 } ?: id, *args))
     }
     @Before fun setup() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -110,17 +112,20 @@ class PreparationAttachmentFlowTest {
                 }
             }
         }
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)).assertCountEquals(2)
+        compose.onAllNodes(isSelected()).assertCountEquals(1)
         compose.onNodeWithText(text(R.string.preparation_full_warmup)).assertExists()
         if (InstrumentationRegistry.getArguments().getString("shots") == "true") {
-            ShotRecorder.take(compose, "preparation-selector-$scale")
+            preparationCapture(compose, "refinement-task2-selector-$scale")
             compose.mainClock.autoAdvance = true
         }
-        compose.onNodeWithText(text(R.string.preparation_preview)).performClick()
         compose.onNodeWithText("Arm Circles").assertExists()
         assertNull(selected)
         compose.onNodeWithText(text(R.string.preparation_none)).performScrollTo().performClick()
         assertNull(selected)
-        compose.onNodeWithText(text(R.string.preparation_use)).assertIsDisplayed().performClick()
+        compose.onAllNodes(isSelected()).assertCountEquals(1)
+        compose.onNodeWithText("Arm Circles").assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.preparation_use_kind, text(R.string.preparation_warmup))).assertIsDisplayed().performClick()
         assertEquals(PreparationChoice(PreparationMode.NONE), selected)
     }
     @Test fun deletingRoutineWhileWorkoutDraftIsOpenReturnsChoiceToAutoOnSave() = runBlocking {
@@ -138,6 +143,31 @@ class PreparationAttachmentFlowTest {
         compose.waitUntil(10000) { done }
         val preset = repo.observePresets().first().single { it.name == "Draft with deleted routine" }
         assertEquals(PreparationMode.AUTO, preset.preparation[PreparationKind.WARMUP]?.mode)
+    }
+    @Test fun savedSessionSelectorHasOneRadioAndPreviewWithoutWriting() = runBlocking {
+        val catalogue = repo.observeExercises().first()
+        val arm = catalogue.first { it.name == "Arm Circles" }
+        val chest = catalogue.first { it.name == "Doorway Chest Stretch" }
+        val routineId = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "My selected routine", steps = listOf(PreparationStep(chest.id, chest.name, PreparationMeasure.SECONDS, 45))))
+        val session = repo.startFreeformSession("Selector inspection")
+        repo.preparations.changeSession(session, PreparationKind.WARMUP, PreparationChoice(PreparationMode.SAVED, routineId))
+        val before = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()
+        val vm = withContext(Dispatchers.Main) { PreparationSelectorViewModel(repo, PreparationKind.WARMUP, null, session, SavedStateHandle(), listOf(arm.id), PreparationChoice(PreparationMode.SAVED, routineId)) }
+        withTimeout(10000) { vm.ui.first { it.loaded } }
+        compose.setContent { IronvellumTheme { PreparationSelectorScreen(PreparationKind.WARMUP, null, session, {}, {}, viewModel = vm) } }
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)).assertCountEquals(3)
+        compose.onAllNodes(isSelected()).assertCountEquals(1)
+        compose.onNodeWithText(chest.name).assertExists()
+        compose.onNodeWithText(arm.name).assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.preparation_auto)).performScrollTo().performClick()
+        compose.onNodeWithText(arm.name).assertExists()
+        compose.onNodeWithText(chest.name).assertDoesNotExist()
+        compose.onNodeWithText("My selected routine").performScrollTo().performClick()
+        compose.onAllNodesWithText(chest.name).assertCountEquals(1)
+        compose.onNodeWithText(text(R.string.preparation_none)).performScrollTo().performClick()
+        compose.onAllNodes(isSelected()).assertCountEquals(1)
+        compose.onNodeWithText(chest.name).assertDoesNotExist()
+        assertEquals(before, repo.preparations.observeSession(session, PreparationKind.WARMUP).first())
     }
     companion object { private const val DB = "preparation-attachment-flow.db" }
 }

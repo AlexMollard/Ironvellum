@@ -5624,8 +5624,6 @@
     <string name="preparation_name__t">ルーティン名</string>
     <string name="preparation_future_only">変更は今後のワークアウトに適用されます。進行中のルーティンは維持されます。</string>
     <string name="preparation_future_only__t">変更は今後のワークアウトに適用されます。進行中のルーティンは維持されます。</string>
-    <string name="preparation_target">目標</string>
-    <string name="preparation_target__t">目標</string>
     <string name="preparation_seconds">秒</string>
     <string name="preparation_seconds__t">秒</string>
     <string name="preparation_reps">回</string>
@@ -5638,8 +5636,6 @@
     <string name="preparation_sides__t">左右それぞれ</string>
     <string name="preparation_directions">各方向</string>
     <string name="preparation_directions__t">各方向</string>
-    <string name="preparation_selected">選択中</string>
-    <string name="preparation_selected__t">選択中</string>
     <string name="preparation_validation">回数は1～100回、時間は5～600秒、ラウンドは1～10、メモは1000文字以内にしてください。</string>
     <string name="preparation_validation__t">回数は1～100回、時間は5～600秒、ラウンドは1～10、メモは1000文字以内にしてください。</string>
     <string name="preparation_add_hint">エクササイズを追加してルーティンを作成します。</string>
@@ -5662,8 +5658,6 @@
     <string name="preparation_keep_editing__t">編集を続ける</string>
     <string name="preparation_choose">%1$sを選択</string>
     <string name="preparation_choose__t">%1$sを選択</string>
-    <string name="preparation_use">このルーティンを使う</string>
-    <string name="preparation_use__t">このルーティンを使う</string>
     <string name="preparation_auto">自動提案</string>
     <string name="preparation_auto__t">自動提案</string>
     <string name="preparation_auto_hint">現在のワークアウトのワークエクササイズに合わせて提案します。</string>
@@ -5794,4 +5788,20 @@
     <string name="preparation_unfold__t">%1$sを展開</string>
     <string name="preparation_final_next">%1$sを終了</string>
     <string name="preparation_final_next__t">%1$sを終了</string>
+
+    <!-- Compact preparation management -->
+    <string name="preparation_edit">編集</string>
+    <string name="preparation_edit__t">編集</string>
+    <string name="preparation_edit_kind">%1$sを編集</string>
+    <string name="preparation_edit_kind__t">%1$sを編集</string>
+    <string name="preparation_use_kind">%1$sを使用</string>
+    <string name="preparation_use_kind__t">%1$sを使用</string>
+    <string name="preparation_repeat">繰り返し</string>
+    <string name="preparation_repeat__t">繰り返し</string>
+    <string name="preparation_add_cue">ヒントを追加</string>
+    <string name="preparation_add_cue__t">ヒントを追加</string>
+    <string name="preparation_reorder">並べ替え</string>
+    <string name="preparation_reorder__t">並べ替え</string>
+    <string name="preparation_none_cooldown_hint">通常のクールダウンの提案をスキップします。</string>
+    <string name="preparation_none_cooldown_hint__t">通常のクールダウンの提案をスキップします。</string>
 </resources>

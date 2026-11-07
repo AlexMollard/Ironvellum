@@ -7153,8 +7153,6 @@
     <string name="preparation_name__t">Preparation name</string>
     <string name="preparation_future_only">Changes apply to future workouts. An ongoing workout keeps its routine.</string>
     <string name="preparation_future_only__t">Changes apply to future trials. An ongoing trial keeps its preparation.</string>
-    <string name="preparation_target">Target</string>
-    <string name="preparation_target__t">Target</string>
     <string name="preparation_seconds">Seconds</string>
     <string name="preparation_seconds__t">Seconds</string>
     <string name="preparation_reps">Reps</string>
@@ -7167,8 +7165,6 @@
     <string name="preparation_sides__t">Each side</string>
     <string name="preparation_directions">Each direction</string>
     <string name="preparation_directions__t">Each direction</string>
-    <string name="preparation_selected">Selected</string>
-    <string name="preparation_selected__t">Selected</string>
     <string name="preparation_validation">Use 1–100 reps or 5–600 seconds, 1–10 rounds and a note of up to 1000 characters.</string>
     <string name="preparation_validation__t">Use 1–100 reps or 5–600 seconds, 1–10 rounds and a note of up to 1000 characters.</string>
     <string name="preparation_add_hint">Add an exercise to build your routine.</string>
@@ -7191,8 +7187,6 @@
     <string name="preparation_keep_editing__t">Keep editing</string>
     <string name="preparation_choose">Choose %1$s</string>
     <string name="preparation_choose__t">Choose %1$s</string>
-    <string name="preparation_use">Use this routine</string>
-    <string name="preparation_use__t">Use this preparation</string>
     <string name="preparation_auto">Auto suggestion</string>
     <string name="preparation_auto__t">Auto suggestion</string>
     <string name="preparation_auto_hint">Follows this workout’s current working exercises.</string>
@@ -7331,4 +7325,20 @@
     <string name="preparation_unfold__t">Expand %1$s</string>
     <string name="preparation_final_next">Finish %1$s</string>
     <string name="preparation_final_next__t">Finish %1$s</string>
+
+    <!-- Compact preparation management -->
+    <string name="preparation_edit">Edit</string>
+    <string name="preparation_edit__t">Edit</string>
+    <string name="preparation_edit_kind">Edit %1$s</string>
+    <string name="preparation_edit_kind__t">Edit %1$s</string>
+    <string name="preparation_use_kind">Use %1$s</string>
+    <string name="preparation_use_kind__t">Use %1$s</string>
+    <string name="preparation_repeat">Repeat</string>
+    <string name="preparation_repeat__t">Repeat</string>
+    <string name="preparation_add_cue">Add a cue</string>
+    <string name="preparation_add_cue__t">Add a cue</string>
+    <string name="preparation_reorder">Reorder</string>
+    <string name="preparation_reorder__t">Reorder</string>
+    <string name="preparation_none_cooldown_hint">Skip the general cooldown offer.</string>
+    <string name="preparation_none_cooldown_hint__t">Skip the general cooldown offer.</string>
 </resources>

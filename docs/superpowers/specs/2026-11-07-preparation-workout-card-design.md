@@ -48,6 +48,8 @@ Editor follows the workout EntryCard pattern: one expanded movement, collapsed s
 
 Every new or changed label, plural, menu description and accessibility action uses paired plain/themed resources in all currently supported locale string files. Names, notes and gallery guide text remain data. Update the hardcoded-string ratchet downward where literals are removed.
 
+Management labels use routine/routines in plain mode. Themed mode retains the app's established preparation terminology and retired-word rules in `docs/GLOSSARY.md`; approving the Workout card layout does not relax that glossary. Keep the glossary checks unchanged.
+
 ## Acceptance and evidence
 
 Implement in two sequential, independently reviewed tasks: (1) shared presentation, offers/entry, runner/completion and summary; (2) library/selector/editor, integration verification and final capture set. The second task reuses the first task's shared interfaces; no simultaneous edits to shared files.

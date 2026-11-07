@@ -5976,8 +5976,6 @@
     <string name="preparation_name__t">Nom de la préparation</string>
     <string name="preparation_future_only">Les changements concernent les futurs entraînements. Celui en cours conserve sa routine.</string>
     <string name="preparation_future_only__t">Les changements concernent les futurs entraînements. Celui en cours conserve sa préparation.</string>
-    <string name="preparation_target">Objectif</string>
-    <string name="preparation_target__t">Objectif</string>
     <string name="preparation_seconds">Secondes</string>
     <string name="preparation_seconds__t">Secondes</string>
     <string name="preparation_reps">Répétitions</string>
@@ -5990,8 +5988,6 @@
     <string name="preparation_sides__t">Chaque côté</string>
     <string name="preparation_directions">Chaque sens</string>
     <string name="preparation_directions__t">Chaque sens</string>
-    <string name="preparation_selected">Sélectionné</string>
-    <string name="preparation_selected__t">Sélectionné</string>
     <string name="preparation_validation">Utilisez 1–100 répétitions ou 5–600 secondes, 1–10 tours et une note de 1000 caractères maximum.</string>
     <string name="preparation_validation__t">Utilisez 1–100 répétitions ou 5–600 secondes, 1–10 tours et une note de 1000 caractères maximum.</string>
     <string name="preparation_add_hint">Ajoutez un exercice pour créer votre routine.</string>
@@ -6014,8 +6010,6 @@
     <string name="preparation_keep_editing__t">Continuer à modifier</string>
     <string name="preparation_choose">Choisir %1$s</string>
     <string name="preparation_choose__t">Choisir %1$s</string>
-    <string name="preparation_use">Utiliser cette routine</string>
-    <string name="preparation_use__t">Utiliser cette préparation</string>
     <string name="preparation_auto">Suggestion automatique</string>
     <string name="preparation_auto__t">Suggestion automatique</string>
     <string name="preparation_auto_hint">Suit les exercices de travail actuels de cet entraînement.</string>
@@ -6162,4 +6156,20 @@
     <string name="preparation_unfold__t">Déplier %1$s</string>
     <string name="preparation_final_next">Terminer %1$s</string>
     <string name="preparation_final_next__t">Terminer %1$s</string>
+
+    <!-- Compact preparation management -->
+    <string name="preparation_edit">Modifier</string>
+    <string name="preparation_edit__t">Modifier</string>
+    <string name="preparation_edit_kind">Modifier %1$s</string>
+    <string name="preparation_edit_kind__t">Modifier %1$s</string>
+    <string name="preparation_use_kind">Utiliser %1$s</string>
+    <string name="preparation_use_kind__t">Utiliser %1$s</string>
+    <string name="preparation_repeat">Répétition</string>
+    <string name="preparation_repeat__t">Répétition</string>
+    <string name="preparation_add_cue">Ajouter un conseil</string>
+    <string name="preparation_add_cue__t">Ajouter un conseil</string>
+    <string name="preparation_reorder">Réorganiser</string>
+    <string name="preparation_reorder__t">Réorganiser</string>
+    <string name="preparation_none_cooldown_hint">Ignorer la suggestion générale de retour au calme.</string>
+    <string name="preparation_none_cooldown_hint__t">Ignorer la suggestion générale de retour au calme.</string>
 </resources>
