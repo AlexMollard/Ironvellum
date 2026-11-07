@@ -100,7 +100,7 @@ Expected: all selected tests pass with nonzero declared counts and release lint 
 - [x] **Step 4: Verify management accessibility and localization.** At 200% text with long names and the keyboard open, change target, rounds, repeat and note, reorder/remove, save, reopen, and verify exact values. Inspect both themes and every menu action. Verify plain/themed resource pairs in every supported locale and run applicable resource/hardcoded checks through the gate. Retest nested owner navigation and legacy copied-step recreation and prescription edits; source session snapshot remains equal.
 - [x] **Step 5: Run focused management tests, then the complete local gate alone.** Use the focused command below; then run the full gate with the installed-AVD override described in the execution report. Require all build/unit/lint/instrumented/web phases and nonzero expected counts. Inspect seven-minute budget, retry reason if any, and new-vs-inherited lint output. Do not count the previous feature's gate or a separate old web pass as this revision's full gate.
 - [x] **Step 6: Capture and inspect all 14 changed real-app states.** Workout offer/overview/warmup/paused/completion/terminal offer, sealed summary offer/cooldown/completion/terminal summary, library/selector/editor/leave confirmation. Include both themes, 200% text and keyboard/long-name evidence. Show the built-app captures to the owner as implementation evidence; approval to implement has already been supplied. Fix material visual or behavioral discrepancies and rerun the covering tests before final completion.
-- [ ] **Step 7: Commit, push and obtain independent reviews.** Commit/push the tested management unit using house style and report actual gate counts/time plus screenshot location. A fresh task reviewer then checks management behavior, full resource coverage and scope; the final whole-change reviewer checks all Review Focus risks and real-app fidelity. Resolve findings in follow-up commits, rerun covering checks and obtain scoped re-review. No release/version/tag/Actions changes.
+- [x] **Step 7: Commit, push and obtain independent reviews.** Commit/push the tested management unit using house style and report actual gate counts/time plus screenshot location. A fresh task reviewer then checks management behavior, full resource coverage and scope; the final whole-change reviewer checks all Review Focus risks and real-app fidelity. Resolve findings in follow-up commits, rerun covering checks and obtain scoped re-review. No release/version/tag/Actions changes.
 
 ```powershell
 rtk proxy python tools/device.py lock --label preparation-card-management -- .\gradlew.bat :app:connectedFossDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.ironvellum.app.ui.PreparationLibraryFlowTest,com.ironvellum.app.ui.PreparationAttachmentFlowTest
@@ -112,3 +112,29 @@ The last command expresses the normal repository gate. This machine lacks its co
 ## Self-review and handoff
 
 The two tasks cover every approved state and preserve earlier persistence rulings. Shared types/signatures are defined once; Task 2 consumes them sequentially. Each Review Focus risk has owning test assertions, and tests exercise navigation, persisted state, rewards, metadata and action reachability rather than matching a component tree. Approximate timing is presentation-only and omitted when the prescription does not support it. Explicit approval and agent-driven execution are already supplied; continue with that method without another approval gate.
+
+## Verified implementation evidence
+
+Execution commit `b2235657` and management commit `1c632f98` are pushed to main. Both independent task reviews approved spec compliance and quality with no blocking findings. Actual app captures cover all 14 changed states, both themes, 200% text, long names and the keyboard: `.tmp/refinement-task2-final/manifest.json` identifies the 44 original captures. Test logs and raw results are retained in `.tmp/refinement-task2-results/full-gate-final/`.
+
+The full local gate on exact implementation source exited zero: 2783 JVM cases (zero failures, one existing opt-in CatalogueExport skip), 726 instrumented cases (zero failures/skips, no retry), release lint zero errors and 1127 inherited warnings (delta zero), four art tests, 358 Vitest tests in 35 files, both Android flavours and production web build. Wall clock was 421.203 seconds, displayed as 7m01s: **1.203 seconds over the unchanged seven-minute target**. This is a recorded benchmark miss; correctness checks passed. Existing Node engine advisories remain. No assertions, lint baselines or gate thresholds were weakened.
+
+For this machine's installed SDK/AVD, the equivalent temporary wrapper is below. Run it from the repository root through `rtk proxy python <wrapper.py>`. It invokes the real gate, including its emulator lock, source-count checks and every phase; it does not change committed device defaults. The installed emulator rejects the historical `angle_indirect` mode. Disabling its file-backed quickboot feature prevents a generated 2.7GB RAM cache from exhausting host disk space, even when launched with `-no-snapshot`.
+
+```python
+import os
+import sys
+
+os.environ['ANDROID_AVD_HOME'] = 'C:/Users/alexm/.android/avd'
+os.environ['ANDROID_EMULATOR_FEATURES'] = '-QuickbootFileBacked'
+os.environ['IRONVELLUM_GPU'] = 'auto'
+sys.path.insert(0, 'tools')
+import device
+device.AVD = 'Ironvellum_Art_API35'
+import gate
+raise SystemExit(gate.main())
+```
+
+Focused instrumented selections were run one class at a time with the entire dotted `-Pandroid.testInstrumentationRunnerArguments.class=...` argument quoted. On this Windows invocation, the comma-separated examples above selected only their first class; fresh XML counts, rather than command appearance, establish coverage. Screenshots were opt-in and verified off during the final gate.
+
+Final whole-change review (`gpt-6-astra`, high reasoning) approved `f1a6c8e9..1c632f98`: no Critical or Important findings and no production fix wave required. The only observations were the recorded timing miss and inherited diagnostics. The controller accepted the review's boundaries: unchanged domain/schema/archive/scoring retain prior contracts and current regression coverage; broader timing/diagnostic maintenance is separate; real state and established glossary take precedence over prototype sample values; real-navigation captures establish system-bar integration; all-locale editorial/device certification was not performed; the three documented rulings retain their stated scope and costs. No new behavior or exception was introduced by those dispositions.
