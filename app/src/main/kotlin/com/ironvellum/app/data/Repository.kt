@@ -335,8 +335,9 @@ class Repository(
         // (StrengthIndex over stored sets), which the SQL migration cannot
         // express — hence code, not SQL.
         profileDao.get()?.let { profile ->
-            if (profile.scoringVersion < StrengthIndex.SCORING_VERSION) {
+            if (profile.scoringVersion < StrengthIndex.SCORING_VERSION &&
                 rescoreStrengthScores(onlyUnscored = false)
+            ) {
                 // Re-read before stamping: the rescore just rewrote
                 // lifetimeStrength, and stamping the pre-rescore row would
                 // silently write the stale total back over the fresh sum.
@@ -2755,8 +2756,9 @@ class Repository(
      * drifted running total is corrected here. XP is never touched: it was
      * awarded under an assumed bodyweight and banked XP is never restated.
      */
-    private suspend fun rescoreStrengthScores(onlyUnscored: Boolean) {
+    private suspend fun rescoreStrengthScores(onlyUnscored: Boolean): Boolean =
         db.withTransaction {
+            var complete = true
             val stats = statDao.observeAll().first()
             val bodyweightAt = SetRecords.bodyweightLookup(
                 stats.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) },
@@ -2789,15 +2791,19 @@ class Repository(
                         )
                     }
                 if (efforts.isEmpty()) return@forEach
-                val score =
-                    StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs), sex) ?: 0
-                if (score != 0 && score != row.session.strengthScore) {
+                val score = StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs), sex)
+                if (score == null) {
+                    // No weigh-in is not a computed zero. Keep the old score and retry the formula upgrade later.
+                    complete = false
+                    return@forEach
+                }
+                if (score != row.session.strengthScore) {
                     sessionDao.updateSession(row.session.copy(strengthScore = score))
                 }
             }
             profileDao.setLifetimeStrength(sessionDao.lifetimeStrength())
+            complete
         }
-    }
 
     suspend fun deleteStat(id: Long) = statDao.delete(id)
 

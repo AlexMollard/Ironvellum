@@ -15,6 +15,7 @@ store listing; this is the whole list.
 - Keep imported machine-assisted pull-ups, chin-ups and dips separate from plain bodyweight exercises, preserving their recorded assistance.
 - Progress by reducing machine assistance; use more support for easier back-offs and drops. Keep unknown support unset, preserve explicit zero, and avoid added-load formulas for assisted starter weights and warmup ramps.
 - Price weighted bodyweight exercise effort using bodyweight plus added load, matching the equivalent plain exercise.
+- Repair existing assisted strength scores, including computed zeroes, without changing training logs or banked XP. Defer repairs that need a missing bodyweight until a measurement is available.
 
 ## 1.9
 

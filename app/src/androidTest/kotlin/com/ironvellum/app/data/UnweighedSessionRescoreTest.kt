@@ -75,6 +75,75 @@ class UnweighedSessionRescoreTest {
     private suspend fun lifetimeStrengthSum() =
         db.sessionDao().observeCompletedWithSets().first().sumOf { it.session.strengthScore.toLong() }
 
+    private suspend fun completedAssistedSession(assistanceKg: Double): Long {
+        val exercise = db.exerciseDao().observeAll().first().first { it.name == "Assisted Pull-up" }
+        val id = db.sessionDao().insertSession(
+            SessionEntity(
+                presetId = null, label = "Assisted history", startedAtMs = System.currentTimeMillis() - 600_000L,
+                completedAtMs = null, xpAwarded = 0, strengthScore = 0, title = "", note = "", privateNote = "Keep this note",
+            ),
+        )
+        val setId = repo.addExtraSet(id, exercise.id, 5, assistanceKg, "")
+        repo.updateSet(setId, reps = 5, weightKg = assistanceKg, done = true)
+        repo.completeSession(id)
+        return id
+    }
+
+    @Test
+    fun versionTwoAssistedScoresRestateIncludingZeroWithoutChangingRawHistoryOrXp() = runBlocking {
+        repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
+        val positive = completedAssistedSession(70.0)
+        val zero = completedAssistedSession(90.0)
+        val before = listOf(positive, zero).associateWith { db.sessionDao().byId(it)!! }
+        val setsBefore = listOf(positive, zero).associateWith { db.sessionDao().setsFor(it) }
+        val xpBefore = db.profileDao().get()!!.totalXp
+        db.profileDao().upsert(db.profileDao().get()!!.copy(scoringVersion = 2, lifetimeStrength = 1_998))
+        listOf(positive, zero).forEach { id ->
+            db.sessionDao().updateSession(db.sessionDao().byId(id)!!.copy(strengthScore = 999))
+        }
+
+        repo.ensureSeeded()
+
+        val expected = StrengthIndex.sessionScore(
+            listOf(StrengthIndex.Effort("Assisted Pull-up", 5, null, 70.0, MuscleGroup.PULL)), 80.0, Sex.MALE,
+        )!!
+        assertTrue(expected > 0)
+        assertEquals(expected, db.sessionDao().byId(positive)!!.strengthScore)
+        assertEquals(0, db.sessionDao().byId(zero)!!.strengthScore)
+        assertEquals(expected.toLong(), db.profileDao().get()!!.lifetimeStrength)
+        assertEquals(StrengthIndex.SCORING_VERSION, db.profileDao().get()!!.scoringVersion)
+        assertEquals(xpBefore, db.profileDao().get()!!.totalXp)
+        before.forEach { (id, session) ->
+            val after = db.sessionDao().byId(id)!!
+            assertEquals(session.xpAwarded, after.xpAwarded)
+            assertEquals(session.privateNote, after.privateNote)
+            assertEquals(setsBefore.getValue(id), db.sessionDao().setsFor(id))
+        }
+    }
+
+    @Test
+    fun unknownBodyweightDefersTheFormulaStampAndRepairsAfterMeasurementArrives() = runBlocking {
+        val id = completedAssistedSession(70.0)
+        val bankedXp = db.profileDao().get()!!.totalXp
+        val raw = db.sessionDao().setsFor(id)
+        db.sessionDao().updateSession(db.sessionDao().byId(id)!!.copy(strengthScore = 999))
+        db.profileDao().upsert(db.profileDao().get()!!.copy(scoringVersion = 2, lifetimeStrength = 999))
+
+        repo.ensureSeeded()
+
+        assertEquals(999, db.sessionDao().byId(id)!!.strengthScore)
+        assertEquals(999L, db.profileDao().get()!!.lifetimeStrength)
+        assertEquals(2, db.profileDao().get()!!.scoringVersion)
+        repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
+        repo.ensureSeeded()
+        val repaired = db.sessionDao().byId(id)!!.strengthScore
+        assertTrue(repaired > 0 && repaired < 999)
+        assertEquals(repaired.toLong(), db.profileDao().get()!!.lifetimeStrength)
+        assertEquals(StrengthIndex.SCORING_VERSION, db.profileDao().get()!!.scoringVersion)
+        assertEquals(bankedXp, db.profileDao().get()!!.totalXp)
+        assertEquals(raw, db.sessionDao().setsFor(id))
+    }
+
     @Test
     fun aLiftingSessionCompletedBeforeTheFirstWeighInIsScoredWhenOneArrives() = runBlocking {
         val id = seedSessionWithOneDoneSet()

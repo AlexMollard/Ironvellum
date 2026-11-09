@@ -39,7 +39,7 @@ object StrengthIndex {
      * once — scores and the lifetime sum are meaningless if old and new
      * formulas mix in one leaderboard.
      */
-    const val SCORING_VERSION = 2
+    const val SCORING_VERSION = 3
 
     /**
      * Female-to-male strength normalisation, applied so the shared board ranks
