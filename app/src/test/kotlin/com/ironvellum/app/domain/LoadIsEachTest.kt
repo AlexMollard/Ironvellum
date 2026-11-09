@@ -18,6 +18,8 @@ class LoadIsEachTest {
     fun twoDumbbellLiftsArePerDumbbell() {
         assertTrue(GearRequirements.loadIsEach("Dumbbell Bench Press"))
         assertTrue(GearRequirements.loadIsEach("Dumbbell Romanian Deadlift"))
+        assertTrue(GearRequirements.loadIsEach("Two Dumbbell Skullcrusher"))
+        assertTrue(GearRequirements.loadIsEach("Decline Dumbbell Press"))
     }
 
     @Test

@@ -996,10 +996,10 @@ internal object LibraryGuides {
             ExerciseGuide(
                 setup = "Lay on a flat bench with your head at one end and your feet planted firmly on the floor.",
                 steps = listOf(
-                    "Grasp a dumbbell with both hands with palms facing up.",
-                    "Raise dumbbell over your body. Your arms will be pointed towards the ceiling.",
-                    "While keeping your upper arms and elbows still, lower the dumbbell in an arc behind your head.",
-                    "Slowly raise the dumbbell back to the starting position.",
+                    "Hold one dumbbell in each hand with palms facing each other.",
+                    "Raise the dumbbells over your body with your arms pointing toward the ceiling.",
+                    "Keep your upper arms and elbows still as you lower the dumbbells in an arc behind your head.",
+                    "Slowly raise the dumbbells back to the starting position.",
                 ),
                 cues = listOf(),
                 commonMistakes = listOf(),

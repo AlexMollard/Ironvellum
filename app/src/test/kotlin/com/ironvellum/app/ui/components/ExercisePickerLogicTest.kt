@@ -48,6 +48,24 @@ class ExercisePickerLogicTest {
     }
 
     @Test
+    fun `my gear requires a pair for two dumbbell library lifts but keeps single dumbbell lifts`() {
+        val all = listOf(
+            ex(1, "Two Dumbbell Skullcrusher", weighted = true),
+            ex(2, "Decline Dumbbell Press", weighted = true),
+            ex(3, "Dumbbell Row", weighted = true),
+            ex(4, "Goblet Squat", weighted = true),
+        )
+        val single = Equipment(fullGym = false, gear = setOf(Gear.DUMBBELLS, Gear.BENCH), dumbbellPair = false)
+        val pair = Equipment(fullGym = false, gear = setOf(Gear.DUMBBELLS, Gear.BENCH), dumbbellPair = true)
+        fun names(equipment: Equipment) =
+            buildPickerView(all, "", PickerFilters(myGear = true), equipment, emptyList(), emptySet())
+                .grouped.flatMap { it.second }.map { it.name }.toSet()
+
+        assertEquals(setOf("Dumbbell Row", "Goblet Squat"), names(single))
+        assertEquals(all.map { it.name }.toSet(), names(pair))
+    }
+
+    @Test
     fun `favourites sort first in results and pin only when nothing narrows the list`() {
         val list = listOf(
             ex(1, "Chin-up"),

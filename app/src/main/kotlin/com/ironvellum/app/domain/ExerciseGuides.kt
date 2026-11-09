@@ -2210,13 +2210,13 @@ object ExerciseGuides {
         put(
             "assisted pull-up",
             ExerciseGuide(
-                setup = "Choose an assist that lets you finish every rep, step on the pad or loop a band, and take an overhand grip a little wider than your shoulders.",
+                setup = "Choose a machine counterweight that lets you finish every rep, step on the pad, and take an overhand grip a little wider than your shoulders. More assistance makes the movement easier. For band assistance, choose Pull-up with the assisted modifier instead.",
                 steps = listOf(
                     "Start with your arms straight and your shoulders pulled down.",
                     "Pull your chest toward the bar.",
                     "Pause when your chin clears the bar.",
                     "Lower slowly to straight arms.",
-                    "Reduce the assist as you get stronger.",
+                    "Reduce the machine assistance as you get stronger.",
                 ),
                 cues = listOf(
                     "Elbows down and in",

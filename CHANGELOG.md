@@ -18,6 +18,7 @@ store listing; this is the whole list.
 - Repair existing assisted strength scores, including computed zeroes, without changing training logs or banked XP. Defer repairs that need a missing bodyweight until a measurement is available.
 - Exclude activity-only hidden reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
 - Show the least machine assistance as the best folded set, rather than the largest counterweight.
+- Require a dumbbell pair for decline dumbbell presses and two-dumbbell skullcrushers; correct skullcrusher and machine-assisted pull-up instructions.
 
 ## 1.9
 

@@ -177,6 +177,8 @@ object GearRequirements {
         "dumbbell bench press",
         "incline dumbbell press",
         "dumbbell fly",
+        "decline dumbbell press",
+        "two dumbbell skullcrusher",
     )
 
     /**
@@ -187,8 +189,8 @@ object GearRequirements {
     private val eachHand: Set<String> = pairOnly + setOf(
         "dumbbell shoulder press", "arnold press", "lateral raise", "front raise", "reverse fly",
         "hammer curl", "dumbbell shrug", "walking lunge", "dumbbell step-up",
-        "dumbbell bent-over row", "decline dumbbell press", "standing dumbbell press", "bent-over rear delt raise",
-        "dumbbell romanian deadlift", "incline dumbbell curl", "two dumbbell skullcrusher", "dumbbell upright row",
+        "dumbbell bent-over row", "standing dumbbell press", "bent-over rear delt raise",
+        "dumbbell romanian deadlift", "incline dumbbell curl", "dumbbell upright row",
         "lying rear lateral raise", "dumbbell rear delt row", "incline dumbbell shoulder press",
         "head-supported rear delt raise", "decline dumbbell fly", "incline hammer-grip dumbbell press",
         "incline dumbbell fly", "incline dumbbell fly with twist", "dumbbell deadlift", "dumbbell lunge",

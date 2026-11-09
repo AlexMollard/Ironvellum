@@ -773,8 +773,8 @@ private fun MutableMap<String, ExerciseWhy>.pushPullWhys2() {
     put(
         "assisted pull-up",
         ExerciseWhy(
-            purpose = "Works the pull-up pattern with a counterweight or band taking some bodyweight, so the lats and biceps get full reps.",
-            pickIt = "Pick it while you cannot yet do strict pull-ups; reduce the assistance over time and move to bodyweight reps once you can do several.",
+            purpose = "Works the pull-up pattern with a machine counterweight taking some bodyweight, so the lats and biceps get full reps. More assistance makes the movement easier.",
+            pickIt = "Pick it while you cannot yet do strict pull-ups; reduce machine assistance as you progress and move to bodyweight reps once you can do several. For band assistance, choose Pull-up with the assisted modifier instead.",
             tags = listOf("Pull-up prep", "Lats", "Scalable"),
         ),
     )
