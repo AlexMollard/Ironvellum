@@ -10,6 +10,7 @@ store listing; this is the whole list.
 - Timed warmups and cooldowns advance automatically with sound/vibration cues following your alert setting. Sides, directions and rounds flow without another countdown; changing exercise gives five seconds to get ready. Rep targets still use manual completion.
 - Legacy warmup exercises share one guided warmup. Cooldown starts from the final workout summary and never changes working sets, XP or rewards.
 - Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
+- Recognise reduced assistance as a PR on assisted pull-ups, chin-ups and dips. Assistance no longer inflates lifted-weight totals; bodyweight-aware records use bodyweight minus assistance.
 
 ## 1.9
 
