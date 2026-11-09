@@ -32,6 +32,25 @@ class ExerciseHistoryCalculatorTest {
         assertNull(partial.totalVolumeKg)
     }
 
+    @Test
+    fun `negative external load stays in history but cannot invent volume or a peak`() {
+        val bench = Exercise(name = "Bench Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+        val invalid = row(1, 1, reps = 5, weightKg = -20.0)
+        val history = ExerciseHistoryCalculator.build(bench, listOf(invalid), 80.0)
+        assertEquals(-20.0, history.entries.single().weightKg!!, 0.0)
+        assertNull(history.totalVolumeKg)
+        assertNull(history.entries.single().e1rmKg)
+        assertNull(history.peak)
+        assertNull(history.heaviestWeightKg)
+        assertTrue(history.series.isEmpty())
+        val valid = ExerciseHistoryCalculator.build(bench, listOf(row(2, 2, reps = 5, weightKg = 100.0)), 80.0)
+        assertEquals(500.0, valid.totalVolumeKg!!, 0.0)
+        assertTrue(valid.entries.single().e1rmKg!! > 0.0)
+        assertNull(ExerciseHistoryCalculator.build(bench, listOf(invalid, row(2, 2, reps = 5, weightKg = 100.0)), 80.0).totalVolumeKg)
+        val body = Exercise(name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val signed = ExerciseHistoryCalculator.build(body, listOf(invalid), 80.0)
+        assertEquals(-20.0, signed.entries.single().weightKg!!, 0.0)
+    }
 
     private val pullUp = Exercise(id = 1, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
 

@@ -681,6 +681,14 @@ class WorkoutShareTest {
     }
 
     @Test
+    fun `negative external loads never subtract from moved kilograms`() {
+        val bench = exercise(1, "Bench Press", weighted = true)
+        val sets = listOf(set(1, "Bench Press", 0, 5, -20.0), set(1, "Bench Press", 1, 5, 100.0))
+        assertEquals(500, WorkoutShare.totals(sets, mapOf(1L to bench)).movedKg)
+        assertEquals(0, WorkoutShare.totals(sets.take(1), mapOf(1L to bench)).movedKg)
+    }
+
+    @Test
     fun `assistance is not external weight moved`() {
         val names = listOf("Bench Press", "Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")
         val exercises = names.mapIndexed { index, name -> exercise(index.toLong() + 1, name, weighted = true) }

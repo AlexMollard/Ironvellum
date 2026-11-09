@@ -146,6 +146,28 @@ class DailyLoopInvariantsTest {
     }
 
     @Test
+    fun activityHiddenRepsAndInvalidExternalLoadsCannotIncreaseTheIdleVolume() = runBlocking {
+        val session = db.sessionDao().insertSession(
+            SessionEntity(presetId = null, label = "Mixed metrics", startedAtMs = System.currentTimeMillis(), completedAtMs = null, xpAwarded = 0),
+        )
+        val skipping = db.exerciseDao().byName("Weighted Skipping")!!.id
+        val activity = repo.addExtraSet(session, skipping, reps = 10, weightKg = 5.0, modifiers = "")
+        repo.updateActivitySet(activity, reps = 10, durationSec = 60, distanceM = null, grade = null, weightKg = 5.0, done = true)
+        val bench = db.exerciseDao().byName("Bench Press")!!.id
+        val valid = repo.addExtraSet(session, bench, reps = 5, weightKg = 100.0, modifiers = "")
+        repo.updateSet(valid, 5, 100.0, done = true)
+        val invalid = repo.addExtraSet(session, bench, reps = 5, weightKg = -20.0, modifiers = "")
+        repo.updateSet(invalid, 5, -20.0, done = true)
+        repo.completeSession(session)
+
+        assertEquals(500.0, repo.observeIdleInputs().first().volumeLast7d, 0.0)
+        val raw = db.sessionDao().setsFor(session)
+        assertEquals(10, raw.single { it.id == activity }.reps)
+        assertEquals(5.0, raw.single { it.id == activity }.weightKg!!, 0.0)
+        assertEquals(-20.0, raw.single { it.id == invalid }.weightKg!!, 0.0)
+    }
+
+    @Test
     fun aSessionsMovementsCanBeReordered() = runBlocking {
         val ids = repsExerciseIds(3)
         val session = repo.startSessionFromPreset(savePreset("Ordered Pull", ids))

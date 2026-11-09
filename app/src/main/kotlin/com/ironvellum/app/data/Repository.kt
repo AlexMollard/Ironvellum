@@ -4715,9 +4715,21 @@ class Repository(
     ): IdleInputs {
         val weekAgoMs = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
         val recent = completed.filter { (it.session.completedAtMs ?: 0L) >= weekAgoMs }
-        val assistedIds = exercises.filter { BodyShare.isAssisted(it.name) }.mapTo(HashSet()) { it.id }
+        val byId = exercises.associateBy { it.id }
         val volume = recent.sumOf { (_, sets) ->
-            sets.filter { it.done && it.exerciseId !in assistedIds }.sumOf { (it.weightKg ?: 0.0) * it.reps }
+            sets.sumOf { set ->
+                val exercise = byId[set.exerciseId]
+                if (!set.done || exercise == null ||
+                    (exercise.metric != ExerciseMetric.REPS.name && exercise.metric != ExerciseMetric.HOLD.name) ||
+                    BodyShare.isAssisted(exercise.name)
+                ) {
+                    0.0
+                } else {
+                    val kg = set.weightKg ?: 0.0
+                    // Preserve signed raw logs, but an invalid external weight cannot subtract moved kilograms.
+                    if (kg < 0.0 && !BodyShare.addsToBody(exercise.toDomain())) 0.0 else kg * set.reps
+                }
+            }
         }
         val completedDates = completed.mapNotNull { (session, _) ->
             session.completedAtMs?.let {

@@ -384,6 +384,8 @@ object ExerciseHistoryCalculator {
         // Loaded rep work is judged by estimated 1RM, the same measure as the Stats records board: a rep-volume score
         // ranks a 90 x 7 back-off above a 100 x 4 top set and sends the chart down the day a heavier top set lands.
         val assisted = BodyShare.isAssisted(exercise.name)
+        val external = !assisted && !BodyShare.addsToBody(exercise)
+        fun invalidExternalLoad(weightKg: Double?): Boolean = external && weightKg != null && weightKg < 0.0
         fun bodyAt(atMs: Long): Double? =
             bodyweightAt?.invoke(atMs)?.takeIf { it > 0.0 } ?: bodyweightKg?.takeIf { it > 0.0 }
         fun e1rmOf(r: ExerciseSetRow): Double? {
@@ -415,6 +417,7 @@ object ExerciseHistoryCalculator {
                 // invent a bodyweight-rep number from it. 0.0 is the value the
                 // calculator already uses for "no honest strength score".
                 score = when {
+                    invalidExternalLoad(r.weightKg) -> 0.0
                     isHold -> StrengthIndex.holdScore(exercise.name, figure, r.weightKg, if (assisted) bodyAt(r.atMs) ?: 0.0 else bodyweightKg ?: 0.0)
                     exercise.metric.isStrength -> StrengthIndex.repScore(exercise.name, figure, r.weightKg, if (assisted) bodyAt(r.atMs) ?: 0.0 else bodyweightKg ?: 0.0)
                     else -> 0.0
@@ -424,14 +427,14 @@ object ExerciseHistoryCalculator {
 
         fun knownLoad(e: ExerciseSetEntry): Double? = if (assisted) {
             BodyShare.assistedLoadKg(e.weightKg, bodyAt(e.atMs))
-        } else e.weightKg ?: bodyweightKg
+        } else if (invalidExternalLoad(e.weightKg)) null else e.weightKg ?: bodyweightKg
         fun loadOf(e: ExerciseSetEntry): Double = knownLoad(e) ?: 0.0
         val done = entries.filter { it.done }
         // Records and the chart follow a trial's top set alone when it had one: its back-offs are lighter by design.
         val counted = done.groupBy { it.sessionId }.values.flatMap { sets ->
             sets.filter { it.kind == SetKind.TOP }.ifEmpty { sets }
         }
-        val knownCounted = if (assisted) counted.filter { knownLoad(it) != null } else counted
+        val knownCounted = counted.filter { !invalidExternalLoad(it.weightKg) && (!assisted || knownLoad(it) != null) }
         val heaviest = knownCounted.maxByOrNull { loadOf(it) * 1000 + it.reps }
         val bestSet = knownCounted.maxByOrNull { it.reps * loadOf(it) }
         val bestScored = knownCounted.maxByOrNull { it.score }
@@ -452,12 +455,14 @@ object ExerciseHistoryCalculator {
         val series = entries
             .groupBy { it.sessionId }
             .mapNotNull { (_, sets) ->
-                if (assisted && counting(sets).none { knownLoad(it) != null }) return@mapNotNull null
+                val countingSets = counting(sets)
+                if (assisted && countingSets.none { knownLoad(it) != null }) return@mapNotNull null
+                if (countingSets.isNotEmpty() && countingSets.all { invalidExternalLoad(it.weightKg) }) return@mapNotNull null
                 ExerciseSessionPoint(
                     atMs = sets.minOf { it.atMs },
                     bestSetScore = sets.filter { it.kind == SetKind.TOP && it.done }.ifEmpty { sets }.maxOf { it.score },
                     totalReps = sets.filter { it.done }.sumOf { it.reps },
-                    peakValue = counting(sets).maxOfOrNull { peakValue(it) } ?: 0.0,
+                    peakValue = countingSets.maxOfOrNull { peakValue(it) } ?: 0.0,
                 )
             }
             .sortedBy { it.atMs }

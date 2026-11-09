@@ -16,6 +16,7 @@ store listing; this is the whole list.
 - Progress by reducing machine assistance; use more support for easier back-offs and drops. Keep unknown support unset, preserve explicit zero, and avoid added-load formulas for assisted starter weights and warmup ramps.
 - Price weighted bodyweight exercise effort using bodyweight plus added load, matching the equivalent plain exercise.
 - Repair existing assisted strength scores, including computed zeroes, without changing training logs or banked XP. Defer repairs that need a missing bodyweight until a measurement is available.
+- Exclude activity-only hidden reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
 
 ## 1.9
 

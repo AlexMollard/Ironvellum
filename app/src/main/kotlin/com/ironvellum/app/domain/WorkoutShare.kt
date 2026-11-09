@@ -153,8 +153,12 @@ object WorkoutShare {
         // (a barbell, a dumbbell): a belt on a pull-up is added load on top of
         // a bodyweight the card does not know, so it would undercount.
         val moved = counted
-            .filter { exercises[it.exerciseId]?.isWeighted == true && !BodyShare.isAssisted(it.exerciseName) }
-            .sumOf { (it.weightKg ?: 0.0) * it.reps }
+            .filter { exercises[it.exerciseId]?.isWeighted == true && !BodyShare.isAssisted(exercises.getValue(it.exerciseId).name) }
+            .sumOf {
+                val weight = it.weightKg ?: 0.0
+                val exercise = exercises.getValue(it.exerciseId)
+                (if (weight < 0.0 && !BodyShare.addsToBody(exercise)) 0.0 else weight) * it.reps
+            }
             .toInt()
         return Totals(done.size, counted.sumOf { it.reps }, heldSeconds, moved)
     }
