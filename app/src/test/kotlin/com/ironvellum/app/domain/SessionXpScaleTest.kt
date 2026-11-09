@@ -97,4 +97,67 @@ class SessionXpScaleTest {
         val history = history(160)
         assertEquals(naive(history), reprice(history))
     }
+
+    @Test
+    fun `weighted pull-up and pull-up use the same load and effort with separate matching histories`() {
+        val pull = Exercise(id = 101, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
+        val weighted = Exercise(id = 102, name = "Weighted Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
+        fun set(exercise: Exercise, kg: Double) = SessionSet(
+            exerciseId = exercise.id, exerciseName = exercise.name, exercisePosition = 0, setIndex = 0,
+            reps = 5, weightKg = kg, done = true,
+        )
+        val prior = WorkoutSession(id = 1, label = "", startedAtMs = 1, completedAtMs = 2)
+        val book = SessionXp(
+            listOf(pull, weighted).associateBy { it.id },
+            listOf(prior to listOf(set(pull, 20.0), set(weighted, 20.0))),
+            bodyweightAt = { 80.0 },
+        )
+        val plainEffort = book.effortOf(set(pull, 15.0))
+        val weightedEffort = book.effortOf(set(weighted, 15.0))
+        assertEquals(95.0, Xp.systemLoadKg(plainEffort, 80.0)!!, 0.001)
+        assertEquals(95.0, Xp.systemLoadKg(weightedEffort, 80.0)!!, 0.001)
+        assertEquals(setOf("pull-up", "weighted pull-up"), book.history.bestLoadKg.keys)
+        assertEquals(100.0, book.history.bestLoadKg.getValue("pull-up"), 0.001)
+        assertEquals(100.0, book.history.bestLoadKg.getValue("weighted pull-up"), 0.001)
+        assertEquals(Xp.judge(plainEffort, 80.0, book.history), Xp.judge(weightedEffort, 80.0, book.history))
+    }
+
+    @Test
+    fun `effort classification preserves leg external assisted unknown and hold load semantics`() {
+        val examples = listOf(
+            Exercise(id = 101, name = "Dumbbell Lunge", muscleGroup = MuscleGroup.LEGS, isWeighted = true),
+            Exercise(id = 102, name = "Barbell Lunge", muscleGroup = MuscleGroup.LEGS, isWeighted = true),
+            Exercise(id = 103, name = "Bench Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true),
+            Exercise(id = 104, name = "Leg Press Machine", muscleGroup = MuscleGroup.LEGS, isWeighted = true),
+            Exercise(id = 105, name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true),
+            Exercise(id = 106, name = "Plank", muscleGroup = MuscleGroup.CORE, isWeighted = false, metric = ExerciseMetric.HOLD),
+        )
+        val book = SessionXp(examples.associateBy { it.id }, emptyList(), bodyweightAt = { 80.0 })
+        fun effort(id: Long, name: String, kg: Double?) = book.effortOf(SessionSet(
+            exerciseId = id, exerciseName = name, exercisePosition = 0, setIndex = 0,
+            reps = 5, weightKg = kg, done = true, durationSec = 30,
+        ))
+        val leg = effort(101, "Dumbbell Lunge", 20.0)
+        assertEquals(100.0, Xp.systemLoadKg(leg, 80.0)!!, 0.001)
+        assertEquals(80.0, Xp.systemLoadKg(effort(101, "Dumbbell Lunge", 0.0), 80.0)!!, 0.001)
+        assertEquals(80.0, Xp.systemLoadKg(effort(101, "Dumbbell Lunge", null), 80.0)!!, 0.001)
+        for (exercise in examples.subList(1, 4)) {
+            val external = effort(exercise.id, exercise.name, 20.0)
+            assertEquals(true, external.externalLoad)
+            assertEquals(20.0 * MovementDifficulty.loadFactor(exercise.name), Xp.systemLoadKg(external, 80.0)!!, 0.001)
+            assertEquals(null, Xp.systemLoadKg(effort(exercise.id, exercise.name, null), 80.0))
+            assertEquals(null, Xp.systemLoadKg(effort(exercise.id, exercise.name, 0.0), 80.0))
+        }
+        val assisted = effort(105, "Assisted Pull-up", 20.0)
+        assertEquals(60.0, Xp.systemLoadKg(assisted, 80.0)!!, 0.001)
+        assertEquals(80.0, Xp.systemLoadKg(effort(105, "Assisted Pull-up", 0.0), 80.0)!!, 0.001)
+        assertEquals(null, Xp.systemLoadKg(effort(105, "Assisted Pull-up", null), 80.0))
+        val unknown = effort(999, "Unknown movement", null)
+        assertEquals(false, unknown.externalLoad)
+        assertEquals(80.0, Xp.systemLoadKg(unknown, 80.0)!!, 0.001)
+        val hold = effort(106, "Plank", null)
+        assertEquals(ExerciseMetric.HOLD, hold.metric)
+        assertEquals(30, hold.holdSeconds)
+        assertEquals(null, Xp.e1rmOf(hold, 80.0))
+    }
 }

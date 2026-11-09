@@ -14,6 +14,7 @@ store listing; this is the whole list.
 - Exercise inspectors show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
 - Keep imported machine-assisted pull-ups, chin-ups and dips separate from plain bodyweight exercises, preserving their recorded assistance.
 - Progress by reducing machine assistance; use more support for easier back-offs and drops. Keep unknown support unset, preserve explicit zero, and avoid added-load formulas for assisted starter weights and warmup ramps.
+- Price weighted bodyweight exercise effort using bodyweight plus added load, matching the equivalent plain exercise.
 
 ## 1.9
 

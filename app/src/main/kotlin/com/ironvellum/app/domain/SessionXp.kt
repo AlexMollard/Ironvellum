@@ -272,7 +272,7 @@ class SessionXp private constructor(
                 exerciseId = set.exerciseId,
                 rpe = set.rpe,
                 kind = set.kind,
-                externalLoad = exercise?.isWeighted == true,
+                externalLoad = exercise?.let { !BodyShare.addsToBody(it) } ?: false,
             )
         }
 
