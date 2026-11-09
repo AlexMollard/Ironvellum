@@ -2,6 +2,8 @@ package com.ironvellum.app.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -11,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.R
 import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.domain.Exercise
@@ -29,12 +32,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The exercise sheet's four pages fit the sheet on the owner's phone (411x891dp) at the default text size with no
- * scrolling, dark and light: Pull-up on About, Form and Fatigue, a weighted lift with a logged history on History.
- * The About page is given a "why do it" at the writers' caps (a purpose of about 120 characters, a pick-it of about
- * 140), the longest the catalogue will hold. At a larger text size a page may scroll, so that is only checked for
- * being there. With `-Pandroid.testInstrumentationRunnerArguments.shots=true` each run also saves the sheet as a PNG
- * in /data/local/tmp/optimise-shots for a human to look at (see [ShotRecorder]).
+ * Form, History and Fatigue fit the owner's phone (411x891dp) at default text size.
+ * About reserves readable space for artwork: dense descriptions may scroll, but its facts
+ * stay reachable and Close/Add stay pinned. Includes dark/light themes and larger text.
+ * Optional captures use `-Pandroid.testInstrumentationRunnerArguments.shots=true`.
  */
 @RunWith(AndroidJUnit4::class)
 class ExerciseInfoSheetFitsTest {
@@ -168,10 +169,21 @@ class ExerciseInfoSheetFitsTest {
         assertEquals("$tab scrolls by $room px (${room / app.resources.displayMetrics.density} dp) on a 411x891dp phone", 0f, room, 0.5f)
     }
 
+    private fun assertAboutUsable(shot: String) {
+        openTab("About")
+        compose.onNode(hasText(app.getString(R.string.infosheet_close_button))).assertIsDisplayed()
+        compose.onNode(hasText(app.getString(R.string.picker_confirm_add))).assertIsDisplayed()
+        ShotRecorder.take(compose, shot)
+        compose.mainClock.autoAdvance = true
+        compose.onNode(hasText(app.getString(R.string.infosheet_section_muscles))).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText(app.getString(R.string.infosheet_close_button))).assertIsDisplayed()
+        compose.onNode(hasText(app.getString(R.string.picker_confirm_add))).assertIsDisplayed()
+    }
+
     @Test
-    fun aboutFitsWithItsWhyAtTheCaps() {
+    fun aboutKeepsFactsAndActionsReachableWithItsWhyAtTheCaps() {
         show(pullUp)
-        assertFits("About", "pullup-dark-about")
+        assertAboutUsable("pullup-dark-about")
     }
 
     @Test
@@ -217,15 +229,15 @@ class ExerciseInfoSheetFitsTest {
     }
 
     @Test
-    fun aSparseAboutFitsToo() {
+    fun aSparseAboutKeepsFactsAndActionsReachableToo() {
         show(hammerCurl, lastLine = "12 × 16 kg · 13 Oct")
-        assertFits("About", "hammercurl-dark-about")
+        assertAboutUsable("hammercurl-dark-about")
     }
 
     @Test
-    fun lightAboutFits() {
+    fun lightAboutKeepsFactsAndActionsReachable() {
         show(pullUp, light = true)
-        assertFits("About", "pullup-light-about")
+        assertAboutUsable("pullup-light-about")
     }
 
     @Test

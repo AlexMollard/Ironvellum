@@ -11,6 +11,7 @@ store listing; this is the whole list.
 - Legacy warmup exercises share one guided warmup. Cooldown starts from the final workout summary and never changes working sets, XP or rewards.
 - Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
 - Recognise reduced assistance as a PR on assisted pull-ups, chin-ups and dips. Assistance no longer inflates lifted-weight totals; bodyweight-aware records use bodyweight minus assistance.
+- Exercise inspectors show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
 
 ## 1.9
 

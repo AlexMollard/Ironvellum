@@ -55,8 +55,8 @@ import com.ironvellum.app.ui.theme.inkBorder
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
  *
- * Each page is built to fit the sheet on a 412x891dp phone at the default text size without scrolling
- * (ExerciseInfoSheetFitsTest holds it to that); a larger text size scrolls instead.
+ * Artwork leads About at a readable full-width size; dense pages and larger text can scroll.
+ * The sheet keeps its actions outside the scrolling page.
  */
 @Composable
 internal fun ExerciseInfoSheet(
@@ -95,7 +95,7 @@ internal fun ExerciseInfoSheet(
         // lifter's own sets and Fatigue is the movement's derived footprint. The sheet drops a page with nothing on it (History never is: it says "not logged yet").
         pages = listOf(
             InfoPage(stringResource(R.string.infosheet_page_about)) {
-                // The drawing leads, small, beside the two facts a lifter looks for first.
+                // Give every pose the full width; equipment and workout facts sit below it.
                 section(null) { AboutTop(exercise, lastLine) }
                 if (why != null) section(Words.text(UiText.res(R.string.infosheet_why_label))) { WhyBody(why) }
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
@@ -122,18 +122,20 @@ internal fun ExerciseInfoSheet(
     )
 }
 
-/** The drawing at [ART_SIZE], grown into any spare page height, beside LAST WORKOUT and EQUIPMENT, each only when there is something to say. */
+/** Full-width artwork grows into spare page height; facts never squeeze a wide pose into a thumbnail. */
 @Composable
 private fun AboutTop(exercise: Exercise, lastLine: String?) {
     val gear = gearLine(exercise.name)
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         val grow = LocalPageRoom.current?.take(ART_GROWTH) ?: 0.dp
-        // Wider than tall, so a lying-down drawing (a push-up) is not shrunk to fit a square; the whole row when alone.
-        val width = if (lastLine == null && gear == null) 1f else ART_WIDTH_SHARE
-        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth(width).height(ART_SIZE + grow))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (lastLine != null) AboutFact(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
-            if (gear != null) AboutFact(Words.armoury.u, gear)
+        ExerciseArtSlot(exercise.name, exercise.muscleGroup, Modifier.fillMaxWidth().height(ART_SIZE + grow))
+        if (lastLine != null || gear != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (lastLine != null) Box(Modifier.weight(1f)) {
+                    AboutFact(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
+                }
+                if (gear != null) Box(Modifier.weight(1f)) { AboutFact(Words.armoury.u, gear) }
+            }
         }
     }
 }
@@ -232,13 +234,10 @@ internal fun InfoSheetScope.fatigueFacts(name: String, modifiers: String = "") {
 }
 
 private const val MAX_WHY_TAGS = 3
-private val ART_SIZE = 76.dp
+private val ART_SIZE = 180.dp
 
-/** How far the drawing grows into a page's empty space: up to 140dp on a page with room to spare. */
-private val ART_GROWTH = 64.dp
-
-/** The drawing's share of the row when facts sit beside it. */
-private const val ART_WIDTH_SHARE = 0.45f
+/** Up to 240dp on a page with room to spare, without adding scroll just to fill empty space. */
+private val ART_GROWTH = 60.dp
 
 private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
