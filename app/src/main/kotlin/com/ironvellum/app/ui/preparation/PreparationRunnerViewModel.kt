@@ -15,7 +15,7 @@ data class PreparationRunnerUi(
     val exercises: List<Exercise> = emptyList(), val busy: Boolean = false, val failed: Boolean = false,
 )
 
-/** Room owns the cursor and clock. UI ticks never write or advance anything. */
+/** Room owns the cursor and clock, including guarded foreground timer-expiry actions. */
 class PreparationRunnerViewModel(
     private val repo: Repository, private val sessionId: Long, private val kind: PreparationKind,
     private val clock: () -> Long = System::currentTimeMillis,

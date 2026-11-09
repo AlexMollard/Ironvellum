@@ -5,7 +5,7 @@ enum class PreparationMode { AUTO, SAVED, NONE }
 enum class PreparationMeasure { REPS, SECONDS }
 enum class PreparationRepeat { ONCE, SIDES, DIRECTIONS }
 enum class PreparationStatus { OPEN, RUNNING, PAUSED, DONE, SKIPPED }
-enum class PreparationAction { START, PAUSE, RESUME, COMPLETE_UNIT, SKIP_UNIT, SKIP_ROUTINE }
+enum class PreparationAction { START, PAUSE, RESUME, COMPLETE_UNIT, SKIP_UNIT, TIMER_EXPIRED, SKIP_ROUTINE }
 
 /** Original workout prescription; activity distance occupies the old weight column, not a preparation load. */
 data class PreparationLegacyTarget(val metric: ExerciseMetric, val targetReps: Int, val targetWeightKg: Double? = null)

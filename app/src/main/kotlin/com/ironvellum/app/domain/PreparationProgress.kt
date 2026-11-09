@@ -1,6 +1,6 @@
 package com.ironvellum.app.domain
 
-/** Deadlines drive display only. Only an explicit, current unit action advances the cursor. */
+/** Room validates each unit transition; foreground timer expiry completes only the current timed unit. */
 data class PreparationProgress(
     val status: PreparationStatus = PreparationStatus.OPEN,
     val stepIndex: Int = 0,
@@ -39,10 +39,13 @@ data class PreparationProgress(
 
     fun advance(snapshot: PreparationSnapshot, action: PreparationAction, nowMs: Long, expectedUnitKey: String? = null): PreparationProgress {
         if (status == PreparationStatus.DONE || status == PreparationStatus.SKIPPED) return this
-        if ((action == PreparationAction.COMPLETE_UNIT || action == PreparationAction.SKIP_UNIT) && expectedUnitKey != currentUnitKey) return this
+        if ((action == PreparationAction.COMPLETE_UNIT || action == PreparationAction.SKIP_UNIT ||
+                action == PreparationAction.TIMER_EXPIRED) && expectedUnitKey != currentUnitKey) return this
         if (action == PreparationAction.SKIP_ROUTINE) return copy(status = PreparationStatus.SKIPPED, readyUntilMs = null, deadlineMs = null)
         val step = snapshot.steps.getOrNull(stepIndex) ?: return copy(status = PreparationStatus.DONE, readyUntilMs = null, deadlineMs = null)
         val duration = if (step.measure == PreparationMeasure.SECONDS) step.target.toLong().coerceAtLeast(0) * 1000 else 0
+        if (action == PreparationAction.TIMER_EXPIRED &&
+            (status != PreparationStatus.RUNNING || duration == 0L || deadlineMs == null || nowMs < deadlineMs)) return this
         return when (action) {
             PreparationAction.START, PreparationAction.RESUME -> {
                 if (status == PreparationStatus.RUNNING) this else {
@@ -54,7 +57,7 @@ data class PreparationProgress(
             }
             PreparationAction.PAUSE -> if (status != PreparationStatus.RUNNING) this else copy(
                 status = PreparationStatus.PAUSED, remainingMs = remainingMs(nowMs).coerceIn(0, duration), readyUntilMs = null, deadlineMs = null)
-            PreparationAction.COMPLETE_UNIT, PreparationAction.SKIP_UNIT -> {
+            PreparationAction.COMPLETE_UNIT, PreparationAction.SKIP_UNIT, PreparationAction.TIMER_EXPIRED -> {
                 var s = stepIndex; var r = roundIndex; var repeat = repeatIndex + 1
                 if (repeat >= step.repetitions) { repeat = 0; r++ }
                 if (r >= step.rounds) { r = 0; s++ }
@@ -65,11 +68,19 @@ data class PreparationProgress(
                     if (repeat >= next.repetitions) { repeat = 0; r++ }
                     if (r >= next.rounds) { r = 0; s++ }
                 }
-                copy(status = if (s >= snapshot.steps.size) PreparationStatus.DONE else PreparationStatus.OPEN,
+                val next = copy(status = if (s >= snapshot.steps.size) PreparationStatus.DONE else PreparationStatus.OPEN,
                     stepIndex = s, roundIndex = r, repeatIndex = repeat,
-                    completedUnitKeys = if (action == PreparationAction.COMPLETE_UNIT) completedUnitKeys + currentUnitKey else completedUnitKeys,
+                    completedUnitKeys = if (action != PreparationAction.SKIP_UNIT) completedUnitKeys + currentUnitKey else completedUnitKeys,
                     skippedUnitKeys = if (action == PreparationAction.SKIP_UNIT) skippedUnitKeys + currentUnitKey else skippedUnitKeys,
                     remainingMs = 0, readyUntilMs = null, deadlineMs = null)
+                if (status != PreparationStatus.RUNNING || next.status == PreparationStatus.DONE) next else {
+                    val nextStep = snapshot.steps[s]
+                    val nextDuration = if (nextStep.measure == PreparationMeasure.SECONDS) nextStep.target.toLong().coerceAtLeast(0) * 1000 else 0
+                    // Start from now, not the expired deadline: returning late must never burn through unseen units.
+                    val ready = if (nextDuration > 0) nowMs + if (s == stepIndex) 0 else 5000 else null
+                    next.copy(status = PreparationStatus.RUNNING, remainingMs = nextDuration,
+                        readyUntilMs = ready, deadlineMs = ready?.plus(nextDuration))
+                }
             }
             PreparationAction.SKIP_ROUTINE -> this
         }

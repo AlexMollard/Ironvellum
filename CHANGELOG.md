@@ -7,6 +7,7 @@ store listing; this is the whole list.
 
 - Save reusable warmups and cooldowns, or choose suggestions based on each workout's working exercises.
 - Follow gallery movements with rep targets, timers, rounds and both sides or directions. Progress survives leaving, rotation and restarting the app.
+- Timed warmups and cooldowns advance automatically with sound/vibration cues following your alert setting. Sides, directions and rounds flow without another countdown; changing exercise gives five seconds to get ready. Rep targets still use manual completion.
 - Legacy warmup exercises share one guided warmup. Cooldown starts from the final workout summary and never changes working sets, XP or rewards.
 - Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
 

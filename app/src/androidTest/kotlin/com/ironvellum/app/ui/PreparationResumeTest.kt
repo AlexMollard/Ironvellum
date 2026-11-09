@@ -52,10 +52,11 @@ class PreparationResumeTest {
         assertEquals(profile, repo.observeProfile().first())
         assertEquals(20000L, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.remainingMs)
     }
-    @Test fun queuedDuplicateCompleteAndSkipKeepOneTransitionInRoom() = runBlocking {
+    @Test fun queuedDuplicateExpiryAndSkipKeepOneTransitionInRoom() = runBlocking {
         val id = session()
         val before = db.sessionDao().setsFor(id)
-        coroutineScope { repeat(2) { launch { repo.preparations.act(id, PreparationKind.COOLDOWN, PreparationAction.COMPLETE_UNIT, 1000, "0:0:0") } } }
+        repo.preparations.act(id, PreparationKind.COOLDOWN, PreparationAction.START, 1000)
+        coroutineScope { repeat(2) { launch { repo.preparations.act(id, PreparationKind.COOLDOWN, PreparationAction.TIMER_EXPIRED, 36000, "0:0:0") } } }
         assertEquals("0:0:1", repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.currentUnitKey)
         coroutineScope { repeat(2) { launch { repo.preparations.act(id, PreparationKind.COOLDOWN, PreparationAction.SKIP_UNIT, 1000, "0:0:1") } } }
         val progress = repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress

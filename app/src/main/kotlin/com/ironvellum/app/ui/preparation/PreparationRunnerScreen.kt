@@ -10,12 +10,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
+import com.ironvellum.app.data.TrialCues
+import com.ironvellum.app.data.TrialPrefs
 import com.ironvellum.app.domain.*
 import com.ironvellum.app.ui.components.*
 import com.ironvellum.app.ui.ironvellumRepository
@@ -56,14 +65,35 @@ fun PreparationRunnerScreen(
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val state = ui.state
     val progress = state?.progress
-    LaunchedEffect(progress) {
-        while (progress?.status == PreparationStatus.RUNNING) { now = System.currentTimeMillis(); delay(100) }
-    }
     LaunchedEffect(ui.loaded, state) { if (ui.loaded && state == null) onBack() }
     val terminal = progress?.status in listOf(PreparationStatus.DONE, PreparationStatus.SKIPPED)
     val overview = progress != null && !progress.hasProgress
     val step = state?.snapshot?.steps?.getOrNull(progress?.stepIndex ?: 0)
     val guided = state != null && !terminal && !overview && !preview && step != null
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val androidContext = LocalContext.current
+    val trialPrefs = remember(androidContext) { TrialPrefs(androidContext) }
+    LaunchedEffect(progress, guided, lifecycleOwner) {
+        if (guided && progress?.status == PreparationStatus.RUNNING) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    now = System.currentTimeMillis()
+                    if (progress.deadlineMs?.let { now >= it } == true) {
+                        viewModel.act(PreparationAction.TIMER_EXPIRED, progress.currentUnitKey)
+                    }
+                    delay(100)
+                }
+            }
+        }
+    }
+    var previousUnitKey by remember { mutableStateOf(progress?.currentUnitKey) }
+    LaunchedEffect(progress?.currentUnitKey) {
+        val previous = previousUnitKey
+        previousUnitKey = progress?.currentUnitKey
+        if (previous != null && previous != progress?.currentUnitKey && previous in progress?.completedUnitKeys.orEmpty()) {
+            TrialCues.play(androidContext, trialPrefs.restAlert, SetClock.Cue.DONE)
+        }
+    }
     val returnText = preparationText(
         if (kind == PreparationKind.WARMUP) R.string.preparation_return_workout else R.string.preparation_return_summary,
         if (kind == PreparationKind.WARMUP) R.string.preparation_return_workout__t else R.string.preparation_return_summary__t)
@@ -166,7 +196,8 @@ fun PreparationRunnerScreen(
                         }
                     }, showFooter = false, actions = {}) {
                     if (!folded) {
-                        PreparationCaption(context)
+                        Text(context, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                         val exercise = ui.exercises.firstOrNull { it.id == step.exerciseId }
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             ExerciseArtSlot(step.exerciseName, exercise?.muscleGroup ?: MuscleGroup.CORE, Modifier.size(180.dp))

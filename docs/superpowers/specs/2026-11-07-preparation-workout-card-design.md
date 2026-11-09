@@ -8,13 +8,14 @@ Reference: `C:/Users/alexm/.codex/visualizations/2026/11/06/01a1b040-5ebf-7c93-9
 
 Make preparation feel like the existing workout: a compact offer, one framed movement card, and the familiar NEXT row with its emerald check. Improve hierarchy and density through grouping, spacing and removal of repeated information. Preserve normal app typography, minimum 48dp interactive targets, accessible names and 200% font scaling.
 
-Scope is presentation and entry routing. Keep Room schema **47**, archive format **15**, repository/domain semantics, reward/scoring, recovery, legacy import/prefix handling and progress normalization unchanged unless a specific failing test proves an essential integration fix. Add no dependency, new gallery movement, artwork, version bump, release, tag or Actions trigger.
+Scope originally covered presentation and entry routing. The 2026-11-10 owner-approved timing refinement below supersedes manual-only timer progression. Keep Room schema **47**, archive format **15**, reward/scoring, recovery, legacy import/prefix handling and progress normalization unchanged. Add no dependency, new gallery movement, artwork, version bump, release, tag or Actions trigger.
 
 The prior design, `docs/superpowers/specs/2026-11-06-warmup-cooldown-design.md`, remains authoritative for persistence and behavior. In particular:
 
 - Warmups remain enabled by default (`true`). Global off hides only untouched Auto general suggestions; saved routines, explicit legacy warmups and existing progress remain available. Cooldown remains independent.
-- Explicit manual completion before timer expiry remains possible. Timer expiry never advances a unit. Retain the five-second readiness phase, real remaining time and explicit resume after leaving.
-- COMPLETE_UNIT/SKIP_UNIT use the key captured by the displayed unit; transaction validation rejects stale/repeated actions atomically.
+- Timed units now advance automatically while the guided runner is resumed and visible. Begin/Resume and changes to another exercise retain five-second readiness; sides, directions and rounds of the same step start immediately. Rep/manual units still require completion. Pause and explicit resume after leaving remain available.
+- COMPLETE_UNIT/SKIP_UNIT/TIMER_EXPIRED use the key captured by the displayed unit; transaction validation rejects stale/repeated actions atomically. Expiry also requires a running timed unit whose deadline has arrived. Each next unit gets its full duration from the transition time, so returning late never catches up through unseen units.
+- Side/direction changes update an accessibility live region; transition sound/vibration uses the existing timed-set alert preference. Read-only preview does not advance units.
 - Preserve legacy target labels, weights and distances, draft metadata through recreation, and clearing superseded legacy metadata only when exercise/measure/target/load changes. Notes/rounds/repeat alone retain it.
 - Session snapshots remain immutable when routines or workout attachments change. Sealed summaries show exact stored results and never replay awards.
 

@@ -62,7 +62,7 @@ class PreparationRunnerLayoutTest {
     @Test fun runnerNormalLightActionsRemainReachable() = runner(1f, light = true)
     @Test fun runnerLargeDarkActionsRemainReachable() = runner(2f, light = false)
     @Test fun rapidDoubleTapCompletesOnlyDisplayedUnit() = runner(1f, doubleTap = true)
-    @Test fun expiryNeverAdvancesAndManualFinishKeepsRecordedCounts() = runBlocking {
+    @Test fun expirySwitchesDirectionAutomaticallyAndManualFinishKeepsRecordedCounts() = runBlocking {
         val arm = repo.observeExercises().first().single { it.name == "Arm Circles" }
         val routine = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Finish honestly", steps = listOf(
             PreparationStep(arm.id, arm.name, PreparationMeasure.SECONDS, 30, rounds = 2, repeat = PreparationRepeat.DIRECTIONS))))
@@ -72,11 +72,13 @@ class PreparationRunnerLayoutTest {
         val vm = withContext(Dispatchers.Main) { PreparationRunnerViewModel(repo, id, PreparationKind.WARMUP) }
         withTimeout(10000) { vm.ui.first { it.loaded } }
         compose.setContent { IronvellumTheme { PreparationRunnerScreen(id, PreparationKind.WARMUP, {}, {}, viewModel = vm) } }
-        compose.onNodeWithText(text(R.string.preparation_reached)).assertExists()
-        Thread.sleep(300)
-        assertEquals("0:0:0", vm.ui.value.state!!.progress.currentUnitKey)
-        compose.onNode(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).assertIsEnabled().performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.currentUnitKey == "0:0:1" }
+        val switched = vm.ui.value.state!!.progress
+        assertEquals(PreparationStatus.RUNNING, switched.status)
+        assertEquals(30000L, switched.deadlineMs!! - switched.readyUntilMs!!)
+        assertTrue(switched.readyUntilMs!! <= System.currentTimeMillis())
+        compose.onAllNodesWithText(text(R.string.preparation_direction_second), substring = true).onFirst().assertExists()
+        preparationCapture(compose, "automatic-preparation-direction")
         compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick()
         compose.onNodeWithText(text(R.string.preparation_finish)).performClick()
         compose.onNodeWithText(text(R.string.preparation_finish_title)).assertExists()
