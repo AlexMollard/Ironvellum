@@ -64,6 +64,63 @@ class SetSchemeTrialTest {
         repo.observeSessionSets(sessionId).first().filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
 
     @Test
+    fun assistedStraightProgressionOffersLessSupportAndAcceptanceCanBeUndone() = runBlocking {
+        val assisted = db.exerciseDao().byName("Assisted Pull-up")!!.id
+        repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
+        val rite = save(assisted, 3, 8, 20.0, SetScheme(workingReps = 8..10))
+        val first = repo.startSessionFromPreset(rite)
+        setsOf(first, assisted).forEach { repo.updateSet(it.id, 10, 20.0, done = true) }
+        repo.completeSession(first)
+
+        val next = repo.startSessionFromPreset(rite)
+        val block = repo.blockOf(next, assisted)
+        val suggestion = repo.trialSuggestions(next).getValue(block)
+        assertEquals(ProgressionSuggestion.Kind.LESS_ASSISTANCE, suggestion.kind)
+        assertEquals(17.5, suggestion.weightKg!!, 0.0)
+        val before = repo.acceptSuggestion(next, block)!!
+        assertEquals(listOf(17.5, 17.5, 17.5), setsOf(next, assisted).map { it.weightKg })
+        assertEquals(listOf(8, 8, 8), setsOf(next, assisted).map { it.reps })
+        repo.undoSuggestion(next, before)
+        assertEquals(listOf(20.0, 20.0, 20.0), setsOf(next, assisted).map { it.weightKg })
+    }
+
+    @Test
+    fun assistedTopProgressionUsesOneTopAndRefillsOnlyUntouchedBackoffs() = runBlocking {
+        val assisted = db.exerciseDao().byName("Assisted Pull-up")!!.id
+        repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
+        val scheme = SetScheme(type = SchemeType.TOP_BACKOFF, topReps = 8..10, backoffPercent = 10)
+        val rite = save(assisted, 3, 8, 20.0, scheme)
+        val first = repo.startSessionFromPreset(rite)
+        assertEquals(listOf(20.0, 27.5, 27.5), setsOf(first, assisted).map { it.weightKg })
+        setsOf(first, assisted).forEach { repo.updateSet(it.id, if (it.kind == SetKind.TOP) 10 else it.reps, it.weightKg, done = true) }
+        repo.completeSession(first)
+
+        val next = repo.startSessionFromPreset(rite)
+        val before = setsOf(next, assisted)
+        repo.updateSet(before[1].id, before[1].reps, 35.0, done = false)
+        val block = repo.blockOf(next, assisted)
+        val suggestion = repo.trialSuggestions(next).getValue(block)
+        assertEquals(ProgressionSuggestion.Kind.LESS_ASSISTANCE, suggestion.kind)
+        assertEquals(17.5, suggestion.weightKg!!, 0.0)
+        repo.acceptSuggestion(next, block)
+        assertEquals(listOf(17.5, 35.0, 25.0), setsOf(next, assisted).map { it.weightKg })
+    }
+
+    @Test
+    fun explicitZeroAssistanceBackoffsSurviveSavingLaunchingAndRefilling() = runBlocking {
+        val assisted = db.exerciseDao().byName("Assisted Pull-up")!!.id
+        repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
+        val scheme = SetScheme(type = SchemeType.TOP_BACKOFF, backoffFixedKg = 0.0)
+        val rite = save(assisted, 3, 4, 20.0, scheme)
+        assertEquals(0.0, repo.observePresets().first().single().entries.single().scheme.backoffFixedKg!!, 0.0)
+        val session = repo.startSessionFromPreset(rite)
+        assertEquals(listOf(20.0, 0.0, 0.0), setsOf(session, assisted).map { it.weightKg })
+        val top = setsOf(session, assisted).first()
+        repo.updateSet(top.id, top.reps, 15.0, done = true)
+        assertEquals(listOf(15.0, 0.0, 0.0), setsOf(session, assisted).map { it.weightKg })
+    }
+
+    @Test
     fun aTopSchemeBeginsAsATopSetAndBackoffs() = runBlocking {
         val rite = save(row, sets = 3, reps = 4, kg = 80.0, scheme = topBackoff)
         val sets = setsOf(repo.startSessionFromPreset(rite), row)

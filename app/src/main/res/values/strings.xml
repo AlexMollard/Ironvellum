@@ -3402,6 +3402,12 @@
     <!-- %1$s the load added, %2$d the reps to drop to. -->
     <string tools:ignore="PluralsCandidate" name="progression_add_drop">Target cleared — add %1$s, drop to %2$d reps</string>
     <string tools:ignore="PluralsCandidate" name="progression_ceiling_add">Rep ceiling reached — add %1$s, back to %2$d reps</string>
+    <string name="progression_assistance_less">Reduce assistance to %1$s and return to %2$d reps</string>
+    <string name="progression_assistance_deload">Increase assistance to %1$s and return to %2$d reps</string>
+    <string name="progression_assistance_reps">Keep the same assistance and climb to %1$d reps</string>
+    <string name="progression_assistance_zero">No assistance remains; choose a harder variation when ready</string>
+    <string name="session_suggestion_less_assistance">Less assistance: %1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">More assistance: %1$s × %2$d</string>
     <string tools:ignore="PluralsCandidate" name="progression_same_load">Same load — climb to %1$d reps</string>
     <!-- %1$s is the vest's top load. -->
     <string name="progression_vest_full_harder">Vest full at %1$s, reps are high enough — take a harder variation</string>

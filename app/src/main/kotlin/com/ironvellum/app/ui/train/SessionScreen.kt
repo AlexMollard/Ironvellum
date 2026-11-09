@@ -15,6 +15,7 @@ import com.ironvellum.app.domain.levelAt
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.LoadKit
@@ -1507,6 +1508,7 @@ fun SessionScreen(
                                         bodyweightKg = bodyweight,
                                         bodyweightLift = !weighted,
                                         bodyShare = MovementDifficulty.bodyShare(first.exerciseName, first.modifiers),
+                                        assisted = BodyShare.isAssisted(first.exerciseName),
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
@@ -2991,8 +2993,17 @@ private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Bool
     return when (suggestion.kind) {
         ProgressionSuggestion.Kind.MORE_LOAD ->
             stringResource(if (suggestion.hold) R.string.session_suggestion_more_load_hold else R.string.session_suggestion_more_load, load, suggestion.reps)
+        ProgressionSuggestion.Kind.LESS_ASSISTANCE ->
+            stringResource(R.string.session_suggestion_less_assistance, load, suggestion.reps)
         ProgressionSuggestion.Kind.DELOAD ->
-            stringResource(if (suggestion.hold) R.string.session_suggestion_deload_hold else R.string.session_suggestion_deload, load, suggestion.reps)
+            stringResource(
+                when {
+                    suggestion.assisted -> R.string.session_suggestion_more_assistance
+                    suggestion.hold -> R.string.session_suggestion_deload_hold
+                    else -> R.string.session_suggestion_deload
+                },
+                load, suggestion.reps,
+            )
         ProgressionSuggestion.Kind.MORE_REPS -> UiText.plural(R.plurals.session_suggestion_more_reps, suggestion.reps, suggestion.reps).asString()
         ProgressionSuggestion.Kind.LONGER_HOLD -> stringResource(R.string.session_suggestion_longer_hold, suggestion.reps)
         ProgressionSuggestion.Kind.CUE -> null

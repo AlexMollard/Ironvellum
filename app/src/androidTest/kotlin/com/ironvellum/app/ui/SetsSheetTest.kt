@@ -36,11 +36,11 @@ class SetsSheetTest {
     private val entry = EditorEntry(1, "Weighted Pull-Up", sets = "3", reps = "8", weight = "22", modifiers = "")
     private val lift = LiftLoading(stepKg = 2.5, bodyweightKg = 80.0, bodyweightLift = true)
 
-    private fun show(entry: EditorEntry, inSuperset: Boolean = false) {
+    private fun show(entry: EditorEntry, inSuperset: Boolean = false, loading: LiftLoading = lift) {
         done = null
         compose.setContent {
             IronvellumTheme {
-                SetsSheet(entry = entry, lift = lift, worn = null, inSuperset = inSuperset, onDone = { done = it }, onDismiss = {})
+                SetsSheet(entry = entry, lift = loading, worn = null, inSuperset = inSuperset, onDone = { done = it }, onDismiss = {})
             }
         }
     }
@@ -85,6 +85,25 @@ class SetsSheetTest {
         compose.onNodeWithText("Fixed").performScrollTo().performClick()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
         assertEquals(10.0, done!!.scheme.backoffFixedKg!!, 1e-9)
+    }
+
+    @Test
+    fun explicitZeroAssistanceReopensAsFixedAndCanBeSaved() {
+        val assisted = entry.copy(exerciseName = "Assisted Pull-up", weight = "20", scheme = SetScheme(type = SchemeType.TOP_BACKOFF, backoffFixedKg = 0.0))
+        show(assisted, loading = LiftLoading(stepKg = 2.5, assisted = true))
+        compose.onNodeWithText("Fixed").performScrollTo().assertExists()
+        ShotRecorder.take(compose, "assisted_fixed_zero")
+        compose.onNodeWithText("Done").assertIsEnabled().performClick()
+        assertEquals(0.0, done!!.scheme.backoffFixedKg!!, 0.0)
+    }
+
+    @Test
+    fun missingBodyweightLeavesTheFixedAssistanceSeedUnset() {
+        val assisted = entry.copy(exerciseName = "Assisted Pull-up", weight = "20", scheme = SetScheme(type = SchemeType.TOP_BACKOFF))
+        show(assisted, loading = LiftLoading(stepKg = 2.5, assisted = true))
+        compose.onNodeWithText("Fixed").performScrollTo().performClick()
+        compose.onNodeWithText("Done").assertIsNotEnabled()
+        ShotRecorder.take(compose, "assisted_fixed_unknown")
     }
 
     @Test

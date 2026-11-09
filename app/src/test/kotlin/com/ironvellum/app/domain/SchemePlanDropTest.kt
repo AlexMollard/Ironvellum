@@ -2,6 +2,7 @@ package com.ironvellum.app.domain
 
 import com.ironvellum.app.domain.SchemePlan.DropRow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** A drop follows the load actually on the set before it, not the load the trial began with. */
@@ -41,4 +42,34 @@ class SchemePlanDropTest {
     fun `no load before it means a bodyweight drop, never a made up one`() {
         assertEquals(listOf(null, null), SchemePlan.dropLoads(listOf(work(null), drop()), 20, lift))
     }
+    @Test
+    fun `assisted backoffs and drops increase known support and preserve unknowns`() {
+        val assisted = LiftLoading(stepKg = 2.5, bodyweightKg = 80.0, assisted = true)
+        val scheme = SetScheme(type = SchemeType.TOP_BACKOFF, backoffPercent = 10)
+        assertEquals(27.5, SchemePlan.backoff(20.0, 8, scheme, assisted).weightKg!!, 0.0)
+        assertEquals(27.5, SchemePlan.seedFixedBackoff(20.0, scheme, assisted)!!, 0.0)
+        assertEquals(30.0, SchemePlan.drop(20.0, 10, assisted.copy(stepKg = 5.0))!!, 0.0)
+        assertEquals(10.0, SchemePlan.seedFixedBackoff(0.0, scheme, assisted)!!, 0.0)
+        assertEquals(8.0, SchemePlan.drop(0.0, 10, assisted.copy(stepKg = 1.0))!!, 0.0)
+        assertEquals(null, SchemePlan.drop(null, 10, assisted))
+        assertEquals(null, SchemePlan.drop(20.0, 10, assisted.copy(bodyweightKg = null)))
+        assertEquals(null, SchemePlan.backoff(null, 8, scheme, assisted).weightKg)
+        assertEquals(null, SchemePlan.seedFixedBackoff(null, scheme, assisted))
+        assertEquals(null, SchemePlan.seedFixedBackoff(20.0, scheme, assisted.copy(bodyweightKg = null)))
+        assertEquals(12.0, SchemePlan.backoff(null, 8, scheme.copy(backoffFixedKg = 12.0), assisted.copy(bodyweightKg = null)).weightKg!!, 0.0)
+        assertEquals(listOf(20.0, 27.5, 35.0), SchemePlan.dropLoads(listOf(work(20.0), drop(), drop()), 10, assisted))
+        assertEquals(listOf(20.0, 35.0, 40.0), SchemePlan.dropLoads(listOf(work(20.0), drop(35.0, edited = true), drop()), 10, assisted))
+        assertEquals(listOf(20.0, 30.0, 35.0), SchemePlan.dropLoads(listOf(work(20.0), drop(30.0, done = true), drop()), 10, assisted))
+        assertEquals(listOf(20.0, null, null), SchemePlan.dropLoads(listOf(work(20.0), drop(), drop()), 10, assisted.copy(bodyweightKg = null)))
+        assertEquals(17.5, SchemePlan.drop(20.0, 10, lift)!!, 0.0)
+    }
+
+    @Test
+    fun `assisted support rounds up on the pound grid`() {
+        val assisted = LiftLoading(stepKg = 2.5, unit = LoadUnit.LB, bodyweightKg = 80.0, assisted = true)
+        val result = SchemePlan.drop(20.0, 10, assisted)!!
+        assertEquals(60.0, Loads.toUnit(result, LoadUnit.LB), 0.002)
+        assertTrue(result >= 26.0)
+    }
+
 }

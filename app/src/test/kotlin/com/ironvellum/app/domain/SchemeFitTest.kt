@@ -84,7 +84,7 @@ class SchemeFitTest {
         val preview = SchemePlan.plan(scheme, 3, 5, 10.0, push).last().weightKg
         assertEquals(2.5, preview!!, 1e-9)
         assertEquals(preview, SchemePlan.backoff(10.0, 5, scheme, push).weightKg)
-        assertEquals(preview, SchemePlan.seedFixedBackoff(10.0, scheme, push), 1e-9)
+        assertEquals(preview, SchemePlan.seedFixedBackoff(10.0, scheme, push)!!, 1e-9)
     }
 
     @Test

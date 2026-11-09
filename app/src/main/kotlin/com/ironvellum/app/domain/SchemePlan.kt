@@ -17,6 +17,8 @@ data class LiftLoading(
     val bodyweightLift: Boolean = false,
     /** The share of [bodyweightKg] the movement moves ([MovementDifficulty.bodyShare]): a push-up carries about two thirds of it. */
     val bodyShare: Double = 1.0,
+    /** Named assisted machines mark support, not added load. */
+    val assisted: Boolean = false,
 ) {
     /** The body this lift actually moves: what a percent comes off, together with the added load. */
     val movedBodyKg: Double get() = (bodyweightKg?.takeIf { it > 0.0 } ?: 0.0) * bodyShare
@@ -70,6 +72,7 @@ object SchemePlan {
         val range = scheme.backoffReps
         val fixed = scheme.backoffFixedKg
         if (fixed != null) return PlannedSet(SetKind.BACKOFF, reps, fixed, range)
+        if (lift.assisted) return PlannedSet(SetKind.BACKOFF, reps, assistedLighter(topKg, scheme.backoffPercent, lift), range)
         val top = (topKg ?: 0.0).coerceAtLeast(0.0)
         if (top <= 0.0) {
             return if (lift.bodyweightLift) PlannedSet(SetKind.BACKOFF, (topReps - FEWER_REPS).coerceAtLeast(1), null)
@@ -91,8 +94,9 @@ object SchemePlan {
      * [topKg] right now (the figure the sheet's preview shows), so the switch changes nothing until it is edited.
      * Falls back to the lift's smallest step when the percent leaves nothing to load (no top load, under one block).
      */
-    fun seedFixedBackoff(topKg: Double?, scheme: SetScheme, lift: LiftLoading): Double {
+    fun seedFixedBackoff(topKg: Double?, scheme: SetScheme, lift: LiftLoading): Double? {
         val percent = scheme.copy(backoffFixedKg = null)
+        if (lift.assisted) return backoff(topKg, scheme.topReps.first, percent, lift).weightKg
         return backoff(topKg, scheme.topReps.first, percent, lift).weightKg?.takeIf { it > 0.0 }
             ?: lift.worn?.firstStepKg(lift.unit)
             ?: lift.stepKg.coerceAtLeast(0.5)
@@ -100,6 +104,7 @@ object SchemePlan {
 
     /** A drop of [percent] lighter than [fromKg], rounded down onto the lift's loads; null at bodyweight. */
     fun drop(fromKg: Double?, percent: Int, lift: LiftLoading): Double? {
+        if (lift.assisted) return assistedLighter(fromKg, percent, lift)
         val from = (fromKg ?: 0.0).coerceAtLeast(0.0)
         if (from <= 0.0) return null
         val keep = 1.0 - percent / 100.0
@@ -177,6 +182,20 @@ object SchemePlan {
     fun restAfterTop(scheme: SetScheme?): Int = scheme?.takeIf { it.type == SchemeType.TOP_BACKOFF }?.restAfterTopSec ?: SetScheme.DEFAULT_TOP_REST_SEC
 
     // ----------------------------------------------------------------- rounding
+    /** More support makes the effective body load lighter; never invent unknown support or bodyweight. */
+    private fun assistedLighter(supportKg: Double?, percent: Int, lift: LiftLoading): Double? {
+        val support = supportKg?.takeIf { it >= 0.0 } ?: return null
+        val body = lift.bodyweightKg?.takeIf { it > 0.0 } ?: return null
+        val target = support + (percent.coerceAtLeast(0) / 100.0) * (body - support).coerceAtLeast(0.0)
+        if (lift.unit == LoadUnit.LB) {
+            val grid = Loads.lbGrid(lift.stepKg)
+            val up = kotlin.math.ceil(Loads.toUnit(target, lift.unit) / grid - 1e-9) * grid
+            return maxOf(support, Loads.toKg(up, lift.unit))
+        }
+        val grid = lift.stepKg.coerceAtLeast(0.25)
+        return maxOf(support, kotlin.math.ceil(target / grid - 1e-9) * grid)
+    }
+
 
     private fun floorToKit(added: Double, lift: LiftLoading): Double? {
         if (added <= 0.0) return null

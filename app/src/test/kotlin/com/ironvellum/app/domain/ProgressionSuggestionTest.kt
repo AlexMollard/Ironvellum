@@ -163,4 +163,43 @@ class ProgressionSuggestionTest {
         val more = ProgressionSuggestion(Kind.MORE_LOAD, 22.5, 8, hold = false, reason = "")
         assertFalse(more.stillOffered(listOf(SessionSet(1, 1, setIndex = 0, reps = 8, weightKg = 18.0, kind = SetKind.DROP))))
     }
+    @Test
+    fun `machine assistance progresses down and deloads up without confusing unknown with zero`() {
+        for (name in listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")) {
+            fun recommendation(weight: Double?, reps: Int, stalls: Int = 0) = Progression.fromSessions(
+                TrainingMode.STRENGTH, 8, 3,
+                List(stalls + 1) { cleared(weight, reps) },
+                exerciseName = name,
+            )
+            val rec = recommendation(20.0, 8)
+            assertTrue(rec.weightKg!! > 0.0 && rec.weightKg!! < 20.0)
+            val suggestion = suggest(rec, 20.0, 8)!!
+            assertEquals(Kind.LESS_ASSISTANCE, suggestion.kind)
+            assertTrue(suggestion.movesLoad)
+            val pending = SessionSet(1, 1, setIndex = 0, reps = suggestion.reps, weightKg = 20.0)
+            assertTrue(suggestion.stillOffered(listOf(pending)))
+            assertTrue(suggestion.carries(pending.copy(weightKg = suggestion.weightKg)))
+            assertFalse(suggestion.carries(pending.copy(weightKg = null)))
+            val deload = recommendation(20.0, 6, stalls = 2)
+            assertTrue(deload.weightKg!! > 20.0)
+            assertEquals(Kind.DELOAD, suggest(deload, 20.0, 8)!!.kind)
+            val zero = recommendation(0.0, 8)
+            assertEquals(0.0, zero.weightKg!!, 0.0)
+            assertTrue(zero.cueOnly)
+            assertTrue(recommendation(0.0, 6, stalls = 2).weightKg!! > 0.0)
+            assertNull(recommendation(null, 8).weightKg)
+            assertNull(recommendation(null, 6, stalls = 2).weightKg)
+        }
+    }
+
+    @Test
+    fun `assistance respects rep bands before reducing support`() {
+        val below = Progression.fromSets(TrainingMode.HYPERTROPHY, 8, 3, cleared(20.0, 8), exerciseName = "Assisted Dip")
+        assertEquals(20.0, below.weightKg!!, 0.0)
+        assertEquals(10, below.reps)
+        val ceiling = Progression.fromSets(TrainingMode.HYPERTROPHY, 8, 3, cleared(20.0, 12), exerciseName = "Assisted Dip")
+        assertTrue(ceiling.weightKg!! < 20.0)
+        assertEquals(8, ceiling.reps)
+    }
+
 }

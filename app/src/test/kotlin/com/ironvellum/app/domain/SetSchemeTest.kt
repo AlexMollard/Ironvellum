@@ -33,6 +33,24 @@ class SetSchemeTest {
     }
 
     @Test
+    fun `zero fixed assistance survives storage and plans as zero`() {
+        val fixed = SetScheme(type = SchemeType.TOP_BACKOFF, backoffFixedKg = 0.0)
+        val restored = SetScheme.decode(fixed.encode())
+        assertEquals(0.0, restored.backoffFixedKg!!, 0.0)
+        val assisted = LiftLoading(stepKg = 2.5, bodyweightKg = null, assisted = true)
+        assertEquals(0.0, SchemePlan.backoff(20.0, 8, restored, assisted).weightKg!!, 0.0)
+        val knownBody = assisted.copy(bodyweightKg = 80.0)
+        val noReduction = fixed.copy(backoffFixedKg = null, backoffPercent = 0)
+        assertEquals(0.0, SchemePlan.seedFixedBackoff(0.0, noReduction, knownBody)!!, 0.0)
+        assertNull(SchemePlan.seedFixedBackoff(null, noReduction, knownBody))
+        assertEquals(0.0, SchemePlan.plan(restored, 3, 8, 20.0, assisted).first { it.kind == SetKind.BACKOFF }.weightKg!!, 0.0)
+        assertNull(SetScheme.decode("t=top_backoff;bf=").backoffFixedKg)
+        assertNull(SetScheme.decode("t=top_backoff;bf=-1").backoffFixedKg)
+        assertNull(SetScheme.decode("t=top_backoff").backoffFixedKg)
+        assertEquals(15.0, SetScheme.decode(owners.encode()).backoffFixedKg!!, 0.0)
+    }
+
+    @Test
     fun `every scheme round-trips and an unreadable column is straight`() {
         val schemes = listOf(
             SetScheme(type = SchemeType.TOP_BACKOFF, backoffPercent = 15, restAfterTopSec = 240, warmupRamp = true),
@@ -259,21 +277,21 @@ class SetSchemeTest {
     @Test
     fun `fixed starts on the load the percent gives now, on the kit steps`() {
         // +22 kg on a 79 kg body, 10% lighter: 11.9 kg added, down to the vest block below.
-        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent, vest), 1e-9)
+        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent, vest)!!, 1e-9)
         // No vest: the lift's own 2.5 kg grid.
-        assertEquals(10.0, SchemePlan.seedFixedBackoff(22.0, percent, belt), 1e-9)
+        assertEquals(10.0, SchemePlan.seedFixedBackoff(22.0, percent, belt)!!, 1e-9)
         // A plain lift takes the percent off the load itself.
-        assertEquals(90.0, SchemePlan.seedFixedBackoff(100.0, percent, LiftLoading(stepKg = 2.5)), 1e-9)
+        assertEquals(90.0, SchemePlan.seedFixedBackoff(100.0, percent, LiftLoading(stepKg = 2.5))!!, 1e-9)
         // The seed is the figure the preview already shows for the percent option.
-        assertEquals(SchemePlan.backoff(22.0, 4, percent, vest).weightKg!!, SchemePlan.seedFixedBackoff(22.0, percent, vest), 1e-9)
+        assertEquals(SchemePlan.backoff(22.0, 4, percent, vest).weightKg!!, SchemePlan.seedFixedBackoff(22.0, percent, vest)!!, 1e-9)
     }
 
     @Test
     fun `the seed ignores a stale fixed load and never leaves nothing to load`() {
-        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent.copy(backoffFixedKg = 15.0), vest), 1e-9)
+        assertEquals(11.0, SchemePlan.seedFixedBackoff(22.0, percent.copy(backoffFixedKg = 15.0), vest)!!, 1e-9)
         // No top load, or a back-off under one block: the smallest step, so Done is never blocked.
-        assertEquals(2.5, SchemePlan.seedFixedBackoff(null, percent, belt), 1e-9)
-        assertEquals(1.0, SchemePlan.seedFixedBackoff(5.0, percent, vest), 1e-9)
+        assertEquals(2.5, SchemePlan.seedFixedBackoff(null, percent, belt)!!, 1e-9)
+        assertEquals(1.0, SchemePlan.seedFixedBackoff(5.0, percent, vest)!!, 1e-9)
     }
 
     // ---- the figure a rite row prints

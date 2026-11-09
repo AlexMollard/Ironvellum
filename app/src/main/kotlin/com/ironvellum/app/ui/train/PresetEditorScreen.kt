@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.BodyShare
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -846,6 +847,7 @@ fun PresetEditorScreen(
                     bodyweightKg = ui.bodyweightKg,
                     bodyweightLift = exercise?.isWeighted == false,
                     bodyShare = MovementDifficulty.bodyShare(entry.exerciseName, entry.modifiers),
+                    assisted = BodyShare.isAssisted(entry.exerciseName),
                 ),
                 worn = worn,
                 inSuperset = entry.supersetGroup != null,

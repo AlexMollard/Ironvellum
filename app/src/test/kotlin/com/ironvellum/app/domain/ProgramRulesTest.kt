@@ -143,6 +143,24 @@ class ProgramRulesTest {
     }
 
     @Test
+    fun `machine support is never a conventional maximum or inverted load`() {
+        for (name in listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")) {
+            val profile = ProgramRules.strengthProfile(listOf(
+                LoggedLift(name, 20.0, 8), LoggedLift(name, 40.0, 8), LoggedLift(name, 0.0, 8),
+                LoggedLift("Bench Press", 75.0, 10),
+            ))
+            assertNull(profile.bestE1rmKg[name.lowercase()])
+            assertEquals(100.0, profile.bestE1rmKg.getValue("bench press"), 1e-9)
+            assertNull(ProgramRules.workingLoadKg(name, "PULL", profile, 8, 2))
+            assertNull(ProgramRules.estimatedLoadKg(name, "PULL", profile, 8, 2))
+            val stale = StrengthProfile(mapOf(name.lowercase() to 50.0))
+            assertNull(ProgramRules.workingLoadKg(name, "PULL", stale, 8, 2))
+            assertNull(ProgramRules.estimatedLoadKg(name, "PULL", stale, 8, 2))
+            assertNotNull(ProgramRules.workingLoadKg("Bench Press", "PUSH", profile, 8, 2))
+        }
+    }
+
+    @Test
     fun `working load applies the epley inversion and rounds DOWN to the step`() {
         val strength = ProgramRules.strengthProfile(listOf(LoggedLift("Bench Press", 75.0, 10)))
         // 100 / (1 + 10/30) = 75.0 exactly: the load that Epley puts back at 100.

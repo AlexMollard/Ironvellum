@@ -89,7 +89,7 @@ object StarterLoads {
         rir: Int,
         worn: LoadKit?,
     ): Pair<Double, String>? {
-        if (basis == null || basis.bodyweightKg <= 0.0) return null
+        if (BodyShare.isAssisted(exercise.name) || basis == null || basis.bodyweightKg <= 0.0) return null
         val load = ProgramRules.loadFromE1rm(
             exercise.name, exercise.muscleGroup.name, e1rmKg(exercise.name, basis), reps, rir, worn,
         )

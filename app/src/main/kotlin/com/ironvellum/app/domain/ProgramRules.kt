@@ -214,7 +214,7 @@ object ProgramRules {
     fun strengthProfile(lifts: List<LoggedLift>): StrengthProfile {
         val best = mutableMapOf<String, Double>()
         for (lift in lifts) {
-            if (lift.weightKg <= 0.0) continue
+            if (BodyShare.isAssisted(lift.exerciseName) || lift.weightKg <= 0.0) continue
             if (lift.reps < 1) continue
             val e1rm = e1rm(lift.weightKg, lift.reps)
             val key = lift.exerciseName.trim().lowercase()
@@ -239,6 +239,7 @@ object ProgramRules {
         /** The vest and belt a worn-load lift is done in ([WornLoad.forLift]); null floors to the usual step. */
         worn: LoadKit? = null,
     ): Pair<Double, String>? {
+        if (BodyShare.isAssisted(exerciseName)) return null
         val e1rm = strength.bestE1rmKg[exerciseName.trim().lowercase()] ?: return null
         return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir, worn) to
             Words.text(UiText.res(R.string.program_load_from_max, maxE1rmLabel(e1rm)))
@@ -344,6 +345,7 @@ object ProgramRules {
      * from; null when no relative is in [strength].
      */
     internal fun estimatedE1rmKg(exerciseName: String, strength: StrengthProfile): Pair<Double, String>? {
+        if (BodyShare.isAssisted(exerciseName)) return null
         val key = exerciseName.trim().lowercase()
         val ownFactor = MovementDifficulty.loadFactor(exerciseName)
         // Deterministic order: the table's own sequence, so the first logged

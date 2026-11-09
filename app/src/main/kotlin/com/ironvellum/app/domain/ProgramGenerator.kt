@@ -614,7 +614,7 @@ object ProgramGenerator {
         rir: Int,
         equipment: Equipment,
     ): LoadFill? {
-        if (!exercise.isWeighted) return null
+        if (!exercise.isWeighted || BodyShare.isAssisted(exercise.name)) return null
         val group = exercise.muscleGroup.name
         val worn = WornLoad.forLift(equipment.kit, exercise.name, exercise.isWeighted, exercise.metric)
         var base = ProgramRules.workingLoadKg(exercise.name, group, strength, reps, rir, worn)

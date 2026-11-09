@@ -102,6 +102,8 @@ object Progression {
          * variation"): [weightKg] and [reps] are what the lifter last did, not something to start on.
          */
         val cueOnly: Boolean = false,
+        /** Machine kilograms are assistance, so less is harder. */
+        val assisted: Boolean = false,
     )
 
     /**
@@ -163,6 +165,7 @@ object Progression {
          * climbs it as double progression whatever the training mode. [targetReps] is then its floor.
          */
         range: IntRange? = null,
+        assisted: Boolean = false,
     ): Recommendation {
         val band = range ?: repBand(mode, targetReps)
         val weight = lastWeightKg
@@ -178,7 +181,15 @@ object Progression {
         if (!allSetsAtTarget || setsDone < minSets) {
             // Grinding a load you have already failed three times is how people
             // stay stuck: back it off and climb again.
-            if (stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight > 0.0) {
+            if (assisted && stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight >= 0.0) {
+                val backedOff = nextLoad(weight, step, unit)
+                return Recommendation(
+                    backedOff, band.first,
+                    Words.text(UiText.res(R.string.progression_assistance_deload, Loads.withUnit(backedOff, unit), band.first)),
+                    deload = true, changed = true, assisted = true,
+                )
+            }
+            if (!assisted && stalls + 1 >= STALLS_BEFORE_DELOAD && weight != null && weight > 0.0) {
                 val deloaded = weight * (1 - DELOAD_FRACTION)
                 val backedOff = worn?.roundKg(deloaded, unit) ?: roundToStep(deloaded, step, unit)
                 val count = stalls + 1
@@ -267,6 +278,28 @@ object Progression {
                 }
             }
             Lever.LOAD, Lever.REPS_THEN_LOAD -> Unit
+        }
+        if (assisted) {
+            if (weight == null || weight < 0.0) return Recommendation(weight, lastReps, "", assisted = true)
+            if ((range != null || mode == TrainingMode.HYPERTROPHY) && lastReps < band.last) {
+                val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
+                return Recommendation(weight, nextReps, Words.text(UiText.res(R.string.progression_assistance_reps, nextReps)), changed = true, assisted = true)
+            }
+            if (weight == 0.0) {
+                return Recommendation(weight, lastReps, Words.text(UiText.res(R.string.progression_assistance_zero)), changed = true, cueOnly = true, assisted = true)
+            }
+            val grid = if (unit == LoadUnit.LB) Loads.lbGrid(step) else minOf(step, WEIGHT_STEP_KG)
+            val current = if (unit == LoadUnit.LB) Loads.snap(weight, unit) else weight
+            val stepInUnit = if (unit == LoadUnit.LB) Loads.lbGrid(step) else step
+            val reduced = minOf(
+                kotlin.math.floor((current - stepInUnit) / grid + 1e-9) * grid,
+                (kotlin.math.ceil(current / grid - 1e-9) - 1) * grid,
+            ).coerceAtLeast(0.0)
+            val nextWeight = if (unit == LoadUnit.LB) Loads.toKg(reduced, unit) else reduced
+            val nextReps = if (range != null || mode == TrainingMode.HYPERTROPHY) targetReps else band.first
+            return Recommendation(nextWeight, nextReps, Words.text(UiText.res(
+                R.string.progression_assistance_less, Loads.withUnit(nextWeight, unit), nextReps,
+            )), changed = true, assisted = true)
         }
         // Bodyweight work progresses in reps. Adding a step to a null load
         // turned a cleared 5×6 push-up into "2.5 kg × 3": a vest or belt the
@@ -429,8 +462,9 @@ object Progression {
             lever = lever,
             clearedRun = clearedRun,
             unit = unit,
-            worn = WornLoad.forLift(kit, exerciseName, lever),
+            worn = if (BodyShare.isAssisted(exerciseName)) null else WornLoad.forLift(kit, exerciseName, lever),
             range = range,
+            assisted = BodyShare.isAssisted(exerciseName),
         )
     }
 

@@ -36,7 +36,7 @@ class StarterLoadsTest {
     @Test
     fun `every weighted gym lift gets a positive load that is a multiple of its step`() {
         for (level in VolumeLevel.entries) {
-            for (e in catalogue.filter { it.isWeighted && it.metric == ExerciseMetric.REPS }) {
+            for (e in catalogue.filter { it.isWeighted && it.metric == ExerciseMetric.REPS && !BodyShare.isAssisted(it.name) }) {
                 val f = fill(e.name, basis(level))
                 assertNotNull("${e.name} at $level has no load", f)
                 assertTrue("${e.name} at $level is ${f!!.kg}", f.kg > 0.0)
@@ -91,9 +91,22 @@ class StarterLoadsTest {
             ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LOW, gym, daysPerWeek = 3),
             catalogue, basis(),
         )
-        val weighted = plan.presets.flatMap { it.entries }.filter { e -> byName(e.exerciseName).isWeighted }
+        val weighted = plan.presets.flatMap { it.entries }.filter { e -> byName(e.exerciseName).isWeighted && !BodyShare.isAssisted(e.exerciseName) }
         assertTrue(weighted.isNotEmpty())
         assertTrue(weighted.map { it.exerciseName }.filter { n -> weighted.first { it.exerciseName == n }.targetWeightKg == null }.toString(),
             weighted.all { it.targetWeightKg != null && it.targetWeightKg!! > 0.0 })
+    }
+
+    @Test
+    fun `assisted machines have no invented starting support`() {
+        for (name in listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")) {
+            val exercise = Exercise(name = name, muscleGroup = MuscleGroup.PULL, isWeighted = true)
+            fun load(strength: StrengthProfile) = ProgramGenerator.fillLoad(exercise, strength, 8, 2, gym)
+            assertNull(load(StrengthProfile()))
+            assertNull(load(basis()))
+            val logged = ProgramRules.strengthProfile(listOf(LoggedLift(name, 20.0, 8), LoggedLift(name, 40.0, 8)))
+            assertNull(load(logged.copy(starter = basis().starter)))
+        }
+        assertNotNull(fill("Bench Press", basis()))
     }
 }

@@ -138,7 +138,7 @@ internal fun SetsSheet(
     val setCount = DecimalInput.parseWhole(sets)?.coerceIn(1, 30) ?: 3
     val repsFrom = DecimalInput.parseWhole(reps)?.coerceAtLeast(1) ?: 1
     val effective = scheme.copy(
-        backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { it > 0.0 } else null,
+        backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { if (lift.assisted) it >= 0.0 else it > 0.0 } else null,
         workingReps = repsUp?.takeIf { it > repsFrom }?.let { repsFrom..it },
     )
     val noFixedYet = scheme.type == SchemeType.TOP_BACKOFF && fixedMode && effective.backoffFixedKg == null
@@ -202,8 +202,9 @@ internal fun SetsSheet(
                         weight, { weight = it }, entry.exerciseName, worn, lift,
                         fixedMode,
                         { on ->
-                            // Fixed starts on the load "% lighter" gives right now, so the preview does not jump and Done stays on.
-                            if (on) fixedText = formatSteppedFigure(SchemePlan.seedFixedBackoff(DecimalInput.parse(weight), scheme, lift))
+                            // Unknown machine support stays blank until the lifter supplies a fixed load.
+                            if (on) fixedText = SchemePlan.seedFixedBackoff(DecimalInput.parse(weight), scheme, lift)
+                                ?.let(::formatSteppedFigure).orEmpty()
                             fixedMode = on
                         },
                         fixedText, { fixedText = it },

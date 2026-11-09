@@ -188,7 +188,7 @@ data class SetScheme(
                 topReps = range("tr", base.topReps, REPS_RANGE),
                 topRir = range("rir", base.topRir, 0..10),
                 backoffSets = int("bo", base.backoffSets, 1..MAX_BACKOFF_SETS),
-                backoffFixedKg = fields["bf"]?.toDoubleOrNull()?.takeIf { it > 0.0 },
+                backoffFixedKg = fields["bf"]?.toDoubleOrNull()?.takeIf { it >= 0.0 && it.isFinite() },
                 backoffPercent = int("bp", base.backoffPercent, PERCENT_RANGE),
                 backoffReps = range("br", base.backoffReps, REPS_RANGE),
                 dropSets = int("ds", base.dropSets, 1..MAX_CUSTOM_SETS),

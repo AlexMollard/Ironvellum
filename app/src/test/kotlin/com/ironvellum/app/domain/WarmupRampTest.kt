@@ -84,4 +84,13 @@ class WarmupRampTest {
         // No bar to start on and no load to scale from: nothing to ramp.
         assertTrue(ramp(0.0, 2.5, barbell = false).isEmpty())
     }
+    @Test
+    fun `named assisted machines never receive an ordinary warmup ramp`() {
+        for (name in listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")) {
+            for (weight in listOf(null, 0.0, 20.0)) {
+                assertTrue(WarmupRamp.planFor(name, "PULL", ExerciseMetric.REPS, weight).isEmpty())
+            }
+        }
+        assertTrue(WarmupRamp.planFor("Bench Press", "PUSH", ExerciseMetric.REPS, 100.0).isNotEmpty())
+    }
 }

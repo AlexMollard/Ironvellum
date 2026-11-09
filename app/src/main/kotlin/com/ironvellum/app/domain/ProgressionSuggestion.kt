@@ -18,10 +18,13 @@ data class ProgressionSuggestion(
     val hold: Boolean,
     /** The engine's own wording of why, under the headline; empty when there is none (a top set's). */
     val reason: String,
+    val assisted: Boolean = false,
 ) {
     enum class Kind {
         /** The load goes up (the reps may reset to the band's floor). */
         MORE_LOAD,
+        /** Less machine support makes the exercise harder. */
+        LESS_ASSISTANCE,
 
         /** The same load for more reps. */
         MORE_REPS,
@@ -40,7 +43,7 @@ data class ProgressionSuggestion(
     val movesFigures: Boolean get() = kind != Kind.CUE
 
     /** Whether accepting moves the load, so the routine's load is worth saving too. */
-    val movesLoad: Boolean get() = kind == Kind.MORE_LOAD || kind == Kind.DELOAD
+    val movesLoad: Boolean get() = kind == Kind.MORE_LOAD || kind == Kind.LESS_ASSISTANCE || kind == Kind.DELOAD
 
     /** The sets accepting writes to: still to log, and plain working, top or drop sets (a back-off follows its top). */
     fun touches(set: SessionSet): Boolean =
@@ -50,7 +53,9 @@ data class ProgressionSuggestion(
     fun carries(set: SessionSet): Boolean {
         val figure = if (hold) set.durationSec ?: 0 else set.reps
         if (figure != reps) return false
-        return set.kind == SetKind.DROP || sameLoad(set.weightKg, weightKg)
+        return set.kind == SetKind.DROP || if (assisted && (set.weightKg == null || weightKg == null)) {
+            set.weightKg == weightKg
+        } else sameLoad(set.weightKg, weightKg)
     }
 
     /**
@@ -87,16 +92,18 @@ object Suggestions {
         if (rec.cueOnly) {
             return ProgressionSuggestion(ProgressionSuggestion.Kind.CUE, writtenKg, writtenReps, hold, rec.reason)
         }
+        if (rec.assisted && (rec.weightKg == null || writtenKg == null)) return null
         val kg = rec.weightKg ?: writtenKg
         val delta = (kg ?: 0.0) - (writtenKg ?: 0.0)
         val kind = when {
-            rec.deload -> if (delta < -EPSILON) ProgressionSuggestion.Kind.DELOAD else return null
-            delta > EPSILON -> ProgressionSuggestion.Kind.MORE_LOAD
+            rec.deload -> if (if (rec.assisted) delta > EPSILON else delta < -EPSILON) ProgressionSuggestion.Kind.DELOAD else return null
+            rec.assisted && delta < -EPSILON -> ProgressionSuggestion.Kind.LESS_ASSISTANCE
+            !rec.assisted && delta > EPSILON -> ProgressionSuggestion.Kind.MORE_LOAD
             abs(delta) <= EPSILON && rec.reps > writtenReps ->
                 if (hold) ProgressionSuggestion.Kind.LONGER_HOLD else ProgressionSuggestion.Kind.MORE_REPS
             else -> return null
         }
-        return ProgressionSuggestion(kind, kg, rec.reps, hold, rec.reason)
+        return ProgressionSuggestion(kind, kg, rec.reps, hold, rec.reason, assisted = rec.assisted)
     }
 
     /** The suggestion for a top set: where [top] (from the lift's last top set) starts against the written top. */

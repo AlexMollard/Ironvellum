@@ -1035,21 +1035,26 @@ class Repository(
         // never adds load to a longer plank.
         val name = exercise?.name ?: ""
         val lever = Progression.leverFor(name, exercise?.isWeighted ?: false, metric)
+        val scheme = SetScheme.decode(entry.setScheme)
+        val assistedTop = BodyShare.isAssisted(name) && scheme.type == SchemeType.TOP_BACKOFF
         // A drop and a back-off are lighter by design: the engine reads the sets that carry the prescription, or the
         // last set of a trial would be taken for where the lifter had got to.
         // Like with like: an assisted pull-up's history never prescribes the plain pull-up, nor the reverse.
         val variation = Variation.key(entry.modifiers)
         val history = blockHistory(entry.exerciseId, nth, variation)
             .map { rows ->
-                rows.filter { it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF }
+                rows.filter {
+                    if (assistedTop) it.setKind() == SetKind.TOP
+                    else it.setKind() != SetKind.DROP && it.setKind() != SetKind.BACKOFF
+                }
                     .sortedBy { it.setIndex }
                     .map { Progression.attemptOf(it.weightKg, it.reps, it.durationSec, hold = lever == Progression.Lever.HOLD) }
             }
             .filter { it.isNotEmpty() }
         return Progression.fromSessions(
             mode = mode,
-            targetReps = entry.targetReps,
-            minSets = entry.targetSets,
+            targetReps = if (assistedTop) scheme.topReps.first else entry.targetReps,
+            minSets = if (assistedTop) 1 else entry.targetSets,
             sessions = history,
             muscleGroup = exercise?.muscleGroup ?: "",
             exerciseName = name,
@@ -1057,7 +1062,7 @@ class Repository(
             unit = Units.current,
             kit = loadKit(),
             // The lifter's own range, when the rite has one, replaces the training mode's band.
-            range = SetScheme.decode(entry.setScheme).repsRange(SetKind.WORKING),
+            range = scheme.repsRange(if (assistedTop) SetKind.TOP else SetKind.WORKING),
         )
     }
 
@@ -1093,7 +1098,7 @@ class Repository(
         exercise ?: return null
         val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
         val scheme = SetScheme.decode(entry.setScheme)
-        if (metric == ExerciseMetric.REPS && scheme.type == SchemeType.TOP_BACKOFF) {
+        if (metric == ExerciseMetric.REPS && scheme.type == SchemeType.TOP_BACKOFF && !BodyShare.isAssisted(exercise.name)) {
             val top = SchemePlan.suggestTop(
                 lastTopMark(entry.exerciseId, entry.modifiers, nth), scheme.topReps, entry.targetWeightKg,
                 nextTopLoad(liftLoadingFor(exercise, loadKit())),
@@ -1364,6 +1369,7 @@ class Repository(
             bodyweightKg = statDao.observeAll().first().firstOrNull()?.weightKg,
             bodyweightLift = !exercise.isWeighted,
             bodyShare = MovementDifficulty.bodyShare(exercise.name),
+            assisted = BodyShare.isAssisted(exercise.name),
         )
     }
 

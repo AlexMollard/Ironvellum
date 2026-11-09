@@ -71,7 +71,7 @@ object WarmupRamp {
         weighted: Boolean? = null,
         unit: LoadUnit = LoadUnit.KG,
     ): List<Step> =
-        if (metric != ExerciseMetric.REPS) {
+        if (metric != ExerciseMetric.REPS || BodyShare.isAssisted(exerciseName)) {
             emptyList()
         } else {
             plan(
