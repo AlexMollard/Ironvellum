@@ -133,6 +133,62 @@ class RepMaxTest {
         assertEquals(listOf(m(5, 15.0)), book["pull-up"])
     }
 
+    @Test
+    fun assistanceReductionPeaksAcrossTheNamedMachinesWithoutChangingSavedKilos() {
+        val old = WorkoutSession(id = 1, label = "old", startedAtMs = 1_000, completedAtMs = 2_000)
+        for (name in listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")) {
+            val before = set(name, 5, 0, 10, 70.0)
+            val book = RepMax.book(listOf(old to listOf(before)))
+            val exercise = Exercise(id = 5, name = name, muscleGroup = MuscleGroup.PULL, isWeighted = true)
+            val peak = SessionPeaks.of(listOf(before.copy(weightKg = 60.0)), book, 80.0) { exercise }.single()
+            assertEquals(RepMax.Kind.LESS_ASSISTANCE, peak.kind)
+            assertEquals(60.0, peak.weightKg!!, 0.0)
+            assertEquals(m(10, 70.0), peak.was)
+            assertEquals(Xp.PEAK_BONUS, peak.xp)
+            assertTrue(RepMax.hits(listOf(before.copy(weightKg = 80.0)), book.getValue(RepMax.key(before)), false).isEmpty())
+        }
+    }
+
+    @Test
+    fun assistedRepPeaksMustBeatRepsAtEqualOrLessAssistance() {
+        val before = listOf(m(10, 60.0), m(8, 50.0))
+        val attempt = set("Assisted Pull-up", 5, 0, 11, 60.0)
+        val hit = RepMax.hits(listOf(attempt), before, false).single()
+        assertEquals(RepMax.Kind.MORE_REPS, hit.kind)
+        assertEquals(m(10, 60.0), hit.was)
+        assertTrue(RepMax.hits(listOf(attempt.copy(weightKg = 70.0)), before + m(15, 70.0), false).isEmpty())
+    }
+
+    @Test
+    fun zeroAssistanceIsARecordButMissingAssistanceIsNotAPerformance() {
+        val before = listOf(m(10, 10.0))
+        val attempt = set("Assisted Dip", 5, 0, 10, 0.0)
+        assertEquals(RepMax.Kind.LESS_ASSISTANCE, RepMax.hits(listOf(attempt), before, false).single().kind)
+        assertTrue(RepMax.hits(listOf(attempt.copy(weightKg = null)), before, false).isEmpty())
+        assertTrue(RepMax.hits(listOf(attempt), emptyList(), false).isEmpty())
+        assertTrue(RepMax.hits(listOf(attempt.copy(weightKg = 10.0)), listOf(m(10, 0.0)), false).isEmpty())
+        val old = WorkoutSession(id = 1, label = "old", startedAtMs = 1_000, completedAtMs = 2_000)
+        assertTrue(RepMax.book(listOf(old to listOf(attempt.copy(weightKg = null)))).isEmpty())
+    }
+
+    @Test
+    fun assistedPeakWithoutBodyweightRemainsVisibleWithoutInventingLoadBasedXp() {
+        val attempt = set("Assisted Pull-up", 5, 0, 10, 60.0)
+        val hit = RepMax.hits(listOf(attempt), listOf(m(10, 70.0)), false).single()
+        assertEquals(RepMax.Kind.LESS_ASSISTANCE, hit.kind)
+        assertEquals(0, RepMax.xp(hit, false, false, false, null))
+        assertEquals(0, RepMax.xp(hit, false, false, false, 50.0))
+        val tiny = hit.copy(set = attempt.copy(weightKg = 69.999))
+        assertEquals(0, RepMax.xp(tiny, false, false, false, 80.0))
+    }
+
+    @Test
+    fun assistedHeadlineChoosesLeastAssistanceEvenWithoutAPayment() {
+        val attempt = set("Assisted Chin-up", 5, 0, 10, 60.0)
+        val hits = RepMax.hits(listOf(attempt, attempt.copy(setIndex = 1, weightKg = 50.0)), listOf(m(10, 70.0)), false)
+        assertEquals(50.0, RepMax.headline(hits, false) { 0 }!!.set.weightKg!!, 0.0)
+    }
+
     // ------------------------------------------------------------ what it pays
 
     private val history = mapOf(

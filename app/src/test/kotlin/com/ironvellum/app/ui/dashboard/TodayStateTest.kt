@@ -356,6 +356,8 @@ class TodayStateTest {
         assertEquals("12 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 100.0))))
         assertEquals("2.5 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 109.5))))
         assertEquals("0.1 kg", peakGainText(peak(squat, false, was = RepMax.Mark(5, 111.99))))
+        val assisted = squat.copy(exerciseName = "Assisted Pull-up", weightKg = 60.0)
+        assertEquals("10 kg", peakGainText(peak(assisted, false, RepMax.Kind.LESS_ASSISTANCE, RepMax.Mark(5, 70.0))))
         assertEquals("2 reps", peakGainText(peak(squat, false, RepMax.Kind.MORE_REPS, RepMax.Mark(3, 112.0))))
         assertEquals("1 rep", peakGainText(peak(squat, false, RepMax.Kind.MORE_REPS, RepMax.Mark(4, 112.0))))
         val plank = SessionSet(exerciseId = 3, exerciseName = "Plank", setIndex = 0, reps = 0, durationSec = 45, done = true)

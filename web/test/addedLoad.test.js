@@ -9,6 +9,7 @@ const cases = [
   ['a barbell row', set('Barbell Row'), '60 kg'],
   ['a bodyweight set', set('Pull-up', { weightKg: null }), 'BW'],
   ['an assisted set', set('Pull-up', { weightKg: -20 }), '-20 kg'],
+  ['an assisted machine', set('Assisted Pull-up', { weightKg: 70 }), '70 kg assistance'],
 ];
 describe('weight added to the body', () => {
   it('reads the per-lift flag the snapshot carries, ignoring case and spacing', () => {
@@ -19,6 +20,13 @@ describe('weight added to the body', () => {
     expect(formatSetLoad({ weightKg: 12.5 }, 'kg', true)).toBe('+12.5 kg'); expect(formatSetLoad({ weightKg: 12.5 }, 'kg')).toBe('12.5 kg');
     expect(formatSetLoad({ weightKg: 0 }, 'kg', true)).toBe('BW'); expect(formatSetLoad({ weightKg: -20 }, 'kg', true)).toBe('-20 kg');
     expect(formatSetLoad({ weightKg: 25 }, 'lb', true)).toBe('+55 lb');
+  });
+  it('distinguishes missing and zero machine assistance from bodyweight and band assistance', () => {
+    for (const name of ['Assisted Pull-up', 'Assisted Chin-up', 'Assisted Dip']) {
+      expect(formatSetLoad(set(name, { weightKg: null }))).toBe('—');
+      expect(formatSetLoad(set(name, { weightKg: 0 }))).toBe('0 kg assistance');
+    }
+    expect(formatSetLoad(set('Pull-up', { modifiers: 'Assisted', weightKg: -20 }))).toBe('-20 kg');
   });
   for (const [name, s, load] of cases) {
     it(`shows ${name} as ${load} in the set table`, () => {

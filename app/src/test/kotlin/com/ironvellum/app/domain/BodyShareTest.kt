@@ -7,6 +7,17 @@ import org.junit.Test
 
 /** The body share and the total-load 1RM it feeds: the owner's real numbers, the whole catalogue, the orderings records rely on. */
 class BodyShareTest {
+    @Test
+    fun `machine assistance resolves only known net load`() {
+        assertTrue(BodyShare.isAssisted(" Assisted Chin-up "))
+        assertTrue(!BodyShare.isAssisted("Pull-up"))
+        assertEquals(10.0, BodyShare.assistedLoadKg(70.0, 80.0)!!, 0.0)
+        assertEquals(80.0, BodyShare.assistedLoadKg(0.0, 80.0)!!, 0.0)
+        assertEquals(0.0, BodyShare.assistedLoadKg(90.0, 80.0)!!, 0.0)
+        assertEquals(null, BodyShare.assistedLoadKg(null, 80.0))
+        assertEquals(null, BodyShare.assistedLoadKg(70.0, null))
+    }
+
 
     private val catalogue: List<Exercise> = Seed.exercises.map { e ->
         Exercise(

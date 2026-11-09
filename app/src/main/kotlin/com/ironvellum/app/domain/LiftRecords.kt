@@ -24,9 +24,8 @@ data class LiftRecord(
 
 /**
  * The Ledger's lift-records board. Estimated one-rep maxes by the same Epley rule and 12-rep clamp the strength
- * profile and the lift boards use. A barbell or machine lift is judged on its marked load. A bodyweight lift is
- * judged on the TOTAL it moved (its [BodyShare] of the body weight at the time, plus the added kilos) and shown as
- * the ADDED-load equivalent, so a pull-up's "+46 kg" reads on the scale of its plates ([BodyShare.e1rmAddedKg]).
+ * profile and the lift boards use. External lifts use their marked load, while named assisted machines use
+ * bodyweight minus assistance. Bodyweight lifts use total load shown as the added-load equivalent.
  * Records already awarded are never re-read: only the figures shown and the comparisons made from now on. Pure.
  */
 object LiftRecords {
@@ -54,18 +53,25 @@ object LiftRecords {
         val best = LinkedHashMap<String, SessionBest>()
         for (set in PeakSets.narrowed(sets)) {
             val weight = set.weightKg ?: continue
-            if (weight <= 0.0) continue
+            if (weight < 0.0) continue
             if (set.reps < 1) continue
             val ex = exercises[set.exerciseId]
             if ((ex?.metric ?: ExerciseMetric.REPS) != ExerciseMetric.REPS) continue
             val name = set.exerciseName.ifEmpty { ex?.name ?: "" }.trim()
             if (name.isEmpty()) continue
+            val assisted = BodyShare.isAssisted(name)
+            if (!assisted && weight == 0.0) continue
             val key = Variation.liftKey(name, set.modifiers)
-            val share = ex?.let { BodyShare.of(it, set.modifiers) } ?: 0.0
-            val e1rm = BodyShare.e1rmAddedKg(weight, set.reps, share, bodyweightKg)
+            val e1rm = if (assisted) {
+                val load = BodyShare.assistedLoadKg(weight, bodyweightKg) ?: continue
+                ProgramRules.e1rm(load, set.reps)
+            } else {
+                val share = ex?.let { BodyShare.of(it, set.modifiers) } ?: 0.0
+                BodyShare.e1rmAddedKg(weight, set.reps, share, bodyweightKg)
+            }
             val held = best[key]
             if (held == null || e1rm > held.e1rmKg) {
-                best[key] = SessionBest(held?.display ?: name, held?.variation ?: Variation.key(set.modifiers), e1rm, set, ex?.let(BodyShare::addsToBody) == true)
+                best[key] = SessionBest(held?.display ?: name, held?.variation ?: Variation.key(set.modifiers), e1rm, set, !assisted && ex?.let(BodyShare::addsToBody) == true)
             }
         }
         return best

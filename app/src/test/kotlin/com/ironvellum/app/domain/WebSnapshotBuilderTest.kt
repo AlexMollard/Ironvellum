@@ -163,6 +163,43 @@ class WebSnapshotBuilderTest {
             reps = 6, weightKg = 12.5, modifiers = "Weighted", done = true))
         assertEquals(15.0, WebSnapshotBuilder.sessionEntries(single(sets, listOf(exercise))).getValue(99).e1rm.getValue("Pull-up#0"), 0.01)
     }
+    @Test fun assistedMachineSnapshotsUseNetLoadAndPreserveAssistance() {
+        val exercises = listOf("Assisted Pull-up", "Assisted Chin-up", "Assisted Dip", "Bench Press")
+            .mapIndexed { i, name -> Exercise(i.toLong() + 10, name, MuscleGroup.PULL, true) }
+        val sets = exercises.mapIndexed { i, exercise ->
+            SessionSet(exerciseId = exercise.id, exerciseName = exercise.name, exercisePosition = i,
+                setIndex = 0, reps = 10, weightKg = if (i == 3) 100.0 else 70.0, done = true)
+        }
+        val base = single(sets, exercises)
+        val input = base.copy(stats = listOf(StatEntry(takenAtMs = base.nowMs - 86_400_000, weightKg = 80.0, heightCm = 180.0)))
+        val entry = WebSnapshotBuilder.sessionEntries(input).getValue(99)
+        assertEquals(1000.0, entry.volumeKg, 0.0)
+        for (exercise in exercises.take(3)) {
+            assertEquals(13.3, entry.e1rm.getValue("${exercise.name}#0"), 0.01)
+        }
+        val unknown = WebSnapshotBuilder.sessionEntries(base).getValue(99)
+        assertTrue(exercises.take(3).all { "${it.name}#0" !in unknown.e1rm })
+    }
+    @Test fun assistedProgressUsesLessAssistanceAcrossSavedHistory() {
+        val exercise = Exercise(10, "Assisted Pull-up", MuscleGroup.PULL, true)
+        val base = single(emptyList(), listOf(exercise))
+        val history = listOf(70.0, 50.0).mapIndexed { index, assistance ->
+            val at = base.nowMs - (2 - index) * 86_400_000L
+            WorkoutSession(id = index.toLong() + 1, label = "Pull", startedAtMs = at, completedAtMs = at) to
+                listOf(SessionSet(exerciseId = 10, exerciseName = exercise.name, setIndex = 0,
+                    reps = 10, weightKg = assistance, done = true))
+        }
+        val input = base.copy(history = history,
+            stats = listOf(StatEntry(takenAtMs = base.nowMs - 3 * 86_400_000L, weightKg = 80.0, heightCm = 180.0)))
+        val sessions = WebSnapshotBuilder.sessionEntries(input)
+        assertEquals(0, sessions.getValue(1).peaks)
+        assertEquals(1, sessions.getValue(2).peaks)
+        assertEquals(50.0, sessions.getValue(2).prs.single().weightKg!!, 0.0)
+        val variation = WebSnapshotBuilder.liftEntries(input).single().variations.single()
+        assertEquals(listOf(13.33, 40.0), variation.points.map { it[2].jsonPrimitive.double })
+        assertEquals(listOf("0", "1"), variation.points.map { it[3].toString() })
+        assertEquals(400.0, variation.volumeKg!!, 0.0)
+    }
     @Test fun peaksAreJudgedAgainstEarlierTrialsOnly() {
         val exercise = Exercise(10, "Pull-up", MuscleGroup.PULL, false)
         val input = single(emptyList(), listOf(exercise))

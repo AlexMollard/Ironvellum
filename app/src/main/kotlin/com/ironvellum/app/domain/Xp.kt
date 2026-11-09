@@ -213,6 +213,7 @@ object Xp {
      * that is not bodyweight. Null when a loaded lift has no load to judge.
      */
     internal fun systemLoadKg(set: SetEffort, bodyweightKg: Double?): Double? {
+        if (BodyShare.isAssisted(set.exerciseName)) return BodyShare.assistedLoadKg(set.weightKg, bodyweightKg)
         val bw = bodyweightKg?.takeIf { it > 0.0 } ?: ASSUMED_BODYWEIGHT_KG
         val marked = (set.weightKg ?: 0.0).coerceAtLeast(0.0) * MovementDifficulty.loadFactor(set.exerciseName)
         if (set.externalLoad) return marked.takeIf { it > 0.0 }

@@ -383,13 +383,21 @@ object ExerciseHistoryCalculator {
 
         // Loaded rep work is judged by estimated 1RM, the same measure as the Stats records board: a rep-volume score
         // ranks a 90 x 7 back-off above a 100 x 4 top set and sends the chart down the day a heavier top set lands.
-        val byE1rm = !isHold && exercise.metric.isStrength && rows.any { it.done && (it.weightKg ?: 0.0) > 0.0 }
+        val assisted = BodyShare.isAssisted(exercise.name)
+        fun bodyAt(atMs: Long): Double? =
+            bodyweightAt?.invoke(atMs)?.takeIf { it > 0.0 } ?: bodyweightKg?.takeIf { it > 0.0 }
         fun e1rmOf(r: ExerciseSetRow): Double? {
+            if (r.reps < 1) return null
+            if (assisted) {
+                val load = BodyShare.assistedLoadKg(r.weightKg, bodyAt(r.atMs)) ?: return null
+                return ProgramRules.e1rm(load, r.reps)
+            }
             val kg = r.weightKg ?: return null
-            if (kg <= 0.0 || r.reps < 1) return null
-            val bodyKg = bodyweightAt?.invoke(r.atMs)?.takeIf { it > 0.0 } ?: bodyweightKg
-            return BodyShare.e1rmAddedKg(kg, r.reps, BodyShare.of(exercise, r.modifiers), bodyKg)
+            if (kg <= 0.0) return null
+            return BodyShare.e1rmAddedKg(kg, r.reps, BodyShare.of(exercise, r.modifiers), bodyAt(r.atMs))
         }
+        val byE1rm = !isHold && exercise.metric.isStrength &&
+            rows.any { it.done && if (assisted) e1rmOf(it) != null else (it.weightKg ?: 0.0) > 0.0 }
         val entries = rows.map { r ->
             val figure = figureOf(r)
             ExerciseSetEntry(
@@ -407,26 +415,30 @@ object ExerciseHistoryCalculator {
                 // invent a bodyweight-rep number from it. 0.0 is the value the
                 // calculator already uses for "no honest strength score".
                 score = when {
-                    isHold -> StrengthIndex.holdScore(exercise.name, figure, r.weightKg, bodyweightKg ?: 0.0)
-                    exercise.metric.isStrength -> StrengthIndex.repScore(exercise.name, figure, r.weightKg, bodyweightKg ?: 0.0)
+                    isHold -> StrengthIndex.holdScore(exercise.name, figure, r.weightKg, if (assisted) bodyAt(r.atMs) ?: 0.0 else bodyweightKg ?: 0.0)
+                    exercise.metric.isStrength -> StrengthIndex.repScore(exercise.name, figure, r.weightKg, if (assisted) bodyAt(r.atMs) ?: 0.0 else bodyweightKg ?: 0.0)
                     else -> 0.0
                 },
             )
         }
 
-        fun loadOf(e: ExerciseSetEntry): Double = e.weightKg ?: bodyweightKg ?: 0.0
+        fun knownLoad(e: ExerciseSetEntry): Double? = if (assisted) {
+            BodyShare.assistedLoadKg(e.weightKg, bodyAt(e.atMs))
+        } else e.weightKg ?: bodyweightKg
+        fun loadOf(e: ExerciseSetEntry): Double = knownLoad(e) ?: 0.0
         val done = entries.filter { it.done }
         // Records and the chart follow a trial's top set alone when it had one: its back-offs are lighter by design.
         val counted = done.groupBy { it.sessionId }.values.flatMap { sets ->
             sets.filter { it.kind == SetKind.TOP }.ifEmpty { sets }
         }
-        val heaviest = counted.maxByOrNull { loadOf(it) * 1000 + it.reps }
-        val bestSet = counted.maxByOrNull { it.reps * loadOf(it) }
-        val bestScored = counted.maxByOrNull { it.score }
+        val knownCounted = if (assisted) counted.filter { knownLoad(it) != null } else counted
+        val heaviest = knownCounted.maxByOrNull { loadOf(it) * 1000 + it.reps }
+        val bestSet = knownCounted.maxByOrNull { it.reps * loadOf(it) }
+        val bestScored = knownCounted.maxByOrNull { it.score }
         // loadOf resolves to 0.0 when there is no weigh-in; a bodyweight set then
         // carries a load we do not know, and summing it claims "0 kg" — a confident
         // lie. Volume is only reported when every completed set has a known load.
-        val unknownLoad = done.any { it.weightKg == null && bodyweightKg == null }
+        val unknownLoad = done.any { knownLoad(it) == null }
 
         // The sets that may name a peak, per trial: done working sets, a top set alone when the trial had one.
         fun counting(sets: List<ExerciseSetEntry>): List<ExerciseSetEntry> {
@@ -439,7 +451,8 @@ object ExerciseHistoryCalculator {
 
         val series = entries
             .groupBy { it.sessionId }
-            .map { (_, sets) ->
+            .mapNotNull { (_, sets) ->
+                if (assisted && counting(sets).none { knownLoad(it) != null }) return@mapNotNull null
                 ExerciseSessionPoint(
                     atMs = sets.minOf { it.atMs },
                     bestSetScore = sets.filter { it.kind == SetKind.TOP && it.done }.ifEmpty { sets }.maxOf { it.score },

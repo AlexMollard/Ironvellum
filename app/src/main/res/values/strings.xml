@@ -3183,6 +3183,7 @@
 
     <!-- The kind of peak a set made, said after a dot in a list: a heavier load, or more reps. -->
     <string name="repmax_kind_heavier">heavier</string>
+    <string name="repmax_kind_less_assistance">less assistance</string>
     <string name="repmax_kind_more_reps">more reps</string>
 
     <!-- A skill's tier shown as a numeral (I to V); the last is shown when the tier is unknown. -->
@@ -5125,6 +5126,8 @@
     <string name="infosheet_history_variation_all">All</string>
     <!-- Under the summary of a bodyweight lift, when no body weight is logged so the estimate cannot count the body. -->
     <string name="infosheet_history_body_missing">The estimate counts the added load only. Log your body weight and it counts your body too.</string>
+    <string name="infosheet_history_assistance_body_missing">Log your body weight to estimate the load moved after assistance.</string>
+    <string name="explorer_effective_load_label">Highest effective load</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
     <!-- Exercise sheet, About: the heading over the movement's purpose, when to pick it and its tags. -->
     <string name="infosheet_why_label">WHY DO IT</string>

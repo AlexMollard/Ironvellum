@@ -6,6 +6,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class XpTest {
+    @Test
+    fun `machine assistance is subtracted even when marked external`() {
+        val set = Xp.SetEffort(exerciseName = "Assisted Pull-up", reps = 5, weightKg = 70.0, externalLoad = true)
+        assertEquals(10.0, Xp.systemLoadKg(set, 80.0)!!, 0.0)
+        assertEquals(20.0, Xp.systemLoadKg(set.copy(weightKg = 60.0), 80.0)!!, 0.0)
+        assertEquals(80.0, Xp.systemLoadKg(set.copy(weightKg = 0.0), 80.0)!!, 0.0)
+        assertEquals(null, Xp.systemLoadKg(set, null))
+    }
+
     private val bodyweight = 79.3
 
     private fun set(

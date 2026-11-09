@@ -82,6 +82,7 @@ class CelebrationFlowTest {
     fun `the peak's gain is told in the unit that moved`() {
         assertEquals("+2.5 kg", peakGain(peak("Pull-up", 6, 10.0, false, RepMax.Kind.HEAVIER, RepMax.Mark(6, 7.5))))
         assertEquals("+5 kg", peakGain(peak("Pull-up", 6, 10.0, false, RepMax.Kind.HEAVIER, RepMax.Mark(6, 5.0))))
+        assertEquals("−10 kg", peakGain(peak("Assisted Pull-up", 10, 60.0, false, RepMax.Kind.LESS_ASSISTANCE, RepMax.Mark(10, 70.0))))
         assertEquals("+2 reps", peakGain(peak("Pull-up", 8, 10.0, false, RepMax.Kind.MORE_REPS, RepMax.Mark(6, 10.0))))
         assertEquals("+15s", peakGain(peak("Plank", 45, null, true, RepMax.Kind.MORE_REPS, RepMax.Mark(30, 0.0))))
     }

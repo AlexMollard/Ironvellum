@@ -7,6 +7,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SetRecordsTest {
+    @Test
+    fun `assisted records improve with less assistance and remain separate`() {
+        val history = listOf(
+            session(1, 1000) to listOf(set("Assisted Pull-up", 1, 5, 70.0), set("Pull-up", 1, 5)),
+            session(2, 2000) to listOf(set("Assisted Pull-up", 1, 5, 60.0)),
+        )
+        val records = SetRecords.records(history, bwAt)
+        assertEquals(60.0, records["assisted pull-up" to 1]!!.weightKg!!, 0.0)
+        assertNull(records["pull-up" to 1]!!.weightKg)
+        assertTrue(SetRecords.delta(records, "Assisted Pull-up", 1, 5, 50.0, bw).isRecord)
+        assertNull(SetRecords.records(history, { 0.0 })["assisted pull-up" to 1])
+    }
+
 
     private val bw = 80.0
 

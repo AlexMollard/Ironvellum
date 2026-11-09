@@ -97,7 +97,11 @@ object StrengthIndex {
         // genuinely that heavy, and capping it would punish the exact work
         // this score exists to reward.
         val marked = (addedKg ?: 0.0).coerceAtLeast(0.0)
-        val load = bodyweightKg + marked * MovementDifficulty.loadFactor(exerciseName)
+        val load = if (BodyShare.isAssisted(exerciseName)) {
+            BodyShare.assistedLoadKg(addedKg, bodyweightKg) ?: return 0.0
+        } else {
+            bodyweightKg + marked * MovementDifficulty.loadFactor(exerciseName)
+        }
         return MovementDifficulty.taperedVolume(repEquivalents) *
             load / bodyweightKg.pow(MASS_EXPONENT) *
             MovementDifficulty.strengthWeight(exerciseName)

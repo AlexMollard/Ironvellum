@@ -227,10 +227,8 @@ object MovementDifficulty {
      *   discoverable at all, and one gym floor mixes 1:1 and 2:1 stacks that
      *   look identical.
      *
-     * Assisted pull-up and dip machines are deliberately absent: there the
-     * marked weight SUBTRACTS load, which the existing "assisted" entry in
-     * [modifierFactors] already models. A second mechanism for the same fact
-     * would be one more table to drift.
+     * Assisted machines are absent: [BodyShare.assistedLoadKg] subtracts their marked assistance
+     * from bodyweight instead of scaling it as external resistance.
      */
     fun loadFactor(exerciseName: String): Double =
         loadFactors[key(exerciseName)] ?: CustomExercises.loadFactor(exerciseName) ?: FREE_WEIGHT_LOAD
@@ -253,9 +251,8 @@ object MovementDifficulty {
     /**
      * Keyed by lowercase catalogue name, matching [key]. Free-weight barbell and
      * dumbbell lifts are deliberately absent: FREE_WEIGHT_LOAD is the default
-     * and a redundant 1.0 entry would be one more line to drift. The assisted
-     * machines are also absent - their marked weight subtracts, which the
-     * "assisted" modifier factor already models.
+     * and a redundant 1.0 entry would be one more line to drift. Assisted machine load is
+     * resolved separately by [BodyShare.assistedLoadKg].
      */
     private val loadFactors: Map<String, Double> = mapOf(
         // Smith band: rails near vertical.

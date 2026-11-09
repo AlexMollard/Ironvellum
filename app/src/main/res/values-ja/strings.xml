@@ -2660,6 +2660,7 @@
     <string name="setkind_rest_pause_tag">リ</string>
     <string name="setkind_rest_pause_blurb">セット中に短く休み、同じ重量でレップを続けます。メインセットとして数えられます。</string>
     <string name="repmax_kind_heavier">より重い</string>
+    <string name="repmax_kind_less_assistance">補助重量を減らした</string>
     <string name="repmax_kind_more_reps">より多いレップ</string>
     <string name="skill_tier_1">I</string>
     <string name="skill_tier_2">II</string>

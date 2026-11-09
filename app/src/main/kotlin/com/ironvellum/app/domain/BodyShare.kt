@@ -32,13 +32,24 @@ package com.ironvellum.app.domain
  *
  * Modifiers adjust the share only where they change how much body is on the working limbs: an incline or an
  * elevation changes the angle of a push-up or a row; a deficit lengthens the range and moves nothing, so it is
- * x1.0. Assisted sets are not adjusted: their marked kilos SUBTRACT load, which the plain-load rule here does not
- * model (shortcut: they keep the old marked-load estimate; add a signed load if assisted records matter).
+ * x1.0. Named assisted machines instead subtract the marked assistance from bodyweight.
  */
 object BodyShare {
 
     const val MIN_SHARE = 0.1
     const val MAX_SHARE = 1.0
+
+    /** Machine assistance is a named exercise, not the band-assisted modifier on another lift. */
+    fun isAssisted(exerciseName: String): Boolean = when (exerciseName.trim().lowercase()) {
+        "assisted pull-up", "assisted chin-up", "assisted dip" -> true
+        else -> false
+    }
+
+    /** Effective load, unknown without both a marked assistance and a positive bodyweight. */
+    fun assistedLoadKg(assistanceKg: Double?, bodyweightKg: Double?): Double? {
+        if (assistanceKg == null || bodyweightKg == null || bodyweightKg <= 0.0) return null
+        return (bodyweightKg - assistanceKg).coerceAtLeast(0.0)
+    }
 
     /** Where a number came from. */
     enum class Basis {
@@ -68,6 +79,7 @@ object BodyShare {
      */
     fun addsToBody(exercise: Exercise): Boolean {
         val name = exercise.name.trim().lowercase()
+        if (isAssisted(exercise.name)) return false
         if (!exercise.isWeighted || name.startsWith("weighted")) return true
         return singleLegFamilies.any { it in name } && externalRigs.none { it in name }
     }

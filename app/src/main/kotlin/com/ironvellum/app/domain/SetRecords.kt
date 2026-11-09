@@ -78,6 +78,9 @@ object SetRecords {
                     // it through the strength path fabricates bodyweight-rep
                     // records. A null metric keeps the legacy path unchanged.
                     val metric = metricOf(set)
+                    if (BodyShare.isAssisted(set.exerciseName) &&
+                        BodyShare.assistedLoadKg(set.weightKg, bodyweightAt(session.startedAtMs)) == null
+                    ) return@forEach
                     if (metric != null && !metric.isStrength) return@forEach
                     // Score with the bodyweight IN FORCE at the session, so a
                     // later weigh-in never re-scores (shrinks/inflates) an

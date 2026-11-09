@@ -12,6 +12,26 @@ import org.junit.Test
  * "heaviest" must not be decided by rep count.
  */
 class ExerciseHistoryCalculatorTest {
+    @Test
+    fun `assisted history uses net load and requires bodyweight`() {
+        val exercise = Exercise(name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
+        val rows = listOf(row(1, 1, reps = 5, weightKg = 70.0), row(2, 2, reps = 5, weightKg = 60.0))
+        val history = ExerciseHistoryCalculator.build(exercise, rows, 80.0)
+        assertEquals(150.0, history.totalVolumeKg!!, 0.0)
+        assertTrue(history.entries[1].e1rmKg!! > history.entries[0].e1rmKg!!)
+        assertEquals(60.0, history.heaviestWeightKg!!, 0.0)
+        val zero = ExerciseHistoryCalculator.build(exercise, listOf(row(1, 1, reps = 5, weightKg = 0.0)), 80.0)
+        assertEquals(400.0, zero.totalVolumeKg!!, 0.0)
+        assertEquals(ProgramRules.e1rm(80.0, 5), zero.entries.single().e1rmKg!!, 0.0001)
+        val unknown = ExerciseHistoryCalculator.build(exercise, rows, null)
+        assertNull(unknown.totalVolumeKg)
+        assertTrue(unknown.entries.all { it.e1rmKg == null })
+        assertTrue(unknown.series.isEmpty())
+        val partial = ExerciseHistoryCalculator.build(exercise, rows + row(3, 3, reps = 5, weightKg = null), 80.0)
+        assertEquals(listOf(1L, 2L), partial.series.map { it.atMs })
+        assertNull(partial.totalVolumeKg)
+    }
+
 
     private val pullUp = Exercise(id = 1, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
 

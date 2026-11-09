@@ -680,6 +680,16 @@ class WorkoutShareTest {
         assertEquals(1000, totals.movedKg)
     }
 
+    @Test
+    fun `assistance is not external weight moved`() {
+        val names = listOf("Bench Press", "Assisted Pull-up", "Assisted Chin-up", "Assisted Dip")
+        val exercises = names.mapIndexed { index, name -> exercise(index.toLong() + 1, name, weighted = true) }
+        val sets = exercises.mapIndexed { index, ex ->
+            set(ex.id, ex.name, 0, 10, weightKg = if (index == 0) 100.0 else 70.0)
+        }
+        assertEquals(WorkoutShare.Totals(4, 40, 0, 1000), WorkoutShare.totals(sets, exercises.associateBy { it.id }))
+    }
+
     /** Distance metres are not reps: they must not land in the rep total. */
     @Test
     fun `only counted movements contribute to the rep total`() {

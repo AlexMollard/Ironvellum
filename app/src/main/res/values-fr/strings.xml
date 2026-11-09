@@ -2806,6 +2806,7 @@
     <string name="setkind_rest_pause_tag">R</string>
     <string name="setkind_rest_pause_blurb">Une courte pause au milieu de la série, puis davantage de répétitions à la même charge. Elle compte comme série de travail.</string>
     <string name="repmax_kind_heavier">plus lourd</string>
+    <string name="repmax_kind_less_assistance">moins d’assistance</string>
     <string name="repmax_kind_more_reps">plus de répétitions</string>
     <string name="skill_tier_1">I</string>
     <string name="skill_tier_2">II</string>

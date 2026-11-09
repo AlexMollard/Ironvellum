@@ -322,7 +322,12 @@ object WebSnapshotBuilder {
             sets.forEachIndexed { i, set ->
                 val exercise = input.exercises[set.exerciseId] ?: return@forEachIndexed
                 if (set.done && set.kind.countsAsWork && exercise.metric == ExerciseMetric.REPS && set.reps > 0) {
-                    val value = BodyShare.e1rmAddedKg(set.weightKg ?: 0.0, set.reps, BodyShare.of(exercise, set.modifiers), body)
+                    val value = if (BodyShare.isAssisted(set.exerciseName)) {
+                        val load = BodyShare.assistedLoadKg(set.weightKg, body) ?: return@forEachIndexed
+                        ProgramRules.e1rm(load, set.reps)
+                    } else {
+                        BodyShare.e1rmAddedKg(set.weightKg ?: 0.0, set.reps, BodyShare.of(exercise, set.modifiers), body)
+                    }
                     estimates["${set.exerciseName}#${wire[i]}"] = kotlin.math.round(value * 10) / 10
                 }
             }

@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseLog
 import com.ironvellum.app.domain.ExerciseLogCalculator
@@ -135,7 +136,7 @@ private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () ->
     if (current.bodyMissing) {
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(R.string.infosheet_history_body_missing),
+            stringResource(if (BodyShare.isAssisted(exercise.name)) R.string.infosheet_history_assistance_body_missing else R.string.infosheet_history_body_missing),
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

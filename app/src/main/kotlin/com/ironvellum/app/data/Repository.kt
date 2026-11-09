@@ -78,6 +78,7 @@ import com.ironvellum.app.domain.IdleState
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.domain.BodyLimits
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PlannedPreset
@@ -4420,8 +4421,9 @@ class Repository(
     fun observeIdleInputs(): Flow<IdleInputs> = combine(
         sessionDao.observeCompletedWithSets(),
         skillPracticeDao.observeAll(),
-    ) { completed, practices ->
-        idleInputs(completed, practices)
+        exerciseDao.observeAll(),
+    ) { completed, practices, exercises ->
+        idleInputs(completed, practices, exercises)
     }
 
     fun observeIdleRate(): Flow<IdleRate> = combine(
@@ -4465,6 +4467,7 @@ class Repository(
         val inputs = idleInputs(
             sessionDao.observeCompletedWithSets().first(),
             skillPracticeDao.observeAll().first(),
+            exerciseDao.observeAll().first(),
         )
         // The same effects (houses AND the worn crest) the rate on screen is built from, or the banked
         // essence and the shown rate drift. A change of crest collects here first, at the crest it replaces.
@@ -4696,11 +4699,13 @@ class Repository(
     private fun idleInputs(
         completed: List<SessionWithSets>,
         practices: List<SkillPracticeEntity>,
+        exercises: List<ExerciseEntity>,
     ): IdleInputs {
         val weekAgoMs = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
         val recent = completed.filter { (it.session.completedAtMs ?: 0L) >= weekAgoMs }
+        val assistedIds = exercises.filter { BodyShare.isAssisted(it.name) }.mapTo(HashSet()) { it.id }
         val volume = recent.sumOf { (_, sets) ->
-            sets.filter { it.done }.sumOf { (it.weightKg ?: 0.0) * it.reps }
+            sets.filter { it.done && it.exerciseId !in assistedIds }.sumOf { (it.weightKg ?: 0.0) * it.reps }
         }
         val completedDates = completed.mapNotNull { (session, _) ->
             session.completedAtMs?.let {

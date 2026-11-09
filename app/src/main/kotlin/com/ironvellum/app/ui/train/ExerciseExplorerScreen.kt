@@ -37,6 +37,7 @@ import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseMetric
@@ -311,7 +312,7 @@ private fun PeakCard(history: ExerciseHistory) {
             (peak == null || heavyKg != peak.weightKg || history.heaviestReps != peak.reps)
         ) {
             InkDivider()
-            ListRow(stringResource(R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold))
+            ListRow(stringResource(if (BodyShare.isAssisted(history.exercise.name)) R.string.explorer_effective_load_label else R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold))
         }
         if (hold) {
             InkDivider()

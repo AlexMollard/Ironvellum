@@ -2660,6 +2660,7 @@
     <string name="setkind_rest_pause_tag">R</string>
     <string name="setkind_rest_pause_blurb">세트 중간에 잠깐 숨을 고른 뒤 같은 중량으로 더 반복해요. 본세트로 계산돼요.</string>
     <string name="repmax_kind_heavier">더 무거운 중량</string>
+    <string name="repmax_kind_less_assistance">더 적은 보조 중량</string>
     <string name="repmax_kind_more_reps">더 많은 횟수</string>
     <string name="skill_tier_1">I</string>
     <string name="skill_tier_2">II</string>

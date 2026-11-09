@@ -652,6 +652,7 @@ internal fun peakGain(peak: SessionPeaks.Peak): String {
     val load = (peak.weightKg ?: 0.0) - peak.was.weightKg
     return when {
         peak.kind == RepMax.Kind.HEAVIER && load > 0.001 -> "+" + Units.withUnit(load)
+        peak.kind == RepMax.Kind.LESS_ASSISTANCE && load < -0.001 -> "−" + Units.withUnit(-load)
         peak.isHold && peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure}s"
         peak.figure > peak.was.figure -> Words.text(UiText.plural(R.plurals.victory_peak_gain_reps, peak.figure - peak.was.figure))
         else -> "+" + Units.withUnit(load.coerceAtLeast(0.0))

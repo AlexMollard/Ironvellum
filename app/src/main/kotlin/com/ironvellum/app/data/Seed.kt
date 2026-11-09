@@ -136,8 +136,7 @@ object Seed {
         ExerciseEntity(name = "Smith Machine Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         ExerciseEntity(name = "Smith Machine Overhead Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         ExerciseEntity(name = "Smith Machine Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
-        // Gym floor - assisted machines. The marked weight SUBTRACTS load; the
-        // existing "assisted" modifier factor models that, so no loadFactor here.
+        // Assisted machines record support, not lifted weight; BodyShare subtracts it from bodyweight.
         ExerciseEntity(name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Assisted Dip", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
     )

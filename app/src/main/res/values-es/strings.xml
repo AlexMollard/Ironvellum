@@ -2806,6 +2806,7 @@
     <string name="setkind_rest_pause_tag">P</string>
     <string name="setkind_rest_pause_blurb">Una breve pausa a mitad de la serie y luego más reps con la misma carga. Cuenta como serie efectiva.</string>
     <string name="repmax_kind_heavier">más peso</string>
+    <string name="repmax_kind_less_assistance">menos asistencia</string>
     <string name="repmax_kind_more_reps">más reps</string>
     <string name="skill_tier_1">I</string>
     <string name="skill_tier_2">II</string>

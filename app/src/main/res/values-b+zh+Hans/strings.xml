@@ -2660,6 +2660,7 @@
     <string name="setkind_rest_pause_tag">停</string>
     <string name="setkind_rest_pause_blurb">组中短暂喘息，再以相同负重继续做几次，计作正式组。</string>
     <string name="repmax_kind_heavier">更重</string>
+    <string name="repmax_kind_less_assistance">更少助力</string>
     <string name="repmax_kind_more_reps">更多次数</string>
     <string name="skill_tier_1">一阶</string>
     <string name="skill_tier_2">二阶</string>

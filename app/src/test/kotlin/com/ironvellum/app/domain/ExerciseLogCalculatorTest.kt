@@ -8,6 +8,18 @@ import org.junit.Test
 
 /** The History tab reports a lifter's own past: grouping, order, best sets and records must each mean what they say. */
 class ExerciseLogCalculatorTest {
+    @Test
+    fun `assisted machine history rewards less assistance without inventing missing bodyweight`() {
+        val exercise = Exercise(name = "Assisted Dip", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+        val rows = listOf(row(1, 1, set = 1, reps = 5, kg = 70.0), row(2, 2, set = 1, reps = 5, kg = 60.0))
+        val log = ExerciseLogCalculator.build(exercise, rows, bodyweightAt = { 80.0 })
+        assertTrue(log.sessions.first().blocks.single().record)
+        assertEquals(ProgramRules.e1rm(20.0, 5), log.bestE1rmKg!!, 0.0001)
+        val unknown = ExerciseLogCalculator.build(exercise, rows)
+        assertNull(unknown.bestE1rmKg)
+        assertTrue(unknown.sessions.flatMap { it.blocks }.flatMap { it.sets }.all { it.e1rmKg == null })
+    }
+
 
     private val pullUp = Exercise(id = 1, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
     private val plank = Exercise(id = 2, name = "Plank", muscleGroup = MuscleGroup.CORE, isWeighted = false, metric = ExerciseMetric.HOLD)

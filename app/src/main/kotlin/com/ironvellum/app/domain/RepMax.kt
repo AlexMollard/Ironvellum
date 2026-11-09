@@ -13,10 +13,11 @@ typealias RepBook = Map<String, List<RepMax.Mark>>
  * Judged against the lifter's history before the trial only: beating your own earlier set in the same
  * trial is never a peak.
  *
- * Two kinds:
+ * Three kinds:
  *  - HEAVIER (force per rep): the set's load beats the best load ever lifted on the movement for the same or
  *    more reps (when nothing was ever done for that many reps, the heaviest load there was), and the set has at
  *    least [MIN_PEAK_REPS] reps. 17.7 kg x 4 beats a best of 15.2 kg x 5; a heavy single or double never counts.
+ *  - LESS_ASSISTANCE: the same force-per-rep rule for named assisted machines, where fewer marked kilos is harder.
  *  - MORE_REPS: more reps than ever at the same or a greater load. Holds read seconds. A bodyweight-only lift has
  *    load 0, so it is judged on reps alone.
  *
@@ -30,6 +31,7 @@ object RepMax {
 
     enum class Kind(@StringRes private val labelRes: Int) {
         HEAVIER(R.string.repmax_kind_heavier),
+        LESS_ASSISTANCE(R.string.repmax_kind_less_assistance),
         MORE_REPS(R.string.repmax_kind_more_reps),
         ;
 
@@ -66,6 +68,10 @@ object RepMax {
     fun loadOf(set: SessionSet): Double = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
 
     fun figureOf(set: SessionSet, hold: Boolean): Int = if (hold) (set.durationSec ?: 0) else set.reps
+
+    /** Positive kilos of progress, while saved marks retain the machine's assistance for display. */
+    fun loadGain(hit: Hit): Double =
+        if (hit.kind == Kind.LESS_ASSISTANCE) hit.was.weightKg - loadOf(hit.set) else loadOf(hit.set) - hit.was.weightKg
 
     /**
      * Everything lifted before a trial. Completed work only, warm-ups never, activities never.
@@ -129,28 +135,30 @@ object RepMax {
         for (set in PeakSets.narrowed(sets)) {
             val metric = metricOf(set)
             if (metric != null && !metric.isStrength) continue
+            if (BodyShare.isAssisted(set.exerciseName) && set.weightKg == null) continue
             val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
             book.getOrPut(key(set)) { mutableListOf() } += Mark(figureOf(set, hold), loadOf(set))
         }
     }
 
     /** What kind of peak a set of [figure] at [weightKg] is against [history] (non-empty), and the earlier best it passed; null when it is none. */
-    fun judge(figure: Int, weightKg: Double, hold: Boolean, history: List<Mark>): Pair<Kind, Mark>? {
+    fun judge(figure: Int, weightKg: Double, hold: Boolean, history: List<Mark>, assisted: Boolean = false): Pair<Kind, Mark>? {
         if (figure <= 0 || history.isEmpty()) return null
+        fun strength(kg: Double) = if (assisted) -kg else kg
         if (!hold && figure >= MIN_PEAK_REPS) {
             val atReps = history.filter { it.figure >= figure }.ifEmpty { history }
-            val ref = atReps.maxOf { it.weightKg }
-            if (weightKg > ref + LOAD_EPSILON) {
-                // Of the sets at the best load, the one with the fewest reps still enough: "the previous best at these reps".
-                val was = atReps.filter { it.weightKg >= ref - LOAD_EPSILON }.minBy { it.figure }
-                return Kind.HEAVIER to was
+            val ref = atReps.maxOf { strength(it.weightKg) }
+            if (strength(weightKg) > ref + LOAD_EPSILON) {
+                // Keep the original marked kilos in the result, not the comparison's signed assistance.
+                val was = atReps.filter { strength(it.weightKg) >= ref - LOAD_EPSILON }.minBy { it.figure }
+                return (if (assisted) Kind.LESS_ASSISTANCE else Kind.HEAVIER) to was
             }
         }
-        val atLoad = history.filter { it.weightKg >= weightKg - LOAD_EPSILON }
+        val atLoad = history.filter { strength(it.weightKg) >= strength(weightKg) - LOAD_EPSILON }
         if (atLoad.isNotEmpty()) {
             val most = atLoad.maxOf { it.figure }
             if (figure > most) {
-                return Kind.MORE_REPS to atLoad.filter { it.figure == most }.minBy { it.weightKg }
+                return Kind.MORE_REPS to atLoad.filter { it.figure == most }.minBy { strength(it.weightKg) }
             }
         }
         return null
@@ -159,7 +167,9 @@ object RepMax {
     /** The done working sets of ONE movement that are peaks, judged against [history] alone ([PeakSets] says which sets are judged). */
     fun hits(block: List<SessionSet>, history: List<Mark>, hold: Boolean): List<Hit> =
         PeakSets.eligible(block).sortedBy { it.setIndex }.mapNotNull { set ->
-            judge(figureOf(set, hold), loadOf(set), hold, history)?.let { (kind, was) -> Hit(set, kind, was) }
+            val assisted = BodyShare.isAssisted(set.exerciseName)
+            if (assisted && set.weightKg == null) return@mapNotNull null
+            judge(figureOf(set, hold), loadOf(set), hold, history, assisted)?.let { (kind, was) -> Hit(set, kind, was) }
         }
 
     /**
@@ -175,6 +185,13 @@ object RepMax {
                 val base = if (addsToBody) (bodyweightKg ?: 0.0).coerceAtLeast(0.0) else 0.0
                 val before = base + hit.was.weightKg
                 val jump = if (before > 0.0) (loadOf(hit.set) - hit.was.weightKg) / before else 1.0
+                jump / (if (isolation) FULL_AT_ISOLATION else FULL_AT_COMPOUND)
+            }
+            Kind.LESS_ASSISTANCE -> {
+                val body = bodyweightKg?.takeIf { it > 0.0 } ?: return 0
+                val before = (body - hit.was.weightKg).coerceAtLeast(0.0)
+                val gain = (body - loadOf(hit.set)).coerceAtLeast(0.0) - before
+                val jump = if (before > 0.0) gain / before else if (gain > 0.0) 1.0 else 0.0
                 jump / (if (isolation) FULL_AT_ISOLATION else FULL_AT_COMPOUND)
             }
             Kind.MORE_REPS -> {
@@ -202,7 +219,7 @@ object RepMax {
 
     /** The headline of a movement's hits: the one that pays most, then the heaviest, then the longest. */
     fun headline(hits: List<Hit>, hold: Boolean, pay: (Hit) -> Int): Hit? =
-        hits.maxWithOrNull(compareBy({ pay(it) }, { loadOf(it.set) }, { figureOf(it.set, hold) }))
+        hits.maxWithOrNull(compareBy({ pay(it) }, { if (BodyShare.isAssisted(it.set.exerciseName)) -loadOf(it.set) else loadOf(it.set) }, { figureOf(it.set, hold) }))
 
     /**
      * The lifts whose latest peak fell inside the last [withinDays] days, newest first. Each trial is judged

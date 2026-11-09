@@ -7,6 +7,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LiftRecordsTest {
+    @Test
+    fun `assisted machine records use net load and require bodyweight`() {
+        val assisted = Exercise(id = 9, name = "Assisted Dip", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+        val exercises = mapOf(assisted.id to assisted)
+        val first = set(assisted, 70.0, 5)
+        val second = set(assisted, 60.0, 5)
+        val best = LiftRecords.sessionBests(listOf(first, second), exercises, 80.0).values.single()
+        assertEquals(ProgramRules.e1rm(20.0, 5), best.e1rmKg, 0.0001)
+        assertEquals(60.0, best.set.weightKg!!, 0.0)
+        assertFalse(best.addsToBody)
+        val zero = LiftRecords.sessionBests(listOf(set(assisted, 0.0, 5)), exercises, 80.0).values.single()
+        assertEquals(ProgramRules.e1rm(80.0, 5), zero.e1rmKg, 0.0001)
+        assertTrue(LiftRecords.sessionBests(listOf(first), exercises, null).isEmpty())
+    }
+
     private val day = 24L * 60 * 60 * 1000
     private val now = 200 * day
 

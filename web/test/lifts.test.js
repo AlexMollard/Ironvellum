@@ -16,6 +16,16 @@ describe('exercise progress', () => {
   it('filters against snapshot build time', () => { const old = variation.points[0][0]; variation.points[0][0] = now - 100 * 86400000; const root = document.createElement('div'); renderLifts(root, context(), 'Pull-up'); const select = root.querySelector('select'); select.value = '3'; select.dispatchEvent(new Event('change')); expect(root.textContent).toContain('One workout written'); variation.points[0][0] = old; });
   it('preserves assisted and hold values', () => { expect(formatPeak({ weightKg: -20, reps: 10 }, 'kg')).toBe('-20 kg × 10'); expect(formatPeak({ reps: 5, durationSec: 5 }, 'kg')).toBe('5 × 1 at 5 s'); expect(formatPeak({ reps: 12, weightKg: null }, 'kg')).toBe('BW × 12'); });
   it('adds a plus only to weight added to the body', () => { expect(formatPeak({ weightKg: 12.5, reps: 6 }, 'kg', true)).toBe('+12.5 kg × 6'); expect(formatPeak({ weightKg: 60, reps: 8 }, 'kg')).toBe('60 kg × 8'); });
+  it('labels saved machine assistance in the history and records', () => {
+    const root = document.createElement('div'), ctx = context();
+    const machine = { ...lift, name: 'Assisted Dip', addsToBody: false,
+      variations: [{ ...variation, peak: { reps: 10, weightKg: 0, e1rmKg: 100 }, heaviest: { reps: 10, weightKg: 0 } }] };
+    ctx.snapshot = { ...ctx.snapshot, lifts: [machine] };
+    renderLifts(root, ctx, machine.name);
+    expect(root.textContent).toContain('0 kg assistance × 10');
+    expect(root.textContent).toContain('Highest effective load');
+    expect(formatPeak({ weightKg: null, reps: 10 }, 'kg', false, true)).toBe('— × 10');
+  });
   it('separates score and e1rm axes, keeping score unconverted for pound users', () => {
     const root = document.createElement('div'), ctx = context();
     const score = { ...variation, key: 'score', label: 'Score', chartMetric: 'strength', chartUnit: 'score', points: [[now - 86400000, 1, 33.97, 0], [now, 2, 40, 1]] };

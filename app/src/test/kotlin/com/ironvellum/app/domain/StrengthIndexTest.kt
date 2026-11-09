@@ -8,6 +8,15 @@ import org.junit.Test
 import kotlin.math.roundToInt
 
 class StrengthIndexTest {
+    @Test
+    fun `assistance reduces strength score instead of adding load`() {
+        val light = StrengthIndex.repScore("Assisted Chin-up", 5, 70.0, 80.0)
+        val heavier = StrengthIndex.repScore("Assisted Chin-up", 5, 60.0, 80.0)
+        assertTrue(heavier > light)
+        assertEquals(0.0, StrengthIndex.repScore("Assisted Chin-up", 5, 90.0, 80.0), 0.0)
+        assertEquals(0.0, StrengthIndex.repScore("Assisted Chin-up", 5, null, 80.0), 0.0)
+    }
+
 
     @Test
     fun `heavier athlete scores more for identical reps`() {

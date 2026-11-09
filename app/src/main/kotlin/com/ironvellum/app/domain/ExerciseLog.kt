@@ -136,7 +136,15 @@ object ExerciseLogCalculator {
         val rows = if (variation == null) allRows else allRows.filter { variationOf(it) == variation }
         var bodyMissing = false
 
+        val assisted = BodyShare.isAssisted(exercise.name)
         fun e1rmOf(r: ExerciseLogRow): Double? {
+            if (assisted) {
+                if (r.reps < 1) return null
+                val body = bodyweightAt(r.startedAtMs)
+                if (body <= 0.0) bodyMissing = true
+                val load = BodyShare.assistedLoadKg(r.weightKg, body) ?: return null
+                return ProgramRules.e1rm(load, r.reps)
+            }
             val kg = r.weightKg ?: return null
             if (kg <= 0.0 || r.reps < 1) return null
             val setShare = BodyShare.of(exercise, r.modifiers)
@@ -145,7 +153,9 @@ object ExerciseLogCalculator {
             return BodyShare.e1rmAddedKg(kg, r.reps, setShare, body)
         }
 
-        val byE1rm = metric == ExerciseMetric.REPS && rows.any { (it.weightKg ?: 0.0) > 0.0 && it.reps >= 1 }
+        val byE1rm = metric == ExerciseMetric.REPS && rows.any {
+            if (assisted) e1rmOf(it) != null else (it.weightKg ?: 0.0) > 0.0 && it.reps >= 1
+        }
 
         fun setOf(r: ExerciseLogRow) = ExerciseLogSet(
             figure = if (metric == ExerciseMetric.HOLD) (r.durationSec ?: r.reps) else r.reps,
@@ -157,7 +167,11 @@ object ExerciseLogCalculator {
             e1rmKg = if (metric == ExerciseMetric.REPS) e1rmOf(r) else null,
         )
 
-        fun score(s: ExerciseLogSet): Double = if (byE1rm) s.e1rmKg ?: 0.0 else s.figure.toDouble()
+        fun score(s: ExerciseLogSet): Double = when {
+            byE1rm -> s.e1rmKg ?: 0.0
+            assisted -> 0.0
+            else -> s.figure.toDouble()
+        }
 
         // Oldest trial first, so a record is judged against what came before it.
         val chrono = rows.filter { SetKind.fromName(it.kind) != SetKind.WARMUP }
@@ -212,7 +226,7 @@ object ExerciseLogCalculator {
             variations = variations,
             selected = variation,
             defaultVariation = defaultVariation,
-            bodyMissing = bodyMissing && byE1rm,
+            bodyMissing = bodyMissing && (byE1rm || assisted),
         )
     }
 

@@ -48,8 +48,12 @@ export function addsToBody(snapshot, exerciseName) {
   const name = String(exerciseName ?? '').trim().toLowerCase();
   return !!snapshot?.lifts?.find(l => String(l.name).trim().toLowerCase() === name)?.addsToBody;
 }
+export function isAssistedMachine(name) {
+  return ['assisted pull-up', 'assisted chin-up', 'assisted dip'].includes(String(name ?? '').trim().toLowerCase());
+}
 // Load of one set: bodyweight reads BW, an assisted set keeps its minus sign, and weight added to the body gets a plus.
 export function formatSetLoad(set, unit = 'kg', addsToBody = false) {
+  if (isAssistedMachine(set.exerciseName)) return set.weightKg == null ? '—' : `${formatLoad(set.weightKg, unit)} ${unit} assistance`;
   if (set.weightKg == null || set.weightKg === 0) return 'BW';
   return `${addsToBody && set.weightKg > 0 ? '+' : ''}${formatLoad(set.weightKg, unit)} ${unit}`;
 }

@@ -1,9 +1,9 @@
 import { formatLoad } from '../format.js';
 
-export function formatPeak(peak, unit, addsToBody = false) {
+export function formatPeak(peak, unit, addsToBody = false, assisted = false) {
   if (!peak) return '—';
   if (peak.durationSec != null) return `${peak.reps || 1} × 1 at ${peak.durationSec} s`;
-  const load = peak.weightKg == null || peak.weightKg === 0 ? 'BW' : `${addsToBody && peak.weightKg > 0 ? '+' : ''}${formatLoad(peak.weightKg, unit)} ${unit}`;
+  const load = assisted ? (peak.weightKg == null ? '—' : `${formatLoad(peak.weightKg, unit)} ${unit} assistance`) : peak.weightKg == null || peak.weightKg === 0 ? 'BW' : `${addsToBody && peak.weightKg > 0 ? '+' : ''}${formatLoad(peak.weightKg, unit)} ${unit}`;
   return `${load} × ${peak.reps}`;
 }
 
@@ -17,7 +17,7 @@ function lastDone(ms, builtAtMs, zone) {
   return date >= monday && date <= current ? new Intl.DateTimeFormat(undefined, { timeZone: zone, weekday: 'long' }).format(ms) : new Intl.DateTimeFormat(undefined, { timeZone: zone, day: 'numeric', month: 'short', year: 'numeric' }).format(ms);
 }
 
-export function renderVariationTable(root, { variations, selected, onToggle, unit, zone, builtAtMs, addsToBody = false }) {
+export function renderVariationTable(root, { variations, selected, onToggle, unit, zone, builtAtMs, addsToBody = false, assisted = false }) {
   root.replaceChildren();
   const table = document.createElement('table');
   table.className = 'variation-table';
@@ -33,7 +33,7 @@ export function renderVariationTable(root, { variations, selected, onToggle, uni
     button.setAttribute('aria-pressed', String(selected.has(v.key))); button.textContent = v.label;
     if (selected.has(v.key) && selected.size === 1) button.setAttribute('aria-disabled', 'true');
     button.addEventListener('click', () => onToggle(v.key)); first.append(button); tr.append(first);
-    const values = v.sets ? [v.peak?.e1rmKg == null ? '—' : `${formatLoad(v.peak.e1rmKg, unit)} ${unit}`, formatPeak(v.peak, unit, addsToBody), lastDone(v.lastMs, builtAtMs, zone)] : ['Not yet', 'Not yet', 'Not yet'];
+    const values = v.sets ? [v.peak?.e1rmKg == null ? '—' : `${formatLoad(v.peak.e1rmKg, unit)} ${unit}`, formatPeak(v.peak, unit, addsToBody, assisted), lastDone(v.lastMs, builtAtMs, zone)] : ['Not yet', 'Not yet', 'Not yet'];
     for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
     body.append(tr);
   });
