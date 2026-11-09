@@ -17,6 +17,7 @@ store listing; this is the whole list.
 - Price weighted bodyweight exercise effort using bodyweight plus added load, matching the equivalent plain exercise.
 - Repair existing assisted strength scores, including computed zeroes, without changing training logs or banked XP. Defer repairs that need a missing bodyweight until a measurement is available.
 - Exclude activity-only hidden reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
+- Show the least machine assistance as the best folded set, rather than the largest counterweight.
 
 ## 1.9
 

@@ -2542,9 +2542,13 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
     val first = block.sets.firstOrNull { !it.warmup } ?: block.first
     return when {
         done.size == total -> {
-            // Best by load then reps; an activity's best is its longest figure.
+            // Machine support runs opposite to added load; a missing assistance value is not zero support.
+            val assisted = BodyShare.isAssisted(first.exerciseName)
             val best = if (metric.isStrength) {
-                done.maxWith(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { if (metric == ExerciseMetric.HOLD) it.durationSec ?: 0 else it.reps }))
+                done.maxWith(compareBy<SessionSet>(
+                    { set -> if (assisted) set.weightKg?.let { -it } ?: Double.NEGATIVE_INFINITY else set.weightKg ?: 0.0 },
+                    { if (metric == ExerciseMetric.HOLD) it.durationSec ?: 0 else it.reps },
+                ))
             } else {
                 done.maxBy { (it.durationSec ?: 0) + it.reps }
             }
