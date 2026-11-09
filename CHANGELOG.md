@@ -12,6 +12,7 @@ store listing; this is the whole list.
 - Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
 - Recognise reduced assistance as a PR on assisted pull-ups, chin-ups and dips. Assistance no longer inflates lifted-weight totals; bodyweight-aware records use bodyweight minus assistance.
 - Exercise inspectors show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
+- Keep imported machine-assisted pull-ups, chin-ups and dips separate from plain bodyweight exercises, preserving their recorded assistance.
 
 ## 1.9
 

@@ -85,6 +85,20 @@ class ImportMergeTest {
     }
 
     @Test
+    fun machineAssistanceImportKeepsItsExerciseIdentityAndRecordedKilograms() = runBlocking {
+        val csv = hevyCsv.replace(",0,10,0,0,8.5", ",21,10,0,0,8.5")
+        repo.mergeImported(CsvWorkoutReader.read(csv), mapping())
+        val imported = db.sessionDao().observeCompletedWithSets().first().single { it.session.imported }
+        val assistedId = repo.exerciseIdByName("Assisted Pull-up")!!
+        val plainId = repo.exerciseIdByName("Pull-up")!!
+        val row = imported.sets.single { it.exerciseId == assistedId }
+        assertEquals(21.0, row.weightKg!!, 0.0)
+        assertEquals(10, row.reps)
+        assertTrue(row.done)
+        assertTrue(imported.sets.none { it.exerciseId == plainId })
+    }
+
+    @Test
     fun mergeAddsSessionsWithoutTouchingExistingOnes() = runBlocking {
         // Pre-existing history, logged the normal way.
         val preset = db.presetDao().observePresets().first().first().preset
@@ -187,6 +201,19 @@ class ImportMergeTest {
         assertEquals(listOf("WARMUP", "WORKING", "DROP", "FAILURE"), sets.map { it.kind })
         assertEquals("only the warm-up is unticked", listOf(false, true, true, true), sets.map { it.done })
         assertTrue("the kind replaced the modifier text", sets.all { it.modifiers.isBlank() })
+    }
+
+    @Test
+    fun signedExternalImportKeepsTheRawValueForReview() = runBlocking {
+        val csv = hevyCsv.replace("Pull Up (Assisted)", "Bench Press")
+            .replace(",0,10,0,0,8.5", ",-20,5,0,0,8.5")
+        val benchId = repo.exerciseIdByName("Bench Press")!!
+        repo.mergeImported(CsvWorkoutReader.read(csv), mapping() + ("bench press" to benchId))
+        val imported = db.sessionDao().observeCompletedWithSets().first().single { it.session.imported }
+        val row = imported.sets.single { it.exerciseId == benchId }
+        assertEquals(-20.0, row.weightKg!!, 0.0)
+        assertEquals(5, row.reps)
+        assertTrue(row.done)
     }
 
     private companion object {

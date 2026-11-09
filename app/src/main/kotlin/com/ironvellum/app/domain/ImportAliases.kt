@@ -5,10 +5,10 @@ package com.ironvellum.app.domain
  * seed catalogue names.
  *
  * Matching order in [resolve]:
- *  1. exact / NOCASE match against the catalogue (Strong's `Bench Press
- *     (Barbell)` style suffix stripped first);
- *  2. this alias table;
- *  3. nothing. NO fuzzy auto-matching: a wrong silent match corrupts a
+ *  1. exact / NOCASE match against the catalogue;
+ *  2. recognized assisted machine names, then stripped equipment suffixes;
+ *  3. this alias table;
+ *  4. nothing. NO fuzzy auto-matching: a wrong silent match corrupts a
  *     lifter's strength history, so anything unresolved goes to review.
  */
 object ImportAliases {
@@ -17,6 +17,11 @@ object ImportAliases {
     private val EQUIPMENT_SUFFIX = Regex(
         "\\s*\\((?:Barbell|Dumbbell|Machine|Cable|Cable - Straight Bar|Smith Machine|" +
             "Bodyweight|Leverage Machine|Lever Machine|Assisted|Weighted|Band|Kettlebell)\\)\\s*$",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private val ASSISTED_SUFFIX = Regex(
+        "^(pull[ -]up|chin[ -]up|dip)\\s*\\(assisted\\)$",
         RegexOption.IGNORE_CASE,
     )
 
@@ -179,14 +184,22 @@ object ImportAliases {
 
     /**
      * The best curated resolution for a raw app name, or null when it must go
-     * to review. Catalogue is matched NOCASE on both the raw and the stripped
-     * name, aliases on the lowercased stripped name.
+     * to review. Exact catalogue names take precedence, then recognized machine
+     * assistance, then the stripped name and aliases.
      */
     fun resolve(rawName: String, catalogue: Collection<String>): String? {
         val raw = rawName.trim()
         if (raw.isEmpty()) return null
-        val stripped = stripEquipment(raw)
         catalogue.firstOrNull { it.equals(raw, ignoreCase = true) }?.let { return it }
+        ASSISTED_SUFFIX.matchEntire(raw)?.let { match ->
+            val target = when (match.groupValues[1].lowercase().replace(" ", "-")) {
+                "pull-up" -> "Assisted Pull-up"
+                "chin-up" -> "Assisted Chin-up"
+                else -> "Assisted Dip"
+            }
+            return catalogue.firstOrNull { it.equals(target, ignoreCase = true) }
+        }
+        val stripped = stripEquipment(raw)
         catalogue.firstOrNull { it.equals(stripped, ignoreCase = true) }?.let { return it }
         return aliases[stripped.lowercase()]
     }
