@@ -16,9 +16,9 @@ class LoadFormatTest {
     fun `no load reads BW wherever a figure is printed`() {
         assertEquals("BW", formatKg(null))
         assertEquals("BW", formatKg(0.0))
-        assertEquals("BW × 5", setText(5, 0.0, hold = false))
-        assertEquals("BW × 5", setText(5, null, hold = false))
-        assertEquals("BW × 5", compactSet(5, 0.0, hold = false))
+        assertEquals("BW × 5", setText(5, 0.0, hold = false, assisted = false))
+        assertEquals("BW × 5", setText(5, null, hold = false, assisted = false))
+        assertEquals("BW × 5", compactSet(5, 0.0, hold = false, assisted = false))
     }
 
     @Test

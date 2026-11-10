@@ -27,10 +27,10 @@ class ExerciseDetailStatsTest {
 
     @Test
     fun `sets read as weight by reps, bodyweight and holds included`() {
-        assertEquals("100 kg × 5", setText(5, 100.0, hold = false))
-        assertEquals("BW × 12", setText(12, null, hold = false))
-        assertEquals("45 s · 20 kg", setText(45, 20.0, hold = true))
-        assertEquals("45 s", setText(45, null, hold = true))
-        assertEquals("97.5 × 5", compactSet(5, 97.5, hold = false))
+        assertEquals("100 kg × 5", setText(5, 100.0, hold = false, assisted = false))
+        assertEquals("BW × 12", setText(12, null, hold = false, assisted = false))
+        assertEquals("45 s · 20 kg", setText(45, 20.0, hold = true, assisted = false))
+        assertEquals("45 s", setText(45, null, hold = true, assisted = false))
+        assertEquals("97.5 × 5", compactSet(5, 97.5, hold = false, assisted = false))
     }
 }

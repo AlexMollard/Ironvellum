@@ -194,21 +194,22 @@ fun ExerciseExplorerScreen(
                     color = IronvellumColors.InkMuted,
                 )
             } else {
+                val assisted = BodyShare.isAssisted(history.exercise.name)
                 if (history.variations.size > 1) {
                     VariationChips(history.variations, history.variation, viewModel::showVariation)
                     Spacer(Modifier.height(6.dp))
                 }
-                PeakCard(history)
+                PeakCard(history, assisted)
                 Spacer(Modifier.height(10.dp))
                 ScoreChart(history)
                 if (ui.setRecords.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
-                    SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
+                    SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD, assisted)
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(stringResource(R.string.explorer_recent_title), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
                 Spacer(Modifier.height(8.dp))
-                RecentSets(history, onOpenChronicle)
+                RecentSets(history, assisted, onOpenChronicle)
             }
         }
         Spacer(Modifier.height(if (selectedExercise == null) 8.dp else 96.dp))
@@ -216,11 +217,12 @@ fun ExerciseExplorerScreen(
 }
 
 /** One set as the lifter reads it: "100 kg × 5", "BW × 12", or for a hold "45 s · 20 kg". */
-internal fun setText(reps: Int, weightKg: Double?, hold: Boolean): String =
+internal fun setText(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean): String =
     if (hold) {
         holdSet(reps, weightKg?.let { Units.withUnit(it) })
     } else {
-        Units.label(weightKg) + " × $reps"
+        (if (assisted) weightKg?.let { Units.withUnit(it) } ?: Words.text(UiText.res(R.string.assistance_unknown))
+        else Units.label(weightKg)) + " × $reps"
     }
 
 private fun holdSet(seconds: Int, load: String?): String = Words.text(
@@ -228,9 +230,10 @@ private fun holdSet(seconds: Int, load: String?): String = Words.text(
 )
 
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
-internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
+internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean): String =
     if (hold) holdSet(reps, weightKg?.let { Units.format(it) })
-    else (weightKg?.takeIf { it > 0.0 }?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
+    else (if (assisted) weightKg?.let { Units.format(it) } ?: Words.text(UiText.res(R.string.assistance_unknown))
+    else weightKg?.takeIf { it > 0.0 }?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
 
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a
@@ -266,7 +269,7 @@ private fun VariationChips(variations: List<String>, shown: String, onPick: (Str
 
 /** One gold hero (the peak) over one card of 52dp stat rows. */
 @Composable
-private fun PeakCard(history: ExerciseHistory) {
+private fun PeakCard(history: ExerciseHistory, assisted: Boolean) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
     val peak = history.peak
     val frequency = remember(history) { trialsPerWeek(history.sessions, history.firstLoggedAtMs, System.currentTimeMillis()) }
@@ -287,7 +290,7 @@ private fun PeakCard(history: ExerciseHistory) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     // Gold is for an earned peak; with nothing scored there is no peak to name.
-                    peak?.let { setText(it.reps, it.weightKg, hold) } ?: "—",
+                    peak?.let { setText(it.reps, it.weightKg, hold, assisted) } ?: "—",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = if (peak != null) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
@@ -312,7 +315,7 @@ private fun PeakCard(history: ExerciseHistory) {
             (peak == null || heavyKg != peak.weightKg || history.heaviestReps != peak.reps)
         ) {
             InkDivider()
-            ListRow(stringResource(if (BodyShare.isAssisted(history.exercise.name)) R.string.explorer_effective_load_label else R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold))
+            ListRow(stringResource(if (assisted) R.string.explorer_effective_load_label else R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold, assisted))
         }
         if (hold) {
             InkDivider()
@@ -384,7 +387,7 @@ private fun ScoreChart(history: ExerciseHistory) {
 
 /** A folded row: the standing best for each set position of the movement, opened on tap. */
 @Composable
-private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean) {
+private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean, assisted: Boolean) {
     var open by rememberSaveable { mutableStateOf(false) }
     val dayMonthYear = stringResource(R.string.explorer_date_day_month_year)
     InkRowPanel(Modifier.fillMaxWidth()) {
@@ -400,7 +403,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
                 ListRow(
                     stringResource(R.string.explorer_setrecords_row, setIndex + 1),
                     subline = formatDate(record.achievedAtMs, dayMonthYear),
-                    value = setText(record.reps, record.weightKg, isHold),
+                    value = setText(record.reps, record.weightKg, isHold, assisted),
                 )
             }
         }
@@ -409,7 +412,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
 
 /** The latest few days of sets in one card, then the way into the whole Chronicle. */
 @Composable
-private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
+private fun RecentSets(history: ExerciseHistory, assisted: Boolean, onOpenChronicle: () -> Unit) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
     val weekdayDayMonth = stringResource(R.string.explorer_date_weekday_day_month)
     val days = history.entries
@@ -422,7 +425,7 @@ private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(day, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 Text(
-                    sets.joinToString(" · ") { compactSet(it.reps, it.weightKg, hold) },
+                    sets.joinToString(" · ") { compactSet(it.reps, it.weightKg, hold, assisted) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                 )
