@@ -129,11 +129,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import com.ironvellum.app.ui.program.rememberFatigueReport
 import com.ironvellum.app.ui.theme.InkPressIndication
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.text.TextAutoSize
@@ -145,6 +143,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -982,13 +981,8 @@ fun SessionScreen(
     // The pocket lock: a dim cover that ignores touches until held. Survives rotation.
     var locked by rememberSaveable { mutableStateOf(false) }
     // A phone that sleeps between sets hides the rest timer; the setting defaults on.
-    val view = LocalView.current
     val keepAwake = remember { trialPrefs.keepScreenOn }
-    DisposableEffect(view, keepAwake) {
-        val before = view.keepScreenOn
-        view.keepScreenOn = keepAwake
-        onDispose { view.keepScreenOn = before }
-    }
+    if (keepAwake) Box(Modifier.keepScreenOn())
     var restOffMovements by remember { mutableStateOf(trialPrefs.restOffNames()) }
     val restAccess = rememberNotificationAccess(Notifications.restChannel(trialPrefs.restAlert))
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->

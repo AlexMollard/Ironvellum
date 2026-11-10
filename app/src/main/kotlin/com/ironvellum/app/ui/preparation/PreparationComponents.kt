@@ -41,10 +41,10 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 @Composable internal fun PreparationFrame(
     title: String, onBack: () -> Unit, primary: String? = null, onPrimary: () -> Unit = {},
     enabled: Boolean = true, actions: @Composable RowScope.() -> Unit = {},
-    dock: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit,
+    dock: (@Composable () -> Unit)? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    Column(Modifier.fillMaxSize().imePadding()) {
+    Column(modifier.fillMaxSize().imePadding()) {
         Spacer(Modifier.height(8.dp))
         PushedHeader(title, onBack, Modifier.padding(horizontal = 16.dp), titleMaxLines = Int.MAX_VALUE, actions = actions)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {

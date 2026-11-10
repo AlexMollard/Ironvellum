@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui
 
 import android.content.Intent
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.compose.ui.test.*
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
@@ -163,6 +166,110 @@ class PreparationSessionFlowTest {
             assertEquals(session.id, record.sessionId)
         } finally {
             compose.runOnIdle { Units.set(app, originalUnit) }
+        }
+    }
+    @Test fun keepAwakeFollowsTimedRunnerAndWorkoutOwnership() = runBlocking {
+        val prefs = TrialPrefs(app)
+        val original = prefs.keepScreenOn
+        prefs.keepScreenOn = true
+        try {
+            val exercises = repo.observeExercises().first()
+            val arm = exercises.first { it.name == "Arm Circles" }
+            val plank = exercises.first { it.name == "Plank" }
+            val routine = repo.preparations.saveRoutine(PreparationRoutine(kind = PreparationKind.WARMUP, name = "Awake warmup",
+                steps = listOf(PreparationStep(arm.id, arm.name, PreparationMeasure.SECONDS, 300))))
+            val preset = repo.savePreset(null, "Awake trial", "", null, listOf(Repository.PresetDraftEntry(plank.id, 1, 300, null)),
+                mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routine)))
+            val id = repo.startSessionFromPreset(preset)
+            fun awake(): Boolean {
+                var result = false
+                compose.runOnIdle {
+                    fun owns(view: View): Boolean = view.keepScreenOn || (view is ViewGroup && (0 until view.childCount).any { owns(view.getChildAt(it)) })
+                    result = owns(compose.activity.window.decorView) ||
+                        (compose.activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
+                }
+                return result
+            }
+            fun expectAwake(expected: Boolean) {
+                compose.waitUntil(10000) { driver.settle(); awake() == expected }
+                assertEquals(expected, awake())
+            }
+            fun startHold() {
+                driver.awaitText(app.getString(R.string.timedset_start_button))
+                driver.click(app.getString(R.string.timedset_start_button))
+                driver.awaitText(app.getString(R.string.timedset_stop_button))
+                compose.waitUntil(10000) {
+                    driver.settle()
+                    compose.onAllNodes(hasContentDescription("elapsed, target", substring = true)).fetchSemanticsNodes().isNotEmpty()
+                }
+            }
+            open(id)
+            val begin = text(R.string.preparation_begin, text(R.string.preparation_warmup))
+            driver.awaitText(begin)
+            expectAwake(true)
+            driver.click("Awake warmup")
+            driver.awaitText(text(R.string.preparation_no_scoring))
+            expectAwake(false)
+            back()
+            driver.click(begin)
+            awaitCheck()
+            preparationCapture(compose, "awake-running-preparation")
+            expectAwake(true)
+            driver.click(text(R.string.preparation_pause))
+            driver.awaitText(text(R.string.preparation_start_timer))
+            expectAwake(false)
+            driver.click(text(R.string.preparation_start_timer))
+            expectAwake(true)
+            compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick()
+            driver.settle()
+            driver.awaitText(text(R.string.preparation_preview))
+            driver.click(text(R.string.preparation_preview))
+            driver.awaitText(text(R.string.preparation_no_scoring))
+            expectAwake(false)
+            back()
+            awaitCheck()
+            expectAwake(true)
+            check().performClick()
+            driver.awaitText(text(R.string.preparation_return_workout))
+            expectAwake(false)
+            driver.click(text(R.string.preparation_return_workout))
+            driver.awaitText(text(R.string.preparation_view))
+            expectAwake(true)
+            startHold()
+            expectAwake(true)
+            compose.onNodeWithContentDescription(app.getString(R.string.session_lock_description)).performClick()
+            driver.settle()
+            driver.awaitText(app.getString(R.string.pocketlock_hold_label))
+            expectAwake(true)
+            preparationCapture(compose, "awake-running-hold-pocket-lock")
+            compose.onNode(hasContentDescription(text(R.string.pocketlock_description, ""), substring = true))
+                .performSemanticsAction(SemanticsActions.OnLongClick)
+            driver.settle()
+            driver.awaitText(app.getString(R.string.timedset_stop_button))
+            expectAwake(true)
+            prefs.keepScreenOn = false
+            back()
+            driver.settle()
+            repo.observeSessionSets(id).first().forEach { repo.updateSet(it.id, it.reps, it.weightKg, done = true) }
+            repo.completeSession(id)
+            val second = repo.startSessionFromPreset(preset)
+            open(second)
+            driver.awaitText(begin)
+            expectAwake(false)
+            driver.click(begin)
+            awaitCheck()
+            expectAwake(false)
+            check().performClick()
+            driver.awaitText(text(R.string.preparation_return_workout))
+            driver.click(text(R.string.preparation_return_workout))
+            startHold()
+            expectAwake(false)
+            compose.onNodeWithContentDescription(app.getString(R.string.session_lock_description)).performClick()
+            driver.settle()
+            driver.awaitText(app.getString(R.string.pocketlock_hold_label))
+            expectAwake(false)
+        } finally {
+            prefs.keepScreenOn = original
         }
     }
     @Test fun failedCooldownStartRemainsOnSummaryAndCanRetry() = runBlocking {

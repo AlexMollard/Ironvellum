@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -155,7 +156,8 @@ fun PreparationRunnerScreen(
             preparationText(R.string.preparation_complete_unit, R.string.preparation_complete_unit__t), step.exerciseName, context), !ui.busy) {
             viewModel.act(PreparationAction.COMPLETE_UNIT, displayedKey)
         }
-    }) else null) {
+    }) else null, modifier = if (guided && step?.measure == PreparationMeasure.SECONDS &&
+        progress?.status == PreparationStatus.RUNNING && trialPrefs.keepScreenOn) Modifier.keepScreenOn() else Modifier) {
         if (ui.failed) PreparationCaption(preparationText(R.string.preparation_error, R.string.preparation_error__t), error = true)
         if (state != null && progress != null) {
             val snapshot = state.snapshot
