@@ -3,7 +3,7 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
-## 1.10 (unreleased)
+## 1.10
 
 ### Warmups, stretches and cooldowns
 - Save reusable warmup and cooldown routines, including stretches, or choose suggestions based on the workout's working exercises.
