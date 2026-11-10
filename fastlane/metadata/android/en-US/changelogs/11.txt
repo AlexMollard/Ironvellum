@@ -1,0 +1,7 @@
+• Guided warmups, stretches and cooldowns with saved routines
+• Automatic side and round timers; screen-awake support for holds
+• Save imported or past workouts as editable routines
+• Correct machine-assistance records, progression and zero support
+• Safer score repair, copied targets and dumbbell limits
+
+Everything: github.com/AlexMollard/Ironvellum/blob/main/CHANGELOG.md

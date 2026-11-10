@@ -3,32 +3,38 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
-## 2.0 (unreleased)
+## 1.10 (unreleased)
 
-- Save reusable warmups and cooldowns, or choose suggestions based on each workout's working exercises.
-- Follow gallery movements with rep targets, timers, rounds and both sides or directions. Progress survives leaving, rotation and restarting the app.
-- Recover malformed saved timer progress and count unfinished preparation units as skipped when finishing early.
-- Timed warmups and cooldowns advance automatically with sound/vibration cues following your alert setting. Sides, directions and rounds flow without another countdown; changing exercise gives five seconds to get ready. Rep targets still use manual completion.
-- Keep the screen awake while warmup, cooldown or hold timers run in view, using the existing Keep screen on preference. Preserve its opt-out and correct ownership when switching screens.
-- Legacy warmup exercises share one guided warmup. Cooldown starts from the final workout summary and never changes working sets, XP or rewards.
-- Preserve a running workout's legacy warmup when replacing routines, including repeated exercises with different targets.
-- Show preparation start failures in place, allowing retry without leaving the workout or saved summary.
-- Recover the saved summary after a restart without replaying awards; Share, Done and the existing photo and routine-update offers remain available.
-- Recognise reduced assistance as a PR on assisted pull-ups, chin-ups and dips. Assistance no longer inflates lifted-weight totals; bodyweight-aware records use bodyweight minus assistance.
-- Exercise inspectors show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
-- Keep imported machine-assisted pull-ups, chin-ups and dips separate from plain bodyweight exercises, preserving their recorded assistance.
-- Progress by reducing machine assistance; use more support for easier back-offs and drops. Keep unknown support unset and preserve explicit zero when typing, stepping and reviewing sets. Avoid added-load formulas for assisted starter weights and warmup ramps.
-- Price weighted bodyweight exercise effort using bodyweight plus added load, matching the equivalent plain exercise.
+### Warmups, stretches and cooldowns
+- Save reusable warmup and cooldown routines, including stretches, or choose suggestions based on the workout's working exercises.
+- Follow gallery movements with rep targets, timers, rounds and both sides or directions. Timed units advance automatically with sound/vibration cues following your alert setting; changing exercise gives five seconds to get ready. Rep targets still use manual completion.
+- Keep the screen awake while warmup, cooldown or hold timers run in view, using the existing Keep screen on preference. Paused preparation and read-only previews release their screen-awake ownership.
+- Resume preparation after leaving, rotation or restarting the app. Recover malformed saved timers and count unfinished units as skipped when finishing early.
+- Legacy warmup exercises share one guided warmup. Preserve the running workout's saved warmup when replacing routines, including repeated exercises with different targets.
+- Start cooldown from the final workout summary without changing working sets, XP or rewards.
+- Show preparation start failures in place, with retry and no premature navigation.
+
+### Workouts and imports
+- Import Strong, Hevy or FitNotes history and optionally save the latest session of each selected workout as a reusable workout. Re-importing does not duplicate history, saved workouts or XP.
+- Open an exported CSV from Android's share menu, or save a past workout as a new editable workout, without changing its history or rewards.
+- Preserve recorded climbing attempts and top/back-off rep and load summaries in copied workouts, including unweighted bodyweight back-offs and their editable fixed-zero setting.
+- Recover the saved workout summary after a restart without replaying awards; Share, Done, photos and routine-update offers remain available.
+
+### Assistance and load fixes
+- Recognise reduced assistance as progress and a PR on assisted pull-ups, chin-ups and dips. Use more support for easier back-offs and drops.
+- Do not count machine counterweights as weight lifted. Bodyweight-aware records use bodyweight minus assistance; weighted bodyweight exercises use bodyweight plus added load.
+- Keep imported machine-assisted exercises separate from plain bodyweight exercises, preserving their recorded support.
+- Keep unknown support distinct from explicit zero when typing, stepping, reviewing sets, inspecting records and sharing workouts. Share the least assistance and the rating from that same set.
 - Repair existing assisted strength scores, including computed zeroes, without changing training logs or banked XP. Preserve the entire existing score when assistance is unknown, and retry pending repairs when a weigh-in is added, corrected, synced or restored.
-- Exclude activity-only hidden reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
-- Show the least machine assistance as the best folded or shared set, rather than the largest counterweight, and share the rating from that same set.
-- Label assistance explicitly in Android and web records. Use workout-start bodyweight for web best-set calculations without shifting chart dates, and complete assistance labels and instructions in all seven translated UI languages.
+- Avoid added-load formulas for assisted starter weights and warmup ramps, and avoid extra five-pound assistance steps caused by gram rounding.
 - Respect per-dumbbell equipment limits for paired lifts in the workout editor.
-- Avoid an extra five-pound assistance step caused by gram rounding in pound-based back-offs and drops.
+- Exclude hidden activity-only reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
+- Label assistance explicitly in Android and web records. Use workout-start bodyweight for web best-set calculations without shifting chart dates.
+- Complete assistance labels and instructions in all seven translated UI languages.
+
+### Exercise details
+- Show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
 - Require a dumbbell pair for decline dumbbell presses and two-dumbbell skullcrushers; correct skullcrusher and machine-assisted pull-up instructions.
-- Import Strong, Hevy or FitNotes history and optionally save the latest session of each selected workout as a reusable workout. Re-importing does not duplicate history, saved imported workouts or XP.
-- Send an exported CSV directly to Ironvellum from Android's share menu, review it before importing, or save any past workout as a new editable workout without changing its history or rewards.
-- Preserve recorded climbing attempts and top/back-off rep and load summaries when saving imported or past workouts as editable routines, including unweighted bodyweight back-offs.
 
 ## 1.9
 
