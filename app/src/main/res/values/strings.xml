@@ -3433,8 +3433,10 @@
     </plurals>
     <!-- Seconds after a list of figures, "6/6/7s"; %1$s is the figures. -->
     <string name="share_figures_seconds">%1$ss</string>
-    <!-- The load line when the load varied: %1$s is the heaviest, "85kg". -->
+    <!-- The load line when settings varied: %1$s is the selected best load or machine support, including its unit. -->
     <string name="share_load_top">top %1$s</string>
+    <string name="share_load_assistance">%1$s assistance</string>
+    <string name="assistance_unknown">—</string>
     <!-- Footer figures: minutes, sets, XP earned, strength score. -->
     <string name="share_footer_minutes">%1$d min</string>
     <plurals name="share_footer_sets">
@@ -5133,7 +5135,7 @@
     <!-- Under the summary of a bodyweight lift, when no body weight is logged so the estimate cannot count the body. -->
     <string name="infosheet_history_body_missing">The estimate counts the added load only. Log your body weight and it counts your body too.</string>
     <string name="infosheet_history_assistance_body_missing">Log your body weight to estimate the load moved after assistance.</string>
-    <string name="explorer_effective_load_label">Highest effective load</string>
+    <string name="explorer_effective_load_label">Assistance at highest effective load</string>
     <!-- Exercise sheet: small upper-case label above the line about the last time it was logged. -->
     <!-- Exercise sheet, About: the heading over the movement's purpose, when to pick it and its tags. -->
     <string name="infosheet_why_label">WHY DO IT</string>

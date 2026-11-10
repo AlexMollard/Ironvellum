@@ -2972,6 +2972,12 @@
     <string name="progression_climb_reps">Objetivo cumplido: sube a %1$d reps</string>
     <string name="progression_add_drop">Objetivo cumplido: añade %1$s y baja a %2$d reps</string>
     <string name="progression_ceiling_add">Límite de reps alcanzado: añade %1$s y vuelve a %2$d reps</string>
+    <string name="progression_assistance_less">Reduce la asistencia a %1$s y vuelve a %2$d reps</string>
+    <string name="progression_assistance_deload">Aumenta la asistencia a %1$s y vuelve a %2$d reps</string>
+    <string name="progression_assistance_reps">Mantén la misma asistencia y sube a %1$d reps</string>
+    <string name="progression_assistance_zero">Ya no queda asistencia; elige una variante más difícil cuando estés listo</string>
+    <string name="session_suggestion_less_assistance">Menos asistencia: %1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">Más asistencia: %1$s × %2$d</string>
     <string name="progression_same_load">Misma carga: sube a %1$d reps</string>
     <string name="progression_vest_full_harder">Chaleco lleno a %1$s y reps suficientes: elige una variante más difícil</string>
     <string name="progression_vest_full_climb">Chaleco lleno a %1$s: sube a %2$d reps</string>
@@ -2988,6 +2994,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$ss</string>
     <string name="share_load_top">máx. %1$s</string>
+    <string name="share_load_assistance">%1$s de asistencia</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d min</string>
     <plurals name="share_footer_sets">
         <item quantity="one">%1$d serie</item>
@@ -4360,6 +4368,8 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Todas</string>
     <string name="infosheet_history_body_missing">La estimación solo cuenta la carga añadida. Registra tu peso corporal para que también lo incluya.</string>
+    <string name="infosheet_history_assistance_body_missing">Registra tu peso corporal para estimar la carga movida tras descontar la asistencia.</string>
+    <string name="explorer_effective_load_label">Asistencia con la carga efectiva más alta</string>
     <string name="infosheet_why_label">POR QUÉ HACERLO</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="one">Ver %d entrenamiento</item>

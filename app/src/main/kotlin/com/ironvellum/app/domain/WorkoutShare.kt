@@ -234,10 +234,13 @@ object WorkoutShare {
                         else -> HIT
                     }
                 }
-                // The top set is the one the load line names: heaviest, then most reps or longest.
-                val top = done.maxWithOrNull(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { figure(it) }))
+                val assisted = BodyShare.isAssisted(exercise?.name ?: working.first().exerciseName)
+                // The named load and effort must come from the same set.
+                val top = if (assisted) done.minWithOrNull(
+                    compareBy<SessionSet>({ it.weightKg ?: Double.POSITIVE_INFINITY }, { -figure(it) }))
+                else done.maxWithOrNull(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { figure(it) }))
                 val rated = if (effort != null) top?.rpe?.let { "· ${Effort.value(it, effort)}" }.orEmpty() else ""
-                val head = listOf(name, load(done, exercise, unit, locale)).filter { it.isNotEmpty() }.joinToString(" · ")
+                val head = listOf(name, load(done, exercise, unit, locale, assisted, top)).filter { it.isNotEmpty() }.joinToString(" · ")
                 val tail = listOf(squares, figures(done.map(::figure), hold), rated).filter { it.isNotEmpty() }.joinToString(" ")
                 "$head\n$tail"
             }
@@ -264,7 +267,14 @@ object WorkoutShare {
      * dropped: the 1.25 kg isolation step lands on 8.75 kg, and one place would
      * print "8.8kg", a load nobody can rack.
      */
-    private fun load(done: List<SessionSet>, exercise: Exercise?, unit: LoadUnit, locale: Locale): String {
+    private fun load(done: List<SessionSet>, exercise: Exercise?, unit: LoadUnit, locale: Locale, assisted: Boolean, topSet: SessionSet?): String {
+        if (assisted) {
+            val support = topSet?.weightKg ?: return ""
+            val formatted = (if (unit == LoadUnit.LB) Loads.format(support, unit, locale) else NumberText.trimmed(support, 2, locale)) + unit.label
+            val text = Words.text(UiText.res(R.string.share_load_assistance, formatted))
+            val varied = done.any { it.weightKg != null && it.weightKg != support }
+            return if (varied) Words.text(UiText.res(R.string.share_load_top, text)) else text
+        }
         val loads = done.map { it.weightKg?.takeIf { kg -> kg > 0.0 } ?: 0.0 }
         val top = loads.maxOrNull()?.takeIf { it > 0.0 } ?: return ""
         val text = (if (exercise?.isWeighted == true) "" else "+") + (if (unit == LoadUnit.LB) Loads.format(top, unit, locale) else NumberText.trimmed(top, 2, locale)) + unit.label

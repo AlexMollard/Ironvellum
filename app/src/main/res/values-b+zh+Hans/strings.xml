@@ -2806,6 +2806,12 @@
     <string name="progression_climb_reps">目标达成——增加到 %1$d 次</string>
     <string name="progression_add_drop">目标达成——增加 %1$s，次数降至 %2$d 次</string>
     <string name="progression_ceiling_add">达到次数上限——增加 %1$s，回到 %2$d 次</string>
+    <string name="progression_assistance_less">将辅助重量降至 %1$s，回到 %2$d 次</string>
+    <string name="progression_assistance_deload">将辅助重量增加至 %1$s，回到 %2$d 次</string>
+    <string name="progression_assistance_reps">保持相同辅助重量，增加到 %1$d 次</string>
+    <string name="progression_assistance_zero">已无辅助重量，准备好后选择更难的变式</string>
+    <string name="session_suggestion_less_assistance">减少辅助重量：%1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">增加辅助重量：%1$s × %2$d</string>
     <string name="progression_same_load">保持负重——增加到 %1$d 次</string>
     <string name="progression_vest_full_harder">负重背心已达 %1$s 上限，次数也足够高——选择更难的变式</string>
     <string name="progression_vest_full_climb">负重背心已达 %1$s 上限——增加到 %2$d 次</string>
@@ -2821,6 +2827,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$s 秒</string>
     <string name="share_load_top">最高 %1$s</string>
+    <string name="share_load_assistance">%1$s 辅助重量</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d 分钟</string>
     <plurals name="share_footer_sets">
         <item quantity="other">%1$d 组</item>
@@ -4100,6 +4108,8 @@
     <string name="infosheet_history_row_description">%1$s，%2$s。%3$s</string>
     <string name="infosheet_history_variation_all">全部</string>
     <string name="infosheet_history_body_missing">估算目前只计算额外负重。记录体重后，也会计入自身重量。</string>
+    <string name="infosheet_history_assistance_body_missing">记录体重以估算扣除辅助后的实际负重。</string>
+    <string name="explorer_effective_load_label">最高有效负重时的辅助重量</string>
     <string name="infosheet_why_label">为什么要练</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="other">查看全部 %d 次训练</item>

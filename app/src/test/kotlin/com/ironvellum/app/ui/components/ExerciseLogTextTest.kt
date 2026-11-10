@@ -36,6 +36,14 @@ class ExerciseLogTextTest {
     }
 
     @Test
+    fun `unknown and zero assistance form separate history runs`() {
+        val assisted = Exercise(id = 4, name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
+        assertEquals("— × 10, 8 · 0 kg × 6, 5 · — × 4",
+            blockLine(assisted, block(set(10), set(8), set(6, 0.0), set(5, 0.0), set(4))).text)
+        assertEquals("BW × 10, 8", blockLine(pullUp, block(set(10), set(8, 0.0))).text)
+    }
+
+    @Test
     fun `a barbell lift shows the whole load without a plus`() {
         assertEquals("60 kg × 5, 5", blockLine(bench, block(set(5, 60.0), set(5, 60.0))).text)
     }

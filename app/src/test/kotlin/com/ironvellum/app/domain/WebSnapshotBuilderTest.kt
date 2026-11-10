@@ -200,6 +200,42 @@ class WebSnapshotBuilderTest {
         assertEquals(listOf("0", "1"), variation.points.map { it[3].toString() })
         assertEquals(400.0, variation.volumeKg!!, 0.0)
     }
+
+    @Test fun assistedLiftUsesSessionStartWhileKeepingCompletionDatesAndIdentity() {
+        val exercise = Exercise(10, "Assisted Pull-up", MuscleGroup.PULL, true)
+        val base = single(emptyList(), listOf(exercise))
+        val finish = base.nowMs
+        val first = WorkoutSession(id = 1, label = "First", startedAtMs = finish - 3000, completedAtMs = finish)
+        val second = WorkoutSession(id = 2, label = "Second", startedAtMs = finish - 1000, completedAtMs = finish)
+        val set = SessionSet(exerciseId = 10, exerciseName = exercise.name, setIndex = 0, reps = 10, weightKg = 60.0, done = true)
+        val input = base.copy(history = listOf(first to listOf(set), second to listOf(set)),
+            stats = listOf(
+                StatEntry(takenAtMs = finish - 4000, weightKg = 80.0, heightCm = 180.0),
+                StatEntry(takenAtMs = finish - 2000, weightKg = 90.0, heightCm = 180.0),
+            ))
+        val variation = WebSnapshotBuilder.liftEntries(input).single().variations.single()
+        assertEquals(500.0, variation.volumeKg!!, 0.0)
+        assertEquals(60.0, variation.heaviest!!.weightKg!!, 0.0)
+        assertEquals(40.0, variation.peak!!.e1rmKg!!, 0.0001)
+        assertEquals(finish, variation.peak!!.atMs)
+        assertEquals(listOf(finish.toString(), finish.toString()), variation.points.map { it[0].toString() })
+        assertEquals(listOf("1", "2"), variation.points.map { it[1].toString() })
+        assertEquals(listOf(26.67, 40.0), variation.points.map { it[2].jsonPrimitive.double })
+        val sessions = WebSnapshotBuilder.sessionEntries(input)
+        assertEquals(26.7, sessions.getValue(1).e1rm.getValue("${exercise.name}#0"), 0.01)
+        assertEquals(40.0, sessions.getValue(2).e1rm.getValue("${exercise.name}#0"), 0.01)
+    }
+
+    @Test fun assistedLiftFallsBackToEarliestReadingAfterStart() {
+        val exercise = Exercise(10, "Assisted Pull-up", MuscleGroup.PULL, true)
+        val set = SessionSet(exerciseId = 10, exerciseName = exercise.name, setIndex = 0, reps = 10, weightKg = 60.0, done = true)
+        val base = single(listOf(set), listOf(exercise))
+        val input = base.copy(stats = listOf(StatEntry(takenAtMs = base.nowMs - 1000, weightKg = 80.0, heightCm = 180.0)))
+        val variation = WebSnapshotBuilder.liftEntries(input).single().variations.single()
+        assertEquals(200.0, variation.volumeKg!!, 0.0)
+        assertEquals(26.67, variation.points.single()[2].jsonPrimitive.double, 0.001)
+        assertEquals(base.nowMs.toString(), variation.points.single()[0].toString())
+    }
     @Test fun peaksAreJudgedAgainstEarlierTrialsOnly() {
         val exercise = Exercise(10, "Pull-up", MuscleGroup.PULL, false)
         val input = single(emptyList(), listOf(exercise))

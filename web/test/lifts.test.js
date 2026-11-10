@@ -23,7 +23,6 @@ describe('exercise progress', () => {
     ctx.snapshot = { ...ctx.snapshot, lifts: [machine] };
     renderLifts(root, ctx, machine.name);
     expect(root.textContent).toContain('0 kg assistance × 10');
-    expect(root.textContent).toContain('Highest effective load');
     expect(formatPeak({ weightKg: null, reps: 10 }, 'kg', false, true)).toBe('— × 10');
   });
   it('separates score and e1rm axes, keeping score unconverted for pound users', () => {

@@ -33,6 +33,21 @@ class ExerciseHistoryCalculatorTest {
     }
 
     @Test
+    fun `heaviest assisted setting and estimated peak can differ or coincide`() {
+        val exercise = Exercise(name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = true)
+        val heavy = row(1, 1, setIndex = 0, reps = 1, weightKg = 60.0)
+        val peak = row(1, 1, setIndex = 1, reps = 12, weightKg = 65.0)
+        val different = ExerciseHistoryCalculator.build(exercise, listOf(heavy, peak), 80.0)
+        assertEquals(60.0, different.heaviestWeightKg!!, 0.0)
+        assertEquals(1, different.heaviestReps)
+        assertEquals(65.0, different.peak!!.weightKg!!, 0.0)
+        assertEquals(12, different.peak!!.reps)
+        val same = ExerciseHistoryCalculator.build(exercise, listOf(heavy), 80.0)
+        assertEquals(same.heaviestWeightKg, same.peak!!.weightKg)
+        assertEquals(same.heaviestReps, same.peak!!.reps)
+    }
+
+    @Test
     fun `negative external load stays in history but cannot invent volume or a peak`() {
         val bench = Exercise(name = "Bench Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
         val invalid = row(1, 1, reps = 5, weightKg = -20.0)

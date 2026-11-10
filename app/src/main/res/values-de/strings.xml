@@ -2972,6 +2972,12 @@
     <string name="progression_climb_reps">Ziel erreicht — steigere auf %1$d Wdh.</string>
     <string name="progression_add_drop">Ziel erreicht — erhöhe um %1$s, zurück auf %2$d Wdh.</string>
     <string name="progression_ceiling_add">Wdh.-Limit erreicht — erhöhe um %1$s, zurück auf %2$d Wdh.</string>
+    <string name="progression_assistance_less">Reduziere die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</string>
+    <string name="progression_assistance_deload">Erhöhe die Unterstützung auf %1$s und gehe zurück auf %2$d Wdh.</string>
+    <string name="progression_assistance_reps">Gleiche Unterstützung — steigere auf %1$d Wdh.</string>
+    <string name="progression_assistance_zero">Keine Unterstützung mehr — wähle eine schwerere Variante, wenn du bereit bist</string>
+    <string name="session_suggestion_less_assistance">Weniger Unterstützung: %1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">Mehr Unterstützung: %1$s × %2$d</string>
     <string name="progression_same_load">Gleiches Gewicht — steigere auf %1$d Wdh.</string>
     <string name="progression_vest_full_harder">Weste bei %1$s voll, genug Wdh. — wähle eine schwerere Variante</string>
     <string name="progression_vest_full_climb">Weste bei %1$s voll — steigere auf %2$d Wdh.</string>
@@ -2988,6 +2994,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$ss</string>
     <string name="share_load_top">Spitze %1$s</string>
+    <string name="share_load_assistance">%1$s Unterstützung</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d Min.</string>
     <plurals name="share_footer_sets">
         <item quantity="one">%1$d Satz</item>
@@ -4360,6 +4368,8 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Alle</string>
     <string name="infosheet_history_body_missing">Die Schätzung zählt nur das Zusatzgewicht. Erfasse dein Körpergewicht, damit es ebenfalls zählt.</string>
+    <string name="infosheet_history_assistance_body_missing">Erfasse dein Körpergewicht, um die bewegte Last nach Abzug der Unterstützung zu schätzen.</string>
+    <string name="explorer_effective_load_label">Unterstützung bei höchster effektiver Last</string>
     <string name="infosheet_why_label">WARUM DIESE ÜBUNG</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="one">%d Training ansehen</item>

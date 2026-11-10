@@ -8,6 +8,7 @@ import androidx.compose.ui.text.withStyle
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ExerciseLogBlock
@@ -18,11 +19,13 @@ import com.ironvellum.app.domain.UiText
 private fun addsToBody(exercise: Exercise): Boolean =
     !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")
 
-private fun loadOf(set: ExerciseLogSet): Double? = set.weightKg?.takeIf { it > 0.0 }
+private fun loadOf(exercise: Exercise, set: ExerciseLogSet): Double? =
+    if (BodyShare.isAssisted(exercise.name)) set.weightKg else set.weightKg?.takeIf { it > 0.0 }
 
 private fun loadText(exercise: Exercise, kg: Double?): String =
     if (kg == null) {
-        Units.label(null, exercise.isWeighted && !addsToBody(exercise))
+        if (BodyShare.isAssisted(exercise.name)) Words.text(UiText.res(R.string.assistance_unknown))
+        else Units.label(null, exercise.isWeighted && !addsToBody(exercise))
     } else {
         (if (addsToBody(exercise)) "+" else "") + Units.withUnit(kg)
     }
@@ -53,9 +56,9 @@ internal fun blockLine(exercise: Exercise, block: ExerciseLogBlock): AnnotatedSt
     while (i < block.sets.size) {
         var j = i + 1
         // A run is the sets in a row that share a load; activities carry no load worth grouping on.
-        while (j < block.sets.size && (!loaded || loadOf(block.sets[j]) == loadOf(block.sets[i]))) j++
+        while (j < block.sets.size && (!loaded || loadOf(exercise, block.sets[j]) == loadOf(exercise, block.sets[i]))) j++
         if (i > 0) append(" · ")
-        val load = loadOf(block.sets[i])
+        val load = loadOf(exercise, block.sets[i])
         if (loaded && (exercise.metric == ExerciseMetric.REPS || load != null)) append(loadText(exercise, load) + " × ")
         for (k in i until j) {
             if (k > i) append(", ")

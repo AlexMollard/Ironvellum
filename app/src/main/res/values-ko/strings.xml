@@ -2806,6 +2806,12 @@
     <string name="progression_climb_reps">목표 달성 — %1$d회까지 늘리세요</string>
     <string name="progression_add_drop">목표 달성 — %1$s 추가하고 %2$d회로 줄이세요</string>
     <string name="progression_ceiling_add">최대 횟수에 도달했어요 — %1$s 추가하고 %2$d회로 돌아가세요</string>
+    <string name="progression_assistance_less">보조 중량을 %1$s로 줄이고 %2$d회로 돌아가세요</string>
+    <string name="progression_assistance_deload">보조 중량을 %1$s로 늘리고 %2$d회로 돌아가세요</string>
+    <string name="progression_assistance_reps">같은 보조 중량으로 %1$d회까지 늘리세요</string>
+    <string name="progression_assistance_zero">보조 중량이 더는 없어요. 준비되면 더 어려운 변형 동작을 선택하세요</string>
+    <string name="session_suggestion_less_assistance">보조 줄이기: %1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">보조 늘리기: %1$s × %2$d</string>
     <string name="progression_same_load">같은 중량으로 %1$d회까지 늘리세요</string>
     <string name="progression_vest_full_harder">조끼 중량이 최대(%1$s)이고 횟수도 충분해요 — 더 어려운 변형 동작으로 바꿔 보세요</string>
     <string name="progression_vest_full_climb">조끼 최대치(%1$s) — %2$d회까지 늘리세요</string>
@@ -2821,6 +2827,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$s초</string>
     <string name="share_load_top">최고 %1$s</string>
+    <string name="share_load_assistance">보조 %1$s</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d분</string>
     <plurals name="share_footer_sets">
         <item quantity="other">%1$d세트</item>
@@ -4100,6 +4108,8 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">전체</string>
     <string name="infosheet_history_body_missing">추정치는 추가 중량만 계산해요. 체중을 기록하면 체중도 포함돼요.</string>
+    <string name="infosheet_history_assistance_body_missing">체중을 기록하면 보조를 뺀 실제 부하를 추정할 수 있어요.</string>
+    <string name="explorer_effective_load_label">최대 유효 부하에서의 보조 중량</string>
     <string name="infosheet_why_label">왜 하나요</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="other">운동 %d개 모두 보기</item>

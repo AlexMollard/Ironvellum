@@ -2972,6 +2972,12 @@
     <string name="progression_climb_reps">Objectif atteint — monte à %1$d répétitions</string>
     <string name="progression_add_drop">Objectif atteint — ajoute %1$s, redescends à %2$d répétitions</string>
     <string name="progression_ceiling_add">Plafond de répétitions atteint — ajoute %1$s, reviens à %2$d répétitions</string>
+    <string name="progression_assistance_less">Réduis l\'assistance à %1$s et reviens à %2$d répétitions</string>
+    <string name="progression_assistance_deload">Augmente l\'assistance à %1$s et reviens à %2$d répétitions</string>
+    <string name="progression_assistance_reps">Garde la même assistance et monte à %1$d répétitions</string>
+    <string name="progression_assistance_zero">Plus d\'assistance ; choisis une variante plus difficile quand tu es prêt</string>
+    <string name="session_suggestion_less_assistance">Moins d\'assistance : %1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">Plus d\'assistance : %1$s × %2$d</string>
     <string name="progression_same_load">Même charge — monte à %1$d répétitions</string>
     <string name="progression_vest_full_harder">Gilet chargé au maximum à %1$s, assez de répétitions — choisis une variante plus difficile</string>
     <string name="progression_vest_full_climb">Gilet chargé au maximum à %1$s — monte à %2$d répétitions</string>
@@ -2988,6 +2994,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$ss</string>
     <string name="share_load_top">max %1$s</string>
+    <string name="share_load_assistance">%1$s d\'assistance</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d min</string>
     <plurals name="share_footer_sets">
         <item quantity="one">%1$d série</item>
@@ -4360,6 +4368,8 @@
     <string name="infosheet_history_row_description">%1$s, %2$s. %3$s</string>
     <string name="infosheet_history_variation_all">Toutes</string>
     <string name="infosheet_history_body_missing">L\'estimation ne compte que la charge ajoutée. Enregistre ton poids pour qu\'elle tienne aussi compte de ton corps.</string>
+    <string name="infosheet_history_assistance_body_missing">Enregistre ton poids pour estimer la charge déplacée après déduction de l\'assistance.</string>
+    <string name="explorer_effective_load_label">Assistance à la charge effective maximale</string>
     <string name="infosheet_why_label">POURQUOI LA FAIRE</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="one">Voir %d séance</item>

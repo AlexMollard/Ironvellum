@@ -142,6 +142,8 @@ object WebSnapshotBuilder {
 
     internal fun liftEntries(input: SnapshotInput): List<WebSnapshot.Lift> {
         val bodyAt = SetRecords.bodyweightLookup(input.stats)
+        val sessionStarts = input.history.associate { (session, _) -> session.id to session.startedAtMs }
+        val sessionStartAt: (Long) -> Long = { sessionStarts.getValue(it) }
         val rows = linkedMapOf<String, Pair<Exercise, MutableList<ExerciseSetRow>>>()
         input.history.forEach { (session, sets) ->
             val at = session.completedAtMs ?: session.startedAtMs
@@ -161,10 +163,8 @@ object WebSnapshotBuilder {
             val records = SetRecords.recordsOf(exercise.name, input.history, bodyAt) { input.exercises[it.exerciseId]?.metric }
             val entries = variations.map { key ->
                 val currentBody = input.stats.maxByOrNull { it.takenAtMs }?.weightKg
-                val history = ExerciseHistoryCalculator.build(exercise, allRows, currentBody, input.nowMs, key, bodyAt)
+                val history = ExerciseHistoryCalculator.build(exercise, allRows, currentBody, input.nowMs, key, bodyAt, sessionStartAt)
                 var previous: Double? = null
-                val pointIds = allRows.filter { Variation.key(it.modifiers) == key }
-                    .groupBy { it.atMs }.mapValues { (_, rows) -> ArrayDeque(rows.map { it.sessionId }.distinct()) }
                 val points = history.series.map { point ->
                     val value = kotlin.math.round(point.peakValue * 100) / 100
                     val best = previous
@@ -172,7 +172,7 @@ object WebSnapshotBuilder {
                     previous = maxOf(best ?: value, value)
                     kotlinx.serialization.json.JsonArray(listOf(
                         kotlinx.serialization.json.JsonPrimitive(point.atMs),
-                        kotlinx.serialization.json.JsonPrimitive(pointIds.getValue(point.atMs).removeFirst()),
+                        kotlinx.serialization.json.JsonPrimitive(point.sessionId),
                         kotlinx.serialization.json.JsonPrimitive(value),
                         kotlinx.serialization.json.JsonPrimitive(if (pr) 1 else 0),
                     ))

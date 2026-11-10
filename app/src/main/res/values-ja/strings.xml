@@ -2806,6 +2806,12 @@
     <string name="progression_climb_reps">目標達成：%1$dレップを目指す</string>
     <string name="progression_add_drop">目標達成：%1$sを追加し、%2$dレップに減らす</string>
     <string name="progression_ceiling_add">レップ数の上限に到達：%1$sを追加し、%2$dレップに戻す</string>
+    <string name="progression_assistance_less">補助重量を%1$sに減らし、%2$dレップに戻す</string>
+    <string name="progression_assistance_deload">補助重量を%1$sに増やし、%2$dレップに戻す</string>
+    <string name="progression_assistance_reps">補助重量を維持して%1$dレップを目指す</string>
+    <string name="progression_assistance_zero">補助重量はもうありません。準備ができたら難しいバリエーションへ</string>
+    <string name="session_suggestion_less_assistance">補助を減らす：%1$s × %2$d</string>
+    <string name="session_suggestion_more_assistance">補助を増やす：%1$s × %2$d</string>
     <string name="progression_same_load">同じ重量で%1$dレップを目指す</string>
     <string name="progression_vest_full_harder">ベストは%1$sで上限、レップ数も十分です。難しいバリエーションへ</string>
     <string name="progression_vest_full_climb">ベストは%1$sで上限：%2$dレップを目指す</string>
@@ -2821,6 +2827,8 @@
     </plurals>
     <string name="share_figures_seconds">%1$s秒</string>
     <string name="share_load_top">最高 %1$s</string>
+    <string name="share_load_assistance">補助 %1$s</string>
+    <string name="assistance_unknown">—</string>
     <string name="share_footer_minutes">%1$d分</string>
     <plurals name="share_footer_sets">
         <item quantity="other">%1$dセット</item>
@@ -4100,6 +4108,8 @@
     <string name="infosheet_history_row_description">%1$s、%2$s。 %3$s</string>
     <string name="infosheet_history_variation_all">すべて</string>
     <string name="infosheet_history_body_missing">推定では、追加された負荷のみがカウントされます。体重を記録すると、あなたの体もカウントされます。</string>
+    <string name="infosheet_history_assistance_body_missing">体重を記録すると、補助を差し引いた実際の負荷を推定できます。</string>
+    <string name="explorer_effective_load_label">実効負荷が最大のときの補助重量</string>
     <string name="infosheet_why_label">なぜやるのか</string>
     <plurals name="infosheet_history_see_all">
         <item quantity="other">%d件のトレーニングをすべて見る</item>

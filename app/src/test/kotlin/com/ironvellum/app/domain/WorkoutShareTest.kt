@@ -258,6 +258,22 @@ class WorkoutShareTest {
         assertTrue(ramp, ramp.contains("Dip · top +22.5kg\n$g$g$g 3 × 6"))
     }
 
+    @Test
+    fun `assisted share selects least known support and its effort`() {
+        val machine = exercise(1, "Assisted Pull-up", weighted = true)
+        fun share(vararg sets: SessionSet) = WorkoutShare.format(session(), sets.toList(), mapOf(1L to machine), zone, includeEffort = true)
+        val varied = share(set(1, machine.name, 0, 5, 70.0).copy(rpe = 6),
+            set(1, machine.name, 1, 5, 60.0).copy(rpe = 9),
+            set(1, machine.name, 2, 5).copy(rpe = 10))
+        assertTrue(varied, varied.contains("Assisted Pull-up · top 60kg assistance\n$g$g$g 3 × 5 · RPE 9"))
+        val zero = share(set(1, machine.name, 0, 5).copy(rpe = 10), set(1, machine.name, 1, 5, 0.0).copy(rpe = 8))
+        assertTrue(zero, zero.contains("Assisted Pull-up · 0kg assistance\n$g$g 5/5 · RPE 8"))
+        val unknown = share(set(1, machine.name, 0, 5).copy(rpe = 7))
+        assertTrue(unknown, unknown.contains("Assisted Pull-up\n$g 5"))
+        assertFalse(unknown, unknown.contains("0kg assistance"))
+        assertTrue(unknown, unknown.contains("RPE 7"))
+    }
+
     /** The isolation step is 1.25 kg, so a real load can sit on a quarter kilo. */
     @Test
     fun `a quarter-kilo load is printed, not rounded`() {

@@ -61,7 +61,7 @@ function liftDetail(pane, lift, snapshot, router) {
     const box = el('div', null, 'analytics-record'); box.append(el('h3', v.label)); const tiles = el('div', null, 'tiles');
     if (v.peak?.e1rmKg != null) tiles.append(tile('Best est. 1RM', `${formatLoad(v.peak.e1rmKg, snapshot.unit)} ${snapshot.unit}`));
     if (v.peak) tiles.append(tile('Best set', formatPeak(v.peak, snapshot.unit, lift.addsToBody, assisted)));
-    if (v.heaviest) tiles.append(tile(assisted ? 'Highest effective load' : 'Heaviest', formatPeak(v.heaviest, snapshot.unit, lift.addsToBody, assisted)));
+    if (v.heaviest) tiles.append(tile(assisted ? 'Highest effective-load set' : 'Heaviest', formatPeak(v.heaviest, snapshot.unit, lift.addsToBody, assisted)));
     for (const record of v.setRecords || []) tiles.append(tile('Set record', `Set ${record.position + 1}: ${lift.metric === 'hold' ? `${record.reps} s` : formatPeak(record, snapshot.unit, lift.addsToBody, assisted)}`));
     if (v.volumeKg != null) tiles.append(tile('Volume', formatVolume(v.volumeKg, snapshot.unit)));
     if (v.perWeek != null) tiles.append(tile('Frequency', `${formatSets(v.perWeek)} a week`));
