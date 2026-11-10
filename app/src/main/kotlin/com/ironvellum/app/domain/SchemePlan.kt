@@ -186,10 +186,15 @@ object SchemePlan {
     private fun assistedLighter(supportKg: Double?, percent: Int, lift: LiftLoading): Double? {
         val support = supportKg?.takeIf { it >= 0.0 } ?: return null
         val body = lift.bodyweightKg?.takeIf { it > 0.0 } ?: return null
-        val target = support + (percent.coerceAtLeast(0) / 100.0) * (body - support).coerceAtLeast(0.0)
+        val fraction = percent.coerceAtLeast(0) / 100.0
+        val target = support + fraction * (body - support).coerceAtLeast(0.0)
         if (lift.unit == LoadUnit.LB) {
             val grid = Loads.lbGrid(lift.stepKg)
-            val up = kotlin.math.ceil(Loads.toUnit(target, lift.unit) / grid - 1e-9) * grid
+            // Both inputs can have been rounded to the nearest gram when stored.
+            // Only tolerate their propagated error at a grid boundary; snapping
+            // the target itself would erase genuine above-grid differences.
+            val errorKg = 0.0005 * (kotlin.math.abs(1.0 - fraction) + fraction).coerceAtLeast(1.0)
+            val up = kotlin.math.ceil((Loads.toUnit(target - errorKg, lift.unit) / grid) - 1e-9) * grid
             return maxOf(support, Loads.toKg(up, lift.unit))
         }
         val grid = lift.stepKg.coerceAtLeast(0.25)

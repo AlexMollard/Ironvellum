@@ -72,4 +72,20 @@ class SchemePlanDropTest {
         assertTrue(result >= 26.0)
     }
 
+    @Test
+    fun `stored pound inputs round at the boundary without hiding genuine extra bodyweight`() {
+        val support = Loads.toKg(50.0, LoadUnit.LB)
+        val scheme = SetScheme(type = SchemeType.TOP_BACKOFF, backoffPercent = 10)
+        for ((bodyLb, expectedLb) in listOf(200.0 to 65.0, 201.0 to 70.0)) {
+            val assisted = LiftLoading(stepKg = 2.5, unit = LoadUnit.LB,
+                bodyweightKg = Loads.toKg(bodyLb, LoadUnit.LB), assisted = true)
+            val drop = SchemePlan.drop(support, 10, assisted)!!
+            val backoff = SchemePlan.backoff(support, 8, scheme, assisted).weightKg!!
+            val seed = SchemePlan.seedFixedBackoff(support, scheme, assisted)!!
+            assertEquals(expectedLb, Loads.toUnit(drop, LoadUnit.LB), 0.002)
+            assertEquals(expectedLb, Loads.toUnit(backoff, LoadUnit.LB), 0.002)
+            assertEquals(expectedLb, Loads.toUnit(seed, LoadUnit.LB), 0.002)
+        }
+    }
+
 }
