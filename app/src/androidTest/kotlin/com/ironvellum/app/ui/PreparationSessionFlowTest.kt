@@ -93,6 +93,24 @@ class PreparationSessionFlowTest {
         preparationCapture(compose, "refinement-task2-nav-workout-terminal")
         Unit
     }
+    @Test fun failedStartShowsErrorAndRetryEntersRunner() = runBlocking {
+        val id = seed(); open(id)
+        val begin = text(R.string.preparation_begin, text(R.string.preparation_warmup))
+        driver.awaitText(begin)
+        val db = app.database.openHelper.writableDatabase
+        db.execSQL("CREATE TRIGGER fail_preparation_start BEFORE INSERT ON session_preparations BEGIN SELECT RAISE(ABORT, 'test start failure'); END")
+        try {
+            driver.click(begin)
+            driver.awaitText(text(R.string.preparation_error))
+            assertEquals(PreparationStatus.OPEN, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
+            assertTrue(driver.allText().contains(begin))
+        } finally {
+            db.execSQL("DROP TRIGGER IF EXISTS fail_preparation_start")
+        }
+        driver.click(begin)
+        awaitCheck()
+        assertEquals(PreparationStatus.RUNNING, repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.progress.status)
+    }
     @Test fun assistedTypedAndSteppedZeroPersistAndCanBeRecorded() = runBlocking {
         val originalUnit = Units.current
         compose.runOnIdle { Units.set(app, LoadUnit.KG) }
@@ -146,6 +164,26 @@ class PreparationSessionFlowTest {
         } finally {
             compose.runOnIdle { Units.set(app, originalUnit) }
         }
+    }
+    @Test fun failedCooldownStartRemainsOnSummaryAndCanRetry() = runBlocking {
+        val id = seed()
+        repo.completeSession(id)
+        open(id)
+        val begin = text(R.string.preparation_begin, text(R.string.preparation_cooldown))
+        driver.awaitText(begin)
+        val db = app.database.openHelper.writableDatabase
+        db.execSQL("CREATE TRIGGER fail_cooldown_start BEFORE INSERT ON session_preparations BEGIN SELECT RAISE(ABORT, 'test start failure'); END")
+        try {
+            driver.click(begin)
+            driver.awaitText(text(R.string.preparation_error))
+            assertEquals(PreparationStatus.OPEN, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.status)
+            assertTrue(driver.allText().contains(begin))
+        } finally {
+            db.execSQL("DROP TRIGGER IF EXISTS fail_cooldown_start")
+        }
+        driver.click(begin)
+        awaitCheck()
+        assertEquals(PreparationStatus.RUNNING, repo.preparations.observeSession(id, PreparationKind.COOLDOWN).first()!!.progress.status)
     }
     @Test fun previewNeverStartsOrResumesAcrossRecreation() = runBlocking {
         val id = seed(); open(id)

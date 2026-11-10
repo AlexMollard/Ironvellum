@@ -598,14 +598,20 @@ class SessionViewModel(
     }
 
     private var preparationEntryPending = false
+    private val _preparationEntryFailure = MutableStateFlow<PreparationKind?>(null)
+    val preparationEntryFailure: StateFlow<PreparationKind?> = _preparationEntryFailure
 
     fun beginPreparation(kind: PreparationKind, after: () -> Unit) {
         if (preparationEntryPending) return
         preparationEntryPending = true
+        _preparationEntryFailure.value = null
         viewModelScope.launchGuarded("begin preparation") {
             try {
                 withContext(NonCancellable) { repo.preparations.act(sessionId, kind, PreparationAction.START, System.currentTimeMillis()) }
                 after()
+            } catch (e: Exception) {
+                if (e !is kotlinx.coroutines.CancellationException) _preparationEntryFailure.value = kind
+                throw e
             } finally { preparationEntryPending = false }
         }
     }
@@ -890,6 +896,7 @@ fun SessionScreen(
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
     val warmupPreparation by viewModel.warmupPreparation.collectAsStateWithLifecycle()
     val cooldownPreparation by viewModel.cooldownPreparation.collectAsStateWithLifecycle()
+    val preparationEntryFailure by viewModel.preparationEntryFailure.collectAsStateWithLifecycle()
     val sealedSummary by viewModel.sealedSummary.collectAsStateWithLifecycle()
     val recoveryReady by viewModel.recoveryReady.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
@@ -1072,10 +1079,13 @@ fun SessionScreen(
         dismissText = stringResource(R.string.common_cancel),
     )
     @Composable fun CooldownCard() {
-        cooldownPreparation?.let { PreparationSummaryCard(it,
-            { openPreparation(PreparationKind.COOLDOWN) }, { openPreparation(PreparationKind.COOLDOWN, change = true) },
-            { viewModel.skipPreparation(PreparationKind.COOLDOWN) },
-            onView = { openPreparation(PreparationKind.COOLDOWN, preview = true) }) }
+        cooldownPreparation?.let {
+            if (preparationEntryFailure == PreparationKind.COOLDOWN) PreparationCaption(preparationText(R.string.preparation_error, R.string.preparation_error__t), error = true)
+            PreparationSummaryCard(it,
+                { openPreparation(PreparationKind.COOLDOWN) }, { openPreparation(PreparationKind.COOLDOWN, change = true) },
+                { viewModel.skipPreparation(PreparationKind.COOLDOWN) },
+                onView = { openPreparation(PreparationKind.COOLDOWN, preview = true) })
+        }
     }
 
     // The notification's Seal action: the same confirmation the slider gives,
@@ -1375,10 +1385,15 @@ fun SessionScreen(
                 // A single Room-backed offer replaces the old reminder and legacy checklist.
                 val preparation = warmupPreparation?.forWarmupSetting(viewModel.warmupEnabled)
                 AnimatedVisibility(preparation != null && warmupOffered(preparation, viewModel.warmupEnabled) && doneCount == 0) {
-                    preparation?.let { PreparationOfferCard(it,
-                        { openPreparation(PreparationKind.WARMUP) }, { openPreparation(PreparationKind.WARMUP, change = true) },
-                        { viewModel.skipPreparation(PreparationKind.WARMUP) },
-                        onView = { openPreparation(PreparationKind.WARMUP, preview = true) }) }
+                    preparation?.let {
+                        Column {
+                            if (preparationEntryFailure == PreparationKind.WARMUP) PreparationCaption(preparationText(R.string.preparation_error, R.string.preparation_error__t), error = true)
+                            PreparationOfferCard(it,
+                                { openPreparation(PreparationKind.WARMUP) }, { openPreparation(PreparationKind.WARMUP, change = true) },
+                                { viewModel.skipPreparation(PreparationKind.WARMUP) },
+                                onView = { openPreparation(PreparationKind.WARMUP, preview = true) })
+                        }
+                    }
                 }
                 var previousFolded = false
 
