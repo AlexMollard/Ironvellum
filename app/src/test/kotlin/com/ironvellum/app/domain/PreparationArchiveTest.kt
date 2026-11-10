@@ -18,19 +18,25 @@ class PreparationArchiveTest {
     )
     @Test fun v15LocalAndCloudCarryUnusedRoutinesAttachmentsAndSealedPausedProgress() {
         listOf(true, false).forEach { device ->
-            val archive = ExportReader.read(write(device)).getOrThrow()
-            assertEquals(15, archive.formatVersion)
+            val json = write(device).replace("\"formatVersion\":${ExportWriter.FORMAT_VERSION}", "\"formatVersion\":15")
+            val archive = ExportReader.read(json).getOrThrow()
             assertEquals(listOf(routine), archive.preparationRoutines)
             assertEquals(77L, archive.presets.single().preparation[PreparationKind.COOLDOWN]?.routineId)
             assertEquals(snapshot, archive.sessionPreparations.single().snapshot)
             assertEquals(12345L, archive.sessionPreparations.single().progress.remainingMs)
         }
     }
-    @Test fun v14AbsentPreparationSectionsRemainEmptyAndAuto() {
-        val archive = ExportReader.read(ExportWriter.write(PlayerProfile(), TrainingMode.STRENGTH, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), exportedAtMs = 1)
-            .replace("\"formatVersion\":15", "\"formatVersion\":14")).getOrThrow()
+    @Test fun v14AbsentPreparationSectionsRemainEmpty() {
+        val json = """
+            {"formatVersion":14,"exportedAtMs":1,
+             "profile":{"name":"Old Lifter","totalXp":0},
+             "presets":[{"id":31,"name":"Old preset","entries":[]}],
+             "sessions":[],"stats":[],"titles":[]}
+        """.trimIndent()
+        val archive = ExportReader.read(json).getOrThrow()
         assertTrue(archive.preparationRoutines.isEmpty())
         assertTrue(archive.sessionPreparations.isEmpty())
+        assertTrue(archive.presets.single().preparation.isEmpty())
     }
     @Test fun v15CarriesLegacyOnlyScopeAndMissingFieldKeepsOldFullScope() {
         val warmup = SessionPreparation(41, PreparationSnapshot(PreparationKind.WARMUP, "Auto",
@@ -42,6 +48,19 @@ class PreparationArchiveTest {
             val older = json.replace(",\"legacyOnly\":true", "")
             assertFalse(ExportReader.read(older).getOrThrow().sessionPreparations.single().progress.legacyOnly)
         }
+    }
+    @Test fun malformedRunningArchiveTimerRecoversBeforeItIsPaused() {
+        val timed = snapshot.copy(steps = listOf(step.copy(target = 30)))
+        val paused = PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 12345)
+        val json = write(preparation = SessionPreparation(41, timed, paused))
+            .replace(PreparationCodec.encodeProgress(paused), "{\"status\":\"RUNNING\"}")
+        val archive = ExportReader.read(json).getOrThrow()
+        assertTrue(archive.preparationProblems.isEmpty())
+        val progress = archive.sessionPreparations.single().progress
+        assertEquals(PreparationStatus.PAUSED, progress.status)
+        assertEquals(30000L, progress.remainingMs)
+        val resumed = progress.advance(timed, PreparationAction.RESUME, 1000)
+        assertEquals(30000L, resumed.deadlineMs!! - resumed.readyUntilMs!!)
     }
     @Test fun malformedPreparationIsReportedWhileTrainingStillRestores() {
         val archive = ExportReader.read(write().replace("\"exerciseName\":\"A custom preparation\"", "\"exerciseName\":\"\"")).getOrThrow()

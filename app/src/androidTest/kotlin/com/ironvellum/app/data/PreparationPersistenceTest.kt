@@ -121,6 +121,7 @@ class PreparationPersistenceTest {
         assertEquals(snapshot, repo.preparations.observeSession(session, PreparationKind.WARMUP).first())
         context.getSharedPreferences("preparation-bulk-test", Context.MODE_PRIVATE).edit().clear().commit()
     }
+
     @Test fun bulkReplacementPreservesExistingSnapshotAndDiscardsUntouchedSession() = runTest {
         val p = preset()
         val session = repo.startSessionFromPreset(p)
@@ -132,6 +133,7 @@ class PreparationPersistenceTest {
         assertNotEquals(session, newSession)
         assertNull(db.sessionDao().byId(session))
     }
+
     @Test fun repeatedLegacyEntriesRetainOrderedPrescriptionsAndSharedTickInArchive() = runTest {
         val store = WarmupStore(context.getSharedPreferences("preparation-repeat-test", Context.MODE_PRIVATE))
         repo = Repository(db, warmupStore = store)
@@ -166,6 +168,27 @@ class PreparationPersistenceTest {
         assertEquals(restored.snapshot.steps, selected.snapshot.steps)
         context.getSharedPreferences("preparation-repeat-test", Context.MODE_PRIVATE).edit().clear().commit()
     }
+
+    @Test fun versionFourteenPresetRestoresWithAutomaticPreparationChoices() = runTest {
+        val json = """
+            {"formatVersion":14,"exportedAtMs":1,
+             "profile":{"name":"Old Lifter","totalXp":0},
+             "presets":[{"id":31,"name":"Old preset","entries":[
+               {"exerciseId":999,"exerciseName":"Bodyweight Squat","targetSets":1,"targetReps":10}]}],
+             "sessions":[],"stats":[],"titles":[]}
+        """.trimIndent()
+        repo.importArchive(json).getOrThrow()
+        val restored = repo.observePresets().first().single()
+        assertEquals("Old preset", restored.name)
+        assertEquals(exercise("Bodyweight Squat").id, restored.entries.single().exerciseId)
+        PreparationKind.entries.forEach { kind ->
+            assertEquals(PreparationMode.AUTO, restored.preparation[kind]?.mode)
+        }
+        val sets = db.sessionDao().setsFor(repo.startSessionFromPreset(restored.id))
+        assertEquals(10, sets.single().reps)
+        assertEquals(restored.entries.single().exerciseId, sets.single().exerciseId)
+    }
+
     @Test fun migration46To47PreservesPresetBothSetsAndPrivateProfileFields() {
         val name = "preparation-migration-test"
         val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), IronvellumDatabase::class.java)

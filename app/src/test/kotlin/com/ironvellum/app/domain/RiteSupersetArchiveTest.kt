@@ -22,11 +22,6 @@ class RiteSupersetArchiveTest {
     )
 
     @Test
-    fun theArchiveIsFormatFifteen() {
-        assertEquals(15, ExportWriter.FORMAT_VERSION)
-    }
-
-    @Test
     fun aRiteSupersetRoundTripsAndPlainEntriesWriteNothingNew() {
         val json = archiveOf(
             PresetEntry(exerciseId = 1, exerciseName = "Bench Press", targetSets = 3, targetReps = 8, position = 0, supersetGroup = 4),
@@ -72,7 +67,6 @@ class RiteSupersetArchiveTest {
 
     @Test
     fun aNewerArchiveIsStillRefused() {
-        assertTrue(ExportReader.read(legacy(16)).isFailure)
-        assertNull(ExportReader.read(legacy(15)).exceptionOrNull())
+        assertTrue(ExportReader.read(legacy(ExportWriter.FORMAT_VERSION + 1)).isFailure)
     }
 }
