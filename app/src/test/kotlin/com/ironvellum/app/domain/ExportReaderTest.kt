@@ -22,6 +22,7 @@ class ExportReaderTest {
                 name = "Heavy Pull",
                 note = "note with \"quote\" and \\ slash",
                 scheduledDay = 3,
+                importKey = "csv:heavy pull",
                 entries = listOf(
                     PresetEntry(exerciseId = 1, exerciseName = "Weighted Pull-up", targetSets = 5, targetReps = 5, targetWeightKg = 20.0, modifiers = "deficit", position = 0),
                     PresetEntry(exerciseId = 2, exerciseName = "Barbell Row", targetSets = 4, targetReps = 8, targetWeightKg = null, position = 1),
@@ -80,6 +81,12 @@ class ExportReaderTest {
     )
 
     @Test
+    fun `old archive without import provenance defaults to null`() {
+        val old = fullArchiveJson().replace(",\"importKey\":\"csv:heavy pull\"", "")
+        assertNull(ExportReader.read(old).getOrThrow().presets.single().importKey)
+    }
+
+    @Test
     fun `round trip preserves every field of every section`() {
         val archive = ExportReader.read(fullArchiveJson()).getOrThrow()
 
@@ -97,6 +104,7 @@ class ExportReaderTest {
         assertEquals(7L, preset.id)
         assertEquals("Heavy Pull", preset.name)
         assertEquals("note with \"quote\" and \\ slash", preset.note)
+        assertEquals("csv:heavy pull", preset.importKey)
         assertEquals(3, preset.scheduledDay)
         assertEquals(
             listOf(

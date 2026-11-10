@@ -545,6 +545,7 @@ class Repository(
                 name = pw.preset.name,
                 note = pw.preset.note,
                 scheduledDay = pw.preset.scheduledDay,
+                importKey = pw.preset.importKey,
                 preparation = attachments.filter { it.presetId == pw.preset.id }.associate {
                     PreparationKind.valueOf(it.kind) to PreparationChoice(PreparationMode.valueOf(it.mode), it.routineId)
                 },
@@ -593,7 +594,8 @@ class Repository(
         val id = if (presetId == null) {
             presetDao.insertPreset(PresetEntity(name = name, note = note, scheduledDay = scheduledDay))
         } else {
-            presetDao.updatePreset(PresetEntity(id = presetId, name = name, note = note, scheduledDay = scheduledDay))
+            val existing = checkNotNull(presetDao.presetWithEntries(presetId)?.preset)
+            presetDao.updatePreset(existing.copy(name = name, note = note, scheduledDay = scheduledDay))
             presetDao.clearEntries(presetId)
             presetId
         }
@@ -3699,6 +3701,7 @@ class Repository(
                 name = pw.preset.name,
                 note = pw.preset.note,
                 scheduledDay = pw.preset.scheduledDay,
+                importKey = pw.preset.importKey,
                 preparation = preparations.choices(pw.preset.id),
                 entries = pw.entries.sortedBy { it.position }.map { e ->
                     PresetEntry(
@@ -3965,7 +3968,7 @@ class Repository(
                 val presetIdByOldId = mutableMapOf<Long, Long>()
                 archive.presets.forEach { preset ->
                     val newPresetId = presetDao.insertPreset(
-                        PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay),
+                        PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay, importKey = preset.importKey),
                     )
                     preset.id.takeIf { it > 0 }?.let { presetIdByOldId[it] = newPresetId }
                     presetDao.insertEntries(
@@ -4253,6 +4256,20 @@ class Repository(
         result
     }
 
+    suspend fun workoutDraft(sessionId: Long): WorkoutPreset? {
+        val session = sessionDao.byId(sessionId)?.takeIf { it.completedAtMs != null } ?: return null
+        val catalogue = exerciseDao.observeAll().first().associateBy { it.id }
+        val sets = sessionDao.setsFor(sessionId).map { s ->
+            SessionSet(id = s.id, exerciseId = s.exerciseId, exerciseName = catalogue[s.exerciseId]?.name ?: "",
+                exercisePosition = s.exercisePosition, setIndex = s.setIndex, reps = s.reps, weightKg = s.weightKg,
+                modifiers = s.modifiers, done = s.done, durationSec = s.durationSec, distanceM = s.distanceM,
+                grade = s.grade, kind = s.setKind(), supersetGroup = s.supersetGroup, rpe = s.rpe)
+        }
+        return com.ironvellum.app.domain.ImportedWorkouts.draft(session.title.ifBlank { session.label }, session.privateNote, sets) { id ->
+            catalogue[id]?.let { runCatching { ExerciseMetric.valueOf(it.metric) }.getOrNull() }
+        }
+    }
+
     // ------------------------------------------------------------------ CSV import
 
     data class MergeResult(
@@ -4261,6 +4278,8 @@ class Repository(
         val skipped: Int,
         val xpAwarded: Int,
         val newMovements: List<String>,
+        val routines: Int = 0,
+        val routinesSkipped: Int = 0,
     )
 
     /**
@@ -4309,7 +4328,45 @@ class Repository(
     suspend fun mergeImported(
         parsed: CsvWorkoutReader.ParsedImport,
         mapping: Map<String, Long>,
+        saveWorkoutKeys: Set<String> = emptySet(),
     ): MergeResult = db.withTransaction {
+        val catalogue = exerciseDao.observeAll().first().associateBy { it.id }
+        var routines = 0
+        var routinesSkipped = 0
+        com.ironvellum.app.domain.ImportedWorkouts.candidates(parsed).filter { it.key in saveWorkoutKeys }.forEach { candidate ->
+            if (presetDao.countImportKey(candidate.key) != 0) {
+                routinesSkipped++
+            } else {
+                val mapped = candidate.workout.sets.mapNotNull { set ->
+                    mapping[set.exerciseName.trim().lowercase()]?.let { id -> set to id }
+                }
+                val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second }, mapped.map {
+                    Variation.key(WireLimits.clamp(it.first.modifiers.trim().ifEmpty { it.first.notes.trim() }, WireLimits.SET_MODIFIERS_MAX))
+                })
+                val sets = mapped.zip(placements) { (set, id), (position, index) ->
+                    val kind = SetKind.fromImport(set.setType)
+                    SessionSet(exerciseId = id, exerciseName = catalogue[id]?.name ?: set.exerciseName,
+                        exercisePosition = position, setIndex = index, reps = set.reps, weightKg = set.weightKg,
+                        modifiers = WireLimits.clamp(set.modifiers.trim().ifEmpty { set.notes.trim() }, WireLimits.SET_MODIFIERS_MAX),
+                        done = kind.countsAsWork, durationSec = set.durationSec, distanceM = set.distanceM,
+                        kind = kind, supersetGroup = set.supersetGroup)
+                }
+                val draft = com.ironvellum.app.domain.ImportedWorkouts.draft(candidate.workout.label.trim(), candidate.workout.notes, sets) { id ->
+                    catalogue[id]?.let { runCatching { ExerciseMetric.valueOf(it.metric) }.getOrNull() }
+                }
+                if (draft == null) {
+                    routinesSkipped++
+                } else {
+                    val id = presetDao.insertPreset(PresetEntity(name = draft.name, note = draft.note, scheduledDay = null, importKey = candidate.key))
+                    presetDao.insertEntries(draft.entries.map { e ->
+                        PresetEntryEntity(presetId = id, exerciseId = e.exerciseId, targetSets = e.targetSets,
+                            targetReps = e.targetReps, targetWeightKg = e.targetWeightKg, modifiers = e.modifiers,
+                            position = e.position, supersetGroup = e.supersetGroup, setScheme = e.scheme.normalised().encode(), warmup = e.warmup)
+                    })
+                    routines++
+                }
+            }
+        }
         val scoring = SessionScoring(exerciseDao.observeAll().first())
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
         // Each imported workout is judged against everything before it: the log as it stood,
@@ -4418,6 +4475,8 @@ class Repository(
             skipped = skipped,
             xpAwarded = totalXp.toInt(),
             newMovements = emptyList(),
+            routines = routines,
+            routinesSkipped = routinesSkipped,
         )
     }.also {
         // Scores and the lifetime sum are recomputed from the stored sets

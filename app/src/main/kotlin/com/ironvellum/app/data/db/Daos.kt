@@ -87,6 +87,9 @@ interface PresetDao {
 
     @Query("SELECT COUNT(*) FROM presets")
     suspend fun count(): Int
+    @Query("SELECT COUNT(*) FROM presets WHERE importKey = :key")
+    suspend fun countImportKey(key: String): Int
+
 
     @Insert
     suspend fun insertPreset(preset: PresetEntity): Long

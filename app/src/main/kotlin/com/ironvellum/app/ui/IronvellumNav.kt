@@ -147,7 +147,8 @@ object Routes {
     const val RATE = "idle/rate"
     fun collection(tab: CollectionTab) = "idle/collection/${tab.name}"
     const val SETTINGS = "settings"
-    const val SETTINGS_SECTION = "settings/{section}"
+    const val SETTINGS_SECTION = "settings/{section}?sharedCsvUri={sharedCsvUri}"
+    const val SHARED_CSV_URI = "sharedCsvUri"
     const val SUPPORT = "support"
     const val SOCIAL = "social"
     const val ACCOUNT = "account"
@@ -165,7 +166,7 @@ object Routes {
     const val LIFTER = "hunter/{userId}?name={name}"
     const val COMMENTS = "comments/{sessionId}?owner={ownerId}&headline={headline}"
     const val MEASUREMENT = "measurement/{site}"
-    const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
+    const val PRESET_EDITOR = "preset_editor?presetId={presetId}&sourceSessionId={sourceSessionId}"
     const val PREPARATION_LIBRARY = "preparation/library/{kind}"
     const val PREPARATION_EDITOR = "preparation/editor/{kind}?routineId={routineId}&starter={starter}"
     const val PREPARATION_SELECTOR = "preparation/select/{kind}?presetId={presetId}&sessionId={sessionId}"
@@ -187,8 +188,11 @@ object Routes {
 
     fun board(kind: BoardKind): String = "board/${kind.arg}"
 
-    fun presetEditor(presetId: Long? = null): String =
-        if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
+    fun presetEditor(presetId: Long? = null, sourceSessionId: Long? = null): String = when {
+        sourceSessionId != null -> "preset_editor?sourceSessionId=$sourceSessionId"
+        presetId != null -> "preset_editor?presetId=$presetId"
+        else -> "preset_editor"
+    }
 
     fun session(sessionId: Long): String = "session/$sessionId"
 
@@ -210,6 +214,8 @@ object Routes {
     fun riteDetail(presetId: Long): String = "rite/$presetId"
 
     fun settingsSection(section: SettingsSection): String = "settings/${section.key}"
+
+    fun sharedWorkoutImport(uri: String): String = "${settingsSection(SettingsSection.DATA)}?sharedCsvUri=${Uri.encode(uri)}"
 
     fun workoutDetail(sessionId: Long): String = "workout/$sessionId"
 
@@ -302,6 +308,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         androidx.compose.runtime.LaunchedEffect(Unit) {
             if (resumeChecked) return@LaunchedEffect
             resumeChecked = true
+            if (routeRequest != null || trialRequest != null || inboxRequest > 0 || todayRequest > 0) return@LaunchedEffect
             val id = repo.resumableSessionId(System.currentTimeMillis()) ?: return@LaunchedEffect
             // Only on a started screen: navigating while the activity is being
             // torn down strands a back stack entry mid-lifecycle and crashes.
@@ -538,11 +545,15 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(
                     Routes.PRESET_EDITOR,
-                    arguments = listOf(navArgument("presetId") { type = NavType.LongType; defaultValue = -1L }),
+                    arguments = listOf(
+                        navArgument("presetId") { type = NavType.LongType; defaultValue = -1L },
+                        navArgument("sourceSessionId") { type = NavType.LongType; defaultValue = -1L },
+                    ),
                 ) { entry ->
                     val selection by entry.savedStateHandle.getStateFlow<android.os.Bundle?>("preparation_result", null).collectAsState()
                     PresetEditorScreen(
                         presetId = entry.arguments?.getLong("presetId")?.takeIf { it > 0 },
+                        sourceSessionId = entry.arguments?.getLong("sourceSessionId")?.takeIf { it > 0 },
                         onDone = { navController.popBackStack() },
                         onPreparation = { kind, choice, ids ->
                             entry.savedStateHandle["preparation_working_ids"] = ids.toLongArray()
@@ -688,7 +699,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(
                     Routes.SETTINGS_SECTION,
-                    arguments = listOf(navArgument("section") { type = NavType.StringType }),
+                    arguments = listOf(
+                        navArgument("section") { type = NavType.StringType },
+                        navArgument(Routes.SHARED_CSV_URI) { type = NavType.StringType; nullable = true; defaultValue = null },
+                    ),
                 ) { entry ->
                     val section = SettingsSection.fromKey(entry.arguments?.getString("section"))
                     // Sub-screens share the hub's view model, so the hub is always
@@ -705,6 +719,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             viewModel = settingsViewModel(hub),
                             onOpenSection = { navController.navigate(Routes.settingsSection(it)) },
                             onOpenPreparation = { navController.navigate(Routes.preparationLibrary()) },
+                            sharedCsvUri = entry.arguments?.getString(Routes.SHARED_CSV_URI),
                         )
                     }
                 }
@@ -835,6 +850,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     WorkoutLogScreen(
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onBack = { navController.popBackStack() },
+                        onSaveWorkout = { id -> navController.navigate(Routes.presetEditor(sourceSessionId = id)) },
                     )
                 }
                 composable(
@@ -844,6 +860,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     WorkoutDetailScreen(
                         sessionId = entry.arguments?.getLong("sessionId") ?: 0L,
                         onBack = { navController.popBackStack() },
+                        onSaveWorkout = { id -> navController.navigate(Routes.presetEditor(sourceSessionId = id)) },
                     )
                 }
                 composable(

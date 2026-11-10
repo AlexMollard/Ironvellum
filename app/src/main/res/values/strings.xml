@@ -7350,4 +7350,20 @@
     <string name="preparation_reorder__t">Reorder</string>
     <string name="preparation_none_cooldown_hint">Skip the general cooldown offer.</string>
     <string name="preparation_none_cooldown_hint__t">Skip the general cooldown offer.</string>
+    <string name="settings_import_workouts_title">Save reusable workouts</string>
+    <string name="settings_import_workouts_title__t">Save reusable rites</string>
+    <string name="settings_import_workouts_caption">Optional. Choose the latest session for each workout; history is imported either way.</string>
+    <string name="settings_import_workouts_caption__t">Optional. Choose the latest trial for each rite; the Chronicle is imported either way.</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_workouts_created">Saved workouts: %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_workouts_created__t">Saved rites: %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_workouts_skipped">Already imported workouts: %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="settings_import_workouts_skipped__t">Already imported rites: %1$d</string>
+    <string name="workoutdetail_save_workout">Save as workout</string>
+    <string name="workoutdetail_save_workout__t">Save as rite</string>
+    <string name="workoutdetail_save_workout_description">Create a reusable workout from this session</string>
+    <string name="workoutdetail_save_workout_description__t">Create a reusable rite from this trial</string>
+    <string name="workout_from_history_missing">This workout is no longer available or has no supported sets.</string>
+    <string name="workout_from_history_missing__t">This trial is no longer available or has no supported sets.</string>
+    <string name="preseteditor_save_failed">Could not save this workout. Please try again.</string>
+    <string name="preseteditor_save_failed__t">Could not save this rite. Please try again.</string>
 </resources>

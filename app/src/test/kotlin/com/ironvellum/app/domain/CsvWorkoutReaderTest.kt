@@ -22,6 +22,48 @@ class CsvWorkoutReaderTest {
 
     private fun zoneMs(s: String): Long =
         LocalDateTime.parse(s).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    @Test
+    fun candidatesUseLatestNormalisedLabelRegardlessOfOrder() {
+        val parsed = CsvWorkoutReader.read(fixture("strong_synthetic.csv"))
+        val workout = parsed.workouts.first()
+        val older = workout.copy(label = "  PUSH   day ", startedAtMs = 1)
+        val newer = workout.copy(label = "push day", startedAtMs = 2)
+        val first = ImportedWorkouts.candidates(parsed.copy(workouts = listOf(older, newer))).single()
+        val second = ImportedWorkouts.candidates(parsed.copy(workouts = listOf(newer, older))).single()
+        assertEquals(first, second)
+        assertEquals("csv:push day", first.key)
+        assertEquals(newer, first.workout)
+    }
+
+    @Test
+    fun candidatesExcludeEmptyAndWarmupOnlySessions() {
+        val parsed = CsvWorkoutReader.read(fixture("strong_synthetic.csv"))
+        val workout = parsed.workouts.first()
+        val empty = workout.copy(label = "Empty", sets = emptyList())
+        val warmup = workout.copy(label = "Warmup", sets = listOf(workout.sets.first().copy(setType = "warmup")))
+        assertTrue(ImportedWorkouts.candidates(parsed.copy(workouts = listOf(empty, warmup))).isEmpty())
+    }
+
+    @Test
+    fun draftKeepsRepeatedBlocksActivityAndWarmupWithoutCountingRamps() {
+        val rows = listOf(
+            SessionSet(exerciseId = 1, exercisePosition = 0, setIndex = 0, reps = 5, kind = SetKind.WARMUP),
+            SessionSet(exerciseId = 1, exercisePosition = 0, setIndex = 1, reps = 8, done = true, modifiers = "paused", supersetGroup = 1),
+            SessionSet(exerciseId = 2, exercisePosition = 1, setIndex = 0, reps = 0, durationSec = 120, done = true, supersetGroup = 1),
+            SessionSet(exerciseId = 1, exercisePosition = 2, setIndex = 0, reps = 6, done = true),
+            SessionSet(exerciseId = 3, exercisePosition = 3, setIndex = 0, reps = 10, kind = SetKind.WARMUP),
+        )
+        val draft = ImportedWorkouts.draft("Day", "", rows) { if (it == 2L) ExerciseMetric.DURATION else ExerciseMetric.REPS }!!
+        assertEquals(listOf(3L, 1L, 2L, 1L), draft.entries.map { it.exerciseId })
+        assertTrue(draft.entries.first().warmup)
+        assertEquals(1, draft.entries[1].targetSets)
+        assertTrue(draft.entries[1].scheme.warmupRamp)
+        assertEquals("paused", draft.entries[1].modifiers)
+        assertEquals(2, draft.entries[2].targetReps)
+        assertEquals(listOf(null, 1, 1, null), draft.entries.map { it.supersetGroup })
+        assertNull(ImportedWorkouts.draft("Warmup", "", listOf(rows.last())) { ExerciseMetric.REPS })
+    }
+
 
     @Test
     fun strongFixtureParsesToExpectedWorkoutAndSetCounts() {

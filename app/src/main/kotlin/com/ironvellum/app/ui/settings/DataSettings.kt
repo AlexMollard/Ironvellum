@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.R
+import com.ironvellum.app.data.IncomingWorkoutShare
 import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.LoadUnit
@@ -35,6 +39,7 @@ import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,7 +49,7 @@ import kotlinx.coroutines.withContext
  * everything, so it is the last row, in red, and keeps its confirm.
  */
 @Composable
-internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
+internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit, sharedCsvUri: String? = null) {
     val exporting by viewModel.exporting.collectAsStateWithLifecycle()
     val exportError by viewModel.exportError.collectAsStateWithLifecycle()
     val importUi by viewModel.import.collectAsStateWithLifecycle()
@@ -55,6 +60,22 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val twinConvert = rememberTwinConvertViewModel()
     val twinGroups by twinConvert.groups.collectAsStateWithLifecycle()
     var convertOpen by remember { mutableStateOf(false) }
+    var sharedConsumed by rememberSaveable(sharedCsvUri) { mutableStateOf(false) }
+    LaunchedEffect(sharedCsvUri) {
+        if (sharedCsvUri != null &&
+            (!sharedConsumed || (viewModel.importReview.value == null && viewModel.import.value.summary == null))
+        ) {
+            val csv = try {
+                IncomingWorkoutShare.readText(context, Uri.parse(sharedCsvUri))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                ""
+            }
+            sharedConsumed = true
+            if (csv.isBlank()) viewModel.reportEmptyImport() else viewModel.startCsvImport(csv)
+        }
+    }
     val exportArchiveTitle = stringResource(R.string.settings_data_export_archive_title)
     // The file is always kg, which its reader assumes; say so when the screen is in lb.
     val csvUnitNote = if (Units.current == LoadUnit.LB) stringResource(R.string.settings_data_csv_unit_note) else null
@@ -191,6 +212,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             ui = review,
             exercises = catalogueExercises,
             onPick = viewModel::chooseImportMapping,
+            onWorkoutPick = viewModel::chooseImportWorkout,
             onUnitPick = viewModel::setImportUnit,
             onImport = viewModel::confirmCsvImport,
             onDismiss = viewModel::dismissImportReview,

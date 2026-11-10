@@ -74,13 +74,15 @@ object SettingsSummaries {
     private fun setsCount(n: Int): UiText = UiText.plural(R.plurals.common_sets_count, n)
 
     /** What an import or restore brought in, left unresolved: the line stays on screen across a language or Themed switch. */
-    fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int): UiText =
+    fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int, routines: Int = 0, routinesSkipped: Int = 0): UiText =
         UiText.join(
             listOf(
                 themedCount(R.plurals.settings_import_csv_sessions, R.plurals.settings_import_csv_sessions__t, sessions),
                 setsCount(sets),
                 UiText.res(R.string.settings_import_csv_xp, xp),
                 UiText.themed(R.string.settings_import_csv_skipped, R.string.settings_import_csv_skipped__t, skipped),
+                UiText.themed(R.string.settings_import_workouts_created, R.string.settings_import_workouts_created__t, routines),
+                UiText.themed(R.string.settings_import_workouts_skipped, R.string.settings_import_workouts_skipped__t, routinesSkipped),
             ),
             " · ",
         )

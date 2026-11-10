@@ -45,6 +45,7 @@ import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ImportAliases
+import com.ironvellum.app.domain.ImportedWorkouts
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UiText
@@ -373,10 +374,15 @@ class SettingsViewModel(
      * aliases resolve. Unmatched names land in the review list.
      */
     fun startCsvImport(raw: String) {
+        val generation = ++parseGeneration
+        reviewRaw = null
+        _importReview.value = null
+        _import.value = ImportUi()
         viewModelScope.launch {
             val firstPass = withContext(Dispatchers.IO) {
                 CsvWorkoutReader.read(raw, strongWeightIsLbs = false)
             }
+            if (generation != parseGeneration) return@launch
             if (firstPass.problems.isNotEmpty() && firstPass.workouts.isEmpty()) {
                 _import.value = ImportUi(summary = UiText.Raw(firstPass.problems.first().message))
                 return@launch
@@ -397,29 +403,39 @@ class SettingsViewModel(
 
     fun setImportUnit(unit: CsvWorkoutReader.WeightUnit) {
         val review = _importReview.value ?: return
-        if (review.selectedUnit == unit) return
+        if (review.importing || review.result != null || review.selectedUnit == unit) return
+        _importReview.value = review.copy(selectedUnit = unit, unitGuessed = false, parsing = true)
         viewModelScope.launch { applyCsvParse(reviewRaw ?: return@launch, unit, guessed = false) }
     }
 
     fun chooseImportMapping(rawName: String, catalogueName: String?) {
         val review = _importReview.value ?: return
+        if (review.importing || review.result != null) return
         _importReview.value = review.copy(choices = review.choices + (rawName to catalogueName))
     }
 
+    fun chooseImportWorkout(key: String, selected: Boolean) {
+        val review = _importReview.value ?: return
+        if (review.importing || review.result != null) return
+        val keys = if (selected) review.selectedWorkoutKeys + key else review.selectedWorkoutKeys - key
+        _importReview.value = review.copy(selectedWorkoutKeys = keys)
+    }
+
     fun dismissImportReview() {
+        ++parseGeneration
         _importReview.value = null
         reviewRaw = null
     }
 
     fun confirmCsvImport() {
         val review = _importReview.value ?: return
-        if (review.importing) return
+        if (review.parsing || review.importing || review.result != null) return
+        _importReview.value = review.copy(importing = true)
         viewModelScope.launch {
-            _importReview.value = review.copy(importing = true, result = null)
             val run = runCatching {
                 val catalogue = repo.catalogueNamesOnce()
                 val mapping = HashMap<String, Long>()
-                val newNames = LinkedHashMap<String, ExerciseMetric>()
+                val newNames = LinkedHashMap<String, Pair<String, ExerciseMetric>>()
                 review.parsed.workouts.forEach { w ->
                     w.sets.forEach { s ->
                         val key = s.exerciseName.trim().lowercase()
@@ -435,23 +451,25 @@ class SettingsViewModel(
                                     mapping[key] = repo.exerciseIdByName(choice)
                                         ?: error("catalogue lost \"$choice\"")
                                 else -> newNames.putIfAbsent(
-                                    ImportAliases.stripEquipment(s.exerciseName),
-                                    inferredMetric(review.parsed, s.exerciseName),
+                                    key,
+                                    ImportAliases.stripEquipment(s.exerciseName) to inferredMetric(review.parsed, s.exerciseName),
                                 )
                             }
                         }
                     }
                 }
-                newNames.forEach { (name, metric) ->
-                    mapping[name.trim().lowercase()] = repo.ensureImportMovement(name, metric)
+                newNames.forEach { (rawKey, movement) ->
+                    mapping[rawKey] = repo.ensureImportMovement(movement.first, movement.second)
                 }
-                repo.mergeImported(review.parsed, mapping)
+                repo.mergeImported(review.parsed, mapping, review.selectedWorkoutKeys)
             }
+            run.exceptionOrNull()?.let { if (it is CancellationException) throw it }
+            if (_importReview.value?.parsed !== review.parsed) return@launch
             _importReview.value = _importReview.value?.copy(
                 importing = false,
                 result = run.fold(
                     { r ->
-SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
+                        SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped, r.routines, r.routinesSkipped)
                     },
                     { say(R.string.settings_import_failed, it.messageText(say(R.string.settings_import_unreadable))) },
                 ),
@@ -460,6 +478,7 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
     }
 
     private var reviewRaw: String? = null
+    private var parseGeneration: Long = 0
 
     private fun inferredMetric(
         parsed: CsvWorkoutReader.ParsedImport,
@@ -508,11 +527,16 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         unit: CsvWorkoutReader.WeightUnit?,
         guessed: Boolean,
     ) {
+        val previous = _importReview.value
+        val generation = ++parseGeneration
         reviewRaw = raw
         val parsed = withContext(Dispatchers.IO) {
             CsvWorkoutReader.read(raw, strongWeightIsLbs = unit == CsvWorkoutReader.WeightUnit.LB)
         }
         val catalogue = repo.catalogueNamesOnce()
+        if (generation != parseGeneration || reviewRaw != raw) return
+        val current = _importReview.value
+        if (previous != null && (current == null || current.parsed !== previous.parsed || current.importing || current.result != null)) return
         val unmatched = parsed.workouts.asSequence()
             .flatMap { it.sets }
             .map { it.exerciseName.trim() }
@@ -531,7 +555,9 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     inferredMetric = inferredMetric(parsed, rawName).name,
                 )
             },
-            choices = unmatched.associateWith { null },
+            choices = unmatched.associateWith { current?.choices?.get(it) },
+            selectedWorkoutKeys = current?.selectedWorkoutKeys.orEmpty()
+                .intersect(ImportedWorkouts.candidates(parsed).map { it.key }.toSet()),
         )
     }
 

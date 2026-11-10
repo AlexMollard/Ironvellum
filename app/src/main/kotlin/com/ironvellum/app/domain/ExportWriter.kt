@@ -18,7 +18,8 @@ object ExportWriter {
     // 13: a rite entry's warm-up flag, written only for a warm-up exercise.
     // 14: the lifter's progress photos as rows (kind, day, workout start, pose, file name, taken time): never the
     // pictures, never in the cloud copy. Absent in an older archive, which a restore reads as "keep this device's photos".
-    const val FORMAT_VERSION = 15
+    // 16: preserves imported workout provenance so restoring a backup does not make repeat imports create copies.
+    const val FORMAT_VERSION = 16
 
     /**
      * Version of the `settings` section, written beside it as `settingsVersion`. Kept apart from
@@ -300,6 +301,7 @@ object ExportWriter {
             append(",\"name\":").appendEscaped(preset.name)
             append(",\"note\":").appendEscaped(preset.note)
             append(",\"scheduledDay\":").appendNullable(preset.scheduledDay) { append(it) }
+            preset.importKey?.let { append(",\"importKey\":"); appendEscaped(it) }
             if (preset.preparation.isNotEmpty()) {
                 append(",\"preparation\":[")
                 preset.preparation.entries.forEachIndexed { i, (kind, choice) ->

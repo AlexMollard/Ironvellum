@@ -6173,4 +6173,20 @@
     <string name="preparation_reorder__t">Réorganiser</string>
     <string name="preparation_none_cooldown_hint">Ignorer la suggestion générale de retour au calme.</string>
     <string name="preparation_none_cooldown_hint__t">Ignorer la suggestion générale de retour au calme.</string>
+    <string name="settings_import_workouts_title">Enregistrer des programmes réutilisables</string>
+    <string name="settings_import_workouts_title__t">Enregistrer des rites réutilisables</string>
+    <string name="settings_import_workouts_caption">Facultatif. Choisissez la dernière séance de chaque programme ; l’historique est importé dans tous les cas.</string>
+    <string name="settings_import_workouts_caption__t">Facultatif. Choisissez la dernière épreuve de chaque rite ; la chronique est importée dans tous les cas.</string>
+    <string name="settings_import_workouts_created">%1$d programmes enregistrés</string>
+    <string name="settings_import_workouts_created__t">%1$d rites enregistrés</string>
+    <string name="settings_import_workouts_skipped">%1$d programmes déjà importés</string>
+    <string name="settings_import_workouts_skipped__t">%1$d rites déjà importés</string>
+    <string name="workoutdetail_save_workout">Enregistrer comme programme</string>
+    <string name="workoutdetail_save_workout__t">Enregistrer comme rite</string>
+    <string name="workoutdetail_save_workout_description">Créer un programme réutilisable à partir de cette séance</string>
+    <string name="workoutdetail_save_workout_description__t">Créer un rite réutilisable à partir de cette épreuve</string>
+    <string name="workout_from_history_missing">Cette séance est indisponible ou ne contient aucune série compatible.</string>
+    <string name="workout_from_history_missing__t">Cette épreuve est indisponible ou ne contient aucune série compatible.</string>
+    <string name="preseteditor_save_failed">Impossible d’enregistrer ce programme. Veuillez réessayer.</string>
+    <string name="preseteditor_save_failed__t">Impossible d’enregistrer ce rite. Veuillez réessayer.</string>
 </resources>

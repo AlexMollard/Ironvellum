@@ -5805,4 +5805,20 @@
     <string name="preparation_reorder__t">순서 변경</string>
     <string name="preparation_none_cooldown_hint">일반 쿨다운 제안을 건너뜁니다.</string>
     <string name="preparation_none_cooldown_hint__t">일반 쿨다운 제안을 건너뜁니다.</string>
+    <string name="settings_import_workouts_title">재사용할 운동 저장</string>
+    <string name="settings_import_workouts_title__t">재사용할 의식 저장</string>
+    <string name="settings_import_workouts_caption">선택 사항입니다. 각 운동의 최근 세션을 선택하세요. 기록은 선택과 관계없이 가져옵니다.</string>
+    <string name="settings_import_workouts_caption__t">선택 사항입니다. 각 의식의 최근 시련을 선택하세요. 연대기는 선택과 관계없이 가져옵니다.</string>
+    <string name="settings_import_workouts_created">운동 %1$d개 저장됨</string>
+    <string name="settings_import_workouts_created__t">의식 %1$d개 저장됨</string>
+    <string name="settings_import_workouts_skipped">운동 %1$d개 이미 가져옴</string>
+    <string name="settings_import_workouts_skipped__t">의식 %1$d개 이미 가져옴</string>
+    <string name="workoutdetail_save_workout">운동으로 저장</string>
+    <string name="workoutdetail_save_workout__t">의식으로 저장</string>
+    <string name="workoutdetail_save_workout_description">이 세션에서 재사용할 운동 만들기</string>
+    <string name="workoutdetail_save_workout_description__t">이 시련에서 재사용할 의식 만들기</string>
+    <string name="workout_from_history_missing">이 세션을 더 이상 사용할 수 없거나 지원되는 세트가 없습니다.</string>
+    <string name="workout_from_history_missing__t">이 시련을 더 이상 사용할 수 없거나 지원되는 세트가 없습니다.</string>
+    <string name="preseteditor_save_failed">이 운동을 저장하지 못했습니다. 다시 시도하세요.</string>
+    <string name="preseteditor_save_failed__t">이 의식을 저장하지 못했습니다. 다시 시도하세요.</string>
 </resources>

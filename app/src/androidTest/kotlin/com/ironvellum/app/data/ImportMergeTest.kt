@@ -8,6 +8,10 @@ import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.ImportedWorkouts
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -214,6 +218,67 @@ class ImportMergeTest {
         assertEquals(-20.0, row.weightKg!!, 0.0)
         assertEquals(5, row.reps)
         assertTrue(row.done)
+    }
+
+    @Test
+    fun priorHistoryThenSelectedTemplateSurvivesRenameAndRepeat() = runBlocking {
+        val parsed = parsed()
+        val mapping = mapping()
+        val key = ImportedWorkouts.candidates(parsed).single().key
+        repo.savePreset(null, "Morning workout", "personal", null, emptyList())
+        repo.mergeImported(parsed, mapping)
+        val xp = db.profileDao().get()!!.totalXp
+        val added = repo.mergeImported(parsed, mapping, setOf(key))
+        assertEquals(0, added.sessions)
+        assertEquals(1, added.routines)
+        val imported = repo.observePresets().first().single { it.importKey == key }
+        repo.savePreset(imported.id, "Renamed", imported.note, null, imported.entries.map {
+            Repository.PresetDraftEntry(it.exerciseId, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers, it.supersetGroup, it.scheme, it.warmup)
+        })
+        val repeated = repo.mergeImported(parsed, mapping, setOf(key))
+        assertEquals(0, repeated.sessions)
+        assertEquals(0, repeated.routines)
+        assertEquals(1, repeated.routinesSkipped)
+        assertEquals(xp, db.profileDao().get()!!.totalXp)
+        val presets = repo.observePresets().first()
+        assertEquals("personal", presets.single { it.name == "Morning workout" }.note)
+        assertEquals("Renamed", presets.single { it.importKey == key }.name)
+    }
+
+    @Test
+    fun concurrentImportsCreateOneSessionAndOneTemplate() = runBlocking {
+        val parsed = parsed()
+        val mapping = mapping()
+        val key = ImportedWorkouts.candidates(parsed).single().key
+        val initialXp = db.profileDao().get()!!.totalXp
+        val results = coroutineScope {
+            List(2) { async { repo.mergeImported(parsed, mapping, setOf(key)) } }.awaitAll()
+        }
+        assertEquals(1, results.sumOf { it.sessions })
+        assertEquals(1, results.sumOf { it.routines })
+        assertEquals(1, repo.observePresets().first().count { it.importKey == key })
+        assertEquals(initialXp + results.sumOf { it.xpAwarded }.toLong(), db.profileDao().get()!!.totalXp)
+        val xp = db.profileDao().get()!!.totalXp
+        assertEquals(0, repo.mergeImported(parsed, mapping, setOf(key)).xpAwarded)
+        assertEquals(xp, db.profileDao().get()!!.totalXp)
+    }
+
+    @Test
+    fun archiveRestoreRetainsImportProvenanceAndHistory() = runBlocking {
+        val parsed = parsed()
+        val initialMapping = mapping()
+        val key = ImportedWorkouts.candidates(parsed).single().key
+        repo.mergeImported(parsed, initialMapping, setOf(key))
+        val archive = repo.exportJson()
+        repo.importArchive(archive).getOrThrow()
+        val restoredMapping = mapping()
+        val xp = db.profileDao().get()!!.totalXp
+        val repeated = repo.mergeImported(parsed, restoredMapping, setOf(key))
+        assertEquals(0, repeated.sessions)
+        assertEquals(0, repeated.routines)
+        assertEquals(1, repeated.routinesSkipped)
+        assertEquals(xp, db.profileDao().get()!!.totalXp)
+        assertEquals(1, repo.observePresets().first().count { it.importKey == key })
     }
 
     private companion object {

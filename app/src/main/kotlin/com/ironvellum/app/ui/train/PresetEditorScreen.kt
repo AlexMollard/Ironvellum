@@ -171,10 +171,15 @@ class PresetEditorViewModel(
     private val repo: Repository,
     private val presetId: Long?,
     private val savedState: SavedStateHandle? = null,
+    private val sourceSessionId: Long? = null,
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(EditorUi(presetId = presetId))
     val ui: StateFlow<EditorUi> = _ui.asStateFlow()
+    private val _saving = MutableStateFlow(false)
+    val saving = _saving.asStateFlow()
+    private val _error = MutableStateFlow<UiText?>(null)
+    val error = _error.asStateFlow()
     private var draft: EditorUi
         get() = _ui.value
         set(value) { savedState?.set("workout_draft", value.preparationDraft()); _ui.value = value }
@@ -217,36 +222,39 @@ class PresetEditorViewModel(
         viewModelScope.launch {
             val exercises = repo.observeExercises().first()
             val bodyweightKg = repo.observeStats().first().firstOrNull()?.weightKg
-            val loaded = if (presetId != null) {
-                val existing = repo.observePresets().first().firstOrNull { it.id == presetId }
-                if (existing != null) {
-                    EditorUi(
-                        presetId = presetId,
-                        name = existing.name,
-                        note = existing.note,
-                        scheduledDay = existing.scheduledDay,
-                        entries = existing.entries.map { entry ->
-                            EditorEntry(
-                                exerciseId = entry.exerciseId,
-                                exerciseName = entry.exerciseName,
-                                sets = entry.targetSets.toString(),
-                                reps = entry.targetReps.toString(),
-                                weight = entry.targetWeightKg?.let(::formatSteppedFigure) ?: "",
-                                modifiers = entry.modifiers,
-                                supersetGroup = entry.supersetGroup,
-                                scheme = entry.scheme,
-                                warmup = entry.warmup,
-                            )
-                        },
-                        exercises = exercises,
-                        bodyweightKg = bodyweightKg,
-                        preparation = PreparationKind.entries.associateWith { existing.preparation[it] ?: PreparationChoice() },
-                    )
-                } else {
-                    EditorUi(presetId = presetId, exercises = exercises, bodyweightKg = bodyweightKg)
-                }
+            val existing = when {
+                presetId != null -> repo.observePresets().first().firstOrNull { it.id == presetId }
+                sourceSessionId != null -> repo.workoutDraft(sourceSessionId)
+                else -> null
+            }
+            if (sourceSessionId != null && existing == null && savedState?.get<Bundle>("workout_draft") == null) {
+                _error.value = UiText.themed(R.string.workout_from_history_missing, R.string.workout_from_history_missing__t)
+            }
+            val loaded = if (existing != null) {
+                EditorUi(
+                    presetId = presetId,
+                    name = existing.name,
+                    note = existing.note,
+                    scheduledDay = existing.scheduledDay,
+                    entries = existing.entries.map { entry ->
+                        EditorEntry(
+                            exerciseId = entry.exerciseId,
+                            exerciseName = entry.exerciseName,
+                            sets = entry.targetSets.toString(),
+                            reps = entry.targetReps.toString(),
+                            weight = entry.targetWeightKg?.let(::formatSteppedFigure) ?: "",
+                            modifiers = entry.modifiers,
+                            supersetGroup = entry.supersetGroup,
+                            scheme = entry.scheme,
+                            warmup = entry.warmup,
+                        )
+                    },
+                    exercises = exercises,
+                    bodyweightKg = bodyweightKg,
+                    preparation = PreparationKind.entries.associateWith { existing.preparation[it] ?: PreparationChoice() },
+                )
             } else {
-                EditorUi(exercises = exercises, bodyweightKg = bodyweightKg)
+                EditorUi(presetId = presetId, exercises = exercises, bodyweightKg = bodyweightKg)
             }
             _baseline.value = savedState?.get<Bundle>("workout_baseline")?.let { loaded.withPreparationDraft(it) } ?: loaded
             savedState?.set("workout_baseline", _baseline.value.preparationDraft())
@@ -345,29 +353,40 @@ class PresetEditorViewModel(
 
     fun save(onDone: () -> Unit) {
         val current = _ui.value
-        if (!current.canSave()) return
+        if (_saving.value || !current.canSave()) return
+        _saving.value = true
+        _error.value = null
         viewModelScope.launch {
-            repo.savePreset(
-                presetId = current.presetId,
-                name = current.name.trim(),
-                note = current.note.trim(),
-                scheduledDay = current.scheduledDay,
-                preparation = current.preparation,
-                entries = current.entries.map {
-                    Repository.PresetDraftEntry(
-                        exerciseId = it.exerciseId,
-                        // canSave() proved every required target is typed. Distance
-                        // work has no reps field, so its stored reps stay the legacy 10.
-                        targetSets = DecimalInput.parseWhole(it.sets)!!.coerceIn(1, 30),
-                        targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: HIDDEN_REPS,
-                        targetWeightKg = DecimalInput.parse(it.weight),
-                        modifiers = it.modifiers.trim(),
-                        supersetGroup = it.supersetGroup,
-                        scheme = it.scheme,
-                        warmup = it.warmup,
-                    )
-                },
-            )
+            try {
+                repo.savePreset(
+                    presetId = current.presetId,
+                    name = current.name.trim(),
+                    note = current.note.trim(),
+                    scheduledDay = current.scheduledDay,
+                    preparation = current.preparation,
+                    entries = current.entries.map {
+                        Repository.PresetDraftEntry(
+                            exerciseId = it.exerciseId,
+                            // canSave() proved every required target is typed. Distance
+                            // work has no reps field, so its stored reps stay the legacy 10.
+                            targetSets = DecimalInput.parseWhole(it.sets)!!.coerceIn(1, 30),
+                            targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: HIDDEN_REPS,
+                            targetWeightKg = DecimalInput.parse(it.weight),
+                            modifiers = it.modifiers.trim(),
+                            supersetGroup = it.supersetGroup,
+                            scheme = it.scheme,
+                            warmup = it.warmup,
+                        )
+                    },
+                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                _saving.value = false
+                throw e
+            } catch (_: Exception) {
+                _saving.value = false
+                _error.value = UiText.themed(R.string.preseteditor_save_failed, R.string.preseteditor_save_failed__t)
+                return@launch
+            }
             onDone()
         }
     }
@@ -572,10 +591,11 @@ internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
 fun PresetEditorScreen(
     presetId: Long?,
     onDone: () -> Unit,
+    sourceSessionId: Long? = null,
     viewModel: PresetEditorViewModel =
         viewModel(
             key = "preset_editor_$presetId",
-            factory = viewModelFactory { initializer { PresetEditorViewModel(ironvellumRepository(), presetId, createSavedStateHandle()) } },
+            factory = viewModelFactory { initializer { PresetEditorViewModel(ironvellumRepository(), presetId, createSavedStateHandle(), sourceSessionId) } },
         ),
     onPreparation: ((PreparationKind, PreparationChoice, List<Long>) -> Unit)? = null,
     returnedPreparation: Pair<PreparationKind, PreparationChoice>? = null,
@@ -583,6 +603,8 @@ fun PresetEditorScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
+    val saving by viewModel.saving.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     val preparationNames by viewModel.preparationNames.collectAsStateWithLifecycle()
     LaunchedEffect(returnedPreparation) {
         returnedPreparation?.let { (kind, choice) ->
@@ -667,6 +689,7 @@ fun PresetEditorScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
             ) {
+                error?.let { Text(it.asString(), color = IronvellumColors.DangerRed, style = MaterialTheme.typography.bodySmall) }
                 UnderlineField(UiText.themed(R.string.preseteditor_name_label, R.string.preseteditor_name_label__t).asString(), ui.name, viewModel::setName)
                 // Wraps over up to four lines: one hard-clipped line cut a note off mid-word.
                 UnderlineField(stringResource(R.string.preseteditor_note_label), ui.note, viewModel::setNote, singleLine = false, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default))
@@ -795,7 +818,7 @@ fun PresetEditorScreen(
         DockedActionBar(
             primary = UiText.themed(R.string.preseteditor_save_button, R.string.preseteditor_save_button__t).asString(),
             onPrimary = { viewModel.save(onDone) },
-            primaryEnabled = ui.canSave(),
+            primaryEnabled = ui.canSave() && !saving,
             reserveLink = false,
         )
     }

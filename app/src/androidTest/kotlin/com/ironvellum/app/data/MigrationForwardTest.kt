@@ -1202,4 +1202,33 @@ class MigrationForwardTest {
             }
         }
     }
+    @Test
+    fun upgradeTo48PreservesPresetsAndEnforcesImportProvenance() = runTest {
+        helper.createDatabase(dbName, 47).use { old ->
+            old.execSQL("INSERT INTO presets(id,name,note,scheduledDay) VALUES(7,'Kept','note',3)")
+            old.execSQL("INSERT INTO preset_entries(id,presetId,exerciseId,targetSets,targetReps,targetWeightKg,modifiers,position,supersetGroup,setScheme,warmup) " +
+                "VALUES(9,7,1,3,8,20,'paused',0,4,NULL,0),(10,7,2,2,6,30,'tempo',1,4,NULL,0)")
+        }
+        helper.runMigrationsAndValidate(dbName, 48, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name,note,scheduledDay,importKey FROM presets WHERE id=7").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("Kept", c.getString(0))
+                assertEquals("note", c.getString(1))
+                assertEquals(3, c.getInt(2))
+                assertTrue(c.isNull(3))
+            }
+            db.query("SELECT COUNT(*),SUM(targetSets),SUM(targetReps),SUM(targetWeightKg),MIN(supersetGroup) FROM preset_entries WHERE presetId=7").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("both saved exercise rows must survive", 2, c.getInt(0))
+                assertEquals(5, c.getInt(1))
+                assertEquals(14, c.getInt(2))
+                assertEquals(50.0, c.getDouble(3), 0.0)
+                assertEquals(4, c.getInt(4))
+            }
+            db.execSQL("INSERT INTO presets(name,note,scheduledDay,importKey) VALUES('Imported','',NULL,'csv:kept')")
+            assertTrue(runCatching {
+                db.execSQL("INSERT INTO presets(name,note,scheduledDay,importKey) VALUES('Duplicate','',NULL,'csv:kept')")
+            }.isFailure)
+        }
+    }
 }

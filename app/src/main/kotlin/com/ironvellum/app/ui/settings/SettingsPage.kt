@@ -60,6 +60,7 @@ fun SettingsSectionScreen(
     viewModel: SettingsViewModel,
     onOpenSection: (SettingsSection) -> Unit = {},
     onOpenPreparation: () -> Unit = {},
+    sharedCsvUri: String? = null,
 ) {
     when (section) {
         SettingsSection.PROFILE -> ProfileSettings(viewModel, onBack)
@@ -70,7 +71,7 @@ fun SettingsSectionScreen(
         SettingsSection.ARMOURY -> ArmourySettings(onBack)
         SettingsSection.SUMMONS -> SummonsSettings(onBack)
         SettingsSection.HEALTH_CONNECT -> HealthConnectSettings(viewModel, onBack)
-        SettingsSection.DATA -> DataSettings(viewModel, onBack)
+        SettingsSection.DATA -> DataSettings(viewModel, onBack, sharedCsvUri)
         SettingsSection.ADVANCED -> AdvancedSettings(viewModel, onBack)
     }
 }

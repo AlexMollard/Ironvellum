@@ -115,11 +115,12 @@ private fun OpenedWorkout(
     sessionId: Long,
     onBack: () -> Unit,
     detailViewModel: @Composable (Long) -> WorkoutDetailViewModel,
+    onSaveWorkout: ((Long) -> Unit)?,
 ) {
     val store: DetailPaneStore = viewModel(key = "workout-detail-pane")
     remember(sessionId) { store.open(sessionId) }
     CompositionLocalProvider(LocalViewModelStoreOwner provides store) {
-        WorkoutDetailScreen(sessionId = sessionId, onBack = onBack, viewModel = detailViewModel(sessionId))
+        WorkoutDetailScreen(sessionId = sessionId, onBack = onBack, viewModel = detailViewModel(sessionId), onSaveWorkout = onSaveWorkout)
     }
 }
 
@@ -144,6 +145,7 @@ fun WorkoutLogScreen(
         viewModel(factory = viewModelFactory { initializer { WorkoutLogViewModel(ironvellumRepository()) } }),
     /** Seam for tests: the detail's view model for a workout; by default the pane store's own. */
     detailViewModel: @Composable (Long) -> WorkoutDetailViewModel = { rememberWorkoutDetailViewModel(it) },
+    onSaveWorkout: ((Long) -> Unit)? = null,
 ) {
     val density = LocalDensity.current
     val expanded = with(density) { LocalWindowInfo.current.containerSize.width.toDp() >= 840.dp }
@@ -162,7 +164,7 @@ fun WorkoutLogScreen(
             Column(Modifier.weight(1f)) {
                 val sessionId = selectedSessionId
                 if (sessionId != null) {
-                    OpenedWorkout(sessionId, onBack = { selectedSessionId = null }, detailViewModel)
+                    OpenedWorkout(sessionId, onBack = { selectedSessionId = null }, detailViewModel, onSaveWorkout)
                 } else {
                     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
@@ -177,7 +179,7 @@ fun WorkoutLogScreen(
             }
         }
     } else if (selectedSessionId != null) {
-        OpenedWorkout(selectedSessionId!!, onBack = { selectedSessionId = null }, detailViewModel)
+        OpenedWorkout(selectedSessionId!!, onBack = { selectedSessionId = null }, detailViewModel, onSaveWorkout)
     } else {
         WorkoutLogList(onOpenWorkout = onOpenWorkout, onBack = onBack, viewModel = viewModel)
     }

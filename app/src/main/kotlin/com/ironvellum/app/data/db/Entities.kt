@@ -25,12 +25,13 @@ data class ExerciseEntity(
     val muscles: String = "",
 )
 
-@Entity(tableName = "presets")
+@Entity(tableName = "presets", indices = [Index(value = ["importKey"], unique = true)])
 data class PresetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val note: String,
     val scheduledDay: Int?,
+    val importKey: String? = null,
 )
 
 @Entity(

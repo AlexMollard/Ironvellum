@@ -5805,4 +5805,20 @@
     <string name="preparation_reorder__t">並べ替え</string>
     <string name="preparation_none_cooldown_hint">通常のクールダウンの提案をスキップします。</string>
     <string name="preparation_none_cooldown_hint__t">通常のクールダウンの提案をスキップします。</string>
+    <string name="settings_import_workouts_title">再利用できるワークアウトを保存</string>
+    <string name="settings_import_workouts_title__t">再利用できる儀式を保存</string>
+    <string name="settings_import_workouts_caption">任意です。各ワークアウトの最新セッションを選択してください。履歴は選択に関係なく取り込まれます。</string>
+    <string name="settings_import_workouts_caption__t">任意です。各儀式の最新の試練を選択してください。年代記は選択に関係なく取り込まれます。</string>
+    <string name="settings_import_workouts_created">%1$d件のワークアウトを保存</string>
+    <string name="settings_import_workouts_created__t">%1$d件の儀式を保存</string>
+    <string name="settings_import_workouts_skipped">%1$d件のワークアウトは取り込み済み</string>
+    <string name="settings_import_workouts_skipped__t">%1$d件の儀式は取り込み済み</string>
+    <string name="workoutdetail_save_workout">ワークアウトとして保存</string>
+    <string name="workoutdetail_save_workout__t">儀式として保存</string>
+    <string name="workoutdetail_save_workout_description">このセッションから再利用できるワークアウトを作成</string>
+    <string name="workoutdetail_save_workout_description__t">この試練から再利用できる儀式を作成</string>
+    <string name="workout_from_history_missing">このセッションは利用できないか、対応するセットがありません。</string>
+    <string name="workout_from_history_missing__t">この試練は利用できないか、対応するセットがありません。</string>
+    <string name="preseteditor_save_failed">このワークアウトを保存できませんでした。もう一度お試しください。</string>
+    <string name="preseteditor_save_failed__t">この儀式を保存できませんでした。もう一度お試しください。</string>
 </resources>

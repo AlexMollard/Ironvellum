@@ -6165,4 +6165,20 @@
     <string name="preparation_reorder__t">Reihenfolge ändern</string>
     <string name="preparation_none_cooldown_hint">Das allgemeine Cooldown-Angebot überspringen.</string>
     <string name="preparation_none_cooldown_hint__t">Das allgemeine Cooldown-Angebot überspringen.</string>
+    <string name="settings_import_workouts_title">Wiederverwendbare Workouts speichern</string>
+    <string name="settings_import_workouts_title__t">Wiederverwendbare Riten speichern</string>
+    <string name="settings_import_workouts_caption">Optional. Wähle die letzte Einheit jedes Workouts; der Verlauf wird immer importiert.</string>
+    <string name="settings_import_workouts_caption__t">Optional. Wähle die letzte Prüfung jedes Ritus; die Chronik wird immer importiert.</string>
+    <string name="settings_import_workouts_created">%1$d Workouts gespeichert</string>
+    <string name="settings_import_workouts_created__t">%1$d Riten gespeichert</string>
+    <string name="settings_import_workouts_skipped">%1$d Workouts bereits importiert</string>
+    <string name="settings_import_workouts_skipped__t">%1$d Riten bereits importiert</string>
+    <string name="workoutdetail_save_workout">Als Workout speichern</string>
+    <string name="workoutdetail_save_workout__t">Als Ritus speichern</string>
+    <string name="workoutdetail_save_workout_description">Ein wiederverwendbares Workout aus dieser Einheit erstellen</string>
+    <string name="workoutdetail_save_workout_description__t">Einen wiederverwendbaren Ritus aus dieser Prüfung erstellen</string>
+    <string name="workout_from_history_missing">Dieses Workout ist nicht mehr verfügbar oder enthält keine unterstützten Sätze.</string>
+    <string name="workout_from_history_missing__t">Diese Prüfung ist nicht mehr verfügbar oder enthält keine unterstützten Sätze.</string>
+    <string name="preseteditor_save_failed">Dieses Workout konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
+    <string name="preseteditor_save_failed__t">Dieser Ritus konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
 </resources>

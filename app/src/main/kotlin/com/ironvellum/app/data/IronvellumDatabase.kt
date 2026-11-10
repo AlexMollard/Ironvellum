@@ -95,7 +95,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 47
+        const val VERSION = 48
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -708,6 +708,13 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_47_48 = object : Migration(47, 48) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE presets ADD COLUMN importKey TEXT")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_presets_importKey ON presets (importKey)")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -745,6 +752,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_44_45,
             MIGRATION_45_46,
             MIGRATION_46_47,
+            MIGRATION_47_48,
         )
 
         const val NAME = "ironvellum.db"

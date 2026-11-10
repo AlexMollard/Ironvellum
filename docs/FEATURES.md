@@ -109,6 +109,10 @@ Optional, and only with an account.
 - Export a full JSON archive or a CSV of your workouts, and import the archive
   again. A weekly automatic backup to a folder you choose keeps the newest
   five.
-- Import workouts from a Strong, Hevy or FitNotes CSV.
+- Import Strong, Hevy or FitNotes CSV history from a file or Android's share menu.
+  Optionally save selected workouts for future training, using their latest
+  session. Re-importing skips existing history and previously imported workouts.
+- Save any completed workout as a new editable workout. This copies its
+  exercises and supported targets without changing history or awarding XP.
 - Read your training on a computer in the [web dashboard](https://alexmollard.github.io/Ironvellum/), read-only and private to you.
 - Delete your cloud account from inside the app at any time.

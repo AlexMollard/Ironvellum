@@ -26,6 +26,7 @@ import com.ironvellum.app.ui.RouteRequest
 import com.ironvellum.app.ui.Routes
 import com.ironvellum.app.ui.TrialRequest
 import com.ironvellum.app.data.Words
+import com.ironvellum.app.data.IncomingWorkoutShare
 import com.ironvellum.app.widget.loadWidgetState
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -53,6 +54,9 @@ class MainActivity : ComponentActivity() {
         } else {
             inboxRequest = savedInstanceState.getInt(KEY_INBOX_REQUEST)
             todayRequest = savedInstanceState.getInt(KEY_TODAY_REQUEST)
+            savedInstanceState.getString(KEY_ROUTE)?.let { route ->
+                routeRequest = RouteRequest(savedInstanceState.getInt(KEY_ROUTE_SERIAL), route)
+            }
             val serial = savedInstanceState.getInt(KEY_TRIAL_SERIAL)
             if (serial > 0) {
                 trialRequest = TrialRequest(
@@ -110,6 +114,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun noteOpenTab(intent: Intent?) {
+        IncomingWorkoutShare.csvUri(intent)?.let { uri ->
+            goTo(Routes.sharedWorkoutImport(uri))
+            return
+        }
         when (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB)) {
             Notifications.TAB_INBOX -> inboxRequest++
             Notifications.TAB_TODAY -> todayRequest++
@@ -182,6 +190,10 @@ class MainActivity : ComponentActivity() {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_INBOX_REQUEST, inboxRequest)
         outState.putInt(KEY_TODAY_REQUEST, todayRequest)
+        routeRequest?.let {
+            outState.putInt(KEY_ROUTE_SERIAL, it.serial)
+            outState.putString(KEY_ROUTE, it.route)
+        }
         trialRequest?.let {
             outState.putInt(KEY_TRIAL_SERIAL, it.serial)
             outState.putLong(KEY_TRIAL_SESSION, it.sessionId)
@@ -195,5 +207,7 @@ class MainActivity : ComponentActivity() {
         const val KEY_TRIAL_SERIAL = "trial_serial"
         const val KEY_TRIAL_SESSION = "trial_session"
         const val KEY_TRIAL_SEAL = "trial_seal"
+        const val KEY_ROUTE_SERIAL = "route_serial"
+        const val KEY_ROUTE = "route"
     }
 }

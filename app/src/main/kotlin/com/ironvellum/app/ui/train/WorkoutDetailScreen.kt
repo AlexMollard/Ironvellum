@@ -351,6 +351,7 @@ fun WorkoutDetailScreen(
     sessionId: Long,
     onBack: () -> Unit,
     viewModel: WorkoutDetailViewModel = rememberWorkoutDetailViewModel(sessionId),
+    onSaveWorkout: ((Long) -> Unit)? = null,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val draft by viewModel.draft.collectAsStateWithLifecycle()
@@ -441,6 +442,14 @@ fun WorkoutDetailScreen(
                 DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
                 WorkoutSets(sets = ui.sets, exercises = ui.exercises)
                 NotesCard(session)
+                if (session.completedAtMs != null && ui.sets.any { it.done || it.warmup } && onSaveWorkout != null) {
+                    ListRow(
+                        label = UiText.themed(R.string.workoutdetail_save_workout, R.string.workoutdetail_save_workout__t).asString(),
+                        value = UiText.themed(R.string.workoutdetail_save_workout_description, R.string.workoutdetail_save_workout_description__t).asString(),
+                        wrapValue = true,
+                        onClick = { onSaveWorkout(session.id) },
+                    )
+                }
                 if (session.completedAtMs != null) {
                     Spacer(Modifier.height(12.dp))
                     WorkoutPhotoCard(

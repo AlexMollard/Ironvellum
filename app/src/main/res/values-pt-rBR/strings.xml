@@ -6173,4 +6173,20 @@
     <string name="preparation_reorder__t">Reordenar</string>
     <string name="preparation_none_cooldown_hint">Pular a sugestão geral de volta à calma.</string>
     <string name="preparation_none_cooldown_hint__t">Pular a sugestão geral de volta à calma.</string>
+    <string name="settings_import_workouts_title">Salvar treinos reutilizáveis</string>
+    <string name="settings_import_workouts_title__t">Salvar ritos reutilizáveis</string>
+    <string name="settings_import_workouts_caption">Opcional. Escolha a sessão mais recente de cada treino; o histórico será importado de qualquer forma.</string>
+    <string name="settings_import_workouts_caption__t">Opcional. Escolha a prova mais recente de cada rito; a crônica será importada de qualquer forma.</string>
+    <string name="settings_import_workouts_created">%1$d treinos salvos</string>
+    <string name="settings_import_workouts_created__t">%1$d ritos salvos</string>
+    <string name="settings_import_workouts_skipped">%1$d treinos já importados</string>
+    <string name="settings_import_workouts_skipped__t">%1$d ritos já importados</string>
+    <string name="workoutdetail_save_workout">Salvar como treino</string>
+    <string name="workoutdetail_save_workout__t">Salvar como rito</string>
+    <string name="workoutdetail_save_workout_description">Criar um treino reutilizável a partir desta sessão</string>
+    <string name="workoutdetail_save_workout_description__t">Criar um rito reutilizável a partir desta prova</string>
+    <string name="workout_from_history_missing">Esta sessão não está mais disponível ou não tem séries compatíveis.</string>
+    <string name="workout_from_history_missing__t">Esta prova não está mais disponível ou não tem séries compatíveis.</string>
+    <string name="preseteditor_save_failed">Não foi possível salvar este treino. Tente novamente.</string>
+    <string name="preseteditor_save_failed__t">Não foi possível salvar este rito. Tente novamente.</string>
 </resources>

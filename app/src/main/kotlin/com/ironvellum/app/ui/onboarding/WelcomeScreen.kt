@@ -126,6 +126,7 @@ internal fun WelcomeScreen(
             ui = review,
             exercises = catalogue,
             onPick = settings::chooseImportMapping,
+            onWorkoutPick = settings::chooseImportWorkout,
             onUnitPick = settings::setImportUnit,
             onImport = settings::confirmCsvImport,
             onDismiss = settings::dismissImportReview,

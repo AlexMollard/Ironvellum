@@ -19,6 +19,8 @@ store listing; this is the whole list.
 - Exclude activity-only hidden reps and invalid negative external weights from lifted-weight totals without deleting imported entries.
 - Show the least machine assistance as the best folded set, rather than the largest counterweight.
 - Require a dumbbell pair for decline dumbbell presses and two-dumbbell skullcrushers; correct skullcrusher and machine-assisted pull-up instructions.
+- Import Strong, Hevy or FitNotes history and optionally save the latest session of each selected workout as a reusable workout. Re-importing does not duplicate history, saved imported workouts or XP.
+- Send an exported CSV directly to Ironvellum from Android's share menu, review it before importing, or save any past workout as a new editable workout without changing its history or rewards.
 
 ## 1.9
 

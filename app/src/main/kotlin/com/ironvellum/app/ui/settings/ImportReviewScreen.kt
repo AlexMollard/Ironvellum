@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +34,11 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ImportedWorkouts
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.ExercisePickerSheet
-import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkSpinner
@@ -45,6 +47,8 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.IronvellumColors
+
+private const val IMPORT_DATE_PATTERN = "d MMM yyyy"
 
 /**
  * One review row per movement name the curated aliases could NOT resolve.
@@ -74,6 +78,8 @@ data class ImportReviewUi(
     val unitGuessed: Boolean = false,
     val unmatched: List<UnmatchedImportName> = emptyList(),
     val choices: Map<String, String?> = emptyMap(),
+    val selectedWorkoutKeys: Set<String> = emptySet(),
+    val parsing: Boolean = false,
     val importing: Boolean = false,
     val result: UiText? = null,
 )
@@ -93,24 +99,25 @@ fun ImportReviewOverlay(
     onUnitPick: (CsvWorkoutReader.WeightUnit) -> Unit,
     onImport: () -> Unit,
     onDismiss: () -> Unit,
+    onWorkoutPick: (String, Boolean) -> Unit = { _, _ -> },
 ) {
     BackHandler(onBack = onDismiss)
     val trials = ui.parsed.workouts.size
+    val candidates = remember(ui.parsed) { ImportedWorkouts.candidates(ui.parsed) }
     Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Column(
+        LazyColumn(
             Modifier
                 .weight(1f)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(8.dp))
-            PushedHeader(stringResource(R.string.settings_data_import_label), onBack = onDismiss)
-            Spacer(Modifier.height(4.dp))
-
+            item {
+                Spacer(Modifier.height(8.dp))
+                PushedHeader(stringResource(R.string.settings_data_import_label), onBack = onDismiss)
+                Spacer(Modifier.height(4.dp))
             val range = ui.parsed.dateRange
             Text(
                 listOfNotNull(
@@ -119,8 +126,8 @@ fun ImportReviewOverlay(
                     range?.let {
                         stringResource(
                             R.string.settings_import_review_range,
-                            formatDate(it.second, "d MMM yyyy"),
-                            formatDate(it.first, "d MMM yyyy"),
+                            formatDate(it.second, IMPORT_DATE_PATTERN),
+                            formatDate(it.first, IMPORT_DATE_PATTERN),
                         )
                     },
                 ).joinToString(" · "),
@@ -158,6 +165,47 @@ fun ImportReviewOverlay(
                     color = IronvellumColors.InkMuted,
                 )
             }
+            }
+            if (candidates.isNotEmpty()) {
+                item {
+                    SectionHeader(UiText.themed(R.string.settings_import_workouts_title, R.string.settings_import_workouts_title__t).asString(), topPadding = 22.dp)
+                    Text(
+                        UiText.themed(R.string.settings_import_workouts_caption, R.string.settings_import_workouts_caption__t).asString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                }
+                items(candidates, key = { it.key }) { candidate ->
+                    val workout = candidate.workout
+                    val selected = candidate.key in ui.selectedWorkoutKeys
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .toggleable(
+                                value = selected,
+                                enabled = !ui.importing && ui.result == null,
+                                role = Role.Checkbox,
+                                onValueChange = { onWorkoutPick(candidate.key, it) },
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = selected, onCheckedChange = null)
+                        Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                            Text(workout.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                            Text(
+                                listOf(
+                                    formatDate(workout.startedAtMs, IMPORT_DATE_PATTERN),
+                                    pluralStringResource(R.plurals.common_sets_count, workout.sets.size, workout.sets.size),
+                                    workout.sets.map { it.exerciseName }.distinct().take(3).joinToString(", "),
+                                ).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
+                }
+            }
+            item {
 
             SectionHeader(stringResource(R.string.settings_import_review_unmatched_title), topPadding = 22.dp)
             if (ui.unmatched.isEmpty()) {
@@ -166,10 +214,11 @@ fun ImportReviewOverlay(
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
-            } else {
-                InkRowPanel {
-                    ui.unmatched.forEachIndexed { i, name ->
-                        if (i > 0) InkDivider()
+            }
+            }
+            if (ui.unmatched.isNotEmpty()) {
+                items(ui.unmatched, key = { it.rawName }) { name ->
+                    InkRowPanel {
                         UnmatchedRow(
                             name = name,
                             chosen = ui.choices[name.rawName],
@@ -179,6 +228,7 @@ fun ImportReviewOverlay(
                     }
                 }
             }
+            item {
 
             ui.result?.let {
                 Spacer(Modifier.height(14.dp))
@@ -190,11 +240,12 @@ fun ImportReviewOverlay(
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
-            if (ui.importing) {
+            if (ui.importing || ui.parsing) {
                 Spacer(Modifier.height(14.dp))
                 InkSpinner()
             }
             Spacer(Modifier.height(16.dp))
+            }
         }
         DockedActionBar(
             primary = when {
@@ -203,7 +254,7 @@ fun ImportReviewOverlay(
                 else -> UiText.themedPlural(R.plurals.settings_import_review_button, R.plurals.settings_import_review_button__t, trials).asString()
             },
             onPrimary = if (ui.result == null) onImport else onDismiss,
-            primaryEnabled = !ui.importing && (ui.result != null || trials > 0),
+            primaryEnabled = !ui.importing && !ui.parsing && (ui.result != null || trials > 0),
             reserveLink = false,
         )
     }

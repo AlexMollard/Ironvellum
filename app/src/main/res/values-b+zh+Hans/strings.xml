@@ -5805,4 +5805,20 @@
     <string name="preparation_reorder__t">重新排序</string>
     <string name="preparation_none_cooldown_hint">跳过常规放松建议。</string>
     <string name="preparation_none_cooldown_hint__t">跳过常规放松建议。</string>
+    <string name="settings_import_workouts_title">保存可重复使用的训练</string>
+    <string name="settings_import_workouts_title__t">保存可重复使用的仪式</string>
+    <string name="settings_import_workouts_caption">可选。选择每项训练最近的一次记录；无论是否选择，都会导入历史记录。</string>
+    <string name="settings_import_workouts_caption__t">可选。选择每项仪式最近的一次试炼；无论是否选择，都会导入编年史。</string>
+    <string name="settings_import_workouts_created">已保存 %1$d 项训练</string>
+    <string name="settings_import_workouts_created__t">已保存 %1$d 项仪式</string>
+    <string name="settings_import_workouts_skipped">%1$d 项训练已导入</string>
+    <string name="settings_import_workouts_skipped__t">%1$d 项仪式已导入</string>
+    <string name="workoutdetail_save_workout">保存为训练</string>
+    <string name="workoutdetail_save_workout__t">保存为仪式</string>
+    <string name="workoutdetail_save_workout_description">根据本次记录创建可重复使用的训练</string>
+    <string name="workoutdetail_save_workout_description__t">根据本次试炼创建可重复使用的仪式</string>
+    <string name="workout_from_history_missing">此记录已不可用或没有受支持的组数。</string>
+    <string name="workout_from_history_missing__t">此试炼已不可用或没有受支持的组数。</string>
+    <string name="preseteditor_save_failed">无法保存此训练。请重试。</string>
+    <string name="preseteditor_save_failed__t">无法保存此仪式。请重试。</string>
 </resources>

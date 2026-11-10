@@ -136,6 +136,7 @@ object ExportReader {
         id = o.long("id") ?: 0,
         name = o.str("name") ?: fail("preset missing name"),
         note = o.str("note") ?: "",
+        importKey = o.str("importKey"),
         entries = (o.arr("entries") ?: emptyList()).map { e ->
             val entry = e as Obj
             PresetEntry(
