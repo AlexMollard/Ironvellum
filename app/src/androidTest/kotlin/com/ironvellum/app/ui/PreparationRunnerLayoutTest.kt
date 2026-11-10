@@ -85,8 +85,8 @@ class PreparationRunnerLayoutTest {
         compose.onNodeWithText(text(R.string.preparation_finish)).performClick()
         compose.waitUntil(10000) { vm.ui.value.state?.progress?.status == PreparationStatus.SKIPPED }
         assertEquals(setOf("0:0:0"), vm.ui.value.state!!.progress.completedUnitKeys)
-        assertTrue(vm.ui.value.state!!.progress.skippedUnitKeys.isEmpty())
-        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_result_counts, R.string.preparation_result_counts__t, 1, 4, 0))).assertExists()
+        assertEquals(setOf("0:0:1", "0:1:0", "0:1:1"), vm.ui.value.state!!.progress.skippedUnitKeys)
+        compose.onNodeWithText(Words.text(UiText.themed(R.string.preparation_result_counts, R.string.preparation_result_counts__t, 1, 4, 3))).assertExists()
         assertTrue(repo.observeSessionSets(id).first().isEmpty())
     }
     private fun runner(scale: Float, doubleTap: Boolean = false, light: Boolean = scale == 2f) = runBlocking {

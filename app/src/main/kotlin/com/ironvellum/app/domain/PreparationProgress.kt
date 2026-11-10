@@ -16,14 +16,40 @@ data class PreparationProgress(
 ) {
     val currentUnitKey: String get() = "$stepIndex:$roundIndex:$repeatIndex"
 
+    private fun skippedThroughEnd(snapshot: PreparationSnapshot): Set<String> {
+        val size = if (legacyOnly) snapshot.legacyStepCount else snapshot.steps.size
+        var skipped: MutableSet<String>? = null
+        for (index in 0 until size) {
+            val step = snapshot.steps[index]
+            for (round in 0 until step.rounds) {
+                for (repeat in 0 until step.repetitions) {
+                    val key = "$index:$round:$repeat"
+                    if (key !in completedUnitKeys && key !in skippedUnitKeys) {
+                        if (skipped == null) skipped = skippedUnitKeys.toMutableSet()
+                        skipped.add(key)
+                    }
+                }
+            }
+        }
+        return skipped ?: skippedUnitKeys
+    }
+
     fun remainingMs(nowMs: Long): Long = if (status == PreparationStatus.RUNNING && deadlineMs != null) {
         (deadlineMs - maxOf(nowMs, readyUntilMs ?: nowMs)).coerceIn(0, remainingMs.coerceAtLeast(0))
     } else remainingMs.coerceAtLeast(0)
 
     /** A clock moving behind readiness (e.g. reboot) cannot start a many-hour timer. */
     fun recovered(snapshot: PreparationSnapshot, nowMs: Long): PreparationProgress {
+        if (status == PreparationStatus.SKIPPED) {
+            val skipped = skippedThroughEnd(snapshot)
+            return if (skipped === skippedUnitKeys) this else copy(skippedUnitKeys = skipped)
+        }
         val step = snapshot.steps.getOrNull(stepIndex)
         val limit = if (step?.measure == PreparationMeasure.SECONDS) step.target.toLong() * 1000 else 0
+        if (status == PreparationStatus.RUNNING && step?.measure == PreparationMeasure.SECONDS &&
+            (readyUntilMs == null || deadlineMs == null)) {
+            return copy(status = PreparationStatus.PAUSED, remainingMs = limit, readyUntilMs = null, deadlineMs = null)
+        }
         return copy(remainingMs = remainingMs.coerceIn(0, limit)).recovered(nowMs)
     }
 
@@ -41,7 +67,8 @@ data class PreparationProgress(
         if (status == PreparationStatus.DONE || status == PreparationStatus.SKIPPED) return this
         if ((action == PreparationAction.COMPLETE_UNIT || action == PreparationAction.SKIP_UNIT ||
                 action == PreparationAction.TIMER_EXPIRED) && expectedUnitKey != currentUnitKey) return this
-        if (action == PreparationAction.SKIP_ROUTINE) return copy(status = PreparationStatus.SKIPPED, readyUntilMs = null, deadlineMs = null)
+        if (action == PreparationAction.SKIP_ROUTINE) return copy(status = PreparationStatus.SKIPPED,
+            skippedUnitKeys = skippedThroughEnd(snapshot), readyUntilMs = null, deadlineMs = null)
         val step = snapshot.steps.getOrNull(stepIndex) ?: return copy(status = PreparationStatus.DONE, readyUntilMs = null, deadlineMs = null)
         val duration = if (step.measure == PreparationMeasure.SECONDS) step.target.toLong().coerceAtLeast(0) * 1000 else 0
         if (action == PreparationAction.TIMER_EXPIRED &&

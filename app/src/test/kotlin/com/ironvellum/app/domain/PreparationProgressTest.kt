@@ -4,6 +4,46 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PreparationProgressTest {
+    @Test fun finishCountsUnresolvedUnitsAndRecoversOldSkippedRows() {
+        val four = snapshot.copy(steps = snapshot.steps.take(1))
+        val one = PreparationProgress().advance(four, PreparationAction.COMPLETE_UNIT, 0, "0:0:0")
+        val finished = one.advance(four, PreparationAction.SKIP_ROUTINE, 0)
+        assertEquals(setOf("0:0:0"), finished.completedUnitKeys)
+        assertEquals(setOf("0:0:1", "0:1:0", "0:1:1"), finished.skippedUnitKeys)
+        assertEquals(finished, finished.advance(four, PreparationAction.SKIP_ROUTINE, 0))
+        assertEquals(finished, one.copy(status = PreparationStatus.SKIPPED).recovered(four, 0))
+        val mixed = one.advance(four, PreparationAction.SKIP_UNIT, 0, one.currentUnitKey)
+            .advance(four, PreparationAction.SKIP_ROUTINE, 0)
+        assertEquals(finished, mixed.copy(stepIndex = finished.stepIndex, roundIndex = finished.roundIndex, repeatIndex = finished.repeatIndex))
+        var done = PreparationProgress()
+        repeat(4) { done = done.advance(four, PreparationAction.COMPLETE_UNIT, 0, done.currentUnitKey) }
+        assertEquals(PreparationStatus.DONE, done.status)
+        assertEquals(done, done.advance(four, PreparationAction.SKIP_ROUTINE, 0))
+    }
+
+    @Test fun finishLegacyScopeRetainsNoncontiguousCompletedUnits() {
+        val scoped = snapshot.copy(legacyStepCount = 1)
+        val old = PreparationProgress(completedUnitKeys = setOf("0:1:0"), legacyOnly = true)
+        val result = old.advance(scoped, PreparationAction.SKIP_ROUTINE, 0)
+        assertEquals(setOf("0:1:0"), result.completedUnitKeys)
+        assertEquals(setOf("0:0:0", "0:0:1", "0:1:1"), result.skippedUnitKeys)
+        assertEquals(result, old.copy(status = PreparationStatus.SKIPPED).recovered(scoped, 0))
+    }
+
+    @Test fun malformedRunningTimedProgressRecoversFullTargetWithoutChangingValidControls() {
+        val malformed = PreparationCodec.decodeProgress("{\"status\":\"RUNNING\"}").getOrThrow()
+        val recovered = malformed.recovered(snapshot, 1000)
+        assertEquals(PreparationStatus.PAUSED, recovered.status)
+        assertEquals(30000L, recovered.remainingMs)
+        val resumed = recovered.advance(snapshot, PreparationAction.RESUME, 1000)
+        assertEquals(30000L, resumed.deadlineMs!! - resumed.readyUntilMs!!)
+        val manual = PreparationProgress(status = PreparationStatus.RUNNING, stepIndex = 1)
+        assertEquals(manual, manual.recovered(snapshot, 1000))
+        val zero = PreparationProgress(status = PreparationStatus.PAUSED, remainingMs = 0)
+            .advance(snapshot, PreparationAction.RESUME, 1000)
+        assertEquals(zero.readyUntilMs, zero.deadlineMs)
+        assertEquals(zero, zero.recovered(snapshot, 1000))
+    }
     @Test fun legacyOnlyScopeRoundTripsAndOldJsonDefaultsToFullScope() {
         val original = PreparationProgress(legacyOnly = true)
         assertEquals(original, PreparationCodec.decodeProgress(PreparationCodec.encodeProgress(original)).getOrThrow())

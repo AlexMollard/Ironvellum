@@ -117,6 +117,30 @@ class PreparationResumeTest {
     @Test fun presetDeleteBeforeSessionScreenImportsNonContiguousTicks() = firstWriter(1, WarmupStep.State.OPEN)
     @Test fun routineEditBeforeSessionScreenImportsSkipped() = firstWriter(2, WarmupStep.State.SKIPPED)
     @Test fun routineDeleteBeforeSessionScreenImportsNonContiguousTicks() = firstWriter(3, WarmupStep.State.OPEN)
+    private fun assertLegacyProgress(imported: SessionPreparation, state: WarmupStep.State) {
+        val progress = imported.progress
+        val all = imported.snapshot.steps.flatMapIndexed { index, step ->
+            (0 until step.rounds).flatMap { round -> (0 until step.repetitions).map { repeat -> "$index:$round:$repeat" } }
+        }.toSet()
+        val ticked = setOf("0:0:0", "2:0:0")
+        when (state) {
+            WarmupStep.State.DONE -> {
+                assertEquals(PreparationStatus.DONE, progress.status)
+                assertEquals(all, progress.completedUnitKeys)
+                assertTrue(progress.skippedUnitKeys.isEmpty())
+            }
+            WarmupStep.State.SKIPPED -> {
+                assertEquals(PreparationStatus.SKIPPED, progress.status)
+                assertEquals(ticked, progress.completedUnitKeys)
+                assertEquals(all - ticked, progress.skippedUnitKeys)
+            }
+            WarmupStep.State.OPEN -> {
+                assertEquals(PreparationStatus.OPEN, progress.status)
+                assertEquals(ticked, progress.completedUnitKeys)
+                assertTrue(progress.skippedUnitKeys.isEmpty())
+            }
+        }
+    }
     private fun firstWriter(mutation: Int, state: WarmupStep.State) = runBlocking {
         val exercises = repo.observeExercises().first().take(3)
         val routine = PreparationRoutine(kind = PreparationKind.WARMUP, name = "Original", steps = listOf(
@@ -126,6 +150,7 @@ class PreparationResumeTest {
         val preset = repo.savePreset(null, "Original", "", null, entries,
             mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routineId)))
         val id = repo.startSessionFromPreset(preset)
+        val rows = db.sessionDao().setsFor(id)
         val snapshot = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot
         db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
         warmups.setState(id, state)
@@ -138,8 +163,11 @@ class PreparationResumeTest {
         }
         val first = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
         assertEquals(snapshot, first.snapshot)
-        assertEquals(legacyPreparationProgress(snapshot, state, setOf(exercises[0].id, exercises[2].id)), first.progress)
-        if (state == WarmupStep.State.OPEN) assertEquals(setOf("0:0:0", "2:0:0"), first.progress.completedUnitKeys)
+        assertLegacyProgress(first, state)
+        assertEquals(id, first.sessionId)
+        assertEquals(rows, db.sessionDao().setsFor(id))
+        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups)
+        assertEquals(first, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
         repo.preparations.ensureSession(id) // Later SessionScreen initialization must be inert.
         assertEquals(first, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
         repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
@@ -193,6 +221,7 @@ class PreparationResumeTest {
         val preset = repo.savePreset(null, "Upgraded warmup", "", null,
             exercises.map { Repository.PresetDraftEntry(it.id, 1, 5, null, warmup = true) })
         val id = repo.startSessionFromPreset(preset)
+        val rows = db.sessionDao().setsFor(id)
         val frozen = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!.snapshot
         db.openHelper.writableDatabase.execSQL("DELETE FROM session_preparations WHERE sessionId = $id")
         warmups.setState(id, state)
@@ -201,8 +230,12 @@ class PreparationResumeTest {
         assertEquals("legacy preparation is real progress before SessionViewModel exists", id, claimed)
         val imported = repo.preparations.observeSession(id, PreparationKind.WARMUP).first()!!
         assertEquals(frozen, imported.snapshot)
-        assertEquals(legacyPreparationProgress(frozen, state, setOf(exercises[0].id, exercises[2].id)), imported.progress)
-        assertTrue(repo.observeSessionSets(id).first().none { it.done })
+        assertLegacyProgress(imported, state)
+        assertEquals(id, imported.sessionId)
+        db.close(); db = IronvellumDatabase.create(context, DB); repo = Repository(db, warmupStore = warmups)
+        repo.preparations.ensureSession(id)
+        assertEquals(imported, repo.preparations.observeSession(id, PreparationKind.WARMUP).first())
+        assertEquals(rows, db.sessionDao().setsFor(id))
         // Deliberately reset progress remains empty despite the stale legacy answers.
         repo.preparations.changeSession(id, PreparationKind.WARMUP, PreparationChoice())
         val replacement = repo.startFreeformSession("After deliberate reset")
