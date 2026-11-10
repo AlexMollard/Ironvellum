@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.LoadUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -37,6 +38,18 @@ class LoadEntryTest {
         assertEquals(15.2, parseLoadKg(" 15,2 ").getOrThrow(), 1e-9)
         assertEquals(0.0, parseLoadKg("").getOrThrow(), 1e-9)
         assertEquals(0.0, parseLoadKg("0").getOrThrow(), 1e-9)
+    }
+
+    @Test
+    fun `assistance entry preserves known zero while blank remains unknown`() {
+        val name = "Assisted Pull-up"
+        assertEquals(0.0, enteredLoadKg("0", parseLoadKg("0").getOrThrow(), name)!!, 0.0)
+        assertNull(enteredLoadKg("", parseLoadKg("").getOrThrow(), name))
+        assertEquals(0.0, stepDownLoad(2.5, name, LoadUnit.KG)!!, 0.0)
+        assertEquals(0.0, stepDownLoad(0.0, name, LoadUnit.KG)!!, 0.0)
+        assertNull(stepDownLoad(null, name, LoadUnit.KG))
+        assertNull(enteredLoadKg("0", 0.0, "Bench Press"))
+        assertNull(stepDownLoad(2.5, "Bench Press", LoadUnit.KG))
     }
 
     @Test

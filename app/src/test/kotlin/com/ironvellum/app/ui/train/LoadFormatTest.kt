@@ -43,4 +43,14 @@ class LoadFormatTest {
         assertTrue(folded("Assisted Pull-up", listOf(null, 60.0)).contains("60 kg"))
         assertTrue(folded("Bench Press", listOf(60.0, 70.0)).contains("70 kg"))
     }
+
+    @Test
+    fun `assisted live and folded figures distinguish unknown from zero`() {
+        val unknown = SessionSet(exerciseId = 1, exerciseName = "Assisted Pull-up", setIndex = 0, reps = 8, weightKg = null)
+        val zero = unknown.copy(weightKg = 0.0)
+        assertTrue(setFigureText(unknown, ExerciseMetric.REPS, true).contains("—"))
+        assertTrue(setFigureText(zero, ExerciseMetric.REPS, true).contains("0 kg"))
+        assertTrue(foldedSubline(TrialBlock(1, 0, listOf(unknown)), ExerciseMetric.REPS, true).contains("—"))
+        assertTrue(foldedSubline(TrialBlock(1, 0, listOf(zero)), ExerciseMetric.REPS, true).contains("0 kg"))
+    }
 }

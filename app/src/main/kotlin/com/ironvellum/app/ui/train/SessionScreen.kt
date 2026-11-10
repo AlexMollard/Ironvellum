@@ -1818,7 +1818,7 @@ fun SessionScreen(
         LaunchedEffect(target.id) { focus.requestFocus() }
         fun apply(sets: List<SessionSet>) {
             val kg = parsed.getOrNull() ?: return
-            sets.forEach { applyLoad(it, kg.takeIf { v -> v > 0.0 }) }
+            sets.forEach { applyLoad(it, enteredLoadKg(field.text, kg, it.exerciseName)) }
             editLoadFor = null
         }
         IronvellumDialog(
@@ -2231,6 +2231,13 @@ internal fun loadGridLb(exerciseName: String): Double = Loads.lbGrid(Progression
 internal fun parseLoadKg(text: String, unit: LoadUnit = Units.current): Result<Double> =
     Loads.parse(text, unit, MAX_LOAD_KG)
 
+internal fun enteredLoadKg(text: String, kg: Double, exerciseName: String): Double? =
+    if (BodyShare.isAssisted(exerciseName)) kg.takeIf { text.isNotBlank() } else kg.takeIf { it > 0.0 }
+
+internal fun stepDownLoad(kg: Double?, exerciseName: String, unit: LoadUnit = Units.current, worn: LoadKit? = null): Double? =
+    stepDownKg(kg, unit, loadGridLb(exerciseName), worn)
+        ?: if (BodyShare.isAssisted(exerciseName) && kg != null) 0.0 else null
+
 /** A load as the dialog shows it for editing: no unit, no trailing ".0". */
 internal fun loadText(kg: Double, unit: LoadUnit = Units.current): String =
     if (unit == LoadUnit.LB) Loads.fieldText(kg, unit)
@@ -2365,19 +2372,20 @@ private fun resText(id: Int, vararg args: Any): String = Words.text(UiText.res(i
 private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
     val worn = WornLoad.forLift(ProgramAnswersStore.kit, set.exerciseName, weighted, metric)
     fun load(): Figure {
-        val kg = set.weightKg?.takeIf { it > 0.0 }
+        val assisted = BodyShare.isAssisted(set.exerciseName)
+        val kg = if (assisted) set.weightKg else set.weightKg?.takeIf { it > 0.0 }
         val each = GearRequirements.loadIsEach(set.exerciseName)
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
-            value = kg?.let { Units.format(it) } ?: if (weighted) "0" else resText(R.string.session_figure_bodyweight),
+            value = kg?.let { Units.format(it) } ?: if (assisted) resText(R.string.assistance_unknown) else if (weighted) "0" else resText(R.string.session_figure_bodyweight),
             // A loaded lift with nothing on it says so, where the unit would sit.
             unit = when {
-                kg == null -> if (weighted) resText(R.string.session_unit_set_load) else ""
+                kg == null -> if (assisted) "" else if (weighted) resText(R.string.session_unit_set_load) else ""
                 each -> resText(R.string.session_unit_load_each, Units.name)
                 else -> Units.name
             },
-            minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
+            minus = set.copy(weightKg = stepDownLoad(set.weightKg, set.exerciseName, worn = worn)),
             plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
             each = each,
         )
@@ -2474,8 +2482,8 @@ internal fun kgLabel(kg: Double?, weighted: Boolean = false): String = Units.lab
 
 /** A set as its row reads: "10 kg × 6". */
 internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
-    ExerciseMetric.REPS -> "${kgLabel(set.weightKg, weighted)} × ${set.reps}"
-    ExerciseMetric.HOLD -> "${kgLabel(set.weightKg, weighted)} × ${set.durationSec ?: 0}s"
+    ExerciseMetric.REPS -> "${setLoadLabel(set, weighted)} × ${set.reps}"
+    ExerciseMetric.HOLD -> "${setLoadLabel(set, weighted)} × ${set.durationSec ?: 0}s"
     ExerciseMetric.DURATION ->
         resText(R.string.session_figure_minutes, (set.durationSec ?: 0) / 60) +
             if (weighted && (set.weightKg ?: 0.0) > 0.0) " · ${kgLabel(set.weightKg)}" else ""
@@ -2486,9 +2494,13 @@ internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Bo
             (set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "")
 }
 
+private fun setLoadLabel(set: SessionSet, weighted: Boolean): String =
+    if (BodyShare.isAssisted(set.exerciseName)) set.weightKg?.let { Units.withUnit(it) } ?: resText(R.string.assistance_unknown)
+    else kgLabel(set.weightKg, weighted)
+
 /** The reference line's figure: "6 × 7.5 kg". */
-private fun repsAtLoad(figure: Int, kg: Double?, hold: Boolean, weighted: Boolean): String =
-    "$figure${if (hold) "s" else ""} × ${kgLabel(kg, weighted)}"
+private fun repsAtLoad(figure: Int, kg: Double?, hold: Boolean, weighted: Boolean, assisted: Boolean): String =
+    "$figure${if (hold) "s" else ""} × ${if (assisted) kg?.let { Units.withUnit(it) } ?: resText(R.string.assistance_unknown) else kgLabel(kg, weighted)}"
 
 /**
  * "Last 6 × 7.5 kg · Peak 6 × 10 kg", the peak in gold. Last is the top set of
@@ -2502,12 +2514,13 @@ private fun referenceLine(
     peak: SetRecords.Record?,
 ): AnnotatedString? {
     val hold = metric == ExerciseMetric.HOLD
+    val assisted = exercise?.name?.let(BodyShare::isAssisted) == true
     val lastText = last?.let {
-        (if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold, exercise?.isWeighted == true)
+        (if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted)
         else exercise?.let { e -> lastLoggedFigure(it, e) })
             ?.let { figure -> figure + (it.rpe?.let { rpe -> " · ${Effort.value(rpe, EffortSetting.scale)}" } ?: "") }
     }
-    val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold, exercise?.isWeighted == true) }
+    val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted) }
     if (lastText == null && peakText == null) return null
     return buildAnnotatedString {
         if (lastText != null) append(resText(R.string.session_reference_last, lastText))
@@ -2556,9 +2569,11 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
         }
         done.isNotEmpty() -> Words.text(UiText.plural(R.plurals.session_folded_progress, total, done.size, total))
         else -> when (metric) {
-            ExerciseMetric.REPS -> first.weightKg?.takeIf { it > 0.0 }?.let { "$total × ${first.reps} · ${Units.withUnit(it)}" }
-                ?: if (weighted) resText(R.string.session_folded_set_a_load, total, first.reps) else "$total × ${first.reps}"
-            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
+            ExerciseMetric.REPS -> if (BodyShare.isAssisted(first.exerciseName)) "$total × ${first.reps} · ${setLoadLabel(first, weighted)}"
+                else first.weightKg?.takeIf { it > 0.0 }?.let { "$total × ${first.reps} · ${Units.withUnit(it)}" }
+                    ?: if (weighted) resText(R.string.session_folded_set_a_load, total, first.reps) else "$total × ${first.reps}"
+            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + if (BodyShare.isAssisted(first.exerciseName)) " · ${setLoadLabel(first, weighted)}"
+                else (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
             ExerciseMetric.DURATION -> resText(R.string.session_folded_minutes, total, (first.durationSec ?: 0) / 60)
             ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> Words.text(UiText.plural(R.plurals.common_sets_count, total))
         }

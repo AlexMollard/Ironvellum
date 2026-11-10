@@ -3,6 +3,7 @@ package com.ironvellum.app.ui
 import android.content.Intent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,6 +36,9 @@ class PreparationSessionFlowTest {
         compose.waitUntil(10000) { driver.settle(); compose.onAllNodes(hasContentDescription(text(R.string.preparation_complete_unit), substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }
     private fun offerMenu() { compose.onNodeWithContentDescription(text(R.string.preparation_actions)).performClick(); driver.settle() }
+    private fun typedLoad() = SemanticsMatcher("type load action") {
+        it.config.getOrNull(SemanticsActions.OnClick)?.label == app.getString(R.string.session_stepper_load_type)
+    }
     @Before fun setup() {
         if (InstrumentationRegistry.getArguments().getString("processProbe") != "verify") {
             TestProfile.ensureSetUp()
@@ -88,6 +92,60 @@ class PreparationSessionFlowTest {
         driver.awaitText(text(R.string.preparation_view))
         preparationCapture(compose, "refinement-task2-nav-workout-terminal")
         Unit
+    }
+    @Test fun assistedTypedAndSteppedZeroPersistAndCanBeRecorded() = runBlocking {
+        val originalUnit = Units.current
+        compose.runOnIdle { Units.set(app, LoadUnit.KG) }
+        try {
+            val assisted = repo.observeExercises().first().first { it.name == "Assisted Pull-up" }
+            val preset = repo.savePreset(null, "Assistance entry", "", null,
+                listOf(Repository.PresetDraftEntry(assisted.id, 1, 5, 2.5)))
+            val id = repo.startSessionFromPreset(preset)
+            val loadLabel = app.getString(R.string.session_load_field_label, "kg")
+            fun openLoadDialog() {
+                driver.settle()
+                compose.onNode(typedLoad()).performClick()
+                driver.awaitText(loadLabel)
+            }
+            open(id)
+            driver.awaitText("Assisted Pull-up")
+            compose.waitUntil(10000) {
+                driver.settle()
+                compose.onAllNodes(typedLoad()).fetchSemanticsNodes().isNotEmpty()
+            }
+            openLoadDialog()
+            compose.onNodeWithText(loadLabel).performTextReplacement("0")
+            driver.settle()
+            driver.click(app.getString(R.string.session_load_this_set))
+            withTimeout(10000) { repo.observeSessionSets(id).first { it.single().weightKg == 0.0 } }
+            openLoadDialog()
+            compose.onNodeWithText(loadLabel).performTextClearance()
+            driver.settle()
+            driver.click(app.getString(R.string.session_load_this_set))
+            withTimeout(10000) { repo.observeSessionSets(id).first { it.single().weightKg == null } }
+            openLoadDialog()
+            compose.onNodeWithText(loadLabel).performTextReplacement("0")
+            driver.settle()
+            driver.click(app.getString(R.string.session_load_this_set))
+            withTimeout(10000) { repo.observeSessionSets(id).first { it.single().weightKg == 0.0 } }
+            driver.settle()
+            compose.onNodeWithContentDescription(app.getString(R.string.session_stepper_load_increase)).performClick()
+            withTimeout(10000) { repo.observeSessionSets(id).first { it.single().weightKg == 2.5 } }
+            driver.settle()
+            compose.onNodeWithContentDescription(app.getString(R.string.session_stepper_load_decrease)).performClick()
+            withTimeout(10000) { repo.observeSessionSets(id).first { it.single().weightKg == 0.0 } }
+            driver.settle()
+            compose.onNodeWithContentDescription(app.getString(R.string.session_log_set_description, 1)).performClick()
+            val zero = withTimeout(10000) { repo.observeSessionSets(id).first { it.single().done } }.single()
+            val session = repo.observeSession(id).first()!!
+            val record = SetRecords.records(listOf(session to listOf(zero)), { 80.0 }).values.single()
+            assertEquals("Assisted Pull-up", record.exerciseName)
+            assertEquals(0.0, record.weightKg!!, 0.0)
+            assertEquals(5, record.reps)
+            assertEquals(session.id, record.sessionId)
+        } finally {
+            compose.runOnIdle { Units.set(app, originalUnit) }
+        }
     }
     @Test fun previewNeverStartsOrResumesAcrossRecreation() = runBlocking {
         val id = seed(); open(id)
