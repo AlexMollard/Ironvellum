@@ -1,5 +1,16 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.data.Seed
+import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.Gear
+import com.ironvellum.app.domain.LoggedLift
+import com.ironvellum.app.domain.MuscleGroup
+import com.ironvellum.app.domain.ProgramGenerator
+import com.ironvellum.app.domain.VolumeLevel
+import com.ironvellum.app.ui.components.PickerFilters
+import com.ironvellum.app.ui.components.buildPickerView
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
@@ -10,6 +21,7 @@ import com.ironvellum.app.domain.WorkoutPreset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** The edits first-run setup and the Forge share, and the rules that keep an added week off a saved cycle. */
@@ -117,6 +129,30 @@ class ProgramEditingTest {
         // Never below one step, and a bodyweight movement has no load to step.
         assertEquals(2.5, PlannedEntry("Curl", 3, 10, 2.5).withLoadDelta(-1, 2.5).targetWeightKg!!, 1e-9)
         assertNull(entry().withLoadDelta(1, 2.5).targetWeightKg)
+    }
+
+    @Test
+    fun `picker additions and swaps cap pair lifts per dumbbell through load stepping`() {
+        val names = listOf("Decline Dumbbell Press", "Two Dumbbell Skullcrusher")
+        val catalogue = Seed.exercises.filter { it.name in names }.mapIndexed { index, it ->
+            Exercise(id = index + 1L, name = it.name, muscleGroup = MuscleGroup.valueOf(it.muscleGroup),
+                isWeighted = it.isWeighted, metric = ExerciseMetric.valueOf(it.metric), category = it.category)
+        }
+        val kit = Equipment(fullGym = false, gear = setOf(Gear.DUMBBELLS, Gear.BENCH),
+            dumbbellMaxKg = 20.0, dumbbellPair = true)
+        val picked = buildPickerView(catalogue, "", PickerFilters(myGear = true), kit, emptyList(), emptySet())
+            .grouped.flatMap { it.second }
+        assertEquals(names.toSet(), picked.map { it.name }.toSet())
+        for (exercise in picked) {
+            val strength = ProgramRules.strengthProfile(listOf(LoggedLift(exercise.name, 45.0, 10)))
+            val cap = ProgramGenerator.dumbbellCapKg(exercise.name, kit)!!
+            assertEquals(20.0, cap, 1e-9)
+            for (sets in listOf(null, 4)) {
+                val prescribed = newPlannedEntry(exercise, sets, VolumeLevel.STANDARD, TrainingFocus.MUSCLE, kit, strength)
+                assertTrue("${exercise.name}: ${prescribed.targetWeightKg}", prescribed.targetWeightKg!! <= 20.0)
+                assertEquals(20.0, prescribed.withLoadDelta(1, 2.5, capKg = cap).targetWeightKg!!, 1e-9)
+            }
+        }
     }
 
     // ---- U11: one progression rule

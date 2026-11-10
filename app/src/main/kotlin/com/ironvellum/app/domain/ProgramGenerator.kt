@@ -553,12 +553,10 @@ object ProgramGenerator {
     )
 
     /**
-     * The per-dumbbell ceiling for this movement under this equipment, or
-     * null when no cap applies: full gym has no cap, movements that need no
-     * dumbbells have no cap (a barbell lift, or a shared-implement lift the
-     * lifter's other gear covers, is never held to the dumbbell), and an
-     * unset or non-positive max is treated as no cap. A two-dumbbell
-     * movement's load numbers are totals, so a pair doubles the ceiling.
+     * The ceiling in the movement's logged load units, or null when no cap
+     * applies: full gym and lifts covered by other gear are not capped, and an
+     * unset or non-positive maximum is treated as no cap. Pair availability
+     * and whether the logged load is per dumbbell are separate concerns.
      */
     internal fun dumbbellCapKg(exerciseName: String, equipment: Equipment): Double? {
         if (equipment.fullGym) return null
@@ -569,7 +567,7 @@ object ProgramGenerator {
         val max = equipment.dumbbellMaxKg?.takeIf { it > 0.0 } ?: return null
         if (GearRequirements.needsPair(exerciseName)) {
             if (!equipment.dumbbellPair) return null
-            return 2 * max
+            return if (GearRequirements.loadIsEach(exerciseName)) max else 2 * max
         }
         return max
     }
@@ -632,8 +630,7 @@ object ProgramGenerator {
 
         val e1rm = impliedE1rm(exercise.name, strength, base.first, reps, rir)
         val rawReps = floor(30.0 * (e1rm / cap - 1.0)).toInt() - rir
-        // The cap is a total for two-dumbbell lifts; the note names the
-        // dumbbell the lifter owns, not "48 kg per dumbbells".
+        // The note names the individual dumbbell the lifter owns.
         val each = equipment.dumbbellMaxKg ?: cap
         val eachLabel = if (each % 1.0 == 0.0) each.toInt().toString() else "%.1f".fmt(each)
         val kit = Words.text(

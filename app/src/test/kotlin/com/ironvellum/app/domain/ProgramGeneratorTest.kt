@@ -1425,7 +1425,7 @@ class ProgramGeneratorTest {
         )
         assertEquals("Bulgarian Split Squat", chosen.name)
         assertNotNull(fill)
-        assertTrue(fill!!.kg <= 48.0)
+        assertTrue(fill!!.kg <= 24.0)
     }
 
     @Test
