@@ -97,6 +97,75 @@ class PreparationPersistenceTest {
         assertEquals(PreparationStatus.PAUSED, recovered.progress.status)
     }
 
+    @Test fun bulkReplacementSnapshotsUpgradedTickBeforeDeletingPresets() = runTest {
+        val store = WarmupStore(context.getSharedPreferences("preparation-bulk-test", Context.MODE_PRIVATE))
+        repo = Repository(db, warmupStore = store)
+        val warmup = exercise("Arm Circles")
+        val work = exercise("Bodyweight Squat")
+        val p = repo.savePreset(null, "Old", "", null, listOf(
+            Repository.PresetDraftEntry(warmup.id, 2, 17, 3.0, warmup = true),
+            Repository.PresetDraftEntry(work.id, 1, 10, null)))
+        val session = db.sessionDao().insertSession(SessionEntity(presetId = p, label = "old", startedAtMs = 1, completedAtMs = null, xpAwarded = 0))
+        repo.addExtraSet(session, work.id, 10, null, "")
+        val sets = db.sessionDao().setsFor(session)
+        store.setTicked(session, setOf(warmup.id))
+
+        repo.applyStarterTemplate()
+        val snapshot = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!
+        assertEquals(17, snapshot.snapshot.steps.first().legacyTarget!!.targetReps)
+        assertEquals(3.0, snapshot.snapshot.steps.first().legacyTarget!!.targetWeightKg!!, 0.0)
+        assertTrue(snapshot.progress.completedUnitKeys.contains("0:0:0"))
+        val newPreset = repo.observePresets().first().first().id
+        assertEquals(session, repo.startSessionFromPreset(newPreset))
+        assertEquals(sets, db.sessionDao().setsFor(session))
+        assertEquals(snapshot, repo.preparations.observeSession(session, PreparationKind.WARMUP).first())
+        context.getSharedPreferences("preparation-bulk-test", Context.MODE_PRIVATE).edit().clear().commit()
+    }
+    @Test fun bulkReplacementPreservesExistingSnapshotAndDiscardsUntouchedSession() = runTest {
+        val p = preset()
+        val session = repo.startSessionFromPreset(p)
+        val before = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!
+        repo.applyStarterTemplate()
+        assertEquals(before, repo.preparations.observeSession(session, PreparationKind.WARMUP).first())
+        val replacement = repo.observePresets().first().first().id
+        val newSession = repo.startSessionFromPreset(replacement)
+        assertNotEquals(session, newSession)
+        assertNull(db.sessionDao().byId(session))
+    }
+    @Test fun repeatedLegacyEntriesRetainOrderedPrescriptionsAndSharedTickInArchive() = runTest {
+        val store = WarmupStore(context.getSharedPreferences("preparation-repeat-test", Context.MODE_PRIVATE))
+        repo = Repository(db, warmupStore = store)
+        val warmup = exercise("Arm Circles")
+        val work = exercise("Bodyweight Squat")
+        val p = repo.savePreset(null, "Repeated", "", null, listOf(
+            Repository.PresetDraftEntry(warmup.id, 2, 17, 3.0, warmup = true),
+            Repository.PresetDraftEntry(warmup.id, 1, 23, 5.0, warmup = true),
+            Repository.PresetDraftEntry(work.id, 1, 10, null)),
+            mapOf(PreparationKind.WARMUP to PreparationChoice(PreparationMode.SAVED, routine())))
+        val session = db.sessionDao().insertSession(SessionEntity(presetId = p, label = "old", startedAtMs = 1, completedAtMs = null, xpAwarded = 0))
+        repo.addExtraSet(session, work.id, 10, null, "")
+        store.setTicked(session, setOf(warmup.id))
+        repo.preparations.ensureSession(session)
+        val initial = repo.preparations.observeSession(session, PreparationKind.WARMUP).first()!!
+        assertEquals(2, initial.snapshot.legacyStepCount)
+        assertEquals(listOf(17, 23), initial.snapshot.steps.map { it.legacyTarget!!.targetReps })
+        assertEquals(listOf(3.0, 5.0), initial.snapshot.steps.map { it.legacyTarget!!.targetWeightKg })
+        assertEquals(listOf(2, 1), initial.snapshot.steps.map { it.rounds })
+        assertEquals(setOf("0:0:0", "0:1:0", "1:0:0"), initial.progress.completedUnitKeys)
+
+        db.sessionDao().updateSession(db.sessionDao().byId(session)!!.copy(completedAtMs = 2))
+        assertTrue(repo.importArchive(repo.exportJson()).getOrThrow().problems.isEmpty())
+        val restoredId = db.sessionDao().completedSessions().single().id
+        val restored = repo.preparations.observeSession(restoredId, PreparationKind.WARMUP).first()!!
+        assertEquals(initial.snapshot.steps.map { it.legacyTarget }, restored.snapshot.steps.map { it.legacyTarget })
+        assertEquals(initial.snapshot.steps.map { it.rounds }, restored.snapshot.steps.map { it.rounds })
+        assertEquals(initial.progress.completedUnitKeys, restored.progress.completedUnitKeys)
+        assertEquals(2, restored.snapshot.legacyStepCount)
+        repo.preparations.changeSession(restoredId, PreparationKind.WARMUP, PreparationChoice(PreparationMode.NONE))
+        val selected = repo.preparations.observeSession(restoredId, PreparationKind.WARMUP).first()!!
+        assertEquals(restored.snapshot.steps, selected.snapshot.steps)
+        context.getSharedPreferences("preparation-repeat-test", Context.MODE_PRIVATE).edit().clear().commit()
+    }
     @Test fun migration46To47PreservesPresetBothSetsAndPrivateProfileFields() {
         val name = "preparation-migration-test"
         val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), IronvellumDatabase::class.java)

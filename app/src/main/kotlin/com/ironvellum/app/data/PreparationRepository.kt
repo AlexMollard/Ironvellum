@@ -101,7 +101,7 @@ class PreparationRepository(private val db: IronvellumDatabase, private val warm
                 PreparationStep(e.id, e.name, if (timed) PreparationMeasure.SECONDS else PreparationMeasure.REPS,
                     target, entry.targetSets, weightKg = entry.targetWeightKg.takeIf { e.metric.isStrength },
                     legacyTarget = PreparationLegacyTarget(e.metric, entry.targetReps, entry.targetWeightKg))
-            }.distinctBy { it.exerciseId }
+            }
         return general.copy(steps = legacy + general.steps.filter { s -> legacy.none { it.exerciseId == s.exerciseId } }, legacyStepCount = legacy.size)
     }
 

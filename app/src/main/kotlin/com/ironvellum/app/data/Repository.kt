@@ -956,7 +956,10 @@ class Repository(
                 }
                 preset
             }
-            if (clearFirst) presetDao.clearAll()
+            if (clearFirst) {
+                sessionDao.liveSession()?.let { preparations.ensureSession(it.id) }
+                presetDao.clearAll()
+            }
             resolved.forEach { preset ->
                 val presetId = presetDao.insertPreset(
                     PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay),
