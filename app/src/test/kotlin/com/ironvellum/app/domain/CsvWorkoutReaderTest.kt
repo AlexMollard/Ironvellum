@@ -22,6 +22,9 @@ class CsvWorkoutReaderTest {
 
     private fun zoneMs(s: String): Long =
         LocalDateTime.parse(s).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    private fun exercise(metric: ExerciseMetric = ExerciseMetric.REPS, name: String = "Bench Press", weighted: Boolean = true) =
+        Exercise(name = name, muscleGroup = MuscleGroup.CORE, isWeighted = weighted, metric = metric)
+
     @Test
     fun candidatesUseLatestNormalisedLabelRegardlessOfOrder() {
         val parsed = CsvWorkoutReader.read(fixture("strong_synthetic.csv"))
@@ -53,7 +56,7 @@ class CsvWorkoutReaderTest {
             SessionSet(exerciseId = 1, exercisePosition = 2, setIndex = 0, reps = 6, done = true),
             SessionSet(exerciseId = 3, exercisePosition = 3, setIndex = 0, reps = 10, kind = SetKind.WARMUP),
         )
-        val draft = ImportedWorkouts.draft("Day", "", rows) { if (it == 2L) ExerciseMetric.DURATION else ExerciseMetric.REPS }!!
+        val draft = ImportedWorkouts.draft("Day", "", rows) { exercise(if (it == 2L) ExerciseMetric.DURATION else ExerciseMetric.REPS) }!!
         assertEquals(listOf(3L, 1L, 2L, 1L), draft.entries.map { it.exerciseId })
         assertTrue(draft.entries.first().warmup)
         assertEquals(1, draft.entries[1].targetSets)
@@ -61,7 +64,56 @@ class CsvWorkoutReaderTest {
         assertEquals("paused", draft.entries[1].modifiers)
         assertEquals(2, draft.entries[2].targetReps)
         assertEquals(listOf(null, 1, 1, null), draft.entries.map { it.supersetGroup })
-        assertNull(ImportedWorkouts.draft("Warmup", "", listOf(rows.last())) { ExerciseMetric.REPS })
+        assertNull(ImportedWorkouts.draft("Warmup", "", listOf(rows.last())) { exercise() })
+    }
+
+    @Test
+    fun copiedAttemptsUseMedianAndKeepMinimumForBlankFigures() {
+        fun target(vararg reps: Int): Int {
+            val rows = reps.mapIndexed { index, count ->
+                SessionSet(exerciseId = 1, setIndex = index, reps = count, done = true)
+            }
+            return ImportedWorkouts.draft("Climb", "", rows) { exercise(ExerciseMetric.ATTEMPTS_GRADE) }!!.entries.single().targetReps
+        }
+        assertEquals(5, target(5))
+        assertEquals(4, target(3, 5))
+        assertEquals(1, target(0))
+        assertEquals(500, target(700))
+    }
+
+    @Test
+    fun copiedTopAndBackoffUseRepresentableRecordedSummaries() {
+        val rows = listOf(
+            SessionSet(exerciseId = 1, setIndex = 0, reps = 5, weightKg = 100.0, kind = SetKind.TOP, done = true),
+            SessionSet(exerciseId = 1, setIndex = 1, reps = 8, weightKg = 50.0, kind = SetKind.BACKOFF, done = true),
+            SessionSet(exerciseId = 1, setIndex = 2, reps = 6, weightKg = 40.0, kind = SetKind.BACKOFF, done = true),
+        )
+        val entry = ImportedWorkouts.draft("Lift", "", rows) { exercise() }!!.entries.single()
+        val scheme = SetScheme.decode(entry.scheme.normalised().encode())
+        val plan = SchemePlan.plan(scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, LiftLoading(stepKg = 2.5))
+        assertEquals(listOf(SetKind.TOP, SetKind.BACKOFF, SetKind.BACKOFF), plan.map { it.kind })
+        assertEquals(listOf(5, 7, 7), plan.map { it.reps })
+        assertEquals(listOf(100.0, 50.0, 50.0), plan.map { it.weightKg })
+        val plain = ImportedWorkouts.draft("Plain", "", listOf(rows.first().copy(kind = SetKind.WORKING))) { exercise() }!!
+        assertEquals(SchemeType.STRAIGHT, plain.entries.single().scheme.type)
+    }
+
+    @Test
+    fun copiedBodyweightBackoffsCombineNullAndZeroBeforeChoosingTheMode() {
+        fun fixed(name: String, weighted: Boolean, vararg loads: Double?): Double? {
+            val rows = listOf(SessionSet(exerciseId = 1, setIndex = 0, reps = 5, kind = SetKind.TOP, done = true)) +
+                loads.mapIndexed { index, load ->
+                    SessionSet(exerciseId = 1, setIndex = index + 1, reps = 8, weightKg = load, kind = SetKind.BACKOFF, done = true)
+                }
+            return ImportedWorkouts.draft("Copy", "", rows) { exercise(name = name, weighted = weighted) }!!
+                .entries.single().scheme.backoffFixedKg
+        }
+        assertEquals(0.0, fixed("Pull-up", false, null, 0.0, 10.0)!!, 0.0)
+        assertEquals(10.0, fixed("Pull-up", false, null, 10.0)!!, 0.0)
+        assertNull(fixed("Pull-up", false, -1.0))
+        assertNull(fixed("Pull-up", false, Double.NaN))
+        assertNull(fixed("Assisted Pull-up", true, null))
+        assertEquals(0.0, fixed("Assisted Pull-up", true, 0.0)!!, 0.0)
     }
 
 

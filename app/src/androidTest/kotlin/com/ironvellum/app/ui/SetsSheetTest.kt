@@ -98,6 +98,28 @@ class SetsSheetTest {
     }
 
     @Test
+    fun ordinaryBodyweightFixedZeroReopensAndSaves() {
+        val copied = entry.copy(exerciseName = "Pull-up", weight = "", scheme = SetScheme(
+            type = SchemeType.TOP_BACKOFF, backoffFixedKg = 0.0, backoffReps = 8..8,
+        ))
+        show(copied)
+        compose.onNodeWithText("Fixed").performScrollTo().assertExists()
+        compose.onNodeWithText("Done").assertIsEnabled().performClick()
+        assertEquals(0.0, done!!.scheme.backoffFixedKg!!, 0.0)
+        assertEquals(8..8, done!!.scheme.backoffReps)
+    }
+
+    @Test
+    fun externalLoadFixedZeroCannotBeSaved() {
+        val invalid = entry.copy(exerciseName = "Bench Press", scheme = SetScheme(
+            type = SchemeType.TOP_BACKOFF, backoffFixedKg = 0.0,
+        ))
+        show(invalid, loading = LiftLoading(stepKg = 2.5))
+        compose.onNodeWithText("Fixed").performScrollTo().assertExists()
+        compose.onNodeWithText("Done").assertIsNotEnabled()
+    }
+
+    @Test
     fun missingBodyweightLeavesTheFixedAssistanceSeedUnset() {
         val assisted = entry.copy(exerciseName = "Assisted Pull-up", weight = "20", scheme = SetScheme(type = SchemeType.TOP_BACKOFF))
         show(assisted, loading = LiftLoading(stepKg = 2.5, assisted = true))

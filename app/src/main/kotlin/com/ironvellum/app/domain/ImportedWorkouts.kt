@@ -19,7 +19,7 @@ object ImportedWorkouts {
             }.sortedBy { it.key }
 
     /** Converts ordered historical blocks without changing the history that supplied them. */
-    fun draft(name: String, note: String, sets: List<SessionSet>, metricOf: (Long) -> ExerciseMetric?): WorkoutPreset? {
+    fun draft(name: String, note: String, sets: List<SessionSet>, exerciseOf: (Long) -> Exercise?): WorkoutPreset? {
         val blocks = sets.sortedWith(compareBy<SessionSet> { it.exercisePosition }.thenBy { it.setIndex })
             .groupBy { it.blockKey }.values
         val entries = blocks.mapNotNull { rows ->
@@ -27,12 +27,13 @@ object ImportedWorkouts {
             val represented = work.ifEmpty { rows }
             if (represented.isEmpty()) return@mapNotNull null
             val first = represented.first()
-            val metric = metricOf(first.exerciseId) ?: return@mapNotNull null
+            val exercise = exerciseOf(first.exerciseId) ?: return@mapNotNull null
+            val metric = exercise.metric
             val done = represented.filter { it.done }.ifEmpty { represented }
             val base = done.filter { it.kind == SetKind.TOP }.ifEmpty {
                 done.filter { it.kind != SetKind.DROP && it.kind != SetKind.BACKOFF }
             }.ifEmpty { done }
-            val scheme = if (work.isEmpty()) SetScheme() else RoutineUpdate.inferScheme(
+            val inferredScheme = if (work.isEmpty()) SetScheme() else RoutineUpdate.inferScheme(
                 SetScheme(warmupRamp = metric == ExerciseMetric.REPS && rows.any { it.warmup }), work,
             )
             val figures = base.map {
@@ -40,10 +41,26 @@ object ImportedWorkouts {
                     ExerciseMetric.HOLD -> it.durationSec ?: it.reps
                     ExerciseMetric.DURATION -> ((it.durationSec ?: 0) + 30) / 60
                     ExerciseMetric.DISTANCE_TIME -> 10
-                    ExerciseMetric.ATTEMPTS_GRADE -> 1
-                    ExerciseMetric.REPS -> it.reps
+                    ExerciseMetric.ATTEMPTS_GRADE, ExerciseMetric.REPS -> it.reps
                 }
             }
+            val scheme = if (metric == ExerciseMetric.REPS && inferredScheme.type == SchemeType.TOP_BACKOFF) {
+                val backoffs = done.filter { it.kind == SetKind.BACKOFF }
+                    .ifEmpty { work.filter { it.kind == SetKind.BACKOFF } }
+                val topReps = RoutineUpdate.medianDown(figures).coerceIn(SetScheme.REPS_RANGE)
+                val backoffReps = RoutineUpdate.medianDown(backoffs.map { it.reps }).coerceIn(SetScheme.REPS_RANGE)
+                val unweighted = !exercise.isWeighted && !BodyShare.isAssisted(exercise.name)
+                // The original prescription is unknown; single-value ranges start at the recorded summary.
+                inferredScheme.copy(
+                    topReps = topReps..topReps,
+                    backoffReps = backoffReps..backoffReps,
+                    backoffFixedKg = RoutineUpdate.mostUsedLoad(backoffs.map { row ->
+                        val load = row.weightKg
+                        if (load == null && unweighted) 0.0
+                        else load?.takeIf { it.isFinite() && it >= 0.0 }
+                    }),
+                )
+            } else inferredScheme
             PresetEntry(exerciseId = first.exerciseId, exerciseName = first.exerciseName,
                 targetSets = represented.count { it.kind != SetKind.DROP }.coerceAtLeast(1),
                 targetReps = RoutineUpdate.medianDown(figures).coerceIn(1, 500),

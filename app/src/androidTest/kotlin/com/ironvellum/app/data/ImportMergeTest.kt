@@ -246,6 +246,122 @@ class ImportMergeTest {
     }
 
     @Test
+    fun selectedCsvTemplateStartsWithRecordedAttemptsAndTopBackoff() = runBlocking {
+        assertCopiedWorkoutStartsWithRecordedFigures(selectedCsv = true)
+    }
+
+    @Test
+    fun completedHistoryCopyStartsWithRecordedAttemptsAndTopBackoff() = runBlocking {
+        assertCopiedWorkoutStartsWithRecordedFigures(selectedCsv = false)
+    }
+
+    private suspend fun assertCopiedWorkoutStartsWithRecordedFigures(selectedCsv: Boolean) {
+        val csv = listOf(
+            "\"title\",\"start_time\",\"end_time\",\"description\",\"exercise_title\",\"superset_id\",\"exercise_notes\",\"set_index\",\"set_type\",\"weight_kg\",\"reps\",\"distance_km\",\"duration_seconds\",\"rpe\"",
+            "\"Copied day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bouldering\",,\"\",0,\"normal\",0,5,0,0,",
+            "\"Copied day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press\",,\"\",0,\"top\",100,5,0,0,",
+            "\"Copied day\",\"23 Dec 2025, 08:00\",\"23 Dec 2025, 08:37\",\"\",\"Bench Press\",,\"\",1,\"backoff\",50,8,0,0,",
+        ).joinToString("\n")
+        val parsed = CsvWorkoutReader.read(csv)
+        val climbing = repo.exerciseIdByName("Bouldering")!!
+        val bench = repo.exerciseIdByName("Bench Press")!!
+        val mapping = mapOf("bouldering" to climbing, "bench press" to bench)
+        val key = ImportedWorkouts.candidates(parsed).single().key
+        repo.mergeImported(parsed, mapping)
+        val before = db.sessionDao().observeCompletedWithSets().first().single { it.session.label == "Copied day" }
+        val xp = db.profileDao().get()!!.totalXp
+        val presetId = if (selectedCsv) {
+            repo.mergeImported(parsed, mapping, setOf(key))
+            repo.observePresets().first().single { it.importKey == key }.id
+        } else {
+            val draft = repo.workoutDraft(before.session.id)!!
+            repo.savePreset(null, draft.name, draft.note, null, draft.entries.map {
+                Repository.PresetDraftEntry(it.exerciseId, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers, it.supersetGroup, it.scheme, it.warmup)
+            })
+        }
+        val saved = repo.observePresets().first().single { it.id == presetId }
+        assertEquals(5, saved.entries.single { it.exerciseId == climbing }.targetReps)
+        val topBackoff = saved.entries.single { it.exerciseId == bench }
+        assertEquals(5..5, topBackoff.scheme.topReps)
+        assertEquals(8..8, topBackoff.scheme.backoffReps)
+        assertEquals(50.0, topBackoff.scheme.backoffFixedKg!!, 0.0)
+        val started = db.sessionDao().setsFor(repo.startSessionFromPreset(presetId))
+        assertEquals(5, started.single { it.exerciseId == climbing }.reps)
+        val benchSets = started.filter { it.exerciseId == bench }.sortedBy { it.setIndex }
+        assertEquals(listOf("TOP", "BACKOFF"), benchSets.map { it.kind })
+        assertEquals(listOf(5, 8), benchSets.map { it.reps })
+        assertEquals(listOf(100.0, 50.0), benchSets.map { it.weightKg })
+        val after = db.sessionDao().observeCompletedWithSets().first().single { it.session.id == before.session.id }
+        assertEquals(before.session, after.session)
+        assertEquals(before.sets, after.sets)
+        assertEquals(xp, db.profileDao().get()!!.totalXp)
+    }
+
+    @Test
+    fun selectedCsvPreservesBodyweightBackoffsThroughRefill() = runBlocking {
+        assertCopiedBodyweightBackoffs(selectedCsv = true)
+    }
+
+    @Test
+    fun historyCopyPreservesBodyweightBackoffsThroughRefill() = runBlocking {
+        assertCopiedBodyweightBackoffs(selectedCsv = false)
+    }
+
+    private suspend fun assertCopiedBodyweightBackoffs(selectedCsv: Boolean) {
+        val header = "\"title\",\"start_time\",\"end_time\",\"description\",\"exercise_title\",\"superset_id\",\"exercise_notes\",\"set_index\",\"set_type\",\"weight_kg\",\"reps\",\"distance_km\",\"duration_seconds\",\"rpe\""
+        fun row(name: String, index: Int, kind: String, weight: String, reps: Int) =
+            "\"Bodyweight copy\",\"24 Dec 2025, 08:00\",\"24 Dec 2025, 08:37\",\"\",\"$name\",,\"\",$index,\"$kind\",$weight,$reps,0,0,"
+        val csv = listOf(
+            header,
+            row("Pull-up", 0, "top", "", 5), row("Pull-up", 1, "backoff", "", 8),
+            row("Bench Press", 0, "top", "100", 5), row("Bench Press", 1, "backoff", "50", 8),
+            row("Pull-up", 0, "top", "20", 5), row("Pull-up", 1, "backoff", "", 8),
+            row("Assisted Pull-up", 0, "top", "", 5), row("Assisted Pull-up", 1, "backoff", "", 8),
+            row("Pull-up", 0, "top", "0", 5), row("Pull-up", 1, "backoff", "", 8),
+            row("Pull-up", 2, "backoff", "0", 8), row("Pull-up", 3, "backoff", "10", 8),
+        ).joinToString("\n")
+        val parsed = CsvWorkoutReader.read(csv)
+        val mapping = listOf("Pull-up", "Bench Press", "Assisted Pull-up").associate {
+            it.lowercase() to repo.exerciseIdByName(it)!!
+        }
+        val key = ImportedWorkouts.candidates(parsed).single().key
+        repo.mergeImported(parsed, mapping, if (selectedCsv) setOf(key) else emptySet())
+        val presetId = if (selectedCsv) {
+            repo.observePresets().first().single { it.importKey == key }.id
+        } else {
+            val history = db.sessionDao().observeCompletedWithSets().first().single { it.session.label == "Bodyweight copy" }
+            val draft = repo.workoutDraft(history.session.id)!!
+            repo.savePreset(null, draft.name, draft.note, null, draft.entries.map {
+                Repository.PresetDraftEntry(it.exerciseId, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers, it.supersetGroup, it.scheme, it.warmup)
+            })
+        }
+        val entries = db.presetDao().presetWithEntries(presetId)!!.entries.sortedBy { it.position }
+        val schemes = entries.map { com.ironvellum.app.domain.SetScheme.decode(it.setScheme) }
+        assertEquals(listOf(0.0, 50.0, 0.0, null, 0.0), schemes.map { it.backoffFixedKg })
+        assertTrue(schemes.all { it.topReps == 5..5 && it.backoffReps == 8..8 })
+
+        val sessionId = repo.startSessionFromPreset(presetId)
+        val blocks = db.sessionDao().setsFor(sessionId).groupBy { it.exercisePosition }.toSortedMap().values.toList()
+        assertEquals(5, blocks.size)
+        val expectedTop = listOf(null, 100.0, 20.0, null, 0.0)
+        val expectedBackoff = listOf(0.0, 50.0, 0.0, null, 0.0)
+        val expectedBackoffCounts = listOf(1, 1, 1, 1, 3)
+        blocks.forEachIndexed { index, rows ->
+            val ordered = rows.sortedBy { it.setIndex }
+            val top = ordered.first { it.kind == "TOP" }
+            val backs = ordered.filter { it.kind == "BACKOFF" }
+            assertEquals(5, top.reps)
+            assertEquals(expectedTop[index], top.weightKg)
+            assertEquals(expectedBackoffCounts[index], backs.size)
+            assertTrue(backs.all { it.reps == 8 && it.weightKg == expectedBackoff[index] })
+            repo.updateSet(top.id, top.reps, top.weightKg, true)
+            val refilled = db.sessionDao().setsFor(sessionId).filter { it.exercisePosition == top.exercisePosition && it.kind == "BACKOFF" }
+            assertEquals(expectedBackoffCounts[index], refilled.size)
+            assertTrue(refilled.all { it.reps == 8 && it.weightKg == expectedBackoff[index] })
+        }
+    }
+
+    @Test
     fun concurrentImportsCreateOneSessionAndOneTemplate() = runBlocking {
         val parsed = parsed()
         val mapping = mapping()

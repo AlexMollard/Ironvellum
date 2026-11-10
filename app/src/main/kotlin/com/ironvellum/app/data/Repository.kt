@@ -4255,7 +4255,7 @@ class Repository(
                 grade = s.grade, kind = s.setKind(), supersetGroup = s.supersetGroup, rpe = s.rpe)
         }
         return com.ironvellum.app.domain.ImportedWorkouts.draft(session.title.ifBlank { session.label }, session.privateNote, sets) { id ->
-            catalogue[id]?.let { runCatching { ExerciseMetric.valueOf(it.metric) }.getOrNull() }
+            catalogue[id]?.takeIf { row -> ExerciseMetric.entries.any { it.name == row.metric } }?.toDomain()
         }
     }
 
@@ -4341,7 +4341,7 @@ class Repository(
                         kind = kind, supersetGroup = set.supersetGroup)
                 }
                 val draft = com.ironvellum.app.domain.ImportedWorkouts.draft(candidate.workout.label.trim(), candidate.workout.notes, sets) { id ->
-                    catalogue[id]?.let { runCatching { ExerciseMetric.valueOf(it.metric) }.getOrNull() }
+                    catalogue[id]?.takeIf { row -> ExerciseMetric.entries.any { it.name == row.metric } }?.toDomain()
                 }
                 if (draft == null) {
                     routinesSkipped++

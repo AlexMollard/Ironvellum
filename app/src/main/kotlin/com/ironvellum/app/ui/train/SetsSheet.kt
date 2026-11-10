@@ -138,7 +138,7 @@ internal fun SetsSheet(
     val setCount = DecimalInput.parseWhole(sets)?.coerceIn(1, 30) ?: 3
     val repsFrom = DecimalInput.parseWhole(reps)?.coerceAtLeast(1) ?: 1
     val effective = scheme.copy(
-        backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { if (lift.assisted) it >= 0.0 else it > 0.0 } else null,
+        backoffFixedKg = if (fixedMode) DecimalInput.parse(fixedText)?.takeIf { if (lift.assisted || lift.bodyweightLift) it >= 0.0 else it > 0.0 } else null,
         workingReps = repsUp?.takeIf { it > repsFrom }?.let { repsFrom..it },
     )
     val noFixedYet = scheme.type == SchemeType.TOP_BACKOFF && fixedMode && effective.backoffFixedKg == null
