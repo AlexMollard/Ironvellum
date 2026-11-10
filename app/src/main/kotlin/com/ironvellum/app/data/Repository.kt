@@ -320,32 +320,7 @@ class Repository(
         // applyStarterTemplate when the lifter explicitly picks it. The
         // catalogue above stays automatic: every screen reads it, and an
         // upgrade must gain new movements without touching history.
-        // Sessions logged before the first weigh-in banked no strength at
-        // all. Waiting for the next weigh-in to notice would leave a lifter
-        // who already measured himself staring at zeros forever; the count
-        // query above the repair makes this free when there is nothing owed.
-        rescoreUnweighedSessions()
-        // A scoring-formula change makes every STORED score stale — session
-        // rows and the leaderboard's lifetime sum keep the old numbers until
-        // something recomputes them — so it must run EXACTLY ONCE per formula
-        // change, not on every launch. The migration only adds the
-        // scoringVersion column at 0; this check consumes the marker: below
-        // the current StrengthIndex.SCORING_VERSION means "stored scores have
-        // never been restated under this formula". Restating is Kotlin work
-        // (StrengthIndex over stored sets), which the SQL migration cannot
-        // express — hence code, not SQL.
-        profileDao.get()?.let { profile ->
-            if (profile.scoringVersion < StrengthIndex.SCORING_VERSION &&
-                rescoreStrengthScores(onlyUnscored = false)
-            ) {
-                // Re-read before stamping: the rescore just rewrote
-                // lifetimeStrength, and stamping the pre-rescore row would
-                // silently write the stale total back over the fresh sum.
-                profileDao.get()?.let { fresh ->
-                    profileDao.upsert(fresh.copy(scoringVersion = StrengthIndex.SCORING_VERSION))
-                }
-            }
-        }
+        repairStrengthScores()
     }
 
     // ---------------------------------------------------------------- health history
@@ -429,6 +404,7 @@ class Repository(
                 ),
             )
         }
+        if (fresh.isNotEmpty()) repairStrengthScores()
         return fresh.size
     }
 
@@ -2704,9 +2680,7 @@ class Repository(
                 bodyFatPct = bodyFatPct,
             ),
         )
-        // A weigh-in is new information about work already done: sessions
-        // completed before any measurement could not be scored at all.
-        rescoreUnweighedSessions()
+        repairStrengthScores()
     }
 
     /**
@@ -2722,28 +2696,31 @@ class Repository(
         }
         require(BodyLimits.validWeight(weightKg)) { "weight $weightKg kg is outside ${BodyLimits.WEIGHT_KG}" }
         statDao.updateWeight(latest.id, weightKg, profileDao.get()?.heightCm ?: latest.heightCm)
-        rescoreUnweighedSessions()
+        repairStrengthScores()
     }
 
     /**
-     * Repairs completed sessions that banked no strength score because no
-     * bodyweight was on record when they finished. The index is body-scaled,
-     * so with nothing to scale by [StrengthIndex.sessionScore] returns null
-     * and the session stored a zero — permanently, since nothing ever looked
-     * again. The work was real; the measurement was merely late.
+     * Retry a pending formula upgrade, or fill scores missing their first
+     * bodyweight when the formula is already current. Do not run both passes.
      *
      * Scored against the bodyweight in force at the session, falling back to
      * the EARLIEST reading on record — the rule [SetRecords.bodyweightLookup]
      * already applies to a set logged before any weigh-in, reused here so the
      * two cannot disagree about the same session.
      *
-     * XP is deliberately NOT revisited: it was awarded under an assumed
-     * bodyweight and banked XP is never restated. Only the strength score,
-     * which was never computed at all, is filled in.
+     * XP is deliberately NOT revisited: banked XP is never restated.
      */
-    private suspend fun rescoreUnweighedSessions() {
-        if (sessionDao.unscoredStrengthSessionCount() == 0) return
-        rescoreStrengthScores(onlyUnscored = true)
+    private suspend fun repairStrengthScores(): Unit = db.withTransaction {
+        val profile = profileDao.get() ?: return@withTransaction
+        if (profile.scoringVersion < StrengthIndex.SCORING_VERSION) {
+            if (rescoreStrengthScores(onlyUnscored = false)) {
+                profileDao.get()?.let { fresh ->
+                    profileDao.upsert(fresh.copy(scoringVersion = StrengthIndex.SCORING_VERSION))
+                }
+            }
+        } else if (sessionDao.unscoredStrengthSessionCount() != 0) {
+            rescoreStrengthScores(onlyUnscored = true)
+        }
     }
 
     /**
@@ -2752,9 +2729,8 @@ class Repository(
      *
      * [onlyUnscored] keeps the weigh-in trigger cheap: it repairs only the
      * sessions that banked no score (guarded upstream by the precise count
-     * query). The formula-change path ([ensureSeeded] against
-     * [StrengthIndex.SCORING_VERSION]) passes false — every stored score was
-     * computed under the old formula and is stale by definition.
+     * query). A pending formula change passes false to restate all computable
+     * sessions; unknown contributions keep the upgrade pending.
      *
      * Recomputed from the sessions rather than nudged by a delta: the sum IS
      * the lifetime figure, and it is what the cloud push recomputes too, so a
@@ -2796,6 +2772,12 @@ class Repository(
                         )
                     }
                 if (efforts.isEmpty()) return@forEach
+                if (efforts.any { it.reps > 0 && it.holdSeconds == null &&
+                        BodyShare.isAssisted(it.exerciseName) && it.addedKg == null }) {
+                    // A partial total would discard the unknown contribution permanently.
+                    complete = false
+                    return@forEach
+                }
                 val score = StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs), sex)
                 if (score == null) {
                     // No weigh-in is not a computed zero. Keep the old score and retry the formula upgrade later.
@@ -2817,15 +2799,18 @@ class Repository(
      * fat, for the history page's Undo. The id is free again once the row is
      * gone, so nothing else can have taken it.
      */
-    suspend fun restoreStat(stat: StatEntry) = statDao.insert(
-        StatEntity(
-            id = stat.id,
-            takenAtMs = stat.takenAtMs,
-            weightKg = stat.weightKg,
-            heightCm = stat.heightCm,
-            bodyFatPct = stat.bodyFatPct,
-        ),
-    )
+    suspend fun restoreStat(stat: StatEntry) {
+        statDao.insert(
+            StatEntity(
+                id = stat.id,
+                takenAtMs = stat.takenAtMs,
+                weightKg = stat.weightKg,
+                heightCm = stat.heightCm,
+                bodyFatPct = stat.bodyFatPct,
+            ),
+        )
+        repairStrengthScores()
+    }
 
     // ---------------------------------------------------------------- measurements
     // Device-only by design: the cloud schema has no measurement table, so
@@ -4226,6 +4211,7 @@ class Repository(
                 photoLibrary.restoreRows(photoRows, sessionIdByStart)
 
                 exerciseDao.observeAll().first().syncCustomExercises()
+                if (statCount > 0) repairStrengthScores()
                 ImportResult(
                     presets = archive.presets.size,
                     sessions = archive.sessions.size,

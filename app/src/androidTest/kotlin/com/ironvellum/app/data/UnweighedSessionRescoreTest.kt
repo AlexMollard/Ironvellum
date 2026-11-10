@@ -75,7 +75,7 @@ class UnweighedSessionRescoreTest {
     private suspend fun lifetimeStrengthSum() =
         db.sessionDao().observeCompletedWithSets().first().sumOf { it.session.strengthScore.toLong() }
 
-    private suspend fun completedAssistedSession(assistanceKg: Double): Long {
+    private suspend fun completedAssistedSession(assistanceKg: Double?, mixed: Boolean = false): Long {
         val exercise = db.exerciseDao().observeAll().first().first { it.name == "Assisted Pull-up" }
         val id = db.sessionDao().insertSession(
             SessionEntity(
@@ -85,6 +85,11 @@ class UnweighedSessionRescoreTest {
         )
         val setId = repo.addExtraSet(id, exercise.id, 5, assistanceKg, "")
         repo.updateSet(setId, reps = 5, weightKg = assistanceKg, done = true)
+        if (mixed) {
+            val other = db.exerciseDao().observeAll().first().first { it.name == "Bodyweight Squat" }
+            val otherSet = repo.addExtraSet(id, other.id, 8, null, "")
+            repo.updateSet(otherSet, reps = 8, weightKg = null, done = true)
+        }
         repo.completeSession(id)
         return id
     }
@@ -135,13 +140,44 @@ class UnweighedSessionRescoreTest {
         assertEquals(999L, db.profileDao().get()!!.lifetimeStrength)
         assertEquals(2, db.profileDao().get()!!.scoringVersion)
         repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
-        repo.ensureSeeded()
         val repaired = db.sessionDao().byId(id)!!.strengthScore
         assertTrue(repaired > 0 && repaired < 999)
         assertEquals(repaired.toLong(), db.profileDao().get()!!.lifetimeStrength)
         assertEquals(StrengthIndex.SCORING_VERSION, db.profileDao().get()!!.scoringVersion)
         assertEquals(bankedXp, db.profileDao().get()!!.totalXp)
         assertEquals(raw, db.sessionDao().setsFor(id))
+    }
+
+    @Test
+    fun unknownAssistancePreservesWholeHistoricalScoreUntilItCanBeComputed() = runBlocking {
+        repo.addStat(80.0, null)
+        val unknown = completedAssistedSession(null)
+        val mixed = completedAssistedSession(null, mixed = true)
+        val zero = completedAssistedSession(90.0)
+        val known = completedAssistedSession(70.0)
+        val ids = listOf(unknown, mixed, zero, known)
+        val raw = ids.associateWith { db.sessionDao().setsFor(it) }
+        val sessions = ids.associateWith { db.sessionDao().byId(it)!! }
+        val xp = db.profileDao().get()!!.totalXp
+        ids.forEach { db.sessionDao().updateSession(db.sessionDao().byId(it)!!.copy(strengthScore = 999)) }
+        db.profileDao().upsert(db.profileDao().get()!!.copy(scoringVersion = 2, lifetimeStrength = 3996))
+
+        repo.ensureSeeded()
+
+        assertEquals(999, db.sessionDao().byId(unknown)!!.strengthScore)
+        assertEquals(999, db.sessionDao().byId(mixed)!!.strengthScore)
+        assertEquals(0, db.sessionDao().byId(zero)!!.strengthScore)
+        val knownScore = StrengthIndex.sessionScore(
+            listOf(StrengthIndex.Effort("Assisted Pull-up", 5, null, 70.0, MuscleGroup.PULL)), 80.0, Sex.MALE,
+        )!!
+        assertEquals(knownScore, db.sessionDao().byId(known)!!.strengthScore)
+        assertEquals(1998L + knownScore, db.profileDao().get()!!.lifetimeStrength)
+        assertEquals(2, db.profileDao().get()!!.scoringVersion)
+        assertEquals(xp, db.profileDao().get()!!.totalXp)
+        ids.forEach {
+            assertEquals(raw.getValue(it), db.sessionDao().setsFor(it))
+            assertEquals(sessions.getValue(it).xpAwarded, db.sessionDao().byId(it)!!.xpAwarded)
+        }
     }
 
     @Test
