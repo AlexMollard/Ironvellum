@@ -2602,7 +2602,7 @@
     <string name="muscles_level_off">オフ</string>
     <string name="muscles_level_main">主要</string>
     <string name="muscles_level_assist">アシスト</string>
-    <string name="muscles_selector_hint">筋肉をタップ：補助、主働、オフ。</string>
+    <string name="muscles_selector_hint">体をタップするか、下の一覧から筋肉を名前で選択します。</string>
     <string name="muscles_exercise_none">この種目の筋肉データはありません。</string>
     <string name="muscles_summary_main">メイン：%1$s。</string>
     <string name="muscles_summary_assist">アシスト：%1$s。</string>
@@ -4050,10 +4050,20 @@
     <string name="customex_name_label">名前</string>
     <string name="customex_type_label">種類</string>
     <string name="customex_logged_label">としてログイン</string>
-    <string name="customex_needs_label">ニーズ</string>
+    <string name="customex_needs_label">器具</string>
     <string name="customex_needs_note">マシンとケーブルは「自分の器具」でフルジムとして扱われます。</string>
     <string name="customex_needs_note__t">マシンとケーブルは「我が武具庫」でフルジムとして扱われます。</string>
     <string name="customex_muscles_label">筋肉</string>
+    <string name="customex_type_picker_title">種目の種類</string>
+    <string name="customex_logged_picker_title">この種目の記録方式</string>
+    <string name="customex_equipment_hint">この種目に必要な器具をすべて選択します。</string>
+    <string name="muscles_selector_selected">選択した筋肉</string>
+    <string name="muscles_selector_by_name">筋肉を名前で選択</string>
+    <string name="muscles_selector_search">筋肉を検索</string>
+    <string name="muscles_selector_role_description">%1$s、%2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="other">%1$d個の筋肉</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="other">%1$d のログに記録されたセット、ルーチン、メモによって使用されます。何かが使用している間は保持されるため、履歴が孤立することはありません。</item>
     </plurals>

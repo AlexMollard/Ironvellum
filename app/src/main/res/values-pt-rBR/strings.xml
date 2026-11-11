@@ -2748,7 +2748,7 @@
     <string name="muscles_level_off">desativado</string>
     <string name="muscles_level_main">principal</string>
     <string name="muscles_level_assist">auxiliar</string>
-    <string name="muscles_selector_hint">Toque em um músculo: auxiliar, principal, desativado.</string>
+    <string name="muscles_selector_hint">Toque no corpo ou selecione os músculos pelo nome abaixo.</string>
     <string name="muscles_exercise_none">Não há dados musculares para este exercício.</string>
     <string name="muscles_summary_main">Principais: %1$s.</string>
     <string name="muscles_summary_assist">Auxiliares: %1$s.</string>
@@ -4308,10 +4308,21 @@
     <string name="customex_name_label">Nome</string>
     <string name="customex_type_label">Tipo</string>
     <string name="customex_logged_label">Registrar como</string>
-    <string name="customex_needs_label">Precisa de</string>
+    <string name="customex_needs_label">Equipamento</string>
     <string name="customex_needs_note">Máquinas e cabos contam como academia completa em MEU EQUIPAMENTO.</string>
     <string name="customex_needs_note__t">Máquinas e cabos contam como academia completa em MEU ARSENAL.</string>
     <string name="customex_muscles_label">Músculos</string>
+    <string name="customex_type_picker_title">Tipo de exercício</string>
+    <string name="customex_logged_picker_title">Registrar este exercício como</string>
+    <string name="customex_equipment_hint">Selecione tudo o que este exercício precisa.</string>
+    <string name="muscles_selector_selected">Músculos selecionados</string>
+    <string name="muscles_selector_by_name">Escolher músculos pelo nome</string>
+    <string name="muscles_selector_search">Buscar músculos</string>
+    <string name="muscles_selector_role_description">%1$s, %2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="one">%1$d músculo</item>
+        <item quantity="other">%1$d músculos</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="one">Usado por %1$d série registrada, rotina ou nota. Será mantido enquanto houver uso, para preservar seu histórico.</item>
         <item quantity="other">Usado por %1$d séries registradas, rotinas e notas. Será mantido enquanto houver uso, para preservar seu histórico.</item>

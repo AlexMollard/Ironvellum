@@ -2748,7 +2748,7 @@
     <string name="muscles_level_off">désactivé</string>
     <string name="muscles_level_main">principal</string>
     <string name="muscles_level_assist">secondaire</string>
-    <string name="muscles_selector_hint">Appuie sur un muscle : secondaire, principal, désactivé.</string>
+    <string name="muscles_selector_hint">Appuie sur le corps ou sélectionne les muscles par nom ci-dessous.</string>
     <string name="muscles_exercise_none">Aucune donnée musculaire pour cet exercice.</string>
     <string name="muscles_summary_main">Principal : %1$s.</string>
     <string name="muscles_summary_assist">Secondaires : %1$s.</string>
@@ -4308,10 +4308,21 @@
     <string name="customex_name_label">Nom</string>
     <string name="customex_type_label">Type d\'exercice</string>
     <string name="customex_logged_label">Enregistré en</string>
-    <string name="customex_needs_label">Matériel nécessaire</string>
+    <string name="customex_needs_label">Matériel</string>
     <string name="customex_needs_note">Les machines et poulies comptent comme une salle complète dans MON MATÉRIEL.</string>
     <string name="customex_needs_note__t">Les machines et poulies comptent comme une salle complète dans MON ARMURERIE.</string>
     <string name="customex_muscles_label">Muscles sollicités</string>
+    <string name="customex_type_picker_title">Type d\'exercice</string>
+    <string name="customex_logged_picker_title">Enregistrer cet exercice en</string>
+    <string name="customex_equipment_hint">Sélectionne tout le matériel nécessaire à cet exercice.</string>
+    <string name="muscles_selector_selected">Muscles sélectionnés</string>
+    <string name="muscles_selector_by_name">Choisir les muscles par nom</string>
+    <string name="muscles_selector_search">Rechercher des muscles</string>
+    <string name="muscles_selector_role_description">%1$s, %2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="one">%1$d muscle</item>
+        <item quantity="other">%1$d muscles</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="one">Utilisé par %1$d série enregistrée, routine ou note. Il reste disponible tant qu\'il est utilisé, pour préserver ton historique.</item>
         <item quantity="other">Utilisé par %1$d séries enregistrées, routines ou notes. Il reste disponible tant qu\'il est utilisé, pour préserver ton historique.</item>

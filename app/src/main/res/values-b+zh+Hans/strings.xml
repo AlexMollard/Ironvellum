@@ -2602,7 +2602,7 @@
     <string name="muscles_level_off">未选</string>
     <string name="muscles_level_main">主要</string>
     <string name="muscles_level_assist">辅助</string>
-    <string name="muscles_selector_hint">点击肌肉切换：辅助、主要、未选。</string>
+    <string name="muscles_selector_hint">点按身体，或在下方按名称选择肌肉。</string>
     <string name="muscles_exercise_none">此动作没有肌肉数据。</string>
     <string name="muscles_summary_main">主要：%1$s。</string>
     <string name="muscles_summary_assist">辅助：%1$s。</string>
@@ -4050,10 +4050,20 @@
     <string name="customex_name_label">名称</string>
     <string name="customex_type_label">类型</string>
     <string name="customex_logged_label">记录方式</string>
-    <string name="customex_needs_label">所需器械</string>
+    <string name="customex_needs_label">器械</string>
     <string name="customex_needs_note">在“我的器械”中，固定器械和绳索器械属于完整健身房。</string>
     <string name="customex_needs_note__t">在“我的军械库”中，固定器械和绳索器械属于完整健身房。</string>
     <string name="customex_muscles_label">肌肉</string>
+    <string name="customex_type_picker_title">动作类型</string>
+    <string name="customex_logged_picker_title">此动作的记录方式</string>
+    <string name="customex_equipment_hint">选择此动作所需的全部器械。</string>
+    <string name="muscles_selector_selected">已选肌肉</string>
+    <string name="muscles_selector_by_name">按名称选择肌肉</string>
+    <string name="muscles_selector_search">搜索肌肉</string>
+    <string name="muscles_selector_role_description">%1$s，%2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="other">%1$d 块肌肉</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="other">被 %1$d 个已记录的组、计划和笔记使用。只要仍被使用，就会保留，以免历史记录失去关联。</item>
     </plurals>

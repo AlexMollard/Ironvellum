@@ -2602,7 +2602,7 @@
     <string name="muscles_level_off">꺼짐</string>
     <string name="muscles_level_main">메인</string>
     <string name="muscles_level_assist">보조</string>
-    <string name="muscles_selector_hint">근육을 탭하세요: 보조, 메인, 꺼짐.</string>
+    <string name="muscles_selector_hint">몸을 탭하거나 아래에서 이름으로 근육을 선택하세요.</string>
     <string name="muscles_exercise_none">이 운동의 근육 데이터가 없어요.</string>
     <string name="muscles_summary_main">메인: %1$s.</string>
     <string name="muscles_summary_assist">보조: %1$s.</string>
@@ -4050,10 +4050,20 @@
     <string name="customex_name_label">이름</string>
     <string name="customex_type_label">유형</string>
     <string name="customex_logged_label">기록 방식</string>
-    <string name="customex_needs_label">필요 장비</string>
+    <string name="customex_needs_label">장비</string>
     <string name="customex_needs_note">머신과 케이블은 내 장비에서 헬스장 전체 장비로 쳐요.</string>
     <string name="customex_needs_note__t">머신과 케이블은 내 무기고에서 헬스장 전체 장비로 쳐요.</string>
     <string name="customex_muscles_label">근육</string>
+    <string name="customex_type_picker_title">운동 유형</string>
+    <string name="customex_logged_picker_title">이 운동의 기록 방식</string>
+    <string name="customex_equipment_hint">이 운동에 필요한 장비를 모두 선택하세요.</string>
+    <string name="muscles_selector_selected">선택한 근육</string>
+    <string name="muscles_selector_by_name">이름으로 근육 선택</string>
+    <string name="muscles_selector_search">근육 검색</string>
+    <string name="muscles_selector_role_description">%1$s, %2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="other">근육 %1$d개</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="other">기록된 세트, 루틴 또는 메모 %1$d개에서 사용 중이에요. 사용 중인 항목이 있는 한 삭제되지 않아 운동 기록이 보존돼요.</item>
     </plurals>

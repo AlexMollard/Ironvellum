@@ -2748,7 +2748,7 @@
     <string name="muscles_level_off">aus</string>
     <string name="muscles_level_main">Hauptmuskel</string>
     <string name="muscles_level_assist">Hilfsmuskel</string>
-    <string name="muscles_selector_hint">Tippe einen Muskel an: Hilfsmuskel, Hauptmuskel, aus.</string>
+    <string name="muscles_selector_hint">Tippe auf den Körper oder wähle unten Muskeln nach Namen aus.</string>
     <string name="muscles_exercise_none">Keine Muskeldaten für diese Übung.</string>
     <string name="muscles_summary_main">Hauptmuskeln: %1$s.</string>
     <string name="muscles_summary_assist">Hilfsmuskeln: %1$s.</string>
@@ -4308,10 +4308,21 @@
     <string name="customex_name_label">Bezeichnung</string>
     <string name="customex_type_label">Typ</string>
     <string name="customex_logged_label">Erfasst als</string>
-    <string name="customex_needs_label">Benötigt</string>
+    <string name="customex_needs_label">Ausrüstung</string>
     <string name="customex_needs_note">Maschinen und Kabelzüge zählen unter MEINE AUSRÜSTUNG als volles Studio.</string>
     <string name="customex_needs_note__t">Maschinen und Kabelzüge zählen in MEINER WAFFENKAMMER als volles Studio.</string>
     <string name="customex_muscles_label">Muskeln</string>
+    <string name="customex_type_picker_title">Übungstyp</string>
+    <string name="customex_logged_picker_title">Übung erfassen als</string>
+    <string name="customex_equipment_hint">Wähle alles aus, was diese Übung benötigt.</string>
+    <string name="muscles_selector_selected">Ausgewählte Muskeln</string>
+    <string name="muscles_selector_by_name">Muskeln nach Namen auswählen</string>
+    <string name="muscles_selector_search">Muskeln suchen</string>
+    <string name="muscles_selector_role_description">%1$s, %2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="one">%1$d Muskel</item>
+        <item quantity="other">%1$d Muskeln</item>
+    </plurals>
     <plurals name="customex_used_by">
         <item quantity="one">In %1$d erfassten Satz, Routine oder Notiz verwendet. Solange sie verwendet wird, bleibt sie erhalten, damit dein Verlauf vollständig bleibt.</item>
         <item quantity="other">In %1$d erfassten Sätzen, Routinen und Notizen verwendet. Solange sie verwendet wird, bleibt sie erhalten, damit dein Verlauf vollständig bleibt.</item>

@@ -35,6 +35,8 @@ store listing; this is the whole list.
 ### Exercise details
 - Show larger, full-width artwork, with equipment and last-workout facts underneath instead of squeezing the drawing into a thumbnail.
 - Require a dumbbell pair for decline dumbbell presses and two-dumbbell skullcrushers; correct skullcrusher and machine-assisted pull-up instructions.
+- Create and edit custom exercises with compact summary rows and focused pickers for exercise type, logging format and equipment. Equipment changes can be applied together or cancelled.
+- Select main and supporting muscles on a full-width body diagram or by name in a searchable list, with explicit role controls that adapt to narrow screens and large text.
 
 ## 1.9
 

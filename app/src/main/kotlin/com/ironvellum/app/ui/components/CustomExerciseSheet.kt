@@ -1,6 +1,10 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -81,6 +90,9 @@ internal fun CustomExerciseSheet(
     var rejected by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf<ExerciseOption?>(null) }
+    val largeText = LocalDensity.current.fontScale > 1.3f
+    val counter = "${name.length} / ${CustomExercises.MAX_NAME}"
     val scope = rememberCoroutineScope()
 
     val type = typeName?.let { n -> CustomType.entries.firstOrNull { it.name == n } }
@@ -122,17 +134,29 @@ internal fun CustomExerciseSheet(
         }
     }
 
+
     CappedDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
+        val focus = LocalFocusManager.current
+        fun open(option: ExerciseOption) {
+            focus.clearFocus()
+            picking = option
+        }
         Column(
             Modifier
                 .fillMaxSize()
-                .background(IronvellumColors.VaultHigh)
+                .background(IronvellumColors.Abyss)
                 .statusBarsPadding()
                 .imePadding(),
         ) {
+            PushedHeader(
+                stringResource(if (editing == null) R.string.customex_title_new else R.string.customex_title_edit),
+                onDismiss,
+                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                titleMaxLines = 2,
+            )
             Column(
                 Modifier
                     .weight(1f)
@@ -140,18 +164,22 @@ internal fun CustomExerciseSheet(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
             ) {
-                PushedHeader(
-                    stringResource(if (editing == null) R.string.customex_title_new else R.string.customex_title_edit),
-                    onDismiss,
-                    Modifier.padding(top = 8.dp),
-                )
                 UnderlineField(
                     label = stringResource(R.string.customex_name_label),
                     value = name,
                     onValueChange = { name = it.take(CustomExercises.MAX_NAME); rejected = null },
-                    counter = "${name.length} / ${CustomExercises.MAX_NAME}",
+                    counter = if (largeText) null else counter,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 )
+                if (largeText) {
+                    Text(
+                        counter,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    )
+                }
                 shownProblem?.let {
                     Text(
                         it,
@@ -161,37 +189,32 @@ internal fun CustomExerciseSheet(
                     )
                 }
 
-                FilterGroup(stringResource(R.string.customex_type_label)) {
-                    CustomType.entries.forEach { t ->
-                        FilterChip(t.label, type == t) { typeName = t.name }
-                    }
-                }
-                FilterGroup(stringResource(R.string.customex_logged_label)) {
-                    CustomLogged.entries.forEach { l ->
-                        FilterChip(l.label, logged == l) { loggedName = l.name }
-                    }
-                }
-                Hint(logged.hint)
-
-                FilterGroup(stringResource(R.string.customex_needs_label)) {
-                    CustomNeed.entries.forEach { n ->
-                        val on = if (n == CustomNeed.NOTHING) needs.isEmpty() else n in needs
-                        FilterChip(n.label, on) {
-                            needsText = CustomExercises.encodeNeeds(
-                                when {
-                                    n == CustomNeed.NOTHING -> emptySet()
-                                    n in needs -> needs - n
-                                    else -> needs + n
-                                },
-                            )
-                        }
-                    }
-                }
-                Hint(UiText.themed(R.string.customex_needs_note, R.string.customex_needs_note__t).asString())
-
-                Spacer(Modifier.height(14.dp))
-                Text(stringResource(R.string.customex_muscles_label), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
+                ListRow(
+                    label = stringResource(R.string.customex_type_label),
+                    value = type?.label ?: stringResource(R.string.picker_confirm_choose),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    onClick = { open(ExerciseOption.TYPE) },
+                )
+                InkDivider()
+                ListRow(
+                    label = stringResource(R.string.customex_logged_label),
+                    value = logged.label,
+                    subline = logged.hint,
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    onClick = { open(ExerciseOption.LOGGED) },
+                )
+                InkDivider()
+                ListRow(
+                    label = stringResource(R.string.customex_needs_label),
+                    value = needs.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.label }
+                        ?: CustomNeed.NOTHING.label,
+                    wrapValue = true,
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    onClick = { open(ExerciseOption.EQUIPMENT) },
+                )
+                InkDivider()
+                SectionHeader(stringResource(R.string.customex_muscles_label), topPadding = 24.dp)
                 MuscleSelector(shares, onChange = { sharesText = CustomExercises.encodeShares(it) })
 
                 if (editing != null) {
@@ -236,6 +259,91 @@ internal fun CustomExerciseSheet(
         }
     }
 
+    when (picking) {
+        ExerciseOption.TYPE -> IronvellumDialog(
+            onDismissRequest = { picking = null },
+            title = { Text(stringResource(R.string.customex_type_picker_title)) },
+            confirmButton = {},
+            dismissButton = {
+                IronvellumButton(stringResource(R.string.common_cancel), { picking = null }, quiet = true)
+            },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    CustomType.entries.forEachIndexed { index, option ->
+                        ExerciseChoiceRow(option.label, selected = type == option) {
+                            typeName = option.name
+                            picking = null
+                        }
+                        if (index < CustomType.entries.lastIndex) InkDivider()
+                    }
+                }
+            },
+        )
+        ExerciseOption.LOGGED -> IronvellumDialog(
+            onDismissRequest = { picking = null },
+            title = { Text(stringResource(R.string.customex_logged_picker_title)) },
+            confirmButton = {},
+            dismissButton = {
+                IronvellumButton(stringResource(R.string.common_cancel), { picking = null }, quiet = true)
+            },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    CustomLogged.entries.forEachIndexed { index, option ->
+                        ExerciseChoiceRow(option.label, option.hint, logged == option) {
+                            loggedName = option.name
+                            picking = null
+                        }
+                        if (index < CustomLogged.entries.lastIndex) InkDivider()
+                    }
+                }
+            },
+        )
+        ExerciseOption.EQUIPMENT -> {
+            var draftText by rememberSaveable { mutableStateOf(needsText) }
+            val draft = CustomExercises.decodeNeeds(draftText)
+            IronvellumDialog(
+                onDismissRequest = { picking = null },
+                title = { Text(stringResource(R.string.customex_needs_label)) },
+                dismissButton = {
+                    IronvellumButton(stringResource(R.string.common_cancel), { picking = null }, quiet = true)
+                },
+                confirmButton = {
+                    IronvellumButton(stringResource(R.string.common_done), { needsText = draftText; picking = null })
+                },
+                text = {
+                    Column {
+                        Hint(stringResource(R.string.customex_equipment_hint))
+                        Spacer(Modifier.height(12.dp))
+                        val options = listOf(CustomNeed.NOTHING) + CustomNeed.entries.filter { it != CustomNeed.NOTHING }
+                        options.forEachIndexed { index, option ->
+                            val checked = if (option == CustomNeed.NOTHING) draft.isEmpty() else option in draft
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                                    .toggleable(checked, role = Role.Checkbox, onValueChange = {
+                                        draftText = CustomExercises.encodeNeeds(
+                                            when {
+                                                option == CustomNeed.NOTHING -> emptySet()
+                                                option in draft -> draft - option
+                                                else -> draft + option
+                                            },
+                                        )
+                                    }).padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Checkbox(checked = checked, onCheckedChange = null)
+                                Text(option.label, style = MaterialTheme.typography.bodyMedium)
+                            }
+                            if (index < options.lastIndex) InkDivider()
+                        }
+                        Hint(UiText.themed(R.string.customex_needs_note, R.string.customex_needs_note__t).asString())
+                    }
+                },
+            )
+        }
+        null -> Unit
+    }
+
     if (confirmDelete) {
         IronvellumDialog(
             onDismissRequest = { confirmDelete = false },
@@ -257,6 +365,30 @@ internal fun CustomExerciseSheet(
                 IronvellumButton(label = stringResource(R.string.customex_keep_button), onClick = { confirmDelete = false }, quiet = true)
             },
         )
+    }
+}
+
+private enum class ExerciseOption { TYPE, LOGGED, EQUIPMENT }
+
+@Composable
+private fun ExerciseChoiceRow(
+    label: String,
+    hint: String? = null,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            if (hint != null) Hint(hint)
+        }
     }
 }
 

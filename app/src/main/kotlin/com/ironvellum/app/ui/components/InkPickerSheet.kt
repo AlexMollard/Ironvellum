@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -78,24 +79,43 @@ fun InkPickerSheet(
                 .imePadding()
                 .padding(horizontal = 16.dp),
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            val countText = countLabel?.invoke(count)
+                ?: if (countNoun != null) "$count ${plural(count, countNoun.first, countNoun.second)}" else "$count"
+            if (LocalDensity.current.fontScale > 1.3f) {
+                // Give the title its own line rather than squeezing words between count and Close.
                 Text(
                     title,
                     style = MaterialTheme.typography.titleMedium,
                     color = IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
-                Text(
-                    countLabel?.invoke(count)
-                        ?: if (countNoun != null) "$count ${plural(count, countNoun.first, countNoun.second)}" else "$count",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-                NavChip(stringResource(R.string.inkpicker_close_button), null, onClick = onDismiss)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(countText, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    NavChip(stringResource(R.string.inkpicker_close_button), null, onClick = onDismiss)
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.Ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        countText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    NavChip(stringResource(R.string.inkpicker_close_button), null, onClick = onDismiss)
+                }
             }
             Spacer(Modifier.height(6.dp))
             PickerSearchField(query = query, onQueryChange = onQueryChange, label = searchLabel)

@@ -3096,7 +3096,7 @@
     <string name="muscles_level_off">off</string>
     <string name="muscles_level_main">main</string>
     <string name="muscles_level_assist">assist</string>
-    <string name="muscles_selector_hint">Tap a muscle: assist, main, off.</string>
+    <string name="muscles_selector_hint">Tap the body or select muscles by name below.</string>
     <string name="muscles_exercise_none">No muscle data for this exercise.</string>
     <!-- Exercise figure: spoken summary. %1$s is a comma-separated list of muscle names. -->
     <string name="muscles_summary_main">Main: %1$s.</string>
@@ -5054,11 +5054,23 @@
     <string name="customex_name_label">Name</string>
     <string name="customex_type_label">Type</string>
     <string name="customex_logged_label">Logged as</string>
-    <string name="customex_needs_label">Needs</string>
-    <!-- Exercise form: caption under the Needs chips. The capitalised word is the name of the equipment filter and is upper case on purpose. -->
+    <string name="customex_needs_label">Equipment</string>
+    <!-- Exercise form: caption in the equipment picker. The capitalised word names the equipment filter. -->
     <string name="customex_needs_note">Machines and cables count as a full gym in MY EQUIPMENT.</string>
     <string name="customex_needs_note__t">Machines and cables count as a full gym in MY ARMOURY.</string>
     <string name="customex_muscles_label">Muscles</string>
+    <string name="customex_type_picker_title">Exercise type</string>
+    <string name="customex_logged_picker_title">Log this exercise as</string>
+    <string name="customex_equipment_hint">Select everything this exercise needs.</string>
+    <string name="muscles_selector_selected">Selected muscles</string>
+    <string name="muscles_selector_by_name">Choose muscles by name</string>
+    <string name="muscles_selector_search">Search muscles</string>
+    <!-- Spoken role choice: %1$s is the muscle, %2$s is off, assist or main. -->
+    <string name="muscles_selector_role_description">%1$s, %2$s</string>
+    <plurals name="muscles_selector_count">
+        <item quantity="one">%1$d muscle</item>
+        <item quantity="other">%1$d muscles</item>
+    </plurals>
     <!-- Exercise form: shown instead of the Delete row while something still uses the exercise. %1$d is how many logged sets, routines and notes use it. -->
     <plurals name="customex_used_by">
         <item quantity="one">Used by %1$d logged set, routine or note. It stays while anything uses it, so your history is never orphaned.</item>
