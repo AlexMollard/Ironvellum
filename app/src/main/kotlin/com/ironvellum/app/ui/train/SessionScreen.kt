@@ -990,6 +990,7 @@ fun SessionScreen(
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted && ui.session?.let { it.completedAtMs == null } == true) WorkoutSessionService.start(screenContext, sessionId)
+        if (granted) (screenContext.applicationContext as com.ironvellum.app.IronvellumApp).notificationsAllowed()
     }
     var notificationSheet by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(sessionId, ui.session?.completedAtMs, ui.loaded) {

@@ -15,6 +15,12 @@ store listing; this is the whole list.
 - Start the Veil's accrual clock at app startup, so the home bar and essence can update without first opening the Veil.
 - Repair missing clocks on older installs and restored backups without collecting rewards, resetting an existing away interval or changing banked essence.
 
+### Notifications
+- Check social activity when signing in, returning to the app or allowing notifications, rather than waiting for the next background poll.
+- Keep pending social alerts when permission is denied or posting fails; retry temporary connection failures without repeating already-delivered activity.
+- Ignore replies from a previous account or backend, and keep existing inbox history silent when first establishing a notification baseline.
+- Catch up a due weekly recap after returning or granting notification permission, within its existing 24-hour window, without duplicate alerts.
+
 ## 1.10
 
 ### Warmups, stretches and cooldowns

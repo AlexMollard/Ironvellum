@@ -26,9 +26,14 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import android.util.Log
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.InboxWorker
+import com.ironvellum.app.data.cloud.InboxPolling
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -118,6 +123,38 @@ class IronvellumApp : Application() {
     }
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val accountRestore by lazy { appScope.async { accountRepository.restore() } }
+    private val repositoryReady = Mutex()
+    private var repositorySeeded = false
+
+    suspend fun awaitRepositoryReady() = repositoryReady.withLock {
+        if (!repositorySeeded) {
+            repository.ensureSeeded()
+            repositorySeeded = true
+        }
+    }
+
+    private suspend fun checkInbox(force: Boolean = false) {
+        val error = InboxPolling.check(this, throttle = !force).exceptionOrNull() ?: return
+        Log.w("InboxPolling", "Foreground inbox check failed: ${error.message}")
+        if (InboxPolling.transient(error)) InboxWorker.retry(this)
+    }
+
+    private suspend fun checkRecap() {
+        try {
+            awaitRepositoryReady()
+            WeeklyRecaps.deliverIfDue(this, repository)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w("WeeklyRecaps", "Foreground recap check failed: ${error.message}")
+        }
+    }
+
+    fun notificationsAllowed() {
+        appScope.launch { checkInbox(force = true) }
+        appScope.launch { checkRecap() }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -172,10 +209,23 @@ class IronvellumApp : Application() {
         // restores a session or touches the cloud, so the first client is
         // built against the backend the lifter actually chose.
         Cloud.init(this)
+        accountRestore
+        appScope.launch {
+            val restored = accountRestore.await().isSuccess
+            var settled = restored
+            combine(accountRepository.account, Cloud.config) { acct, cfg -> acct?.userId to cfg }
+                .distinctUntilChanged()
+                .collect { (userId, config) ->
+                    val live = userId != null && config != null
+                    if (live) settled = true
+                    if (settled) InboxWorker.sync(this@IronvellumApp, live)
+                    if (live) appScope.launch { checkInbox() }
+                }
+        }
         // The lifter's vest and belt, off the main thread: the load steppers read them from the store's flow.
         appScope.launch { runCatching { com.ironvellum.app.data.ProgramAnswersStore.get(this@IronvellumApp) } }
         appScope.launch {
-            repository.ensureSeeded()
+            awaitRepositoryReady()
             // The home-screen widgets show the plan, the live trial (its sets ticked) and the finished ones: any write to them redraws.
             database.invalidationTracker.addObserver(object : InvalidationTracker.Observer("sessions", "set_logs", "presets", "preset_entries") {
                 override fun onInvalidated(tables: Set<String>) = TodayWidget.refresh(this@IronvellumApp)
@@ -198,29 +248,16 @@ class IronvellumApp : Application() {
             // The Veil's one-time catch-up for levels that never paid out. Guarded
             // by a stored version, so every launch after the first is a no-op.
             runCatching { repository.applyVeilGrant() }
-            // Restore a stored sign-in before any screen asks who we are,
-            // otherwise the social surfaces flash "signed out" on every launch.
-            val restored = runCatching { accountRepository.restore() }.getOrNull()?.isSuccess == true
-            // The inbox poll follows the account from here on. Not before the
-            // restore: a worker that cold-started this process is waiting for
-            // that account, and a null read too early would cancel it. A
-            // failed restore (offline token refresh) proves nothing either, so
-            // until an account is seen only a sign-in may change the schedule.
-            appScope.launch {
-                var settled = restored
-                combine(accountRepository.account, Cloud.config) { acct, cfg -> acct != null && cfg != null }
-                    .distinctUntilChanged()
-                    .collect { live ->
-                        if (live) settled = true
-                        if (settled) InboxWorker.sync(this@IronvellumApp, live)
-                    }
-            }
         }
         // Built now, so its throttle clock starts with the process and the first ON_START rides on the start-up sync.
         healthResume
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_START) appScope.launch { runCatching { healthResume.onResume() } }
+                if (event == Lifecycle.Event.ON_START) {
+                    appScope.launch { runCatching { healthResume.onResume() } }
+                    appScope.launch { checkInbox(force = true) }
+                    appScope.launch { checkRecap() }
+                }
             },
         )
         HealthSyncWorker.schedule(this)

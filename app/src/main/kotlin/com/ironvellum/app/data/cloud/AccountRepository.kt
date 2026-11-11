@@ -12,6 +12,9 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,25 +43,28 @@ data class Account(
  * Authenticated identity + the one row of `profiles` the player owns.
  * All methods speak in Result so the UI never sees a raw stack trace.
  */
-class AccountRepository {
+class AccountRepository(private val clientOverride: SupabaseClient? = null) {
 
     private val _account = MutableStateFlow<Account?>(null)
+    private val sessionLock = Mutex()
+    @Volatile private var automaticRestoreAllowed = true
 
     /** The signed-in account, or null while signed out / cloud unconfigured. */
     val account: StateFlow<Account?> = _account.asStateFlow()
 
-    private suspend fun requireClient(): Result<SupabaseClient> = Cloud.requireConfigured
+    private suspend fun requireClient(): Result<SupabaseClient> = clientOverride?.let { Result.success(it) } ?: Cloud.requireConfigured
 
     /** Resume a persisted session on app start. Quiet success when signed out;
      *  a failed import surfaces as a Result — silently swallowing it left the
      *  user "signed out" forever with no explanation on any social tab. */
-    suspend fun restore(): Result<Unit> {
-        val client = requireClient().getOrElse { return failure(it) }
+    suspend fun restore(): Result<Unit> = sessionLock.withLock {
+        if (!automaticRestoreAllowed) return@withLock Result.success(Unit)
+        val client = requireClient().getOrElse { return@withLock failure(it) }
         // supabase-kt persists the session in its SessionManager but does not
         // import it automatically: load then import (refreshing if stale).
         val session = runCatching { client.auth.sessionManager.loadSessionOrNull() }.getOrNull()
-            ?: return Result.success(Unit)
-        return runCatching {
+            ?: return@withLock Result.success(Unit)
+        runCatching {
             client.auth.importSession(session)
             val user = client.auth.currentUserOrNull()
             // Statement, not an expression: a trailing `?.let` inferred the
@@ -70,17 +76,20 @@ class AccountRepository {
                 // tab. Keep the identity with a blank name and retry the row
                 // on the next social read (see [refreshProfile]).
                 val profile = loadAccount(user.id, email)
-                _account.value = profile ?: Account(
-                    userId = user.id,
-                    email = email,
-                    displayName = "",
-                    // The sign-up default; replaced once the row is readable.
-                    visibility = "friends",
-                    profileLoaded = false,
-                )
+                synchronized(_account) {
+                    if (automaticRestoreAllowed) _account.value = profile ?: Account(
+                        userId = user.id,
+                        email = email,
+                        displayName = "",
+                        // The sign-up default; replaced once the row is readable.
+                        visibility = "friends",
+                        profileLoaded = false,
+                    )
+                }
             }
         }.recoverCatching { error ->
-            throw MessageException(Cloud.explain(error))
+            if (error is CancellationException) throw error
+            throw MessageException(Cloud.explain(error), error)
         }
     }
 
@@ -276,9 +285,15 @@ class AccountRepository {
         // Local state clears first: client.auth.signOut() is a network
         // revocation, and treating it as a precondition stranded the lifter
         // signed in with no connectivity and no way out.
-        _account.value = null
-        requireClient().onSuccess { client ->
-            runCatching { client.auth.signOut() }
+        synchronized(_account) {
+            automaticRestoreAllowed = false
+            _account.value = null
+        }
+        // A restore already importing a token must finish before logout clears the SDK's stored session.
+        sessionLock.withLock {
+            requireClient().onSuccess { client ->
+                runCatching { client.auth.signOut() }
+            }
         }
         return Result.success(Unit)
     }
@@ -302,14 +317,14 @@ class AccountRepository {
     }
 
     private suspend fun loadSignedInAccount(fallbackEmail: String): Account? {
-        val client = Cloud.client()
+        val client = requireClient().getOrThrow()
         val userId = client.auth.currentUserOrNull()?.id ?: return null
         return loadAccount(userId, fallbackEmail)?.also { _account.value = it }
     }
 
     /** Profiles are readable per RLS; a missing row (Google signup) returns null. */
     private suspend fun loadAccount(userId: String, email: String): Account? {
-        val client = Cloud.client()
+        val client = requireClient().getOrThrow()
         return runCatching {
             client.postgrest.from("profiles").select {
                 filter { eq("id", userId) }

@@ -11,11 +11,16 @@ import com.ironvellum.app.data.db.SessionEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.domain.RecapSchedule
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -124,6 +129,40 @@ class WeeklyRecapsTest {
         assertEquals(RecapSchedule.Verdict.AlreadyDelivered(week), WeeklyRecaps.deliverIfDue(context, repo, now.plusMinutes(5)))
         assertEquals(RecapSchedule.Verdict.AlreadyDelivered(week), WeeklyRecaps.deliverIfDue(context, repo, at(week.plusDays(7), 7)))
         assertNull(posted())
+    }
+
+    @Test
+    fun aPermissionGrantWithinTheGraceWindowCanStillDeliverTheRecap() = runBlocking {
+        val blocked = object : android.content.ContextWrapper(context) {
+            override fun checkSelfPermission(permission: String): Int =
+                if (permission == android.Manifest.permission.POST_NOTIFICATIONS) android.content.pm.PackageManager.PERMISSION_DENIED
+                else super.checkSelfPermission(permission)
+        }
+        val now = at(week.plusDays(6), 19, 2)
+        WeeklyRecaps.deliverIfDue(blocked, repo, now)
+        assertNull(WeeklyRecaps.lastDelivered(context))
+        assertNull(posted())
+        assertEquals(RecapSchedule.Verdict.Deliver(week), WeeklyRecaps.deliverIfDue(context, repo, now.plusHours(1)))
+        assertEquals(week, WeeklyRecaps.lastDelivered(context))
+        assertNotNull(posted())
+    }
+
+    @Test
+    fun concurrentForegroundAndWorkerChecksDeliverTheWeekOnlyOnce() = runBlocking {
+        val start = CompletableDeferred<Unit>()
+        val now = at(week.plusDays(6), 19, 2)
+        val checks = List(4) {
+            async(Dispatchers.IO) {
+                start.await()
+                WeeklyRecaps.deliverIfDue(context, repo, now)
+            }
+        }
+        start.complete(Unit)
+        val verdicts = checks.awaitAll()
+        assertEquals(1, verdicts.count { it == RecapSchedule.Verdict.Deliver(week) })
+        assertEquals(3, verdicts.count { it == RecapSchedule.Verdict.AlreadyDelivered(week) })
+        assertEquals(week, WeeklyRecaps.lastDelivered(context))
+        assertNotNull(posted())
     }
 
     @Test

@@ -33,11 +33,16 @@ object InboxNotifier {
     private const val KEY_ENABLED = "enabled"
     private const val KEY_MARK = "mark_ms"
     private const val KEY_MARK_USER = "mark_user"
+    private const val KEY_MARK_BACKEND = "mark_backend"
     private const val KEY_ASKED = "asked_permission"
     private const val KEY_TRIBUTED = "tributed"
 
     /** Tributes remembered for [coalesce]: a month of a busy lifter's, far more than the inbox's 100 rows. */
     internal const val TRIBUTE_MEMORY = 300
+    private var generation = 0L
+
+    @Synchronized
+    fun generation(): Long = generation
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -49,6 +54,7 @@ object InboxNotifier {
      * worker outright rather than leaving it to wake and return. The setting is
      * only reachable signed in, so on needs no account check here.
      */
+    @Synchronized
     fun setEnabled(context: Context, value: Boolean) {
         prefs(context).edit { putBoolean(KEY_ENABLED, value) }
         if (value) {
@@ -82,6 +88,7 @@ object InboxNotifier {
         return enabled(context) && !hasPermission(context)
     }
 
+    @Synchronized
     fun cancel(context: Context) {
         NotificationManagerCompat.from(context).cancel(Notifications.ID_ALLIES)
     }
@@ -91,11 +98,14 @@ object InboxNotifier {
      * baseline, not inherit this one's mark, and a signed-out phone has
      * nothing to poll for.
      */
+    @Synchronized
     fun reset(context: Context) {
+        generation++
         prefs(context).edit {
             remove(KEY_MARK)
             remove(KEY_MARK_USER)
             remove(KEY_TRIBUTED)
+            remove(KEY_MARK_BACKEND)
         }
         cancel(context)
         InboxWorker.cancel(context)
@@ -107,17 +117,24 @@ object InboxNotifier {
      * only records the mark: notifying the whole existing backlog after
      * install or sign-in would be a flood of things the lifter already knows.
      */
-    fun onInbox(context: Context, userId: String, inbox: Inbox) {
+    @Synchronized
+    fun onInbox(context: Context, userId: String, inbox: Inbox, backend: String? = null, isCurrent: () -> Boolean) {
+        if (!isCurrent()) return
         val p = prefs(context)
         val newest = inbox.items.maxOfOrNull { it.occurredAtMs }
-        if (p.getString(KEY_MARK_USER, null) != userId) {
+        val storedBackend = p.getString(KEY_MARK_BACKEND, null)
+        if (p.getString(KEY_MARK_USER, null) != userId ||
+            (backend != null && storedBackend != null && storedBackend != backend)
+        ) {
             p.edit {
                 putString(KEY_MARK_USER, userId)
+                if (backend != null) putString(KEY_MARK_BACKEND, backend)
                 putLong(KEY_MARK, newest ?: 0L)
                 remove(KEY_TRIBUTED)
             }
             return
         }
+        if (backend != null && storedBackend == null) p.edit { putString(KEY_MARK_BACKEND, backend) }
         // Read on another device (or in the app): the server's seen-at has
         // passed everything, so the posted row is stale news. Taken from
         // seen-at, not the local mark, which advances as soon as we post.
@@ -128,12 +145,6 @@ object InboxNotifier {
         if (newer.isEmpty()) return
         val tributed = p.getString(KEY_TRIBUTED, null).orEmpty().split('\n').filter { it.isNotEmpty() }
         val fresh = coalesce(newer, tributed.toSet())
-        // Advance before posting: a crash between the two would otherwise
-        // repeat the same notification every half hour.
-        p.edit {
-            putLong(KEY_MARK, maxOf(floor, newer.first().occurredAtMs))
-            putString(KEY_TRIBUTED, rememberTributes(tributed, fresh).joinToString("\n"))
-        }
         if (fresh.isEmpty() || !canNotify(context)) return
 
         val latest = line(fresh.first()).asString(context)
@@ -182,7 +193,12 @@ object InboxNotifier {
         ) {
             return
         }
+        if (!isCurrent() || !canNotify(context)) return
         NotificationManagerCompat.from(context).notify(Notifications.ID_ALLIES, notification)
+        p.edit {
+            putLong(KEY_MARK, maxOf(floor, newer.first().occurredAtMs))
+            putString(KEY_TRIBUTED, rememberTributes(tributed, fresh).joinToString("\n"))
+        }
     }
 
     /**

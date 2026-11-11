@@ -116,7 +116,9 @@ fun SocialScreen(
     // the once-per-install ask exactly like ALLOW would.
     val context = LocalContext.current
     var explainNotifications by rememberSaveable { mutableStateOf(false) }
-    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) app.notificationsAllowed()
+    }
     // Settled, not current: half a swipe toward INBOX must not clear its notification.
     val settledTab = GuildTab.entries[pager.settledPage]
     LaunchedEffect(settledTab) {

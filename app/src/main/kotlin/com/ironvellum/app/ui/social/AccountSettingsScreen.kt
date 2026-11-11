@@ -111,7 +111,9 @@ fun AccountSettingsScreen(
     var allyAlerts by remember { mutableStateOf(InboxNotifier.enabled(context)) }
     // Re-read on every resume: a block lifted in system settings shows at once.
     val allyAccess = rememberNotificationAccess(Notifications.CHANNEL_ALLIES)
-    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) (context.applicationContext as com.ironvellum.app.IronvellumApp).notificationsAllowed()
+    }
 
     Column(
         Modifier

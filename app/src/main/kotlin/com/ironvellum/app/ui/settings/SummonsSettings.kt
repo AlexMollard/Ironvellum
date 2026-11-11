@@ -41,7 +41,9 @@ internal fun SummonsSettings(onBack: () -> Unit) {
     // scheduled, and the notice below offers the way to allow them.
     val askNotifications = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { }
+    ) { granted ->
+        if (granted) (context.applicationContext as com.ironvellum.app.IronvellumApp).notificationsAllowed()
+    }
     val setOn: (Boolean) -> Unit = { on ->
         if (on != remindersOn) {
             if (on) {

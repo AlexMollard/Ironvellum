@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -22,6 +23,8 @@ import com.ironvellum.app.ui.asString
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.recap.RecapCopy
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -39,6 +42,7 @@ object WeeklyRecaps {
     private const val PREFS = "weekly_recap"
     private const val KEY_LAST_WEEK = "last_delivered_week"
     private const val WORK_NAME = "weekly-recap"
+    private val deliveryMutex = Mutex()
 
     /** The Monday of the last week delivered (as an epoch day); null before the first. A week is never delivered twice. */
     fun lastDelivered(context: Context): LocalDate? {
@@ -72,6 +76,7 @@ object WeeklyRecaps {
         val delay = RecapSchedule.delayUntilNext(ZonedDateTime.now())
         val request = OneTimeWorkRequestBuilder<RecapWorker>()
             .setInitialDelay(delay.toMillis(), TimeUnit.MILLISECONDS)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
             .addTag(WORK_NAME)
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(WORK_NAME, policy, request)
@@ -83,7 +88,7 @@ object WeeklyRecaps {
      * The worker's whole job: what [RecapSchedule.decide] says for [now]. On a delivery the week is marked delivered
      * only once the notification is actually posted, so a refusal (permission, channel off) is never recorded as a delivery.
      */
-    suspend fun deliverIfDue(context: Context, repo: Repository, now: ZonedDateTime = ZonedDateTime.now()): RecapSchedule.Verdict {
+    suspend fun deliverIfDue(context: Context, repo: Repository, now: ZonedDateTime = ZonedDateTime.now()): RecapSchedule.Verdict = deliveryMutex.withLock {
         val history = repo.observeHistory().first()
         val verdict = RecapSchedule.decide(now, lastDelivered(context)) { week ->
             PeriodStats.workoutsIn(history, week, week.plusDays(7), now.zone)
@@ -91,7 +96,7 @@ object WeeklyRecaps {
         if (verdict is RecapSchedule.Verdict.Deliver && post(context, load(repo, verdict.week, now.toLocalDate(), now.zone))) {
             markDelivered(context, verdict.week)
         }
-        return verdict
+        verdict
     }
 
     /**

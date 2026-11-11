@@ -130,9 +130,23 @@ phone. (Warbands followed later the same day — see the roadmap above.)
 - **Ally workout view.** The comments screen becomes the workout view: sets in
   exercise order (`session_sets.exercise_position`), reactions, comments. The
   whole feed card opens it.
-- **Inbox notifications.** A 30-minute WorkManager job reads `my_inbox()` and
-  posts one Android notification for items newer than a persisted mark and the
-  server seen-mark; no Google push service. Toggle under Account › Notifications.
+- **Inbox notifications.** A 30-minute WorkManager job reads `my_inbox()`; delivery
+  is best-effort and Android may defer it. Sign-in, foreground resume and a
+  notification-permission grant also check immediately.
+  - The first successful read for an account/backend silently establishes its
+    history baseline, even before permission is granted.
+  - Later reads post one private Android notification for events newer than
+    both the delivery mark and the server seen-mark. Advance the delivery mark
+    and reaction memory only after posting succeeds.
+  - Serialize checks and reject responses from an account/backend that changed
+    during the read. A failed startup restore can retry, but automatic recovery
+    cannot undo an explicit sign-out.
+  - Temporary network, HTTP 429 and server failures receive at most two retries
+    with exponential backoff starting at one minute; permanent failures wait for
+    a later check.
+  - No Google push service. Toggle under Account › Notifications; disabling it
+    cancels background polling and queued retries. Foreground reads can still
+    establish the silent baseline and refresh the unread count.
 
 
 ## Moderation
