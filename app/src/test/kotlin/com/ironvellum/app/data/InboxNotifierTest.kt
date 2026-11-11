@@ -14,6 +14,18 @@ class InboxNotifierTest {
         InboxItem.NewReaction(at, actor, actor, session, "Heavy Pull", Reaction.FLAME)
 
     @Test
+    fun `a malformed timestamp does not discard the valid inbox events`() {
+        fun row(actor: String, at: String) = InboxRowDto(kind = "request", occurredAt = at, actorId = actor, actorName = actor)
+        val valid = row("eli", "2026-10-01T18:00:00Z")
+        val rows = listOf(
+            row("broken", "not-a-time"),
+            valid,
+            row("overflow", "+1000000000-12-31T23:59:59.999999999Z"),
+        )
+        assertEquals(listOf(InboxItem.FriendRequest(1790877600000L, "eli", "eli")), rows.mapNotNull { it.toInboxItem() })
+    }
+
+    @Test
     fun `a tribute paid again on the same trial does not notify twice`() {
         val first = listOf(tribute("s1", "eli", 100))
         val announced = InboxNotifier.rememberTributes(emptyList(), InboxNotifier.coalesce(first, emptySet()))

@@ -701,7 +701,13 @@ data class InboxRowDto(
      * such row is dropped; it must not fail the whole inbox.
      */
     internal fun toInboxItem(): InboxItem? {
-        val at = Instant.parse(occurredAt).toEpochMilli()
+        val at = try {
+            Instant.parse(occurredAt).toEpochMilli()
+        } catch (_: java.time.DateTimeException) {
+            return null
+        } catch (_: ArithmeticException) {
+            return null
+        }
         val name = actorName?.takeIf { it.isNotBlank() } ?: hiddenLifterName()
         return when (kind) {
             "request" -> InboxItem.FriendRequest(at, actorId, name)

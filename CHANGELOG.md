@@ -21,6 +21,7 @@ store listing; this is the whole list.
 - Ignore replies from a previous account or backend, and keep existing inbox history silent when first establishing a notification baseline.
 - Catch up a due weekly recap after returning or granting notification permission, within its existing 24-hour window, without duplicate alerts.
 - Retry failed evening reminders and weekly recaps twice with exponential backoff, while preserving cancellation and the next scheduled occurrence.
+- Keep valid social events available when an inbox row contains an invalid or out-of-range timestamp.
 
 ## 1.10
 
