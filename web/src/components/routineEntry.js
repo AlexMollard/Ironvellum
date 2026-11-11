@@ -1,6 +1,6 @@
 import { node, link, liftPath } from './statCard.js';
 import { artImg } from './artImg.js';
-import { formatLoad } from '../format.js';
+import { exerciseUnit, formatLoad } from '../format.js';
 
 /**
  * One numbered entry of a routine, read-only, exactly as the snapshot carries it: the art, name and variation chip, the scheme line
@@ -8,6 +8,7 @@ import { formatLoad } from '../format.js';
  * exercise (`context.snapshot.lifts`) the whole entry is one link to it; a custom exercise has none and stays plain.
  */
 export function routineEntry(entry, unit = 'kg', { snapshot, router } = {}) {
+  unit = exerciseUnit(snapshot, entry.name, unit);
   const path = router ? liftPath(snapshot, entry.name) : null;
   const row = node('li', null, `routine-entry${entry.warmup ? ' is-warmup' : ''}${path ? ' is-link' : ''}`); row.dataset.position = String(entry.position);
   const art = node('span', null, 'art-frame'); art.append(artImg(entry.name, entry.art)); art.setAttribute('aria-hidden', 'true');

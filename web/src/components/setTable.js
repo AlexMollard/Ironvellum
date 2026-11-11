@@ -1,5 +1,5 @@
 import { word } from '../i18n.js';
-import { addsToBody, formatLoad, formatSetLoad, setPerformance, setEffort, setKindName } from '../format.js';
+import { addsToBody, exerciseUnit, formatLoad, formatSetLoad, setPerformance, setEffort, setKindName } from '../format.js';
 import { node } from './statCard.js';
 export function setTable(sets, entry, snapshot) {
   const table = node('table', null, 'set-table');
@@ -9,7 +9,7 @@ export function setTable(sets, entry, snapshot) {
   const body = node('tbody');
   for (const [position, set] of sets.entries()) {
     const key = `${set.exerciseName}#${set.setIndex}`; const row = node('tr', null, `kind-${set.kind || 'working'}`);
-    const unit = snapshot?.unit || 'kg';
+    const unit = exerciseUnit(snapshot, set.exerciseName);
     const load = formatSetLoad(set, unit, addsToBody(snapshot, set.exerciseName)), performance = setPerformance(set).join(' · ') || '—', effort = setEffort(set, snapshot) ?? '—';
     const e1rm = entry?.e1rm?.[key], peak = entry?.peakSets?.includes(key);
     for (const value of [position + 1, setKindName(set), load, performance, effort]) row.append(node('td', value));

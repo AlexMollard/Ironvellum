@@ -8,6 +8,18 @@ import org.junit.Test
 /** A setting this build cannot read is dropped and named; it never throws, so it can never fail a training restore. */
 class ArchiveSettingsSanitizeTest {
 
+    @Test fun exerciseUnitsRejectUnknownValuesAndMalformedNames() {
+        val result = ArchiveSettings.sanitize(mapOf("appearance" to mapOf(
+            "exerciseLoadUnit.leg press" to "s:LB",
+            "exerciseLoadUnit.bench press" to "s:KG",
+            "exerciseLoadUnit.row" to "s:STONE",
+            "exerciseLoadUnit." to "s:LB",
+            "exerciseLoadUnit.Leg Press" to "s:LB",
+        )))
+        assertEquals(mapOf("exerciseLoadUnit.leg press" to "s:LB", "exerciseLoadUnit.bench press" to "s:KG"), result.accepted["appearance"])
+        assertEquals(setOf("appearance/exerciseLoadUnit.row", "appearance/exerciseLoadUnit.", "appearance/exerciseLoadUnit.Leg Press"), result.dropped.toSet())
+    }
+
     @Test fun unknownFilesKeysAndStaleValuesAreDroppedOneByOne() {
         val result = ArchiveSettings.sanitize(
             mapOf(

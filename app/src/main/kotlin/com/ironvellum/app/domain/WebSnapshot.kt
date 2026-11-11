@@ -20,6 +20,9 @@ data class WebSnapshot(
     val sessions: Map<String, SessionEntry>, val lifts: List<Lift>, val fatigue: Fatigue, val trends: Trends,
     /** Additive to v1: a web that does not know it ignores it. */
     val routines: Routines = Routines(),
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val exerciseUnits: Map<String, String> = emptyMap(),
 ) {
     @Serializable data class AccentSet(val preset: String?, val primary: String, val secondary: String, val bright: String,
         val deep: String, val muted: String, val panelTint: String, val panelTintBorder: String, val fill: String,

@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.components
 
 import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.BodyShare
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
@@ -35,9 +36,10 @@ internal fun lastLoggedLine(
 
 internal fun lastLoggedFigure(last: LastLogged, exercise: Exercise): String {
     val added = !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")
-    val load = last.weightKg?.takeIf { it > 0.0 }?.let { (if (added) "+" else "") + Units.withUnit(it) }
+    val assisted = BodyShare.isAssisted(exercise.name)
+    val load = last.weightKg?.takeIf { assisted || it > 0.0 }?.let { (if (added) "+" else "") + Units.withUnit(it, exercise.name) }
     return when (exercise.metric) {
-        ExerciseMetric.REPS -> "${last.reps} × ${load ?: Units.label(null, exercise.isWeighted && !added)}"
+        ExerciseMetric.REPS -> "${last.reps} × ${load ?: if (assisted) Words.text(UiText.res(R.string.assistance_unknown)) else Units.label(null, exercise.isWeighted && !added, exercise.name)}"
         ExerciseMetric.HOLD -> {
             val seconds = setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure
             if (load == null) lastLoggedSeconds(seconds) else "${lastLoggedSeconds(seconds)} × $load"

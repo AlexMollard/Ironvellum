@@ -25,17 +25,17 @@ private fun loadOf(exercise: Exercise, set: ExerciseLogSet): Double? =
 private fun loadText(exercise: Exercise, kg: Double?): String =
     if (kg == null) {
         if (BodyShare.isAssisted(exercise.name)) Words.text(UiText.res(R.string.assistance_unknown))
-        else Units.label(null, exercise.isWeighted && !addsToBody(exercise))
+        else Units.label(null, exercise.isWeighted && !addsToBody(exercise), exercise.name)
     } else {
-        (if (addsToBody(exercise)) "+" else "") + Units.withUnit(kg)
+        (if (addsToBody(exercise)) "+" else "") + Units.withUnit(kg, exercise.name)
     }
 
 /**
  * An estimated 1RM in the lifter's unit: "+46 kg" for a bodyweight lift (an added-load equivalent, like the plates
  * that are loaded), "120 kg" for a bar. [decimals] 0 for an axis label, 1 for a figure.
  */
-internal fun e1rmText(kg: Double, addsToBody: Boolean, decimals: Int): String =
-    (if (addsToBody) "+" else "") + Units.fixed(kg, decimals)
+internal fun e1rmText(kg: Double, addsToBody: Boolean, decimals: Int, exerciseName: String? = null): String =
+    (if (addsToBody) "+" else "") + Units.fixed(kg, decimals, exerciseName)
 
 /** One set's own figure with no load: "12", or "45 s" for a hold. */
 private fun figureText(exercise: Exercise, set: ExerciseLogSet): String = when (exercise.metric) {

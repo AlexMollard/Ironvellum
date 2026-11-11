@@ -183,14 +183,14 @@ internal fun EffortEntryEditor(
         if (onLoad != null && load != null) {
             EffortStepper(
                 label = stringResource(R.string.effort_editor_load_label),
-                value = Units.format(load),
-                unit = Units.name,
+                value = Units.format(load, name),
+                unit = Units.nameFor(name),
                 less = stringResource(R.string.effort_editor_load_less_description, name),
                 more = stringResource(R.string.effort_editor_load_more_description, name),
                 onLess = { if (enabled) onLoad(-1) },
                 onMore = { if (enabled) onLoad(1) },
                 moreEnabled = enabled && (cap == null || load < cap - 1e-9) &&
-                    wornFor(entry, equipment)?.let { it.nextKg(load, Units.current) != null } != false,
+                    wornFor(entry, equipment)?.let { it.nextKg(load, Units.forExercise(name)) != null } != false,
             )
         }
         dumbbellNote(entry, equipment, capLabel)?.let { note ->

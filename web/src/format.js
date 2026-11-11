@@ -2,6 +2,11 @@ export function formatLoad(kg, unit = 'kg') {
   const value = unit === 'lb' ? Math.round(kg / 0.45359237 * 2) / 2 : Math.round(kg * 100) / 100;
   return String(Object.is(value, -0) ? 0 : value);
 }
+// Snapshot overrides are keyed by normalized base exercise name; absent or unknown values follow the global unit.
+export function exerciseUnit(snapshot, exerciseName, fallback = 'kg') {
+  const unit = snapshot?.exerciseUnits?.[String(exerciseName ?? '').trim().toLowerCase()];
+  return unit === 'kg' || unit === 'lb' ? unit : (snapshot?.unit || fallback);
+}
 export function formatVolume(kg, unit = 'kg') {
   const amount = unit === 'lb' ? kg / 0.45359237 : kg;
   const value = Math.round(amount / 100) / 10;

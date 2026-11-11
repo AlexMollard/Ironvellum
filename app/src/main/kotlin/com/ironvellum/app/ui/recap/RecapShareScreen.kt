@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.R
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.UiText
 import com.ironvellum.app.domain.WeeklyRecap
 import com.ironvellum.app.ui.asString
@@ -130,7 +131,9 @@ internal fun ShareCardContent(
 
     val picturesFolder = stringResource(R.string.recap_share_pictures_folder)
     var card by remember { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(cardKey, options, palette) {
+    val unit = Units.current
+    val exerciseUnits = Units.exerciseOverrides
+    LaunchedEffect(cardKey, options, palette, unit, exerciseUnits) {
         card = withContext(Dispatchers.Default) { render(context, options, palette) }
     }
 

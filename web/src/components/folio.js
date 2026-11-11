@@ -6,7 +6,7 @@ import { liftTier, knownLift } from './liftTier.js';
 import { reasonDialog, confirmPanel } from './reasonDialog.js';
 import { renderLineChart } from './lineChart.js';
 import { lifterSummary } from '../lifterSummary.js';
-import { formatSetLoad, setPerformance, formatDay, plural } from '../format.js';
+import { exerciseUnit, formatSetLoad, setPerformance, formatDay, plural } from '../format.js';
 import { explain } from '../explain.js';
 import { t, format, word } from '../i18n.js';
 
@@ -21,13 +21,13 @@ export function summaryLine(figures) {
   return parts.join(' · ');
 }
 
-function workoutSets(body, workout, unit) {
+function workoutSets(body, workout, snapshot) {
   body.replaceChildren();
   if (workout.note) body.append(node('p', workout.note, 'muted'));
   for (const exercise of workout.exercises) {
     const block = node('div', null, 'folio-exercise'); block.append(node('strong', exercise.name));
     for (const [index, set] of exercise.sets.entries()) {
-      const line = node('div', [`Set ${index + 1}`, formatSetLoad({ ...set, exerciseName: exercise.name }, unit), setPerformance(set).join(' · ')].filter(Boolean).join(' · '), set.done ? 'folio-set' : 'folio-set muted'); block.append(line);
+      const line = node('div', [`Set ${index + 1}`, formatSetLoad({ ...set, exerciseName: exercise.name }, exerciseUnit(snapshot, exercise.name)), setPerformance(set).join(' · ')].filter(Boolean).join(' · '), set.done ? 'folio-set' : 'folio-set muted'); block.append(line);
     }
     body.append(block);
   }
@@ -72,7 +72,7 @@ export function renderFolio(root, { social, snapshot, me, nowMs = Date.now(), on
       open.addEventListener('click', async () => {
         body.hidden = !body.hidden; open.setAttribute('aria-expanded', String(!body.hidden));
         if (body.hidden || loaded) return;
-        try { workoutSets(body, await social.lifterWorkout(s.id), snapshot?.unit); loaded = true; } catch (error) { body.replaceChildren(node('p', error?.name === 'WorkoutHidden' ? t('cloud_sync_trial_hidden') : explain(error), 'notice')); }
+        try { workoutSets(body, await social.lifterWorkout(s.id), snapshot); loaded = true; } catch (error) { body.replaceChildren(node('p', error?.name === 'WorkoutHidden' ? t('cloud_sync_trial_hidden') : explain(error), 'notice')); }
       });
       item.append(open, body); recent.append(item);
     }

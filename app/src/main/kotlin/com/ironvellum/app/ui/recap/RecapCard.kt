@@ -152,7 +152,7 @@ object RecapCard {
                 val room = setRight - set.measureText(setText) - 24f - nameLeft
                 canvas.drawText(TextUtils.ellipsize(record.label, TextPaint(name), room, TextUtils.TruncateAt.END).toString(), nameLeft, centre + 14f, name)
                 canvas.drawText(setText, setRight, centre + 12f, set)
-                canvas.drawText("+" + Loads.fixed(record.gainKg, Units.current, 1), RIGHT, centre + 14f, gain)
+                canvas.drawText("+" + Loads.fixed(record.gainKg, Units.forExercise(record.name), 1), RIGHT, centre + 14f, gain)
             }
         }
 

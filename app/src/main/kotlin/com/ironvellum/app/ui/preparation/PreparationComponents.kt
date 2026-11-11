@@ -95,7 +95,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 }
 
 @Composable internal fun preparationTarget(step: PreparationStep): String {
-    step.legacyTargetLine { com.ironvellum.app.data.Units.withUnit(it) }?.let { return it }
+    step.legacyTargetLine { com.ironvellum.app.data.Units.withUnit(it, step.exerciseName) }?.let { return it }
     val target = if (step.measure == PreparationMeasure.REPS) preparationCount(R.plurals.preparation_target_reps, R.plurals.preparation_target_reps__t, step.target)
         else preparationCount(R.plurals.preparation_target_seconds, R.plurals.preparation_target_seconds__t, step.target)
     val repeated = when (step.repeat) {

@@ -26,6 +26,16 @@ import org.junit.Test
 
 /** The edits first-run setup and the Forge share, and the rules that keep an added week off a saved cycle. */
 class ProgramEditingTest {
+    @Test fun `pound load steps stay on the displayed grid without quarter kilogram rounding`() {
+        val unit = com.ironvellum.app.domain.LoadUnit.LB
+        val start = com.ironvellum.app.domain.Loads.toKg(100.0, unit)
+        val entry = PlannedEntry("Bench Press", 3, 10, start)
+        val step = loadStepKg(unit)
+        val next = entry.withLoadDelta(1, step, unit = unit)
+        assertEquals("105", com.ironvellum.app.domain.Loads.format(next.targetWeightKg!!, unit))
+        assertEquals("100", com.ironvellum.app.domain.Loads.format(next.withLoadDelta(-1, step, unit = unit).targetWeightKg!!, unit))
+    }
+
 
     private fun entry(name: String = "Push-up", sets: Int = 3, reps: Int = 10) = PlannedEntry(name, sets, reps, null)
     private fun rite(name: String, day: Int?, vararg entries: PlannedEntry) =

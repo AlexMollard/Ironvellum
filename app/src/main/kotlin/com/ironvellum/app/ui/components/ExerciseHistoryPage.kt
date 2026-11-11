@@ -143,7 +143,7 @@ private fun ColumnScope.ExerciseHistoryPage(exercise: Exercise, onDismiss: () ->
     }
     if (current.trend.size >= 2) {
         Spacer(Modifier.height(10.dp))
-        HistoryTrend(current, dateFormat)
+        HistoryTrend(current, dateFormat, exercise.name)
     }
     Spacer(Modifier.height(10.dp))
     PanelLabel(Words.text(UiText.themed(R.string.infosheet_history_list_label, R.string.infosheet_history_list_label__t)))
@@ -170,7 +170,7 @@ private fun HistorySummary(exercise: Exercise, log: ExerciseLog, dateFormat: Str
     val lead = if (judged) log.best?.let { best ->
         stringResource(if (hold) R.string.infosheet_history_best_hold_label else R.string.infosheet_history_best_set_label) to bestSetText(exercise, best)
     } else null
-    val e1rm = log.bestE1rmKg?.let { stringResource(R.string.infosheet_history_best_e1rm_label) to e1rmText(it, log.addsToBody, 1) }
+    val e1rm = log.bestE1rmKg?.let { stringResource(R.string.infosheet_history_best_e1rm_label) to e1rmText(it, log.addsToBody, 1, exercise.name) }
     val done = stringResource(R.string.infosheet_history_done_label) to log.sessions.size.toString()
     val last = log.lastAtMs?.let { stringResource(R.string.infosheet_history_last_label) to formatDate(it, dateFormat) }
     InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(10.dp)) {
@@ -248,7 +248,7 @@ private fun bestSetText(exercise: Exercise, set: ExerciseLogSet): String =
     blockLine(exercise, ExerciseLogBlock(0, "", listOf(set), null, false)).text
 
 @Composable
-private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
+private fun HistoryTrend(log: ExerciseLog, dateFormat: String, exerciseName: String) {
     val hold = log.metric == ExerciseMetric.HOLD
     val title = when {
         log.byE1rm -> UiText.themed(R.string.infosheet_history_trend_e1rm, R.string.infosheet_history_trend_e1rm__t)
@@ -267,7 +267,7 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
         endLabel = formatDate(log.trend.last().atMs, dateFormat),
         valueText = {
             when {
-                log.byE1rm -> e1rmText(it, log.addsToBody, 1)
+                log.byE1rm -> e1rmText(it, log.addsToBody, 1, exerciseName)
                 hold -> UiText.res(R.string.explorer_set_hold, it.toInt()).asString(context)
                 else -> it.toInt().toString()
             }
@@ -275,7 +275,7 @@ private fun HistoryTrend(log: ExerciseLog, dateFormat: String) {
         // The top and bottom of the line, with their unit, on the left edge: "+46 kg" over "+20 kg".
         axisText = {
             when {
-                log.byE1rm -> e1rmText(it, log.addsToBody, 0)
+                log.byE1rm -> e1rmText(it, log.addsToBody, 0, exerciseName)
                 hold -> UiText.res(R.string.explorer_set_hold, it.toInt()).asString(context)
                 else -> UiText.plural(R.plurals.victory_totals_reps, it.toInt(), it.toInt().toString()).asString(context)
             }

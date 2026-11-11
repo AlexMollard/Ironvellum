@@ -503,6 +503,7 @@ fun WorkoutDetailScreen(
                         unit = Units.current,
                         includeEffort = includeEffort,
                         effortScale = EffortSetting.scale,
+                        exerciseUnits = Units.exerciseOverrides,
                     )
                 },
                 hasNotes = exerciseNotes.isNotEmpty(),
@@ -897,7 +898,7 @@ private fun SetLine(label: String, text: String, muted: Boolean) {
 private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean): String {
     val kg = set.weightKg ?: 0.0
     return when {
-        hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${Units.withUnit(kg)}" else ""
+        hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${Units.withUnit(kg, set.exerciseName)}" else ""
         metric == ExerciseMetric.ATTEMPTS_GRADE ->
             // The grade is the climb's identity; the weight slot is not (a boulder problem carries no load).
             UiText.plural(R.plurals.workoutdetail_attempts_count, set.reps).asString() + set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
@@ -905,7 +906,7 @@ private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weig
         metric == ExerciseMetric.DURATION -> setFigure(metric, set.reps, set.durationSec, null).figure
         // A barbell lift with no load is unset, not bodyweight.
         weighted && kg <= 0.0 -> UiText.plural(R.plurals.common_reps_count, set.reps).asString()
-        kg > 0.0 -> "${Units.withUnit(kg)} × ${set.reps}"
+        kg > 0.0 -> "${Units.withUnit(kg, set.exerciseName)} × ${set.reps}"
         else -> UiText.plural(R.plurals.common_reps_count, set.reps).asString()
     }
 }

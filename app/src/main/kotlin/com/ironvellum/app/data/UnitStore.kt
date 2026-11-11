@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,59 +10,95 @@ import androidx.core.content.edit
 import com.ironvellum.app.domain.LoadUnit
 import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.fmt
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
-/**
- * The lifter's load unit, kg or lb, kept on the device with the other display choices ("appearance"
- * preferences). Storage stays kg everywhere; this decides only what is shown and typed.
- *
- * [current] is Compose state, so any composable that formats a load through
- * [com.ironvellum.app.domain.Loads] with it recomposes when the unit changes, the same way
- * IronvellumColors.accents carries the accent pair. It is read once at app start by [init].
- */
+/** Display preferences only: all stored loads and calculations remain in kilograms. */
 object Units {
     private const val PREFS = "appearance"
     private const val KEY = "loadUnit"
+    internal const val EXERCISE_PREFIX = "exerciseLoadUnit."
+    private var preferences: SharedPreferences? = null
 
     var current: LoadUnit by mutableStateOf(LoadUnit.KG)
         private set
+    var exerciseOverrides: Map<String, LoadUnit> by mutableStateOf(emptyMap())
+        private set
 
-    /** The unit as a flow, for text built off the main thread (the Strength Rank's breakdown). */
     val flow: Flow<LoadUnit> = snapshotFlow { current }.distinctUntilChanged()
+    val changes: Flow<Unit> = snapshotFlow { current to exerciseOverrides }.map { }
+
+    internal fun exerciseKey(name: String): String = name.trim().lowercase(Locale.ROOT)
+    internal fun validExerciseKey(key: String): Boolean =
+        key.isNotBlank() && key.length <= 200 && key.none { it.isISOControl() } && key == exerciseKey(key)
 
     fun init(context: Context) {
-        current = runCatching {
-            LoadUnit.valueOf(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null).orEmpty())
-        }.getOrDefault(LoadUnit.KG)
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        preferences = prefs
+        current = runCatching { LoadUnit.valueOf(prefs.getString(KEY, null).orEmpty()) }.getOrDefault(LoadUnit.KG)
+        exerciseOverrides = prefs.all.mapNotNull { (key, value) ->
+            if (!key.startsWith(EXERCISE_PREFIX)) return@mapNotNull null
+            val name = key.removePrefix(EXERCISE_PREFIX)
+            if (!validExerciseKey(name) || value !is String) return@mapNotNull null
+            LoadUnit.entries.firstOrNull { it.name == value }?.let { name to it }
+        }.toMap()
     }
 
-    /** "225 lb" in the lifter's unit. */
-    fun withUnit(kg: Double): String = Loads.withUnit(kg, current)
+    fun overrideFor(exerciseName: String): LoadUnit? = exerciseOverrides[exerciseKey(exerciseName)]
+    fun forExercise(exerciseName: String): LoadUnit = overrideFor(exerciseName) ?: current
+    private fun unitFor(exerciseName: String?): LoadUnit = exerciseName?.let(::forExercise) ?: current
+    fun nameFor(exerciseName: String): String = forExercise(exerciseName).label
 
-    /** "225", the figure alone. */
-    fun format(kg: Double): String = Loads.format(kg, current)
-
-    /** "225 lb", or "BW" for no load. */
-    fun label(kg: Double?, weighted: Boolean = false): String = Loads.label(kg, current, weighted)
-
-    /** [kg] as a count in the lifter's unit, for text that appends its own unit. */
-    fun amount(kg: Double): Double = Loads.toUnit(kg, current)
-
-    /** "225 lb" to [decimals] places (a whole pound at 0, else the nearest 0.5 lb). */
-    fun fixed(kg: Double, decimals: Int): String = "${Loads.fixed(kg, current, decimals)} ${current.label}"
-
-    /** A total moved, whole and grouped: "3,420 lb". */
-    fun volume(kg: Double): String = "${"%,.0f".fmt(amount(kg))} ${current.label}"
-
-    /** [kg] as whole units, for a count that groups its own digits. */
-    fun whole(kg: Double): Long = Math.round(amount(kg))
-
-    /** "lb". */
+    fun withUnit(kg: Double, exerciseName: String? = null): String = Loads.withUnit(kg, unitFor(exerciseName))
+    fun format(kg: Double, exerciseName: String? = null): String = Loads.format(kg, unitFor(exerciseName))
+    fun label(kg: Double?, weighted: Boolean = false, exerciseName: String? = null): String =
+        Loads.label(kg, unitFor(exerciseName), weighted)
+    fun amount(kg: Double, exerciseName: String? = null): Double = Loads.toUnit(kg, unitFor(exerciseName))
+    fun fixed(kg: Double, decimals: Int, exerciseName: String? = null): String {
+        val unit = unitFor(exerciseName)
+        return "${Loads.fixed(kg, unit, decimals)} ${unit.label}"
+    }
+    fun volume(kg: Double, exerciseName: String? = null): String {
+        val unit = unitFor(exerciseName)
+        return "${"%,.0f".fmt(Loads.toUnit(kg, unit))} ${unit.label}"
+    }
+    fun whole(kg: Double, exerciseName: String? = null): Long = Math.round(amount(kg, exerciseName))
     val name: String get() = current.label
 
     fun set(context: Context, unit: LoadUnit) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY, unit.name) }
         current = unit
+    }
+
+    fun setExercise(context: Context, exerciseName: String, unit: LoadUnit?) {
+        val key = exerciseKey(exerciseName)
+        require(validExerciseKey(key))
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        preferences = prefs
+        prefs.edit { if (unit == null) remove(EXERCISE_PREFIX + key) else putString(EXERCISE_PREFIX + key, unit.name) }
+        exerciseOverrides = if (unit == null) exerciseOverrides - key else exerciseOverrides + (key to unit)
+    }
+
+    /** Called only after the corresponding custom-exercise transaction has committed. */
+    internal fun renameExercise(oldName: String, newName: String) {
+        val old = exerciseKey(oldName)
+        val new = exerciseKey(newName)
+        if (old == new) return
+        val unit = exerciseOverrides[old]
+        val prefs = preferences ?: return
+        prefs.edit {
+            remove(EXERCISE_PREFIX + old)
+            if (unit == null) remove(EXERCISE_PREFIX + new) else putString(EXERCISE_PREFIX + new, unit.name)
+        }
+        exerciseOverrides = if (unit == null) exerciseOverrides - old - new else exerciseOverrides - old + (new to unit)
+    }
+
+    internal fun removeExercise(name: String) {
+        val key = exerciseKey(name)
+        val prefs = preferences ?: return
+        prefs.edit { remove(EXERCISE_PREFIX + key) }
+        exerciseOverrides = exerciseOverrides - key
     }
 }

@@ -131,7 +131,7 @@ internal object XpReveal {
             else -> ""
         }
         // Said in words: a bare "+60 kg" read as XP. A lifted load is the top one; a body's extra is what was added.
-        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { uiString(if (line.externalLoad) R.string.xp_subline_top_load else R.string.xp_subline_added_load, Units.withUnit(it)) }
+        val load = line.topLoadKg?.takeIf { it > 0.0 }?.let { uiString(if (line.externalLoad) R.string.xp_subline_top_load else R.string.xp_subline_added_load, Units.withUnit(it, line.exerciseName)) }
         return listOfNotNull(made.ifEmpty { null }, load).joinToString(" · ")
     }
 

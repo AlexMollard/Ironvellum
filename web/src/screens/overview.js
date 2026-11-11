@@ -49,7 +49,7 @@ export async function renderOverview(root, { source, snapshot, router, nowMs = D
     const volumeText = entry ? splitVolume(entry.volumeKg, snapshot.unit).join(' ') : '—';
     const lastCard = lastWorkoutCard({
       heading: `Your last ${t('concept_trial_s')}`, profile, when: `${formatWeekday(day)} ${formatDay(day)}`, meta: `${formatClock(last.startedAt, snapshot.zone)}${entry ? ` · ${entry.min} min` : ''}`, xp: entry?.xp,
-      title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, prs: entry?.prs, chips, levels: entry?.muscleLevels, names: snapshot.muscles, figure: profile.figure,
+      title: last.title || last.label || t('concept_trial_c'), path: workoutPath(last), router, unit: snapshot.unit, snapshot, prs: entry?.prs, chips, levels: entry?.muscleLevels, names: snapshot.muscles, figure: profile.figure,
       stats: entry ? `${plural(entry.hardSets, 'hard set')} · ${volumeText} · STR ${entry.strength}` : '— hard sets · — volume · — STR'
     });
     main.append(lastCard);

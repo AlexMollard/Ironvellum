@@ -469,30 +469,43 @@ class Repository(
      * Edits one of the lifter's own movements. Its metric is locked once any set is logged against it, because
      * reps, seconds and metres are stored in different columns and a change would reread history.
      */
-    suspend fun updateCustomExercise(id: Long, spec: CustomSpec): CustomSave = db.withTransaction {
-        val before = exerciseDao.byId(id)?.takeIf { it.custom }
-            ?: return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_not_yours)))
-        val catalogue = exerciseDao.observeAll().first()
-        CustomExercises.nameProblem(spec.name, catalogue.map { it.name }, own = before.name)
-            ?.let { return@withTransaction CustomSave.Rejected(it) }
-        if (spec.logged.metric.name != before.metric && exerciseDao.loggedSets(id) > 0) {
-            return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_metric_locked)))
+    suspend fun updateCustomExercise(id: Long, spec: CustomSpec): CustomSave {
+        var previousName: String? = null
+        val result = db.withTransaction {
+            val before = exerciseDao.byId(id)?.takeIf { it.custom }
+                ?: return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_not_yours)))
+            val catalogue = exerciseDao.observeAll().first()
+            CustomExercises.nameProblem(spec.name, catalogue.map { it.name }, own = before.name)
+                ?.let { return@withTransaction CustomSave.Rejected(it) }
+            if (spec.logged.metric.name != before.metric && exerciseDao.loggedSets(id) > 0) {
+                return@withTransaction CustomSave.Rejected(Words.text(UiText.res(R.string.custom_metric_locked)))
+            }
+            val row = customRow(spec, id)
+            exerciseDao.update(row)
+            catalogue.map { if (it.id == id) row else it }.syncCustomExercises()
+            previousName = before.name
+            CustomSave.Saved(row.toDomain())
         }
-        val row = customRow(spec, id)
-        exerciseDao.update(row)
-        catalogue.map { if (it.id == id) row else it }.syncCustomExercises()
-        CustomSave.Saved(row.toDomain())
+        if (result is CustomSave.Saved) previousName?.let { Units.renameExercise(it, result.exercise.name) }
+        return result
     }
 
     /** How many logged sets, rite entries and trial notes hold the exercise; delete is only possible at zero. */
     suspend fun customExerciseUsage(id: Long): Int = exerciseDao.usage(id) + preparations.exerciseUsage(id)
 
     /** Deletes one of the lifter's own movements when nothing references it; false (and nothing deleted) otherwise. */
-    suspend fun deleteCustomExercise(id: Long): Boolean = db.withTransaction {
-        if (customExerciseUsage(id) > 0) return@withTransaction false
-        val deleted = exerciseDao.deleteCustom(id) > 0
-        exerciseDao.observeAll().first().syncCustomExercises()
-        deleted
+    suspend fun deleteCustomExercise(id: Long): Boolean {
+        var deletedName: String? = null
+        val deleted = db.withTransaction {
+            if (customExerciseUsage(id) > 0) return@withTransaction false
+            val before = exerciseDao.byId(id)?.takeIf { it.custom }
+            val removed = exerciseDao.deleteCustom(id) > 0
+            if (removed) deletedName = before?.name
+            exerciseDao.observeAll().first().syncCustomExercises()
+            removed
+        }
+        deletedName?.let(Units::removeExercise)
+        return deleted
     }
 
     private fun customRow(spec: CustomSpec, id: Long) = ExerciseEntity(
@@ -1041,7 +1054,7 @@ class Repository(
             muscleGroup = exercise?.muscleGroup ?: "",
             exerciseName = name,
             lever = lever,
-            unit = Units.current,
+            unit = Units.forExercise(name),
             kit = loadKit(),
             // The lifter's own range, when the rite has one, replaces the training mode's band.
             range = scheme.repsRange(if (assistedTop) SetKind.TOP else SetKind.WORKING),
@@ -1171,7 +1184,7 @@ class Repository(
         val first = rows.filter { !it.isWarmup }.minByOrNull { it.setIndex }?.weightKg
         val ramp = WarmupRamp.planFor(
             exercise.name, exercise.muscleGroup, ExerciseMetric.REPS, first,
-            kit = loadKit(), weighted = exercise.isWeighted, unit = Units.current,
+            kit = loadKit(), weighted = exercise.isWeighted, unit = Units.forExercise(exercise.name),
         )
         if (ramp.size != warmups.size) return
         warmups.zip(ramp).forEach { (row, step) -> sessionDao.updateSet(row.copy(weightKg = step.weightKg, reps = step.reps)) }
@@ -1347,7 +1360,7 @@ class Repository(
         return LiftLoading(
             stepKg = Progression.weightStepKg(exercise.muscleGroup, exercise.name),
             worn = WornLoad.forLift(kit, exercise.name, exercise.isWeighted, metric),
-            unit = Units.current,
+            unit = Units.forExercise(exercise.name),
             bodyweightKg = statDao.observeAll().first().firstOrNull()?.weightKg,
             bodyweightLift = !exercise.isWeighted,
             bodyShare = MovementDifficulty.bodyShare(exercise.name),
@@ -1410,7 +1423,7 @@ class Repository(
         val ramp = if (scheme.warmupRamp) {
             WarmupRamp.planFor(
                 exercise.name, exercise.muscleGroup, ExerciseMetric.REPS, planned.firstOrNull()?.weightKg,
-                kit = kit, weighted = exercise.isWeighted, unit = Units.current,
+                kit = kit, weighted = exercise.isWeighted, unit = Units.forExercise(exercise.name),
             )
         } else {
             emptyList()
@@ -1699,7 +1712,7 @@ class Repository(
             val first = rows.first()
             val plan = WarmupRamp.planFor(
                 exercise.name, exercise.muscleGroup, metric, first.weightKg,
-                kit = kit, weighted = exercise.isWeighted, unit = Units.current,
+                kit = kit, weighted = exercise.isWeighted, unit = Units.forExercise(exercise.name),
             )
             if (plan.isEmpty()) return@withTransaction emptyList()
             rows.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + plan.size)) }

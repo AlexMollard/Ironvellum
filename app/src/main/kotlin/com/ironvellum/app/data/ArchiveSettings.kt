@@ -94,7 +94,8 @@ class ArchiveSettings(
                 "theme", "primary", "secondary", "light_primary", "light_secondary", "liftingExperience", "loadUnit", "effortScale" -> "s"
                 "themedNames", "fatigueAdvice", "logEffort" -> "b"
                 "coverage_heavy_dismissed" -> "ss"
-                else -> null
+                else -> if (key.startsWith(Units.EXERCISE_PREFIX) &&
+                    Units.validExerciseKey(key.removePrefix(Units.EXERCISE_PREFIX))) "s" else null
             }
             "trial_prefs" -> when (key) {
                 "rest_off", "keep_screen_on", "live_update", "lifts_on_lock", "convert_card_done" -> "b"
@@ -209,7 +210,9 @@ class ArchiveSettings(
                         "priorities" -> raw.isEmpty() || raw.split(",").all { token -> MuscleArea.entries.any { it.name == token } }
                         "dumbbellMaxKg", "vestMaxKg", "vestBlockKg" -> raw.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true
                         "primary", "secondary", "light_primary", "light_secondary" -> parseAccentHex(raw) != null
-                        else -> if (file == "program_answers" && key.startsWith("plates.")) {
+                        else -> if (file == "appearance" && key.startsWith(Units.EXERCISE_PREFIX)) {
+                            raw == "KG" || raw == "LB"
+                        } else if (file == "program_answers" && key.startsWith("plates.")) {
                             raw.toDoubleOrNull()?.let { it.isFinite() && it >= 0 } == true
                         } else true
                     }

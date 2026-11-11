@@ -503,8 +503,8 @@ private const val MAX_REPS = 500
 private val DRAG_STEP = 56.dp
 
 /** A rite's stored kg target as the lifter reads it: "225 lb", or the text as typed when it is not a number yet. */
-private fun loadTarget(kgText: String): String =
-    DecimalInput.parse(kgText)?.let { Units.withUnit(it) } ?: "$kgText ${Units.name}"
+private fun loadTarget(kgText: String, exerciseName: String): String =
+    DecimalInput.parse(kgText)?.let { Units.withUnit(it, exerciseName) } ?: "$kgText ${Units.nameFor(exerciseName)}"
 
 /** What a load stepper reads while no load is set: it never says "none"; the figure is 48dp wide, so one short word. A bodyweight lift reads "BW". */
 internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean): String =
@@ -515,19 +515,23 @@ internal fun LoadTargetStepperPlaceholder(bodyweight: Boolean): String =
  * here and writes the kg equivalent back; typing "132." keeps its point until the next digit.
  */
 @Composable
-internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = stringResource(R.string.preseteditor_load_label), emptyText: String = stringResource(R.string.preseteditor_load_empty), caption: String? = null, onKgText: (String) -> Unit) {
-    val unit = Units.current
+internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, worn: LoadKit?, label: String = stringResource(R.string.preseteditor_load_label), emptyText: String = stringResource(R.string.preseteditor_load_empty), caption: String? = null, unit: LoadUnit = Units.current, onKgText: (String) -> Unit) {
+    fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
+    fun kgOf(lb: String) = Loads.parse(lb, unit, MAX_LOAD_KG).getOrNull()
+    var typed by remember(unit) { mutableStateOf(lbText(kgText)) }
+    val typedKg = kgOf(typed)
+    val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
+    val shown = if (inSync) typed else lbText(kgText)
     if (worn != null) {
         // The kit's own blocks and belt plates, walked on the stored kg; the figure stays typeable in the lifter's unit.
         val kg = DecimalInput.parse(kgText) ?: 0.0
-        fun shown(v: Double) = Loads.fieldText(v, unit)
         StepperRow(
-            label = label, value = if (unit == LoadUnit.KG || kgText.isBlank()) kgText else shown(kg), unit = unit.label,
+            label = label, value = if (unit == LoadUnit.KG) kgText else shown, unit = unit.label,
             less = stringResource(R.string.preseteditor_load_less), more = stringResource(R.string.preseteditor_load_more), error = error, decimal = true, maxDigits = 0,
-            onValue = { typed ->
-                when {
-                    unit == LoadUnit.KG || typed.isBlank() -> onKgText(typed)
-                    else -> Loads.parse(typed, unit, MAX_LOAD_KG).getOrNull()?.let { onKgText(formatSteppedFigure(it)) }
+            onValue = { value ->
+                if (unit == LoadUnit.KG) onKgText(value) else {
+                    typed = value
+                    if (value.isBlank()) onKgText("") else kgOf(value)?.let { onKgText(formatSteppedFigure(it)) }
                 }
             },
             onLess = { onKgText(worn.previousKg(kg, unit)?.let { formatSteppedFigure(it) } ?: "") },
@@ -540,14 +544,7 @@ internal fun LoadTargetStepper(kgText: String, gridLb: Double, error: Boolean, w
         DecimalStepper(label, kgText, LoadUnit.KG.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), Progression.WEIGHT_STEP_KG, error, onGrid = true, emptyText = emptyText, caption = caption, onValue = onKgText)
         return
     }
-    fun lbText(kg: String) = DecimalInput.parse(kg)?.let { Loads.fieldText(it, unit) } ?: kg
-    fun kgOf(lb: String) = Loads.parse(lb, unit, MAX_LOAD_KG).getOrNull()
-    var typed by remember { mutableStateOf(lbText(kgText)) }
-    // The stored kg is the truth; if the typed lb no longer matches it (the card reopened on another
-    // value), show the stored one. A half-typed figure ("132.") matches nothing yet and stays as typed.
-    val typedKg = kgOf(typed)
-    val inSync = (typed.isBlank() && kgText.isBlank()) || (typed.isNotBlank() && typedKg == null) || typedKg == DecimalInput.parse(kgText)
-    val shown = if (inSync) typed else lbText(kgText)
+    // Keep partially typed lb text until the stored value changes independently.
     DecimalStepper(
         label, shown, LoadUnit.LB.label, stringResource(R.string.preseteditor_load_less), stringResource(R.string.preseteditor_load_more), gridLb, error,
         max = Loads.toUnit(MAX_LOAD_KG, unit), onGrid = true, emptyText = emptyText, caption = caption,
@@ -566,7 +563,7 @@ internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
     fun v(s: String) = s.ifBlank { "–" }
     return when (metric) {
         ExerciseMetric.REPS -> {
-            val load = if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}"
+            val load = if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight, entry.exerciseName)}"
             // A scheme says its own shape; the entry's sets x reps only stand for Straight.
             SchemeText.summary(entry.scheme, DecimalInput.parseWhole(entry.sets) ?: 1)?.let { it + load }
                 ?: ("${v(entry.sets)} × ${repsFigure(entry)}" + load)
@@ -576,7 +573,7 @@ internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
                 R.string.exercise_target_hold,
                 v(entry.sets),
                 repsFigure(entry),
-                if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight)}",
+                if (entry.weight.isBlank()) "" else " · ${loadTarget(entry.weight, entry.exerciseName)}",
             ),
         )
         ExerciseMetric.DURATION -> Words.text(UiText.res(R.string.exercise_target_minutes, v(entry.sets), v(entry.reps)))
@@ -776,7 +773,9 @@ fun PresetEditorScreen(
                         if (ui.entries.all { it.warmup }) {
                             UiText.themed(R.string.preseteditor_warmups_only_hint, R.string.preseteditor_warmups_only_hint__t).asString()
                         } else {
-                            stringResource(R.string.preseteditor_fill_hint, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name)
+                            val invalid = ui.entries.firstOrNull { TargetField.WEIGHT in missingTargets(it, ui.metricOf(it)) }
+                            val unit = invalid?.let { Units.forExercise(it.exerciseName) } ?: Units.current
+                            stringResource(R.string.preseteditor_fill_hint, Loads.ceilingText(MAX_LOAD_KG, unit), unit.label)
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
@@ -866,7 +865,7 @@ fun PresetEditorScreen(
                 lift = LiftLoading(
                     stepKg = Progression.weightStepKg(exercise?.muscleGroup?.name.orEmpty(), entry.exerciseName),
                     worn = worn,
-                    unit = Units.current,
+                    unit = Units.forExercise(entry.exerciseName),
                     bodyweightKg = ui.bodyweightKg,
                     bodyweightLift = exercise?.isWeighted == false,
                     bodyShare = MovementDifficulty.bodyShare(entry.exerciseName, entry.modifiers),
@@ -1184,7 +1183,7 @@ private fun EntryItem(
         }
         when (metric) {
             ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn, emptyText = LoadTargetStepperPlaceholder(bodyweightLift)) { onEntry(entry.copy(weight = it)) }
+                LoadTargetStepper(entry.weight, loadGridLb(entry.exerciseName), TargetField.WEIGHT in bad, worn, emptyText = LoadTargetStepperPlaceholder(bodyweightLift), unit = Units.forExercise(entry.exerciseName)) { onEntry(entry.copy(weight = it)) }
             ExerciseMetric.DISTANCE_TIME ->
                 DecimalStepper(stringResource(R.string.preseteditor_distance_label), entry.weight, stringResource(R.string.preseteditor_unit_km), stringResource(R.string.preseteditor_distance_less), stringResource(R.string.preseteditor_distance_more), 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
             else -> Unit

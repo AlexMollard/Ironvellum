@@ -3,6 +3,13 @@
 What changed in each release, grouped by what you will notice. The short version ships with the app
 store listing; this is the whole list.
 
+## 1.11
+
+### Weight units per exercise
+- Choose App default, kg or lb from an exercise's About page or its unit dropdown while logging a workout.
+- Keep each exercise's choice across variations, workouts, app restarts and local or cloud backup restores. Explicit kg or lb stays pinned when the app's default changes.
+- Use the chosen unit for load entry, plate steps, plans, history, records, workout sharing and the web viewer. Recorded kilograms, scores and XP stay unchanged; workout totals still use the app default.
+
 ## 1.10
 
 ### Warmups, stretches and cooldowns

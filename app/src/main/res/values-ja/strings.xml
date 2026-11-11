@@ -5841,4 +5841,11 @@
     <string name="workout_from_history_missing__t">この試練は利用できないか、対応するセットがありません。</string>
     <string name="preseteditor_save_failed">このワークアウトを保存できませんでした。もう一度お試しください。</string>
     <string name="preseteditor_save_failed__t">この儀式を保存できませんでした。もう一度お試しください。</string>
+    <string name="exercise_unit_title">重量の単位</string>
+    <string name="exercise_unit_default">アプリの既定値（%1$s）</string>
+    <string name="exercise_unit_default_hint">アプリの設定に従う</string>
+    <string name="exercise_unit_kg_hint">この種目では常にキログラムを使う</string>
+    <string name="exercise_unit_lb_hint">この種目では常にポンドを使う</string>
+    <string name="exercise_unit_scope">すべてのワークアウトでこの種目に適用されます。記録済みの重量は変わりません。</string>
+    <string name="exercise_unit_choose_description">%1$sの重量の単位</string>
 </resources>

@@ -77,14 +77,14 @@ object RecapText {
     fun unit(): String = Units.current.label
 
     /** A load to one place with its unit: "99.0 kg". */
-    fun load(kg: Double): String = Units.fixed(kg, 1)
+    fun load(kg: Double, exerciseName: String? = null): String = Units.fixed(kg, 1, exerciseName)
 
     /** A gain with its sign: "+3.0 kg". */
-    fun gain(kg: Double): String = "+" + load(kg)
+    fun gain(kg: Double, exerciseName: String? = null): String = "+" + load(kg, exerciseName)
 
     /** The load of a set: "82.5 kg", or "+12.5 kg" when it is added to the body. */
     private fun setLoad(set: SessionSet, addsToBody: Boolean): String {
-        val figure = Units.withUnit(set.weightKg ?: 0.0)
+        val figure = Units.withUnit(set.weightKg ?: 0.0, set.exerciseName)
         return if (addsToBody) "+$figure" else figure
     }
 

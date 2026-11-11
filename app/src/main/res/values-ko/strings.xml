@@ -5841,4 +5841,11 @@
     <string name="workout_from_history_missing__t">이 시련을 더 이상 사용할 수 없거나 지원되는 세트가 없습니다.</string>
     <string name="preseteditor_save_failed">이 운동을 저장하지 못했습니다. 다시 시도하세요.</string>
     <string name="preseteditor_save_failed__t">이 의식을 저장하지 못했습니다. 다시 시도하세요.</string>
+    <string name="exercise_unit_title">중량 단위</string>
+    <string name="exercise_unit_default">앱 기본값 (%1$s)</string>
+    <string name="exercise_unit_default_hint">앱 설정 따르기</string>
+    <string name="exercise_unit_kg_hint">이 운동에는 항상 킬로그램 사용</string>
+    <string name="exercise_unit_lb_hint">이 운동에는 항상 파운드 사용</string>
+    <string name="exercise_unit_scope">모든 운동 세션에서 이 운동에 적용돼요. 기록된 중량은 그대로 유지돼요.</string>
+    <string name="exercise_unit_choose_description">%1$s 중량 단위</string>
 </resources>

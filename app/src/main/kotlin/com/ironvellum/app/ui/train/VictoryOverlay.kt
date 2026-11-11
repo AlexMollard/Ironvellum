@@ -555,7 +555,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(
-                peakFigure(best.figure, best.weightKg, best.isHold),
+                peakFigure(best.figure, best.weightKg, best.isHold, best.exerciseName),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
@@ -578,7 +578,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
                 R.string.victory_peak_detail,
                 best.setIndex + 1,
                 best.kind.label,
-                peakFigure(best.was.figure, best.was.weightKg, best.isHold),
+                peakFigure(best.was.figure, best.was.weightKg, best.isHold, best.exerciseName),
                 peakPay(best),
             ).asString(),
             style = MaterialTheme.typography.bodySmall,
@@ -604,7 +604,7 @@ private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionP
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    peakFigure(peak.figure, peak.weightKg, peak.isHold),
+                    peakFigure(peak.figure, peak.weightKg, peak.isHold, peak.exerciseName),
                     style = MaterialTheme.typography.bodySmall,
                     color = Dim,
                     modifier = Modifier.padding(start = 8.dp),
@@ -626,8 +626,8 @@ private fun peakDescription(peak: SessionPeaks.Peak): String {
         peak.kind.label,
         peak.label,
         peak.setIndex + 1,
-        peakFigure(peak.figure, peak.weightKg, peak.isHold),
-        peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold),
+        peakFigure(peak.figure, peak.weightKg, peak.isHold, peak.exerciseName),
+        peakFigure(peak.was.figure, peak.was.weightKg, peak.isHold, peak.exerciseName),
         peakGain(peak),
         peakPay(peak),
     )
@@ -651,18 +651,18 @@ internal fun peakPay(peak: SessionPeaks.Peak): String =
 internal fun peakGain(peak: SessionPeaks.Peak): String {
     val load = (peak.weightKg ?: 0.0) - peak.was.weightKg
     return when {
-        peak.kind == RepMax.Kind.HEAVIER && load > 0.001 -> "+" + Units.withUnit(load)
-        peak.kind == RepMax.Kind.LESS_ASSISTANCE && load < -0.001 -> "−" + Units.withUnit(-load)
+        peak.kind == RepMax.Kind.HEAVIER && load > 0.001 -> "+" + Units.withUnit(load, peak.exerciseName)
+        peak.kind == RepMax.Kind.LESS_ASSISTANCE && load < -0.001 -> "−" + Units.withUnit(-load, peak.exerciseName)
         peak.isHold && peak.figure > peak.was.figure -> "+${peak.figure - peak.was.figure}s"
         peak.figure > peak.was.figure -> Words.text(UiText.plural(R.plurals.victory_peak_gain_reps, peak.figure - peak.was.figure))
-        else -> "+" + Units.withUnit(load.coerceAtLeast(0.0))
+        else -> "+" + Units.withUnit(load.coerceAtLeast(0.0), peak.exerciseName)
     }
 }
 
 /** "6 × 82.5kg", "10 × BW", or a hold's "45s" (with any added load). Same shape as the live badge. */
-private fun peakFigure(figure: Int, weightKg: Double?, isHold: Boolean): String =
+private fun peakFigure(figure: Int, weightKg: Double?, isHold: Boolean, exerciseName: String): String =
     if (isHold) {
-        "${figure}s" + (weightKg?.takeIf { it > 0.0 }?.let { " +${formatKg(it)}" } ?: "")
+        "${figure}s" + (weightKg?.takeIf { it > 0.0 }?.let { " +${formatKg(it, exerciseName)}" } ?: "")
     } else {
-        "$figure × ${formatKg(weightKg)}"
+        "$figure × ${formatKg(weightKg, exerciseName)}"
     }

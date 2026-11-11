@@ -197,14 +197,14 @@ private fun LiftRow(lift: ReviewLift) {
         Column(Modifier.weight(1f)) {
             Text(lift.label, style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp), color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Caption(
-                lift.beforeKg?.let { stringResource(R.string.review_lift_change, ReviewText.figure(it), Units.fixed(lift.afterKg, 1)) }
-                    ?: stringResource(R.string.review_lift_new_sub, Units.fixed(lift.afterKg, 1)),
+                lift.beforeKg?.let { stringResource(R.string.review_lift_change, ReviewText.figure(it, lift.name), Units.fixed(lift.afterKg, 1, lift.name)) }
+                    ?: stringResource(R.string.review_lift_new_sub, Units.fixed(lift.afterKg, 1, lift.name)),
                 Modifier.padding(top = 2.dp),
             )
         }
         Sparkline(lift.series, Modifier.width(64.dp).height(24.dp))
         Text(
-            lift.gainKg?.let { RecapText.gain(it) } ?: stringResource(R.string.review_lift_new_badge),
+            lift.gainKg?.let { RecapText.gain(it, lift.name) } ?: stringResource(R.string.review_lift_new_badge),
             style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
             color = if (lift.isNew) IronvellumColors.SovereignGold else IronvellumColors.EmeraldBright,
             textAlign = TextAlign.End,

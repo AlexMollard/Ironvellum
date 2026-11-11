@@ -202,7 +202,7 @@ internal fun peakGainText(peak: RepMax.Recent): String {
     return when (hit.kind) {
         RepMax.Kind.HEAVIER, RepMax.Kind.LESS_ASSISTANCE -> {
             val gain = RepMax.loadGain(hit).coerceAtLeast(0.1)
-            Units.withUnit(Math.round(gain * 10) / 10.0)
+            Units.withUnit(Math.round(gain * 10) / 10.0, peak.name)
         }
         RepMax.Kind.MORE_REPS -> {
             val gain = RepMax.figureOf(hit.set, peak.isHold) - hit.was.figure

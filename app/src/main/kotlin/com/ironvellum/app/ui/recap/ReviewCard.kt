@@ -99,12 +99,12 @@ object ReviewCard {
             val top = 817f + i * ROW
             canvas.drawRect(MARGIN, top, RIGHT, top + 2f, fill(palette.rune))
             val centre = top + 2f + (ROW - 2f) / 2f
-            val gainText = lift.gainKg?.let { "+" + Loads.fixed(it, Units.current, 1) } ?: context.getString(R.string.review_card_new)
+            val gainText = lift.gainKg?.let { "+" + Loads.fixed(it, Units.forExercise(lift.name), 1) } ?: context.getString(R.string.review_card_new)
             val before = lift.beforeKg
             val changeText = if (before != null) {
-                UiText.res(R.string.review_lift_change, ReviewText.figure(before), RecapText.load(lift.afterKg)).resolved()
+                UiText.res(R.string.review_lift_change, ReviewText.figure(before, lift.name), RecapText.load(lift.afterKg, lift.name)).resolved()
             } else {
-                UiText.res(R.string.review_lift_new_sub, RecapText.load(lift.afterKg)).resolved()
+                UiText.res(R.string.review_lift_new_sub, RecapText.load(lift.afterKg, lift.name)).resolved()
             }
             val changeRight = RIGHT - 150f - 24f
             val room = changeRight - change.measureText(changeText) - 24f - MARGIN

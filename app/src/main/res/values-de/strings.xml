@@ -6202,4 +6202,11 @@
     <string name="workout_from_history_missing__t">Diese Prüfung ist nicht mehr verfügbar oder enthält keine unterstützten Sätze.</string>
     <string name="preseteditor_save_failed">Dieses Workout konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
     <string name="preseteditor_save_failed__t">Dieser Ritus konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
+    <string name="exercise_unit_title">Gewichtseinheit</string>
+    <string name="exercise_unit_default">App-Standard (%1$s)</string>
+    <string name="exercise_unit_default_hint">Den App-Einstellungen folgen</string>
+    <string name="exercise_unit_kg_hint">Für diese Übung immer Kilogramm verwenden</string>
+    <string name="exercise_unit_lb_hint">Für diese Übung immer Pfund verwenden</string>
+    <string name="exercise_unit_scope">Gilt für diese Übung in jedem Training. Deine aufgezeichneten Gewichte bleiben unverändert.</string>
+    <string name="exercise_unit_choose_description">Gewichtseinheit für %1$s</string>
 </resources>

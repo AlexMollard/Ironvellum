@@ -226,7 +226,7 @@ internal fun TrialAmendEditor(
                 },
                 initialKg = set.weightKg,
                 onConfirm = { kg ->
-                    onChange { d -> d.updateSet(blockIdx, setIdx) { it.copy(weightKg = kg.takeIf { v -> v > 0.0 }) } }
+                    onChange { d -> d.updateSet(blockIdx, setIdx) { it.copy(weightKg = kg) } }
                     loadFor = null
                 },
                 onDismiss = { loadFor = null },
@@ -362,12 +362,13 @@ private fun AmendLoadDialog(
     exerciseName: String,
     setLabel: String,
     initialKg: Double?,
-    onConfirm: (Double) -> Unit,
+    onConfirm: (Double?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val initial = initialKg?.let { loadText(it) }.orEmpty()
+    val unit = remember(exerciseName) { Units.forExercise(exerciseName) }
+    val initial = initialKg?.let { loadText(it, unit) }.orEmpty()
     var field by remember { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
-    val parsed = parseLoadKg(field.text)
+    val parsed = parseLoadKg(field.text, unit)
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     IronvellumDialog(
@@ -395,11 +396,11 @@ private fun AmendLoadDialog(
                 value = field,
                 onValueChange = { field = cleanLoadInput(it) },
                 singleLine = true,
-                label = { Text(UiText.res(R.string.amend_load_label, Units.name).asString()) },
+                label = { Text(UiText.res(R.string.amend_load_label, unit.label).asString()) },
                 placeholder = { Text(stringResource(R.string.amend_load_hint)) },
                 isError = parsed.isFailure,
                 supportingText = if (parsed.isFailure) {
-                    { Text(UiText.res(R.string.amend_load_error, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name).asString()) }
+                    { Text(UiText.res(R.string.amend_load_error, Loads.ceilingText(MAX_LOAD_KG, unit), unit.label).asString()) }
                 } else {
                     null
                 },
@@ -409,7 +410,7 @@ private fun AmendLoadDialog(
             )
         },
         confirmButton = {
-            IronvellumButton(stringResource(R.string.amend_load_button), enabled = parsed.isSuccess, onClick = { parsed.getOrNull()?.let(onConfirm) })
+            IronvellumButton(stringResource(R.string.amend_load_button), enabled = parsed.isSuccess, onClick = { parsed.getOrNull()?.let { onConfirm(enteredLoadKg(field.text, it, exerciseName)) } })
         },
     )
 }

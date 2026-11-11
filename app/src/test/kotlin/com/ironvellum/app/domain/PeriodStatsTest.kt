@@ -175,7 +175,7 @@ class PeriodStatsTest {
         )
         val lifts = week(history).lifts
         assertEquals(listOf("Back Squat", "Bench Press"), lifts.map { it.label })
-        assertEquals(LiftWork("Back Squat", 3, 5, 100.0, false), lifts[0])
+        assertEquals(LiftWork("Back Squat", 3, 5, 100.0, false, exerciseName = "Back Squat"), lifts[0])
         assertNull(lifts[1].reps)
     }
 

@@ -597,7 +597,7 @@ private fun GapSheet(report: OptimiseReport, muscle: Muscle, onStep: (OptStep) -
                         reasons = ranked.map { reasonLine(it.tags) },
                         lines = ranked.map { candidate ->
                             val entry = gapEntry(input, candidate)
-                            prescriptionLine(entry, entry.targetWeightKg?.let { Units.withUnit(it) })
+                            prescriptionLine(entry, entry.targetWeightKg?.let { Units.withUnit(it, entry.exerciseName) })
                         },
                         chosen = chosen,
                         onChoose = { chosen = it },
@@ -876,7 +876,7 @@ private fun DetailPage(
                     Text(leaving.exerciseName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = IronvellumColors.Ink)
                     Text(movementLine(leaving), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     Text(
-                        movementDetail(leaving, leaving.targetWeightKg?.let { Units.withUnit(it) }),
+                        movementDetail(leaving, leaving.targetWeightKg?.let { Units.withUnit(it, leaving.exerciseName) }),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
@@ -950,7 +950,7 @@ private fun leavingEntry(change: OptChange, week: List<PlannedPreset>): PlannedE
 /** What a swap option would be prescribed: "3 hard sets · ~10–15 reps · 12 kg". */
 private fun swapLine(option: OptOption): String? {
     val to = (option.edits.firstOrNull()?.op as? ChangeOp.SwapEntry)?.to ?: return null
-    return prescriptionLine(to, to.targetWeightKg?.let { Units.withUnit(it) })
+    return prescriptionLine(to, to.targetWeightKg?.let { Units.withUnit(it, to.exerciseName) })
 }
 
 // ----------------------------------------------------------------------------------------------- overlap

@@ -1,6 +1,7 @@
 package com.ironvellum.app.domain
 
 import java.time.ZoneId
+import java.util.Locale
 
 /** Phone wording is supplied by the caller so building remains independent of UI state. */
 interface FatigueText {
@@ -19,6 +20,7 @@ data class SnapshotInput(
     val builtAtMs: Long = nowMs,
     /** The focus a routine's minutes are priced at (the phone's [SessionClock.focusFor]); the generator's default when unknown. */
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
+    val exerciseUnits: Map<String, LoadUnit> = emptyMap(),
 )
 
 object WebSnapshotBuilder {
@@ -52,6 +54,7 @@ object WebSnapshotBuilder {
             profile = profile, deeds = deeds, muscles = Muscle.entries.associate { it.name to it.label },
             week = week, months = monthEntries(input), sessions = sessionEntries(input).mapKeys { it.key.toString() },
             lifts = liftEntries(input), fatigue = fatigueSection(input), trends = trends, routines = routinesSection(input),
+            exerciseUnits = input.exerciseUnits.mapKeys { it.key.trim().lowercase(Locale.ROOT) }.mapValues { it.value.name.lowercase(Locale.ROOT) },
         )
     }
 
@@ -214,7 +217,6 @@ object WebSnapshotBuilder {
     internal fun routinesSection(input: SnapshotInput): WebSnapshot.Routines {
         val pace = SessionClock.pace(input.history)
         val metrics = input.exercises.values.associate { it.name to it.metric }
-        val unit = input.unit
         val presets = input.presets.map { preset ->
             val planned = PlannedPreset(preset.name, preset.note, preset.scheduledDay, preset.working.map {
                 PlannedEntry(it.exerciseName, it.targetSets, it.targetReps, it.targetWeightKg, it.modifiers)
@@ -231,7 +233,7 @@ object WebSnapshotBuilder {
                         // The variation chip is the rite row's own subline: the modifiers, one per segment.
                         label = entry.modifiers.split(",").map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" · "),
                         sets = entry.targetSets, reps = entry.targetReps, loadKg = entry.targetWeightKg,
-                        figure = SchemeText.figure(entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { Loads.withUnit(it, unit) }, MovementDifficulty.isHoldByName(entry.exerciseName)),
+                        figure = SchemeText.figure(entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { Loads.withUnit(it, input.exerciseUnits[entry.exerciseName.trim().lowercase(Locale.ROOT)] ?: input.unit) }, MovementDifficulty.isHoldByName(entry.exerciseName)),
                         scheme = SchemeText.summary(entry.scheme, entry.targetSets), modifiers = entry.modifiers,
                         supersetGroup = entry.supersetGroup, warmup = entry.warmup,
                     )

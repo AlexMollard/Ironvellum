@@ -80,6 +80,7 @@ object WorkoutShare {
         includeEffort: Boolean = false,
         effortScale: EffortScale = EffortScale.RPE,
         locale: Locale = Locale.getDefault(),
+        exerciseUnits: Map<String, LoadUnit> = emptyMap(),
     ): String = buildString {
         val at = session.completedAtMs ?: session.startedAtMs
 
@@ -108,7 +109,8 @@ object WorkoutShare {
                 if (working.isEmpty()) return@mapNotNull null
                 val full = group.first().exerciseName.ifBlank { exercise?.name ?: Words.text(UiText.res(R.string.share_movement_fallback)) }
                 val peak = peakByLift[Variation.liftKey(full, group.first().modifiers)]
-                val text = movementText(Variation.label(full, group.first().modifiers), working, exercise, targets[id], peak, unit, effortScale.takeIf { includeEffort }, locale)
+                val liftUnit = exerciseUnits[full.trim().lowercase(Locale.ROOT)] ?: unit
+                val text = movementText(Variation.label(full, group.first().modifiers), working, exercise, targets[id], peak, liftUnit, effortScale.takeIf { includeEffort }, locale)
                     ?: return@mapNotNull null
                 val note = if (includeNotes) exerciseNotes[id]?.let(::noteLine) else null
                 text to note

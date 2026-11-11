@@ -16,6 +16,15 @@ class WebSnapshotJsonTest {
         val snapshot = WebSnapshotBuilder.build(WebSnapshotFixtures.input())
         assertEquals(WebSnapshotJson.write(snapshot), WebSnapshotJson.write(snapshot))
     }
+    @Test fun exerciseUnitsAreOptionalAndSerializedWhenPresent() {
+        val snapshot = WebSnapshotBuilder.build(WebSnapshotFixtures.input())
+        val legacy = WebSnapshotJson.write(snapshot)
+        assertFalse(Json.parseToJsonElement(legacy).jsonObject.containsKey("exerciseUnits"))
+        val mixed = WebSnapshotJson.write(snapshot.copy(exerciseUnits = mapOf("bench press" to "kg", "leg press" to "lb")))
+        val units = Json.parseToJsonElement(mixed).jsonObject.getValue("exerciseUnits").jsonObject
+        assertEquals("kg", units.getValue("bench press").jsonPrimitive.content)
+        assertEquals("lb", units.getValue("leg press").jsonPrimitive.content)
+    }
     @Test fun contentHashIgnoresBuiltAt() {
         val snapshot = WebSnapshotBuilder.build(WebSnapshotFixtures.input())
         val original = WebSnapshotJson.contentHash(WebSnapshotJson.write(snapshot))

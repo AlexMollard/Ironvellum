@@ -76,14 +76,14 @@ internal fun PlateSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val unit = Units.current
+    val unit = Units.forExercise(exerciseName)
     val setups by PlateStore.setups.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { PlateStore.load(context.applicationContext) }
     val setup = setups.getValue(unit)
     val rack = remember(setup, unit, exerciseName) { PlateStore.rack(setup, unit, exerciseName) }
     // Everything here is in the unit: the set's load snapped to what the screen shows for it.
-    val setLoad = remember { loadKg?.takeIf { it > 0.0 }?.let { Loads.snap(it, unit) } }
-    var target by remember(rack.bar) { mutableDoubleStateOf(setLoad ?: rack.bar) }
+    val setLoad = remember(loadKg, unit) { loadKg?.takeIf { it > 0.0 }?.let { Loads.snap(it, unit) } }
+    var target by remember(rack.bar, unit, exerciseName) { mutableDoubleStateOf(setLoad ?: rack.bar) }
     var barOpen by remember { mutableStateOf(false) }
     val reading = rack.read(target)
     val name = unit.label

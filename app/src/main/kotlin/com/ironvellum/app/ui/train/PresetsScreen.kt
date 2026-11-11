@@ -195,6 +195,7 @@ internal fun dayLabel(day: Int): String = DayNames.short(day)?.uppercase().orEmp
 
 /** "82.5 kg", or "BW" for no load (null or 0): the shared load formatter, so every caller spaces and words it alike. */
 internal fun formatKg(kg: Double?): String = Units.label(kg)
+internal fun formatKg(kg: Double?, exerciseName: String): String = Units.label(kg, exerciseName = exerciseName)
 
 @Composable
 fun PresetsScreen(

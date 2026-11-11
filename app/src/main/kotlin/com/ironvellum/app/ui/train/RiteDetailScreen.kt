@@ -193,7 +193,7 @@ private fun EntryRows(entries: List<com.ironvellum.app.domain.PresetEntry>, onOp
             ListRow(
                 entry.exerciseName,
                 value = com.ironvellum.app.domain.SchemeText.figure(
-                    entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, ::formatKg,
+                    entry.scheme, entry.targetSets, entry.targetReps, entry.targetWeightKg, { formatKg(it, entry.exerciseName) },
                     hold = MovementDifficulty.isHoldByName(entry.exerciseName),
                 ),
                 wrapValue = true,

@@ -7,6 +7,7 @@ import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.LoadKit
 import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.StrengthProfile
@@ -57,7 +58,17 @@ internal fun PlannedEntry.withLoadDelta(
         return copy(targetWeightKg = next)
     }
     val top = capKg ?: MAX_LOAD_KG
-    val next = (Math.round((load + delta * stepKg) * 4) / 4.0).coerceIn(minOf(stepKg, top), maxOf(top, load))
+    val next = (if (unit == LoadUnit.LB) {
+        var stepped = load
+        val gridLb = Loads.toUnit(stepKg, unit)
+        repeat(kotlin.math.abs(delta)) {
+            stepped = if (delta > 0) Loads.stepUp(stepped, unit, gridLb, stepKg)
+            else Loads.stepDown(stepped, unit, gridLb, stepKg) ?: stepKg
+        }
+        stepped
+    } else {
+        Math.round((load + delta * stepKg) * 4) / 4.0
+    }).coerceIn(minOf(stepKg, top), maxOf(top, load))
     return copy(targetWeightKg = next)
 }
 

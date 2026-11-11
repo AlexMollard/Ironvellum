@@ -6210,4 +6210,11 @@
     <string name="workout_from_history_missing__t">Cette épreuve est indisponible ou ne contient aucune série compatible.</string>
     <string name="preseteditor_save_failed">Impossible d’enregistrer ce programme. Veuillez réessayer.</string>
     <string name="preseteditor_save_failed__t">Impossible d’enregistrer ce rite. Veuillez réessayer.</string>
+    <string name="exercise_unit_title">Unité de poids</string>
+    <string name="exercise_unit_default">Par défaut dans l’appli (%1$s)</string>
+    <string name="exercise_unit_default_hint">Suivre les réglages de l’appli</string>
+    <string name="exercise_unit_kg_hint">Toujours utiliser les kilogrammes pour cet exercice</string>
+    <string name="exercise_unit_lb_hint">Toujours utiliser les livres pour cet exercice</string>
+    <string name="exercise_unit_scope">Utilisée pour cet exercice dans chaque séance. Tes poids enregistrés restent inchangés.</string>
+    <string name="exercise_unit_choose_description">Unité de poids pour %1$s</string>
 </resources>

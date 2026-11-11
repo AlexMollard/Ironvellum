@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.EffortSetting
-import com.ironvellum.app.data.Units
+import com.ironvellum.app.domain.Loads
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.EffortScale
 import com.ironvellum.app.domain.LiftLoading
@@ -217,7 +217,7 @@ internal fun SetsSheet(
                             SetKind.WORKING.barColor(),
                         ) {
                             if (scheme.type != SchemeType.CUSTOM) WholeStepper(stringResource(R.string.setssheet_sets_label), sets, stringResource(R.string.setssheet_noun_sets), false, 2, 30) { sets = it }
-                            LoadTargetStepper(weight, loadGridLb(entry.exerciseName), false, worn, label = loadLabel, emptyText = loadEmpty) { weight = it }
+                            LoadTargetStepper(weight, loadGridLb(entry.exerciseName), false, worn, label = loadLabel, emptyText = loadEmpty, unit = lift.unit) { weight = it }
                             if (scheme.type == SchemeType.CUSTOM) {
                                 WholeStepper(stringResource(R.string.setssheet_reps_label), reps, stringResource(R.string.setssheet_noun_reps), false, 3, 500) { reps = it }
                             } else {
@@ -442,7 +442,7 @@ private fun TopBackoffCards(
     RoleCard(stringResource(R.string.setssheet_role_top), UiText.plural(R.plurals.common_sets_count, 1).asString(), SetKind.TOP.tint()) {
         LoadTargetStepper(
             weight, loadGridLb(exerciseName), false, worn,
-            label = stringResource(if (bodyweight) R.string.setssheet_load_added_label else R.string.setssheet_load_label), emptyText = LoadTargetStepperPlaceholder(bodyweight), onKgText = onWeight,
+            label = stringResource(if (bodyweight) R.string.setssheet_load_added_label else R.string.setssheet_load_label), emptyText = LoadTargetStepperPlaceholder(bodyweight), onKgText = onWeight, unit = lift.unit,
         )
         IntRangeStepper(
             stringResource(R.string.setssheet_reps_label), scheme.topReps, 1, max,
@@ -464,7 +464,7 @@ private fun TopBackoffCards(
             Segment(stringResource(R.string.setssheet_backoff_fixed), fixedMode) { onFixedMode(true) }
         }
         if (fixedMode) {
-            LoadTargetStepper(fixedText, loadGridLb(exerciseName), fixedText.isBlank(), worn, label = stringResource(R.string.setssheet_backoff_load_label), onKgText = onFixedText)
+            LoadTargetStepper(fixedText, loadGridLb(exerciseName), fixedText.isBlank(), worn, label = stringResource(R.string.setssheet_backoff_load_label), onKgText = onFixedText, unit = lift.unit)
         } else {
             IntStepper(
                 stringResource(R.string.setssheet_backoffpercent_label), scheme.backoffPercent,
@@ -486,7 +486,7 @@ private fun backoffCaption(topKg: Double?, scheme: SetScheme, lift: LiftLoading)
     val kg = planned.weightKg
     return when {
         kg != null -> {
-            val figure = (if (lift.bodyweightLift) "+" else "") + Units.withUnit(kg)
+            val figure = (if (lift.bodyweightLift) "+" else "") + Loads.withUnit(kg, lift.unit)
             when (planned.rounding) {
                 Rounding.VEST_BLOCKS -> UiText.res(R.string.setssheet_backoff_rounded_vest, figure)
                 Rounding.BELT_PLATES -> UiText.res(R.string.setssheet_backoff_rounded_belt, figure)
@@ -795,7 +795,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     fun height(i: Int): Float = (if (heaviest > 0.0) (totals[i] / heaviest).let { it * it }.toFloat() else levels.getOrNull(i) ?: 0.8f).coerceIn(0.25f, 1f)
     fun figure(set: PlannedSet, withUnit: Boolean): String {
         val repsText = set.range?.let { SchemeText.reps(it) } ?: set.reps.toString()
-        val load = set.weightKg?.let { (if (lift.bodyweightLift) "+" else "") + (if (withUnit) Units.withUnit(it) else Units.format(it)) }
+        val load = set.weightKg?.let { (if (lift.bodyweightLift) "+" else "") + (if (withUnit) Loads.withUnit(it, lift.unit) else Loads.format(it, lift.unit)) }
             ?: if (lift.bodyweightLift) "BW" else null
         return if (load == null) repsText else "$repsText × $load"
     }
@@ -819,7 +819,7 @@ private fun YoullDo(scheme: SetScheme, sets: Int, reps: Int, kg: Double?, lift: 
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                stringResource(R.string.setssheet_youll_do).uppercase() + if (kg != null && kg > 0.0) " · ${Units.name}" else "",
+                stringResource(R.string.setssheet_youll_do).uppercase() + if (kg != null && kg > 0.0) " · ${lift.unit.label}" else "",
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )

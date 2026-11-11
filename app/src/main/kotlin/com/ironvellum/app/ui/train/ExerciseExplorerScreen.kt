@@ -204,7 +204,7 @@ fun ExerciseExplorerScreen(
                 ScoreChart(history)
                 if (ui.setRecords.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
-                    SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD, assisted)
+                    SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD, assisted, history.exercise.name)
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(stringResource(R.string.explorer_recent_title), style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
@@ -217,12 +217,12 @@ fun ExerciseExplorerScreen(
 }
 
 /** One set as the lifter reads it: "100 kg × 5", "BW × 12", or for a hold "45 s · 20 kg". */
-internal fun setText(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean): String =
+internal fun setText(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean, exerciseName: String? = null): String =
     if (hold) {
-        holdSet(reps, weightKg?.let { Units.withUnit(it) })
+        holdSet(reps, weightKg?.let { Units.withUnit(it, exerciseName) })
     } else {
-        (if (assisted) weightKg?.let { Units.withUnit(it) } ?: Words.text(UiText.res(R.string.assistance_unknown))
-        else Units.label(weightKg)) + " × $reps"
+        (if (assisted) weightKg?.let { Units.withUnit(it, exerciseName) } ?: Words.text(UiText.res(R.string.assistance_unknown))
+        else Units.label(weightKg, exerciseName = exerciseName)) + " × $reps"
     }
 
 private fun holdSet(seconds: Int, load: String?): String = Words.text(
@@ -230,10 +230,10 @@ private fun holdSet(seconds: Int, load: String?): String = Words.text(
 )
 
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
-internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean): String =
-    if (hold) holdSet(reps, weightKg?.let { Units.format(it) })
-    else (if (assisted) weightKg?.let { Units.format(it) } ?: Words.text(UiText.res(R.string.assistance_unknown))
-    else weightKg?.takeIf { it > 0.0 }?.let { Units.format(it) } ?: Loads.bodyweight()) + " × $reps"
+internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean, assisted: Boolean, exerciseName: String? = null): String =
+    if (hold) holdSet(reps, weightKg?.let { Units.format(it, exerciseName) })
+    else (if (assisted) weightKg?.let { Units.format(it, exerciseName) } ?: Words.text(UiText.res(R.string.assistance_unknown))
+    else weightKg?.takeIf { it > 0.0 }?.let { Units.format(it, exerciseName) } ?: Loads.bodyweight()) + " × $reps"
 
 /**
  * Trials per week over the span from the first trial to [nowMs], never shorter than a
@@ -290,7 +290,7 @@ private fun PeakCard(history: ExerciseHistory, assisted: Boolean) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     // Gold is for an earned peak; with nothing scored there is no peak to name.
-                    peak?.let { setText(it.reps, it.weightKg, hold, assisted) } ?: "—",
+                    peak?.let { setText(it.reps, it.weightKg, hold, assisted, history.exercise.name) } ?: "—",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = if (peak != null) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
@@ -300,7 +300,7 @@ private fun PeakCard(history: ExerciseHistory, assisted: Boolean) {
                 )
                 if (peak != null) {
                     Text(
-                        if (history.peakIsE1rm) stringResource(R.string.explorer_peak_e1rm, Units.fixed(peak.e1rmKg ?: 0.0, 1)) else stringResource(R.string.explorer_peak_score, formatScore(peak.score)),
+                        if (history.peakIsE1rm) stringResource(R.string.explorer_peak_e1rm, Units.fixed(peak.e1rmKg ?: 0.0, 1, history.exercise.name)) else stringResource(R.string.explorer_peak_score, formatScore(peak.score)),
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                         maxLines = 1,
@@ -315,7 +315,7 @@ private fun PeakCard(history: ExerciseHistory, assisted: Boolean) {
             (peak == null || heavyKg != peak.weightKg || history.heaviestReps != peak.reps)
         ) {
             InkDivider()
-            ListRow(stringResource(if (assisted) R.string.explorer_effective_load_label else R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold, assisted))
+            ListRow(stringResource(if (assisted) R.string.explorer_effective_load_label else R.string.explorer_heaviest_label), value = setText(history.heaviestReps, heavyKg, hold, assisted, history.exercise.name))
         }
         if (hold) {
             InkDivider()
@@ -323,7 +323,7 @@ private fun PeakCard(history: ExerciseHistory, assisted: Boolean) {
         } else {
             history.totalVolumeKg?.let { volume ->
                 InkDivider()
-                ListRow(stringResource(R.string.explorer_volume_label), subline = stringResource(R.string.explorer_volume_all_time), value = Units.volume(volume))
+                ListRow(stringResource(R.string.explorer_volume_label), subline = stringResource(R.string.explorer_volume_all_time), value = Units.volume(volume, history.exercise.name))
             }
         }
         frequency?.let {
@@ -376,7 +376,7 @@ private fun ScoreChart(history: ExerciseHistory) {
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
                 startLabel = formatDate(points.first().atMs, dayMonth),
                 endLabel = formatDate(points.last().atMs, dayMonth),
-                valueText = { if (e1rm) Units.fixed(it, 1) else UiText.res(R.string.explorer_chart_score_value, "%.1f".fmt(it)).asString(context) },
+                valueText = { if (e1rm) Units.fixed(it, 1, history.exercise.name) else UiText.res(R.string.explorer_chart_score_value, "%.1f".fmt(it)).asString(context) },
                 dateText = { formatDate(points[it].atMs, dayMonth) },
                 atMs = points.map { it.atMs },
                 smooth = false,
@@ -387,7 +387,7 @@ private fun ScoreChart(history: ExerciseHistory) {
 
 /** A folded row: the standing best for each set position of the movement, opened on tap. */
 @Composable
-private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean, assisted: Boolean) {
+private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean, assisted: Boolean, exerciseName: String) {
     var open by rememberSaveable { mutableStateOf(false) }
     val dayMonthYear = stringResource(R.string.explorer_date_day_month_year)
     InkRowPanel(Modifier.fillMaxWidth()) {
@@ -403,7 +403,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
                 ListRow(
                     stringResource(R.string.explorer_setrecords_row, setIndex + 1),
                     subline = formatDate(record.achievedAtMs, dayMonthYear),
-                    value = setText(record.reps, record.weightKg, isHold, assisted),
+                    value = setText(record.reps, record.weightKg, isHold, assisted, exerciseName),
                 )
             }
         }
@@ -425,7 +425,7 @@ private fun RecentSets(history: ExerciseHistory, assisted: Boolean, onOpenChroni
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(day, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                 Text(
-                    sets.joinToString(" · ") { compactSet(it.reps, it.weightKg, hold, assisted) },
+                    sets.joinToString(" · ") { compactSet(it.reps, it.weightKg, hold, assisted, history.exercise.name) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                 )

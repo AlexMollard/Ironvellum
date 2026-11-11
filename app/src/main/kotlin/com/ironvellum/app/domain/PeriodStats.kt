@@ -21,6 +21,7 @@ data class LiftWork(
     val reps: Int?,
     val topKg: Double?,
     val addsToBody: Boolean,
+    val exerciseName: String? = null,
 )
 
 /** One Monday-to-Sunday week's workouts and kilograms moved: what a period's best week is picked by. */
@@ -176,6 +177,7 @@ data class PeriodStats(
                         reps = list.map { it.reps }.distinct().singleOrNull()?.takeIf { !timed && it > 0 },
                         topKg = list.maxOf { it.weightKg ?: 0.0 }.takeIf { it > 0.0 },
                         addsToBody = adds,
+                        exerciseName = list.first().exerciseName,
                     )
                 },
                 titles = inside.map { (session, _) -> session.title.ifBlank { session.label } },

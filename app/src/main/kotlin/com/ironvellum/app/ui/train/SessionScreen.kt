@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.Checkbox
@@ -112,6 +113,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
 import com.ironvellum.app.ui.components.InkIconButton
+import com.ironvellum.app.ui.components.ExerciseUnitPicker
 import com.ironvellum.app.ui.components.HoldsCelebration
 import com.ironvellum.app.ui.components.UndoBar
 import androidx.compose.material3.MaterialTheme
@@ -356,8 +358,8 @@ class SessionViewModel(
     private val dismissals = SuggestionDismissals(appContext)
     private val dismissed = MutableStateFlow(dismissals.dismissed(sessionId))
 
-    /** What the progression engine would change per block, read once: history does not change while a trial is live. */
-    private val engineSuggestions: StateFlow<Map<BlockKey, ProgressionSuggestion>> = flow { emit(repo.trialSuggestions(sessionId)) }
+    /** History stays fixed during a trial; a unit change can change the next plate-grid step offered. */
+    private val engineSuggestions: StateFlow<Map<BlockKey, ProgressionSuggestion>> = Units.changes.map { repo.trialSuggestions(sessionId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /**
@@ -1454,7 +1456,7 @@ fun SessionScreen(
                                     exercise != null && block.sets.none { it.warmup || it.done } &&
                                     WarmupRamp.planFor(
                                         exercise.name, exercise.muscleGroup.name, metric, first.weightKg,
-                                        kit = ProgramAnswersStore.kit, weighted = weighted, unit = Units.current,
+                                        kit = ProgramAnswersStore.kit, weighted = weighted, unit = Units.forExercise(first.exerciseName),
                                     ).isNotEmpty()
                                 ) {
                                     { viewModel.addWarmupRamp(block.key, ::offerRampUndo) }
@@ -1513,7 +1515,7 @@ fun SessionScreen(
                                     val lift = LiftLoading(
                                         stepKg = Progression.weightStepKg(exercise?.muscleGroup?.name.orEmpty(), first.exerciseName),
                                         worn = WornLoad.forLift(ProgramAnswersStore.kit, first.exerciseName, weighted, metric),
-                                        unit = Units.current,
+                                        unit = Units.forExercise(first.exerciseName),
                                         bodyweightKg = bodyweight,
                                         bodyweightLift = !weighted,
                                         bodyShare = MovementDifficulty.bodyShare(first.exerciseName, first.modifiers),
@@ -1521,7 +1523,7 @@ fun SessionScreen(
                                     )
                                     val pendingTop = block.sets.firstOrNull { it.kind == SetKind.TOP && it.isPending }
                                     val wouldPeak = pendingTop != null && newPeakSetIds(listOf(pendingTop.copy(done = true)), metric, peakBook).isNotEmpty()
-                                    TrialHints.forLift(block.sets, scheme, lastTops[block.key], wouldPeak, lift, { kg -> kgLabel(kg, weighted) }, hold = metric == ExerciseMetric.HOLD)
+                                    TrialHints.forLift(block.sets, scheme, lastTops[block.key], wouldPeak, lift, { kg -> kgLabel(kg, weighted, first.exerciseName) }, hold = metric == ExerciseMetric.HOLD)
                                 } else {
                                     emptyMap()
                                 },
@@ -1810,9 +1812,10 @@ fun SessionScreen(
     }
 
     editLoadFor?.let { target ->
-        val initial = target.weightKg?.let { loadText(it) }.orEmpty()
+        val unit = remember(target.id) { Units.forExercise(target.exerciseName) }
+        val initial = target.weightKg?.let { loadText(it, unit) }.orEmpty()
         var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
-        val parsed = parseLoadKg(field.text)
+        val parsed = parseLoadKg(field.text, unit)
         // This set, every later set of the exercise not yet ticked off (a
         // working weight usually holds for the rest of the exercise), and every
         // later TICKED set logged at this set's old load: correcting a load
@@ -1860,12 +1863,12 @@ fun SessionScreen(
                     singleLine = true,
                     label = {
                         val each = GearRequirements.loadIsEach(target.exerciseName)
-                        Text(stringResource(if (each) R.string.session_load_field_label_each else R.string.session_load_field_label, Units.name))
+                        Text(stringResource(if (each) R.string.session_load_field_label_each else R.string.session_load_field_label, unit.label))
                     },
                     placeholder = { Text(stringResource(R.string.session_load_placeholder)) },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
-                        { Text(stringResource(R.string.session_load_error, Loads.ceilingText(MAX_LOAD_KG, Units.current), Units.name)) }
+                        { Text(stringResource(R.string.session_load_error, Loads.ceilingText(MAX_LOAD_KG, unit), unit.label)) }
                     } else {
                         null
                     },
@@ -2093,7 +2096,7 @@ fun SessionScreen(
                     onShare = {
                         shareRender = { notes, effort -> WorkoutShare.format(summary.session, ui.sets, exercises.associateBy { it.id },
                             targets = shareTargets, exerciseNotes = exerciseNotes, includeNotes = notes, unit = Units.current,
-                            includeEffort = effort, effortScale = EffortSetting.scale) }
+                            includeEffort = effort, effortScale = EffortSetting.scale, exerciseUnits = Units.exerciseOverrides) }
                     }) }
             } else TrialCelebration(
                 stage = stage,
@@ -2131,6 +2134,7 @@ fun SessionScreen(
                             unit = Units.current,
                             includeEffort = includeEffort,
                             effortScale = EffortSetting.scale,
+                            exerciseUnits = Units.exerciseOverrides,
                         )
                     }
                 },
@@ -2380,6 +2384,7 @@ private fun resText(id: Int, vararg args: Any): String = Words.text(UiText.res(i
 
 private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
     val worn = WornLoad.forLift(ProgramAnswersStore.kit, set.exerciseName, weighted, metric)
+    val unit = Units.forExercise(set.exerciseName)
     fun load(): Figure {
         val assisted = BodyShare.isAssisted(set.exerciseName)
         val kg = if (assisted) set.weightKg else set.weightKg?.takeIf { it > 0.0 }
@@ -2387,15 +2392,15 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
-            value = kg?.let { Units.format(it) } ?: if (assisted) resText(R.string.assistance_unknown) else if (weighted) "0" else resText(R.string.session_figure_bodyweight),
+            value = kg?.let { Loads.format(it, unit) } ?: if (assisted) resText(R.string.assistance_unknown) else if (weighted) "0" else resText(R.string.session_figure_bodyweight),
             // A loaded lift with nothing on it says so, where the unit would sit.
             unit = when {
                 kg == null -> if (assisted) "" else if (weighted) resText(R.string.session_unit_set_load) else ""
-                each -> resText(R.string.session_unit_load_each, Units.name)
-                else -> Units.name
+                each -> resText(R.string.session_unit_load_each, unit.label)
+                else -> unit.label
             },
-            minus = set.copy(weightKg = stepDownLoad(set.weightKg, set.exerciseName, worn = worn)),
-            plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName), worn = worn)),
+            minus = set.copy(weightKg = stepDownLoad(set.weightKg, set.exerciseName, unit, worn)),
+            plus = set.copy(weightKg = stepUpKg(set.weightKg, unit, gridLb = loadGridLb(set.exerciseName), worn = worn)),
             each = each,
         )
     }
@@ -2487,7 +2492,7 @@ private fun FigureKind.stepperRes(each: Boolean = false): Triple<Int, Int, Int> 
 }
 
 /** "10 kg", or "BW" for a bodyweight set. */
-internal fun kgLabel(kg: Double?, weighted: Boolean = false): String = Units.label(kg, weighted)
+internal fun kgLabel(kg: Double?, weighted: Boolean = false, exerciseName: String? = null): String = Units.label(kg, weighted, exerciseName)
 
 /** A set as its row reads: "10 kg × 6". */
 internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
@@ -2495,7 +2500,7 @@ internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Bo
     ExerciseMetric.HOLD -> "${setLoadLabel(set, weighted)} × ${set.durationSec ?: 0}s"
     ExerciseMetric.DURATION ->
         resText(R.string.session_figure_minutes, (set.durationSec ?: 0) / 60) +
-            if (weighted && (set.weightKg ?: 0.0) > 0.0) " · ${kgLabel(set.weightKg)}" else ""
+            if (weighted && (set.weightKg ?: 0.0) > 0.0) " · ${kgLabel(set.weightKg, exerciseName = set.exerciseName)}" else ""
     ExerciseMetric.DISTANCE_TIME ->
         resText(R.string.session_figure_km_minutes, formatBodyValue((set.distanceM ?: 0.0) / 1000.0), (set.durationSec ?: 0) / 60)
     ExerciseMetric.ATTEMPTS_GRADE ->
@@ -2504,12 +2509,12 @@ internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Bo
 }
 
 private fun setLoadLabel(set: SessionSet, weighted: Boolean): String =
-    if (BodyShare.isAssisted(set.exerciseName)) set.weightKg?.let { Units.withUnit(it) } ?: resText(R.string.assistance_unknown)
-    else kgLabel(set.weightKg, weighted)
+    if (BodyShare.isAssisted(set.exerciseName)) set.weightKg?.let { Units.withUnit(it, set.exerciseName) } ?: resText(R.string.assistance_unknown)
+    else kgLabel(set.weightKg, weighted, set.exerciseName)
 
 /** The reference line's figure: "6 × 7.5 kg". */
-private fun repsAtLoad(figure: Int, kg: Double?, hold: Boolean, weighted: Boolean, assisted: Boolean): String =
-    "$figure${if (hold) "s" else ""} × ${if (assisted) kg?.let { Units.withUnit(it) } ?: resText(R.string.assistance_unknown) else kgLabel(kg, weighted)}"
+private fun repsAtLoad(figure: Int, kg: Double?, hold: Boolean, weighted: Boolean, assisted: Boolean, exerciseName: String?): String =
+    "$figure${if (hold) "s" else ""} × ${if (assisted) kg?.let { Units.withUnit(it, exerciseName) } ?: resText(R.string.assistance_unknown) else kgLabel(kg, weighted, exerciseName)}"
 
 /**
  * "Last 6 × 7.5 kg · Peak 6 × 10 kg", the peak in gold. Last is the top set of
@@ -2525,11 +2530,11 @@ private fun referenceLine(
     val hold = metric == ExerciseMetric.HOLD
     val assisted = exercise?.name?.let(BodyShare::isAssisted) == true
     val lastText = last?.let {
-        (if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted)
+        (if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted, exercise?.name)
         else exercise?.let { e -> lastLoggedFigure(it, e) })
             ?.let { figure -> figure + (it.rpe?.let { rpe -> " · ${Effort.value(rpe, EffortSetting.scale)}" } ?: "") }
     }
-    val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted) }
+    val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold, exercise?.isWeighted == true, assisted, exercise?.name) }
     if (lastText == null && peakText == null) return null
     return buildAnnotatedString {
         if (lastText != null) append(resText(R.string.session_reference_last, lastText))
@@ -2579,10 +2584,10 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
         done.isNotEmpty() -> Words.text(UiText.plural(R.plurals.session_folded_progress, total, done.size, total))
         else -> when (metric) {
             ExerciseMetric.REPS -> if (BodyShare.isAssisted(first.exerciseName)) "$total × ${first.reps} · ${setLoadLabel(first, weighted)}"
-                else first.weightKg?.takeIf { it > 0.0 }?.let { "$total × ${first.reps} · ${Units.withUnit(it)}" }
+                else first.weightKg?.takeIf { it > 0.0 }?.let { "$total × ${first.reps} · ${Units.withUnit(it, first.exerciseName)}" }
                     ?: if (weighted) resText(R.string.session_folded_set_a_load, total, first.reps) else "$total × ${first.reps}"
             ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + if (BodyShare.isAssisted(first.exerciseName)) " · ${setLoadLabel(first, weighted)}"
-                else (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
+                else (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it, first.exerciseName)}" } ?: "")
             ExerciseMetric.DURATION -> resText(R.string.session_folded_minutes, total, (first.durationSec ?: 0) / 60)
             ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> Words.text(UiText.plural(R.plurals.common_sets_count, total))
         }
@@ -2798,6 +2803,8 @@ internal fun OpenExerciseCard(
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
+    var choosingUnit by remember(block.key) { mutableStateOf(false) }
+    if (choosingUnit) ExerciseUnitPicker(first.exerciseName) { choosingUnit = false }
     // Once working sets are being logged the warm-ups fold into one ticked row, which opens on a tap.
     var warmupsOpen by remember(block.key) { mutableStateOf(false) }
     val foldWarmups = !amend && !warmupsOpen && block.sets.any { it.done && !it.warmup } &&
@@ -2857,6 +2864,18 @@ internal fun OpenExerciseCard(
                     clickLabel = stringResource(R.string.session_plates_description),
                     onClick = it,
                 )
+            }
+            if (metric.isStrength) {
+                Row(
+                    Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp)
+                        .clickable(onClickLabel = stringResource(R.string.exercise_unit_choose_description, first.exerciseName), role = Role.Button) { choosingUnit = true }
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(Units.nameFor(first.exerciseName), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
             }
             ExerciseMenu(
                 name = first.exerciseName,
@@ -3016,8 +3035,8 @@ internal class AppliedOffer(val suggestion: ProgressionSuggestion, val onUndo: (
 
 /** The headline of a suggestion ("Ready for more: 12.5 kg × 8"); null for a cue, whose line is the engine's own advice. */
 @Composable
-private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Boolean): String? {
-    val load = kgLabel(suggestion.weightKg, weighted)
+private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Boolean, name: String): String? {
+    val load = kgLabel(suggestion.weightKg, weighted, name)
     return when (suggestion.kind) {
         ProgressionSuggestion.Kind.MORE_LOAD ->
             stringResource(if (suggestion.hold) R.string.session_suggestion_more_load_hold else R.string.session_suggestion_more_load, load, suggestion.reps)
@@ -3040,8 +3059,8 @@ private fun suggestionHeadline(suggestion: ProgressionSuggestion, weighted: Bool
 
 /** The line confirming an accepted suggestion ("Applied: 12.5 kg × 8 for the rest of today"). */
 @Composable
-private fun appliedHeadline(suggestion: ProgressionSuggestion, weighted: Boolean): String {
-    val load = kgLabel(suggestion.weightKg, weighted)
+private fun appliedHeadline(suggestion: ProgressionSuggestion, weighted: Boolean, name: String): String {
+    val load = kgLabel(suggestion.weightKg, weighted, name)
     return when (suggestion.kind) {
         ProgressionSuggestion.Kind.MORE_REPS -> UiText.plural(R.plurals.session_suggestion_applied_reps, suggestion.reps, suggestion.reps).asString()
         ProgressionSuggestion.Kind.LONGER_HOLD -> stringResource(R.string.session_suggestion_applied_longer_hold, suggestion.reps)
@@ -3067,7 +3086,7 @@ private fun CardAction(text: String, description: String, color: Color, onClick:
 @Composable
 private fun SuggestionCard(offer: SuggestionOffer, name: String, weighted: Boolean) {
     val suggestion = offer.suggestion
-    val headline = suggestionHeadline(suggestion, weighted)
+    val headline = suggestionHeadline(suggestion, weighted, name)
     val shape = MaterialTheme.shapes.small
     Column(
         Modifier
@@ -3122,7 +3141,7 @@ private fun AppliedCard(offer: AppliedOffer, name: String, weighted: Boolean) {
             .padding(start = 12.dp, top = 8.dp, end = 4.dp),
     ) {
         Text(
-            appliedHeadline(offer.suggestion, weighted),
+            appliedHeadline(offer.suggestion, weighted, name),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.Ink,
@@ -4634,7 +4653,7 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field, 
         RoutineUpdate.Field.REPS ->
             resText(if (change.isHold) R.string.session_field_hold else R.string.session_figure_label_reps) to "${before.targetReps}$unit → ${after.targetReps}$unit"
         // "60 kg", spaced like every other load on the screen (formatKg's "60kg" is the compact rite-row form).
-        RoutineUpdate.Field.LOAD -> resText(R.string.session_field_load) to "${Units.label(before.targetWeightKg, weighted)} → ${Units.label(after.targetWeightKg, weighted)}"
+        RoutineUpdate.Field.LOAD -> resText(R.string.session_field_load) to "${Units.label(before.targetWeightKg, weighted, before.exerciseName)} → ${Units.label(after.targetWeightKg, weighted, after.exerciseName)}"
         RoutineUpdate.Field.MODIFIERS ->
             resText(R.string.session_field_modifiers) to
                 "${before.modifiers.ifBlank { resText(R.string.session_field_none) }} → ${after.modifiers.ifBlank { resText(R.string.session_field_none) }}"
@@ -4818,7 +4837,7 @@ private fun RoutineUpdateDialog(
                         },
                         figures = "${add.line} · " + SchemeText.figure(
                             add.entry.scheme, add.entry.targetSets, add.entry.targetReps, add.entry.targetWeightKg,
-                            load = { Units.label(it, true) }, hold = add.isHold,
+                            load = { Units.label(it, true, add.entry.exerciseName) }, hold = add.isHold,
                         ),
                         labelWidth = 104.dp,
                     ) { addedKept = if (on) addedKept - add.entry.exerciseId else addedKept + add.entry.exerciseId }

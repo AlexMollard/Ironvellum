@@ -688,6 +688,7 @@ class CloudSync(
                                     appearance = WebAppearance.of(mode, dark, light, themed),
                                     fatigueText = WebFatigueText, displayName = me.displayName,
                                     figure = figure, crestId = wornCrest, builtAtMs = now, focus = focus,
+                                    exerciseUnits = Units.exerciseOverrides,
                                 )
                                 WebSnapshotJson.write(WebSnapshotBuilder.build(input))
                             }

@@ -7380,4 +7380,11 @@
     <string name="workout_from_history_missing__t">This trial is no longer available or has no supported sets.</string>
     <string name="preseteditor_save_failed">Could not save this workout. Please try again.</string>
     <string name="preseteditor_save_failed__t">Could not save this rite. Please try again.</string>
+    <string name="exercise_unit_title">Weight unit</string>
+    <string name="exercise_unit_default">App default (%1$s)</string>
+    <string name="exercise_unit_default_hint">Follow your app settings</string>
+    <string name="exercise_unit_kg_hint">Always use kilograms for this exercise</string>
+    <string name="exercise_unit_lb_hint">Always use pounds for this exercise</string>
+    <string name="exercise_unit_scope">Used for this exercise in every workout. Your recorded weights stay the same.</string>
+    <string name="exercise_unit_choose_description">Weight unit for %1$s</string>
 </resources>

@@ -116,6 +116,22 @@ class WorkoutShareTest {
     )
 
     @Test
+    fun `per exercise units override global without changing stored kilograms`() {
+        val bench = exercise(1, "Bench Press", weighted = true)
+        val leg = exercise(2, "Leg Press", weighted = true)
+        val sets = listOf(set(1, "Bench Press", 0, 5, 100.0), set(2, "Leg Press", 0, 5, 100.0, position = 1))
+        val catalogue = listOf(bench, leg).associateBy { it.id }
+        val mixed = WorkoutShare.format(session(), sets, catalogue, zone, unit = LoadUnit.LB,
+            exerciseUnits = mapOf("bench press" to LoadUnit.KG, "leg press" to LoadUnit.LB))
+        assertTrue(mixed, "100kg" in mixed)
+        assertTrue(mixed, "220.5lb" in mixed)
+        val legacy = WorkoutShare.format(session(), sets, catalogue, zone, unit = LoadUnit.LB)
+        assertFalse(legacy, "100kg" in legacy)
+        assertEquals(2, "220.5lb".toRegex().findAll(legacy).count())
+        assertTrue(sets.all { it.weightKg == 100.0 })
+    }
+
+    @Test
     fun `a variation is named on its line and the plain lift is not`() {
         val pushUp = exercise(1, "Push-up")
         val sets = List(3) { set(1, "Push-up", it, 12, modifiers = "deficit") } +

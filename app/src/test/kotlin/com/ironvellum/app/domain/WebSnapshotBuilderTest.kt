@@ -44,6 +44,15 @@ class WebSnapshotBuilderTest {
         val snapshot = WebSnapshotBuilder.build(input)
         assertEquals("lb", snapshot.unit); assertEquals("rir", snapshot.effort)
     }
+    @Test fun exerciseUnitsAreAdditiveAndDoNotConvertSnapshotData() {
+        val input = WebSnapshotFixtures.input()
+        val original = WebSnapshotBuilder.build(input)
+        val changed = WebSnapshotBuilder.build(input.copy(exerciseUnits = mapOf("bench press" to LoadUnit.KG, "leg press" to LoadUnit.LB)))
+        assertEquals(mapOf("bench press" to "kg", "leg press" to "lb"), changed.exerciseUnits)
+        assertEquals(original.sessions, changed.sessions)
+        assertEquals(original.lifts, changed.lifts)
+        assertTrue(original.exerciseUnits.isEmpty())
+    }
     @Test fun figureFollowsInput() {
         for (figure in listOf("male", "female")) assertEquals(figure, WebSnapshotBuilder.profileAndDeeds(WebSnapshotFixtures.input().copy(figure = figure)).first.figure)
     }

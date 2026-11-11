@@ -343,6 +343,8 @@ object Xp {
         val detail: String = "",
         /** [topLoadKg] is the load itself (a barbell, a dumbbell), not weight added to the body (a belted pull-up). */
         val externalLoad: Boolean = false,
+        /** Base catalogue name, separate from the variation label used for display. */
+        val exerciseName: String? = null,
     )
 
     /** What one lift's peak pays and what kind it was ("heavier", "more reps"), as [SessionPeaks] priced it. */
@@ -436,6 +438,7 @@ object Xp {
                     topLoadKg = block.mapNotNull { it.weightKg?.takeIf { w -> w > 0.0 } }.maxOrNull(),
                     hold = isHold(block.first()),
                     externalLoad = block.first().externalLoad,
+                    exerciseName = block.first().exerciseName,
                 )
             }
             if (best != null) {

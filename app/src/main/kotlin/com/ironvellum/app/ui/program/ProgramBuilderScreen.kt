@@ -979,7 +979,8 @@ fun ProgramBuilderScreen(
                             onLoad = { entryIndex, delta ->
                                 viewModel.editEntry(presetIndex, entryIndex) { entry ->
                                     val cap = equipment?.let { ProgramGenerator.dumbbellCapKg(entry.exerciseName, it) }
-                                    entry.withLoadDelta(delta, loadStepKg(Units.current), cap, wornFor(entry, equipment, catalogue), Units.current)
+                                    val unit = Units.forExercise(entry.exerciseName)
+                                    entry.withLoadDelta(delta, loadStepKg(unit), cap, wornFor(entry, equipment, catalogue), unit)
                                 }
                             },
                             onRemove = { entryIndex -> viewModel.removeEntry(presetIndex, entryIndex) },

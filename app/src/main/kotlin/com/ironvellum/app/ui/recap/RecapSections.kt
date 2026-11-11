@@ -262,9 +262,9 @@ private fun Records(recap: WeeklyRecap) {
                     Caption(RecapText.recordSet(record), Modifier.padding(top = 2.dp))
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Caption(stringResource(R.string.recap_record_e1rm, RecapText.load(record.e1rmKg)))
+                    Caption(stringResource(R.string.recap_record_e1rm, RecapText.load(record.e1rmKg, record.name)))
                     Text(
-                        RecapText.gain(record.gainKg),
+                        RecapText.gain(record.gainKg, record.name),
                         style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
                         color = IronvellumColors.EmeraldBright,
                     )
@@ -496,7 +496,7 @@ private fun DoneThisWeek(recap: WeeklyRecap) {
             if (index > 0) InkDivider()
             Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(lift.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                val load = lift.topKg?.let { (if (lift.addsToBody) "+" else "") + Units.withUnit(it) }
+                val load = lift.topKg?.let { (if (lift.addsToBody) "+" else "") + Units.withUnit(it, lift.exerciseName) }
                 Caption(
                     when {
                         lift.reps != null && load != null -> stringResource(R.string.recap_lift_sets_reps_load, lift.sets, lift.reps, load)

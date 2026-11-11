@@ -6210,4 +6210,11 @@
     <string name="workout_from_history_missing__t">Esta prueba ya no está disponible o no tiene series compatibles.</string>
     <string name="preseteditor_save_failed">No se pudo guardar esta rutina. Inténtalo de nuevo.</string>
     <string name="preseteditor_save_failed__t">No se pudo guardar este rito. Inténtalo de nuevo.</string>
+    <string name="exercise_unit_title">Unidad de peso</string>
+    <string name="exercise_unit_default">Predeterminada de la app (%1$s)</string>
+    <string name="exercise_unit_default_hint">Seguir los ajustes de la app</string>
+    <string name="exercise_unit_kg_hint">Usar siempre kilogramos para este ejercicio</string>
+    <string name="exercise_unit_lb_hint">Usar siempre libras para este ejercicio</string>
+    <string name="exercise_unit_scope">Se usa para este ejercicio en todos los entrenamientos. Tus pesos registrados no cambian.</string>
+    <string name="exercise_unit_choose_description">Unidad de peso para %1$s</string>
 </resources>

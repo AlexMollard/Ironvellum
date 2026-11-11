@@ -18,7 +18,7 @@ export function workoutRow(workout, entry, snapshot, router, source) {
   const figures = entry ? `${entry.min} min · ${plural(entry.hardSets, 'hard set')} · ${formatVolume(entry.volumeKg, snapshot?.unit)} · +${entry.xp} XP` : '— min · — hard sets · — volume · — XP';
   text.append(titleLine, node('div', figures, 'muted row-figures'));
   el.append(when, text);
-  if (entry?.prs?.length) el.append(prTag(entry.prs[0], snapshot?.unit));
+  if (entry?.prs?.length) el.append(prTag(entry.prs[0], snapshot?.unit, snapshot));
   // The strip sits above the row's stretched link so it can show its tooltips; a click on it still opens the workout.
   const strip = muscleStrip(entry?.groupLevels, { own: false }); strip.addEventListener('click', () => heading.click());
   el.append(strip);

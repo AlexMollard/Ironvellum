@@ -5841,4 +5841,11 @@
     <string name="workout_from_history_missing__t">此试炼已不可用或没有受支持的组数。</string>
     <string name="preseteditor_save_failed">无法保存此训练。请重试。</string>
     <string name="preseteditor_save_failed__t">无法保存此仪式。请重试。</string>
+    <string name="exercise_unit_title">重量单位</string>
+    <string name="exercise_unit_default">应用默认（%1$s）</string>
+    <string name="exercise_unit_default_hint">跟随应用设置</string>
+    <string name="exercise_unit_kg_hint">此动作始终使用千克</string>
+    <string name="exercise_unit_lb_hint">此动作始终使用磅</string>
+    <string name="exercise_unit_scope">每次训练中的此动作均使用此设置。已记录的重量保持不变。</string>
+    <string name="exercise_unit_choose_description">%1$s的重量单位</string>
 </resources>

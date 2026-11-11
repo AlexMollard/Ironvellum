@@ -53,7 +53,7 @@ export async function renderWorkoutDetail(root, { source, snapshot, router, soci
     const line = node('div', null, 'exercise-line'); line.append(title2);
     const modifiers = [...new Set(group.sets.map(s => s.modifiers).filter(Boolean))];
     for (const variation of modifiers) line.append(node('span', variation, 'chip chip-accent'));
-    for (const pr of entry?.prs || []) if (pr.label === group.name || pr.label.startsWith(`${group.name} .`)) line.append(prTag(pr, snapshot?.unit));
+    for (const pr of entry?.prs || []) if (pr.label === group.name || pr.label.startsWith(`${group.name} .`)) line.append(prTag(pr, snapshot?.unit, snapshot));
     head.append(frame, line); block.append(head); const scroll = node('div', null, 'table-scroll'); scroll.append(setTable(group.sets, entry, snapshot)); block.append(scroll); main.append(block);
   }
   if (workout.note) { const note = node('p', null, 'note'); note.append(node('span', 'Your note: ', 'muted'), workout.note); side.append(note); }

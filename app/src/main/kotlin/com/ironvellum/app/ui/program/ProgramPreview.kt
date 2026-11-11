@@ -289,7 +289,7 @@ fun ProposedEntryRow(
     val stackDetail = LocalDensity.current.fontScale > 1.3f
     val detail: @Composable () -> Unit = {
         Text(
-            movementDetail(entry, entry.targetWeightKg?.let { Units.withUnit(it) }),
+            movementDetail(entry, entry.targetWeightKg?.let { Units.withUnit(it, entry.exerciseName) }),
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,

@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -25,8 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.data.Lines
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.data.Words
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.ExerciseWhy
 import com.ironvellum.app.domain.ExerciseWhys
@@ -72,6 +78,7 @@ internal fun ExerciseInfoSheet(
     why: ExerciseWhy? = ExerciseWhys.forName(exercise.name),
 ) {
     val skill = Skills.forName(exercise.name)
+    var choosingUnit by remember(exercise.name) { mutableStateOf(false) }
     // One line per board: an archer push-up is rung 4 itself and counts as a push-up (rung 2), so show the higher.
     val boards = LiftBoards.boardsFor(exercise.name).groupBy { it.lift }.values.map { same -> same.maxBy { it.rung ?: 0 } }
     val chips = buildList {
@@ -96,7 +103,7 @@ internal fun ExerciseInfoSheet(
         pages = listOf(
             InfoPage(stringResource(R.string.infosheet_page_about)) {
                 // Give every pose the full width; equipment and workout facts sit below it.
-                section(null) { AboutTop(exercise, lastLine) }
+                section(null) { AboutTop(exercise, lastLine, onUnit = { choosingUnit = true }) }
                 if (why != null) section(Words.text(UiText.res(R.string.infosheet_why_label))) { WhyBody(why) }
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
                 if (skill != null) {
@@ -120,11 +127,12 @@ internal fun ExerciseInfoSheet(
             InfoPage(stringResource(R.string.infosheet_page_fatigue)) { fatigueFacts(exercise.name, modifiers) },
         ),
     )
+    if (choosingUnit) ExerciseUnitPicker(exercise.name, onDismiss = { choosingUnit = false })
 }
 
 /** Full-width artwork grows into spare page height; facts never squeeze a wide pose into a thumbnail. */
 @Composable
-private fun AboutTop(exercise: Exercise, lastLine: String?) {
+private fun AboutTop(exercise: Exercise, lastLine: String?, onUnit: () -> Unit) {
     val gear = gearLine(exercise.name)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         val grow = LocalPageRoom.current?.take(ART_GROWTH) ?: 0.dp
@@ -135,6 +143,27 @@ private fun AboutTop(exercise: Exercise, lastLine: String?) {
                     AboutFact(Words.text(UiText.themed(R.string.infosheet_last_label, R.string.infosheet_last_label__t)), lastLine)
                 }
                 if (gear != null) Box(Modifier.weight(1f)) { AboutFact(Words.armoury.u, gear) }
+            }
+        }
+        if (exercise.metric == ExerciseMetric.REPS || exercise.metric == ExerciseMetric.HOLD) {
+            Column {
+                InkDivider()
+                ListRow(
+                    label = stringResource(R.string.exercise_unit_title),
+                    value = Units.overrideFor(exercise.name)?.label
+                        ?: stringResource(R.string.exercise_unit_default, Units.name),
+                    wrapValue = true,
+                    contentPadding = PaddingValues(vertical = 12.dp),
+                    onClickLabel = stringResource(R.string.exercise_unit_choose_description, exercise.name),
+                    onClick = onUnit,
+                )
+                InkDivider()
+                Text(
+                    stringResource(R.string.exercise_unit_scope),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
             }
         }
     }

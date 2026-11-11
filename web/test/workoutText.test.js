@@ -29,6 +29,14 @@ describe('workout text', () => {
     const out = formatWorkoutText({ workout, entry, snapshot: { ...snapshot, unit: 'lb', effort: 'rpe' }, sets: [set('Squat', 0, 0, { weightKg: 102.058, rpe: 9 }), set('Dip', 1, 0, { weightKg: null }), set('Pull-up', 2, 0, { weightKg: -20, reps: 10 })] });
     expect(out).toContain('  1  225 lb × 6  RPE 9'); expect(out).toContain('  1  BW × 6'); expect(out).toContain('  1  -44 lb × 10');
   });
+  it('uses per-exercise units while leaving aggregate volume global, and falls back for legacy snapshots', () => {
+    const mixed = [set('Bench Press', 0, 0, { weightKg: 100 }), set('Leg Press', 1, 0, { weightKg: 100 })];
+    const preferences = { ...snapshot, unit: 'lb', exerciseUnits: { 'bench press': 'kg', 'leg press': 'lb' } };
+    const out = formatWorkoutText({ workout, entry, snapshot: preferences, sets: mixed });
+    expect(out).toContain('100 kg × 6'); expect(out).toContain('220.5 lb × 6'); expect(out).toContain('21.6 k lb');
+    const legacy = formatWorkoutText({ workout, entry, snapshot: { ...snapshot, unit: 'lb' }, sets: mixed });
+    expect(legacy.match(/220\.5 lb × 6/g)).toHaveLength(2);
+  });
   it('names warm-up and back-off sets, and holds and runs without reps', () => {
     const out = formatWorkoutText({ workout, entry, snapshot, sets: [set('Lift', 0, 0, { kind: 'warmup', weightKg: 40 }), set('Lift', 0, 1, { kind: 'backoff' }), set('Plank', 1, 0, { reps: 0, weightKg: null, durationSec: 45 }), set('Run', 2, 0, { reps: 0, weightKg: null, distanceM: 5000 })] });
     expect(out).toContain('  1  40 kg × 6  Warm-up'); expect(out).toContain('  2  60 kg × 6  Back-off'); expect(out).toContain('  1  45 s'); expect(out).toContain('  1  5 km');

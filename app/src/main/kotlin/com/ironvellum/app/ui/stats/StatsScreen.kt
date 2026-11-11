@@ -475,11 +475,11 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
             // The board is a glance; the lift's whole history is on Exercises.
-            val change = record.deltaKg?.let { stringResource(R.string.stats_change_90d, Ledger.signed(Units.amount(it), Units.name)) }
+            val change = record.deltaKg?.let { stringResource(R.string.stats_change_90d, Ledger.signed(Units.amount(it, record.name), Units.nameFor(record.name))) }
             val fresh = LiftRecords.isFresh(record, nowMs)
             ListRow(
                 label = record.label,
-                value = Units.fixed(record.bestE1rmKg, 1),
+                value = Units.fixed(record.bestE1rmKg, 1, record.name),
                 subline = if (fresh) {
                     val newTag = UiText.themed(R.string.stats_lift_new_peak, R.string.stats_lift_new_peak__t).asString()
                     change?.let { stringResource(R.string.stats_join, newTag, it) } ?: newTag
