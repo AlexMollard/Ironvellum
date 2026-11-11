@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -29,6 +30,7 @@ import com.ironvellum.app.domain.CustomType
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.ui.components.CustomExerciseSheet
+import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.theme.AccentPalette
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTheme
@@ -106,6 +108,25 @@ class CustomExerciseSheetTest {
             onSaved = { saved = it; open = false },
             onDismiss = { open = false },
         )
+    }
+
+    @Test fun customPickerInfoShowsActionsAndOpensEditor() {
+        val exercise = Exercise(name = NAME, muscleGroup = CustomType.PUSH.group, isWeighted = true, custom = true)
+        compose.setContent {
+            IronvellumTheme {
+                ExercisePickerSheet(exercises = listOf(exercise), onPick = {}, onDismiss = {}, defaultMyGear = false)
+            }
+        }
+        driver.settle()
+        compose.onAllNodesWithContentDescription(text(R.string.picker_row_about_description, NAME)).onFirst().performClick()
+        driver.settle()
+        val inInfo = hasAnyAncestor(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, NAME))
+        compose.onNode(hasText(text(R.string.infosheet_close_button)) and inInfo).assertIsDisplayed()
+        compose.onNode(hasText(text(R.string.infosheet_edit_button)) and inInfo).assertIsDisplayed()
+        compose.onNode(hasText(text(R.string.picker_confirm_add)) and inInfo).assertIsDisplayed()
+        shot("picker-info")
+        compose.onNode(hasText(text(R.string.infosheet_edit_button)) and inInfo).performClick()
+        compose.onNodeWithText(text(R.string.customex_save_edit_button)).assertExists()
     }
 
     @Test fun createAndEditPersistChoicesAndMuscleRoles() = runBlocking {

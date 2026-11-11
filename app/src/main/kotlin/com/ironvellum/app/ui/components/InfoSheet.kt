@@ -88,7 +88,7 @@ import com.ironvellum.app.domain.UiText
  *  2. Optional [summary] strip: [InfoFigures] or [InfoProgress].
  *  3. Sections from [content], in the order they are declared, each under a
  *     PanelLabel. A long one is folded behind "Show more".
- *  4. [actions], at most two buttons, pinned: they stay put while 1-3 scroll.
+ *  4. [actions], at most three buttons in rows of two, pinned while 1-3 scroll.
  *
  * [InfoSheetSize.Full] is for rich detail (up to about 90% of the screen);
  * [InfoSheetSize.Compact] is for "What's this?" explainers (up to 60%, nothing
@@ -117,7 +117,7 @@ fun InfoSheet(
     pages: List<InfoPage> = emptyList(),
     content: InfoSheetScope.() -> Unit = {},
 ) {
-    require(actions.size <= 2) { "An info sheet pins at most two actions" }
+    require(actions.size <= 3) { "An info sheet pins at most three actions" }
     val compact = size == InfoSheetSize.Compact
     val maxHeight = LocalConfiguration.current.screenHeightDp.dp * size.maxHeightFraction
     // An empty page is dropped; a lone survivor is not worth a tab row, so it renders flat.
@@ -192,22 +192,25 @@ fun InfoSheet(
             }
             if (actions.isNotEmpty()) {
                 Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, thickness = 1.dp))
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = LedgerSpace.Gutter, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = LedgerSpace.Gutter, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    actions.forEach { action ->
-                        IronvellumButton(
-                            label = action.label,
-                            onClick = action.onClick,
-                            enabled = action.enabled,
-                            quiet = action.quiet,
-                            gold = action.gold,
-                            danger = action.danger,
-                            modifier = Modifier.weight(1f).heightIn(min = LedgerSpace.Target),
-                        )
+                    for (rowStart in actions.indices step 2) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (index in rowStart until minOf(rowStart + 2, actions.size)) {
+                                val action = actions[index]
+                                IronvellumButton(
+                                    label = action.label,
+                                    onClick = action.onClick,
+                                    enabled = action.enabled,
+                                    quiet = action.quiet,
+                                    gold = action.gold,
+                                    danger = action.danger,
+                                    modifier = Modifier.weight(1f).heightIn(min = LedgerSpace.Target),
+                                )
+                            }
+                        }
                     }
                 }
             } else {
