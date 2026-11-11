@@ -83,6 +83,8 @@ Ironvellum works with no account and no network. If you sign in, it syncs your t
 
 Tests run locally with `python3 tools/gate.py`. GitHub workflows are manual-only; pushing runs no checks.
 
+The [GitHub social preview](docs/images/social-preview.png) is a 1280 × 640 PNG built from the app's store screenshots. Regenerate it with `python tools/social_preview.py` (requires Pillow), then upload it under repository **Settings → General → Social preview → Edit → Upload an image**. Committing the image does not change GitHub's preview setting. See [GitHub's image requirements](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview).
+
 ## Licence
 
 Free software under the [GPL-3.0-or-later](LICENSE), with no ads, trackers or paid tier. Exercise art comes from [Open Exercise Art](https://github.com/AlexMollard/Open-Exercise-Art) (CC BY-SA 4.0); other credits are in [ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
