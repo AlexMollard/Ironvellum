@@ -365,5 +365,5 @@ object Cloud {
         else -> UiText.themed(R.string.line_stumbled, R.string.line_stumbled__t)
     }
 
-    fun <T> failure(error: Throwable): Result<T> = Result.failure(MessageException(explain(error)))
+    fun <T> failure(error: Throwable): Result<T> = Result.failure(MessageException(explain(error), error))
 }

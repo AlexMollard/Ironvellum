@@ -10,12 +10,16 @@ import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
+import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserSession
+import io.github.jan.supabase.auth.exception.NoSessionFoundException
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.NonCancellable
@@ -23,8 +27,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlin.time.Clock
 import com.ironvellum.app.data.MessageException
 
 /** How an email sign-up ended: signed in now, or waiting on the confirmation link. */
@@ -58,18 +65,77 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
     private var completedAuthentication = 0L
     private var identityGeneration = 0L
     private var identityClient: SupabaseClient? = null
+    private var initializedClient: SupabaseClient? = null
 
     private fun newTransition(): Long = synchronized(_account) { ++transition }
+
+    /** SDK loadSessionOrNull also hides I/O failures and cancellation; only absence means signed out. */
+    private suspend fun storedSession(client: SupabaseClient): UserSession? = try {
+        client.auth.sessionManager.loadSession()
+    } catch (_: NoSessionFoundException) {
+        null
+    }
+
+    /** SDK Initializing also means background-paused; wait for initial setup only once per client. */
+    private suspend fun awaitClientSetup(client: SupabaseClient) {
+        if (initializedClient === client) return
+        combine(client.auth.sessionStatus, Cloud.config) { status, _ ->
+            if (requireClient().getOrNull() !== client) throw CancellationException("Account backend changed")
+            status
+        }.first { it !is SessionStatus.Initializing }
+        initializedClient = client
+    }
+
+    private suspend fun importStoredSession(client: SupabaseClient, session: UserSession) {
+        currentCoroutineContext().ensureActive()
+        val now = Clock.System.now()
+        val current = client.auth.currentSessionOrNull()
+        if (current != null) {
+            if (current.user?.id != session.user?.id) throw CancellationException("Account identity changed")
+            if (current.expiresAt > now) return
+        }
+        val resumed = if (session.expiresAt <= now) client.auth.refreshSession(session.refreshToken) else session
+        // Preserve rotated credentials once refresh has returned, even if the requesting screen was cancelled.
+        withContext(NonCancellable) {
+            if (requireClient().getOrNull() !== client || resumed.user?.id != session.user?.id ||
+                client.auth.currentUserOrNull()?.id?.let { it != session.user?.id } == true
+            ) throw CancellationException("Account identity changed")
+            // Do not restart Android's paused refresh loop for a background read.
+            val autoRefresh = client.auth.isAutoRefreshRunning ||
+                (client.auth.sessionStatus.value is SessionStatus.NotAuthenticated && client.auth.config.alwaysAutoRefresh)
+            client.auth.importSession(resumed, autoRefresh = autoRefresh)
+        }
+    }
+
+    /** Called with sessionLock held before both private reads and profile writes. */
+    private suspend fun ensureAccountSession(client: SupabaseClient, userId: String) {
+        synchronized(_account) {
+            if (requireClient().getOrNull() !== client || identityClient !== client ||
+                _account.value?.userId != userId
+            ) throw CancellationException("Account transition superseded")
+        }
+        val current = client.auth.currentSessionOrNull()
+        if (current == null || current.expiresAt <= Clock.System.now()) {
+            val session = current ?: storedSession(client)
+            synchronized(_account) {
+                if (requireClient().getOrNull() !== client || identityClient !== client ||
+                    _account.value?.userId != userId || session?.user?.id != userId
+                ) throw CancellationException("Account transition superseded")
+            }
+            importStoredSession(client, checkNotNull(session))
+        }
+        synchronized(_account) {
+            if (requireClient().getOrNull() !== client || identityClient !== client ||
+                _account.value?.userId != userId || client.auth.currentUserOrNull()?.id != userId
+            ) throw CancellationException("Account transition superseded")
+        }
+    }
 
     internal suspend fun <T> withAccount(userId: String, block: suspend () -> T): T {
         val job = checkNotNull(currentCoroutineContext()[Job])
         sessionLock.withLock {
-            val client = requireClient().getOrNull()
-            synchronized(_account) {
-                if (client == null || identityClient !== client || _account.value?.userId != userId ||
-                    client.auth.currentUserOrNull()?.id != userId
-                ) throw CancellationException("Account transition superseded")
-            }
+            val client = requireClient().getOrNull() ?: throw CancellationException("Account backend changed")
+            ensureAccountSession(client, userId)
             synchronized(activeQueries) { activeQueries.add(job) }
         }
         try {
@@ -118,7 +184,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
             synchronized(_account) {
                 if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
             }
-            client.auth.awaitInitialization()
+            awaitClientSetup(client)
             cancelQueries()
             synchronized(_account) {
                 if (transition != token || requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
@@ -174,18 +240,16 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 client.auth.currentUserOrNull()?.id == current.userId
         }
         if (alreadyLoaded) return@withLock Result.success(Unit)
-        // supabase-kt persists the session in its SessionManager but does not
-        // import it automatically: load then import (refreshing if stale).
-        val session = attempt { client.auth.sessionManager.loadSessionOrNull() }.getOrElse {
-            if (it is CancellationException) throw it
-            null
-        }
+        // No saved identity is a valid signed-out result, including background starts
+        // where the SDK is waiting for a foreground lifecycle callback.
+        attempt { storedSession(client) }.getOrElse { return@withLock failure(it) }
             ?: return@withLock Result.success(Unit)
         attempt {
             cancelQueries()
-            client.auth.awaitInitialization()
+            awaitClientSetup(client)
             if (requireClient().getOrNull() !== client) throw CancellationException("Account transition superseded")
-            client.auth.importSession(session)
+            val latest = client.auth.currentSessionOrNull() ?: storedSession(client)
+            if (latest != null) importStoredSession(client, latest)
             val user = client.auth.currentUserOrNull()
             // Statement, not an expression: a trailing `?.let` inferred the
             // lambda as Unit? and the function no longer returned Result<Unit>.
@@ -438,6 +502,7 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
                 cancelQueries()
                 requireClient().onSuccess { client ->
                     try {
+                        awaitClientSetup(client)
                         runCatching { client.auth.signOut() }
                     } finally {
                         runCatching { client.auth.clearSession() }
@@ -467,12 +532,15 @@ class AccountRepository(private val clientOverride: SupabaseClient? = null) {
         }
     }
 
-    private fun currentProfile(client: SupabaseClient, userId: String, generation: Long): Account = synchronized(_account) {
-        val current = _account.value ?: throw CancellationException("Account identity changed")
-        if (requireClient().getOrNull() !== client || identityClient !== client || identityGeneration != generation || current.userId != userId ||
-            client.auth.currentUserOrNull()?.id != userId
-        ) throw CancellationException("Account identity changed")
-        current
+    private suspend fun currentProfile(client: SupabaseClient, userId: String, generation: Long): Account {
+        ensureAccountSession(client, userId)
+        return synchronized(_account) {
+            val current = _account.value ?: throw CancellationException("Account identity changed")
+            if (requireClient().getOrNull() !== client || identityClient !== client || identityGeneration != generation || current.userId != userId ||
+                client.auth.currentUserOrNull()?.id != userId
+            ) throw CancellationException("Account identity changed")
+            current
+        }
     }
 
     private suspend fun loadSignedInAccount(client: SupabaseClient, fallbackEmail: String, token: Long): Account? {

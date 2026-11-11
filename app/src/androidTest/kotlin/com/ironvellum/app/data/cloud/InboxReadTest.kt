@@ -30,7 +30,7 @@ import org.junit.runner.RunWith
 /** The real CloudSync inbox API, with SDK auth and isolated HTTP/storage, never a real account. */
 @RunWith(AndroidJUnit4::class)
 class InboxReadTest {
-    private class Fixture {
+    private class Fixture(private val autoRefresh: Boolean = false) {
         val readStarted = CompletableDeferred<Unit>()
         val releaseRead = CompletableDeferred<Unit>()
         val seenStarted = CompletableDeferred<Unit>()
@@ -49,6 +49,9 @@ class InboxReadTest {
         var eventAt = OLD
         var eventCount = 1
         var seenAt: String? = null
+        val storage = MemorySessionManager(UserSession("test-access", "test-refresh", expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = USER)))
+        var failRefresh = false
+        var refreshes = 0
         private val engine = MockEngine { request ->
             val body = when {
                 request.url.encodedPath.endsWith("/profiles") -> PROFILE
@@ -76,15 +79,21 @@ class InboxReadTest {
                     seenAt?.let { """[{"seen_at":"$it"}]""" } ?: "[]"
                 }
                 request.url.encodedPath.endsWith("/logout") -> "{}"
+                request.url.encodedPath.endsWith("/token") -> {
+                    check(request.url.parameters["grant_type"] == "refresh_token")
+                    refreshes++
+                    if (failRefresh) throw IOException("temporary authentication refresh failure")
+                    """{"access_token":"renewed-access","refresh_token":"renewed-refresh","expires_in":3600,"token_type":"bearer","user":{"id":"$USER","aud":"authenticated"}}"""
+                }
                 else -> error("Unexpected isolated request ${request.url.encodedPath}")
             }
             respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val client: SupabaseClient = createSupabaseClient("https://inbox-test.invalid", "test-key") {
             install(Auth) {
-                sessionManager = MemorySessionManager(UserSession("test-access", "test-refresh", expiresIn = 3600, tokenType = "bearer", user = UserInfo(aud = "authenticated", id = USER)))
+                sessionManager = storage
                 autoLoadFromStorage = false
-                alwaysAutoRefresh = false
+                alwaysAutoRefresh = autoRefresh
                 enableLifecycleCallbacks = false
             }
             install(Postgrest) { maxRetries = 0 }
@@ -97,6 +106,11 @@ class InboxReadTest {
             return CloudSync((context.applicationContext as IronvellumApp).repository, account, client, AppearanceStore(context), checkNotNull(account.account.value))
         }
         suspend fun close() { releaseRead.complete(Unit); releaseSeen.complete(Unit); releaseWatermark.complete(Unit); client.close() }
+        @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+        suspend fun pauseSdk() {
+            client.auth.stopAutoRefreshForCurrentSession()
+            client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
+        }
     }
 
     @Test fun acknowledgementAfterAnOlderReadCannotResurrectItsUnreadBadge() = runBlocking {
@@ -234,6 +248,98 @@ class InboxReadTest {
             assertEquals(0, fixture.seenCalls)
             assertEquals(1, sync.inboxUnread.value)
         } finally { fixture.close() }
+    }
+
+    @Test fun backgroundReadsAndAcknowledgementsResumeTheSameAccountWithoutRestartingItsRefreshLoop() = runBlocking {
+        withTimeout(10_000) {
+            val fixture = Fixture(autoRefresh = true)
+            try {
+                val sync = fixture.sync()
+                assertTrue(fixture.client.auth.isAutoRefreshRunning)
+                fixture.pauseSdk()
+                assertEquals(1, sync.inbox(force = true).getOrThrow().unread)
+                assertFalse(fixture.client.auth.isAutoRefreshRunning)
+                fixture.pauseSdk()
+                sync.markInboxSeen(USER, fixture.client).getOrThrow()
+                assertEquals(0, sync.inboxUnread.value)
+                assertEquals(USER, fixture.client.auth.currentUserOrNull()?.id)
+                assertFalse(fixture.client.auth.isAutoRefreshRunning)
+            } finally { fixture.close() }
+        }
+    }
+
+    @Test fun backgroundReadRenewsExpiredCredentialsBeforeFetchingTheInbox() = runBlocking {
+        withTimeout(10_000) {
+            val fixture = Fixture(autoRefresh = true)
+            try {
+                val sync = fixture.sync()
+                fixture.pauseSdk()
+                val session = checkNotNull(fixture.storage.loadSessionOrNull())
+                fixture.storage.saveSession(session.copy(expiresAt = kotlin.time.Instant.fromEpochMilliseconds(0)))
+                assertEquals(1, sync.inbox().getOrThrow().unread)
+                assertEquals(1, fixture.refreshes)
+                assertEquals("renewed-access", fixture.client.auth.currentSessionOrNull()?.accessToken)
+                assertEquals("renewed-refresh", fixture.storage.loadSessionOrNull()?.refreshToken)
+                assertFalse(fixture.client.auth.isAutoRefreshRunning)
+            } finally { fixture.close() }
+        }
+    }
+
+    @Test fun failedBackgroundCredentialRefreshRetainsItsRetryCauseAndCanRecover() = runBlocking {
+        withTimeout(10_000) {
+            val fixture = Fixture(autoRefresh = true)
+            try {
+                val sync = fixture.sync()
+                fixture.pauseSdk()
+                val session = checkNotNull(fixture.storage.loadSessionOrNull())
+                fixture.storage.saveSession(session.copy(expiresAt = kotlin.time.Instant.fromEpochMilliseconds(0)))
+                fixture.failRefresh = true
+                val failed = sync.inbox()
+                assertTrue(generateSequence(failed.exceptionOrNull()) { it.cause }.any { it is IOException })
+                assertEquals(USER, fixture.account.account.value?.userId)
+                fixture.failRefresh = false
+                assertEquals(1, sync.inbox().getOrThrow().unread)
+                assertEquals("renewed-refresh", fixture.storage.loadSessionOrNull()?.refreshToken)
+            } finally { fixture.close() }
+        }
+    }
+
+    @Test fun aPausedSdkCannotResumeStoredCredentialsBelongingToAnotherAccount() = runBlocking {
+        withTimeout(10_000) {
+            val fixture = Fixture()
+            try {
+                val sync = fixture.sync()
+                val session = checkNotNull(fixture.client.auth.currentSessionOrNull())
+                val otherId = "d7c9abc8-4a61-4468-9b24-2df6c46ac0c0"
+                fixture.client.auth.importSession(session.copy(user = UserInfo(aud = "authenticated", id = otherId)))
+                fixture.pauseSdk()
+                try {
+                    sync.inbox()
+                    fail("another account's stored credentials must not be used")
+                } catch (_: kotlinx.coroutines.CancellationException) { }
+                assertEquals(0, fixture.reads)
+                assertEquals(0, fixture.refreshes)
+                assertEquals(otherId, fixture.storage.loadSessionOrNull()?.user?.id)
+                assertEquals(USER, fixture.account.account.value?.userId)
+            } finally { fixture.close() }
+        }
+    }
+
+    @Test fun laterExpiryOfAnAuthenticatedBackgroundSessionDoesNotRestartThePausedRefreshLoop() = runBlocking {
+        withTimeout(10_000) {
+            val fixture = Fixture(autoRefresh = true)
+            try {
+                val sync = fixture.sync()
+                fixture.pauseSdk()
+                sync.inbox(force = true).getOrThrow()
+                val session = checkNotNull(fixture.client.auth.currentSessionOrNull())
+                fixture.client.auth.importSession(session.copy(expiresAt = kotlin.time.Instant.fromEpochMilliseconds(0)), autoRefresh = false)
+                assertEquals(1, sync.inbox(force = true).getOrThrow().unread)
+                assertEquals(1, fixture.refreshes)
+                assertEquals("renewed-refresh", fixture.storage.loadSessionOrNull()?.refreshToken)
+                assertFalse(fixture.client.auth.isAutoRefreshRunning)
+            } finally { fixture.close() }
+        }
     }
 
     companion object {

@@ -72,6 +72,112 @@ class AccountRestoreTest {
         }
     }
 
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    @Test fun anInitializedSdkPauseDoesNotBlockStoredSessionRecovery() = runBlocking {
+        withTimeout(10_000) {
+            val storage = MemorySessionManager(session())
+            val engine = MockEngine { request ->
+                check(request.url.encodedPath.endsWith("/profiles"))
+                respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+            }
+            val client = client(storage, engine)
+            try {
+                val accounts = AccountRepository(client)
+                accounts.restore().getOrThrow()
+                client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
+                accounts.restore().getOrThrow()
+                assertEquals(USER, accounts.account.value?.userId)
+                assertEquals("Test Ally", accounts.account.value?.displayName)
+                assertEquals(USER, client.auth.currentUserOrNull()?.id)
+            } finally {
+                client.close()
+            }
+        }
+    }
+
+    @Test fun aFailedStoredSessionReadRetainsItsCauseAndCanRecover() = runBlocking {
+        val memory = MemorySessionManager(session())
+        var failRead = true
+        val storage = object : SessionManager by memory {
+            override suspend fun loadSession(): UserSession {
+                if (failRead) {
+                    failRead = false
+                    throw IOException("temporary session read failure")
+                }
+                return memory.loadSession()
+            }
+        }
+        val engine = MockEngine { request ->
+            check(request.url.encodedPath.endsWith("/profiles"))
+            respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+        }
+        val client = client(storage, engine)
+        try {
+            val accounts = AccountRepository(client)
+            val failed = accounts.restore()
+            assertTrue(generateSequence(failed.exceptionOrNull()) { it.cause }.any { it is IOException })
+            assertNull(accounts.account.value)
+            accounts.restore().getOrThrow()
+            assertEquals(USER, accounts.account.value?.userId)
+            assertEquals("Test Ally", accounts.account.value?.displayName)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test fun cancellationWhileReadingStoredCredentialsIsNotReportedAsSignedOut() = runBlocking {
+        val memory = MemorySessionManager(session())
+        var cancelRead = true
+        val storage = object : SessionManager by memory {
+            override suspend fun loadSession(): UserSession {
+                if (cancelRead) {
+                    cancelRead = false
+                    throw kotlinx.coroutines.CancellationException("cancelled session read")
+                }
+                return memory.loadSession()
+            }
+        }
+        val engine = MockEngine { request ->
+            check(request.url.encodedPath.endsWith("/profiles"))
+            respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+        }
+        val client = client(storage, engine)
+        try {
+            val accounts = AccountRepository(client)
+            try {
+                accounts.restore()
+                fail("session-read cancellation must propagate")
+            } catch (_: kotlinx.coroutines.CancellationException) { }
+            accounts.restore().getOrThrow()
+            assertEquals(USER, accounts.account.value?.userId)
+            assertEquals(USER, client.auth.currentUserOrNull()?.id)
+        } finally {
+            client.close()
+        }
+    }
+
+    @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
+    @Test fun privacyChangesCanResumeAPausedSessionWithoutDroppingOtherProfileFields() = runBlocking {
+        withTimeout(10_000) {
+            val engine = MockEngine { request ->
+                check(request.url.encodedPath.endsWith("/profiles"))
+                respond(PROFILE, HttpStatusCode.OK, JSON_HEADERS)
+            }
+            val client = client(MemorySessionManager(session()), engine)
+            try {
+                val accounts = AccountRepository(client)
+                accounts.restore().getOrThrow()
+                client.auth.setSessionStatus(io.github.jan.supabase.auth.status.SessionStatus.Initializing)
+                accounts.setVisibility("friends").getOrThrow()
+                assertEquals("Test Ally", accounts.account.value?.displayName)
+                assertEquals("friends", accounts.account.value?.visibility)
+                assertEquals(USER, client.auth.currentUserOrNull()?.id)
+            } finally {
+                client.close()
+            }
+        }
+    }
+
     @Test fun aRestoreInFlightCannotPublishAnAccountAfterExplicitSignOut() = runBlocking {
         withTimeout(10_000) {
             val profileStarted = CompletableDeferred<Unit>()

@@ -25,6 +25,7 @@ store listing; this is the whole list.
 - Keep sign-in, restored profiles and privacy changes tied to the current account; cancellation and overlapping requests no longer leave account controls stuck busy or revive a signed-out session.
 - Wait for authentication startup before importing saved sessions or signing in, preventing a startup race from making restored accounts disappear.
 - Keep inbox unread counts accurate when refreshes and read acknowledgements overlap; isolate cached social data by account and backend, and recover cancelled inbox loads with a working retry.
+- Resume background social requests without waiting for the app to reopen; renew expired credentials before querying and preserve retryable session-storage and refresh failures.
 
 ## 1.10
 
