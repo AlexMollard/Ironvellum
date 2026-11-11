@@ -86,6 +86,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import com.ironvellum.app.data.cloud.Account
+import com.ironvellum.app.data.cloud.FriendRow
 
 /** The workout's lifter as this screen draws them; the workout row itself carries only an id. */
 internal data class OwnerIdentity(
@@ -121,170 +130,251 @@ internal data class CommentsUi(
     val sentCount: Int = 0,
 )
 
+internal interface CommentsGateway {
+    val owners: Flow<SocialOwner>
+    fun owner(): SocialOwner
+    fun account(): Account?
+    suspend fun comments(sessionId: String, force: Boolean): Result<List<Comment>>
+    suspend fun addComment(sessionId: String, body: String): Result<Comment>
+    suspend fun deleteComment(id: String): Result<Unit>
+    suspend fun workout(sessionId: String, force: Boolean): Result<AllyWorkout>
+    suspend fun likers(sessionId: String): Result<List<Liker>>
+    suspend fun friends(): Result<List<FriendRow>>
+    suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit>
+    suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String): Result<Unit>
+}
+
+private class CloudCommentsGateway(private val cloud: CloudSync, private val accounts: AccountRepository) : CommentsGateway {
+    override val owners = socialOwners(accounts.account.map { it?.userId }) { accounts.account.value?.userId }
+    override fun owner() = currentSocialOwner(accounts.account.value?.userId)
+    override fun account() = accounts.account.value
+    override suspend fun comments(sessionId: String, force: Boolean) = cloud.comments(sessionId, force)
+    override suspend fun addComment(sessionId: String, body: String) = cloud.addComment(sessionId, body)
+    override suspend fun deleteComment(id: String) = cloud.deleteComment(id)
+    override suspend fun workout(sessionId: String, force: Boolean) = cloud.workout(sessionId, force)
+    override suspend fun likers(sessionId: String) = cloud.likers(sessionId)
+    override suspend fun friends() = cloud.friends()
+    override suspend fun react(sessionId: String, reaction: Reaction?) = cloud.react(sessionId, reaction)
+    override suspend fun report(userId: String, reason: ReportReason, note: String, sessionId: String, commentId: String) =
+        cloud.report(userId, reason, note, sessionId, commentId)
+}
+
 internal class CommentsViewModel(
-    private val cloud: CloudSync,
-    private val accountRepo: AccountRepository,
+    private val gateway: CommentsGateway,
     private val sessionId: String,
     private val ownerId: String = "",
 ) : ViewModel() {
+    constructor(cloud: CloudSync, accountRepo: AccountRepository, sessionId: String, ownerId: String = "") :
+        this(CloudCommentsGateway(cloud, accountRepo), sessionId, ownerId)
 
-    private val _ui = MutableStateFlow(CommentsUi(myUserId = accountRepo.account.value?.userId))
+    private var owner = gateway.owner()
+    private var requests = requestScope()
+    private val _ui = MutableStateFlow(CommentsUi(myUserId = owner.userId))
     val ui: StateFlow<CommentsUi> = _ui.asStateFlow()
-
-    /** Comment ids with a delete in flight: a double tap on the confirm must not fire twice. */
     private val deleting = mutableSetOf<String>()
-
-    /** A reaction call in flight: a second pick before it answers would roll back to a state that is already stale. */
     private var reacting = false
-
+    private var resolvedOwner: String? = null
+    private var readVersion = 0L
+    private var mutationVersion = 0L
+    private data class CommentChange(val version: Long, val comment: Comment?)
+    private val commentChanges = mutableMapOf<String, CommentChange>()
+    private fun requestScope() = CoroutineScope(viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]))
+    private fun current(expected: SocialOwner, scope: CoroutineScope) =
+        owner == expected && requests === scope && gateway.owner() == expected
     private fun Throwable.reason(): UiText = reasonText(UiText.res(R.string.comments_unknown_failure))
 
-    init {
-        viewModelScope.launch {
-            accountRepo.account.collect { _ui.value = _ui.value.copy(myUserId = it?.userId) }
-        }
+    private fun reconcileComments(snapshot: List<Comment>): List<Comment> {
+        if (commentChanges.isEmpty()) return snapshot
+        val merged = ArrayList<Comment>(snapshot.size + commentChanges.size)
+        for (comment in snapshot) if (comment.id !in commentChanges) merged.add(comment)
+        for (change in commentChanges.values) change.comment?.let { merged.add(it) }
+        merged.sortBy { it.createdAtMs }
+        return merged
+    }
+
+    private fun refreshOwner(): Boolean {
+        val next = gateway.owner()
+        if (next == owner) return false
+        owner = next
+        requests.cancel()
+        requests = requestScope()
+        deleting.clear()
+        reacting = false
+        resolvedOwner = null
+        readVersion++
+        mutationVersion++
+        commentChanges.clear()
+        _ui.value = CommentsUi(myUserId = next.userId)
+        return true
+    }
+
+    private fun startReads() {
         load()
         loadWorkout()
         loadReactions()
-        // The route's owner id is enough to name the lifter before the workout lands.
         resolveOwner(ownerId)
     }
 
-    /** [force] only from the explicit retry: the thread read is cached. */
+    init {
+        viewModelScope.launch { gateway.owners.collect { if (refreshOwner()) startReads() } }
+        startReads()
+    }
+
     fun load(force: Boolean = false) {
-        viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null)
-            cloud.comments(sessionId, force = force)
-                .onSuccess { _ui.value = _ui.value.copy(comments = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            _ui.value = _ui.value.copy(loading = false)
+        if (refreshOwner()) { startReads(); return }
+        val expected = owner
+        val scope = requests
+        val version = ++readVersion
+        val mutation = mutationVersion
+        _ui.value = _ui.value.copy(loading = true, error = null)
+        scope.launch {
+            try {
+                val result = gateway.comments(sessionId, force)
+                if (!current(expected, scope) || version != readVersion) return@launch
+                result.onSuccess { snapshot ->
+                    // Retire only changes preceding this read; preserve later mutations without discarding thread history.
+                    commentChanges.entries.removeAll { it.value.version <= mutation }
+                    _ui.value = _ui.value.copy(comments = reconcileComments(snapshot))
+                }
+                    .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(error = it.reason()) }
+            } finally {
+                if (current(expected, scope) && version == readVersion) _ui.value = _ui.value.copy(loading = false)
+            }
         }
     }
 
-    /** The sets. A failure here never touches the thread: comments load and send on their own. */
     fun loadWorkout(force: Boolean = false) {
-        viewModelScope.launch {
-            _ui.value = _ui.value.copy(workoutLoading = true, workoutError = null)
-            cloud.workout(sessionId, force = force)
-                .onSuccess { workout ->
+        if (refreshOwner()) { startReads(); return }
+        val expected = owner
+        val scope = requests
+        _ui.value = _ui.value.copy(workoutLoading = true, workoutError = null)
+        scope.launch {
+            try {
+                val result = gateway.workout(sessionId, force)
+                if (!current(expected, scope)) return@launch
+                result.onSuccess { workout ->
                     _ui.value = _ui.value.copy(workout = workout)
                     resolveOwner(workout.userId)
-                }
-                .onFailure { _ui.value = _ui.value.copy(workoutError = it.reason()) }
-            _ui.value = _ui.value.copy(workoutLoading = false)
+                }.onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(workoutError = it.reason()) }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(workoutLoading = false)
+            }
         }
     }
 
     fun loadReactions() {
-        viewModelScope.launch {
-            cloud.likers(sessionId)
-                // A pick in flight owns the list: landing an older read on top
-                // of the optimistic row made the chip flicker back and forth.
-                .onSuccess { if (!reacting) _ui.value = _ui.value.copy(likers = it, likersError = null) }
-                .onFailure { _ui.value = _ui.value.copy(likersError = it.reason()) }
+        if (refreshOwner()) { startReads(); return }
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            val result = gateway.likers(sessionId)
+            if (!current(expected, scope)) return@launch
+            result.onSuccess { if (!reacting) _ui.value = _ui.value.copy(likers = it, likersError = null) }
+                .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(likersError = it.reason()) }
         }
     }
 
-    private var resolvedOwner: String? = null
-
-    /**
-     * Name, level and worn title for the workout's lifter. Allies are in the
-     * cached friends read; the signed-in lifter is not in it, so their own
-     * account fills in. Anyone else keeps a plain "Lifter" — the tap still
-     * opens them, the profile screen has the real name.
-     */
     private fun resolveOwner(userId: String) {
         if (userId.isBlank() || resolvedOwner == userId) return
         resolvedOwner = userId
-        val me = accountRepo.account.value
+        val me = gateway.account()
         if (me?.userId == userId) {
             _ui.value = _ui.value.copy(owner = OwnerIdentity(userId, me.displayName, null, null))
             return
         }
-        viewModelScope.launch {
-            val row = cloud.friends().getOrNull()?.firstOrNull { it.userId == userId }
-            _ui.value = _ui.value.copy(
-                owner = OwnerIdentity(userId, row?.displayName ?: Words.lifter.c, row?.level, row?.currentTitleId, row?.crestId),
-            )
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            val row = gateway.friends().getOrNull()?.firstOrNull { it.userId == userId }
+            if (!current(expected, scope) || resolvedOwner != userId) return@launch
+            _ui.value = _ui.value.copy(owner = OwnerIdentity(userId, row?.displayName ?: Words.lifter.c, row?.level, row?.currentTitleId, row?.crestId))
         }
     }
 
-    /**
-     * Optimistic: the chip moves now and the call reconciles. [reaction] null
-     * removes the lifter's own. A refusal restores the previous list, so a
-     * rejected write never leaves a phantom reaction behind.
-     */
     fun react(reaction: Reaction?) {
-        val current = _ui.value
-        val me = current.myUserId ?: return
+        if (refreshOwner()) { startReads(); return }
+        val state = _ui.value
+        val me = state.myUserId ?: return
         if (reacting) return
-        val before = current.likers
+        val before = state.likers
         if (before?.firstOrNull { it.userId == me }?.reaction == reaction) return
-        val name = accountRepo.account.value?.displayName ?: Words.text(UiText.res(R.string.comments_you))
+        val name = gateway.account()?.displayName ?: Words.text(UiText.res(R.string.comments_you))
         reacting = true
         val others = before.orEmpty().filter { it.userId != me }
-        _ui.value = current.copy(
-            reactionError = null,
-            likers = if (reaction == null) others
-            else listOf(Liker(me, name, System.currentTimeMillis(), reaction)) + others,
-        )
-        viewModelScope.launch {
-            cloud.react(sessionId, reaction)
-                .onSuccess { reacting = false; loadReactions() }
-                .onFailure {
-                    reacting = false
-                    _ui.value = _ui.value.copy(likers = before, reactionError = it.reason())
-                }
+        _ui.value = state.copy(reactionError = null, likers = if (reaction == null) others else listOf(Liker(me, name, System.currentTimeMillis(), reaction)) + others)
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            try {
+                val result = gateway.react(sessionId, reaction)
+                if (!current(expected, scope)) return@launch
+                result.onSuccess { reacting = false; loadReactions() }
+                    .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(likers = before, reactionError = it.reason()) }
+            } finally {
+                if (current(expected, scope)) reacting = false
+            }
         }
     }
 
     fun onDraft(text: String) {
+        if (refreshOwner()) startReads()
         _ui.value = _ui.value.copy(draft = text.take(WireLimits.COMMENT_MAX))
     }
 
     fun send() {
-        val current = _ui.value
-        if (current.sending || current.draft.isBlank()) return
-        _ui.value = current.copy(sending = true, actionError = null, notice = null)
-        viewModelScope.launch {
-            cloud.addComment(sessionId, current.draft)
-                // The draft clears only on success: a refused comment (rate
-                // limit, thread full) must not throw away what was typed.
-                .onSuccess { comment ->
-                    _ui.value = _ui.value.copy(
-                        comments = _ui.value.comments.filter { it.id != comment.id } + comment,
-                        draft = "",
-                        sentCount = _ui.value.sentCount + 1,
-                    )
-                }
-                .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
-            _ui.value = _ui.value.copy(sending = false)
+        if (refreshOwner()) { startReads(); return }
+        val state = _ui.value
+        if (state.sending || state.draft.isBlank()) return
+        _ui.value = state.copy(sending = true, actionError = null, notice = null)
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            try {
+                val result = gateway.addComment(sessionId, state.draft)
+                if (!current(expected, scope)) return@launch
+                result.onSuccess { comment ->
+                    mutationVersion++
+                    commentChanges[comment.id] = CommentChange(mutationVersion, comment)
+                    _ui.value = _ui.value.copy(comments = _ui.value.comments.filter { it.id != comment.id } + comment,
+                        draft = "", sentCount = _ui.value.sentCount + 1)
+                }.onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(actionError = it.reason()) }
+            } finally {
+                if (current(expected, scope)) _ui.value = _ui.value.copy(sending = false)
+            }
         }
     }
 
     fun delete(comment: Comment) {
+        if (refreshOwner()) { startReads(); return }
         if (!deleting.add(comment.id)) return
         _ui.value = _ui.value.copy(actionError = null, notice = null)
-        viewModelScope.launch {
-            cloud.deleteComment(comment.id)
-                .onSuccess { _ui.value = _ui.value.copy(comments = _ui.value.comments.filter { it.id != comment.id }) }
-                .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
-            deleting -= comment.id
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            try {
+                val result = gateway.deleteComment(comment.id)
+                if (!current(expected, scope)) return@launch
+                result.onSuccess {
+                    mutationVersion++
+                    commentChanges[comment.id] = CommentChange(mutationVersion, null)
+                    _ui.value = _ui.value.copy(comments = _ui.value.comments.filter { it.id != comment.id })
+                }.onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(actionError = it.reason()) }
+            } finally {
+                if (current(expected, scope)) deleting -= comment.id
+            }
         }
     }
 
     fun report(comment: Comment, reason: ReportReason, note: String) {
+        if (refreshOwner()) { startReads(); return }
         _ui.value = _ui.value.copy(actionError = null, notice = null)
-        viewModelScope.launch {
-            cloud.report(
-                targetUserId = comment.userId,
-                reason = reason,
-                note = note,
-                sessionId = sessionId,
-                commentId = comment.id,
-            )
-                .onSuccess { _ui.value = _ui.value.copy(notice = UiText.res(R.string.comments_report_sent)) }
-                .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
+        val expected = owner
+        val scope = requests
+        scope.launch {
+            val result = gateway.report(comment.userId, reason, note, sessionId, comment.id)
+            if (!current(expected, scope)) return@launch
+            result.onSuccess { _ui.value = _ui.value.copy(notice = UiText.res(R.string.comments_report_sent)) }
+                .onFailure { if (it !is CancellationException) _ui.value = _ui.value.copy(actionError = it.reason()) }
         }
     }
 }

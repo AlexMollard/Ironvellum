@@ -42,6 +42,12 @@ store listing; this is the whole list.
 - Retain valid sign-in sessions when a profile read temporarily fails, allowing the profile to recover without entering credentials again.
 - Run a fresh notification check when signing back into the same account, even within the polling throttle window.
 
+### Social screens
+- Clear previous-account friends, circle and board snapshots when the account or backend changes; ignore late responses and obsolete actions instead of showing another account's social state.
+- Make pull-to-refresh fetch a fresh feed immediately rather than waiting for the read cache to expire.
+- Keep feed pagination on the refreshed cursor so an older in-flight page cannot skip workouts; preserve pending reactions when posts move between pages.
+- Reconcile posted and deleted comments with delayed reads without losing earlier thread history or bringing deleted comments back.
+
 ## 1.10
 
 ### Warmups, stretches and cooldowns
